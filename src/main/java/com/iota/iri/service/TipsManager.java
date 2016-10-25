@@ -1,12 +1,27 @@
-package iri;
+package com.iota.iri.service;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
 
-class TipsManager {
+import com.iota.iri.Bundle;
+import com.iota.iri.Milestone;
+import com.iota.iri.Snapshot;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
+
+public class TipsManager {
 
     static boolean shuttingDown;
 
-    static void launch() {
+    public static void launch() {
 
         (new Thread(() -> {
 
@@ -40,8 +55,7 @@ class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    static void shutDown() {
-
+    public static void shutDown() {
         shuttingDown = true;
     }
 
@@ -58,7 +72,7 @@ class TipsManager {
             {
                 int numberOfAnalyzedTransactions = 0;
 
-                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Storage.transactionPointer((extraTip == null ? preferableMilestone : extraTip).bytes)));
+                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Storage.transactionPointer((extraTip == null ? preferableMilestone : extraTip).bytes())));
                 Long pointer;
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
@@ -99,7 +113,6 @@ class TipsManager {
                                 }
 
                                 if (!validBundle) {
-
                                     return null;
                                 }
                             }
@@ -138,7 +151,7 @@ class TipsManager {
             Hash tip = preferableMilestone;
             if (extraTip != null) {
 
-                Transaction transaction = Storage.loadTransaction(Storage.transactionPointer(tip.bytes));
+                Transaction transaction = Storage.loadTransaction(Storage.transactionPointer(tip.bytes()));
                 while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 
                     tip = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
@@ -149,7 +162,7 @@ class TipsManager {
                     } while (transaction.currentIndex != 0);
                 }
             }
-            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Storage.transactionPointer(tip.bytes)));
+            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Storage.transactionPointer(tip.bytes())));
             Long pointer;
             while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
@@ -158,12 +171,10 @@ class TipsManager {
                     final Transaction transaction = Storage.loadTransaction(pointer);
 
                     if (transaction.currentIndex == 0) {
-
                         tailsToAnalyze.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
                     }
 
                     for (final Long approverPointer : Storage.approveeTransactions(Storage.approveePointer(transaction.hash))) {
-
                         nonAnalyzedTransactions.offer(approverPointer);
                     }
                 }
@@ -176,7 +187,7 @@ class TipsManager {
                 final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
 
-                    final Transaction tail = Storage.loadTransaction(tailsToAnalyzeIterator.next().bytes);
+                    final Transaction tail = Storage.loadTransaction(tailsToAnalyzeIterator.next().bytes());
                     if (Storage.analyzedTransactionFlag(tail.pointer)) {
 
                         tailsToAnalyzeIterator.remove();
@@ -194,7 +205,7 @@ class TipsManager {
                 Set<Hash> extraTransactions = new HashSet<>();
 
                 nonAnalyzedTransactions.clear();
-                nonAnalyzedTransactions.offer(Storage.transactionPointer(tail.bytes));
+                nonAnalyzedTransactions.offer(Storage.transactionPointer(tail.bytes()));
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
                     if (Storage.setAnalyzedTransactionFlag(pointer)) {
@@ -222,7 +233,7 @@ class TipsManager {
 
                     for (final Hash extraTransaction : extraTransactions) {
 
-                        final Transaction transaction = Storage.loadTransaction(extraTransaction.bytes);
+                        final Transaction transaction = Storage.loadTransaction(extraTransaction.bytes());
                         if (transaction.currentIndex == 0) {
 
                             final Bundle bundle = new Bundle(transaction.bundle);
@@ -257,9 +268,8 @@ class TipsManager {
 
                         for (final Hash extraTransaction : extraTransactions) {
 
-                            final Transaction transaction = Storage.loadTransaction(extraTransaction.bytes);
+                            final Transaction transaction = Storage.loadTransaction(extraTransaction.bytes());
                             if (transaction.value != 0) {
-
                                 final Hash address = new Hash(transaction.address);
                                 final Long value = stateCopy.get(address);
                                 stateCopy.put(address, value == null ? transaction.value : (value + transaction.value));
@@ -269,9 +279,7 @@ class TipsManager {
                         for (final long value : stateCopy.values()) {
 
                             if (value < 0) {
-
                                 extraTransactions = null;
-
                                 break;
                             }
                         }
@@ -279,7 +287,6 @@ class TipsManager {
                         if (extraTransactions != null) {
 
                             if (extraTransactions.size() > bestRating) {
-
                                 bestTip = tail;
                                 bestRating = extraTransactions.size();
                             }
@@ -288,7 +295,6 @@ class TipsManager {
                 }
             }
             System.out.println(bestRating + " extra transactions approved");
-
             return bestTip;
         }
     }

@@ -1,0 +1,12 @@
+/target*
+/.classpath
+/.project
+/.settings
+/tomcat.*
+/.idea
+/*.iml
+.classpath
+.project
+*.class
+target/*
+

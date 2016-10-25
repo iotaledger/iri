@@ -1,17 +1,47 @@
-package iri;
+package com.iota.iri.service;
 
-import cfb.curl.*;
-import cfb.pearldiver.*;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.nio.ByteBuffer;
+import java.nio.channels.AsynchronousChannelGroup;
+import java.nio.channels.AsynchronousServerSocketChannel;
+import java.nio.channels.AsynchronousSocketChannel;
+import java.nio.channels.CompletionHandler;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.Executors;
 
-import javax.script.*;
-import java.io.*;
-import java.net.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.util.*;
-import java.util.concurrent.*;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
-class API {
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.iota.iri.IRI;
+import com.iota.iri.Milestone;
+import com.iota.iri.Neighbor;
+import com.iota.iri.Snapshot;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.PearlDiver;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
+import com.iota.iri.utils.Converter;
+
+public class API {
+
+	private static final Logger log = LoggerFactory.getLogger(API.class);
 
     public static final int PORT = 14265;
 
@@ -19,36 +49,13 @@ class API {
     static AsynchronousServerSocketChannel serverChannel;
     static final PearlDiver pearlDiver = new PearlDiver();
 
-    static void launch() throws IOException {
+    public static void launch() throws IOException {
 
         scriptEngine = (new ScriptEngineManager()).getEngineByName("JavaScript");
 
         serverChannel = AsynchronousServerSocketChannel.open(AsynchronousChannelGroup.withThreadPool(Executors.newCachedThreadPool()));
         serverChannel.bind(new InetSocketAddress(InetAddress.getLoopbackAddress(), PORT));
-        serverChannel.accept(null, new CompletionHandler<AsynchronousSocketChannel, Void>() {
-
-            @Override
-            public void completed(final AsynchronousSocketChannel clientChannel, final Void attachment) {
-
-                serverChannel.accept(null, this);
-
-                new Request(clientChannel);
-            }
-
-            @Override
-            public void failed(final Throwable e, final Void attachment) {
-            }
-        });
-    }
-
-    static void shutDown() {
-
-        try {
-
-            serverChannel.close();
-
-        } catch (final Exception e) {
-        }
+        serverChannel.accept(null, handler);
     }
 
     static String array(final List<String> elements) {
@@ -126,33 +133,16 @@ class API {
                         }
 
                     } catch (final Exception e) {
-
                         e.printStackTrace();
-
-                        try {
-
-                            channel.close();
-
-                        } catch (final Exception e2) {
-
-                            e2.printStackTrace();
-                        }
+                    } finally {
+                    	IOUtils.closeQuietly(channel);
                     }
                 }
 
                 @Override
                 public void failed(final Throwable e, final Request request) {
-
                     e.printStackTrace();
-
-                    try {
-
-                        channel.close();
-
-                    } catch (final Exception e2) {
-
-                        e2.printStackTrace();
-                    }
+                    IOUtils.closeQuietly(channel);
                 }
             });
         }
@@ -255,7 +245,7 @@ class API {
                                 bundlesTransactions = new HashSet<>();
                                 for (final String bundle : (List<String>)request.get("bundles")) {
 
-                                    bundlesTransactions.addAll(Storage.bundleTransactions(Storage.bundlePointer((new Hash(bundle)).bytes)));
+                                    bundlesTransactions.addAll(Storage.bundleTransactions(Storage.bundlePointer((new Hash(bundle)).bytes())));
                                 }
 
                             } else {
@@ -269,7 +259,7 @@ class API {
                                 addressesTransactions = new HashSet<>();
                                 for (final String address : (List<String>)request.get("addresses")) {
 
-                                    addressesTransactions.addAll(Storage.addressTransactions(Storage.addressPointer((new Hash(address)).bytes)));
+                                    addressesTransactions.addAll(Storage.addressTransactions(Storage.addressPointer((new Hash(address)).bytes())));
                                 }
 
                             } else {
@@ -287,7 +277,7 @@ class API {
 
                                         tag += Converter.TRYTE_ALPHABET.charAt(0);
                                     }
-                                    tagsTransactions.addAll(Storage.tagTransactions(Storage.tagPointer((new Hash(tag)).bytes)));
+                                    tagsTransactions.addAll(Storage.tagTransactions(Storage.tagPointer((new Hash(tag)).bytes())));
                                 }
 
                             } else {
@@ -301,7 +291,7 @@ class API {
                                 approveeTransactions = new HashSet<>();
                                 for (final String approvee : (List<String>)request.get("approvees")) {
 
-                                    approveeTransactions.addAll(Storage.approveeTransactions(Storage.approveePointer((new Hash(approvee)).bytes)));
+                                    approveeTransactions.addAll(Storage.approveeTransactions(Storage.approveePointer((new Hash(approvee)).bytes())));
                                 }
 
                             } else {
@@ -362,7 +352,7 @@ class API {
 
                                 Storage.clearAnalyzedTransactionsFlags();
 
-                                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Storage.transactionPointer(milestone.bytes)));
+                                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Storage.transactionPointer(milestone.bytes())));
                                 Long pointer;
                                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
@@ -421,7 +411,7 @@ class API {
                                 final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
                                 for (final Hash tip : tips) {
 
-                                    final long pointer = Storage.transactionPointer(tip.bytes);
+                                    final long pointer = Storage.transactionPointer(tip.bytes());
                                     if (pointer <= 0) {
 
                                         response = "\"error\": \"One of the tips absents\"";
@@ -456,7 +446,6 @@ class API {
                                                         inclusionStates[i] = true;
 
                                                         if (--numberOfNonMetTransactions <= 0) {
-
                                                             break MAIN_LOOP;
                                                         }
                                                     }
@@ -469,7 +458,6 @@ class API {
                                     }
 
                                     if (response == null) {
-
                                         response = "\"states\": " + Arrays.toString(inclusionStates);
                                     }
                                 }
@@ -552,7 +540,7 @@ class API {
 
                             for (final String hash : (List<String>)request.get("hashes")) {
 
-                                final Transaction transaction = Storage.loadTransaction((new Hash(hash)).bytes);
+                                final Transaction transaction = Storage.loadTransaction((new Hash(hash)).bytes());
                                 elements.add(transaction == null ? "null" : ("\"" + Converter.trytes(transaction.trits()) + "\""));
                             }
 
@@ -608,8 +596,7 @@ class API {
 
             } catch (final Exception e) {
 
-                e.printStackTrace();
-
+                log.error("API Exception: ", e);
                 response = "\"exception\": \"" + e.toString().replaceAll("\"", "'").replace("\r", "\\r").replace("\n", "\\n") + "\"";
             }
 
@@ -625,32 +612,35 @@ class API {
                 public void completed(final Integer numberOfBytes, final Request request) {
 
                     if (buffer.hasRemaining()) {
-
                         channel.write(buffer, request, this);
-
                     } else {
-
-                        try {
-
-                            channel.close();
-
-                        } catch (final Exception e) {
-                        }
+                    	IOUtils.closeQuietly(channel);
                     }
                 }
 
                 @Override
                 public void failed(final Throwable e, final Request request) {
-
-                    try {
-
-                        channel.close();
-
-                    } catch (final Exception e2) {
-                    }
+                	IOUtils.closeQuietly(channel);
                 }
 
             });
         }
+    }
+    
+    private static CompletionHandler<AsynchronousSocketChannel, Void> handler = new CompletionHandler<AsynchronousSocketChannel, Void>() {
+
+        @Override
+        public void completed(final AsynchronousSocketChannel clientChannel, final Void attachment) {
+            serverChannel.accept(null, this);
+            new Request(clientChannel);
+        }
+
+        @Override
+        public void failed(final Throwable e, final Void attachment) {
+        }
+    };
+
+    public static void shutDown() {
+    	IOUtils.closeQuietly(serverChannel);
     }
 }

@@ -1,29 +1,32 @@
-package iri;
+package com.iota.iri;
 
-import cfb.curl.*;
-import cfb.iss.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
-import java.util.*;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.ISS;
+import com.iota.iri.model.Transaction;
+import com.iota.iri.service.Storage;
+import com.iota.iri.utils.Converter;
 
 public class Bundle {
 
-    public final List<List<Transaction>> transactions;
+    public final List<List<Transaction>> transactions = new LinkedList<>();
 
-    Bundle(final byte[] bundle) {
-
-        transactions = new LinkedList<>();
+    public Bundle(final byte[] bundle) {
 
         final long bundlePointer = Storage.bundlePointer(bundle);
         if (bundlePointer != 0) {
-
             final Map<Long, Transaction> bundleTransactions = new HashMap<>();
             for (final long transactionPointer : Storage.bundleTransactions(bundlePointer)) {
-
                 bundleTransactions.put(transactionPointer, Storage.loadTransaction(transactionPointer));
             }
             for (Transaction transaction : bundleTransactions.values()) {
 
-                if (transaction.currentIndex == 0 && transaction.validity >= 0) {
+                if (transaction.currentIndex == 0 && transaction.validity() >= 0) {
 
                     final List<Transaction> instanceTransactions = new LinkedList<>();
 
@@ -47,7 +50,7 @@ public class Bundle {
 
                             if (bundleValue == 0) {
 
-                                if (instanceTransactions.get(0).validity == 0) {
+                                if (instanceTransactions.get(0).validity() == 0) {
 
                                     final Curl bundleHash = new Curl();
                                     for (final Transaction transaction2 : instanceTransactions) {
@@ -77,6 +80,7 @@ public class Bundle {
                                                 } while (++j < instanceTransactions.size()
                                                         && Arrays.equals(instanceTransactions.get(j).address, transaction.address)
                                                         && instanceTransactions.get(j).value == 0);
+                                                
                                                 final int[] addressTrits = new int[Transaction.ADDRESS_TRINARY_SIZE];
                                                 address.squeeze(addressTrits, 0, addressTrits.length);
                                                 if (!Arrays.equals(Converter.bytes(addressTrits, 0, Transaction.ADDRESS_TRINARY_SIZE), transaction.address)) {
@@ -87,37 +91,27 @@ public class Bundle {
                                                 }
 
                                             } else {
-
                                                 j++;
                                             }
                                         }
 
                                         Storage.setTransactionValidity(instanceTransactions.get(0).pointer, 1);
-
                                         transactions.add(instanceTransactions);
-
                                     } else {
-
                                         Storage.setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                                     }
-
                                 } else {
-
                                     transactions.add(instanceTransactions);
                                 }
-
                             } else {
-
                                 Storage.setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                             }
 
                             break;
 
                         } else {
-
                             transaction = bundleTransactions.get(transaction.trunkTransactionPointer);
                             if (transaction == null) {
-
                                 break;
                             }
                         }

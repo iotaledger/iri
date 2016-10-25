@@ -1,8 +1,10 @@
-package iri;
+package com.iota.iri.model;
 
-import cfb.curl.*;
+import java.util.Arrays;
 
-import java.util.*;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.service.Storage;
+import com.iota.iri.utils.Converter;
 
 public class Transaction {
 
@@ -44,30 +46,30 @@ public class Transaction {
 
     public static final int MIN_WEIGHT_MAGNITUDE = 18;
 
-    final int type;
-    final byte[] hash;
+    public final int type;
+    public final byte[] hash;
 
-    final byte[] bytes;
+    public final byte[] bytes;
 
-    final byte[] address;
-    final long value;
-    final byte[] tag;
-    final long currentIndex, lastIndex;
-    final byte[] bundle;
-    final byte[] trunkTransaction;
-    final byte[] branchTransaction;
+    public final byte[] address;
+    public final long value;
+    public final byte[] tag;
+    public final long currentIndex, lastIndex;
+    public final byte[] bundle;
+    public final byte[] trunkTransaction;
+    public final byte[] branchTransaction;
 
-    long trunkTransactionPointer;
-    long branchTransactionPointer;
+    public long trunkTransactionPointer;
+    public long branchTransactionPointer;
     final int validity;
 
     int[] trits;
 
-    final long pointer;
+    public final long pointer;
 
-    int weightMagnitude;
+    public int weightMagnitude;
 
-    Transaction(final int[] trits) {
+    public Transaction(final int[] trits) {
 
         this.trits = trits;
         bytes = Converter.bytes(trits);
@@ -96,7 +98,7 @@ public class Transaction {
         pointer = 0;
     }
 
-    Transaction(final byte[] bytes, final int[] trits, final Curl curl) {
+    public Transaction(final byte[] bytes, final int[] trits, final Curl curl) {
 
         this.bytes = Arrays.copyOf(bytes, BYTES_SIZE);
         Converter.getTrits(this.bytes, this.trits = trits);
@@ -144,7 +146,7 @@ public class Transaction {
         pointer = 0;
     }
 
-    Transaction(final byte[] mainBuffer, final long pointer) {
+    public Transaction(final byte[] mainBuffer, final long pointer) {
 
         type = mainBuffer[TYPE_OFFSET];
         System.arraycopy(mainBuffer, HASH_OFFSET, hash = new byte[HASH_SIZE], 0, HASH_SIZE);
@@ -195,7 +197,6 @@ public class Transaction {
         if (transaction == null) {
 
             mainBuffer[TYPE_OFFSET] = Storage.PREFILLED_SLOT;
-
         } else {
 
             mainBuffer[TYPE_OFFSET] = (byte)transaction.type;
@@ -219,7 +220,6 @@ public class Transaction {
             } else {
 
                 if (approvedTransactionPointer < 0) {
-
                     approvedTransactionPointer = -approvedTransactionPointer;
                 }
 
@@ -246,4 +246,13 @@ public class Transaction {
             }
         }
     }
+    
+    public long value() {
+		return value;
+	}
+    
+    public int validity() {
+		return validity;
+	}
 }
+

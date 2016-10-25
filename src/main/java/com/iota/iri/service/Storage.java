@@ -1,12 +1,21 @@
-package iri;
+package com.iota.iri.service;
 
-import java.io.*;
-import java.nio.*;
-import java.nio.channels.*;
-import java.nio.file.*;
-import java.util.*;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Collections;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Queue;
 
-class Storage {
+import com.iota.iri.Milestone;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
+
+public class Storage {
 
     public static final int CELL_SIZE = 2048;
     public static final int CELLS_PER_CHUNK = 65536;
@@ -37,12 +46,14 @@ class Storage {
     public static final int ZEROTH_POINTER_OFFSET = 64;
 
     static FileChannel transactionsChannel;
-    static ByteBuffer transactionsTipsFlags;
+    public static ByteBuffer transactionsTipsFlags;
     static final ByteBuffer[] transactionsChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
     volatile static long transactionsNextPointer = CELLS_OFFSET - SUPER_GROUPS_OFFSET;
+    
     static final byte[] mainBuffer = new byte[CELL_SIZE], auxBuffer = new byte[CELL_SIZE];
-    static final byte[][] approvedTransactionsToStore = new byte[2][];
-    static int numberOfApprovedTransactionsToStore;
+    public static final byte[][] approvedTransactionsToStore = new byte[2][];
+    
+    public static int numberOfApprovedTransactionsToStore;
 
     static FileChannel bundlesChannel;
     static final ByteBuffer[] bundlesChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
@@ -63,7 +74,8 @@ class Storage {
     static ByteBuffer transactionsToRequest;
     volatile static int numberOfTransactionsToRequest;
     static final byte[] transactionToRequest = new byte[Transaction.HASH_SIZE];
-    static ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy;
+    
+    public static ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy;
 
     private static boolean launched;
 
@@ -94,14 +106,11 @@ class Storage {
                 for (final int value : mainBuffer) {
 
                     if (value != 0) {
-
                         empty = false;
-
                         break;
                     }
                 }
                 if (empty) {
-
                     break;
                 }
 
@@ -130,14 +139,11 @@ class Storage {
                 for (final int value : mainBuffer) {
 
                     if (value != 0) {
-
                         empty = false;
-
                         break;
                     }
                 }
                 if (empty) {
-
                     break;
                 }
 
@@ -282,31 +288,26 @@ class Storage {
 
             ((MappedByteBuffer) transactionsTipsFlags).force();
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && transactionsChunks[i] != null; i++) {
-
                 System.out.println("Flushing transactions chunk #" + i);
                 flush(transactionsChunks[i]);
             }
 
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && bundlesChunks[i] != null; i++) {
-
                 System.out.println("Flushing bundles chunk #" + i);
                 flush(bundlesChunks[i]);
             }
 
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && addressesChunks[i] != null; i++) {
-
                 System.out.println("Flushing addresses chunk #" + i);
                 flush(addressesChunks[i]);
             }
 
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && tagsChunks[i] != null; i++) {
-
                 System.out.println("Flushing tags chunk #" + i);
                 flush(tagsChunks[i]);
             }
 
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && approversChunks[i] != null; i++) {
-
                 System.out.println("Flushing approvers chunk #" + i);
                 flush(approversChunks[i]);
             }
@@ -329,13 +330,10 @@ class Storage {
     private static boolean flush(final ByteBuffer buffer) {
 
         try {
-
             ((MappedByteBuffer) buffer).force();
-
             return true;
 
         } catch (final Exception e) {
-
             return false;
         }
     }
@@ -458,14 +456,12 @@ class Storage {
     public static synchronized Transaction loadTransaction(final long pointer) {
 
         ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
-
         return new Transaction(mainBuffer, pointer);
     }
 
     public static synchronized Transaction loadTransaction(final byte[] hash) {
 
         final long pointer = transactionPointer(hash);
-
         return pointer > 0 ? loadTransaction(pointer) : null;
     }
 
@@ -481,7 +477,7 @@ class Storage {
 
                     clearAnalyzedTransactionsFlags();
 
-                    final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(transactionPointer(Milestone.latestMilestone.bytes)));
+                    final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(transactionPointer(Milestone.latestMilestone.bytes())));
                     Long pointer;
                     while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
@@ -506,9 +502,7 @@ class Storage {
             }
 
             if (numberOfTransactionsToRequest == 0) {
-
-                System.arraycopy(Hash.NULL_HASH.bytes, 0, buffer, offset, Transaction.HASH_SIZE);
-
+                System.arraycopy(Hash.NULL_HASH.bytes(), 0, buffer, offset, Transaction.HASH_SIZE);
             } else {
 
                 ((ByteBuffer) transactionsToRequest.position(--numberOfTransactionsToRequest * Transaction.HASH_SIZE)).get(transactionToRequest);
@@ -518,9 +512,7 @@ class Storage {
     }
 
     public static synchronized boolean tipFlag(final long pointer) {
-
         final long index = (pointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) >> 11;
-
         return (transactionsTipsFlags.get((int)(index >> 3)) & (1 << (index & 7))) != 0;
     }
 
@@ -532,7 +524,6 @@ class Storage {
         while (pointer < transactionsNextPointer) {
 
             if (tipFlag(pointer)) {
-
                 tips.add(new Hash(loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE));
             }
 

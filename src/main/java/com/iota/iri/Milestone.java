@@ -1,10 +1,20 @@
-package iri;
+package com.iota.iri;
 
-import cfb.curl.*;
-import cfb.iss.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
-import java.util.*;
-import java.util.concurrent.*;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.ISS;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
+import com.iota.iri.service.Storage;
+import com.iota.iri.utils.Converter;
 
 public class Milestone {
 
@@ -18,7 +28,7 @@ public class Milestone {
 
     public static void updateLatestMilestone() {
 
-        for (final Long pointer : Storage.addressTransactions(Storage.addressPointer(COORDINATOR.bytes))) {
+        for (final Long pointer : Storage.addressTransactions(Storage.addressPointer(COORDINATOR.bytes()))) {
 
             if (analyzedMilestoneCandidates.add(pointer)) {
 
@@ -94,7 +104,7 @@ public class Milestone {
                     Storage.clearAnalyzedTransactionsFlags();
 
                     final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
-                    nonAnalyzedTransactions.offer(Storage.transactionPointer(milestone.bytes));
+                    nonAnalyzedTransactions.offer(Storage.transactionPointer(milestone.bytes()));
                     Long pointer;
                     while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
@@ -108,7 +118,6 @@ public class Milestone {
                                 break;
 
                             } else {
-
                                 nonAnalyzedTransactions.offer(transaction2.trunkTransactionPointer);
                                 nonAnalyzedTransactions.offer(transaction2.branchTransactionPointer);
                             }

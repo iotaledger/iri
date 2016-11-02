@@ -504,6 +504,8 @@ public class API {
 	}
 
 	public static void shutDown() {
-		server.stop();
+		if (server != null) {
+			server.stop();
+		}
     }
 }

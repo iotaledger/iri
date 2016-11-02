@@ -1,7 +1,5 @@
 package com.iota.iri;
 
-import static org.junit.Assert.*;
-
 import org.junit.Test;
 
 public class IRITest {
@@ -16,4 +14,5 @@ public class IRITest {
 		IRI.main(new String[] {"1"});
 	}
 
+	
 }

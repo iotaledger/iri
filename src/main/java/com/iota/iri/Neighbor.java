@@ -23,15 +23,6 @@ public class Neighbor {
         	// ignore
         }
     }
-
-    @Override
-    public String toString() {
-
-        return "\"address\": \"" + address + "\""
-                + ", \"numberOfAllTransactions\": " + numberOfAllTransactions
-                + ", \"numberOfNewTransactions\": " + numberOfNewTransactions
-                + ", \"numberOfInvalidTransactions\": " + numberOfInvalidTransactions;
-    }
     
     @Override
     public boolean equals(final Object obj) {
@@ -43,7 +34,19 @@ public class Neighbor {
         return address.hashCode();
     }
     
-    public SocketAddress address() {
+    public SocketAddress getAddress() {
 		return address;
+	}
+    
+    public int getNumberOfAllTransactions() {
+		return numberOfAllTransactions;
+	}
+    
+    public int getNumberOfInvalidTransactions() {
+		return numberOfInvalidTransactions;
+	}
+    
+    public int getNumberOfNewTransactions() {
+		return numberOfNewTransactions;
 	}
 }

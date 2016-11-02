@@ -244,11 +244,7 @@ public class API {
 	}
 
 	private static AbstractResponse getNeighborsStatement() {
-		final List<String> elements = new LinkedList<>();
-		for (final Neighbor neighbor : Node.neighbors) {
-			elements.add("{" + neighbor + "}");
-		}
-		return GetNeighborsResponse.create(elements);
+		return GetNeighborsResponse.create(Node.neighbors);
 	}
 
 	private static AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) {

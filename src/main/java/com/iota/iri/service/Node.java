@@ -76,7 +76,7 @@ public class Node {
 
                         for (final Neighbor neighbor : neighbors) {
 
-                            if (neighbor.address().equals(receivingPacket.getSocketAddress())) {
+                            if (neighbor.getAddress().equals(receivingPacket.getSocketAddress())) {
 
                                 try {
 

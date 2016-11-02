@@ -11,6 +11,9 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.Bundle;
 import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
@@ -18,6 +21,8 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 
 public class TipsManager {
+
+	private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
     static boolean shuttingDown;
 
@@ -36,19 +41,16 @@ public class TipsManager {
                     Milestone.updateLatestSolidSubtangleMilestone();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
-
-                        System.out.println("Latest milestone has changed from #" + previousLatestMilestoneIndex + " to #" + Milestone.latestMilestoneIndex);
+                        log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex + " to #" + Milestone.latestMilestoneIndex);
                     }
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
-
-                        System.out.println("Latest SOLID SUBTANGLE milestone has changed from #" + previousSolidSubtangleLatestMilestoneIndex + " to #" + Milestone.latestSolidSubtangleMilestoneIndex);
+                    	log.info("Latest SOLID SUBTANGLE milestone has changed from #" + previousSolidSubtangleLatestMilestoneIndex + " to #" + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
 
                     Thread.sleep(5000);
 
                 } catch (final Exception e) {
-
-                    e.printStackTrace();
+                	log.error("Error during TipsManager Milestone updating", e);
                 }
             }
 
@@ -82,9 +84,7 @@ public class TipsManager {
 
                         final Transaction transaction = Storage.loadTransaction(pointer);
                         if (transaction.type == Storage.PREFILLED_SLOT) {
-
                             return null;
-
                         } else {
 
                             if (transaction.currentIndex == 0) {
@@ -123,7 +123,7 @@ public class TipsManager {
                     }
                 }
 
-                System.out.println("Confirmed transactions = " + numberOfAnalyzedTransactions);
+                log.info("Confirmed transactions = {}", numberOfAnalyzedTransactions);
             }
 
             final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
@@ -195,7 +195,7 @@ public class TipsManager {
                 }
             }
 
-            System.out.println(tailsToAnalyze.size() + " tails need to be analyzed");
+            log.info(tailsToAnalyze.size() + " tails need to be analyzed");
             Hash bestTip = preferableMilestone;
             int bestRating = 0;
             for (final Hash tail : tailsToAnalyze) {
@@ -212,9 +212,7 @@ public class TipsManager {
 
                         final Transaction transaction = Storage.loadTransaction(pointer);
                         if (transaction.type == Storage.PREFILLED_SLOT) {
-
                             extraTransactions = null;
-
                             break;
 
                         } else {
@@ -244,20 +242,16 @@ public class TipsManager {
                                     for (final Transaction bundleTransaction : bundleTransactions) {
 
                                         if (!extraTransactionsCopy.remove(new Hash(bundleTransaction.hash, 0, Transaction.HASH_SIZE))) {
-
                                             extraTransactionsCopy = null;
-
                                             break;
                                         }
                                     }
-
                                     break;
                                 }
                             }
                         }
 
                         if (extraTransactionsCopy == null) {
-
                             break;
                         }
                     }
@@ -294,7 +288,7 @@ public class TipsManager {
                     }
                 }
             }
-            System.out.println(bestRating + " extra transactions approved");
+            log.info(bestRating + " extra transactions approved");
             return bestTip;
         }
     }

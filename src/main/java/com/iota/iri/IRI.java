@@ -1,22 +1,12 @@
 package com.iota.iri;
 
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xnio.streams.ChannelInputStream;
 
 import com.iota.iri.service.API;
 import com.iota.iri.service.Node;
 import com.iota.iri.service.Storage;
 import com.iota.iri.service.TipsManager;
-
-import io.undertow.Undertow;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.Headers;
 
 /**
  * Main IOTA Reference Implementation starting class

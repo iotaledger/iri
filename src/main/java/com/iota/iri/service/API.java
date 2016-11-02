@@ -494,12 +494,10 @@ public class API {
 	}
 	
 	public static void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime) throws IOException {
+		res.setDuration((int) (System.currentTimeMillis() - beginningTime));
 		final String response = gson.toJson(res);
 		
-		final String wrapResponse = "{" + response + (response.length() == 0 ? "" : ", ") + "\"duration\": "
-		        + (System.currentTimeMillis() - beginningTime) + "}";
-		
-		exchange.getResponseChannel().write(ByteBuffer.wrap(wrapResponse.toString().getBytes(StandardCharsets.UTF_8)));
+		exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
 		exchange.endExchange();
 	}
 

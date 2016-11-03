@@ -43,7 +43,7 @@ public class IRI {
 		}
 		
 		if (args.length < 2) {
-			log.error("Invalid arguments list. Provide port number and at least one upd node addresse.");
+			log.error("Invalid arguments list. Provide port number and at least one udp node address.");
 			throw new IllegalStateException();
 		}
 

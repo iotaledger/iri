@@ -1,8 +1,9 @@
 package com.iota.iri;
 
-import java.net.*;
-
 import com.iota.iri.service.Node;
+
+import java.net.DatagramPacket;
+import java.net.SocketAddress;
 
 public class Neighbor {
 

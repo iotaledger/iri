@@ -1,31 +1,5 @@
 package com.iota.iri.service;
 
-import static io.undertow.Handlers.path;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.channels.AsynchronousSocketChannel;
-import java.nio.channels.CompletionHandler;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.streams.ChannelInputStream;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iota.iri.IRI;
@@ -36,26 +10,27 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
-import com.iota.iri.service.dto.AttachToTangleResponse;
-import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.ExceptionResponse;
-import com.iota.iri.service.dto.FindTransactionesponse;
-import com.iota.iri.service.dto.GetBalancesResponse;
-import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
-import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.dto.GetTipsResponse;
-import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
-import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
+import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;
-
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.streams.ChannelInputStream;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
+
+import static io.undertow.Handlers.path;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -138,7 +113,6 @@ public class API {
 			}
 
 			case "getNodeInfo": {
-
 				return GetNodeInfoResponse.create(IRI.NAME, IRI.VERSION, 
 						Runtime.getRuntime().availableProcessors(),
 				        Runtime.getRuntime().freeMemory(), 
@@ -442,15 +416,15 @@ public class API {
 
 		Hash prevTransaction = null;
 
-		for (int i = 0; i < trytes.size(); i++) {
+		for (String tryte : trytes) {
 
-			final int[] transactionTrits = Converter.trits(trytes.get(i));
+			final int[] transactionTrits = Converter.trits(tryte);
 			System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
-			        transactionTrits, Transaction.TRUNK_TRANSACTION_TRINARY_OFFSET,
-			        Transaction.TRUNK_TRANSACTION_TRINARY_SIZE);
+					transactionTrits, Transaction.TRUNK_TRANSACTION_TRINARY_OFFSET,
+					Transaction.TRUNK_TRANSACTION_TRINARY_SIZE);
 			System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
-			        transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
-			        Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
+					transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
+					Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
 
 			if (pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
 				transactions.clear();

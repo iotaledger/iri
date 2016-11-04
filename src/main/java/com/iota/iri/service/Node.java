@@ -1,5 +1,10 @@
 package com.iota.iri.service;
 
+import com.iota.iri.Milestone;
+import com.iota.iri.Neighbor;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Transaction;
+
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
@@ -8,11 +13,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import com.iota.iri.Milestone;
-import com.iota.iri.Neighbor;
-import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Transaction;
 
 public class Node {
 
@@ -141,6 +141,7 @@ public class Node {
                                 neighbor.send(sendingPacket);
 
                             } catch (final Exception e) {
+                                // ignore
                             }
                         }
                     }

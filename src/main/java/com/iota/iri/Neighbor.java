@@ -3,15 +3,15 @@ package com.iota.iri;
 import com.iota.iri.service.Node;
 
 import java.net.DatagramPacket;
-import java.net.SocketAddress;
+import java.net.InetSocketAddress;
 
 public class Neighbor {
 
-    private final SocketAddress address;
+    private final InetSocketAddress address;
     
     public int numberOfAllTransactions, numberOfNewTransactions, numberOfInvalidTransactions;
 
-    public Neighbor(final SocketAddress address) {
+    public Neighbor(final InetSocketAddress address) {
         this.address = address;
     }
 
@@ -35,7 +35,7 @@ public class Neighbor {
         return address.hashCode();
     }
     
-    public SocketAddress getAddress() {
+    public InetSocketAddress getAddress() {
 		return address;
 	}
     

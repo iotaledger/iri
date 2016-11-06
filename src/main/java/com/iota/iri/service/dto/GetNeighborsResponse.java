@@ -3,7 +3,7 @@ package com.iota.iri.service.dto;
 import java.util.List;
 
 public class GetNeighborsResponse extends AbstractResponse {
-	
+
 	private Neighbor[] neighbors;
 
     public Neighbor[] getNeighbors() {
@@ -27,10 +27,10 @@ public class GetNeighborsResponse extends AbstractResponse {
         public int getNumberOfInvalidTransactions() {
 			return numberOfInvalidTransactions;
 		}
-        
+
         public static Neighbor createFrom(com.iota.iri.Neighbor n) {
         	Neighbor ne = new Neighbor();
-        	ne.address = n.getAddress().toString();
+        	ne.address = n.getAddress().getHostString() + ":" + n.getAddress().getPort();
         	ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
         	ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();
         	ne.numberOfNewTransactions = n.getNumberOfNewTransactions();

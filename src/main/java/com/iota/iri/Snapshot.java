@@ -1,10 +1,10 @@
 package com.iota.iri;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class Snapshot {
 

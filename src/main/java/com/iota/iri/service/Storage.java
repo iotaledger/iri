@@ -1,5 +1,9 @@
 package com.iota.iri.service;
 
+import com.iota.iri.Milestone;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -10,10 +14,6 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-
-import com.iota.iri.Milestone;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 
 public class Storage {
 

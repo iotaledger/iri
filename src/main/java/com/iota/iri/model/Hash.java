@@ -1,9 +1,9 @@
 package com.iota.iri.model;
 
-import java.util.Arrays;
-
 import com.iota.iri.hash.Curl;
 import com.iota.iri.utils.Converter;
+
+import java.util.Arrays;
 
 public class Hash {
 

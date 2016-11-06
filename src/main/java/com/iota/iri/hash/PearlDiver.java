@@ -147,6 +147,7 @@ public class PearlDiver {
             wait();
 
         } catch (final InterruptedException e) {
+            // ignore
         }
 
         return interrupted;

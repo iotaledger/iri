@@ -1,12 +1,11 @@
 package com.iota.iri;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.iota.iri.service.API;
 import com.iota.iri.service.Node;
 import com.iota.iri.service.Storage;
 import com.iota.iri.service.TipsManager;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Main IOTA Reference Implementation starting class
@@ -43,7 +42,7 @@ public class IRI {
 		}
 		
 		if (args.length < 2) {
-			log.error("Invalid arguments list. Provide port number and at least one upd node addresse.");
+			log.error("Invalid arguments list. Provide port number and at least one udp node address.");
 			throw new IllegalStateException();
 		}
 

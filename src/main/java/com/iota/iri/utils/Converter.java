@@ -1,6 +1,6 @@
 package com.iota.iri.utils;
 
-import java.util.*;
+import java.util.Arrays;
 
 public class Converter {
 

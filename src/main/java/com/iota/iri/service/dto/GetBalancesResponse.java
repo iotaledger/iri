@@ -1,8 +1,8 @@
 package com.iota.iri.service.dto;
 
-import java.util.List;
-
 import com.iota.iri.model.Hash;
+
+import java.util.List;
 
 public class GetBalancesResponse extends AbstractResponse {
 	

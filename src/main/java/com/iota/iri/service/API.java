@@ -21,6 +21,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.streams.ChannelInputStream;
 
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -37,26 +39,27 @@ public class API {
 
 	private static final Logger log = LoggerFactory.getLogger(API.class);
 
+	static ScriptEngine scriptEngine;
 	private static Undertow server;
 	public static final int PORT = 14265;
 
 	private static final PearlDiver pearlDiver = new PearlDiver();
 
 	public static void launch() throws IOException {
+
+		scriptEngine = (new ScriptEngineManager()).getEngineByName("JavaScript");
+
 		server = Undertow.builder().addHttpListener(PORT, "localhost")
-		        .setHandler(path().addPrefixPath("/", new HttpHandler() {
-			        @Override
-			        public void handleRequest(final HttpServerExchange exchange) throws Exception {
+		        .setHandler(path().addPrefixPath("/", exchange -> {
 
-				        final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
-				        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
+                    final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
+                    exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
 
-				        final long beginningTime = System.currentTimeMillis();
-				        final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
-				        final AbstractResponse response = process(body);
-				        sendResponse(exchange, response, beginningTime);
-			        }
-		        })).build();
+                    final long beginningTime = System.currentTimeMillis();
+                    final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
+                    final AbstractResponse response = process(body);
+                    sendResponse(exchange, response, beginningTime);
+                })).build();
 		
 		server.start();
 	}
@@ -67,7 +70,7 @@ public class API {
 
 		try {
 
-			final Map<String, Object> request = gson.fromJson(requestString, Map.class);
+			final Map<String, Object> request = (Map<String, Object>)scriptEngine.eval("Java.asJSONCompatible(" + requestString + ");");
 
 			final String command = (String) request.get("command");
 			if (command == null) {

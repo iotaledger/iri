@@ -18,63 +18,63 @@ import java.util.Queue;
 public class Storage {
 
     public static final int CELL_SIZE = 2048;
-    public static final int CELLS_PER_CHUNK = 65536;
-    public static final int CHUNK_SIZE = CELL_SIZE * CELLS_PER_CHUNK;
-    public static final int MAX_NUMBER_OF_CHUNKS = 16384; // Limits the storage capacity to ~1 billion transactions
+    private static final int CELLS_PER_CHUNK = 65536;
+    private static final int CHUNK_SIZE = CELL_SIZE * CELLS_PER_CHUNK;
+    private static final int MAX_NUMBER_OF_CHUNKS = 16384; // Limits the storage capacity to ~1 billion transactions
 
-    public static final int TIPS_FLAGS_OFFSET = 0, TIPS_FLAGS_SIZE = MAX_NUMBER_OF_CHUNKS * CELLS_PER_CHUNK / Byte.SIZE;
+    private static final int TIPS_FLAGS_OFFSET = 0, TIPS_FLAGS_SIZE = MAX_NUMBER_OF_CHUNKS * CELLS_PER_CHUNK / Byte.SIZE;
     public static final int SUPER_GROUPS_OFFSET = TIPS_FLAGS_OFFSET + TIPS_FLAGS_SIZE, SUPER_GROUPS_SIZE = (Short.MAX_VALUE - Short.MIN_VALUE + 1) * CELL_SIZE;
     public static final int CELLS_OFFSET = SUPER_GROUPS_OFFSET + SUPER_GROUPS_SIZE;
 
-    public static final int TRANSACTIONS_TO_REQUEST_OFFSET = 0, TRANSACTIONS_TO_REQUEST_SIZE = CHUNK_SIZE;
-    public static final int ANALYZED_TRANSACTIONS_FLAGS_OFFSET = TRANSACTIONS_TO_REQUEST_OFFSET + TRANSACTIONS_TO_REQUEST_SIZE, ANALYZED_TRANSACTIONS_FLAGS_SIZE = MAX_NUMBER_OF_CHUNKS * CELLS_PER_CHUNK / Byte.SIZE;
-    public static final int ANALYZED_TRANSACTIONS_FLAGS_COPY_OFFSET = ANALYZED_TRANSACTIONS_FLAGS_OFFSET + ANALYZED_TRANSACTIONS_FLAGS_SIZE, ANALYZED_TRANSACTIONS_FLAGS_COPY_SIZE = ANALYZED_TRANSACTIONS_FLAGS_SIZE;
+    private static final int TRANSACTIONS_TO_REQUEST_OFFSET = 0, TRANSACTIONS_TO_REQUEST_SIZE = CHUNK_SIZE;
+    private static final int ANALYZED_TRANSACTIONS_FLAGS_OFFSET = TRANSACTIONS_TO_REQUEST_OFFSET + TRANSACTIONS_TO_REQUEST_SIZE, ANALYZED_TRANSACTIONS_FLAGS_SIZE = MAX_NUMBER_OF_CHUNKS * CELLS_PER_CHUNK / Byte.SIZE;
+    private static final int ANALYZED_TRANSACTIONS_FLAGS_COPY_OFFSET = ANALYZED_TRANSACTIONS_FLAGS_OFFSET + ANALYZED_TRANSACTIONS_FLAGS_SIZE, ANALYZED_TRANSACTIONS_FLAGS_COPY_SIZE = ANALYZED_TRANSACTIONS_FLAGS_SIZE;
 
-    public static final int GROUP = 0;
+    private static final int GROUP = 0;
     public static final int PREFILLED_SLOT = 1;
     public static final int FILLED_SLOT = -1;
 
     public static final byte[] ZEROED_BUFFER = new byte[CELL_SIZE];
 
-    public static final String TRANSACTIONS_FILE_NAME = "transactions.iri";
-    public static final String BUNDLES_FILE_NAME = "bundles.iri";
-    public static final String ADDRESSES_FILE_NAME = "addresses.iri";
-    public static final String TAGS_FILE_NAME = "tags.iri";
-    public static final String APPROVERS_FILE_NAME = "approvers.iri";
-    public static final String SCRATCHPAD_FILE_NAME = "scratchpad.iri";
+    private static final String TRANSACTIONS_FILE_NAME = "transactions.iri";
+    private static final String BUNDLES_FILE_NAME = "bundles.iri";
+    private static final String ADDRESSES_FILE_NAME = "addresses.iri";
+    private static final String TAGS_FILE_NAME = "tags.iri";
+    private static final String APPROVERS_FILE_NAME = "approvers.iri";
+    private static final String SCRATCHPAD_FILE_NAME = "scratchpad.iri";
 
-    public static final int ZEROTH_POINTER_OFFSET = 64;
+    private static final int ZEROTH_POINTER_OFFSET = 64;
 
-    static FileChannel transactionsChannel;
+    private static FileChannel transactionsChannel;
     public static ByteBuffer transactionsTipsFlags;
-    static final ByteBuffer[] transactionsChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
-    volatile static long transactionsNextPointer = CELLS_OFFSET - SUPER_GROUPS_OFFSET;
-    
-    static final byte[] mainBuffer = new byte[CELL_SIZE], auxBuffer = new byte[CELL_SIZE];
+    private static final ByteBuffer[] transactionsChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
+    private volatile static long transactionsNextPointer = CELLS_OFFSET - SUPER_GROUPS_OFFSET;
+
+    private static final byte[] mainBuffer = new byte[CELL_SIZE], auxBuffer = new byte[CELL_SIZE];
     public static final byte[][] approvedTransactionsToStore = new byte[2][];
     
     public static int numberOfApprovedTransactionsToStore;
 
-    static FileChannel bundlesChannel;
-    static final ByteBuffer[] bundlesChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
-    volatile static long bundlesNextPointer = SUPER_GROUPS_SIZE;
+    private static FileChannel bundlesChannel;
+    private static final ByteBuffer[] bundlesChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
+    private volatile static long bundlesNextPointer = SUPER_GROUPS_SIZE;
 
-    static FileChannel addressesChannel;
-    static final ByteBuffer[] addressesChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
-    volatile static long addressesNextPointer = SUPER_GROUPS_SIZE;
+    private static FileChannel addressesChannel;
+    private static final ByteBuffer[] addressesChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
+    private volatile static long addressesNextPointer = SUPER_GROUPS_SIZE;
 
-    static FileChannel tagsChannel;
-    static final ByteBuffer[] tagsChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
-    volatile static long tagsNextPointer = SUPER_GROUPS_SIZE;
+    private static FileChannel tagsChannel;
+    private  static final ByteBuffer[] tagsChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
+    private volatile static long tagsNextPointer = SUPER_GROUPS_SIZE;
 
-    static FileChannel approversChannel;
-    static final ByteBuffer[] approversChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
-    volatile static long approversNextPointer = SUPER_GROUPS_SIZE;
+    private static FileChannel approversChannel;
+    private static final ByteBuffer[] approversChunks = new ByteBuffer[MAX_NUMBER_OF_CHUNKS];
+    private volatile static long approversNextPointer = SUPER_GROUPS_SIZE;
 
-    static ByteBuffer transactionsToRequest;
-    volatile static int numberOfTransactionsToRequest;
-    static final byte[] transactionToRequest = new byte[Transaction.HASH_SIZE];
-    
+    private static ByteBuffer transactionsToRequest;
+    public volatile static int numberOfTransactionsToRequest;
+    private static final byte[] transactionToRequest = new byte[Transaction.HASH_SIZE];
+
     public static ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy;
 
     private static boolean launched;

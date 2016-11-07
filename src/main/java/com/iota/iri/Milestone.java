@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class Milestone {
 
-    static Hash COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
+    private static Hash COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
 
     public static Hash latestMilestone = Hash.NULL_HASH, latestSolidSubtangleMilestone = Hash.NULL_HASH;
     public static int latestMilestoneIndex, latestSolidSubtangleMilestoneIndex;

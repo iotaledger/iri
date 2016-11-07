@@ -8,8 +8,8 @@ import java.util.Arrays;
 public class ISS {
 
     public static final int NUMBER_OF_FRAGMENT_CHUNKS = 27;
-    public static final int FRAGMENT_LENGTH = Curl.HASH_LENGTH * NUMBER_OF_FRAGMENT_CHUNKS;
-    public static final int NUMBER_OF_SECURITY_LEVELS = 3;
+    private static final int FRAGMENT_LENGTH = Curl.HASH_LENGTH * NUMBER_OF_FRAGMENT_CHUNKS;
+    private static final int NUMBER_OF_SECURITY_LEVELS = 3;
 
     private static final int MIN_TRIT_VALUE = -1, MAX_TRIT_VALUE = 1;
     private static final int TRYTE_WIDTH = 3;

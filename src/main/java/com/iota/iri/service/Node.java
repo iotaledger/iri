@@ -16,19 +16,19 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class Node {
 
-    static final int TRANSACTION_PACKET_SIZE = 1650;
+    private static final int TRANSACTION_PACKET_SIZE = 1650;
 
-    static final int QUEUE_SIZE = 1000;
-    static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
+    private static final int QUEUE_SIZE = 1000;
+    private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
 
-    static final int REQUESTED_TRANSACTION_OFFSET = Transaction.SIZE;
+    private static final int REQUESTED_TRANSACTION_OFFSET = Transaction.SIZE;
 
     public static DatagramSocket socket;
     private static boolean shuttingDown;
 
-    static final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
+    public static final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
 
-    static final ConcurrentSkipListSet<Transaction> queuedTransactions = new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
+    public static final ConcurrentSkipListSet<Transaction> queuedTransactions = new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
 
         if (transaction1.weightMagnitude == transaction2.weightMagnitude) {
 
@@ -44,9 +44,9 @@ public class Node {
         }
     });
 
-    static final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
-    static final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
-    static final DatagramPacket tipRequestingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
+    private static final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
+    private static final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
+    private static final DatagramPacket tipRequestingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
 
     public static void launch(final String[] args) throws Exception {
 

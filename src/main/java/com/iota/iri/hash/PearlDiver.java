@@ -2,7 +2,7 @@ package com.iota.iri.hash;
 
 public class PearlDiver {
 
-    public static final int TRANSACTION_LENGTH = 8019;
+    private static final int TRANSACTION_LENGTH = 8019;
 
     private static final int HASH_LENGTH = 243;
     private static final int STATE_LENGTH = HASH_LENGTH * 3;

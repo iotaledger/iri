@@ -14,7 +14,7 @@ public class TipsManager {
 
 	private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
-    static boolean shuttingDown;
+    private static boolean shuttingDown;
 
     public static void launch() {
 
@@ -222,7 +222,7 @@ public class TipsManager {
                     for (final Hash extraTransaction : extraTransactions) {
 
                         final Transaction transaction = Storage.loadTransaction(extraTransaction.bytes());
-                        if (transaction.currentIndex == 0) {
+                        if (transaction != null && transaction.currentIndex == 0) {
 
                             final Bundle bundle = new Bundle(transaction.bundle);
                             for (final List<Transaction> bundleTransactions : bundle.transactions) {

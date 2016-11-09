@@ -2,12 +2,12 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
-public class FindTransactionesponse extends AbstractResponse {
+public class FindTransactionsResponse extends AbstractResponse {
 	
 	private String [] hashes;
 
 	public static AbstractResponse create(List<String> elements) {
-		FindTransactionesponse res = new FindTransactionesponse();
+		FindTransactionsResponse res = new FindTransactionsResponse();
 		res.hashes = elements.toArray(new String[] {});
 		return res;
 	}

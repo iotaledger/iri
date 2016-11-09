@@ -13,7 +13,6 @@ import com.iota.iri.model.Transaction;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;
 import io.undertow.Undertow;
-import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import org.apache.commons.io.IOUtils;
@@ -21,8 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.streams.ChannelInputStream;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
@@ -39,15 +36,12 @@ public class API {
 
 	private static final Logger log = LoggerFactory.getLogger(API.class);
 
-	static ScriptEngine scriptEngine;
 	private static Undertow server;
-	public static final int PORT = 14265;
+	private static final int PORT = 14265;
 
 	private static final PearlDiver pearlDiver = new PearlDiver();
 
 	public static void launch() throws IOException {
-
-		scriptEngine = (new ScriptEngineManager()).getEngineByName("JavaScript");
 
 		server = Undertow.builder().addHttpListener(PORT, "localhost")
 		        .setHandler(path().addPrefixPath("/", exchange -> {
@@ -66,11 +60,11 @@ public class API {
 
 	private static final Gson gson = new GsonBuilder().create();
 
-	public static AbstractResponse process(final String requestString) throws UnsupportedEncodingException {
+	private static AbstractResponse process(final String requestString) throws UnsupportedEncodingException {
 
 		try {
 
-			final Map<String, Object> request = (Map<String, Object>)scriptEngine.eval("Java.asJSONCompatible(" + requestString + ");");
+			final Map<String, Object> request = gson.fromJson(requestString, Map.class);
 
 			final String command = (String) request.get("command");
 			if (command == null) {
@@ -86,7 +80,7 @@ public class API {
 			case "attachToTangle": {
 				final Hash trunkTransaction = new Hash((String) request.get("trunkTransaction"));
 				final Hash branchTransaction = new Hash((String) request.get("branchTransaction"));
-				final int minWeightMagnitude = (Integer) request.get("minWeightMagnitude");
+				final int minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
 				final List<String> trytes = (List<String>) request.get("trytes");
 
 				return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
@@ -98,23 +92,19 @@ public class API {
 			case "findTransactions": {
 				return findTransactionStatement(request);
 			}
-
 			case "getBalances": {
 				final List<String> addresses = (List<String>) request.get("addresses");
-				final Integer threshold = (Integer) request.get("threshold");
+				final int threshold = ((Double) request.get("threshold")).intValue();
 				return getBalancesStatement(addresses, threshold);
 			}
-
 			case "getInclusionStates": {
 				final List<String> trans = (List<String>) request.get("transactions");
 				final List<String> tps = (List<String>) request.get("tips");
 				return getInclusionStateStatement(trans, tps);
 			}
-
 			case "getNeighbors": {
 				return getNeighborsStatement();
 			}
-
 			case "getNodeInfo": {
 				return GetNodeInfoResponse.create(IRI.NAME, IRI.VERSION, 
 						Runtime.getRuntime().availableProcessors(),
@@ -131,12 +121,11 @@ public class API {
 				        Storage.tips().size(), 
 				        Storage.numberOfTransactionsToRequest);
 			}
-
 			case "getTips": {
 				return getTipsStatement();
 			}
 			case "getTransactionsToApprove": {
-				final int depth = (Integer) request.get("depth");
+				final int depth = ((Double) request.get("depth")).intValue();
 				return getTransactionToApproveStatement(depth);
 			}
 			case "getTrytes": {
@@ -343,7 +332,7 @@ public class API {
 			elements.add(new Hash(Storage.loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE).toString());
 		}
 
-		return FindTransactionesponse.create(elements);
+		return FindTransactionsResponse.create(elements);
 	}
 
 	private static AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
@@ -466,7 +455,7 @@ public class API {
 		return AddedNeighborsResponse.create(numberOfAddedNeighbors);
 	}
 	
-	public static void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime) throws IOException {
+	private static void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime) throws IOException {
 		res.setDuration((int) (System.currentTimeMillis() - beginningTime));
 		final String response = gson.toJson(res);
 		

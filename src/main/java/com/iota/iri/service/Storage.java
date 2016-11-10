@@ -1,9 +1,5 @@
 package com.iota.iri.service;
 
-import com.iota.iri.Milestone;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -15,7 +11,16 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.iota.iri.Milestone;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
+
 public class Storage {
+	
+	private static final Logger log = LoggerFactory.getLogger(Storage.class);
 
     public static final int CELL_SIZE = 2048;
     private static final int CELLS_PER_CHUNK = 65536;
@@ -206,16 +211,12 @@ public class Storage {
                 tagsChunks[(int) (tagsNextPointer >> 27)].get(mainBuffer);
                 boolean empty = true;
                 for (final int value : mainBuffer) {
-
                     if (value != 0) {
-
                         empty = false;
-
                         break;
                     }
                 }
                 if (empty) {
-
                     break;
                 }
 
@@ -229,12 +230,10 @@ public class Storage {
         while (true) {
 
             if ((approversNextPointer & (CHUNK_SIZE - 1)) == 0) {
-
                 approversChunks[(int)(approversNextPointer >> 27)] = approversChannel.map(FileChannel.MapMode.READ_WRITE, approversNextPointer, CHUNK_SIZE);
             }
 
             if (approversChannelSize - approversNextPointer > CHUNK_SIZE) {
-
                 approversNextPointer += CHUNK_SIZE;
 
             } else {
@@ -244,14 +243,11 @@ public class Storage {
                 for (final int value : mainBuffer) {
 
                     if (value != 0) {
-
                         empty = false;
-
                         break;
                     }
                 }
                 if (empty) {
-
                     break;
                 }
 
@@ -288,27 +284,27 @@ public class Storage {
 
             ((MappedByteBuffer) transactionsTipsFlags).force();
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && transactionsChunks[i] != null; i++) {
-                System.out.println("Flushing transactions chunk #" + i);
+                log.info("Flushing transactions chunk #" + i);
                 flush(transactionsChunks[i]);
             }
 
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && bundlesChunks[i] != null; i++) {
-                System.out.println("Flushing bundles chunk #" + i);
+            	log.info("Flushing bundles chunk #" + i);
                 flush(bundlesChunks[i]);
             }
 
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && addressesChunks[i] != null; i++) {
-                System.out.println("Flushing addresses chunk #" + i);
+            	log.info("Flushing addresses chunk #" + i);
                 flush(addressesChunks[i]);
             }
 
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && tagsChunks[i] != null; i++) {
-                System.out.println("Flushing tags chunk #" + i);
+            	log.info("Flushing tags chunk #" + i);
                 flush(tagsChunks[i]);
             }
 
             for (int i = 0; i < MAX_NUMBER_OF_CHUNKS && approversChunks[i] != null; i++) {
-                System.out.println("Flushing approvers chunk #" + i);
+            	log.info("Flushing approvers chunk #" + i);
                 flush(approversChunks[i]);
             }
 

@@ -426,18 +426,14 @@ public class Storage {
             ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(auxBuffer);
 
             if (auxBuffer[Transaction.TYPE_OFFSET] == GROUP) {
-
                 if ((pointer = value(auxBuffer, (hash[depth] + 128) << 3)) == 0) {
-
                     return 0;
                 }
 
             } else {
 
                 for (; depth < Transaction.HASH_SIZE; depth++) {
-
                     if (auxBuffer[Transaction.HASH_OFFSET + depth] != hash[depth]) {
-
                         return 0;
                     }
                 }
@@ -532,7 +528,6 @@ public class Storage {
 
         analyzedTransactionsFlags.position(0);
         for (int i = 0; i < ANALYZED_TRANSACTIONS_FLAGS_SIZE / CELL_SIZE; i++) {
-
             analyzedTransactionsFlags.put(ZEROED_BUFFER);
         }
     }
@@ -552,13 +547,9 @@ public class Storage {
         if ((value & (1 << ((pointer >> 11) & 7))) == 0) {
 
             analyzedTransactionsFlags.put((int)(pointer >> (11 + 3)), (byte)(value | (1 << ((pointer >> 11) & 7))));
-
             return true;
-
-        } else {
-
-            return false;
-        }
+        } 
+        return false;
     }
 
     public static void saveAnalyzedTransactionsFlags() {
@@ -1070,17 +1061,14 @@ public class Storage {
                                     break;
 
                                 } else {
-
                                     pointer = nextCellPointer;
                                     ((ByteBuffer)bundlesChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
                                     offset = -Long.BYTES;
                                 }
 
                             } else {
-
                                 setValue(mainBuffer, offset, transactionPointer);
                                 ((ByteBuffer)bundlesChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
-
                                 break;
                             }
                         }

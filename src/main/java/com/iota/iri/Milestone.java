@@ -106,9 +106,7 @@ public class Milestone {
 
                             final Transaction transaction2 = Storage.loadTransaction(pointer);
                             if (transaction2.type == Storage.PREFILLED_SLOT) {
-
                                 solid = false;
-
                                 break;
 
                             } else {
@@ -120,10 +118,8 @@ public class Milestone {
                 }
 
                 if (solid) {
-
                     latestSolidSubtangleMilestone = milestone;
                     latestSolidSubtangleMilestoneIndex = milestoneIndex;
-
                     return;
                 }
             }

@@ -123,8 +123,8 @@
 							<goal>shade</goal>
 						</goals>
 						<configuration>
-							<finalName>${project.name}-${project.version}</finalName>
-							<outputDirectory>${project.basedir}</outputDirectory>
+							<finalName>iri-${project.version}</finalName>
+							<outputDirectory>${project.basedir}/target</outputDirectory>
 							<mainClass>com.iota.iri.IRI</mainClass>
 							<transformers>
 								<transformer

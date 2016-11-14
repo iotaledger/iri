@@ -123,9 +123,7 @@ public class TipsManager {
                 if (entry.getValue() <= 0) {
 
                     if (entry.getValue() < 0) {
-
-                        System.out.println("Ledger inconsistency detected");
-
+                    	log.error("Ledger inconsistency detected");
                         return null;
                     }
 

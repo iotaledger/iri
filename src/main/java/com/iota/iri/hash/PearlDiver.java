@@ -2,194 +2,183 @@ package com.iota.iri.hash;
 
 public class PearlDiver {
 
-    private static final int TRANSACTION_LENGTH = 8019;
+	private static final int TRANSACTION_LENGTH = 8019;
 
-    private static final int HASH_LENGTH = 243;
-    private static final int STATE_LENGTH = HASH_LENGTH * 3;
+	private static final int HASH_LENGTH = 243;
+	private static final int STATE_LENGTH = HASH_LENGTH * 3;
 
-    private boolean finished, interrupted;
+	private boolean finished, interrupted;
 
-    public synchronized void interrupt() {
+	public synchronized void interrupt() {
+		finished = true;
+		interrupted = true;
+		notifyAll();
+	}
 
-        finished = true;
-        interrupted = true;
+	public synchronized boolean search(final int[] transactionTrits, final int minWeightMagnitude,
+	        int numberOfThreads) {
 
-        notifyAll();
-    }
+		if (transactionTrits.length != TRANSACTION_LENGTH) {
+			throw new RuntimeException("Invalid transaction trits length: " + transactionTrits.length);
+		}
+		if (minWeightMagnitude < 0 || minWeightMagnitude > HASH_LENGTH) {
+			throw new RuntimeException("Invalid min weight magnitude: " + minWeightMagnitude);
+		}
 
-    public synchronized boolean search(final int[] transactionTrits, final int minWeightMagnitude, int numberOfThreads) {
+		finished = false;
+		interrupted = false;
 
-        if (transactionTrits.length != TRANSACTION_LENGTH) {
-            throw new RuntimeException("Invalid transaction trits length: " + transactionTrits.length);
-        }
-        if (minWeightMagnitude < 0 || minWeightMagnitude > HASH_LENGTH) {
-            throw new RuntimeException("Invalid min weight magnitude: " + minWeightMagnitude);
-        }
+		final long[] midStateLow = new long[STATE_LENGTH], midStateHigh = new long[STATE_LENGTH];
 
-        finished = false;
-        interrupted = false;
+		{
+			for (int i = HASH_LENGTH; i < STATE_LENGTH; i++) {
+				midStateLow[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+				midStateHigh[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+			}
 
-        final long[] midStateLow = new long[STATE_LENGTH], midStateHigh = new long[STATE_LENGTH];
+			int offset = 0;
+			final long[] scratchpadLow = new long[STATE_LENGTH], scratchpadHigh = new long[STATE_LENGTH];
+			for (int i = (TRANSACTION_LENGTH - HASH_LENGTH) / HASH_LENGTH; i-- > 0;) {
 
-        {
-            for (int i = HASH_LENGTH; i < STATE_LENGTH; i++) {
+				for (int j = 0; j < HASH_LENGTH; j++) {
 
-                midStateLow[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-                midStateHigh[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-            }
+					switch (transactionTrits[offset++]) {
 
-            int offset = 0;
-            final long[] scratchpadLow = new long[STATE_LENGTH], scratchpadHigh = new long[STATE_LENGTH];
-            for (int i = (TRANSACTION_LENGTH - HASH_LENGTH) / HASH_LENGTH; i-- > 0; ) {
+					case 0: 
+						midStateLow[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+						midStateHigh[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+						break;
 
-                for (int j = 0; j < HASH_LENGTH; j++) {
+					case 1: 
+						midStateLow[j] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
+						midStateHigh[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+						break;
 
-                    switch (transactionTrits[offset++]) {
+					default:
+						midStateLow[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+						midStateHigh[j] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
+					}
+				}
+				transform(midStateLow, midStateHigh, scratchpadLow, scratchpadHigh);
+			}
 
-                        case 0: {
+			midStateLow[0] = 0b1101101101101101101101101101101101101101101101101101101101101101L;
+			midStateHigh[0] = 0b1011011011011011011011011011011011011011011011011011011011011011L;
+			midStateLow[1] = 0b1111000111111000111111000111111000111111000111111000111111000111L;
+			midStateHigh[1] = 0b1000111111000111111000111111000111111000111111000111111000111111L;
+			midStateLow[2] = 0b0111111111111111111000000000111111111111111111000000000111111111L;
+			midStateHigh[2] = 0b1111111111000000000111111111111111111000000000111111111111111111L;
+			midStateLow[3] = 0b1111111111000000000000000000000000000111111111111111111111111111L;
+			midStateHigh[3] = 0b0000000000111111111111111111111111111111111111111111111111111111L;
+		}
 
-                            midStateLow[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-                            midStateHigh[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+		if (numberOfThreads <= 0) {
+			numberOfThreads = Runtime.getRuntime().availableProcessors() - 1;
+			if (numberOfThreads < 1) {
+				numberOfThreads = 1;
+			}
+		}
 
-                        } break;
+		while (numberOfThreads-- > 0) {
 
-                        case 1: {
+			final int threadIndex = numberOfThreads;
+			(new Thread(() -> {
 
-                            midStateLow[j] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
-                            midStateHigh[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+				final long[] midStateCopyLow = new long[STATE_LENGTH], midStateCopyHigh = new long[STATE_LENGTH];
+				System.arraycopy(midStateLow, 0, midStateCopyLow, 0, STATE_LENGTH);
+				System.arraycopy(midStateHigh, 0, midStateCopyHigh, 0, STATE_LENGTH);
+				for (int i = threadIndex; i-- > 0;) {
 
-                        } break;
+					increment(midStateCopyLow, midStateCopyHigh, HASH_LENGTH / 3, (HASH_LENGTH / 3) * 2);
+				}
 
-                        default: {
+				final long[] stateLow = new long[STATE_LENGTH], stateHigh = new long[STATE_LENGTH];
+				final long[] scratchpadLow = new long[STATE_LENGTH], scratchpadHigh = new long[STATE_LENGTH];
+				while (!finished) {
 
-                            midStateLow[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-                            midStateHigh[j] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
-                        }
-                    }
-                }
+					increment(midStateCopyLow, midStateCopyHigh, (HASH_LENGTH / 3) * 2, HASH_LENGTH);
+					System.arraycopy(midStateCopyLow, 0, stateLow, 0, STATE_LENGTH);
+					System.arraycopy(midStateCopyHigh, 0, stateHigh, 0, STATE_LENGTH);
+					transform(stateLow, stateHigh, scratchpadLow, scratchpadHigh);
 
-                transform(midStateLow, midStateHigh, scratchpadLow, scratchpadHigh);
-            }
+					NEXT_BIT_INDEX: for (int bitIndex = 64; bitIndex-- > 0;) {
 
-            midStateLow[0] = 0b1101101101101101101101101101101101101101101101101101101101101101L;
-            midStateHigh[0] = 0b1011011011011011011011011011011011011011011011011011011011011011L;
-            midStateLow[1] = 0b1111000111111000111111000111111000111111000111111000111111000111L;
-            midStateHigh[1] = 0b1000111111000111111000111111000111111000111111000111111000111111L;
-            midStateLow[2] = 0b0111111111111111111000000000111111111111111111000000000111111111L;
-            midStateHigh[2] = 0b1111111111000000000111111111111111111000000000111111111111111111L;
-            midStateLow[3] = 0b1111111111000000000000000000000000000111111111111111111111111111L;
-            midStateHigh[3] = 0b0000000000111111111111111111111111111111111111111111111111111111L;
-        }
+						for (int i = minWeightMagnitude; i-- > 0;) {
+							if ((((int) (stateLow[HASH_LENGTH - 1 - i] >> bitIndex))
+							        & 1) != (((int) (stateHigh[HASH_LENGTH - 1 - i] >> bitIndex)) & 1)) {
+								continue NEXT_BIT_INDEX;
+							}
+						}
 
-        if (numberOfThreads <= 0) {
+						finished = true;
 
-            numberOfThreads = Runtime.getRuntime().availableProcessors() - 1;
-            if (numberOfThreads < 1) {
+						synchronized (this) {
+							for (int i = 0; i < HASH_LENGTH; i++) {
+								transactionTrits[TRANSACTION_LENGTH - HASH_LENGTH
+								        + i] = ((((int) (midStateCopyLow[i] >> bitIndex)) & 1) == 0) ? 1
+								                : (((((int) (midStateCopyHigh[i] >> bitIndex)) & 1) == 0) ? -1 : 0);
+							}
 
-                numberOfThreads = 1;
-            }
-        }
+							notifyAll();
+						}
 
-        while (numberOfThreads-- > 0) {
+						break;
+					}
+				}
 
-            final int threadIndex = numberOfThreads;
-            (new Thread(() -> {
+			})).start();
+		}
 
-                final long[] midStateCopyLow = new long[STATE_LENGTH], midStateCopyHigh = new long[STATE_LENGTH];
-                System.arraycopy(midStateLow, 0, midStateCopyLow, 0, STATE_LENGTH);
-                System.arraycopy(midStateHigh, 0, midStateCopyHigh, 0, STATE_LENGTH);
-                for (int i = threadIndex; i-- > 0; ) {
+		try {
 
-                    increment(midStateCopyLow, midStateCopyHigh, HASH_LENGTH / 3, (HASH_LENGTH / 3) * 2);
-                }
+			wait();
 
-                final long[] stateLow = new long[STATE_LENGTH], stateHigh = new long[STATE_LENGTH];
-                final long[] scratchpadLow = new long[STATE_LENGTH], scratchpadHigh = new long[STATE_LENGTH];
-                while (!finished) {
+		} catch (final InterruptedException e) {
+			// ignore
+		}
 
-                    increment(midStateCopyLow, midStateCopyHigh, (HASH_LENGTH / 3) * 2, HASH_LENGTH);
-                    System.arraycopy(midStateCopyLow, 0, stateLow, 0, STATE_LENGTH);
-                    System.arraycopy(midStateCopyHigh, 0, stateHigh, 0, STATE_LENGTH);
-                    transform(stateLow, stateHigh, scratchpadLow, scratchpadHigh);
+		return interrupted;
+	}
 
-                NEXT_BIT_INDEX:
-                    for (int bitIndex = 64; bitIndex-- > 0; ) {
+	private static void transform(final long[] stateLow, final long[] stateHigh, final long[] scratchpadLow,
+	        final long[] scratchpadHigh) {
 
-                        for (int i = minWeightMagnitude; i-- > 0; ) {
+		int scratchpadIndex = 0;
+		for (int round = 27; round-- > 0;) {
 
-                            if ((((int)(stateLow[HASH_LENGTH - 1 - i] >> bitIndex)) & 1) != (((int)(stateHigh[HASH_LENGTH - 1 - i] >> bitIndex)) & 1)) {
+			System.arraycopy(stateLow, 0, scratchpadLow, 0, STATE_LENGTH);
+			System.arraycopy(stateHigh, 0, scratchpadHigh, 0, STATE_LENGTH);
 
-                                continue NEXT_BIT_INDEX;
-                            }
-                        }
+			for (int stateIndex = 0; stateIndex < STATE_LENGTH; stateIndex++) {
 
-                        finished = true;
+				final long alpha = scratchpadLow[scratchpadIndex];
+				final long beta = scratchpadHigh[scratchpadIndex];
+				final long gamma = scratchpadHigh[scratchpadIndex += (scratchpadIndex < 365 ? 364 : -365)];
+				final long delta = (alpha | (~gamma)) & (scratchpadLow[scratchpadIndex] ^ beta);
 
-                        synchronized (this) {
+				stateLow[stateIndex] = ~delta;
+				stateHigh[stateIndex] = (alpha ^ gamma) | delta;
+			}
+		}
+	}
 
-                            for (int i = 0; i < HASH_LENGTH; i++) {
+	private static void increment(final long[] midStateCopyLow, final long[] midStateCopyHigh, final int fromIndex,
+	        final int toIndex) {
 
-                                transactionTrits[TRANSACTION_LENGTH - HASH_LENGTH + i] = ((((int)(midStateCopyLow[i] >> bitIndex)) & 1) == 0) ? 1 : (((((int)(midStateCopyHigh[i] >> bitIndex)) & 1) == 0) ? -1 : 0);
-                            }
+		for (int i = fromIndex; i < toIndex; i++) {
 
-                            notifyAll();
-                        }
+			if (midStateCopyLow[i] == 0b0000000000000000000000000000000000000000000000000000000000000000L) {
+				midStateCopyLow[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+				midStateCopyHigh[i] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
+			} else {
 
-                        break;
-                    }
-                }
-
-            })).start();
-        }
-
-        try {
-
-            wait();
-
-        } catch (final InterruptedException e) {
-            // ignore
-        }
-
-        return interrupted;
-    }
-
-    private static void transform(final long[] stateLow, final long[] stateHigh, final long[] scratchpadLow, final long[] scratchpadHigh) {
-
-        int scratchpadIndex = 0;
-        for (int round = 27; round-- > 0; ) {
-
-            System.arraycopy(stateLow, 0, scratchpadLow, 0, STATE_LENGTH);
-            System.arraycopy(stateHigh, 0, scratchpadHigh, 0, STATE_LENGTH);
-
-            for (int stateIndex = 0; stateIndex < STATE_LENGTH; stateIndex++) {
-
-                final long alpha = scratchpadLow[scratchpadIndex];
-                final long beta = scratchpadHigh[scratchpadIndex];
-                final long gamma = scratchpadHigh[scratchpadIndex += (scratchpadIndex < 365 ? 364 : -365)];
-                final long delta = (alpha | (~gamma)) & (scratchpadLow[scratchpadIndex] ^ beta);
-
-                stateLow[stateIndex] = ~delta;
-                stateHigh[stateIndex] = (alpha ^ gamma) | delta;
-            }
-        }
-    }
-
-    private static void increment(final long[] midStateCopyLow, final long[] midStateCopyHigh, final int fromIndex, final int toIndex) {
-
-        for (int i = fromIndex; i < toIndex; i++) {
-
-            if (midStateCopyLow[i] == 0b0000000000000000000000000000000000000000000000000000000000000000L) {
-                midStateCopyLow[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-                midStateCopyHigh[i] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
-            } else {
-
-                if (midStateCopyHigh[i] == 0b0000000000000000000000000000000000000000000000000000000000000000L) {
-                    midStateCopyHigh[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-                } else {
-                    midStateCopyLow[i] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
-                }
-                break;
-            }
-        }
-    }
+				if (midStateCopyHigh[i] == 0b0000000000000000000000000000000000000000000000000000000000000000L) {
+					midStateCopyHigh[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+				} else {
+					midStateCopyLow[i] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
+				}
+				break;
+			}
+		}
+	}
 }

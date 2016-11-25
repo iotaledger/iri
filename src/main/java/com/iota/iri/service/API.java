@@ -16,6 +16,7 @@ import io.undertow.Undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.concurrent.AtomicInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.streams.ChannelInputStream;
@@ -28,6 +29,7 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static io.undertow.Handlers.path;
 
@@ -115,8 +117,8 @@ public class API {
 				        Milestone.latestMilestoneIndex,
 				        Milestone.latestSolidSubtangleMilestone, 
 				        Milestone.latestSolidSubtangleMilestoneIndex,
-				        Node.neighbors.size(), 
-				        Node.queuedTransactions.size(), 
+				        Node.instance().howManyNeighbors(), 
+				        Node.instance().queuedTransactionsSize(), 
 				        System.currentTimeMillis(),
 				        Storage.tips().size(), 
 				        Storage.numberOfTransactionsToRequest);
@@ -157,18 +159,26 @@ public class API {
 	}
 
 	private static AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
-		int numberOfRemovedNeighbors = 0;
-		for (final String uriString : uris) {
-
-			final URI uri = new URI(uriString);
-			if (uri.getScheme() != null && uri.getScheme().equals("udp")) {
-
-				if (Node.neighbors.remove(new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort())))) {
-					numberOfRemovedNeighbors++;
+		final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
+		uris.stream()
+			.map(API::uri)
+			.map(Optional::get)
+			.filter(u -> "udp".equals(u.getScheme()))
+			.forEach(u -> {
+				if (Node.instance().removeNeighbor(u)) {
+					numberOfRemovedNeighbors.incrementAndGet();
 				}
-			}
+			});
+		return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
+	}
+	
+	public static Optional<URI> uri(final String uri) {
+		try {
+			return Optional.of(new URI(uri));
+		} catch (URISyntaxException e) {
+			log.error("Uri {} raised URI Syntax Exception", uri);
 		}
-		return RemoveNeighborsResponse.create(numberOfRemovedNeighbors);
+		return Optional.empty();
 	}
 
 	private static void getTrytesStatement(List<String> hashes) {
@@ -210,7 +220,7 @@ public class API {
 	}
 
 	private static AbstractResponse getNeighborsStatement() {
-		return GetNeighborsResponse.create(Node.neighbors);
+		return GetNeighborsResponse.create(Node.instance().getNeighbors());
 	}
 
 	private static AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) {
@@ -340,9 +350,8 @@ public class API {
 
 			final Transaction transaction = new Transaction(Converter.trits(tryte));
 			transaction.weightMagnitude = Curl.HASH_LENGTH;
-			Node.broadcast(transaction);
+			Node.instance().broadcast(transaction);
 		}
-
 		return AbstractResponse.createEmptyResponse();
 	}
 
@@ -408,7 +417,7 @@ public class API {
 
 		Hash prevTransaction = null;
 
-		for (String tryte : trytes) {
+		for (final String tryte : trytes) {
 
 			final int[] transactionTrits = Converter.trits(tryte);
 			System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
@@ -422,7 +431,6 @@ public class API {
 				transactions.clear();
 				break;
 			}
-
 			final Transaction transaction = new Transaction(transactionTrits);
 			transactions.add(transaction);
 			prevTransaction = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
@@ -430,7 +438,7 @@ public class API {
 
 		final List<String> elements = new LinkedList<>();
 		for (int i = transactions.size(); i-- > 0;) {
-			elements.add("\"" + Converter.trytes(transactions.get(i).trits()) + "\"");
+			elements.add(Converter.trytes(transactions.get(i).trits()));
 		}
 		return AttachToTangleResponse.create(elements);
 	}
@@ -439,19 +447,15 @@ public class API {
 
 		int numberOfAddedNeighbors = 0;
 		for (final String uriString : uris) {
-
 			final URI uri = new URI(uriString);
-			if (uri.getScheme() != null && uri.getScheme().equals("udp")) {
-
+			if ("udp".equals(uri.getScheme())) {
 				final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()));
-				if (!Node.neighbors.contains(neighbor)) {
-
-					Node.neighbors.add(neighbor);
+				if (!Node.instance().getNeighbors().contains(neighbor)) {
+					Node.instance().getNeighbors().add(neighbor);
 					numberOfAddedNeighbors++;
 				}
 			}
 		}
-
 		return AddedNeighborsResponse.create(numberOfAddedNeighbors);
 	}
 	

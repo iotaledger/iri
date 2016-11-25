@@ -26,10 +26,10 @@ public class IRI {
 		try {
 
 			Storage.launch();
-			Node.launch(args);
+			Node.instance().init(args);
 			TipsManager.launch();
 			API.launch();
-
+		
 		} catch (final Exception e) {
 			log.error("Exception during IOTA node initialisation: ", e);
 		}
@@ -59,7 +59,7 @@ public class IRI {
 
 				API.shutDown();
 				TipsManager.shutDown();
-				Node.shutDown();
+				Node.instance().shutDown();
 				Storage.shutDown();
 
 			} catch (final Exception e) {

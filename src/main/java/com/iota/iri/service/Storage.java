@@ -96,12 +96,10 @@ public class Storage {
         while (true) {
 
             if ((transactionsNextPointer & (CHUNK_SIZE - 1)) == 0) {
-
                 transactionsChunks[(int)(transactionsNextPointer >> 27)] = transactionsChannel.map(FileChannel.MapMode.READ_WRITE, SUPER_GROUPS_OFFSET + transactionsNextPointer, CHUNK_SIZE);
             }
 
             if (transactionsChannelSize - transactionsNextPointer - SUPER_GROUPS_OFFSET > CHUNK_SIZE) {
-
                 transactionsNextPointer += CHUNK_SIZE;
 
             } else {
@@ -129,12 +127,10 @@ public class Storage {
         while (true) {
 
             if ((bundlesNextPointer & (CHUNK_SIZE - 1)) == 0) {
-
                 bundlesChunks[(int)(bundlesNextPointer >> 27)] = bundlesChannel.map(FileChannel.MapMode.READ_WRITE, bundlesNextPointer, CHUNK_SIZE);
             }
 
             if (bundlesChannelSize - bundlesNextPointer > CHUNK_SIZE) {
-
                 bundlesNextPointer += CHUNK_SIZE;
 
             } else {
@@ -162,12 +158,10 @@ public class Storage {
         while (true) {
 
             if ((addressesNextPointer & (CHUNK_SIZE - 1)) == 0) {
-
                 addressesChunks[(int)(addressesNextPointer >> 27)] = addressesChannel.map(FileChannel.MapMode.READ_WRITE, addressesNextPointer, CHUNK_SIZE);
             }
 
             if (addressesChannelSize - addressesNextPointer > CHUNK_SIZE) {
-
                 addressesNextPointer += CHUNK_SIZE;
 
             } else {
@@ -177,14 +171,11 @@ public class Storage {
                 for (final int value : mainBuffer) {
 
                     if (value != 0) {
-
                         empty = false;
-
                         break;
                     }
                 }
                 if (empty) {
-
                     break;
                 }
 
@@ -198,12 +189,10 @@ public class Storage {
         while (true) {
 
             if ((tagsNextPointer & (CHUNK_SIZE - 1)) == 0) {
-
                 tagsChunks[(int)(tagsNextPointer >> 27)] = tagsChannel.map(FileChannel.MapMode.READ_WRITE, tagsNextPointer, CHUNK_SIZE);
             }
 
             if (tagsChannelSize - tagsNextPointer > CHUNK_SIZE) {
-
                 tagsNextPointer += CHUNK_SIZE;
 
             } else {
@@ -319,6 +308,7 @@ public class Storage {
                 approversChannel.close();
 
             } catch (final Exception e) {
+            	log.error("Catched Exception whilst shutting down:", e);
             }
         }
     }
@@ -389,7 +379,6 @@ public class Storage {
                         pointer = transactionsNextPointer;
                         appendToTransactions(transaction != null || tip);
                         if (transaction != null) {
-
                             updateBundleAddressTagAndApprovers(pointer);
                         }
 
@@ -406,7 +395,6 @@ public class Storage {
                         updateBundleAddressTagAndApprovers(pointer);
 
                     } else {
-
                         pointer = 0;
                     }
                 }

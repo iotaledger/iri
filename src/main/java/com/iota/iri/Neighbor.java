@@ -19,7 +19,7 @@ public class Neighbor {
 
         try {
             packet.setSocketAddress(address);
-            Node.socket.send(packet);
+            Node.instance().send(packet);
         } catch (final Exception e) {
         	// ignore
         }

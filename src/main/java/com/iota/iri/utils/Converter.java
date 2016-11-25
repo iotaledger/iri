@@ -78,7 +78,6 @@ public class Converter {
         for (int i = 0; i < trytes.length(); i++) {
             System.arraycopy(TRYTE_TO_TRITS_MAPPINGS[TRYTE_ALPHABET.indexOf(trytes.charAt(i))], 0, trits, i * NUMBER_OF_TRITS_IN_A_TRYTE, NUMBER_OF_TRITS_IN_A_TRYTE);
         }
-
         return trits;
     }
 
@@ -98,7 +97,6 @@ public class Converter {
         }
 
         if (value < 0) {
-
             for (int i = 0; i < size; i++) {
                 destination[offset + i] = -destination[offset + i];
             }
@@ -107,12 +105,10 @@ public class Converter {
 
     public static String trytes(final int[] trits, final int offset, final int size) {
 
-        StringBuilder trytes = new StringBuilder();
+        final StringBuilder trytes = new StringBuilder();
         for (int i = 0; i < (size + NUMBER_OF_TRITS_IN_A_TRYTE - 1) / NUMBER_OF_TRITS_IN_A_TRYTE; i++) {
-
             int j = trits[offset + i * 3] + trits[offset + i * 3 + 1] * 3 + trits[offset + i * 3 + 2] * 9;
             if (j < 0) {
-
                 j += TRYTE_ALPHABET.length();
             }
             trytes.append(TRYTE_ALPHABET.charAt(j));
@@ -128,8 +124,7 @@ public class Converter {
         return trits[offset] + trits[offset + 1] * 3 + trits[offset + 2] * 9;
     }
 
-    public static void increment(final int[] trits, final int size) {
-
+    private static void increment(final int[] trits, final int size) {
         for (int i = 0; i < size; i++) {
             if (++trits[i] > Converter.MAX_TRIT_VALUE) {
                 trits[i] = Converter.MIN_TRIT_VALUE;

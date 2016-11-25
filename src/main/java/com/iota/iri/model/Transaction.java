@@ -106,7 +106,6 @@ public class Transaction {
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
 
             if (trits[i] != 0) {
-
                 throw new RuntimeException("Invalid transaction value");
             }
         }
@@ -124,7 +123,6 @@ public class Transaction {
 
         weightMagnitude = MIN_WEIGHT_MAGNITUDE;
         while (weightMagnitude < Curl.HASH_LENGTH && hashTrits[Curl.HASH_LENGTH - weightMagnitude - 1] == 0) {
-
             weightMagnitude++;
         }
 

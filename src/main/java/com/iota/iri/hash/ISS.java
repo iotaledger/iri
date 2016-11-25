@@ -18,7 +18,6 @@ public class ISS {
     public static int[] subseed(final int[] seed, int index) {
 
         if (index < 0) {
-
             throw new RuntimeException("Invalid subseed index: " + index);
         }
 
@@ -48,11 +47,9 @@ public class ISS {
     public static int[] key(final int[] subseed, final int numberOfFragments) {
 
         if (subseed.length != Curl.HASH_LENGTH) {
-
             throw new RuntimeException("Invalid subseed length: " + subseed.length);
         }
         if (numberOfFragments <= 0) {
-
             throw new RuntimeException("Invalid number of key fragments: " + numberOfFragments);
         }
 
@@ -61,7 +58,6 @@ public class ISS {
         final Curl hash = new Curl();
         hash.absorb(subseed, 0, subseed.length);
         hash.squeeze(key, 0, key.length);
-
         return key;
     }
 
@@ -80,7 +76,6 @@ public class ISS {
             for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
 
                 for (int k = MAX_TRYTE_VALUE - MIN_TRYTE_VALUE; k-- > 0; ) {
-
                     final Curl hash = new Curl();
                     hash.absorb(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                     hash.squeeze(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
@@ -97,7 +92,6 @@ public class ISS {
     public static int[] address(final int[] digests) {
 
         if (digests.length == 0 || digests.length % Curl.HASH_LENGTH != 0) {
-
             throw new RuntimeException("Invalid digests length: " + digests.length);
         }
 
@@ -113,7 +107,6 @@ public class ISS {
     public static int[] normalizedBundle(final int[] bundle) {
 
         if (bundle.length != Curl.HASH_LENGTH) {
-
             throw new RuntimeException("Invalid bundle length: " + bundle.length);
         }
 
@@ -134,9 +127,7 @@ public class ISS {
                     for (int j = i * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j < (i + 1) * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j++) {
 
                         if (normalizedBundle[j] > MIN_TRYTE_VALUE) {
-
                             normalizedBundle[j]--;
-
                             break;
                         }
                     }
@@ -149,9 +140,7 @@ public class ISS {
                     for (int j = i * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j < (i + 1) * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j++) {
 
                         if (normalizedBundle[j] < MAX_TRYTE_VALUE) {
-
                             normalizedBundle[j]++;
-
                             break;
                         }
                     }
@@ -165,11 +154,9 @@ public class ISS {
     public static int[] signatureFragment(final int[] normalizedBundleFragment, final int[] keyFragment) {
 
         if (normalizedBundleFragment.length != Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS) {
-
             throw new RuntimeException("Invalid normalized bundle fragment length: " + normalizedBundleFragment.length);
         }
         if (keyFragment.length != FRAGMENT_LENGTH) {
-
             throw new RuntimeException("Invalid key fragment length: " + keyFragment.length);
         }
 
@@ -191,11 +178,9 @@ public class ISS {
     public static int[] digest(final int[] normalizedBundleFragment, final int[] signatureFragment) {
 
         if (normalizedBundleFragment.length != Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS) {
-
             throw new RuntimeException("Invalid normalized bundle fragment length: " + normalizedBundleFragment.length);
         }
         if (signatureFragment.length != FRAGMENT_LENGTH) {
-
             throw new RuntimeException("Invalid signature fragment length: " + signatureFragment.length);
         }
 

@@ -15,7 +15,7 @@ public class Curl {
     private static final int[] TRUTH_TABLE = {1, 0, -1, 1, -1, 0, -1, 1, 0};
 
     private final int[] state = new int[STATE_LENGTH];
-
+    
     public void absorb(final int[] trits, int offset, int length) {
 
         do {
@@ -24,6 +24,7 @@ public class Curl {
             offset += HASH_LENGTH;
         } while ((length -= HASH_LENGTH) > 0);
     }
+    
 
     public void squeeze(final int[] trits, int offset, int length) {
 
@@ -51,4 +52,5 @@ public class Curl {
             state[stateIndex] = 0;
         }
     }
+    
 }

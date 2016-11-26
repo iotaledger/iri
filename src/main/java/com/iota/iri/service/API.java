@@ -313,7 +313,7 @@ public class API {
 		}
 
 		final Set<Long> approveeTransactions = new HashSet<>();
-		;
+
 		if (request.containsKey("approvees")) {
 			for (final String approvee : (List<String>) request.get("approvees")) {
 				approveeTransactions

@@ -32,11 +32,11 @@ public class Node {
     private static final int QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
 
-    public DatagramSocket socket;
+    private DatagramSocket socket;
     private boolean shuttingDown = false;
 
     private final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
-    private final ConcurrentSkipListSet<Transaction> queuedTransactions = weigthQueue();
+    private final ConcurrentSkipListSet<Transaction> queuedTransactions = weightQueue();
 
     private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
@@ -46,7 +46,7 @@ public class Node {
 
         socket = new DatagramSocket(Integer.parseInt(args[0]));
         
-        Arrays.asList(args).stream()
+        Arrays.stream(args)
         	.skip(1)
         	.map(API::uri)
         	.map(Optional::get)
@@ -57,9 +57,7 @@ public class Node {
         	})
         	.filter(u -> "udp".equals(u.getScheme()))
         	.map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort())))
-        	.forEach(n -> {
-        		neighbors.add(n);
-            });
+        	.forEach(neighbors::add);
 
         spawnReceiverThread();
         spawnBroadcasterThread();
@@ -127,7 +125,7 @@ public class Node {
 	private void spawnBroadcasterThread() {
 		(new Thread(() -> {
 
-			log.info("Spawing Broadcaster Thread");
+			log.info("Spawning Broadcaster Thread");
             
             while (!shuttingDown) {
 
@@ -158,7 +156,7 @@ public class Node {
 	private void spawnTipRequesterThread() {
 		(new Thread(() -> {
 			
-			log.info("Spawing Tips Requester Thread");
+			log.info("Spawning Tips Requester Thread");
 
             while (!shuttingDown) {
 
@@ -178,7 +176,7 @@ public class Node {
         }, "Tips Requester")).start();
 	}
 
-    private static ConcurrentSkipListSet<Transaction> weigthQueue() {
+    private static ConcurrentSkipListSet<Transaction> weightQueue() {
     	return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
     		
             if (transaction1.weightMagnitude == transaction2.weightMagnitude) {

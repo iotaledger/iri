@@ -4,7 +4,7 @@ The IRI is the IOTA reference implementation project. It is a complete [[IOTA]](
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.0 Release
+* **Latest release:** 1.1.1 Release
 * **License:** GPLv3
 * **Readme updated:** 2016-11-01 10:23:43 (UTC)
 
@@ -16,7 +16,7 @@ The JOTA library has been designed to be used with Java 6+ in order to allow Iot
 
 ##Usage
 
-You'll need maven installed. In order 
+You'll need maven installed. In order
 
 * To compile:
 
@@ -35,6 +35,3 @@ This will create in the root directory of the project an executable jar package 
 For example
 
 `java -jar IRI-1.1.0.jar 14265 udp://1.1.1.1:14265 udp://2.2.2.2:14265`
-
-
-

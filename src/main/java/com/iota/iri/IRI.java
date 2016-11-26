@@ -15,12 +15,12 @@ public class IRI {
 	private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
 	public static final String NAME = "IRI";
-	public static final String VERSION = "1.1.0.1";
+	public static final String VERSION = "1.1.1";
 
 	public static void main(final String[] args) {
 
 		log.info("Welcome to {} {}", NAME, VERSION);
-		
+
 		validateParams(args);
 
 		try {
@@ -29,7 +29,7 @@ public class IRI {
 			Node.instance().init(args);
 			TipsManager.launch();
 			API.launch();
-		
+
 		} catch (final Exception e) {
 			log.error("Exception during IOTA node initialisation: ", e);
 		}
@@ -40,7 +40,7 @@ public class IRI {
 			log.info("Usage: java -jar {}-{}.jar [port number] <list of neighbors>", NAME, VERSION);
 			System.exit(0);
 		}
-		
+
 		if (args.length < 2) {
 			log.error("Invalid arguments list. Provide port number and at least one udp node address.");
 			throw new IllegalStateException();
@@ -53,7 +53,7 @@ public class IRI {
 
 	static {
 		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-			
+
 			log.info("Shutting down IOTA node, please hold tight...");
 			try {
 

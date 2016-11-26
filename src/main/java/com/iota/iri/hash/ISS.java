@@ -40,7 +40,6 @@ public class ISS {
         final Curl hash = new Curl();
         hash.absorb(subseedPreimage, 0, subseedPreimage.length);
         hash.squeeze(subseed, 0, subseed.length);
-
         return subseed;
     }
 

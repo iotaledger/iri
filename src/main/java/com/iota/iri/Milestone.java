@@ -34,7 +34,7 @@ public class Milestone {
                     if (index > latestMilestoneIndex) {
 
                         final Bundle bundle = new Bundle(transaction.bundle);
-                        for (final List<Transaction> bundleTransactions : bundle.transactions) {
+                        for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
 
                             if (bundleTransactions.get(0).pointer == transaction.pointer) {
 
@@ -53,12 +53,9 @@ public class Milestone {
 
                                         final Curl curl = new Curl();
                                         if ((indexCopy & 1) == 0) {
-
                                             curl.absorb(hash, 0, hash.length);
                                             curl.absorb(transaction2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
-
                                         } else {
-
                                             curl.absorb(transaction2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                                             curl.absorb(hash, 0, hash.length);
                                         }

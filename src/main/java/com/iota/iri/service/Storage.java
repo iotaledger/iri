@@ -562,20 +562,15 @@ public class Storage {
             ((ByteBuffer)bundlesChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
 
             if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
-
                 if ((pointer = value(mainBuffer, (hash[depth] + 128) << 3)) == 0) {
                     return 0;
                 }
-
             } else {
-
                 for (; depth < Transaction.BUNDLE_SIZE; depth++) {
-
                     if (mainBuffer[Transaction.HASH_OFFSET + depth] != hash[depth]) {
                         return 0;
                     }
                 }
-
                 return pointer;
             }
         }
@@ -597,11 +592,8 @@ public class Storage {
 
                     final long transactionPointer = value(mainBuffer, offset);
                     if (transactionPointer == 0) {
-
                         break;
-
                     } else {
-
                         bundleTransactions.add(transactionPointer);
                     }
                 }
@@ -609,17 +601,13 @@ public class Storage {
 
                     final long nextCellPointer = value(mainBuffer, offset);
                     if (nextCellPointer == 0) {
-
                         break;
-
                     } else {
-
                         ((ByteBuffer) bundlesChunks[(int) (nextCellPointer >> 27)].position((int) (nextCellPointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
                         offset = -Long.BYTES;
                     }
 
                 } else {
-
                     break;
                 }
             }
@@ -638,20 +626,16 @@ public class Storage {
             if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
 
                 if ((pointer = value(mainBuffer, (hash[depth] + 128) << 3)) == 0) {
-
                     return 0;
                 }
-
             } else {
 
                 for (; depth < Transaction.ADDRESS_SIZE; depth++) {
 
                     if (mainBuffer[Transaction.HASH_OFFSET + depth] != hash[depth]) {
-
                         return 0;
                     }
                 }
-
                 return pointer;
             }
         }
@@ -815,11 +799,8 @@ public class Storage {
 
                     final long transactionPointer = value(mainBuffer, offset);
                     if (transactionPointer == 0) {
-
                         break;
-
                     } else {
-
                         approveeTransactions.add(transactionPointer);
                     }
                 }
@@ -827,17 +808,13 @@ public class Storage {
 
                     final long nextCellPointer = value(mainBuffer, offset);
                     if (nextCellPointer == 0) {
-
                         break;
-
                     } else {
-
                         ((ByteBuffer) approversChunks[(int) (nextCellPointer >> 27)].position((int) (nextCellPointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
                         offset = -Long.BYTES;
                     }
 
                 } else {
-
                     break;
                 }
             }
@@ -847,12 +824,10 @@ public class Storage {
     }
 
     public static synchronized void setTransactionValidity(final long pointer, final int validity) {
-
         transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.VALIDITY_OFFSET, (byte)validity);
     }
 
     public static long value(final byte[] buffer, final int offset) {
-
         return ((long)(buffer[offset] & 0xFF)) + (((long)(buffer[offset + 1] & 0xFF)) << 8) + (((long)(buffer[offset + 2] & 0xFF)) << 16) + (((long)(buffer[offset + 3] & 0xFF)) << 24) + (((long)(buffer[offset + 4] & 0xFF)) << 32) + (((long)(buffer[offset + 5] & 0xFF)) << 40) + (((long)(buffer[offset + 6] & 0xFF)) << 48) + (((long)(buffer[offset + 7] & 0xFF)) << 56);
     }
 

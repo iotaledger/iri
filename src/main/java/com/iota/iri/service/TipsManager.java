@@ -82,7 +82,7 @@ public class TipsManager {
                                 boolean validBundle = false;
 
                                 final Bundle bundle = new Bundle(transaction.bundle);
-                                for (final List<Transaction> bundleTransactions : bundle.transactions) {
+                                for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
 
                                     if (bundleTransactions.get(0).pointer == transaction.pointer) {
 
@@ -91,13 +91,11 @@ public class TipsManager {
                                         for (final Transaction bundleTransaction : bundleTransactions) {
 
                                             if (bundleTransaction.value != 0) {
-
                                                 final Hash address = new Hash(bundleTransaction.address);
                                                 final Long value = state.get(address);
                                                 state.put(address, value == null ? bundleTransaction.value : (value + bundleTransaction.value));
                                             }
                                         }
-
                                         break;
                                     }
                                 }
@@ -202,11 +200,8 @@ public class TipsManager {
                         if (transaction.type == Storage.PREFILLED_SLOT) {
                             extraTransactions = null;
                             break;
-
                         } else {
-
                             extraTransactions.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
-
                             nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
                             nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
                         }
@@ -223,7 +218,7 @@ public class TipsManager {
                         if (transaction != null && transaction.currentIndex == 0) {
 
                             final Bundle bundle = new Bundle(transaction.bundle);
-                            for (final List<Transaction> bundleTransactions : bundle.transactions) {
+                            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
 
                                 if (Arrays.equals(bundleTransactions.get(0).hash, transaction.hash)) {
 

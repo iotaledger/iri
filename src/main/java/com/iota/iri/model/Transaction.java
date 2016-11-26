@@ -63,7 +63,7 @@ public class Transaction {
     public long branchTransactionPointer;
     private final int validity;
 
-    private int[] trits;
+    int[] trits;
 
     public final long pointer;
 
@@ -117,7 +117,6 @@ public class Transaction {
 
         hash = Converter.bytes(hashTrits);
         if (hash[Hash.SIZE_IN_BYTES - 4] != 0 || hash[Hash.SIZE_IN_BYTES - 3] != 0 || hash[Hash.SIZE_IN_BYTES - 2] != 0 || hash[Hash.SIZE_IN_BYTES - 1] != 0) {
-
             throw new RuntimeException("Invalid transaction hash");
         }
 
@@ -162,12 +161,10 @@ public class Transaction {
 
         trunkTransactionPointer = Storage.transactionPointer(trunkTransaction);
         if (trunkTransactionPointer < 0) {
-
             trunkTransactionPointer = -trunkTransactionPointer;
         }
         branchTransactionPointer = Storage.transactionPointer(branchTransaction);
         if (branchTransactionPointer < 0) {
-
             branchTransactionPointer = -branchTransactionPointer;
         }
 
@@ -179,11 +176,9 @@ public class Transaction {
     public synchronized int[] trits() {
 
         if (trits == null) {
-
             trits = new int[TRINARY_SIZE];
             Converter.getTrits(bytes, trits);
         }
-
         return trits;
     }
 
@@ -193,10 +188,8 @@ public class Transaction {
         System.arraycopy(hash, 0, mainBuffer, HASH_OFFSET, HASH_SIZE);
 
         if (transaction == null) {
-
             mainBuffer[TYPE_OFFSET] = Storage.PREFILLED_SLOT;
         } else {
-
             mainBuffer[TYPE_OFFSET] = (byte)transaction.type;
 
             System.arraycopy(transaction.bytes, 0, mainBuffer, BYTES_OFFSET, BYTES_SIZE);
@@ -214,13 +207,11 @@ public class Transaction {
             if (approvedTransactionPointer == 0) {
 
                 Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.trunkTransaction;
-
             } else {
 
                 if (approvedTransactionPointer < 0) {
                     approvedTransactionPointer = -approvedTransactionPointer;
                 }
-
                 final long index = (approvedTransactionPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11;
                 Storage.transactionsTipsFlags.put((int)(index >> 3), (byte)(Storage.transactionsTipsFlags.get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
             }
@@ -230,14 +221,11 @@ public class Transaction {
                 if (approvedTransactionPointer == 0) {
 
                     Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.branchTransaction;
-
                 } else {
 
                     if (approvedTransactionPointer < 0) {
-
                         approvedTransactionPointer = -approvedTransactionPointer;
                     }
-
                     final long index = (approvedTransactionPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11;
                     Storage.transactionsTipsFlags.put((int) (index >> 3), (byte) (Storage.transactionsTipsFlags.get((int) (index >> 3)) & (0xFF ^ (1 << (index & 7)))));
                 }

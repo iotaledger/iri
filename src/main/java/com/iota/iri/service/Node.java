@@ -1,10 +1,5 @@
 package com.iota.iri.service;
 
-import com.iota.iri.Milestone;
-import com.iota.iri.Neighbor;
-import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Transaction;
-
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -15,9 +10,18 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.iota.iri.Milestone;
+import com.iota.iri.Neighbor;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Transaction;
 
 /** 
  * The class node is responsible for managing Thread's connection.
@@ -33,7 +37,8 @@ public class Node {
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
 
     private DatagramSocket socket;
-    private boolean shuttingDown = false;
+    
+    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
     private final ConcurrentSkipListSet<Transaction> queuedTransactions = weightQueue();
@@ -41,6 +46,8 @@ public class Node {
     private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
     private final DatagramPacket tipRequestingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
+
+    private final ExecutorService executor = Executors.newFixedThreadPool(3);
 
     public void init(final String[] args) throws Exception {
 
@@ -59,13 +66,15 @@ public class Node {
         	.map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort())))
         	.forEach(neighbors::add);
 
-        spawnReceiverThread();
-        spawnBroadcasterThread();
-        spawnTipRequesterThread();
+        executor.submit(spawnReceiverThread());
+        executor.submit(spawnBroadcasterThread());
+        executor.submit(spawnTipRequesterThread());
+        
+        executor.shutdown();
     }
 
-	private void spawnReceiverThread() {
-		(new Thread(() -> {
+	private Runnable spawnReceiverThread() {
+		return () -> {
 
         	final Curl curl = new Curl();
             final int[] receivedTransactionTrits = new int[Transaction.TRINARY_SIZE];
@@ -73,7 +82,7 @@ public class Node {
 
             log.info("Spawing Receiver Thread");
             
-            while (!shuttingDown) {
+            while (!shuttingDown.get()) {
 
                 try {
                     socket.receive(receivingPacket);
@@ -119,15 +128,16 @@ public class Node {
                 	log.error("Receiver Thread Exception:", e);
                 }
             }
-        }, "Receiver")).start();
+        	log.info("Shutting down spawing Receiver Thread");
+        };
 	}
 
-	private void spawnBroadcasterThread() {
-		(new Thread(() -> {
+	private Runnable spawnBroadcasterThread() {
+		return () -> {
 
 			log.info("Spawning Broadcaster Thread");
             
-            while (!shuttingDown) {
+            while (!shuttingDown.get()) {
 
                 try {
                     final Transaction transaction = queuedTransactions.pollFirst();
@@ -150,15 +160,16 @@ public class Node {
                 	log.error("Broadcaster Thread Exception:", e);
                 }
             }
-        }, "Broadcaster")).start();
+        	log.info("Shutting down Broadcaster Thread");
+        };
 	}
 
-	private void spawnTipRequesterThread() {
-		(new Thread(() -> {
+	private Runnable spawnTipRequesterThread() {
+		return () -> {
 			
 			log.info("Spawning Tips Requester Thread");
 
-            while (!shuttingDown) {
+            while (!shuttingDown.get()) {
 
                 try {
                     final Transaction transaction = Storage.loadTransaction(Storage.transactionPointer(Milestone.latestMilestone.bytes()));
@@ -172,13 +183,12 @@ public class Node {
                 	log.error("Tips Requester Thread Exception:", e);
                 }
             }
-
-        }, "Tips Requester")).start();
+            log.info("Shutting down Requester Thread");
+        };
 	}
 
     private static ConcurrentSkipListSet<Transaction> weightQueue() {
     	return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
-    		
             if (transaction1.weightMagnitude == transaction2.weightMagnitude) {
                 for (int i = 0; i < Transaction.HASH_SIZE; i++) {
                     if (transaction1.hash[i] != transaction2.hash[i]) {
@@ -187,7 +197,6 @@ public class Node {
                 }
                 return 0;
             } 
-
             return transaction2.weightMagnitude - transaction1.weightMagnitude;
         });
 	}
@@ -199,8 +208,9 @@ public class Node {
         }
     }
 
-    public void shutDown() {
-        shuttingDown = true;
+    public void shutDown() throws InterruptedException {
+        shuttingDown.set(true);
+        executor.awaitTermination(6, TimeUnit.SECONDS); 
     }
     
     private Node() {}
@@ -227,7 +237,7 @@ public class Node {
 		return neighbors;
 	}
 
-	public void send(DatagramPacket packet) {
+	public void send(final DatagramPacket packet) {
 		try {
 			socket.send(packet);
 		} catch (IOException e) {

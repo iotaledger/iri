@@ -93,10 +93,10 @@ public class Node {
                             if (neighbor.getAddress().equals(receivingPacket.getSocketAddress())) {
                                 try {
 
-                                    neighbor.numberOfAllTransactions++;
+                                    neighbor.incAllTransactions();
                                     final Transaction receivedTransaction = new Transaction(receivingPacket.getData(), receivedTransactionTrits, curl);
                                     if (Storage.storeTransaction(receivedTransaction.hash, receivedTransaction, false) != 0) {
-                                        neighbor.numberOfNewTransactions++;
+                                        neighbor.incNewTransactions();
                                         broadcast(receivedTransaction);
                                     }
 
@@ -116,7 +116,7 @@ public class Node {
                                     }
                                 } catch (final RuntimeException e) {
                                 	log.error("Invalid Transaction Error:", e);
-                                    neighbor.numberOfInvalidTransactions++;
+                                    neighbor.incInvalidTransactions();
                                 }
                                 break;
                             }

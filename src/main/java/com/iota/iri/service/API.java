@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static io.undertow.Handlers.path;
 
@@ -203,11 +204,11 @@ public class API {
 	}
 
 	private static AbstractResponse getTipsStatement() {
-		final List<String> elements = new LinkedList<>();
-		for (final Hash tip : Storage.tips()) {
-			elements.add(tip.toString());
-		}
-		return GetTipsResponse.create(elements);
+		return GetTipsResponse.create(
+				Storage.tips()
+					.stream()
+					.map(Hash::toString)
+					.collect(Collectors.toList()));
 	}
 
 	private static AbstractResponse storeTransactionStatement(List<String> trys) {
@@ -279,7 +280,6 @@ public class API {
 						}
 					}
 				}
-
 				return GetInclusionStatesResponse.create(inclusionStates);
 			}
 		}
@@ -464,6 +464,10 @@ public class API {
 		final String response = gson.toJson(res);
 		
 		exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
+
+		if (res instanceof ErrorResponse || res instanceof ExceptionResponse) {
+			exchange.setResponseCode(400);
+		}
 		exchange.endExchange();
 	}
 

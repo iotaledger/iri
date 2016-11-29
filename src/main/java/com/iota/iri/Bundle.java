@@ -1,12 +1,18 @@
 package com.iota.iri;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.Storage;
+import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageBundle;
+import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
-
-import java.util.*;
 
 /**
  * A bundle is a group of transactions that follow each other from
@@ -20,8 +26,7 @@ public class Bundle {
 
     public Bundle(final byte[] bundle) {
 
-        final long bundlePointer = Storage.bundlePointer(bundle);
-        
+        final long bundlePointer = StorageBundle.instance().bundlePointer(bundle);
         if (bundlePointer == 0) {
         	return;
         }
@@ -43,7 +48,7 @@ public class Bundle {
 
                     if (transaction.currentIndex != i || transaction.lastIndex != lastIndex
                             || ((bundleValue += transaction.value) < -Transaction.SUPPLY || bundleValue > Transaction.SUPPLY)) {
-                        Storage.setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                        StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                         break;
                     }
 
@@ -84,7 +89,7 @@ public class Bundle {
                                             final int[] addressTrits = new int[Transaction.ADDRESS_TRINARY_SIZE];
                                             address.squeeze(addressTrits, 0, addressTrits.length);
                                             if (!Arrays.equals(Converter.bytes(addressTrits, 0, Transaction.ADDRESS_TRINARY_SIZE), transaction.address)) {
-                                                Storage.setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                                                StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                                                 break MAIN_LOOP;
                                             }
                                         } else {
@@ -92,16 +97,16 @@ public class Bundle {
                                         }
                                     }
 
-                                    Storage.setTransactionValidity(instanceTransactions.get(0).pointer, 1);
+                                    StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, 1);
                                     transactions.add(instanceTransactions);
                                 } else {
-                                    Storage.setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                                	StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                                 }
                             } else {
                                 transactions.add(instanceTransactions);
                             }
                         } else {
-                            Storage.setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                            StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                         }
                         break;
 
@@ -119,8 +124,10 @@ public class Bundle {
 
 	private Map<Long, Transaction> loadTransactionsFromTangle(final long bundlePointer) {
 		final Map<Long, Transaction> bundleTransactions = new HashMap<>();
-		for (final long transactionPointer : Storage.bundleTransactions(bundlePointer)) {
-		    bundleTransactions.put(transactionPointer, Storage.loadTransaction(transactionPointer));
+		for (final long transactionPointer : StorageBundle.instance().bundleTransactions(bundlePointer)) {
+		    bundleTransactions
+		    		.put(transactionPointer, StorageTransactions.instance()
+		    		.loadTransaction(transactionPointer));
 		}
 		return bundleTransactions;
 	}

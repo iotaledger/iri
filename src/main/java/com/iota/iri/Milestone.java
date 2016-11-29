@@ -1,34 +1,44 @@
 package com.iota.iri;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.Storage;
+import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageAddresses;
+import com.iota.iri.service.storage.AbstractStorage;
+import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class Milestone {
 
-    private static final Hash COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
+    public static final Hash COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
 
     public static Hash latestMilestone = Hash.NULL_HASH;
     public static Hash latestSolidSubtangleMilestone = Hash.NULL_HASH;
+    
     public static int latestMilestoneIndex = 6000;
     public static int latestSolidSubtangleMilestoneIndex = 6000;
 
     private static final Set<Long> analyzedMilestoneCandidates = new HashSet<>();
     private static final Map<Integer, Hash> milestones = new ConcurrentHashMap<>();
 
-    public static void updateLatestMilestone() {
+    public static void updateLatestMilestone() { // refactor
 
-        for (final Long pointer : Storage.addressTransactions(Storage.addressPointer(COORDINATOR.bytes()))) {
+        for (final Long pointer : StorageAddresses.instance().addressesOf(COORDINATOR)) {
 
             if (analyzedMilestoneCandidates.add(pointer)) {
 
-                final Transaction transaction = Storage.loadTransaction(pointer);
+                final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                 if (transaction.currentIndex == 0) {
 
                     final int index = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET, 15);
@@ -39,8 +49,8 @@ public class Milestone {
 
                             if (bundleTransactions.get(0).pointer == transaction.pointer) {
 
-                                final Transaction transaction2 = Storage.loadTransaction(transaction.trunkTransactionPointer);
-                                if (transaction2.type == Storage.FILLED_SLOT
+                                final Transaction transaction2 = StorageTransactions.instance().loadTransaction(transaction.trunkTransactionPointer);
+                                if (transaction2.type == AbstractStorage.FILLED_SLOT
                                         && transaction.branchTransactionPointer == transaction2.trunkTransactionPointer) {
 
                                     final int[] trunkTransactionTrits = new int[Transaction.TRUNK_TRANSACTION_TRINARY_SIZE];
@@ -69,11 +79,10 @@ public class Milestone {
 
                                         latestMilestone = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
                                         latestMilestoneIndex = index;
-
+                                        
                                         milestones.put(latestMilestoneIndex, latestMilestone);
                                     }
                                 }
-
                                 break;
                             }
                         }
@@ -94,17 +103,17 @@ public class Milestone {
 
                 synchronized (Storage.analyzedTransactionsFlags) {
 
-                    Storage.clearAnalyzedTransactionsFlags();
+                    Storage.instance().clearAnalyzedTransactionsFlags();
 
                     final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
-                    nonAnalyzedTransactions.offer(Storage.transactionPointer(milestone.bytes()));
+                    nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(milestone.bytes()));
                     Long pointer;
                     while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                        if (Storage.setAnalyzedTransactionFlag(pointer)) {
+                        if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
 
-                            final Transaction transaction2 = Storage.loadTransaction(pointer);
-                            if (transaction2.type == Storage.PREFILLED_SLOT) {
+                            final Transaction transaction2 = StorageTransactions.instance().loadTransaction(pointer);
+                            if (transaction2.type == AbstractStorage.PREFILLED_SLOT) {
                                 solid = false;
                                 break;
 

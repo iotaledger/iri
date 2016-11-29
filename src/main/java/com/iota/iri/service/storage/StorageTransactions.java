@@ -60,8 +60,10 @@ public class StorageTransactions extends AbstractStorage {
                 transactionsNextPointer += CELL_SIZE;
             }
         }
-        
-        if (transactionsNextPointer == CELLS_OFFSET - SUPER_GROUPS_OFFSET) {
+	}
+
+	public void updateBundleAddressTagApprovers() {
+		if (transactionsNextPointer == CELLS_OFFSET - SUPER_GROUPS_OFFSET) {
 
             // No need to zero "mainBuffer", it already contains only zeros
             setValue(mainBuffer, Transaction.TYPE_OFFSET, FILLED_SLOT);

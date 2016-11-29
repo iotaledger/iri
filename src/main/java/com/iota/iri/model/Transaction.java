@@ -46,7 +46,7 @@ public class Transaction {
 
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
-    private static final int MIN_WEIGHT_MAGNITUDE = 18;
+    private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
     public final int type;
     public final byte[] hash;
@@ -118,7 +118,7 @@ public class Transaction {
         curl.squeeze(hashTrits, 0, hashTrits.length);
 
         hash = Converter.bytes(hashTrits);
-        if (hash[Hash.SIZE_IN_BYTES - 4] != 0 || hash[Hash.SIZE_IN_BYTES - 3] != 0 || hash[Hash.SIZE_IN_BYTES - 2] != 0 || hash[Hash.SIZE_IN_BYTES - 1] != 0) {
+        if (hash[Hash.SIZE_IN_BYTES - 3] != 0 || hash[Hash.SIZE_IN_BYTES - 2] != 0 || hash[Hash.SIZE_IN_BYTES - 1] != 0) {
             throw new RuntimeException("Invalid transaction hash");
         }
 
@@ -215,7 +215,7 @@ public class Transaction {
                 }
                 final long index = (approvedTransactionPointer - (AbstractStorage.CELLS_OFFSET - AbstractStorage.SUPER_GROUPS_OFFSET)) >> 11;
                 StorageTransactions.instance().transactionsTipsFlags().put(
-                		(int)(index >> 3), 
+                		(int)(index >> 3),
                 		(byte)(StorageTransactions.instance().transactionsTipsFlags().get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
             }
             if (!Arrays.equals(transaction.branchTransaction, transaction.trunkTransaction)) {
@@ -230,19 +230,18 @@ public class Transaction {
                     }
                     final long index = (approvedTransactionPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11;
                     StorageTransactions.instance().transactionsTipsFlags().put(
-                    		(int) (index >> 3), 
+                    		(int) (index >> 3),
                     		(byte) (StorageTransactions.instance().transactionsTipsFlags().get((int) (index >> 3)) & (0xFF ^ (1 << (index & 7)))));
                 }
             }
         }
     }
-    
+
     public long value() {
 		return value;
 	}
-    
+
     public int validity() {
 		return validity;
 	}
 }
-

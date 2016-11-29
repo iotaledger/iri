@@ -2,10 +2,10 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>groupId</groupId>
-  <artifactId>iri</artifactId>
+  <artifactId>iri-testnet</artifactId>
   <name>IRI</name>
-  <version>1.1.1</version>
-  <description>IOTA Reference Implementation.</description>
+  <version>1.0</version>
+  <description>Testnet IOTA Reference Implementation.</description>
   <build>
     <plugins>
       <plugin>
@@ -118,4 +118,3 @@
     <undertown.version>1.2.11.Final</undertown.version>
   </properties>
 </project>
-

@@ -4,11 +4,11 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>groupId</groupId>
-	<artifactId>iri</artifactId>
-	<version>1.1.1</version>
+	<artifactId>iri-testnet</artifactId>
+	<version>1.0</version>
 
 	<name>IRI</name>
-	<description>IOTA Reference Implementation.</description>
+	<description>Testnet IOTA Reference Implementation.</description>
 
 	<properties>
 		<java-version>1.8</java-version>

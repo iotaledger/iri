@@ -14,6 +14,7 @@ import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
@@ -33,7 +34,7 @@ public class Milestone {
 
     public static void updateLatestMilestone() { // refactor
 
-        for (final Long pointer : Storage.instance().addressTransactions(Storage.instance().addressPointer(COORDINATOR.bytes()))) {
+        for (final Long pointer : StorageAddresses.instance().addressesOf(COORDINATOR)) {
 
             if (analyzedMilestoneCandidates.add(pointer)) {
 

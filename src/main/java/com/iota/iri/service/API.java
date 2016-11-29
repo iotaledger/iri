@@ -52,6 +52,7 @@ import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
 import com.iota.iri.service.dto.GetTrytesResponse;
 import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageBundle;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
@@ -318,7 +319,7 @@ public class API {
 		if (request.containsKey("addresses")) {
 			for (final String address : (List<String>) request.get("addresses")) {
 				addressesTransactions
-				        .addAll(Storage.instance().addressTransactions(Storage.instance().addressPointer((new Hash(address)).bytes())));
+				        .addAll(StorageAddresses.instance().addressTransactions(StorageAddresses.instance().addressPointer((new Hash(address)).bytes())));
 			}
 		}
 

@@ -61,6 +61,7 @@ import com.iota.iri.utils.Converter;
 import io.undertow.Undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -488,6 +489,7 @@ public class API {
 		if (res instanceof ErrorResponse || res instanceof ExceptionResponse) {
 			exchange.setResponseCode(400); // bad request
 		}
+		exchange.getResponseHeaders().add(new HttpString("Access-Control-Allow-Origin"),"*");
 		exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
 		
 		exchange.endExchange();

@@ -71,7 +71,7 @@ public class API {
 
 			final String command = (String) request.get("command");
 			if (command == null) {
-				return ErrorResponse.create("'command' parameter has not been specified");
+				return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
 			}
 
 			switch (command) {
@@ -150,7 +150,7 @@ public class API {
 				return storeTransactionStatement(trytes);
 			}
 			default:
-				return ErrorResponse.create("Command '" + command + "' is unknown");
+				return ErrorResponse.create("Command [" + command + "] is unknown");
 			}
 
 		} catch (final Exception e) {
@@ -463,11 +463,11 @@ public class API {
 		res.setDuration((int) (System.currentTimeMillis() - beginningTime));
 		final String response = gson.toJson(res);
 		
-		exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
-
 		if (res instanceof ErrorResponse || res instanceof ExceptionResponse) {
-			exchange.setResponseCode(400);
+			exchange.setResponseCode(400); // bad request
 		}
+		exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
+		
 		exchange.endExchange();
 	}
 

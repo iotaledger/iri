@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import org.apache.commons.io.IOUtils;
@@ -53,6 +52,7 @@ import com.iota.iri.service.dto.GetTrytesResponse;
 import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
+import com.iota.iri.service.storage.StorageApprovers;
 import com.iota.iri.service.storage.StorageBundle;
 import com.iota.iri.service.storage.StorageTags;
 import com.iota.iri.service.storage.StorageTransactions;
@@ -339,7 +339,7 @@ public class API {
 		if (request.containsKey("approvees")) {
 			for (final String approvee : (List<String>) request.get("approvees")) {
 				approveeTransactions
-				        .addAll(Storage.instance().approveeTransactions(Storage.instance().approveePointer((new Hash(approvee)).bytes())));
+				        .addAll(StorageApprovers.instance().approveeTransactions(StorageApprovers.instance().approveePointer((new Hash(approvee)).bytes())));
 			}
 		}
 

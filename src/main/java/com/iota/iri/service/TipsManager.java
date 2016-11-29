@@ -20,6 +20,7 @@ import com.iota.iri.Snapshot;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageApprovers;
 import com.iota.iri.service.storage.StorageTransactions;
 
 public class TipsManager {
@@ -136,7 +137,6 @@ public class TipsManager {
                     	log.error("Ledger inconsistency detected");
                         return null;
                     }
-
                     stateIterator.remove();
                 }
             }
@@ -170,7 +170,7 @@ public class TipsManager {
                         tailsToAnalyze.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
                     }
 
-                    for (final Long approverPointer : Storage.instance().approveeTransactions(Storage.instance().approveePointer(transaction.hash))) {
+                    for (final Long approverPointer : StorageApprovers.instance().approveeTransactions(StorageApprovers.instance().approveePointer(transaction.hash))) {
                         nonAnalyzedTransactions.offer(approverPointer);
                     }
                 }

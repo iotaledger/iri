@@ -7,7 +7,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Queue;
 
 import org.slf4j.Logger;
@@ -52,6 +51,8 @@ public class Storage extends AbstractStorage {
     	storageAddressesInstance.init();
     	storageTags.init();
     	storageApprovers.init();
+    	
+    	storageTransactionInstance.updateBundleAddressTagApprovers();
 
         final FileChannel scratchpadChannel = FileChannel.open(Paths.get(SCRATCHPAD_FILE_NAME), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
         transactionsToRequest = scratchpadChannel.map(FileChannel.MapMode.READ_WRITE, TRANSACTIONS_TO_REQUEST_OFFSET, TRANSACTIONS_TO_REQUEST_SIZE);

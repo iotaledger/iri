@@ -186,7 +186,7 @@ public class Transaction {
 
     public static void dump(final byte[] mainBuffer, final byte[] hash, final Transaction transaction) {
 
-        System.arraycopy(Storage.instance().zeroedBuffer(), 0, mainBuffer, 0, AbstractStorage.CELL_SIZE);
+        System.arraycopy(new byte[AbstractStorage.CELL_SIZE], 0, mainBuffer, 0, AbstractStorage.CELL_SIZE);
         System.arraycopy(hash, 0, mainBuffer, HASH_OFFSET, HASH_SIZE);
 
         if (transaction == null) {

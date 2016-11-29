@@ -54,6 +54,7 @@ import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageBundle;
+import com.iota.iri.service.storage.StorageTags;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
 
@@ -329,7 +330,7 @@ public class API {
 				while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
 					tag += Converter.TRYTE_ALPHABET.charAt(0);
 				}
-				tagsTransactions.addAll(Storage.instance().tagTransactions(Storage.instance().tagPointer((new Hash(tag)).bytes())));
+				tagsTransactions.addAll(StorageTags.instance().tagTransactions(StorageTags.instance().tagPointer((new Hash(tag)).bytes())));
 			}
 		}
 

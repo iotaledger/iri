@@ -67,11 +67,11 @@ public class StorageTransactions extends AbstractStorage {
             setValue(mainBuffer, Transaction.TYPE_OFFSET, FILLED_SLOT);
             appendToTransactions(true);
 
-            System.arraycopy(Storage.instance().zeroedBuffer(), 0, mainBuffer, 0, CELL_SIZE);
+            emptyMainBuffer();
             setValue(mainBuffer, 128 << 3, CELLS_OFFSET - SUPER_GROUPS_OFFSET);
             ((ByteBuffer)transactionsChunks[0].position((128 + (128 << 8)) << 11)).put(mainBuffer);
 
-            System.arraycopy(Storage.instance().zeroedBuffer(), 0, mainBuffer, 0, CELL_SIZE);
+            emptyMainBuffer();
             Storage.instance().updateBundleAddressTagAndApprovers(CELLS_OFFSET - SUPER_GROUPS_OFFSET);
         }
 	}
@@ -209,12 +209,12 @@ public class StorageTransactions extends AbstractStorage {
 
                         for (int j = depth; j < i; j++) {
 
-                            System.arraycopy(Storage.instance().zeroedBuffer(), 0, mainBuffer, 0, CELL_SIZE);
+                            emptyMainBuffer();
                             setValue(mainBuffer, (hash[j] + 128) << 3, transactionsNextPointer + CELL_SIZE);
                             appendToTransactions(false);
                         }
 
-                        System.arraycopy(Storage.instance().zeroedBuffer(), 0, mainBuffer, 0, CELL_SIZE);
+                        emptyMainBuffer();
                         setValue(mainBuffer, (differentHashByte + 128) << 3, pointer);
                         setValue(mainBuffer, (hash[i] + 128) << 3, transactionsNextPointer + CELL_SIZE);
                         appendToTransactions(false);

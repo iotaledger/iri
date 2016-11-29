@@ -1,11 +1,12 @@
 package com.iota.iri;
 
-import com.iota.iri.service.API;
-import com.iota.iri.service.Node;
-import com.iota.iri.service.Storage;
-import com.iota.iri.service.TipsManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.iota.iri.service.API;
+import com.iota.iri.service.Node;
+import com.iota.iri.service.TipsManager;
+import com.iota.iri.service.storage.Storage;
 
 /**
  * Main IOTA Reference Implementation starting class
@@ -25,7 +26,7 @@ public class IRI {
 
 		try {
 
-			Storage.launch();
+			Storage.instance().init();
 			Node.instance().init(args);
 			TipsManager.launch();
 			API.launch();
@@ -59,8 +60,8 @@ public class IRI {
 
 				API.shutDown();
 				TipsManager.shutDown();
-				Node.instance().shutDown();
-				Storage.shutDown();
+				Node.instance().shutdown();
+				Storage.instance().shutdown();
 
 			} catch (final Exception e) {
 				log.error("Exception occurred shutting down IOTA node: ", e);

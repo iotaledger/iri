@@ -1,14 +1,26 @@
 package com.iota.iri.service;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.Bundle;
 import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.*;
+import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageTransactions;
 
 public class TipsManager {
 
@@ -57,22 +69,22 @@ public class TipsManager {
 
         synchronized (Storage.analyzedTransactionsFlags) {
 
-            Storage.clearAnalyzedTransactionsFlags();
+            Storage.instance().clearAnalyzedTransactionsFlags();
 
             Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
             {
                 int numberOfAnalyzedTransactions = 0;
 
-                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Storage.transactionPointer((extraTip == null ? preferableMilestone : extraTip).bytes())));
+                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions.instance().transactionPointer((extraTip == null ? preferableMilestone : extraTip).bytes())));
                 Long pointer;
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (Storage.setAnalyzedTransactionFlag(pointer)) {
+                    if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
 
                         numberOfAnalyzedTransactions++;
 
-                        final Transaction transaction = Storage.loadTransaction(pointer);
+                        final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                         if (transaction.type == Storage.PREFILLED_SLOT) {
                             return null;
                         } else {
@@ -129,38 +141,36 @@ public class TipsManager {
                 }
             }
 
-            Storage.saveAnalyzedTransactionsFlags();
-            Storage.clearAnalyzedTransactionsFlags();
+            Storage.instance().saveAnalyzedTransactionsFlags();
+            Storage.instance().clearAnalyzedTransactionsFlags();
 
             final Set<Hash> tailsToAnalyze = new HashSet<>();
 
             Hash tip = preferableMilestone;
             if (extraTip != null) {
 
-                Transaction transaction = Storage.loadTransaction(Storage.transactionPointer(tip.bytes()));
+                Transaction transaction = StorageTransactions.instance().loadTransaction(StorageTransactions.instance().transactionPointer(tip.bytes()));
                 while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 
                     tip = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
                     do {
-
-                        transaction = Storage.loadTransaction(transaction.trunkTransactionPointer);
-
+                        transaction = StorageTransactions.instance().loadTransaction(transaction.trunkTransactionPointer);
                     } while (transaction.currentIndex != 0);
                 }
             }
-            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Storage.transactionPointer(tip.bytes())));
+            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions.instance().transactionPointer(tip.bytes())));
             Long pointer;
             while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                if (Storage.setAnalyzedTransactionFlag(pointer)) {
+                if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
 
-                    final Transaction transaction = Storage.loadTransaction(pointer);
+                    final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 
                     if (transaction.currentIndex == 0) {
                         tailsToAnalyze.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
                     }
 
-                    for (final Long approverPointer : Storage.approveeTransactions(Storage.approveePointer(transaction.hash))) {
+                    for (final Long approverPointer : Storage.instance().approveeTransactions(Storage.instance().approveePointer(transaction.hash))) {
                         nonAnalyzedTransactions.offer(approverPointer);
                     }
                 }
@@ -168,14 +178,13 @@ public class TipsManager {
 
             if (extraTip != null) {
 
-                Storage.loadAnalyzedTransactionsFlags();
+                Storage.instance().loadAnalyzedTransactionsFlags();
 
                 final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
 
-                    final Transaction tail = Storage.loadTransaction(tailsToAnalyzeIterator.next().bytes());
-                    if (Storage.analyzedTransactionFlag(tail.pointer)) {
-
+                    final Transaction tail = StorageTransactions.instance().loadTransaction(tailsToAnalyzeIterator.next().bytes());
+                    if (Storage.instance().analyzedTransactionFlag(tail.pointer)) {
                         tailsToAnalyzeIterator.remove();
                     }
                 }
@@ -186,17 +195,17 @@ public class TipsManager {
             int bestRating = 0;
             for (final Hash tail : tailsToAnalyze) {
 
-                Storage.loadAnalyzedTransactionsFlags();
+                Storage.instance().loadAnalyzedTransactionsFlags();
 
                 Set<Hash> extraTransactions = new HashSet<>();
 
                 nonAnalyzedTransactions.clear();
-                nonAnalyzedTransactions.offer(Storage.transactionPointer(tail.bytes()));
+                nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(tail.bytes()));
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (Storage.setAnalyzedTransactionFlag(pointer)) {
+                    if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
 
-                        final Transaction transaction = Storage.loadTransaction(pointer);
+                        final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                         if (transaction.type == Storage.PREFILLED_SLOT) {
                             extraTransactions = null;
                             break;
@@ -214,7 +223,7 @@ public class TipsManager {
 
                     for (final Hash extraTransaction : extraTransactions) {
 
-                        final Transaction transaction = Storage.loadTransaction(extraTransaction.bytes());
+                        final Transaction transaction = StorageTransactions.instance().loadTransaction(extraTransaction.bytes());
                         if (transaction != null && transaction.currentIndex == 0) {
 
                             final Bundle bundle = new Bundle(transaction.bundle);
@@ -233,7 +242,6 @@ public class TipsManager {
                                 }
                             }
                         }
-
                         if (extraTransactionsCopy == null) {
                             break;
                         }
@@ -245,7 +253,7 @@ public class TipsManager {
 
                         for (final Hash extraTransaction : extraTransactions) {
 
-                            final Transaction transaction = Storage.loadTransaction(extraTransaction.bytes());
+                            final Transaction transaction = StorageTransactions.instance().loadTransaction(extraTransaction.bytes());
                             if (transaction.value != 0) {
                                 final Hash address = new Hash(transaction.address);
                                 final Long value = stateCopy.get(address);
@@ -254,7 +262,6 @@ public class TipsManager {
                         }
 
                         for (final long value : stateCopy.values()) {
-
                             if (value < 0) {
                                 extraTransactions = null;
                                 break;
@@ -262,7 +269,6 @@ public class TipsManager {
                         }
 
                         if (extraTransactions != null) {
-
                             if (extraTransactions.size() > bestRating) {
                                 bestTip = tail;
                                 bestRating = extraTransactions.size();
@@ -271,7 +277,7 @@ public class TipsManager {
                     }
                 }
             }
-            log.info(bestRating + " extra transactions approved");
+            log.info("{} extra transactions approved", bestRating);
             return bestTip;
         }
     }

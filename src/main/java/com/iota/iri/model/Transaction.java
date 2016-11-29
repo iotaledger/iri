@@ -1,10 +1,12 @@
 package com.iota.iri.model;
 
-import com.iota.iri.hash.Curl;
-import com.iota.iri.service.Storage;
-import com.iota.iri.utils.Converter;
-
 import java.util.Arrays;
+
+import com.iota.iri.hash.Curl;
+import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.AbstractStorage;
+import com.iota.iri.service.storage.StorageTransactions;
+import com.iota.iri.utils.Converter;
 
 public class Transaction {
 
@@ -151,7 +153,7 @@ public class Transaction {
         System.arraycopy(mainBuffer, BYTES_OFFSET, bytes = new byte[BYTES_SIZE], 0, BYTES_SIZE);
 
         System.arraycopy(mainBuffer, ADDRESS_OFFSET, address = new byte[ADDRESS_SIZE], 0, ADDRESS_SIZE);
-        value = Storage.value(mainBuffer, VALUE_OFFSET);
+        value = AbstractStorage.value(mainBuffer, VALUE_OFFSET);
         System.arraycopy(mainBuffer, TAG_OFFSET, tag = new byte[TAG_SIZE], 0, TAG_SIZE);
         currentIndex = Storage.value(mainBuffer, CURRENT_INDEX_OFFSET);
         lastIndex = Storage.value(mainBuffer, LAST_INDEX_OFFSET);
@@ -159,11 +161,11 @@ public class Transaction {
         System.arraycopy(mainBuffer, TRUNK_TRANSACTION_OFFSET, trunkTransaction = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
         System.arraycopy(mainBuffer, BRANCH_TRANSACTION_OFFSET, branchTransaction = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
 
-        trunkTransactionPointer = Storage.transactionPointer(trunkTransaction);
+        trunkTransactionPointer = StorageTransactions.instance().transactionPointer(trunkTransaction);
         if (trunkTransactionPointer < 0) {
             trunkTransactionPointer = -trunkTransactionPointer;
         }
-        branchTransactionPointer = Storage.transactionPointer(branchTransaction);
+        branchTransactionPointer = StorageTransactions.instance().transactionPointer(branchTransaction);
         if (branchTransactionPointer < 0) {
             branchTransactionPointer = -branchTransactionPointer;
         }
@@ -184,7 +186,7 @@ public class Transaction {
 
     public static void dump(final byte[] mainBuffer, final byte[] hash, final Transaction transaction) {
 
-        System.arraycopy(Storage.ZEROED_BUFFER, 0, mainBuffer, 0, Storage.CELL_SIZE);
+        System.arraycopy(Storage.instance().zeroedBuffer(), 0, mainBuffer, 0, AbstractStorage.CELL_SIZE);
         System.arraycopy(hash, 0, mainBuffer, HASH_OFFSET, HASH_SIZE);
 
         if (transaction == null) {
@@ -203,23 +205,23 @@ public class Transaction {
             System.arraycopy(transaction.trunkTransaction, 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
             System.arraycopy(transaction.branchTransaction, 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
 
-            long approvedTransactionPointer = Storage.transactionPointer(transaction.trunkTransaction);
+            long approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.trunkTransaction);
             if (approvedTransactionPointer == 0) {
-
                 Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.trunkTransaction;
             } else {
 
                 if (approvedTransactionPointer < 0) {
                     approvedTransactionPointer = -approvedTransactionPointer;
                 }
-                final long index = (approvedTransactionPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11;
-                Storage.transactionsTipsFlags.put((int)(index >> 3), (byte)(Storage.transactionsTipsFlags.get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
+                final long index = (approvedTransactionPointer - (AbstractStorage.CELLS_OFFSET - AbstractStorage.SUPER_GROUPS_OFFSET)) >> 11;
+                StorageTransactions.instance().transactionsTipsFlags().put(
+                		(int)(index >> 3), 
+                		(byte)(StorageTransactions.instance().transactionsTipsFlags().get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
             }
             if (!Arrays.equals(transaction.branchTransaction, transaction.trunkTransaction)) {
 
-                approvedTransactionPointer = Storage.transactionPointer(transaction.branchTransaction);
+                approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.branchTransaction);
                 if (approvedTransactionPointer == 0) {
-
                     Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.branchTransaction;
                 } else {
 
@@ -227,7 +229,9 @@ public class Transaction {
                         approvedTransactionPointer = -approvedTransactionPointer;
                     }
                     final long index = (approvedTransactionPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11;
-                    Storage.transactionsTipsFlags.put((int) (index >> 3), (byte) (Storage.transactionsTipsFlags.get((int) (index >> 3)) & (0xFF ^ (1 << (index & 7)))));
+                    StorageTransactions.instance().transactionsTipsFlags().put(
+                    		(int) (index >> 3), 
+                    		(byte) (StorageTransactions.instance().transactionsTipsFlags().get((int) (index >> 3)) & (0xFF ^ (1 << (index & 7)))));
                 }
             }
         }

@@ -22,6 +22,8 @@ import com.iota.iri.Milestone;
 import com.iota.iri.Neighbor;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageTransactions;
 
 /** 
  * The class node is responsible for managing Thread's connection.
@@ -95,7 +97,7 @@ public class Node {
 
                                     neighbor.incAllTransactions();
                                     final Transaction receivedTransaction = new Transaction(receivingPacket.getData(), receivedTransactionTrits, curl);
-                                    if (Storage.storeTransaction(receivedTransaction.hash, receivedTransaction, false) != 0) {
+                                    if (StorageTransactions.instance().storeTransaction(receivedTransaction.hash, receivedTransaction, false) != 0) {
                                         neighbor.incNewTransactions();
                                         broadcast(receivedTransaction);
                                     }
@@ -103,14 +105,14 @@ public class Node {
                                     final long transactionPointer;
                                     System.arraycopy(receivingPacket.getData(), Transaction.SIZE, requestedTransaction, 0, Transaction.HASH_SIZE);
                                     if (Arrays.equals(requestedTransaction, receivedTransaction.hash)) {
-                                        transactionPointer = Storage.transactionPointer(Milestone.latestMilestone.bytes());
+                                        transactionPointer = StorageTransactions.instance().transactionPointer(Milestone.latestMilestone.bytes());
                                     } else {
-                                        transactionPointer = Storage.transactionPointer(requestedTransaction);
+                                        transactionPointer = StorageTransactions.instance().transactionPointer(requestedTransaction);
                                     }
                                     if (transactionPointer > Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET) {
                                     	synchronized (sendingPacket) {
-                                    		System.arraycopy(Storage.loadTransaction(transactionPointer).bytes, 0, sendingPacket.getData(), 0, Transaction.SIZE);
-                                    		Storage.transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
+                                    		System.arraycopy(StorageTransactions.instance().loadTransaction(transactionPointer).bytes, 0, sendingPacket.getData(), 0, Transaction.SIZE);
+                                    		Storage.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
                                     		neighbor.send(sendingPacket);
                                     	}
                                     }
@@ -147,7 +149,7 @@ public class Node {
                             try {
                             	synchronized (sendingPacket) {
                             		System.arraycopy(transaction.bytes, 0, sendingPacket.getData(), 0, Transaction.SIZE);
-                            		Storage.transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
+                            		Storage.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
                             		neighbor.send(sendingPacket);
 								}
                             } catch (final Exception e) {
@@ -172,12 +174,12 @@ public class Node {
             while (!shuttingDown.get()) {
 
                 try {
-                    final Transaction transaction = Storage.loadTransaction(Storage.transactionPointer(Milestone.latestMilestone.bytes()));
+                    final Transaction transaction = StorageTransactions.instance().loadMilestone(Milestone.latestMilestone);
                     System.arraycopy(transaction.bytes, 0, tipRequestingPacket.getData(), 0, Transaction.SIZE);
                     System.arraycopy(transaction.hash, 0, tipRequestingPacket.getData(), Transaction.SIZE, Transaction.HASH_SIZE);
-                    for (final Neighbor neighbor : neighbors) {
-                        neighbor.send(tipRequestingPacket);
-                    }
+                    
+                    neighbors.stream().forEach(n -> n.send(tipRequestingPacket));
+                    
                     Thread.sleep(5000);
                 } catch (final Exception e) {
                 	log.error("Tips Requester Thread Exception:", e);
@@ -208,7 +210,7 @@ public class Node {
         }
     }
 
-    public void shutDown() throws InterruptedException {
+    public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
         executor.awaitTermination(6, TimeUnit.SECONDS); 
     }

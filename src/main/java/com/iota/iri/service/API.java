@@ -1,5 +1,32 @@
 package com.iota.iri.service;
 
+import static io.undertow.Handlers.path;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.streams.ChannelInputStream;
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iota.iri.IRI;
@@ -10,29 +37,28 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.dto.*;
+import com.iota.iri.service.dto.AbstractResponse;
+import com.iota.iri.service.dto.AddedNeighborsResponse;
+import com.iota.iri.service.dto.AttachToTangleResponse;
+import com.iota.iri.service.dto.ErrorResponse;
+import com.iota.iri.service.dto.ExceptionResponse;
+import com.iota.iri.service.dto.FindTransactionsResponse;
+import com.iota.iri.service.dto.GetBalancesResponse;
+import com.iota.iri.service.dto.GetInclusionStatesResponse;
+import com.iota.iri.service.dto.GetNeighborsResponse;
+import com.iota.iri.service.dto.GetNodeInfoResponse;
+import com.iota.iri.service.dto.GetTipsResponse;
+import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
+import com.iota.iri.service.dto.GetTrytesResponse;
+import com.iota.iri.service.dto.RemoveNeighborsResponse;
+import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageBundle;
+import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
+
 import io.undertow.Undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.concurrent.AtomicInitializer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.streams.ChannelInputStream;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-
-import static io.undertow.Handlers.path;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -121,7 +147,7 @@ public class API {
 				        Node.instance().howManyNeighbors(), 
 				        Node.instance().queuedTransactionsSize(), 
 				        System.currentTimeMillis(),
-				        Storage.tips().size(), 
+				        StorageTransactions.instance().tips().size(), 
 				        Storage.numberOfTransactionsToRequest);
 			}
 			case "getTips": {
@@ -185,7 +211,7 @@ public class API {
 	private static void getTrytesStatement(List<String> hashes) {
 		final List<String> elements = new LinkedList<>();
 		for (final String hash : hashes) {
-			final Transaction transaction = Storage.loadTransaction((new Hash(hash)).bytes());
+			final Transaction transaction = StorageTransactions.instance().loadTransaction((new Hash(hash)).bytes());
 			elements.add(transaction == null ? "null" : (Converter.trytes(transaction.trits())));
 		}
 		GetTrytesResponse.create(elements);
@@ -205,7 +231,7 @@ public class API {
 
 	private static AbstractResponse getTipsStatement() {
 		return GetTipsResponse.create(
-				Storage.tips()
+				StorageTransactions.instance().tips()
 					.stream()
 					.map(Hash::toString)
 					.collect(Collectors.toList()));
@@ -214,7 +240,7 @@ public class API {
 	private static AbstractResponse storeTransactionStatement(List<String> trys) {
 		for (final String trytes : trys) {
 			final Transaction transaction = new Transaction(Converter.trits(trytes));
-			Storage.storeTransaction(transaction.hash, transaction, false);
+			StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
 		}
 
 		return AbstractResponse.createEmptyResponse();
@@ -225,27 +251,21 @@ public class API {
 	}
 
 	private static AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) {
-		final List<Hash> transactions = new LinkedList<>();
-		for (final String transaction : trans) {
-			transactions.add((new Hash(transaction)));
-		}
-
-		final List<Hash> tips = new LinkedList<>();
-		for (final String tip : tps) {
-			tips.add(new Hash(tip));
-		}
+		
+		final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
+		final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
 
 		int numberOfNonMetTransactions = transactions.size();
 		final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];
 
 		synchronized (Storage.analyzedTransactionsFlags) {
 
-			Storage.clearAnalyzedTransactionsFlags();
+			Storage.instance().clearAnalyzedTransactionsFlags();
 
 			final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
 			for (final Hash tip : tips) {
 
-				final long pointer = Storage.transactionPointer(tip.bytes());
+				final long pointer = StorageTransactions.instance().transactionPointer(tip.bytes());
 				if (pointer <= 0) {
 					return ErrorResponse.create("One of the tips absents");
 				}
@@ -256,9 +276,9 @@ public class API {
 				Long pointer;
 				MAIN_LOOP: while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-					if (Storage.setAnalyzedTransactionFlag(pointer)) {
+					if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
 
-						final Transaction transaction = Storage.loadTransaction(pointer);
+						final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 						if (transaction.type == Storage.PREFILLED_SLOT) {
 							return ErrorResponse.create("The subtangle is not solid");
 						} else {
@@ -290,7 +310,7 @@ public class API {
 		if (request.containsKey("bundles")) {
 			for (final String bundle : (List<String>) request.get("bundles")) {
 				bundlesTransactions
-				        .addAll(Storage.bundleTransactions(Storage.bundlePointer((new Hash(bundle)).bytes())));
+				        .addAll(StorageBundle.instance().bundleTransactions(StorageBundle.instance().bundlePointer((new Hash(bundle)).bytes())));
 			}
 		}
 
@@ -298,7 +318,7 @@ public class API {
 		if (request.containsKey("addresses")) {
 			for (final String address : (List<String>) request.get("addresses")) {
 				addressesTransactions
-				        .addAll(Storage.addressTransactions(Storage.addressPointer((new Hash(address)).bytes())));
+				        .addAll(Storage.instance().addressTransactions(Storage.instance().addressPointer((new Hash(address)).bytes())));
 			}
 		}
 
@@ -308,7 +328,7 @@ public class API {
 				while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
 					tag += Converter.TRYTE_ALPHABET.charAt(0);
 				}
-				tagsTransactions.addAll(Storage.tagTransactions(Storage.tagPointer((new Hash(tag)).bytes())));
+				tagsTransactions.addAll(Storage.instance().tagTransactions(Storage.instance().tagPointer((new Hash(tag)).bytes())));
 			}
 		}
 
@@ -317,11 +337,11 @@ public class API {
 		if (request.containsKey("approvees")) {
 			for (final String approvee : (List<String>) request.get("approvees")) {
 				approveeTransactions
-				        .addAll(Storage.approveeTransactions(Storage.approveePointer((new Hash(approvee)).bytes())));
+				        .addAll(Storage.instance().approveeTransactions(Storage.instance().approveePointer((new Hash(approvee)).bytes())));
 			}
 		}
 
-		// jesus...
+		// need refactoring
 		final Set<Long> foundTransactions = bundlesTransactions.isEmpty() ? (addressesTransactions.isEmpty()
 		        ? (tagsTransactions.isEmpty()
 		                ? (approveeTransactions.isEmpty() ? new HashSet<>() : approveeTransactions) : tagsTransactions)
@@ -339,7 +359,7 @@ public class API {
 
 		final List<String> elements = new LinkedList<>();
 		for (final long pointer : foundTransactions) {
-			elements.add(new Hash(Storage.loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE).toString());
+			elements.add(new Hash(StorageTransactions.instance().loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE).toString());
 		}
 
 		return FindTransactionsResponse.create(elements);
@@ -377,16 +397,16 @@ public class API {
 
 		synchronized (Storage.analyzedTransactionsFlags) {
 
-			Storage.clearAnalyzedTransactionsFlags();
+			Storage.instance().clearAnalyzedTransactionsFlags();
 
 			final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
-			        Collections.singleton(Storage.transactionPointer(milestone.bytes())));
+			        Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.bytes())));
 			Long pointer;
 			while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-				if (Storage.setAnalyzedTransactionFlag(pointer)) {
+				if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
 
-					final Transaction transaction = Storage.loadTransaction(pointer);
+					final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 
 					if (transaction.value != 0) {
 

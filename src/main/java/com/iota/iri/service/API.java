@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -161,7 +162,7 @@ public class API {
 			}
 			case "getTrytes": {
 				final List<String> hashes = (List<String>) request.get("hashes");
-				getTrytesStatement(hashes);
+				return getTrytesStatement(hashes);
 			}
 
 			case "interruptAttachingToTangle": {
@@ -210,13 +211,16 @@ public class API {
 		return Optional.empty();
 	}
 
-	private static void getTrytesStatement(List<String> hashes) {
+	private static AbstractResponse getTrytesStatement(List<String> hashes) {
+		log.debug("Executing getTrytesStatement: {}", Arrays.toString(hashes.toArray()));
 		final List<String> elements = new LinkedList<>();
 		for (final String hash : hashes) {
 			final Transaction transaction = StorageTransactions.instance().loadTransaction((new Hash(hash)).bytes());
-			elements.add(transaction == null ? "null" : (Converter.trytes(transaction.trits())));
+			if (transaction != null) {
+				elements.add(Converter.trytes(transaction.trits()));
+			}
 		}
-		GetTrytesResponse.create(elements);
+		return GetTrytesResponse.create(elements);
 	}
 
 	private static AbstractResponse getTransactionToApproveStatement(final int depth) {

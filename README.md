@@ -6,7 +6,6 @@ It allows to connect easily using java directly to a local or a remote [[IOTA no
 
 * **Latest release:** 1.1.1 Release
 * **License:** GPLv3
-* **Readme updated:** 2016-11-01 10:23:43 (UTC)
 
 # Purpose of this repository
 

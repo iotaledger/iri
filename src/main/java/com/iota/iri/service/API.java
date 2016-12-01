@@ -122,6 +122,7 @@ public class API {
 			}
 			case "broadcastTransactions": {
 				final List<String> trytes = (List<String>) request.get("trytes");
+				log.debug("Invoking 'boradcastTransactions' with {}", trytes);
 				return broadcastTransactionStatement(trytes);
 			}
 			case "findTransactions": {
@@ -165,6 +166,7 @@ public class API {
 			}
 			case "getTrytes": {
 				final List<String> hashes = (List<String>) request.get("hashes");
+				log.debug("Executing getTrytesStatement: {}", Arrays.toString(hashes.toArray()));
 				return getTrytesStatement(hashes);
 			}
 
@@ -179,6 +181,7 @@ public class API {
 
 			case "storeTransactions": {
 				List<String> trytes = (List<String>) request.get("trytes");
+				log.debug("Invoking 'storeTransactions' with {}", trytes);
 				return storeTransactionStatement(trytes);
 			}
 			default:
@@ -215,7 +218,6 @@ public class API {
 	}
 
 	private AbstractResponse getTrytesStatement(List<String> hashes) {
-		log.debug("Executing getTrytesStatement: {}", Arrays.toString(hashes.toArray()));
 		final List<String> elements = new LinkedList<>();
 		for (final String hash : hashes) {
 			final Transaction transaction = StorageTransactions.instance().loadTransaction((new Hash(hash)).bytes());
@@ -246,12 +248,11 @@ public class API {
 					.collect(Collectors.toList()));
 	}
 
-	private AbstractResponse storeTransactionStatement(List<String> trys) {
+	private AbstractResponse storeTransactionStatement(final List<String> trys) {
 		for (final String trytes : trys) {
 			final Transaction transaction = new Transaction(Converter.trits(trytes));
 			StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
 		}
-
 		return AbstractResponse.createEmptyResponse();
 	}
 
@@ -325,7 +326,10 @@ public class API {
 
 		final Set<Long> addressesTransactions = new HashSet<>();
 		if (request.containsKey("addresses")) {
-			for (final String address : (List<String>) request.get("addresses")) {
+			final List<String> addresses = (List<String>) request.get("addresses");
+			log.debug("Searching: {}", addresses.stream().reduce((a,b) -> a+= ',' + b));
+			
+			for (final String address : addresses) {
 				addressesTransactions
 				        .addAll(StorageAddresses.instance().addressTransactions(StorageAddresses.instance().addressPointer((new Hash(address)).bytes())));
 			}
@@ -376,7 +380,6 @@ public class API {
 
 	private AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
 		for (final String tryte : trytes2) {
-
 			final Transaction transaction = new Transaction(Converter.trits(tryte));
 			transaction.weightMagnitude = Curl.HASH_LENGTH;
 			Node.instance().broadcast(transaction);

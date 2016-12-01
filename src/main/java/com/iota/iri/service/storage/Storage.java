@@ -189,6 +189,5 @@ public class Storage extends AbstractStorage {
     public static Storage instance() {
 		return instance;
 	}
-
 }
 

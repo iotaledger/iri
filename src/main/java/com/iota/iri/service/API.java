@@ -33,6 +33,8 @@ import com.iota.iri.IRI;
 import com.iota.iri.Milestone;
 import com.iota.iri.Neighbor;
 import com.iota.iri.Snapshot;
+import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
@@ -62,20 +64,23 @@ import com.iota.iri.utils.Converter;
 import io.undertow.Undertow;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
 
 @SuppressWarnings("unchecked")
 public class API {
 
 	private static final Logger log = LoggerFactory.getLogger(API.class);
 
-	private static Undertow server;
-	private static final int PORT = 14265;
+	private Undertow server;
 
-	private static final PearlDiver pearlDiver = new PearlDiver();
+	private final Gson gson = new GsonBuilder().create();
+	private final PearlDiver pearlDiver = new PearlDiver();
 
-	public static void launch() throws IOException {
-
-		server = Undertow.builder().addHttpListener(PORT, "localhost")
+	public void init() throws IOException {
+		
+		int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
+		
+		server = Undertow.builder().addHttpListener(apiPort, "localhost")
 		        .setHandler(path().addPrefixPath("/", exchange -> {
 
                     final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
@@ -90,9 +95,7 @@ public class API {
 		server.start();
 	}
 
-	private static final Gson gson = new GsonBuilder().create();
-
-	private static AbstractResponse process(final String requestString) throws UnsupportedEncodingException {
+	private AbstractResponse process(final String requestString) throws UnsupportedEncodingException {
 
 		try {
 
@@ -188,7 +191,7 @@ public class API {
 		}
 	}
 
-	private static AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
+	private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
 		final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
 		uris.stream()
 			.map(API::uri)
@@ -211,7 +214,7 @@ public class API {
 		return Optional.empty();
 	}
 
-	private static AbstractResponse getTrytesStatement(List<String> hashes) {
+	private AbstractResponse getTrytesStatement(List<String> hashes) {
 		log.debug("Executing getTrytesStatement: {}", Arrays.toString(hashes.toArray()));
 		final List<String> elements = new LinkedList<>();
 		for (final String hash : hashes) {
@@ -223,7 +226,7 @@ public class API {
 		return GetTrytesResponse.create(elements);
 	}
 
-	private static AbstractResponse getTransactionToApproveStatement(final int depth) {
+	private AbstractResponse getTransactionToApproveStatement(final int depth) {
 		final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth);
 		if (trunkTransactionToApprove == null) {
 			return ErrorResponse.create("The subtangle is not solid");
@@ -235,7 +238,7 @@ public class API {
 		return GetTransactionsToApproveResponse.create(trunkTransactionToApprove, branchTransactionToApprove);
 	}
 
-	private static AbstractResponse getTipsStatement() {
+	private AbstractResponse getTipsStatement() {
 		return GetTipsResponse.create(
 				StorageTransactions.instance().tips()
 					.stream()
@@ -243,7 +246,7 @@ public class API {
 					.collect(Collectors.toList()));
 	}
 
-	private static AbstractResponse storeTransactionStatement(List<String> trys) {
+	private AbstractResponse storeTransactionStatement(List<String> trys) {
 		for (final String trytes : trys) {
 			final Transaction transaction = new Transaction(Converter.trits(trytes));
 			StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
@@ -252,11 +255,11 @@ public class API {
 		return AbstractResponse.createEmptyResponse();
 	}
 
-	private static AbstractResponse getNeighborsStatement() {
+	private AbstractResponse getNeighborsStatement() {
 		return GetNeighborsResponse.create(Node.instance().getNeighbors());
 	}
 
-	private static AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) {
+	private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) {
 		
 		final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
 		final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
@@ -311,7 +314,7 @@ public class API {
 		}
 	}
 
-	private static AbstractResponse findTransactionStatement(final Map<String, Object> request) {
+	private AbstractResponse findTransactionStatement(final Map<String, Object> request) {
 		final Set<Long> bundlesTransactions = new HashSet<>();
 		if (request.containsKey("bundles")) {
 			for (final String bundle : (List<String>) request.get("bundles")) {
@@ -371,7 +374,7 @@ public class API {
 		return FindTransactionsResponse.create(elements);
 	}
 
-	private static AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
+	private AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
 		for (final String tryte : trytes2) {
 
 			final Transaction transaction = new Transaction(Converter.trits(tryte));
@@ -381,7 +384,7 @@ public class API {
 		return AbstractResponse.createEmptyResponse();
 	}
 
-	private static AbstractResponse getBalancesStatement(final List<String> addrss, final int threshold) {
+	private AbstractResponse getBalancesStatement(final List<String> addrss, final int threshold) {
 
 		if (threshold <= 0 || threshold > 100) {
 			return ErrorResponse.create("Illegal 'threshold'");
@@ -437,7 +440,7 @@ public class API {
 		return GetBalancesResponse.create(elements, milestone, milestoneIndex);
 	}
 
-	private static AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
+	private AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
 	        final int minWeightMagnitude, final List<String> trytes) {
 		final List<Transaction> transactions = new LinkedList<>();
 
@@ -469,7 +472,7 @@ public class API {
 		return AttachToTangleResponse.create(elements);
 	}
 
-	private static AbstractResponse addNeighborsStatement(final List<String> uris) throws URISyntaxException {
+	private AbstractResponse addNeighborsStatement(final List<String> uris) throws URISyntaxException {
 
 		int numberOfAddedNeighbors = 0;
 		for (final String uriString : uris) {
@@ -485,21 +488,27 @@ public class API {
 		return AddedNeighborsResponse.create(numberOfAddedNeighbors);
 	}
 	
-	private static void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime) throws IOException {
+	private void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime) throws IOException {
 		res.setDuration((int) (System.currentTimeMillis() - beginningTime));
 		final String response = gson.toJson(res);
 		
 		if (res instanceof ErrorResponse || res instanceof ExceptionResponse) {
 			exchange.setResponseCode(400); // bad request
 		}
+		exchange.getResponseHeaders().add(new HttpString("Access-Control-Allow-Origin"), Configuration.string(DefaultConfSettings.CORS_ENABLED));
 		exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
-		
 		exchange.endExchange();
 	}
 
-	public static void shutDown() {
+	public void shutDown() {
 		if (server != null) {
 			server.stop();
 		}
     }
+	
+	private static API instance = new API();
+	
+	public static API instance() {
+		return instance;
+	}
 }

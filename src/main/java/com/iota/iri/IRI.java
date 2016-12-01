@@ -26,9 +26,9 @@ public class IRI {
 	public static final String VERSION = "1.1.1";
 
 	public static void main(final String[] args) {
-
-		validateParams(args);
+		
 		log.info("Welcome to {} {}", NAME, VERSION);
+		validateParams(args);
 		shutdownHook();
 		
 		try {

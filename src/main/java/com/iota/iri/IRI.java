@@ -52,7 +52,6 @@ public class IRI {
 		if (args.length < 2) {
 			log.error("Invalid arguments list. Provide api port number and at least one udp node address.");
 			printUsage();
-            System.exit(2);
 		}
 		
 		final CmdLineParser parser = new CmdLineParser();
@@ -63,6 +62,7 @@ public class IRI {
 	    final Option<Boolean> headless = parser.addBooleanOption('h', "headless");
 	    final Option<Boolean> debug = parser.addBooleanOption('d',"debug");
 	    final Option<String> neighbors = parser.addStringOption('n', "neighbors");
+	    final Option<Boolean> help = parser.addBooleanOption('h',"help");
 	    
 	    try {
             parser.parse(args);
@@ -79,17 +79,19 @@ public class IRI {
 	    if (cport == null) {
     		log.error("Invalid arguments list. Provide api port number with -p or --port");
 			printUsage();
-            System.exit(2);
 	    }
 	
 	    final String cns = parser.getOptionValue(neighbors);
 	    if (cns == null) {
     		log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
 			printUsage();
-            System.exit(2);
 	    }
 	    
 	    // optionals
+	    if (parser.getOptionValue(help) != null) {
+	    	printUsage();
+	    }
+	    
 	    if (parser.getOptionValue(cors) != null) {
 	    	Configuration.put(DefaultConfSettings.CORS_ENABLED, parser.getOptionValue(cors));
 	    }

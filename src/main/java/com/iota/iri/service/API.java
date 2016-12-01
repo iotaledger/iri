@@ -62,6 +62,7 @@ import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
 
 import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
@@ -81,18 +82,28 @@ public class API {
 		int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
 		
 		server = Undertow.builder().addHttpListener(apiPort, "localhost")
-		        .setHandler(path().addPrefixPath("/", exchange -> {
-
-                    final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
-                    exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-
-                    final long beginningTime = System.currentTimeMillis();
-                    final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
-                    final AbstractResponse response = process(body);
-                    sendResponse(exchange, response, beginningTime);
-                })).build();
-		
+		        .setHandler(path().addPrefixPath("/", new HttpHandler() {
+					@Override
+					public void handleRequest(final HttpServerExchange exchange) throws Exception {
+						if (exchange.isInIoThread()) {
+							exchange.dispatch(this);
+						    return;
+						}
+						processRequest(exchange);
+					}
+		        })).build();
 		server.start();
+	}
+	
+	
+	private void processRequest(final HttpServerExchange exchange) throws IOException, UnsupportedEncodingException {
+		final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
+        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
+	
+        final long beginningTime = System.currentTimeMillis();
+        final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
+        final AbstractResponse response = process(body);
+        sendResponse(exchange, response, beginningTime);
 	}
 
 	private AbstractResponse process(final String requestString) throws UnsupportedEncodingException {
@@ -136,6 +147,10 @@ public class API {
 			case "getInclusionStates": {
 				final List<String> trans = (List<String>) request.get("transactions");
 				final List<String> tps = (List<String>) request.get("tips");
+				
+				if (trans == null || tps == null) {
+					return ErrorResponse.create("getInclusionStates Bad Request.");		
+				}
 				return getInclusionStateStatement(trans, tps);
 			}
 			case "getNeighbors": {
@@ -166,7 +181,7 @@ public class API {
 			}
 			case "getTrytes": {
 				final List<String> hashes = (List<String>) request.get("hashes");
-				log.debug("Executing getTrytesStatement: {}", Arrays.toString(hashes.toArray()));
+				log.debug("Executing getTrytesStatement: {}", hashes);
 				return getTrytesStatement(hashes);
 			}
 

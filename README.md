@@ -6,7 +6,7 @@ It allows to connect easily using java directly to a local or a remote [[IOTA no
 
 * **Latest release:** 1.1.1 Release
 * **License:** GPLv3
-* **Readme updated:** 2016-11-01 10:23:43 (UTC)
+* **Readme updated:** 2016-12-02 23:26:43 (UTC)
 
 The current reference implementation is in refatoring phase. Any contribution is highly appreciated.
 
@@ -42,16 +42,16 @@ the following parameters are optional:
 
 `-r or --receiver-port define the Transaction receiver port`
 
-`-c or --enabled-cors enable the API cross origin filter`
+`-c or --enabled-cors enable the API cross origin filter: cors domain defined between ''`
 
 `--headless disable the logo (logo still WIP)`
 
-`-h prints the usage`
-
 `-d or --debug prints on the standard output, more debug informations`
+
+`-h prints the usage`
  
 For instance
 
-`java -jar target/iri-1.1.1.jar -p 14265 -n 'udp://1.1.1.1:14265 udp://2.2.2.2:14265' -d`
+`java -jar target/iri-1.1.1.jar -p 14265 -n 'udp://1.1.1.1:14265 udp://2.2.2.2:14265' -d -c 'iotatoken.com'`
 
 

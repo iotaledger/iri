@@ -59,7 +59,7 @@ public class IRI {
 		final Option<String> port = parser.addStringOption('p', "port");
 	    final Option<String> rport = parser.addStringOption('r', "receiver-port");
 	    final Option<String> cors = parser.addStringOption('c', "enabled-cors");
-	    final Option<Boolean> headless = parser.addBooleanOption('h', "headless");
+	    final Option<Boolean> headless = parser.addBooleanOption("headless");
 	    final Option<Boolean> debug = parser.addBooleanOption('d',"debug");
 	    final Option<String> neighbors = parser.addStringOption('n', "neighbors");
 	    final Option<Boolean> help = parser.addBooleanOption('h',"help");
@@ -87,17 +87,20 @@ public class IRI {
 			printUsage();
 	    }
 	    
-	    // optionals
+	    // optional flags
 	    if (parser.getOptionValue(help) != null) {
 	    	printUsage();
 	    }
 	    
-	    if (parser.getOptionValue(cors) != null) {
-	    	Configuration.put(DefaultConfSettings.CORS_ENABLED, parser.getOptionValue(cors));
+	    final String vcors = parser.getOptionValue(cors);
+	    if (vcors != null) {
+	    	log.debug("Enabled CORS with value : {} ", vcors);
+	    	Configuration.put(DefaultConfSettings.CORS_ENABLED, vcors);
 	    }
 	    
-	    if (parser.getOptionValue(rport) != null) {
-	    	Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT, parser.getOptionValue(rport));
+	    final String vrport = parser.getOptionValue(rport);
+	    if (vrport != null) {
+	    	Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT, vrport);
 	    }
 	    
 	    if (parser.getOptionValue(headless) != null) {
@@ -124,8 +127,8 @@ public class IRI {
 				+ "[{-p,--port} 14265] "
 				+ "[{-r,--receiver-port} 14265] "
 				+ "[{-c,--enabled-cors} *] "
-				+ "[{-h,--headless} false] "
-				+ "[{-d,--debug} false] "
+				+ "[{-h}] [{--headless}] "
+				+ "[{-d,--debug}] "
 				//+ "[{-t,--testnet} false] " // -> TBDiscussed
 				+ "[{-n,--neighbors} '<list of neighbors>'] ",
 				NAME, VERSION);

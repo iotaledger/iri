@@ -5,7 +5,7 @@
 
 	<groupId>groupId</groupId>
 	<artifactId>iri-testnet</artifactId>
-	<version>1.1.1</version>
+	<version>1.1.2</version>
 
 	<name>IRI Testnet</name>
 	<description>Testnet IOTA Reference Implementation.</description>
@@ -13,7 +13,7 @@
 	<properties>
 		<java-version>1.8</java-version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<undertown.version>1.2.11.Final</undertown.version>
+		<undertown.version>1.4.6.Final</undertown.version>
 	</properties>
 
 	<repositories>

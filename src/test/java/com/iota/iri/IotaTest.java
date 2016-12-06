@@ -2,6 +2,7 @@ package com.iota.iri;
 
 import java.io.IOException;
 
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 
 import com.iota.iri.model.Hash;
@@ -28,5 +29,11 @@ public class IotaTest {
 			.loadTransaction((new Hash(hash)).bytes());
 		System.err.println(transaction);
 		StorageTransactions.instance().shutdown();
+	}
+	
+	@Test
+	public void test() {
+		final String address = (StringUtils.repeat('9', 81));
+		System.err.println(address);
 	}
 }

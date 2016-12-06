@@ -375,13 +375,14 @@ public class API {
 		                ? (approveeTransactions.isEmpty() ? new HashSet<>() : approveeTransactions) : tagsTransactions)
 		        : addressesTransactions) : bundlesTransactions;
 
-		if (addressesTransactions != null) {
+
+		if (!addressesTransactions.isEmpty()) {
 			foundTransactions.retainAll(addressesTransactions);
 		}
-		if (tagsTransactions != null) {
+		if (!tagsTransactions.isEmpty()) {
 			foundTransactions.retainAll(tagsTransactions);
 		}
-		if (approveeTransactions != null) {
+		if (!approveeTransactions.isEmpty()) {
 			foundTransactions.retainAll(approveeTransactions);
 		}
 

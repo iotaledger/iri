@@ -27,16 +27,15 @@ public class TipsManager {
 
 	private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
-    private static boolean shuttingDown;
+    private volatile boolean shuttingDown;
 
-    public static void launch() {
+    public void init() {
 
         (new Thread(() -> {
-
+        	
             while (!shuttingDown) {
 
                 try {
-
                     final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
                     final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
@@ -49,18 +48,16 @@ public class TipsManager {
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
                     	log.info("Latest SOLID SUBTANGLE milestone has changed from #" + previousSolidSubtangleLatestMilestoneIndex + " to #" + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
-
                     Thread.sleep(5000);
 
                 } catch (final Exception e) {
                 	log.error("Error during TipsManager Milestone updating", e);
                 }
             }
-
         }, "Latest Milestone Tracker")).start();
     }
 
-    public static void shutDown() {
+    public void shutDown() {
         shuttingDown = true;
     }
 
@@ -281,4 +278,12 @@ public class TipsManager {
             return bestTip;
         }
     }
+    
+    private static TipsManager instance = new TipsManager();
+    
+    private TipsManager() {}
+    
+    public static TipsManager instance() {
+		return instance;
+	}
 }

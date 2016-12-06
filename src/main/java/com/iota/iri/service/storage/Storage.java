@@ -16,6 +16,9 @@ import com.iota.iri.Milestone;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 
+/**
+ * Storage is organized as 243-value tree
+ */
 public class Storage extends AbstractStorage {
 	
 	private static final Logger log = LoggerFactory.getLogger(Storage.class);
@@ -67,7 +70,6 @@ public class Storage extends AbstractStorage {
     public synchronized void shutdown() {
 
         if (launched) {
-
         	storageTransactionInstance.shutdown();
         	storageBundleInstance.shutdown();
         	storageAddressesInstance.shutdown();
@@ -189,6 +191,5 @@ public class Storage extends AbstractStorage {
     public static Storage instance() {
 		return instance;
 	}
-
 }
 

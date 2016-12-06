@@ -15,11 +15,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Milestone;
 import com.iota.iri.Neighbor;
+import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
@@ -51,12 +54,13 @@ public class Node {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(3);
 
-    public void init(final String[] args) throws Exception {
+    public void init() throws Exception {
 
-        socket = new DatagramSocket(Integer.parseInt(args[0]));
-        
-        Arrays.stream(args)
-        	.skip(1)
+        socket = new DatagramSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT));
+       
+        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" "))
+        	.distinct()
+        	.filter(s -> !s.isEmpty())
         	.map(API::uri)
         	.map(Optional::get)
         	.peek(u -> {
@@ -66,6 +70,11 @@ public class Node {
         	})
         	.filter(u -> "udp".equals(u.getScheme()))
         	.map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort())))
+        	.peek(u -> {
+        		if (Configuration.booling(DefaultConfSettings.DEBUG)) {
+        			log.debug("-> Adding neighbor : {} ", u.getAddress());
+        		}
+        	})
         	.forEach(neighbors::add);
 
         executor.submit(spawnReceiverThread());

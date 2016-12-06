@@ -288,7 +288,8 @@ public class APIIntegrationTests {
                 body(gson.toJson(request)).
                 when().
                 post("/").
-                then().
+                then()
+                .log().all().and().
                 statusCode(200);
     }
 
@@ -310,7 +311,7 @@ public class APIIntegrationTests {
                 body(gson.toJson(request)).
                 when().
                 post("/").
-                then().
+                then().log().all().and().
                 statusCode(200);
     }
 

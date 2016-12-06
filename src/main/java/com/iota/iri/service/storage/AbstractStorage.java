@@ -30,9 +30,9 @@ public abstract class AbstractStorage {
 	        + ANALYZED_TRANSACTIONS_FLAGS_SIZE,
 	        ANALYZED_TRANSACTIONS_FLAGS_COPY_SIZE = ANALYZED_TRANSACTIONS_FLAGS_SIZE;
 
-	public final static int GROUP = 0;
-	public final static int PREFILLED_SLOT = 1;
-	public final static int FILLED_SLOT = -1;
+	public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store tranasction bytes)
+	public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only another tx references that hash
+	public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
 
 	protected static final int ZEROTH_POINTER_OFFSET = 64;
 
@@ -62,7 +62,7 @@ public abstract class AbstractStorage {
         try {
             ((MappedByteBuffer) buffer).force();
             return true;
-
+            
         } catch (final Exception e) {
             return false;
         }

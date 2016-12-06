@@ -49,14 +49,17 @@ public class Transaction {
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
     public final int type;
+    
     public final byte[] hash;
-
-    public final byte[] bytes;
-
+    public final byte[] bytes; // stores entire tx bytes. message occupies always first part named 'signatureMessageFragment'
     public final byte[] address;
-    public final long value;
-    public final byte[] tag;
-    public final long currentIndex, lastIndex;
+    
+    public final long value; // <0 spending transaction, >=0 deposit transaction / message
+    
+    public final byte[] tag; // milestone index
+    public final long currentIndex; // index of tx in the bundle
+    public final long lastIndex; // lastIndex is curIndex of the last tx from the same bundle
+    
     public final byte[] bundle;
     public final byte[] trunkTransaction;
     public final byte[] branchTransaction;
@@ -65,10 +68,8 @@ public class Transaction {
     public long branchTransactionPointer;
     private final int validity;
 
-    int[] trits;
-
+    private int[] trits;
     public final long pointer;
-
     public int weightMagnitude;
 
     public Transaction(final int[] trits) {

@@ -511,12 +511,15 @@ public class API {
 		res.setDuration((int) (System.currentTimeMillis() - beginningTime));
 		final String response = gson.toJson(res);
 		
-		if (res instanceof ErrorResponse || res instanceof ExceptionResponse) {
-			exchange.setResponseCode(400); // bad request
+		if (res instanceof ErrorResponse) {
+			exchange.setStatusCode(400); // bad request
+		} else if (res instanceof ExceptionResponse) {
+			exchange.setStatusCode(500); // internall error	
 		}
 		exchange.getResponseHeaders().add(new HttpString("Access-Control-Allow-Origin"), Configuration.string(DefaultConfSettings.CORS_ENABLED));
-		exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
+		final int writtenBytes = exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
 		exchange.endExchange();
+		log.debug("Sent {} bytes back in the response.", writtenBytes);
 	}
 
 	public void shutDown() {

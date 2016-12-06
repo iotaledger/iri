@@ -27,7 +27,6 @@ You have two options, the preferred option is that you compile yourself. The sec
 
 ### Compiling yourself  
 
-<<<<<<< HEAD
 Make sure to have Maven and Java 8 installed on your computer. When cloning the project from github, also make sure to get the `testnet` branch.
 
 #### To compile
@@ -45,9 +44,8 @@ $ mvn package
 This will create in the `target` directory of the project an executable jar package called IRI-${release-version}.jar . For instance `iri-1.1.1.jar`
 
 #### To execute
-=======
+
 * To execute:
->>>>>>> origin/dev
 
 `java -jar IRI-${version}.jar  [{-p,--port} 14265] [{-r,--receiver-port} 14265] [{-c,--enabled-cors} *] [{-h}] [[--headless}] [{-d,--debug}] [{-n,--neighbors} '<list of neighbors>'] `
 

@@ -111,7 +111,10 @@ public class API {
 		try {
 
 			final Map<String, Object> request = gson.fromJson(requestString, Map.class);
-
+			if (request == null) {
+				return ExceptionResponse.create("Invalid request payload: '" + requestString + "'");
+			}
+			
 			final String command = (String) request.get("command");
 			if (command == null) {
 				return ErrorResponse.create("COMMAND parameter has not been specified in the request.");

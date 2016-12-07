@@ -31,7 +31,7 @@ public class IRI {
 	public static final String VERSION = "1.1.2";
 
 	public static void main(final String[] args) {
-		
+
 		log.info("Welcome to {} {}", NAME, VERSION);
 		validateParams(args);
 		shutdownHook();
@@ -161,13 +161,13 @@ public class IRI {
 	}
 	
 	private static void showIotaLogo() {
-		final Path path = Paths.get("logo.ans");
+		final String charset = "IBM00858";
 	
 		try {
-			List<String> lines = Files.readAllLines(path, Charset.forName("IBM00858"));
-			lines.stream().forEach(log::info);
+			final Path path = Paths.get("logo.ans");
+			Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
 		} catch (IOException e) {
-			log.error("Impossible to display logo. Charset not supported.");
+			log.error("Impossible to display logo. Charset {} not supported.", charset);
 		}
 	}
 }

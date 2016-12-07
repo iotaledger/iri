@@ -126,7 +126,7 @@ public class Node {
                                     	}
                                     }
                                 } catch (final RuntimeException e) {
-                                	log.error("Invalid Transaction Error:", e);
+                                	log.error("Received an Invalid Transaction. Dropping it...");
                                     neighbor.incInvalidTransactions();
                                 }
                                 break;

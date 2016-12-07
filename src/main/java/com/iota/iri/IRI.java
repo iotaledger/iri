@@ -1,7 +1,12 @@
 package com.iota.iri;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.List;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,6 +35,10 @@ public class IRI {
 		log.info("Welcome to {} {}", NAME, VERSION);
 		validateParams(args);
 		shutdownHook();
+		
+		if (false == Configuration.booling(DefaultConfSettings.HEADLESS)) {
+			showIotaLogo();
+		}
 		
 		try {
 
@@ -104,7 +113,6 @@ public class IRI {
 	    }
 	    
 	    if (parser.getOptionValue(headless) != null) {
-	    	log.info("Headless feature is WIP...");
 	    	Configuration.put(DefaultConfSettings.HEADLESS, "true");
 	    }
 	    
@@ -150,5 +158,16 @@ public class IRI {
 				log.error("Exception occurred shutting down IOTA node: ", e);
 			}
 		}, "Shutdown Hook"));
+	}
+	
+	private static void showIotaLogo() {
+		final Path path = Paths.get("logo.ans");
+	
+		try {
+			List<String> lines = Files.readAllLines(path, Charset.forName("IBM00858"));
+			lines.stream().forEach(log::info);
+		} catch (IOException e) {
+			log.error("Impossible to display logo. Charset not supported.");
+		}
 	}
 }

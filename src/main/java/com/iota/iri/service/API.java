@@ -119,11 +119,14 @@ public class API {
 			if (command == null) {
 				return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
 			}
-
+			
+			log.info("-> Requesting command {}", command);
+			
 			switch (command) {
 
 			case "addNeighbors": {
 				final List<String> uris = (List<String>) request.get("uris");
+				log.debug("Invoking 'addNeighbors' with {}", uris);
 				return addNeighborsStatement(uris);
 			}
 			case "attachToTangle": {
@@ -193,7 +196,8 @@ public class API {
 				return AbstractResponse.createEmptyResponse();
 			}
 			case "removeNeighbors": {
-				List<String> uris = (List<String>) request.get("uris");
+				final List<String> uris = (List<String>) request.get("uris");
+				log.debug("Invoking 'removeNeighbors' with {}", uris);
 				return removeNeighborsStatement(uris);
 			}
 

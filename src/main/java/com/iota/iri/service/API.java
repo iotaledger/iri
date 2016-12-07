@@ -136,7 +136,7 @@ public class API {
 			}
 			case "broadcastTransactions": {
 				final List<String> trytes = (List<String>) request.get("trytes");
-				log.debug("Invoking 'boradcastTransactions' with {}", trytes);
+				log.debug("Invoking 'broadcastTransactions' with {}", trytes);
 				return broadcastTransactionStatement(trytes);
 			}
 			case "findTransactions": {

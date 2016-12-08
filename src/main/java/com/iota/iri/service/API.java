@@ -64,6 +64,7 @@ import com.iota.iri.utils.Converter;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 
@@ -523,10 +524,18 @@ public class API {
 		} else if (res instanceof ExceptionResponse) {
 			exchange.setStatusCode(500); // internall error	
 		}
-		exchange.getResponseHeaders().add(new HttpString("Access-Control-Allow-Origin"), Configuration.string(DefaultConfSettings.CORS_ENABLED));
+		
+		setupResponseHeaders(exchange);
+		
 		final int writtenBytes = exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
 		exchange.endExchange();
 		log.debug("Sent {} bytes back in the response.", writtenBytes);
+	}
+
+	private static void setupResponseHeaders(final HttpServerExchange exchange) {
+		final HeaderMap headerMap = exchange.getResponseHeaders();
+		headerMap.add(new HttpString("Access-Control-Allow-Origin"), Configuration.string(DefaultConfSettings.CORS_ENABLED));
+		headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
 	}
 
 	public void shutDown() {

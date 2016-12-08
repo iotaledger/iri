@@ -18,6 +18,9 @@ import com.iota.iri.service.storage.Storage;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
+
 /**
  * Main IOTA Reference Implementation starting class
  */
@@ -119,6 +122,7 @@ public class IRI {
 	    if (parser.getOptionValue(debug) != null) {
 	    	Configuration.put(DefaultConfSettings.DEBUG, "true");
 	    	log.info(Configuration.allSettings());
+	    	StatusPrinter.print((LoggerContext)LoggerFactory.getILoggerFactory());;
 	    }
 	    
 	    Configuration.put(DefaultConfSettings.API_PORT, cport);

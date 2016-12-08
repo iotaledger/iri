@@ -52,6 +52,7 @@ public class TipsManager {
 
                 } catch (final Exception e) {
                 	log.error("Error during TipsManager Milestone updating", e);
+                	log.error("DB can be corrupted. Please delete it and Resync.");
                 }
             }
         }, "Latest Milestone Tracker")).start();

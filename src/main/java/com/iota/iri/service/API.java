@@ -353,6 +353,9 @@ public class API {
 			log.debug("Searching: {}", addresses.stream().reduce((a,b) -> a+= ',' + b));
 			
 			for (final String address : addresses) {
+				if (address.length() != 81) {
+					log.error("Address {} doesn't look a valid address", address);
+				}
 				addressesTransactions
 				        .addAll(StorageAddresses.instance().addressTransactions(StorageAddresses.instance().addressPointer((new Hash(address)).bytes())));
 			}
@@ -382,7 +385,6 @@ public class API {
 		        ? (tagsTransactions.isEmpty()
 		                ? (approveeTransactions.isEmpty() ? new HashSet<>() : approveeTransactions) : tagsTransactions)
 		        : addressesTransactions) : bundlesTransactions;
-
 
 		if (!addressesTransactions.isEmpty()) {
 			foundTransactions.retainAll(addressesTransactions);

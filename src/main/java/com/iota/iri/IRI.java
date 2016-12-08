@@ -47,7 +47,9 @@ public class IRI {
 
 		} catch (final Exception e) {
 			log.error("Exception during IOTA node initialisation: ", e);
+			System.exit(-1);
 		}
+		log.info("IOTA Node initialised correctly.");
 	}
 
 	private static void validateParams(final String[] args) {

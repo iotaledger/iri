@@ -235,7 +235,6 @@ public class StorageAddresses extends AbstractStorage {
         }
 	}
 	
-
     private void appendToAddresses() {
 
         ((ByteBuffer)addressesChunks[(int)(addressesNextPointer >> 27)].position((int)(addressesNextPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);

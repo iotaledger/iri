@@ -62,7 +62,9 @@ import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
 
 import io.undertow.Undertow;
+import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 
@@ -81,18 +83,28 @@ public class API {
 		int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
 		
 		server = Undertow.builder().addHttpListener(apiPort, "localhost")
-		        .setHandler(path().addPrefixPath("/", exchange -> {
-
-                    final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
-                    exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-
-                    final long beginningTime = System.currentTimeMillis();
-                    final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
-                    final AbstractResponse response = process(body);
-                    sendResponse(exchange, response, beginningTime);
-                })).build();
-		
+		        .setHandler(path().addPrefixPath("/", new HttpHandler() {
+					@Override
+					public void handleRequest(final HttpServerExchange exchange) throws Exception {
+						if (exchange.isInIoThread()) {
+							exchange.dispatch(this);
+						    return;
+						}
+						processRequest(exchange);
+					}
+		        })).build();
 		server.start();
+	}
+	
+	
+	private void processRequest(final HttpServerExchange exchange) throws IOException, UnsupportedEncodingException {
+		final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
+        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
+	
+        final long beginningTime = System.currentTimeMillis();
+        final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
+        final AbstractResponse response = process(body);
+        sendResponse(exchange, response, beginningTime);
 	}
 
 	private AbstractResponse process(final String requestString) throws UnsupportedEncodingException {
@@ -100,16 +112,22 @@ public class API {
 		try {
 
 			final Map<String, Object> request = gson.fromJson(requestString, Map.class);
-
+			if (request == null) {
+				return ExceptionResponse.create("Invalid request payload: '" + requestString + "'");
+			}
+			
 			final String command = (String) request.get("command");
 			if (command == null) {
 				return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
 			}
-
+			
+			log.info("-> Requesting command {}", command);
+			
 			switch (command) {
 
 			case "addNeighbors": {
 				final List<String> uris = (List<String>) request.get("uris");
+				log.debug("Invoking 'addNeighbors' with {}", uris);
 				return addNeighborsStatement(uris);
 			}
 			case "attachToTangle": {
@@ -122,6 +140,7 @@ public class API {
 			}
 			case "broadcastTransactions": {
 				final List<String> trytes = (List<String>) request.get("trytes");
+				log.debug("Invoking 'broadcastTransactions' with {}", trytes);
 				return broadcastTransactionStatement(trytes);
 			}
 			case "findTransactions": {
@@ -135,6 +154,10 @@ public class API {
 			case "getInclusionStates": {
 				final List<String> trans = (List<String>) request.get("transactions");
 				final List<String> tps = (List<String>) request.get("tips");
+				
+				if (trans == null || tps == null) {
+					return ErrorResponse.create("getInclusionStates Bad Request.");		
+				}
 				return getInclusionStateStatement(trans, tps);
 			}
 			case "getNeighbors": {
@@ -165,6 +188,7 @@ public class API {
 			}
 			case "getTrytes": {
 				final List<String> hashes = (List<String>) request.get("hashes");
+				log.debug("Executing getTrytesStatement: {}", hashes);
 				return getTrytesStatement(hashes);
 			}
 
@@ -173,12 +197,14 @@ public class API {
 				return AbstractResponse.createEmptyResponse();
 			}
 			case "removeNeighbors": {
-				List<String> uris = (List<String>) request.get("uris");
+				final List<String> uris = (List<String>) request.get("uris");
+				log.debug("Invoking 'removeNeighbors' with {}", uris);
 				return removeNeighborsStatement(uris);
 			}
 
 			case "storeTransactions": {
 				List<String> trytes = (List<String>) request.get("trytes");
+				log.debug("Invoking 'storeTransactions' with {}", trytes);
 				return storeTransactionStatement(trytes);
 			}
 			default:
@@ -215,7 +241,6 @@ public class API {
 	}
 
 	private AbstractResponse getTrytesStatement(List<String> hashes) {
-		log.debug("Executing getTrytesStatement: {}", Arrays.toString(hashes.toArray()));
 		final List<String> elements = new LinkedList<>();
 		for (final String hash : hashes) {
 			final Transaction transaction = StorageTransactions.instance().loadTransaction((new Hash(hash)).bytes());
@@ -246,12 +271,11 @@ public class API {
 					.collect(Collectors.toList()));
 	}
 
-	private AbstractResponse storeTransactionStatement(List<String> trys) {
+	private AbstractResponse storeTransactionStatement(final List<String> trys) {
 		for (final String trytes : trys) {
 			final Transaction transaction = new Transaction(Converter.trits(trytes));
 			StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
 		}
-
 		return AbstractResponse.createEmptyResponse();
 	}
 
@@ -325,7 +349,13 @@ public class API {
 
 		final Set<Long> addressesTransactions = new HashSet<>();
 		if (request.containsKey("addresses")) {
-			for (final String address : (List<String>) request.get("addresses")) {
+			final List<String> addresses = (List<String>) request.get("addresses");
+			log.debug("Searching: {}", addresses.stream().reduce((a,b) -> a+= ',' + b));
+			
+			for (final String address : addresses) {
+				if (address.length() != 81) {
+					log.error("Address {} doesn't look a valid address", address);
+				}
 				addressesTransactions
 				        .addAll(StorageAddresses.instance().addressTransactions(StorageAddresses.instance().addressPointer((new Hash(address)).bytes())));
 			}
@@ -356,13 +386,13 @@ public class API {
 		                ? (approveeTransactions.isEmpty() ? new HashSet<>() : approveeTransactions) : tagsTransactions)
 		        : addressesTransactions) : bundlesTransactions;
 
-		if (addressesTransactions != null) {
+		if (!addressesTransactions.isEmpty()) {
 			foundTransactions.retainAll(addressesTransactions);
 		}
-		if (tagsTransactions != null) {
+		if (!tagsTransactions.isEmpty()) {
 			foundTransactions.retainAll(tagsTransactions);
 		}
-		if (approveeTransactions != null) {
+		if (!approveeTransactions.isEmpty()) {
 			foundTransactions.retainAll(approveeTransactions);
 		}
 
@@ -376,7 +406,6 @@ public class API {
 
 	private AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
 		for (final String tryte : trytes2) {
-
 			final Transaction transaction = new Transaction(Converter.trits(tryte));
 			transaction.weightMagnitude = Curl.HASH_LENGTH;
 			Node.instance().broadcast(transaction);
@@ -492,12 +521,23 @@ public class API {
 		res.setDuration((int) (System.currentTimeMillis() - beginningTime));
 		final String response = gson.toJson(res);
 		
-		if (res instanceof ErrorResponse || res instanceof ExceptionResponse) {
-			exchange.setResponseCode(400); // bad request
+		if (res instanceof ErrorResponse) {
+			exchange.setStatusCode(400); // bad request
+		} else if (res instanceof ExceptionResponse) {
+			exchange.setStatusCode(500); // internall error	
 		}
-		exchange.getResponseHeaders().add(new HttpString("Access-Control-Allow-Origin"), Configuration.string(DefaultConfSettings.CORS_ENABLED));
-		exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
+		
+		setupResponseHeaders(exchange);
+		
+		final int writtenBytes = exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
 		exchange.endExchange();
+		log.debug("Sent {} bytes back in the response.", writtenBytes);
+	}
+
+	private static void setupResponseHeaders(final HttpServerExchange exchange) {
+		final HeaderMap headerMap = exchange.getResponseHeaders();
+		headerMap.add(new HttpString("Access-Control-Allow-Origin"), Configuration.string(DefaultConfSettings.CORS_ENABLED));
+		headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
 	}
 
 	public void shutDown() {

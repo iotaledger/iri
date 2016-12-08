@@ -6,7 +6,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public abstract class AbstractResponse {
-
+	
+	private static class Emptyness extends AbstractResponse {};
+	
     private Integer duration;
 
     @Override
@@ -33,7 +35,7 @@ public abstract class AbstractResponse {
 	}
     
     public static AbstractResponse createEmptyResponse() {
-    	return new AbstractResponse() {};
+    	return new Emptyness();
     }
 
 }

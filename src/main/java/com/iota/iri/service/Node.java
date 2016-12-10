@@ -15,7 +15,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +90,7 @@ public class Node {
             final int[] receivedTransactionTrits = new int[Transaction.TRINARY_SIZE];
             final byte[] requestedTransaction = new byte[Transaction.HASH_SIZE];
 
-            log.info("Spawing Receiver Thread");
+            log.info("Spawning Receiver Thread");
             
             while (!shuttingDown.get()) {
 
@@ -139,7 +138,7 @@ public class Node {
                 	log.error("Receiver Thread Exception:", e);
                 }
             }
-        	log.info("Shutting down spawing Receiver Thread");
+        	log.info("Shutting down spawning Receiver Thread");
         };
 	}
 
@@ -187,7 +186,7 @@ public class Node {
                     System.arraycopy(transaction.bytes, 0, tipRequestingPacket.getData(), 0, Transaction.SIZE);
                     System.arraycopy(transaction.hash, 0, tipRequestingPacket.getData(), Transaction.SIZE, Transaction.HASH_SIZE);
                     
-                    neighbors.stream().forEach(n -> n.send(tipRequestingPacket));
+                    neighbors.forEach(n -> n.send(tipRequestingPacket));
                     
                     Thread.sleep(5000);
                 } catch (final Exception e) {

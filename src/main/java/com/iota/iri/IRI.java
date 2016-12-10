@@ -37,7 +37,7 @@ public class IRI {
 		validateParams(args);
 		shutdownHook();
 		
-		if (false == Configuration.booling(DefaultConfSettings.HEADLESS)) {
+		if (!Configuration.booling(DefaultConfSettings.HEADLESS)) {
 			showIotaLogo();
 		}
 		
@@ -122,13 +122,13 @@ public class IRI {
 	    if (parser.getOptionValue(debug) != null) {
 	    	Configuration.put(DefaultConfSettings.DEBUG, "true");
 	    	log.info(Configuration.allSettings());
-	    	StatusPrinter.print((LoggerContext)LoggerFactory.getILoggerFactory());;
+	    	StatusPrinter.print((LoggerContext)LoggerFactory.getILoggerFactory());
 	    }
 	    
 	    Configuration.put(DefaultConfSettings.API_PORT, cport);
-	    Configuration.put(DefaultConfSettings.NEIGHBORS, cns.toString());
-	
-	    if (Integer.parseInt(cport) < 1024) {
+	    Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
+
+		if (cport != null && Integer.parseInt(cport) < 1024) {
 			log.warn("Warning: api port value seems too low.");
 		}
 	}

@@ -1,8 +1,6 @@
 package com.iota.iri;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
-
 import java.util.HashMap;
 import java.util.Map;
 

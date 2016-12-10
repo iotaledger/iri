@@ -9,7 +9,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -97,7 +96,7 @@ public class API {
 	}
 	
 	
-	private void processRequest(final HttpServerExchange exchange) throws IOException, UnsupportedEncodingException {
+	private void processRequest(final HttpServerExchange exchange) throws IOException {
 		final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
 	
@@ -396,10 +395,7 @@ public class API {
 			foundTransactions.retainAll(approveeTransactions);
 		}
 
-		final List<String> elements = new LinkedList<>();
-		for (final long pointer : foundTransactions) {
-			elements.add(new Hash(StorageTransactions.instance().loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE).toString());
-		}
+		final List<String> elements = foundTransactions.stream().map(pointer -> new Hash(StorageTransactions.instance().loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE).toString()).collect(Collectors.toCollection(LinkedList::new));
 
 		return FindTransactionsResponse.create(elements);
 	}
@@ -419,10 +415,7 @@ public class API {
 			return ErrorResponse.create("Illegal 'threshold'");
 		}
 
-		final List<Hash> addresses = new LinkedList<>();
-		for (final String address : addrss) {
-			addresses.add((new Hash(address)));
-		}
+		final List<Hash> addresses = addrss.stream().map(address -> (new Hash(address))).collect(Collectors.toCollection(LinkedList::new));
 
 		final Map<Hash, Long> balances = new HashMap<>();
 		for (final Hash address : addresses) {
@@ -461,10 +454,7 @@ public class API {
 			}
 		}
 
-		final List<String> elements = new LinkedList<>();
-		for (final Hash address : addresses) {
-			elements.add(balances.get(address).toString());
-		}
+		final List<String> elements = addresses.stream().map(address -> balances.get(address).toString()).collect(Collectors.toCollection(LinkedList::new));
 
 		return GetBalancesResponse.create(elements, milestone, milestoneIndex);
 	}

@@ -1,0 +1,15 @@
+language: java
+jdk:
+- oraclejdk8
+script: mvn package
+deploy:
+  provider: releases
+  api_key:
+    secure: l80FJQ+9Kk+ZYZxXcfagFGgnrp8BlnSZNCDv9KqbWYWQ4YL83qULlD1xgewUcEZhxbddR4nIo/gB1HxrdUxyjzHQKd1ysQ54BH9ZM51MqAtmzslz1gg6WNIDElugsY484W/ynAOQ286tq/5Y4bsAtmHaNzRLlf0sUfW1evXVBNFTz+0eLinqd/r0cC6bEFVk0TWXtk2+EcfTsowkyA36QNZhA+l0ti7GpJj5ubG4cd7hO7ktY4yQ130zJ4zrvv9aL6OwpFULGPDSV/wWujxcZm8GlLrJc2kWAHPLfQESt1Vr9ze2P/8n2FPyh9G67KemS8ubdp5XQPTZKALv4a7Zw8QBhJoahFptkqofgxQkDreCWlgwQyJvmfIJ7pFYXzGsdKUsd4aop6EhT44e2vJuYQBI+EUmx9HiW5+tQPsRkwWqyPyfchHu7KCpqGnImkDTjIHHJinB9dyEdQUbkGVVDWv3n8jNXas5IijS6YvMH5PVt6bWwcbAmijrY+a6E7kf/siJHNNyK/uBTL6FZIkkL2jcH6USgrt2KI/xIoBng1c1w000ctGQcXVGUjeURqQeHclLLpst2Td0uR6SgAGLEOxjeQ9ghzQWC/4x9BPW7xf7SkxhESWB2MMTvxma8xaV7hmNSsUK7tHyMLZPGdhDnPuUx2E6eNG4IZzUvcmHI4U=
+  file_glob: true
+  file: "/home/travis/build/iotaledger/iri/target/iri*.jar"
+  skip_cleanup: true
+  on:
+    tags: true
+    repo: iotaledger/iri
+    all_branches: true

@@ -1,3 +1,6 @@
+##Master branch build status: 
+[![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=master)](https://travis-ci.org/iotaledger/iri)
+
 ##Introduction
 
 The IRI is the IOTA reference implementation project. It is a complete [[IOTA]](http://www.iotatoken.com/) Node with a JSON-REST HTTP interface.

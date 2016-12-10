@@ -126,9 +126,9 @@ public class IRI {
 	    }
 	    
 	    Configuration.put(DefaultConfSettings.API_PORT, cport);
-	    Configuration.put(DefaultConfSettings.NEIGHBORS, cns.toString());
-	
-	    if (Integer.parseInt(cport) < 1024) {
+	    Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
+
+		if (cport != null && Integer.parseInt(cport) < 1024) {
 			log.warn("Warning: api port value seems too low.");
 		}
 	}

@@ -17,13 +17,13 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 
 public class StorageScratchpad extends AbstractStorage {
-	
-	private static final Logger log = LoggerFactory.getLogger(StorageScratchpad.class);
 
-	private static final StorageScratchpad instance = new StorageScratchpad();
-	private static final String SCRATCHPAD_FILE_NAME = "scratchpad.iri";
-	
-	private ByteBuffer transactionsToRequest;
+    private static final Logger log = LoggerFactory.getLogger(StorageScratchpad.class);
+
+    private static final StorageScratchpad instance = new StorageScratchpad();
+    private static final String SCRATCHPAD_FILE_NAME = "scratchpad.iri";
+
+    private ByteBuffer transactionsToRequest;
     private ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy;
     
     private final byte[] transactionToRequest = new byte[Transaction.HASH_SIZE];
@@ -31,23 +31,23 @@ public class StorageScratchpad extends AbstractStorage {
     private int previousNumberOfTransactions;
 
     public volatile int numberOfTransactionsToRequest;
-    
+
     private FileChannel scratchpadChannel = null;
 
     @Override
-	public void init() throws IOException {
-    	scratchpadChannel = FileChannel.open(Paths.get(SCRATCHPAD_FILE_NAME), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+    public void init() throws IOException {
+        scratchpadChannel = FileChannel.open(Paths.get(SCRATCHPAD_FILE_NAME), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
         transactionsToRequest = scratchpadChannel.map(FileChannel.MapMode.READ_WRITE, TRANSACTIONS_TO_REQUEST_OFFSET, TRANSACTIONS_TO_REQUEST_SIZE);
         analyzedTransactionsFlags = scratchpadChannel.map(FileChannel.MapMode.READ_WRITE, ANALYZED_TRANSACTIONS_FLAGS_OFFSET, ANALYZED_TRANSACTIONS_FLAGS_SIZE);
         analyzedTransactionsFlagsCopy = scratchpadChannel.map(FileChannel.MapMode.READ_WRITE, ANALYZED_TRANSACTIONS_FLAGS_COPY_OFFSET, ANALYZED_TRANSACTIONS_FLAGS_COPY_SIZE);	
-	}
+    }
 
-	@Override
-	public void shutdown() {
-		  try {
-			  scratchpadChannel.close();	
+    @Override
+    public void shutdown() {
+        try {
+            scratchpadChannel.close();	
         } catch (final Exception e) {
-        	log.error("Shutting down Storage Scratchpad error: ", e);
+            log.error("Shutting down Storage Scratchpad error: ", e);
         }
 	}
 	
@@ -64,9 +64,10 @@ public class StorageScratchpad extends AbstractStorage {
                     clearAnalyzedTransactionsFlags();
 
                     final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
-                    		Collections.singleton(
-                    				StorageTransactions.instance()
-                    					.transactionPointer(Milestone.latestMilestone.bytes())));
+                    		
+                    Collections.singleton(
+                        StorageTransactions.instance()
+                        .transactionPointer(Milestone.latestMilestone.bytes())));
                     
                     Long pointer;
                     while ((pointer = nonAnalyzedTransactions.poll()) != null) {
@@ -86,7 +87,7 @@ public class StorageScratchpad extends AbstractStorage {
                 }
 
                 final long transactionsNextPointer = StorageTransactions.transactionsNextPointer;
-				log.info("Transactions to request = {}", numberOfTransactionsToRequest + " / " + (transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE + " (" + (System.currentTimeMillis() - beginningTime) + " ms / " + (numberOfTransactionsToRequest == 0 ? 0 : (previousNumberOfTransactions == 0 ? 0 : (((transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE - previousNumberOfTransactions) * 100) / numberOfTransactionsToRequest)) + "%)");
+                log.info("Transactions to request = {}", numberOfTransactionsToRequest + " / " + (transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE + " (" + (System.currentTimeMillis() - beginningTime) + " ms / " + (numberOfTransactionsToRequest == 0 ? 0 : (previousNumberOfTransactions == 0 ? 0 : (((transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE - previousNumberOfTransactions) * 100) / numberOfTransactionsToRequest)) + "%)");
                 previousNumberOfTransactions = (int) ((transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE);
             }
 

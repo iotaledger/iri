@@ -12,7 +12,6 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Milestone;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 

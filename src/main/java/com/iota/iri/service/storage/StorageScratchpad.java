@@ -31,19 +31,24 @@ public class StorageScratchpad extends AbstractStorage {
     private int previousNumberOfTransactions;
 
     public volatile int numberOfTransactionsToRequest;
+    
+    private FileChannel scratchpadChannel = null;
 
     @Override
 	public void init() throws IOException {
-	 	final FileChannel scratchpadChannel = FileChannel.open(Paths.get(SCRATCHPAD_FILE_NAME), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+    	scratchpadChannel = FileChannel.open(Paths.get(SCRATCHPAD_FILE_NAME), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
         transactionsToRequest = scratchpadChannel.map(FileChannel.MapMode.READ_WRITE, TRANSACTIONS_TO_REQUEST_OFFSET, TRANSACTIONS_TO_REQUEST_SIZE);
         analyzedTransactionsFlags = scratchpadChannel.map(FileChannel.MapMode.READ_WRITE, ANALYZED_TRANSACTIONS_FLAGS_OFFSET, ANALYZED_TRANSACTIONS_FLAGS_SIZE);
-        analyzedTransactionsFlagsCopy = scratchpadChannel.map(FileChannel.MapMode.READ_WRITE, ANALYZED_TRANSACTIONS_FLAGS_COPY_OFFSET, ANALYZED_TRANSACTIONS_FLAGS_COPY_SIZE);
-        scratchpadChannel.close();		
+        analyzedTransactionsFlagsCopy = scratchpadChannel.map(FileChannel.MapMode.READ_WRITE, ANALYZED_TRANSACTIONS_FLAGS_COPY_OFFSET, ANALYZED_TRANSACTIONS_FLAGS_COPY_SIZE);	
 	}
 
 	@Override
 	public void shutdown() {
-		//
+		  try {
+			  scratchpadChannel.close();	
+        } catch (final Exception e) {
+        	log.error("Shutting down Storage Scratchpad error: ", e);
+        }
 	}
 	
 	public void transactionToRequest(final byte[] buffer, final int offset) {

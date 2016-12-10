@@ -186,7 +186,7 @@ public class Node {
                     System.arraycopy(transaction.bytes, 0, tipRequestingPacket.getData(), 0, Transaction.SIZE);
                     System.arraycopy(transaction.hash, 0, tipRequestingPacket.getData(), Transaction.SIZE, Transaction.HASH_SIZE);
                     
-                    neighbors.stream().forEach(n -> n.send(tipRequestingPacket));
+                    neighbors.forEach(n -> n.send(tipRequestingPacket));
                     
                     Thread.sleep(5000);
                 } catch (final Exception e) {

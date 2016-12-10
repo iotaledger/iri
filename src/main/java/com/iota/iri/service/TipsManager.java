@@ -21,6 +21,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageApprovers;
+import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.StorageTransactions;
 
 public class TipsManager {
@@ -52,7 +53,6 @@ public class TipsManager {
 
                 } catch (final Exception e) {
                 	log.error("Error during TipsManager Milestone updating", e);
-                	log.error("DB can be corrupted. Please delete it and Resync.");
                 }
             }
         }, "Latest Milestone Tracker")).start();
@@ -66,9 +66,9 @@ public class TipsManager {
 
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
-        synchronized (Storage.analyzedTransactionsFlags) {
+        synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
 
-            Storage.instance().clearAnalyzedTransactionsFlags();
+        	StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
             Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
@@ -79,7 +79,7 @@ public class TipsManager {
                 Long pointer;
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
+                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
                         numberOfAnalyzedTransactions++;
 
@@ -139,8 +139,8 @@ public class TipsManager {
                 }
             }
 
-            Storage.instance().saveAnalyzedTransactionsFlags();
-            Storage.instance().clearAnalyzedTransactionsFlags();
+            StorageScratchpad.instance().saveAnalyzedTransactionsFlags();
+            StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
             final Set<Hash> tailsToAnalyze = new HashSet<>();
 
@@ -160,7 +160,7 @@ public class TipsManager {
             Long pointer;
             while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
+                if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
                     final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 
@@ -176,13 +176,13 @@ public class TipsManager {
 
             if (extraTip != null) {
 
-                Storage.instance().loadAnalyzedTransactionsFlags();
+                StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
 
                 final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
 
                     final Transaction tail = StorageTransactions.instance().loadTransaction(tailsToAnalyzeIterator.next().bytes());
-                    if (Storage.instance().analyzedTransactionFlag(tail.pointer)) {
+                    if (StorageScratchpad.instance().analyzedTransactionFlag(tail.pointer)) {
                         tailsToAnalyzeIterator.remove();
                     }
                 }
@@ -193,7 +193,7 @@ public class TipsManager {
             int bestRating = 0;
             for (final Hash tail : tailsToAnalyze) {
 
-                Storage.instance().loadAnalyzedTransactionsFlags();
+            	StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
 
                 Set<Hash> extraTransactions = new HashSet<>();
 
@@ -201,7 +201,7 @@ public class TipsManager {
                 nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(tail.bytes()));
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
+                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
                         final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                         if (transaction.type == Storage.PREFILLED_SLOT) {

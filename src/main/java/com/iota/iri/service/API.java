@@ -57,6 +57,7 @@ import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageApprovers;
 import com.iota.iri.service.storage.StorageBundle;
+import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.StorageTags;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
@@ -177,7 +178,7 @@ public class API {
 				        Node.instance().queuedTransactionsSize(), 
 				        System.currentTimeMillis(),
 				        StorageTransactions.instance().tips().size(), 
-				        Storage.numberOfTransactionsToRequest);
+				        StorageScratchpad.instance().getNumberOfTransactionsToRequest());
 			}
 			case "getTips": {
 				return getTipsStatement();
@@ -291,9 +292,9 @@ public class API {
 		int numberOfNonMetTransactions = transactions.size();
 		final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];
 
-		synchronized (Storage.analyzedTransactionsFlags) {
+		synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
 
-			Storage.instance().clearAnalyzedTransactionsFlags();
+			StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
 			final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
 			for (final Hash tip : tips) {
@@ -309,7 +310,7 @@ public class API {
 				Long pointer;
 				MAIN_LOOP: while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-					if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
+					if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
 						final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 						if (transaction.type == Storage.PREFILLED_SLOT) {
@@ -433,16 +434,16 @@ public class API {
 		final Hash milestone = Milestone.latestSolidSubtangleMilestone;
 		final int milestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
-		synchronized (Storage.analyzedTransactionsFlags) {
+		synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
 
-			Storage.instance().clearAnalyzedTransactionsFlags();
+			StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
 			final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
 			        Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.bytes())));
 			Long pointer;
 			while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-				if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
+				if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
 					final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 

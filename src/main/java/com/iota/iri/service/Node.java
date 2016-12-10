@@ -26,6 +26,7 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.StorageTransactions;
 
 /** 
@@ -121,7 +122,7 @@ public class Node {
                                     if (transactionPointer > Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET) {
                                     	synchronized (sendingPacket) {
                                     		System.arraycopy(StorageTransactions.instance().loadTransaction(transactionPointer).bytes, 0, sendingPacket.getData(), 0, Transaction.SIZE);
-                                    		Storage.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
+                                    		StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
                                     		neighbor.send(sendingPacket);
                                     	}
                                     }
@@ -158,7 +159,7 @@ public class Node {
                             try {
                             	synchronized (sendingPacket) {
                             		System.arraycopy(transaction.bytes, 0, sendingPacket.getData(), 0, Transaction.SIZE);
-                            		Storage.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
+                            		StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
                             		neighbor.send(sendingPacket);
 								}
                             } catch (final Exception e) {

@@ -99,14 +99,11 @@ public class TipsManager {
 
                                         validBundle = true;
 
-                                        for (final Transaction bundleTransaction : bundleTransactions) {
-
-                                            if (bundleTransaction.value != 0) {
-                                                final Hash address = new Hash(bundleTransaction.address);
-                                                final Long value = state.get(address);
-                                                state.put(address, value == null ? bundleTransaction.value : (value + bundleTransaction.value));
-                                            }
-                                        }
+                                        bundleTransactions.stream().filter(bundleTransaction -> bundleTransaction.value != 0).forEach(bundleTransaction -> {
+                                            final Hash address = new Hash(bundleTransaction.address);
+                                            final Long value = state.get(address);
+                                            state.put(address, value == null ? bundleTransaction.value : (value + bundleTransaction.value));
+                                        });
                                         break;
                                     }
                                 }
@@ -168,9 +165,7 @@ public class TipsManager {
                         tailsToAnalyze.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
                     }
 
-                    for (final Long approverPointer : StorageApprovers.instance().approveeTransactions(StorageApprovers.instance().approveePointer(transaction.hash))) {
-                        nonAnalyzedTransactions.offer(approverPointer);
-                    }
+                    StorageApprovers.instance().approveeTransactions(StorageApprovers.instance().approveePointer(transaction.hash)).forEach(nonAnalyzedTransactions::offer);
                 }
             }
 

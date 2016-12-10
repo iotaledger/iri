@@ -38,9 +38,7 @@ public class Configuration {
     
     public static String allSettings() {
         final StringBuilder settings = new StringBuilder();
-        conf.keySet().forEach(t -> {
-            settings.append("Set '" + t + "'\t -> " + conf.get(t) + "\n");
-        });
+        conf.keySet().forEach(t -> settings.append("Set '").append(t).append("'\t -> ").append(conf.get(t)).append("\n"));
         return settings.toString();
     }
 

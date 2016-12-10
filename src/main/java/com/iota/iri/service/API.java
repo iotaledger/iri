@@ -96,7 +96,7 @@ public class API {
 	}
 	
 	
-	private void processRequest(final HttpServerExchange exchange) throws IOException, UnsupportedEncodingException {
+	private void processRequest(final HttpServerExchange exchange) throws IOException {
 		final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
 	

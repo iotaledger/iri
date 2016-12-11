@@ -76,8 +76,8 @@ public class StorageBundle extends AbstractStorage {
 
 	}
 	
-	public synchronized long bundlePointer(final byte[] hash) {
-
+	public long bundlePointer(final byte[] hash) {
+		synchronized (Storage.class) {
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11;
         for (int depth = 2; depth < Transaction.BUNDLE_SIZE; depth++) {
 
@@ -96,13 +96,13 @@ public class StorageBundle extends AbstractStorage {
                 return pointer;
             }
         }
-
+		}
         throw new IllegalStateException("Corrupted storage");
     }
 
 
-    public synchronized List<Long> bundleTransactions(final long pointer) {
-
+    public List<Long> bundleTransactions(final long pointer) {
+    	synchronized (Storage.class) {
         final List<Long> bundleTransactions = new LinkedList<>();
 
         if (pointer != 0) {
@@ -135,6 +135,7 @@ public class StorageBundle extends AbstractStorage {
             }
         }
         return bundleTransactions;
+    	}
     }
     
     public void updateBundle(final long transactionPointer, final Transaction transaction) {

@@ -110,8 +110,9 @@ public class StorageTransactions extends AbstractStorage {
         }
     }
     
-    public synchronized long transactionPointer(final byte[] hash) { // Returns a negative value if the transaction hasn't been seen yet but was referenced
+    public long transactionPointer(final byte[] hash) { // Returns a negative value if the transaction hasn't been seen yet but was referenced
 
+        synchronized (Storage.class) {
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11;
         for (int depth = 2; depth < Transaction.HASH_SIZE; depth++) {
 
@@ -133,30 +134,39 @@ public class StorageTransactions extends AbstractStorage {
                 return auxBuffer[Transaction.TYPE_OFFSET] == PREFILLED_SLOT ? -pointer : pointer;
             }
         }
+        }
         throw new IllegalStateException("Corrupted storage");
     }
 
-    public synchronized Transaction loadTransaction(final long pointer) {
-        ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
-        return new Transaction(mainBuffer, pointer);
+    public Transaction loadTransaction(final long pointer) {
+        synchronized (Storage.class) {
+            ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
+            return new Transaction(mainBuffer, pointer);
+    	}
     }
 
-    public synchronized Transaction loadTransaction(final byte[] hash) {
-        final long pointer = transactionPointer(hash);
-        return pointer > 0 ? loadTransaction(pointer) : null;
+    public Transaction loadTransaction(final byte[] hash) {
+        synchronized (Storage.class) {
+            final long pointer = transactionPointer(hash);
+            return pointer > 0 ? loadTransaction(pointer) : null;
+        }
     }
     
-    public synchronized void setTransactionValidity(final long pointer, final int validity) {
-        transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.VALIDITY_OFFSET, (byte)validity);
+    public void setTransactionValidity(final long pointer, final int validity) {
+        synchronized (Storage.class) {
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.VALIDITY_OFFSET, (byte)validity);
+        }
     }
 	
-    public synchronized boolean tipFlag(final long pointer) {
-        final long index = (pointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) >> 11;
-        return (transactionsTipsFlags.get((int)(index >> 3)) & (1 << (index & 7))) != 0;
+    public boolean tipFlag(final long pointer) {
+    	synchronized (Storage.class) {
+            final long index = (pointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) >> 11;
+            return (transactionsTipsFlags.get((int)(index >> 3)) & (1 << (index & 7))) != 0;
+        }
     }
     
-    public synchronized List<Hash> tips() {
-
+    public List<Hash> tips() {
+    	synchronized (Storage.class) {
         final List<Hash> tips = new LinkedList<>();
 
         long pointer = CELLS_OFFSET - SUPER_GROUPS_OFFSET;
@@ -168,10 +178,12 @@ public class StorageTransactions extends AbstractStorage {
             pointer += CELL_SIZE;
         }
         return tips;
+    	}
     }
     
-    public synchronized long storeTransaction(final byte[] hash, final Transaction transaction, final boolean tip) { // Returns the pointer or 0 if the transaction was already in the storage and "transaction" value is not null
+    public long storeTransaction(final byte[] hash, final Transaction transaction, final boolean tip) { // Returns the pointer or 0 if the transaction was already in the storage and "transaction" value is not null
 
+    	synchronized (Storage.class) {
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11, prevPointer = 0;
 
     MAIN_LOOP:
@@ -246,6 +258,7 @@ public class StorageTransactions extends AbstractStorage {
         }
 
         return pointer;
+    	}
     }
 
     public ByteBuffer transactionsTipsFlags() {

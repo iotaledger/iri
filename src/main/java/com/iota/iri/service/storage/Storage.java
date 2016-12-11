@@ -21,48 +21,50 @@ import com.iota.iri.model.Transaction;
  */
 public class Storage extends AbstractStorage {
 	
-	private static final Logger log = LoggerFactory.getLogger(Storage.class);
+    private static final Logger log = LoggerFactory.getLogger(Storage.class);
 
     public static final byte[][] approvedTransactionsToStore = new byte[2][];
-        
+
     private volatile boolean launched;
 
     public static int numberOfApprovedTransactionsToStore;
-    
+
     private StorageTransactions storageTransactionInstance = StorageTransactions.instance();
     private StorageBundle storageBundleInstance = StorageBundle.instance();
     private StorageAddresses storageAddressesInstance = StorageAddresses.instance();
     private StorageTags storageTags = StorageTags.instance();
     private StorageApprovers storageApprovers = StorageApprovers.instance();
     private StorageScratchpad storageScratchpad = StorageScratchpad.instance();
-    		
+
     @Override
     public void init() throws IOException {
-    	
-    	storageTransactionInstance.init();
-    	storageBundleInstance.init();
-    	storageAddressesInstance.init();
-    	storageTags.init();
-    	storageApprovers.init();
-    	storageScratchpad.init();
-    	
-    	storageTransactionInstance.updateBundleAddressTagApprovers();
 
-        launched = true;
+        synchronized (Storage.class) {
+            storageTransactionInstance.init();
+            storageBundleInstance.init();
+            storageAddressesInstance.init();
+            storageTags.init();
+            storageApprovers.init();
+            storageScratchpad.init();
+            storageTransactionInstance.updateBundleAddressTagApprovers();
+            launched = true;
+        }
     }
 
     @Override
     public void shutdown() {
 
-        if (launched) {
-        	storageTransactionInstance.shutdown();
-        	storageBundleInstance.shutdown();
-        	storageAddressesInstance.shutdown();
-        	storageTags.shutdown();
-        	storageApprovers.shutdown();
-        	storageScratchpad.shutdown();
-        	
-            log.info("DB successfully flushed");
+        synchronized (Storage.class) {
+            if (launched) {
+                storageTransactionInstance.shutdown();
+                storageBundleInstance.shutdown();
+                storageAddressesInstance.shutdown();
+                storageTags.shutdown();
+                storageApprovers.shutdown();
+                storageScratchpad.shutdown();
+
+                log.info("DB successfully flushed");
+            }
         }
     }
 

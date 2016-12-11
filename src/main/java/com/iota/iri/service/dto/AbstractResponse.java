@@ -7,7 +7,7 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 public abstract class AbstractResponse {
 	
-	private static class Emptyness extends AbstractResponse {};
+	private static class Emptyness extends AbstractResponse {}
 	
     private Integer duration;
 

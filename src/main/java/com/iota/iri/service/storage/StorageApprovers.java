@@ -71,7 +71,8 @@ public class StorageApprovers extends AbstractStorage {
         }
 	}
 	
-	public synchronized long approveePointer(final byte[] hash) {
+	public long approveePointer(final byte[] hash) {
+		synchronized (Storage.class) {
 
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11;
         for (int depth = 2; depth < Transaction.HASH_SIZE; depth++) {
@@ -94,12 +95,13 @@ public class StorageApprovers extends AbstractStorage {
                 return pointer;
             }
         }
-
+        }
         throw new IllegalStateException("Corrupted storage");
     }
 
-    public synchronized List<Long> approveeTransactions(final long pointer) {
+    public List<Long> approveeTransactions(final long pointer) {
 
+    	synchronized (Storage.class) {
         final List<Long> approveeTransactions = new LinkedList<>();
 
         if (pointer != 0) {
@@ -133,6 +135,7 @@ public class StorageApprovers extends AbstractStorage {
         }
 
         return approveeTransactions;
+    	}
     }
 
     private void appendToApprovers() {

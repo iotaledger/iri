@@ -15,6 +15,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
+import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
@@ -101,16 +102,16 @@ public class Milestone {
 
                 boolean solid = true;
 
-                synchronized (Storage.analyzedTransactionsFlags) {
+                synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
 
-                    Storage.instance().clearAnalyzedTransactionsFlags();
+                	StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
                     final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
                     nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(milestone.bytes()));
                     Long pointer;
                     while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                        if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
+                        if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
                             final Transaction transaction2 = StorageTransactions.instance().loadTransaction(pointer);
                             if (transaction2.type == AbstractStorage.PREFILLED_SLOT) {

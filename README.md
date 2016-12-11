@@ -1,10 +1,15 @@
 ## IOTA Testnet IRI
 
+##Dev branch build status: 
+[![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=dev)](https://travis-ci.org/iotaledger/iri)
+
+##Introduction
+
 This is a branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for the testnet we have setup. It is a complete [[IOTA]](http://www.iotatoken.com/) Node with a JSON-REST HTTP interface.
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.1 Release
+* **Latest release:** 1.1.2.1 
 * **License:** GPLv3
 
 # Purpose of this repository

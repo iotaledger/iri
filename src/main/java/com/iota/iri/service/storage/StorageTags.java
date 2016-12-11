@@ -71,8 +71,8 @@ public class StorageTags extends AbstractStorage {
         }
 	}
 	
-	public synchronized long tagPointer(final byte[] hash) {
-
+	public long tagPointer(final byte[] hash) {
+		synchronized (Storage.class) {
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11;
         for (int depth = 2; depth < Transaction.TAG_SIZE; depth++) {
 
@@ -93,11 +93,13 @@ public class StorageTags extends AbstractStorage {
                 return pointer;
             }
         }
+		}
         throw new IllegalStateException("Corrupted storage");
     }
 	
-	public synchronized List<Long> tagTransactions(final long pointer) {
+	public List<Long> tagTransactions(final long pointer) {
 
+        synchronized (Storage.class) {
         final List<Long> tagTransactions = new LinkedList<>();
 
         if (pointer != 0) {
@@ -129,6 +131,7 @@ public class StorageTags extends AbstractStorage {
             }
         }
         return tagTransactions;
+        }
     }
 	
 	private void appendToTags() {

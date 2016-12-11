@@ -9,7 +9,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,6 +56,7 @@ import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageApprovers;
 import com.iota.iri.service.storage.StorageBundle;
+import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.StorageTags;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
@@ -64,6 +64,7 @@ import com.iota.iri.utils.Converter;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
+import io.undertow.util.HeaderMap;
 import io.undertow.util.Headers;
 import io.undertow.util.HttpString;
 
@@ -96,7 +97,7 @@ public class API {
 	}
 	
 	
-	private void processRequest(final HttpServerExchange exchange) throws IOException, UnsupportedEncodingException {
+	private void processRequest(final HttpServerExchange exchange) throws IOException {
 		final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
 	
@@ -111,16 +112,22 @@ public class API {
 		try {
 
 			final Map<String, Object> request = gson.fromJson(requestString, Map.class);
-
+			if (request == null) {
+				return ExceptionResponse.create("Invalid request payload: '" + requestString + "'");
+			}
+			
 			final String command = (String) request.get("command");
 			if (command == null) {
 				return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
 			}
-
+			
+			log.info("-> Requesting command {}", command);
+			
 			switch (command) {
 
 			case "addNeighbors": {
 				final List<String> uris = (List<String>) request.get("uris");
+				log.debug("Invoking 'addNeighbors' with {}", uris);
 				return addNeighborsStatement(uris);
 			}
 			case "attachToTangle": {
@@ -133,7 +140,7 @@ public class API {
 			}
 			case "broadcastTransactions": {
 				final List<String> trytes = (List<String>) request.get("trytes");
-				log.debug("Invoking 'boradcastTransactions' with {}", trytes);
+				log.debug("Invoking 'broadcastTransactions' with {}", trytes);
 				return broadcastTransactionStatement(trytes);
 			}
 			case "findTransactions": {
@@ -170,7 +177,7 @@ public class API {
 				        Node.instance().queuedTransactionsSize(), 
 				        System.currentTimeMillis(),
 				        StorageTransactions.instance().tips().size(), 
-				        Storage.numberOfTransactionsToRequest);
+				        StorageScratchpad.instance().getNumberOfTransactionsToRequest());
 			}
 			case "getTips": {
 				return getTipsStatement();
@@ -190,7 +197,8 @@ public class API {
 				return AbstractResponse.createEmptyResponse();
 			}
 			case "removeNeighbors": {
-				List<String> uris = (List<String>) request.get("uris");
+				final List<String> uris = (List<String>) request.get("uris");
+				log.debug("Invoking 'removeNeighbors' with {}", uris);
 				return removeNeighborsStatement(uris);
 			}
 
@@ -277,15 +285,15 @@ public class API {
 
 	private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) {
 		
-		final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
-		final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
+		final List<Hash> transactions = trans.stream().map(s -> new Hash(s)).collect(Collectors.toList());
+		final List<Hash> tips = tps.stream().map(s -> new Hash(s)).collect(Collectors.toList());
 
 		int numberOfNonMetTransactions = transactions.size();
 		final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];
 
-		synchronized (Storage.analyzedTransactionsFlags) {
+		synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
 
-			Storage.instance().clearAnalyzedTransactionsFlags();
+			StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
 			final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
 			for (final Hash tip : tips) {
@@ -301,7 +309,7 @@ public class API {
 				Long pointer;
 				MAIN_LOOP: while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-					if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
+					if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
 						final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 						if (transaction.type == Storage.PREFILLED_SLOT) {
@@ -345,6 +353,9 @@ public class API {
 			log.debug("Searching: {}", addresses.stream().reduce((a,b) -> a+= ',' + b));
 			
 			for (final String address : addresses) {
+				if (address.length() != 81) {
+					log.error("Address {} doesn't look a valid address", address);
+				}
 				addressesTransactions
 				        .addAll(StorageAddresses.instance().addressTransactions(StorageAddresses.instance().addressPointer((new Hash(address)).bytes())));
 			}
@@ -375,7 +386,6 @@ public class API {
 		                ? (approveeTransactions.isEmpty() ? new HashSet<>() : approveeTransactions) : tagsTransactions)
 		        : addressesTransactions) : bundlesTransactions;
 
-
 		if (!addressesTransactions.isEmpty()) {
 			foundTransactions.retainAll(addressesTransactions);
 		}
@@ -386,10 +396,7 @@ public class API {
 			foundTransactions.retainAll(approveeTransactions);
 		}
 
-		final List<String> elements = new LinkedList<>();
-		for (final long pointer : foundTransactions) {
-			elements.add(new Hash(StorageTransactions.instance().loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE).toString());
-		}
+		final List<String> elements = foundTransactions.stream().map(pointer -> new Hash(StorageTransactions.instance().loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE).toString()).collect(Collectors.toCollection(LinkedList::new));
 
 		return FindTransactionsResponse.create(elements);
 	}
@@ -409,10 +416,7 @@ public class API {
 			return ErrorResponse.create("Illegal 'threshold'");
 		}
 
-		final List<Hash> addresses = new LinkedList<>();
-		for (final String address : addrss) {
-			addresses.add((new Hash(address)));
-		}
+		final List<Hash> addresses = addrss.stream().map(address -> (new Hash(address))).collect(Collectors.toCollection(LinkedList::new));
 
 		final Map<Hash, Long> balances = new HashMap<>();
 		for (final Hash address : addresses) {
@@ -423,16 +427,16 @@ public class API {
 		final Hash milestone = Milestone.latestSolidSubtangleMilestone;
 		final int milestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
-		synchronized (Storage.analyzedTransactionsFlags) {
+		synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
 
-			Storage.instance().clearAnalyzedTransactionsFlags();
+			StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
 			final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
 			        Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.bytes())));
 			Long pointer;
 			while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-				if (Storage.instance().setAnalyzedTransactionFlag(pointer)) {
+				if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
 					final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 
@@ -451,10 +455,7 @@ public class API {
 			}
 		}
 
-		final List<String> elements = new LinkedList<>();
-		for (final Hash address : addresses) {
-			elements.add(balances.get(address).toString());
-		}
+		final List<String> elements = addresses.stream().map(address -> balances.get(address).toString()).collect(Collectors.toCollection(LinkedList::new));
 
 		return GetBalancesResponse.create(elements, milestone, milestoneIndex);
 	}
@@ -517,10 +518,17 @@ public class API {
 			exchange.setStatusCode(500); // internall error	
 		}
 
-		exchange.getResponseHeaders().add(new HttpString("Access-Control-Allow-Origin"), Configuration.string(DefaultConfSettings.CORS_ENABLED));
+		setupResponseHeaders(exchange);
+		
 		final int writtenBytes = exchange.getResponseChannel().write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
 		exchange.endExchange();
 		log.debug("Sent {} bytes back in the response.", writtenBytes);
+	}
+
+	private static void setupResponseHeaders(final HttpServerExchange exchange) {
+		final HeaderMap headerMap = exchange.getResponseHeaders();
+		headerMap.add(new HttpString("Access-Control-Allow-Origin"), Configuration.string(DefaultConfSettings.CORS_ENABLED));
+		headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
 	}
 
 	public void shutDown() {

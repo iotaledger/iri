@@ -1,7 +1,10 @@
 package com.iota.iri;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,6 +18,9 @@ import com.iota.iri.service.storage.Storage;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
+
 /**
  * Main IOTA Reference Implementation starting class
  */
@@ -23,13 +29,17 @@ public class IRI {
 	private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
 	public static final String NAME = "IRI Testnet";
-	public static final String VERSION = "1.1.2";
+	public static final String VERSION = "1.1.2.1";
 
 	public static void main(final String[] args) {
-		
+
 		log.info("Welcome to {} {}", NAME, VERSION);
 		validateParams(args);
 		shutdownHook();
+		
+		if (!Configuration.booling(DefaultConfSettings.HEADLESS)) {
+			showIotaLogo();
+		}
 		
 		try {
 
@@ -40,7 +50,9 @@ public class IRI {
 
 		} catch (final Exception e) {
 			log.error("Exception during IOTA node initialisation: ", e);
+			System.exit(-1);
 		}
+		log.info("IOTA Node initialised correctly.");
 	}
 
 	private static void validateParams(final String[] args) {
@@ -104,19 +116,19 @@ public class IRI {
 	    }
 	    
 	    if (parser.getOptionValue(headless) != null) {
-	    	log.info("Headless feature is WIP...");
 	    	Configuration.put(DefaultConfSettings.HEADLESS, "true");
 	    }
 	    
 	    if (parser.getOptionValue(debug) != null) {
 	    	Configuration.put(DefaultConfSettings.DEBUG, "true");
 	    	log.info(Configuration.allSettings());
+	    	StatusPrinter.print((LoggerContext)LoggerFactory.getILoggerFactory());
 	    }
 	    
 	    Configuration.put(DefaultConfSettings.API_PORT, cport);
-	    Configuration.put(DefaultConfSettings.NEIGHBORS, cns.toString());
-	
-	    if (Integer.parseInt(cport) < 1024) {
+	    Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
+		
+		if (Integer.parseInt(cport) < 1024) {
 			log.warn("Warning: api port value seems too low.");
 		}
 	}
@@ -150,5 +162,16 @@ public class IRI {
 				log.error("Exception occurred shutting down IOTA node: ", e);
 			}
 		}, "Shutdown Hook"));
+	}
+	
+	private static void showIotaLogo() {
+		final String charset = "IBM00858";
+	
+		try {
+			final Path path = Paths.get("logo.ans");
+			Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
+		} catch (IOException e) {
+			log.error("Impossible to display logo. Charset {} not supported.", charset);
+		}
 	}
 }

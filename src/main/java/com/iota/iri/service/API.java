@@ -157,6 +157,11 @@ public class API {
                 if (trans == null || tps == null) {
                     return ErrorResponse.create("getInclusionStates Bad Request.");
                 }
+                
+                if (invalidSubtangleStatus()) {
+                    return ErrorResponse
+                            .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                }
                 return getInclusionStateStatement(trans, tps);
             }
             case "getNeighbors": {
@@ -176,7 +181,7 @@ public class API {
             }
             case "getTransactionsToApprove": {
                 final int depth = ((Double) request.get("depth")).intValue();
-                if (Milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX) {
+                if (invalidSubtangleStatus()) {
                     return ErrorResponse
                             .create("This operations cannot be executed: The subtangle has not been updated yet.");
                 }
@@ -211,6 +216,10 @@ public class API {
             log.error("API Exception: ", e);
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
+    }
+
+    private boolean invalidSubtangleStatus() {
+        return (Milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
     }
 
     private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {

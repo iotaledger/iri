@@ -25,18 +25,18 @@ public class Neighbor {
         	// ignore
         }
     }
-    
+
     @Override
     public boolean equals(final Object obj) {
-    	if (this == obj) {
+        if (this == obj) {
             return true;
-    	}
-        if ((obj == null) || (obj.getClass() != this.getClass())) {
+        }
+        if ((obj == null) || !(obj instanceof Neighbor)) {
             return false;
         }
         return address.equals(((Neighbor)obj).address);
     }
-
+    
     @Override
     public int hashCode() {
         return address.hashCode();

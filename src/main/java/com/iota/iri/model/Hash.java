@@ -48,9 +48,15 @@ public class Hash {
 
     @Override
     public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if ((obj == null) || !(obj instanceof Hash)) {
+            return false;
+        }
         return Arrays.equals(bytes, ((Hash)obj).bytes);
     }
-
+    
     @Override
     public int hashCode() {
         return hashCode;

@@ -22,10 +22,16 @@ public abstract class AbstractResponse {
     }
 
     @Override
-    public boolean equals(Object obj) {
+    public boolean equals(final Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if ((obj == null) || !(obj instanceof AbstractResponse)) {
+            return false;
+        }
         return EqualsBuilder.reflectionEquals(this, obj, false);
     }
-    
+
     public Integer getDuration() {
         return duration;
     }

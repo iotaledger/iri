@@ -252,7 +252,7 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    private AbstractResponse getTransactionToApproveStatement(final int depth) {
+    private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) {
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth);
         if (trunkTransactionToApprove == null) {
             return ErrorResponse.create("The subtangle is not solid");

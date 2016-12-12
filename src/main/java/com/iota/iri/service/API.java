@@ -283,8 +283,8 @@ public class API {
 
     private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) {
 
-        final List<Hash> transactions = trans.stream().map(s -> new Hash(s)).collect(Collectors.toList());
-        final List<Hash> tips = tps.stream().map(s -> new Hash(s)).collect(Collectors.toList());
+        final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
+        final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
 
         int numberOfNonMetTransactions = transactions.size();
         final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];

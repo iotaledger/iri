@@ -17,13 +17,14 @@ public class Configuration {
     private static final Map<String, String> conf = new ConcurrentHashMap<>();
 
     public enum DefaultConfSettings {
-    	API_PORT,
-    	TANGLE_RECEIVER_PORT,
-    	CORS_ENABLED,
-    	TESTNET, // not used yet
-    	HEADLESS,
-    	NEIGHBORS,
-    	DEBUG
+        API_PORT,
+        TANGLE_RECEIVER_PORT,
+        CORS_ENABLED,
+        TESTNET, // not used yet
+        HEADLESS,
+        NEIGHBORS,
+        DEBUG, 
+        EXPERIMENTAL // experimental features.
     }
     
     static {
@@ -34,6 +35,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.TESTNET.name(), "false");
         conf.put(DefaultConfSettings.HEADLESS.name(), "false");
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
+        conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
     }
     
     public static String allSettings() {

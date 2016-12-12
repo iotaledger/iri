@@ -74,6 +74,7 @@ public class IRI {
         final Option<Boolean> headless = parser.addBooleanOption("headless");
         final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
+        final Option<Boolean> experimental = parser.addBooleanOption('e', "experimental");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
 
         try {
@@ -124,6 +125,11 @@ public class IRI {
             StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
         }
 
+        if (parser.getOptionValue(experimental) != null) {
+            log.info("Experimental IOTA features turned on.");
+            Configuration.put(DefaultConfSettings.EXPERIMENTAL, "true");
+        }
+
         Configuration.put(DefaultConfSettings.API_PORT, cport);
         Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
 
@@ -134,7 +140,7 @@ public class IRI {
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " + "[{-p,--port} 14265] " + "[{-r,--receiver-port} 14265] "
-                + "[{-c,--enabled-cors} *] " + "[{-h}] [{--headless}] " + "[{-d,--debug}] "
+                + "[{-c,--enabled-cors} *] " + "[{-h}] [{--headless}] " + "[{-d,--debug}] [{-e,--experimental}]"
                 // + "[{-t,--testnet} false] " // -> TBDiscussed
                 + "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
         System.exit(0);

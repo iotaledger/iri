@@ -224,21 +224,12 @@ public class API {
 
     private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
         final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
-        uris.stream().map(API::uri).map(Optional::get).filter(u -> "udp".equals(u.getScheme())).forEach(u -> {
+        uris.stream().map(Node::uri).map(Optional::get).filter(u -> "udp".equals(u.getScheme())).forEach(u -> {
             if (Node.instance().removeNeighbor(u)) {
                 numberOfRemovedNeighbors.incrementAndGet();
             }
         });
         return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
-    }
-
-    public static Optional<URI> uri(final String uri) {
-        try {
-            return Optional.of(new URI(uri));
-        } catch (URISyntaxException e) {
-            log.error("Uri {} raised URI Syntax Exception", uri);
-        }
-        return Optional.empty();
     }
 
     private AbstractResponse getTrytesStatement(List<String> hashes) {

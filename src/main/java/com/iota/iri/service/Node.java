@@ -3,10 +3,15 @@ package com.iota.iri.service;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -55,31 +60,97 @@ public class Node {
     private final DatagramPacket tipRequestingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(3);
+    private final ExecutorService executor = Executors.newFixedThreadPool(4);
 
     public void init() throws Exception {
 
         socket = new DatagramSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT));
 
-        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
-                .filter(s -> !s.isEmpty()).map(API::uri).map(Optional::get).peek(u -> {
+        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS)
+                .split(" "))
+                .distinct()
+                .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get)
+                .peek(u -> {
                     if (!"udp".equals(u.getScheme())) {
                         log.warn("WARNING: '{}' is not a valid udp:// uri schema.", u);
                     }
-                }).filter(u -> "udp".equals(u.getScheme()))
-                .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()))).peek(u -> {
+                })
+                .filter(u -> "udp".equals(u.getScheme()))
+                .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort())))
+                .peek(u -> {
                     if (Configuration.booling(DefaultConfSettings.DEBUG)) {
                         log.debug("-> Adding neighbor : {} ", u.getAddress());
                     }
-                }).forEach(neighbors::add);
+                })
+                .forEach(neighbors::add);
 
         executor.submit(spawnReceiverThread());
         executor.submit(spawnBroadcasterThread());
         executor.submit(spawnTipRequesterThread());
-
+        
+        if (Configuration.booling(DefaultConfSettings.EXPERIMENTAL)) {
+            executor.submit(spawnNeighborDNSChecker());
+        }
         executor.shutdown();
     }
 
+    private Map<String, String> neighborIpCache = new HashMap<>();
+    
+    private Runnable spawnNeighborDNSChecker() {
+        return () -> {
+
+            log.info("Spawning Neighbor DNS Checker Thread");
+
+            while (!shuttingDown.get()) {
+                log.info("Checking Neighbors' Ip...");
+
+                try {
+                    neighbors.forEach(n -> {
+                        String hostname = n.getAddress().getHostName();
+                        checkIp(hostname).ifPresent(ip -> {
+                            log.info("DNS Cheker: Validation DNS Address '{}' with '{}'", hostname, ip);
+                            final String neighborAddress = neighborIpCache.get(hostname);
+                            
+                            if (neighborAddress == null) {
+                                neighborIpCache.put(neighborAddress, ip);
+                            } else {
+                                if (neighborAddress.equals(ip)) {
+                                    log.info("{} seems fine.", hostname);
+                                } else {
+                                    log.info("CHANGED IP for {}! Updating...", hostname);
+                                    
+                                    uri("udp://" + hostname).ifPresent(uri -> {
+                                        removeNeighbor(uri);
+                                        
+                                        uri("udp://" + ip).ifPresent(nuri -> {
+                                            addNeighbor(nuri);
+                                            neighborIpCache.put(hostname, ip);
+                                        });
+                                    });
+                                }
+                            }
+                        });
+                    });
+
+                    Thread.sleep(1000*60*30);
+                } catch (final Exception e) {
+                    log.error("Tips Requester Thread Exception:", e);
+                }
+            }
+            log.info("Shutting down Requester Thread");
+        };
+    }
+    
+    private Optional<String> checkIp(String dnsName) {
+        InetAddress inetAddress;
+        try {
+            inetAddress = java.net.InetAddress.getByName(dnsName);
+        } catch (UnknownHostException e) {
+            return Optional.empty();
+        }
+        return Optional.of(inetAddress.getHostAddress());
+    }
+    
     private Runnable spawnReceiverThread() {
         return () -> {
 
@@ -233,13 +304,35 @@ public class Node {
         executor.awaitTermination(6, TimeUnit.SECONDS);
     }
 
-    private Node() {
+    public void send(final DatagramPacket packet) {
+        try {
+            socket.send(packet);
+        } catch (IOException e) {
+            // ignore
+        }
     }
-
+    
     // helpers methods
 
     public boolean removeNeighbor(final URI uri) {
         return neighbors.remove(new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort())));
+    }
+
+    public boolean addNeighbor(final URI uri) {
+        final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()));
+        if (!Node.instance().getNeighbors().contains(neighbor)) {
+            return Node.instance().getNeighbors().add(neighbor);
+        }
+        return false;
+    }
+    
+    public static Optional<URI> uri(final String uri) {
+        try {
+            return Optional.of(new URI(uri));
+        } catch (URISyntaxException e) {
+            log.error("Uri {} raised URI Syntax Exception", uri);
+        }
+        return Optional.empty();
     }
 
     public static Node instance() {
@@ -257,12 +350,6 @@ public class Node {
     public List<Neighbor> getNeighbors() {
         return neighbors;
     }
-
-    public void send(final DatagramPacket packet) {
-        try {
-            socket.send(packet);
-        } catch (IOException e) {
-            // ignore
-        }
-    }
+    
+    private Node() {}
 }

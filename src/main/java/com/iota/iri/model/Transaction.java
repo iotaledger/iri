@@ -1,12 +1,12 @@
 package com.iota.iri.model;
 
-import java.util.Arrays;
-
 import com.iota.iri.hash.Curl;
-import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.AbstractStorage;
+import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
+
+import java.util.Arrays;
 
 public class Transaction {
 

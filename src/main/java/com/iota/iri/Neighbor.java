@@ -36,7 +36,7 @@ public class Neighbor {
         }
         return address.equals(((Neighbor)obj).address);
     }
-    
+
     @Override
     public int hashCode() {
         return address.hashCode();

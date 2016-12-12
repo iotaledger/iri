@@ -7,8 +7,9 @@ import org.junit.Test;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static com.jayway.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.containsString;
-import static com.jayway.restassured.RestAssured.*;
 
 public class APIIntegrationTests {
 

@@ -1,6 +1,7 @@
 package com.iota.iri;
 
 import com.iota.iri.model.Hash;
+
 import java.util.HashMap;
 import java.util.Map;
 

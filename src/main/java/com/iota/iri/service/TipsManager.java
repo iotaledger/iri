@@ -26,7 +26,7 @@ import com.iota.iri.service.storage.StorageTransactions;
 
 public class TipsManager {
 
-	private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
+    private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
     private volatile boolean shuttingDown;
 
@@ -276,10 +276,10 @@ public class TipsManager {
     }
     
     private static TipsManager instance = new TipsManager();
-    
+
     private TipsManager() {}
-    
+
     public static TipsManager instance() {
-		return instance;
-	}
+        return instance;
+    }
 }

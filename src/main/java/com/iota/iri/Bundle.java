@@ -121,17 +121,17 @@ public class Bundle {
     }
 
 
-	private Map<Long, Transaction> loadTransactionsFromTangle(final long bundlePointer) {
-		final Map<Long, Transaction> bundleTransactions = new HashMap<>();
-		for (final long transactionPointer : StorageBundle.instance().bundleTransactions(bundlePointer)) {
-		    bundleTransactions
-		    		.put(transactionPointer, StorageTransactions.instance()
-		    		.loadTransaction(transactionPointer));
-		}
-		return bundleTransactions;
-	}
+    private Map<Long, Transaction> loadTransactionsFromTangle(final long bundlePointer) {
+        final Map<Long, Transaction> bundleTransactions = new HashMap<>();
+        for (final long transactionPointer : StorageBundle.instance().bundleTransactions(bundlePointer)) {
+            bundleTransactions
+                .put(transactionPointer, StorageTransactions.instance()
+                .loadTransaction(transactionPointer));
+        }
+        return bundleTransactions;
+    }
     
     public List<List<Transaction>> getTransactions() {
-		return transactions;
-	}
+        return transactions;
+    }
 }

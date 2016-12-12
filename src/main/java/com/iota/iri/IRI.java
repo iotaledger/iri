@@ -26,152 +26,145 @@ import ch.qos.logback.core.util.StatusPrinter;
  */
 public class IRI {
 
-	private static final Logger log = LoggerFactory.getLogger(IRI.class);
+    private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
-	public static final String NAME = "IRI";
-	public static final String VERSION = "1.1.2.1";
+    public static final String NAME = "IRI";
+    public static final String VERSION = "1.1.2.1";
 
-	public static void main(final String[] args) {
+    public static void main(final String[] args) {
 
-		log.info("Welcome to {} {}", NAME, VERSION);
-		validateParams(args);
-		shutdownHook();
-		
-		if (!Configuration.booling(DefaultConfSettings.HEADLESS)) {
-			showIotaLogo();
-		}
-		
-		try {
+        log.info("Welcome to {} {}", NAME, VERSION);
+        validateParams(args);
+        shutdownHook();
 
-			Storage.instance().init();
-			Node.instance().init();
-			TipsManager.instance().init();
-			API.instance().init();
-
-		} catch (final Exception e) {
-			log.error("Exception during IOTA node initialisation: ", e);
-			System.exit(-1);
-		}
-		log.info("IOTA Node initialised correctly.");
-	}
-
-	private static void validateParams(final String[] args) {
-		
-		if (args.length > 0 && args[0].equalsIgnoreCase("-h")) {
-			printUsage();
-		}
-		
-		if (args.length < 2) {
-			log.error("Invalid arguments list. Provide api port number and at least one udp node address.");
-			printUsage();
-		}
-		
-		final CmdLineParser parser = new CmdLineParser();
-		
-		final Option<String> port = parser.addStringOption('p', "port");
-	    final Option<String> rport = parser.addStringOption('r', "receiver-port");
-	    final Option<String> cors = parser.addStringOption('c', "enabled-cors");
-	    final Option<Boolean> headless = parser.addBooleanOption("headless");
-	    final Option<Boolean> debug = parser.addBooleanOption('d',"debug");
-	    final Option<String> neighbors = parser.addStringOption('n', "neighbors");
-	    final Option<Boolean> help = parser.addBooleanOption('h',"help");
-	    
-	    try {
-            parser.parse(args);
+        if (!Configuration.booling(DefaultConfSettings.HEADLESS)) {
+            showIotaLogo();
         }
-        catch ( CmdLineParser.OptionException e ) {
+
+        try {
+
+            Storage.instance().init();
+            Node.instance().init();
+            TipsManager.instance().init();
+            API.instance().init();
+
+        } catch (final Exception e) {
+            log.error("Exception during IOTA node initialisation: ", e);
+            System.exit(-1);
+        }
+        log.info("IOTA Node initialised correctly.");
+    }
+
+    private static void validateParams(final String[] args) {
+
+        if (args.length > 0 && args[0].equalsIgnoreCase("-h")) {
+            printUsage();
+        }
+
+        if (args.length < 2) {
+            log.error("Invalid arguments list. Provide api port number and at least one udp node address.");
+            printUsage();
+        }
+
+        final CmdLineParser parser = new CmdLineParser();
+
+        final Option<String> port = parser.addStringOption('p', "port");
+        final Option<String> rport = parser.addStringOption('r', "receiver-port");
+        final Option<String> cors = parser.addStringOption('c', "enabled-cors");
+        final Option<Boolean> headless = parser.addBooleanOption("headless");
+        final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
+        final Option<String> neighbors = parser.addStringOption('n', "neighbors");
+        final Option<Boolean> help = parser.addBooleanOption('h', "help");
+
+        try {
+            parser.parse(args);
+        } catch (CmdLineParser.OptionException e) {
             log.error("Cli error: ", e);
-        	printUsage();
+            printUsage();
             System.exit(2);
         }
-	    
-	    // mandatory args
-	    
-	    final String cport = parser.getOptionValue(port);
-	    if (cport == null) {
-    		log.error("Invalid arguments list. Provide api port number with -p or --port");
-			printUsage();
-	    }
-	
-	    final String cns = parser.getOptionValue(neighbors);
-	    if (cns == null) {
-    		log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
-			printUsage();
-	    }
-	    
-	    // optional flags
-	    if (parser.getOptionValue(help) != null) {
-	    	printUsage();
-	    }
-	    
-	    final String vcors = parser.getOptionValue(cors);
-	    if (vcors != null) {
-	    	log.debug("Enabled CORS with value : {} ", vcors);
-	    	Configuration.put(DefaultConfSettings.CORS_ENABLED, vcors);
-	    }
-	    
-	    final String vrport = parser.getOptionValue(rport);
-	    if (vrport != null) {
-	    	Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT, vrport);
-	    }
-	    
-	    if (parser.getOptionValue(headless) != null) {
-	    	Configuration.put(DefaultConfSettings.HEADLESS, "true");
-	    }
-	    
-	    if (parser.getOptionValue(debug) != null) {
-	    	Configuration.put(DefaultConfSettings.DEBUG, "true");
-	    	log.info(Configuration.allSettings());
-	    	StatusPrinter.print((LoggerContext)LoggerFactory.getILoggerFactory());
-	    }
-	    
-	    Configuration.put(DefaultConfSettings.API_PORT, cport);
-	    Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
-		
-		if (Integer.parseInt(cport) < 1024) {
-			log.warn("Warning: api port value seems too low.");
-		}
-	}
 
-	private static void printUsage() {
-		log.info(
-				"Usage: java -jar {}-{}.jar "
-				+ "[{-p,--port} 14265] "
-				+ "[{-r,--receiver-port} 14265] "
-				+ "[{-c,--enabled-cors} *] "
-				+ "[{-h}] [{--headless}] "
-				+ "[{-d,--debug}] "
-				//+ "[{-t,--testnet} false] " // -> TBDiscussed
-				+ "[{-n,--neighbors} '<list of neighbors>'] ",
-				NAME, VERSION);
-		System.exit(0);
-	}
+        // mandatory args
 
-	private static void shutdownHook() {
-		Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        final String cport = parser.getOptionValue(port);
+        if (cport == null) {
+            log.error("Invalid arguments list. Provide api port number with -p or --port");
+            printUsage();
+        }
 
-			log.info("Shutting down IOTA node, please hold tight...");
-			try {
+        final String cns = parser.getOptionValue(neighbors);
+        if (cns == null) {
+            log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
+            printUsage();
+        }
 
-				API.instance().shutDown();
-				TipsManager.instance().shutDown();
-				Node.instance().shutdown();
-				Storage.instance().shutdown();
+        // optional flags
+        if (parser.getOptionValue(help) != null) {
+            printUsage();
+        }
 
-			} catch (final Exception e) {
-				log.error("Exception occurred shutting down IOTA node: ", e);
-			}
-		}, "Shutdown Hook"));
-	}
-	
-	private static void showIotaLogo() {
-		final String charset = "IBM00858";
-	
-		try {
-			final Path path = Paths.get("logo.ans");
-			Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
-		} catch (IOException e) {
-			log.error("Impossible to display logo. Charset {} not supported.", charset);
-		}
-	}
+        final String vcors = parser.getOptionValue(cors);
+        if (vcors != null) {
+            log.debug("Enabled CORS with value : {} ", vcors);
+            Configuration.put(DefaultConfSettings.CORS_ENABLED, vcors);
+        }
+
+        final String vrport = parser.getOptionValue(rport);
+        if (vrport != null) {
+            Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT, vrport);
+        }
+
+        if (parser.getOptionValue(headless) != null) {
+            Configuration.put(DefaultConfSettings.HEADLESS, "true");
+        }
+
+        if (parser.getOptionValue(debug) != null) {
+            Configuration.put(DefaultConfSettings.DEBUG, "true");
+            log.info(Configuration.allSettings());
+            StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
+        }
+
+        Configuration.put(DefaultConfSettings.API_PORT, cport);
+        Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
+
+        if (Integer.parseInt(cport) < 1024) {
+            log.warn("Warning: api port value seems too low.");
+        }
+    }
+
+    private static void printUsage() {
+        log.info("Usage: java -jar {}-{}.jar " + "[{-p,--port} 14265] " + "[{-r,--receiver-port} 14265] "
+                + "[{-c,--enabled-cors} *] " + "[{-h}] [{--headless}] " + "[{-d,--debug}] "
+                // + "[{-t,--testnet} false] " // -> TBDiscussed
+                + "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
+        System.exit(0);
+    }
+
+    private static void shutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+
+            log.info("Shutting down IOTA node, please hold tight...");
+            try {
+
+                API.instance().shutDown();
+                TipsManager.instance().shutDown();
+                Node.instance().shutdown();
+                Storage.instance().shutdown();
+
+            } catch (final Exception e) {
+                log.error("Exception occurred shutting down IOTA node: ", e);
+            }
+        }, "Shutdown Hook"));
+    }
+
+    private static void showIotaLogo() {
+        final String charset = "IBM00858";
+
+        try {
+            final Path path = Paths.get("logo.ans");
+            Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
+        } catch (IOException e) {
+            log.error("Impossible to display logo. Charset {} not supported.", charset);
+        }
+    }
 }

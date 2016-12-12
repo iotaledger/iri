@@ -89,14 +89,14 @@ public class Node {
         executor.submit(spawnTipRequesterThread());
         
         if (Configuration.booling(DefaultConfSettings.EXPERIMENTAL)) {
-            executor.submit(spawnNeighborDNSChecker());
+            executor.submit(spawnNeighborDNSResolver());
         }
         executor.shutdown();
     }
 
     private Map<String, String> neighborIpCache = new HashMap<>();
     
-    private Runnable spawnNeighborDNSChecker() {
+    private Runnable spawnNeighborDNSResolver() {
         return () -> {
 
             log.info("Spawning Neighbor DNS Checker Thread");
@@ -134,10 +134,10 @@ public class Node {
 
                     Thread.sleep(1000*60*30);
                 } catch (final Exception e) {
-                    log.error("Tips Requester Thread Exception:", e);
+                    log.error("Spawning Neighbor DNS Resolver Thread Exception:", e);
                 }
             }
-            log.info("Shutting down Requester Thread");
+            log.info("Shutting down Neighbor DNS Resolver Thread");
         };
     }
     

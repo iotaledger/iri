@@ -1,17 +1,13 @@
 package com.iota.iri;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.StorageBundle;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
+
+import java.util.*;
 
 /**
  * A bundle is a group of transactions that follow each other from

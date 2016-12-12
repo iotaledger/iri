@@ -1,14 +1,13 @@
 package com.iota.iri;
 
-import java.io.IOException;
-
-import org.apache.commons.lang3.StringUtils;
-import org.junit.Test;
-
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageTransactions;
+import org.apache.commons.lang3.StringUtils;
+import org.junit.Test;
+
+import java.io.IOException;
 
 public class IotaTest {
 

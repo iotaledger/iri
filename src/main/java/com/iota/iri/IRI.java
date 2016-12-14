@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -57,12 +58,8 @@ public class IRI {
 
     private static void validateParams(final String[] args) {
 
-        if (args.length > 0 && args[0].equalsIgnoreCase("-h")) {
-            printUsage();
-        }
-
-        if (args.length < 2) {
-            log.error("Invalid arguments list. Provide api port number and at least one udp node address.");
+        if (args == null || args.length < 2) {
+            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
             printUsage();
         }
 
@@ -80,29 +77,31 @@ public class IRI {
         try {
             parser.parse(args);
         } catch (CmdLineParser.OptionException e) {
-            log.error("Cli error: ", e);
+            log.error("CLI error: ", e);
             printUsage();
             System.exit(2);
         }
 
         // mandatory args
-
         final String cport = parser.getOptionValue(port);
         if (cport == null) {
-            log.error("Invalid arguments list. Provide api port number with -p or --port");
-            printUsage();
-        }
-
-        final String cns = parser.getOptionValue(neighbors);
-        if (cns == null) {
             log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
             printUsage();
         }
+        Configuration.put(DefaultConfSettings.API_PORT, cport);
 
         // optional flags
         if (parser.getOptionValue(help) != null) {
             printUsage();
         }
+        
+        String cns = parser.getOptionValue(neighbors);
+        if (cns == null) {
+            log.warn("No neighbor has been specified. Server starting nodeless.");
+            cns = StringUtils.EMPTY;
+        } 
+        Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
+        
 
         final String vcors = parser.getOptionValue(cors);
         if (vcors != null) {
@@ -130,19 +129,20 @@ public class IRI {
             Configuration.put(DefaultConfSettings.EXPERIMENTAL, "true");
         }
 
-        Configuration.put(DefaultConfSettings.API_PORT, cport);
-        Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
-
         if (Integer.parseInt(cport) < 1024) {
             log.warn("Warning: api port value seems too low.");
         }
     }
 
     private static void printUsage() {
-        log.info("Usage: java -jar {}-{}.jar " + "[{-p,--port} 14265] " + "[{-r,--receiver-port} 14265] "
-                + "[{-c,--enabled-cors} *] " + "[{-h}] [{--headless}] " + "[{-d,--debug}] [{-e,--experimental}]"
-                // + "[{-t,--testnet} false] " // -> TBDiscussed
-                + "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
+        log.info("Usage: java -jar {}-{}.jar " + 
+                 "[{-p,--port} 14265] " + 
+                 "[{-r,--receiver-port} 14265] " + 
+                 "[{-c,--enabled-cors} *] " + 
+                 "[{-h}] [{--headless}] " + 
+                 "[{-d,--debug}] [{-e,--experimental}]" +
+                 // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
+                 "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
         System.exit(0);
     }
 
@@ -164,7 +164,7 @@ public class IRI {
     }
 
     private static void showIotaLogo() {
-        final String charset = "IBM00858";
+        final String charset = "CP437";
 
         try {
             final Path path = Paths.get("logo.ans");

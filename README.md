@@ -33,7 +33,7 @@ This will create in the root directory of the project an executable jar package 
 
 * To execute:
 
-`java -jar IRI-${version}.jar  [{-p,--port} 14265] [{-r,--receiver-port} 14265] [{-c,--enabled-cors} *] [{-h}] [[--headless}] [{-d,--debug}] [{-n,--neighbors} '<list of neighbors>'] `
+`java -jar IRI-${version}.jar [{-p,--port} 14265] [{-r,--receiver-port} 14265] [{-c,--enabled-cors} *] [{-h}] [[--headless}] [{-d,--debug}] [{-n,--neighbors} '<list of neighbors>'] [{-e,--experimental}]`
 
 Where
 
@@ -50,6 +50,8 @@ the following parameters are optional:
 `--headless disable the logo (logo still WIP)`
 
 `-d or --debug prints on the standard output, more debug informations`
+
+`-e or --experimental activates experimental features. Current feature: DNS automatic resolver.`
 
 `-h prints the usage`
  

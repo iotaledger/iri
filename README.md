@@ -39,9 +39,9 @@ Where
 
 `-p or --port define the API port (MANDATORY)`
 
-`-n specify the list of neighbors (MANDATORY) Please note: neighbors must be defined between ''`
-
 the following parameters are optional:
+
+`-n specify the list of neighbors Please note: neighbors must be defined between '' or "" depends on the Terminal`
 
 `-r or --receiver-port define the Transaction receiver port`
 

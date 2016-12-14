@@ -26,9 +26,11 @@ public class Milestone {
 
     public static Hash latestMilestone = Hash.NULL_HASH;
     public static Hash latestSolidSubtangleMilestone = Hash.NULL_HASH;
-
-    public static int latestMilestoneIndex = 0;
-    public static int latestSolidSubtangleMilestoneIndex = 0;
+    
+    public static final int MILESTONE_START_INDEX = 0;
+    
+    public static int latestMilestoneIndex = MILESTONE_START_INDEX;
+    public static int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
 
     private static final Set<Long> analyzedMilestoneCandidates = new HashSet<>();
     private static final Map<Integer, Hash> milestones = new ConcurrentHashMap<>();

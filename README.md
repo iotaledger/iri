@@ -3,13 +3,13 @@
 ##Dev branch build status: 
 [![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=dev)](https://travis-ci.org/iotaledger/iri)
 
-##Introduction
+# Introduction
 
-This is a branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for the testnet we have setup. It is a complete [[IOTA]](http://www.iotatoken.com/) Node with a JSON-REST HTTP interface.
+This is the testnet branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for the testnet we have setup. It is a complete [[IOTA]](http://www.iotatoken.com/) Node with a JSON-REST HTTP interface.
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.2.1 
+* **Latest release:** 1.1.2.2
 * **License:** GPLv3
 
 # Purpose of this repository
@@ -26,9 +26,11 @@ Obviously, because this is its own, independent network, you have to go through 
 
 If you notice any issues or irregularities in this release. Please make sure to submit an issue on github.
 
+
 # Installing
 
 You have two options, the preferred option is that you compile yourself. The second option is that you utilize the provided jar, which is released regularly (when new updates occur) here: [Github Releases](https://github.com/iotaledger/iri/releases). Make sure to utilize the `testnet` versions!
+
 
 ### Compiling yourself  
 
@@ -75,5 +77,4 @@ the following parameters are optional:
 For instance
 
 `java -jar target/iri-1.1.1.jar -p 14265 -n 'udp://1.1.1.1:14265 udp://2.2.2.2:14265' -d -c 'iotatoken.com'`
-
 

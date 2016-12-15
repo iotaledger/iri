@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,9 +107,9 @@ public class Node {
 
                 try {
                     neighbors.forEach(n -> {
-                        String hostname = n.getAddress().getHostName();
+                        final String hostname = n.getAddress().getHostName();
                         checkIp(hostname).ifPresent(ip -> {
-                            log.info("DNS Cheker: Validation DNS Address '{}' with '{}'", hostname, ip);
+                            log.info("DNS Checker: Validating DNS Address '{}' with '{}'", hostname, ip);
                             final String neighborAddress = neighborIpCache.get(hostname);
                             
                             if (neighborAddress == null) {
@@ -141,14 +142,26 @@ public class Node {
         };
     }
     
-    private Optional<String> checkIp(String dnsName) {
+    private Optional<String> checkIp(final String dnsName) {
+        
+        if (StringUtils.isEmpty(dnsName)) {
+            return Optional.empty();
+        }
+        
         InetAddress inetAddress;
         try {
             inetAddress = java.net.InetAddress.getByName(dnsName);
         } catch (UnknownHostException e) {
             return Optional.empty();
         }
-        return Optional.of(inetAddress.getHostAddress());
+        
+        final String hostAddress = inetAddress.getHostAddress();
+        
+        if (StringUtils.equals(dnsName, hostAddress)) { // not a DNS...
+            return Optional.empty();
+        }
+        
+        return Optional.of(hostAddress);
     }
     
     private Runnable spawnReceiverThread() {

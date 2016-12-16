@@ -197,7 +197,7 @@ public class API {
             }
 
             case "interruptAttachingToTangle": {
-                pearlDiver.interrupt();
+                pearlDiver.cancel();
                 return AbstractResponse.createEmptyResponse();
             }
             case "removeNeighbors": {

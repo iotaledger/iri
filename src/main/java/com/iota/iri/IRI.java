@@ -72,6 +72,7 @@ public class IRI {
         final Option<String> cors = parser.addStringOption('c', "enabled-cors");
         final Option<Boolean> headless = parser.addBooleanOption("headless");
         final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
+        final Option<Boolean> remote = parser.addBooleanOption("remote");
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
         final Option<Boolean> experimental = parser.addBooleanOption('e', "experimental");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
@@ -119,6 +120,11 @@ public class IRI {
         if (parser.getOptionValue(headless) != null) {
             Configuration.put(DefaultConfSettings.HEADLESS, "true");
         }
+        
+        if (parser.getOptionValue(remote) != null) {
+            log.info("Remote access enabled. Binding API socket to listen any interface.");
+            Configuration.put(DefaultConfSettings.API_HOST, "0.0.0.0");
+        }
 
         if (parser.getOptionValue(debug) != null) {
             Configuration.put(DefaultConfSettings.DEBUG, "true");
@@ -142,7 +148,9 @@ public class IRI {
                  "[{-r,--receiver-port} 14265] " + 
                  "[{-c,--enabled-cors} *] " + 
                  "[{-h}] [{--headless}] " + 
-                 "[{-d,--debug}] [{-e,--experimental}]" +
+                 "[{-d,--debug}] " + 
+                 "[{-e,--experimental}]" +
+                 "[{--remote}]" +
                  // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
                  "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
         System.exit(0);
@@ -172,7 +180,7 @@ public class IRI {
             final Path path = Paths.get("logo.ans");
             Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
         } catch (IOException e) {
-            log.error("Impossible to display logo. Charset {} not supported.", charset);
+            log.error("Impossible to display logo. Charset {} not supported by terminal.", charset);
         }
     }
 }

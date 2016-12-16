@@ -54,15 +54,15 @@ This will create in the `target` directory of the project an executable jar pack
 
 * To execute:
 
-`java -jar IRI-${version}.jar  [{-p,--port} 14265] [{-r,--receiver-port} 14265] [{-c,--enabled-cors} *] [{-h}] [[--headless}] [{-d,--debug}] [{-n,--neighbors} '<list of neighbors>'] `
+`java -jar IRI-${version}.jar [{-p,--port} 14265] [{-r,--receiver-port} 14265] [{-c,--enabled-cors} *] [{-h}] [[--headless}] [{-d,--debug}] [{-n,--neighbors} '<list of neighbors>'] [{-e,--experimental}]`
 
 Where
 
 `-p or --port define the API port (MANDATORY)`
 
-`-n specify the list of neighbors (MANDATORY) Please note: neighbors must be defined between ''`
-
 the following parameters are optional:
+
+`-n specify the list of neighbors Please note: neighbors must be defined between '' or "" depends on the Terminal`
 
 `-r or --receiver-port define the Transaction receiver port`
 
@@ -71,6 +71,8 @@ the following parameters are optional:
 `--headless disable the logo (logo still WIP)`
 
 `-d or --debug prints on the standard output, more debug informations`
+
+`-e or --experimental activates experimental features. Current feature: DNS automatic resolver.`
 
 `-h prints the usage`
  

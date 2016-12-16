@@ -80,9 +80,12 @@ public class API {
 
     public void init() throws IOException {
 
-        int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
+        final int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
+        final String apiHost = Configuration.string(DefaultConfSettings.API_HOST);
 
-        server = Undertow.builder().addHttpListener(apiPort, "localhost")
+        log.debug("Binding JSON-REST API Undertown server on {}:{}" , apiHost, apiPort);
+        
+        server = Undertow.builder().addHttpListener(apiPort, apiHost)
                 .setHandler(path().addPrefixPath("/", new HttpHandler() {
                     @Override
                     public void handleRequest(final HttpServerExchange exchange) throws Exception {
@@ -194,7 +197,7 @@ public class API {
             }
 
             case "interruptAttachingToTangle": {
-                pearlDiver.interrupt();
+                pearlDiver.cancel();
                 return AbstractResponse.createEmptyResponse();
             }
             case "removeNeighbors": {

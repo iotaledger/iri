@@ -61,7 +61,7 @@ public class Node {
     private final DatagramPacket tipRequestingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+    private final ExecutorService executor = Executors.newFixedThreadPool(Configuration.booling(DefaultConfSettings.EXPERIMENTAL) ? 5 :3);
 
     public void init() throws Exception {
 
@@ -90,17 +90,35 @@ public class Node {
         executor.submit(spawnTipRequesterThread());
         
         if (Configuration.booling(DefaultConfSettings.EXPERIMENTAL)) {
-            executor.submit(spawnNeighborDNSResolver());
+            executor.submit(spawnNeighborDNSRefresherThread());
+            executor.submit(spawnRepeaterThread());
         }
         executor.shutdown();
+    }
+    
+    private Runnable spawnRepeaterThread() {
+        return () -> {
+
+            log.info("Spawning Repeater Thread");
+
+            while (!shuttingDown.get()) {
+                log.info("Repeater in Action...");
+                try {
+                    Thread.sleep(1000*50);
+                } catch (final Exception e) {
+                    log.error("Repeater Thread Exception:", e);
+                }
+            }
+            log.info("Shutting down Neighbor DNS Resolver Thread");
+        };
     }
 
     private Map<String, String> neighborIpCache = new HashMap<>();
     
-    private Runnable spawnNeighborDNSResolver() {
+    private Runnable spawnNeighborDNSRefresherThread() {
         return () -> {
 
-            log.info("Spawning Neighbor DNS Checker Thread");
+            log.info("Spawning Neighbor DNS Refresher Thread");
 
             while (!shuttingDown.get()) {
                 log.info("Checking Neighbors' Ip...");
@@ -135,7 +153,7 @@ public class Node {
 
                     Thread.sleep(1000*60*30);
                 } catch (final Exception e) {
-                    log.error("Spawning Neighbor DNS Resolver Thread Exception:", e);
+                    log.error("Neighbor DNS Refresher Thread Exception:", e);
                 }
             }
             log.info("Shutting down Neighbor DNS Resolver Thread");

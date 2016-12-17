@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -474,7 +475,7 @@ public class API {
                     transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
                     Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
 
-            if (pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
+            if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
                 transactions.clear();
                 break;
             }

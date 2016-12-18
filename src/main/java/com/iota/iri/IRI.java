@@ -174,10 +174,10 @@ public class IRI {
     }
 
     private static void showIotaLogo() {
-        final String charset = "CP437";
+        final String charset = "UTF8";
 
         try {
-            final Path path = Paths.get("logo.ans");
+            final Path path = Paths.get("logo.utf8.ans");
             Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
         } catch (IOException e) {
             log.error("Impossible to display logo. Charset {} not supported by terminal.", charset);

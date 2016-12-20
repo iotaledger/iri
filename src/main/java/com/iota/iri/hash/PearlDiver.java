@@ -100,7 +100,6 @@ public class PearlDiver {
                 System.arraycopy(midCurlStateLow, 0, midCurlStateCopyLow, 0, CURL_STATE_LENGTH);
                 System.arraycopy(midCurlStateHigh, 0, midCurlStateCopyHigh, 0, CURL_STATE_LENGTH);
                 for (int i = threadIndex; i-- > 0; ) {
-
                     increment(midCurlStateCopyLow, midCurlStateCopyHigh, CURL_HASH_LENGTH / 3, (CURL_HASH_LENGTH / 3) * 2);
                 }
 
@@ -131,7 +130,6 @@ public class PearlDiver {
                                 state = COMPLETED;
 
                                 for (int i = 0; i < CURL_HASH_LENGTH; i++) {
-
                                     transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] = ((((int) (midCurlStateCopyLow[i] >> bitIndex)) & 1) == 0) ? 1 : (((((int) (midCurlStateCopyHigh[i] >> bitIndex)) & 1) == 0) ? -1 : 0);
                                 }
 

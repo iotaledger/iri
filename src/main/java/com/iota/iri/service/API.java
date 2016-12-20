@@ -78,7 +78,9 @@ public class API {
 
     private final Gson gson = new GsonBuilder().create();
     private final PearlDiver pearlDiver = new PearlDiver();
-
+    
+    private final AtomicInteger counter = new AtomicInteger(0);
+    
     public void init() throws IOException {
 
         final int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
@@ -124,7 +126,7 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            log.info("-> Requesting command {}", command);
+            log.info("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
             switch (command) {
 

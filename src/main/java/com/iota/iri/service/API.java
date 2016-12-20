@@ -161,7 +161,7 @@ public class API {
                 if (trans == null || tps == null) {
                     return ErrorResponse.create("getInclusionStates Bad Request.");
                 }
-                
+
                 if (invalidSubtangleStatus()) {
                     return ErrorResponse
                             .create("This operations cannot be executed: The subtangle has not been updated yet.");
@@ -173,7 +173,7 @@ public class API {
             }
             case "getNodeInfo": {
                 return GetNodeInfoResponse.create(IRI.NAME, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
-                        Runtime.getRuntime().freeMemory(), Runtime.getRuntime().maxMemory(),
+                        Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
                         Runtime.getRuntime().totalMemory(), Milestone.latestMilestone, Milestone.latestMilestoneIndex,
                         Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                         Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),

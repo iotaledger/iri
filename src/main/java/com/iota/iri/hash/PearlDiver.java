@@ -91,7 +91,7 @@ public class PearlDiver {
             }
         }
 
-		Thread[] workers = new Thread[numberOfThreads];
+        Thread[] workers = new Thread[numberOfThreads];
 		
         while (numberOfThreads-- > 0) {
 
@@ -142,7 +142,7 @@ public class PearlDiver {
                     }
                 }
             }));
-			workers[threadIndex] = worker;
+            workers[threadIndex] = worker;
             worker.start();
         }
 
@@ -154,7 +154,7 @@ public class PearlDiver {
             state = CANCELLED;
         }
 
-		 for (int i = 0; i < workers.length; i++) {
+        for (int i = 0; i < workers.length; i++) {
             try {
                 workers[i].join();
             } catch (final InterruptedException e) {

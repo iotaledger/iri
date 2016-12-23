@@ -224,7 +224,7 @@ public class API {
         }
     }
 
-    private boolean invalidSubtangleStatus() {
+    public static boolean invalidSubtangleStatus() {
         return (Milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
     }
 

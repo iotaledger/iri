@@ -7,7 +7,7 @@ The IRI is the IOTA reference implementation project. It is a complete [[IOTA]](
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.2.2 Release
+* **Latest release:** 1.1.2.3 Release
 * **License:** GPLv3
 * **Readme updated:** 2016-12-12 13:26:43 (UTC)
 
@@ -51,7 +51,7 @@ the following parameters are optional:
 
 `-d or --debug prints on the standard output, more debug informations`
 
-`-e or --experimental activates experimental features. Current feature: DNS automatic resolver.`
+`-e or --experimental activates experimental features. Current feature: Random Tip Selector Broadcaster.`
 
 `-h prints the usage`
  

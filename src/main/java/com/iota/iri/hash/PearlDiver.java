@@ -91,10 +91,12 @@ public class PearlDiver {
             }
         }
 
+		Thread[] workers = new Thread[numberOfThreads];
+		
         while (numberOfThreads-- > 0) {
 
             final int threadIndex = numberOfThreads;
-            (new Thread(() -> {
+            Thread worker = (new Thread(() -> {
 
                 final long[] midCurlStateCopyLow = new long[CURL_STATE_LENGTH], midCurlStateCopyHigh = new long[CURL_STATE_LENGTH];
                 System.arraycopy(midCurlStateLow, 0, midCurlStateCopyLow, 0, CURL_STATE_LENGTH);
@@ -139,7 +141,9 @@ public class PearlDiver {
                         break;
                     }
                 }
-            })).start();
+            }));
+			workers[threadIndex] = worker;
+            worker.start();
         }
 
         try {
@@ -150,6 +154,14 @@ public class PearlDiver {
             state = CANCELLED;
         }
 
+		 for (int i = 0; i < workers.length; i++) {
+            try {
+                workers[i].join();
+            } catch (final InterruptedException e) {
+                state = CANCELLED;
+            }
+        }
+		
         return state == COMPLETED;
     }
 

@@ -461,7 +461,7 @@ public class API {
         return GetBalancesResponse.create(elements, milestone, milestoneIndex);
     }
 
-    private AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
+    private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
             final int minWeightMagnitude, final List<String> trytes) {
         final List<Transaction> transactions = new LinkedList<>();
 

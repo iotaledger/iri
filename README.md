@@ -1,7 +1,7 @@
 ## IOTA Testnet IRI
 
 ##Dev branch build status: 
-[![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=dev)](https://travis-ci.org/iotaledger/iri)
+[![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=master)](https://travis-ci.org/iotaledger/iri)
 
 # Introduction
 
@@ -9,7 +9,8 @@ This is the testnet branch of the main IRI repository, as this is a IOTA referen
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.2.2
+
+* **Latest release:** 1.1.2.3 Release
 * **License:** GPLv3
 
 # Purpose of this repository
@@ -72,7 +73,7 @@ the following parameters are optional:
 
 `-d or --debug prints on the standard output, more debug informations`
 
-`-e or --experimental activates experimental features. Current feature: DNS automatic resolver.`
+`-e or --experimental activates experimental features. Current feature: Random Tip Selector Broadcaster.`
 
 `-h prints the usage`
  

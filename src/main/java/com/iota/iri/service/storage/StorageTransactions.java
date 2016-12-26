@@ -167,17 +167,17 @@ public class StorageTransactions extends AbstractStorage {
     
     public List<Hash> tips() {
     	synchronized (Storage.class) {
-        final List<Hash> tips = new LinkedList<>();
-
-        long pointer = CELLS_OFFSET - SUPER_GROUPS_OFFSET;
-        while (pointer < transactionsNextPointer) {
-
-            if (tipFlag(pointer)) {
-                tips.add(new Hash(loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE));
+            final List<Hash> tips = new LinkedList<>();
+    
+            long pointer = CELLS_OFFSET - SUPER_GROUPS_OFFSET;
+            while (pointer < transactionsNextPointer) {
+    
+                if (tipFlag(pointer)) {
+                    tips.add(new Hash(loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE));
+                }
+                pointer += CELL_SIZE;
             }
-            pointer += CELL_SIZE;
-        }
-        return tips;
+            return tips;
     	}
     }
     

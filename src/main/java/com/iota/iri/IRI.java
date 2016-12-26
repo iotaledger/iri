@@ -30,8 +30,9 @@ public class IRI {
 
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
+
     public static final String NAME = "IRI Testnet";
-    public static final String VERSION = "1.1.2.2";
+    public static final String VERSION = "1.1.2.3";
 
     public static void main(final String[] args) {
 
@@ -126,12 +127,6 @@ public class IRI {
             Configuration.put(DefaultConfSettings.API_HOST, "0.0.0.0");
         }
 
-        if (parser.getOptionValue(debug) != null) {
-            Configuration.put(DefaultConfSettings.DEBUG, "true");
-            log.info(Configuration.allSettings());
-            StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
-        }
-
         if (parser.getOptionValue(experimental) != null) {
             log.info("Experimental IOTA features turned on.");
             Configuration.put(DefaultConfSettings.EXPERIMENTAL, "true");
@@ -139,6 +134,12 @@ public class IRI {
 
         if (Integer.parseInt(cport) < 1024) {
             log.warn("Warning: api port value seems too low.");
+        }
+        
+        if (parser.getOptionValue(debug) != null) {
+            Configuration.put(DefaultConfSettings.DEBUG, "true");
+            log.info(Configuration.allSettings());
+            StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
         }
     }
 

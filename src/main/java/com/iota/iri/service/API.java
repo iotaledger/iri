@@ -78,7 +78,9 @@ public class API {
 
     private final Gson gson = new GsonBuilder().create();
     private final PearlDiver pearlDiver = new PearlDiver();
-
+    
+    private final AtomicInteger counter = new AtomicInteger(0);
+    
     public void init() throws IOException {
 
         final int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
@@ -124,7 +126,7 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            log.info("-> Requesting command {}", command);
+            log.info("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
             switch (command) {
 
@@ -161,7 +163,7 @@ public class API {
                 if (trans == null || tps == null) {
                     return ErrorResponse.create("getInclusionStates Bad Request.");
                 }
-                
+
                 if (invalidSubtangleStatus()) {
                     return ErrorResponse
                             .create("This operations cannot be executed: The subtangle has not been updated yet.");
@@ -173,7 +175,7 @@ public class API {
             }
             case "getNodeInfo": {
                 return GetNodeInfoResponse.create(IRI.NAME, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
-                        Runtime.getRuntime().freeMemory(), Runtime.getRuntime().maxMemory(),
+                        Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
                         Runtime.getRuntime().totalMemory(), Milestone.latestMilestone, Milestone.latestMilestoneIndex,
                         Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                         Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
@@ -222,7 +224,7 @@ public class API {
         }
     }
 
-    private boolean invalidSubtangleStatus() {
+    public static boolean invalidSubtangleStatus() {
         return (Milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
     }
 
@@ -459,7 +461,7 @@ public class API {
         return GetBalancesResponse.create(elements, milestone, milestoneIndex);
     }
 
-    private AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
+    private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
             final int minWeightMagnitude, final List<String> trytes) {
         final List<Transaction> transactions = new LinkedList<>();
 

@@ -43,6 +43,7 @@ public class APIIntegrationTests {
                 body(containsString("jreFreeMemory")).
                 body(containsString("jreMaxMemory")).
                 body(containsString("jreTotalMemory")).
+                body(containsString("jreVersion")).
                 body(containsString("latestMilestone")).
                 body(containsString("latestMilestoneIndex")).
                 body(containsString("jreAvailableProcessors")).

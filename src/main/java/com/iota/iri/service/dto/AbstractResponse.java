@@ -6,9 +6,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.apache.commons.lang3.builder.ToStringStyle;
 
 public abstract class AbstractResponse {
-	
+
 	private static class Emptyness extends AbstractResponse {}
-	
+
     private Integer duration;
 
     @Override
@@ -25,15 +25,15 @@ public abstract class AbstractResponse {
     public boolean equals(Object obj) {
         return EqualsBuilder.reflectionEquals(this, obj, false);
     }
-    
+
     public Integer getDuration() {
         return duration;
     }
-    
+
     public void setDuration(Integer duration) {
 		this.duration = duration;
 	}
-    
+
     public static AbstractResponse createEmptyResponse() {
     	return new Emptyness();
     }

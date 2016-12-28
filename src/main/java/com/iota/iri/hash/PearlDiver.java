@@ -119,7 +119,7 @@ public class PearlDiver {
 
 					synchronized (_this) {
 						if(finished) {
-							return;
+							break;
 						}
 						finished = true;
 						while((outMask & mask) == 0) {

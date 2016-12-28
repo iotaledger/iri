@@ -6,6 +6,8 @@ public class PearlDiver {
 
 	private static final int HASH_LENGTH = 243;
 	private static final int STATE_LENGTH = HASH_LENGTH * 3;
+	private static final long HIGH_BITS = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+	private static final long LOW_BITS = 0b0000000000000000000000000000000000000000000000000000000000000000L;
 
 	private boolean finished, interrupted;
 
@@ -32,8 +34,8 @@ public class PearlDiver {
 
 		{
 			for (int i = HASH_LENGTH; i < STATE_LENGTH; i++) {
-				midStateLow[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-				midStateHigh[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+				midStateLow[i] = HIGH_BITS;
+				midStateHigh[i] = HIGH_BITS;
 			}
 
 			int offset = 0;
@@ -45,18 +47,18 @@ public class PearlDiver {
 					switch (transactionTrits[offset++]) {
 
 					case 0: 
-						midStateLow[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-						midStateHigh[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+						midStateLow[j] = HIGH_BITS;
+						midStateHigh[j] = HIGH_BITS;
 						break;
 
 					case 1: 
-						midStateLow[j] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
-						midStateHigh[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+						midStateLow[j] = LOW_BITS;
+						midStateHigh[j] = HIGH_BITS;
 						break;
 
 					default:
-						midStateLow[j] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-						midStateHigh[j] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
+						midStateLow[j] = HIGH_BITS;
+						midStateHigh[j] = LOW_BITS;
 					}
 				}
 				transform(midStateLow, midStateHigh, scratchpadLow, scratchpadHigh);
@@ -78,6 +80,7 @@ public class PearlDiver {
 				numberOfThreads = 1;
 			}
 		}
+		PearlDiver _this = this;
 
 		while (numberOfThreads-- > 0) {
 
@@ -91,39 +94,46 @@ public class PearlDiver {
 
 					increment(midStateCopyLow, midStateCopyHigh, HASH_LENGTH / 3, (HASH_LENGTH / 3) * 2);
 				}
+				int tries = 0;
 
 				final long[] stateLow = new long[STATE_LENGTH], stateHigh = new long[STATE_LENGTH];
 				final long[] scratchpadLow = new long[STATE_LENGTH], scratchpadHigh = new long[STATE_LENGTH];
+				long mask, outMask = 1;
 				while (!finished) {
 
+					tries++;
 					increment(midStateCopyLow, midStateCopyHigh, (HASH_LENGTH / 3) * 2, HASH_LENGTH);
 					System.arraycopy(midStateCopyLow, 0, stateLow, 0, STATE_LENGTH);
 					System.arraycopy(midStateCopyHigh, 0, stateHigh, 0, STATE_LENGTH);
 					transform(stateLow, stateHigh, scratchpadLow, scratchpadHigh);
 
-					NEXT_BIT_INDEX: for (int bitIndex = 64; bitIndex-- > 0;) {
-
-						for (int i = minWeightMagnitude; i-- > 0;) {
-							if ((((int) (stateLow[HASH_LENGTH - 1 - i] >> bitIndex))
-							        & 1) != (((int) (stateHigh[HASH_LENGTH - 1 - i] >> bitIndex)) & 1)) {
-								continue NEXT_BIT_INDEX;
-							}
+					mask = HIGH_BITS;
+					for (int i = minWeightMagnitude; i-- > 0;) {
+						mask &= ~(stateLow[HASH_LENGTH - 1 - i] ^ stateHigh[HASH_LENGTH - 1 - i]);
+						if ( mask == 0) {
+							break;
 						}
-
-						finished = true;
-
-						synchronized (this) {
-							for (int i = 0; i < HASH_LENGTH; i++) {
-								transactionTrits[TRANSACTION_LENGTH - HASH_LENGTH
-								        + i] = ((((int) (midStateCopyLow[i] >> bitIndex)) & 1) == 0) ? 1
-								                : (((((int) (midStateCopyHigh[i] >> bitIndex)) & 1) == 0) ? -1 : 0);
-							}
-
-							notifyAll();
-						}
-
-						break;
 					}
+					if(mask == 0)
+						continue;
+
+					synchronized (_this) {
+						if(finished) {
+							return;
+						}
+						finished = true;
+						while((outMask & mask) == 0) {
+							outMask <<= 1;
+						}
+						for (int i = 0; i < HASH_LENGTH; i++) {
+							transactionTrits[TRANSACTION_LENGTH - HASH_LENGTH + i] = 
+									(midStateCopyLow[i] & outMask) == 0 ? 1
+											: (midStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
+						}
+
+						notifyAll();
+					}
+
 				}
 
 			})).start();
@@ -167,15 +177,15 @@ public class PearlDiver {
 
 		for (int i = fromIndex; i < toIndex; i++) {
 
-			if (midStateCopyLow[i] == 0b0000000000000000000000000000000000000000000000000000000000000000L) {
-				midStateCopyLow[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-				midStateCopyHigh[i] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
+			if (midStateCopyLow[i] == LOW_BITS) {
+				midStateCopyLow[i] = HIGH_BITS;
+				midStateCopyHigh[i] = LOW_BITS;
 			} else {
 
-				if (midStateCopyHigh[i] == 0b0000000000000000000000000000000000000000000000000000000000000000L) {
-					midStateCopyHigh[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+				if (midStateCopyHigh[i] == LOW_BITS) {
+					midStateCopyHigh[i] = HIGH_BITS;
 				} else {
-					midStateCopyLow[i] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
+					midStateCopyLow[i] = LOW_BITS;
 				}
 				break;
 			}

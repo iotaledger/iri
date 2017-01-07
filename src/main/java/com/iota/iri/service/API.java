@@ -26,6 +26,7 @@ import com.iota.iri.service.dto.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xnio.channels.StreamSinkChannel;
 import org.xnio.streams.ChannelInputStream;
 
 import com.google.gson.Gson;
@@ -516,10 +517,25 @@ public class API {
 
         setupResponseHeaders(exchange);
 
-        final int writtenBytes = exchange.getResponseChannel()
-                .write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
-        exchange.endExchange();
-        log.debug("Sent {} bytes back in the response.", writtenBytes);
+        ByteBuffer responseBuf = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
+        exchange.setResponseContentLength(responseBuf.array().length);
+        StreamSinkChannel sinkChannel = exchange.getResponseChannel();
+        sinkChannel.getWriteSetter().set( channel -> {
+            if (responseBuf.remaining() > 0)
+                try {
+                    sinkChannel.write(responseBuf);
+                    if (responseBuf.remaining() == 0) {
+                        exchange.endExchange();
+                    }
+                } catch (IOException e) {
+                    log.error("Error writing response",e);
+                    exchange.endExchange();
+                }
+            else {
+                exchange.endExchange();
+            }
+        });
+        sinkChannel.resumeWrites();
     }
 
     private static void setupResponseHeaders(final HttpServerExchange exchange) {

@@ -168,7 +168,6 @@ public class IXI {
             Map<String, Callable<AbstractResponse>> ixiMap = new HashMap<>();
             Map<String, Runnable> startStop = new HashMap<>();
             Bindings bindings = scriptEngine.createBindings();
-            Runnable init;
 
             bindings.put("API", ixiMap);
             bindings.put("IXICycle", startStop);
@@ -176,10 +175,6 @@ public class IXI {
             ixiLifetime.put(filename, startStop);
             scriptEngine.eval(ixi, bindings);
 
-            init = startStop.get("init");
-            if(init != null) {
-                init.run();
-            }
         } catch (final ScriptException e) {
             throw new RuntimeException(e);
         }

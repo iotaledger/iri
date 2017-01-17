@@ -25,7 +25,8 @@ public class Configuration {
         HEADLESS,
         NEIGHBORS,
         DEBUG, 
-        EXPERIMENTAL // experimental features.
+        EXPERIMENTAL, // experimental features.
+        IXI_DIR
     }
     
     static {
@@ -38,6 +39,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.HEADLESS.name(), "false");
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
         conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
+        conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
     }
     
     public static String allSettings() {

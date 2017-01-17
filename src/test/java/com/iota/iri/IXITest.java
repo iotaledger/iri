@@ -11,6 +11,8 @@ import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 
 import static java.nio.file.StandardOpenOption.CREATE;
 import static org.junit.Assert.*;
@@ -45,7 +47,8 @@ public class IXITest {
                 Files.newOutputStream(testFile.toPath(), CREATE))) {
             out.write(testJs.getBytes());
         }
-        AbstractResponse response = IXI.processCommand("test.getParser");
+        Map<String, Object> request = new HashMap<>();
+        AbstractResponse response = IXI.processCommand("test.getParser", request);
 
         testFile.delete();
 

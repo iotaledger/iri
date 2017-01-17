@@ -212,7 +212,7 @@ public class API {
                 return storeTransactionStatement(trytes);
             }
             default:
-                return IXI.instance().processCommand(command);
+                return IXI.instance().processCommand(command, request);
             }
 
         } catch (final Exception e) {

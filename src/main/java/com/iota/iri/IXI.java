@@ -2,6 +2,7 @@ package com.iota.iri;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
+import com.iota.iri.service.CallableRequest;
 import com.iota.iri.service.dto.AbstractResponse;
 import com.iota.iri.service.dto.ErrorResponse;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
@@ -22,7 +23,7 @@ public class IXI {
     //private static final ScriptEngine scriptEngine = (new ScriptEngineManager()).getEngineByName("JavaScript");
     private static final ScriptEngine scriptEngine = (new NashornScriptEngineFactory()).getScriptEngine((classname) ->
             !"com.iota.iri.IXI".equals(classname));
-    private static final Map<String, Map<String, Callable<AbstractResponse>>> ixiAPI = new HashMap<>();
+    private static final Map<String, Map<String, CallableRequest<AbstractResponse>>> ixiAPI = new HashMap<>();
     private static final Map<String, Map<String, Runnable>> ixiLifetime = new HashMap<>();
     private static final Map<WatchKey, Path> watchKeys = new HashMap<>();
     private static WatchService watcher;
@@ -85,17 +86,17 @@ public class IXI {
         });
     }
 
-    public static AbstractResponse processCommand(final String command) {
+    public static AbstractResponse processCommand(final String command, Map<String, Object> request) {
         try {
-            Map<String, Callable<AbstractResponse>> ixiMap;
+            Map<String, CallableRequest<AbstractResponse>> ixiMap;
             AbstractResponse res;
             for (String key :
                     ixiAPI.keySet()) {
                 if(command.substring(0, key.length()).equals(key)) {
                     String subCmd = command.substring(key.length()+1);
                     ixiMap = ixiAPI.get(key);
-                    Callable<AbstractResponse> c = ixiMap.get(subCmd);
-                    res = c.call();
+                    CallableRequest<AbstractResponse> c = ixiMap.get(subCmd);
+                    res = c.call(request);
                     if(res != null) return res;
                 }
             }
@@ -165,7 +166,7 @@ public class IXI {
 
     private static void attach(final Reader ixi, final String filename) {
         try {
-            Map<String, Callable<AbstractResponse>> ixiMap = new HashMap<>();
+            Map<String, CallableRequest<AbstractResponse>> ixiMap = new HashMap<>();
             Map<String, Runnable> startStop = new HashMap<>();
             Bindings bindings = scriptEngine.createBindings();
 

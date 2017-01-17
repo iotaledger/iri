@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
+import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -19,7 +20,9 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 
+import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -88,19 +91,17 @@ public class Node {
         executor.submit(spawnReceiverThread());
         executor.submit(spawnBroadcasterThread());
         executor.submit(spawnTipRequesterThread());
-        
-        if (Configuration.booling(DefaultConfSettings.EXPERIMENTAL)) {
-            executor.submit(spawnNeighborDNSResolver());
-        }
+        executor.submit(spawnNeighborDNSRefresherThread());
+
         executor.shutdown();
     }
 
     private Map<String, String> neighborIpCache = new HashMap<>();
     
-    private Runnable spawnNeighborDNSResolver() {
+    private Runnable spawnNeighborDNSRefresherThread() {
         return () -> {
 
-            log.info("Spawning Neighbor DNS Checker Thread");
+            log.info("Spawning Neighbor DNS Refresher Thread");
 
             while (!shuttingDown.get()) {
                 log.info("Checking Neighbors' Ip...");
@@ -135,7 +136,7 @@ public class Node {
 
                     Thread.sleep(1000*60*30);
                 } catch (final Exception e) {
-                    log.error("Spawning Neighbor DNS Resolver Thread Exception:", e);
+                    log.error("Neighbor DNS Refresher Thread Exception:", e);
                 }
             }
             log.info("Shutting down Neighbor DNS Resolver Thread");
@@ -173,6 +174,9 @@ public class Node {
 
             log.info("Spawning Receiver Thread");
 
+            final SecureRandom rnd = new SecureRandom();
+            long randomTipBroadcastCounter = 0;
+
             while (!shuttingDown.get()) {
 
                 try {
@@ -197,11 +201,24 @@ public class Node {
                                     System.arraycopy(receivingPacket.getData(), Transaction.SIZE, requestedTransaction,
                                             0, Transaction.HASH_SIZE);
                                     if (Arrays.equals(requestedTransaction, receivedTransaction.hash)) {
-                                        transactionPointer = StorageTransactions.instance()
-                                                .transactionPointer(Milestone.latestMilestone.bytes());
+
+                                        if (Configuration.booling(DefaultConfSettings.EXPERIMENTAL) &&
+                                                ++randomTipBroadcastCounter % 3 == 0) {
+                                            log.info("Experimental: Random Tip Broadcaster.");
+
+                                            final String [] tips = StorageTransactions.instance().tips().stream()
+                                                    .map(Hash::toString)
+                                                    .toArray(size -> new String[size]);
+                                            final String rndTipHash = tips[rnd.nextInt(tips.length)];
+
+                                            transactionPointer = StorageTransactions.instance()
+                                                    .transactionPointer(rndTipHash.getBytes());
+                                        } else {
+                                            transactionPointer = StorageTransactions.instance()
+                                                    .transactionPointer(Milestone.latestMilestone.bytes());
+                                        }
                                     } else {
-                                        transactionPointer = StorageTransactions.instance()
-                                                .transactionPointer(requestedTransaction);
+                                        transactionPointer = StorageTransactions.instance().transactionPointer(requestedTransaction);
                                     }
                                     if (transactionPointer > Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET) {
                                         synchronized (sendingPacket) {

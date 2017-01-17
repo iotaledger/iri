@@ -1,0 +1,21 @@
+
+1.1.2.3:
+
+    - Promoted DNS resolver from experimental (-e) to be activated by default
+    - Implemented experimental random tip selector and broadcaster (to be activated with -e)
+    - API statements log counter
+    - added JRE version to GetNodeInfo
+    - fixed regression with AttachToTangle in combination with PearlDiver update
+    - PearDiver update
+    - UTF-8 Logo
+    - Enabling --remote access
+
+1.1.2.2:
+
+    - DNS resolver
+    - Peerless node
+    - CP437 Logo
+    - getTransactionToApprove lock
+    - preventing getTransactionToToApprove on an unsync tangle
+    - reducing log noise.
+    - general bug fixing

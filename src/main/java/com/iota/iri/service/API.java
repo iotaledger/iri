@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,9 +22,11 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.iota.iri.service.dto.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.xnio.channels.StreamSinkChannel;
 import org.xnio.streams.ChannelInputStream;
 
 import com.google.gson.Gson;
@@ -38,20 +41,6 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
-import com.iota.iri.service.dto.AttachToTangleResponse;
-import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.ExceptionResponse;
-import com.iota.iri.service.dto.FindTransactionsResponse;
-import com.iota.iri.service.dto.GetBalancesResponse;
-import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
-import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.dto.GetTipsResponse;
-import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
-import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageApprovers;
@@ -78,11 +67,16 @@ public class API {
     private final Gson gson = new GsonBuilder().create();
     private final PearlDiver pearlDiver = new PearlDiver();
 
+    private final AtomicInteger counter = new AtomicInteger(0);
+
     public void init() throws IOException {
 
-        int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
+        final int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
+        final String apiHost = Configuration.string(DefaultConfSettings.API_HOST);
 
-        server = Undertow.builder().addHttpListener(apiPort, "localhost")
+        log.debug("Binding JSON-REST API Undertown server on {}:{}", apiHost, apiPort);
+
+        server = Undertow.builder().addHttpListener(apiPort, apiHost)
                 .setHandler(path().addPrefixPath("/", new HttpHandler() {
                     @Override
                     public void handleRequest(final HttpServerExchange exchange) throws Exception {
@@ -120,96 +114,100 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            log.info("-> Requesting command {}", command);
+            if (Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command)) {
+                return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+            }
+
+            log.info("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
             switch (command) {
 
-            case "addNeighbors": {
-                final List<String> uris = (List<String>) request.get("uris");
-                log.debug("Invoking 'addNeighbors' with {}", uris);
-                return addNeighborsStatement(uris);
-            }
-            case "attachToTangle": {
-                final Hash trunkTransaction = new Hash((String) request.get("trunkTransaction"));
-                final Hash branchTransaction = new Hash((String) request.get("branchTransaction"));
-                final int minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
-                final List<String> trytes = (List<String>) request.get("trytes");
+                case "addNeighbors": {
+                    final List<String> uris = (List<String>) request.get("uris");
+                    log.debug("Invoking 'addNeighbors' with {}", uris);
+                    return addNeighborsStatement(uris);
+                }
+                case "attachToTangle": {
+                    final Hash trunkTransaction = new Hash((String) request.get("trunkTransaction"));
+                    final Hash branchTransaction = new Hash((String) request.get("branchTransaction"));
+                    final int minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
+                    final List<String> trytes = (List<String>) request.get("trytes");
 
-                return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
-            }
-            case "broadcastTransactions": {
-                final List<String> trytes = (List<String>) request.get("trytes");
-                log.debug("Invoking 'broadcastTransactions' with {}", trytes);
-                return broadcastTransactionStatement(trytes);
-            }
-            case "findTransactions": {
-                return findTransactionStatement(request);
-            }
-            case "getBalances": {
-                final List<String> addresses = (List<String>) request.get("addresses");
-                final int threshold = ((Double) request.get("threshold")).intValue();
-                return getBalancesStatement(addresses, threshold);
-            }
-            case "getInclusionStates": {
-                final List<String> trans = (List<String>) request.get("transactions");
-                final List<String> tps = (List<String>) request.get("tips");
+                    return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
+                }
+                case "broadcastTransactions": {
+                    final List<String> trytes = (List<String>) request.get("trytes");
+                    log.debug("Invoking 'broadcastTransactions' with {}", trytes);
+                    return broadcastTransactionStatement(trytes);
+                }
+                case "findTransactions": {
+                    return findTransactionStatement(request);
+                }
+                case "getBalances": {
+                    final List<String> addresses = (List<String>) request.get("addresses");
+                    final int threshold = ((Double) request.get("threshold")).intValue();
+                    return getBalancesStatement(addresses, threshold);
+                }
+                case "getInclusionStates": {
+                    final List<String> trans = (List<String>) request.get("transactions");
+                    final List<String> tps = (List<String>) request.get("tips");
 
-                if (trans == null || tps == null) {
-                    return ErrorResponse.create("getInclusionStates Bad Request.");
+                    if (trans == null || tps == null) {
+                        return ErrorResponse.create("getInclusionStates Bad Request.");
+                    }
+
+                    if (invalidSubtangleStatus()) {
+                        return ErrorResponse
+                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    }
+                    return getInclusionStateStatement(trans, tps);
+                }
+                case "getNeighbors": {
+                    return getNeighborsStatement();
+                }
+                case "getNodeInfo": {
+                    return GetNodeInfoResponse.create(IRI.NAME, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
+                            Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
+                            Runtime.getRuntime().totalMemory(), Milestone.latestMilestone, Milestone.latestMilestoneIndex,
+                            Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
+                            Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
+                            System.currentTimeMillis(), StorageTransactions.instance().tips().size(),
+                            StorageScratchpad.instance().getNumberOfTransactionsToRequest());
+                }
+                case "getTips": {
+                    return getTipsStatement();
+                }
+                case "getTransactionsToApprove": {
+                    final int depth = ((Double) request.get("depth")).intValue();
+                    if (invalidSubtangleStatus()) {
+                        return ErrorResponse
+                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    }
+                    return getTransactionToApproveStatement(depth);
+                }
+                case "getTrytes": {
+                    final List<String> hashes = (List<String>) request.get("hashes");
+                    log.debug("Executing getTrytesStatement: {}", hashes);
+                    return getTrytesStatement(hashes);
                 }
 
-                if (invalidSubtangleStatus()) {
-                    return ErrorResponse
-                            .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                case "interruptAttachingToTangle": {
+                    pearlDiver.cancel();
+                    return AbstractResponse.createEmptyResponse();
                 }
-                return getInclusionStateStatement(trans, tps);
-            }
-            case "getNeighbors": {
-                return getNeighborsStatement();
-            }
-            case "getNodeInfo": {
-                return GetNodeInfoResponse.create(IRI.NAME, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
-                        Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
-                        Runtime.getRuntime().totalMemory(), Milestone.latestMilestone, Milestone.latestMilestoneIndex,
-                        Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
-                        Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
-                        System.currentTimeMillis(), StorageTransactions.instance().tips().size(),
-                        StorageScratchpad.instance().getNumberOfTransactionsToRequest());
-            }
-            case "getTips": {
-                return getTipsStatement();
-            }
-            case "getTransactionsToApprove": {
-                final int depth = ((Double) request.get("depth")).intValue();
-                if (invalidSubtangleStatus()) {
-                    return ErrorResponse
-                            .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                case "removeNeighbors": {
+                    final List<String> uris = (List<String>) request.get("uris");
+                    log.debug("Invoking 'removeNeighbors' with {}", uris);
+                    return removeNeighborsStatement(uris);
                 }
-                return getTransactionToApproveStatement(depth);
-            }
-            case "getTrytes": {
-                final List<String> hashes = (List<String>) request.get("hashes");
-                log.debug("Executing getTrytesStatement: {}", hashes);
-                return getTrytesStatement(hashes);
-            }
 
-            case "interruptAttachingToTangle": {
-                pearlDiver.interrupt();
-                return AbstractResponse.createEmptyResponse();
-            }
-            case "removeNeighbors": {
-                final List<String> uris = (List<String>) request.get("uris");
-                log.debug("Invoking 'removeNeighbors' with {}", uris);
-                return removeNeighborsStatement(uris);
-            }
-
-            case "storeTransactions": {
-                List<String> trytes = (List<String>) request.get("trytes");
-                log.debug("Invoking 'storeTransactions' with {}", trytes);
-                return storeTransactionStatement(trytes);
-            }
-            default:
-                return ErrorResponse.create("Command [" + command + "] is unknown");
+                case "storeTransactions": {
+                    List<String> trytes = (List<String>) request.get("trytes");
+                    log.debug("Invoking 'storeTransactions' with {}", trytes);
+                    return storeTransactionStatement(trytes);
+                }
+                default:
+                    return ErrorResponse.create("Command [" + command + "] is unknown");
             }
 
         } catch (final Exception e) {
@@ -218,7 +216,7 @@ public class API {
         }
     }
 
-    private boolean invalidSubtangleStatus() {
+    public static boolean invalidSubtangleStatus() {
         return (Milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
     }
 
@@ -296,7 +294,8 @@ public class API {
 
             {
                 Long pointer;
-                MAIN_LOOP: while ((pointer = nonAnalyzedTransactions.poll()) != null) {
+                MAIN_LOOP:
+                while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
                     if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
@@ -373,7 +372,7 @@ public class API {
         // need refactoring
         final Set<Long> foundTransactions = bundlesTransactions.isEmpty() ? (addressesTransactions.isEmpty()
                 ? (tagsTransactions.isEmpty()
-                        ? (approveeTransactions.isEmpty() ? new HashSet<>() : approveeTransactions) : tagsTransactions)
+                ? (approveeTransactions.isEmpty() ? new HashSet<>() : approveeTransactions) : tagsTransactions)
                 : addressesTransactions) : bundlesTransactions;
 
         if (!addressesTransactions.isEmpty()) {
@@ -455,8 +454,8 @@ public class API {
         return GetBalancesResponse.create(elements, milestone, milestoneIndex);
     }
 
-    private AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
-            final int minWeightMagnitude, final List<String> trytes) {
+    private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
+                                                                  final int minWeightMagnitude, final List<String> trytes) {
         final List<Transaction> transactions = new LinkedList<>();
 
         Hash prevTransaction = null;
@@ -471,7 +470,7 @@ public class API {
                     transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
                     Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
 
-            if (pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
+            if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
                 transactions.clear();
                 break;
             }
@@ -481,7 +480,7 @@ public class API {
         }
 
         final List<String> elements = new LinkedList<>();
-        for (int i = transactions.size(); i-- > 0;) {
+        for (int i = transactions.size(); i-- > 0; ) {
             elements.add(Converter.trytes(transactions.get(i).trits()));
         }
         return AttachToTangleResponse.create(elements);
@@ -510,16 +509,33 @@ public class API {
 
         if (res instanceof ErrorResponse) {
             exchange.setStatusCode(400); // bad request
+        } else if (res instanceof AccessLimitedResponse) {
+            exchange.setStatusCode(401); // api method not allowed
         } else if (res instanceof ExceptionResponse) {
-            exchange.setStatusCode(500); // internall error
+            exchange.setStatusCode(500); // internal error
         }
 
         setupResponseHeaders(exchange);
 
-        final int writtenBytes = exchange.getResponseChannel()
-                .write(ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8)));
-        exchange.endExchange();
-        log.debug("Sent {} bytes back in the response.", writtenBytes);
+        ByteBuffer responseBuf = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
+        exchange.setResponseContentLength(responseBuf.array().length);
+        StreamSinkChannel sinkChannel = exchange.getResponseChannel();
+        sinkChannel.getWriteSetter().set( channel -> {
+            if (responseBuf.remaining() > 0)
+                try {
+                    sinkChannel.write(responseBuf);
+                    if (responseBuf.remaining() == 0) {
+                        exchange.endExchange();
+                    }
+                } catch (IOException e) {
+                    log.error("Error writing response",e);
+                    exchange.endExchange();
+                }
+            else {
+                exchange.endExchange();
+            }
+        });
+        sinkChannel.resumeWrites();
     }
 
     private static void setupResponseHeaders(final HttpServerExchange exchange) {

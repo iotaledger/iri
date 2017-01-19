@@ -10,6 +10,9 @@ public class PearlDiver {
     private static final int CURL_HASH_LENGTH = 243;
     private static final int CURL_STATE_LENGTH = CURL_HASH_LENGTH * 3;
 
+    private static final long HIGH_BITS = 0b1111111111111111111111111111111111111111111111111111111111111111L;
+    private static final long LOW_BITS = 0b0000000000000000000000000000000000000000000000000000000000000000L;
+
     private static final int RUNNING = 0;
     private static final int CANCELLED = 1;
     private static final int COMPLETED = 2;
@@ -92,7 +95,7 @@ public class PearlDiver {
         }
 
         Thread[] workers = new Thread[numberOfThreads];
-		
+        
         while (numberOfThreads-- > 0) {
 
             final int threadIndex = numberOfThreads;
@@ -107,6 +110,7 @@ public class PearlDiver {
 
                 final long[] curlStateLow = new long[CURL_STATE_LENGTH], curlStateHigh = new long[CURL_STATE_LENGTH];
                 final long[] curlScratchpadLow = new long[CURL_STATE_LENGTH], curlScratchpadHigh = new long[CURL_STATE_LENGTH];
+                long mask, outMask = 1;
                 while (state == RUNNING) {
 
                     increment(midCurlStateCopyLow, midCurlStateCopyHigh, (CURL_HASH_LENGTH / 3) * 2, CURL_HASH_LENGTH);
@@ -114,32 +118,30 @@ public class PearlDiver {
                     System.arraycopy(midCurlStateCopyHigh, 0, curlStateHigh, 0, CURL_STATE_LENGTH);
                     transform(curlStateLow, curlStateHigh, curlScratchpadLow, curlScratchpadHigh);
 
-                NEXT_BIT_INDEX:
-                    for (int bitIndex = 64; bitIndex-- > 0; ) {
-
-                        for (int i = minWeightMagnitude; i-- > 0; ) {
-
-                            if ((((int)(curlStateLow[CURL_HASH_LENGTH - 1 - i] >> bitIndex)) & 1) != (((int)(curlStateHigh[CURL_HASH_LENGTH - 1 - i] >> bitIndex)) & 1)) {
-
-                                continue NEXT_BIT_INDEX;
-                            }
+                    mask = HIGH_BITS;
+                    for (int i = minWeightMagnitude; i-- > 0;) {
+                        mask &= ~(curlStateLow[CURL_HASH_LENGTH - 1 - i] ^ curlStateHigh[CURL_HASH_LENGTH - 1 - i]);
+                        if ( mask == 0) {
+                            break;
                         }
-
-                        synchronized (this) {
-
-                            if (state == RUNNING) {
-
-                                state = COMPLETED;
-
-                                for (int i = 0; i < CURL_HASH_LENGTH; i++) {
-                                    transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] = ((((int) (midCurlStateCopyLow[i] >> bitIndex)) & 1) == 0) ? 1 : (((((int) (midCurlStateCopyHigh[i] >> bitIndex)) & 1) == 0) ? -1 : 0);
-                                }
-
-                                notifyAll();
-                            }
-                        }
-                        break;
                     }
+                    if(mask == 0) continue;
+                    synchronized (this) {
+
+                        if (state == RUNNING) {
+
+                            state = COMPLETED;
+
+                            while((outMask & mask) == 0) {
+                                outMask <<= 1;
+                            }
+                            for (int i = 0; i < CURL_HASH_LENGTH; i++) {
+                                transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] = (midCurlStateCopyLow[i] & outMask) == 0 ? 1: (midCurlStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
+                            }
+                            notifyAll();
+                        }
+                    }
+                    break;
                 }
             }));
             workers[threadIndex] = worker;
@@ -161,7 +163,7 @@ public class PearlDiver {
                 state = CANCELLED;
             }
         }
-		
+        
         return state == COMPLETED;
     }
 

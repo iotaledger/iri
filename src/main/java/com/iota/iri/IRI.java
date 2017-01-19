@@ -27,12 +27,10 @@ import ch.qos.logback.core.util.StatusPrinter;
  */
 public class IRI {
 
-
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
-
-    public static final String NAME = "IRI Testnet";
-    public static final String VERSION = "1.1.2.3";
+    public static final String NAME = "IRI";
+    public static final String VERSION = "1.1.2.4";
 
     public static void main(final String[] args) {
 
@@ -63,7 +61,6 @@ public class IRI {
         if (args == null || args.length < 2) {
             log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
             printUsage();
-
         }
 
         final CmdLineParser parser = new CmdLineParser();
@@ -74,6 +71,7 @@ public class IRI {
         final Option<Boolean> headless = parser.addBooleanOption("headless");
         final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
         final Option<Boolean> remote = parser.addBooleanOption("remote");
+        final Option<String> remoteLimitApi = parser.addStringOption("remote-limit-api");
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
         final Option<Boolean> experimental = parser.addBooleanOption('e', "experimental");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
@@ -98,19 +96,25 @@ public class IRI {
         if (parser.getOptionValue(help) != null) {
             printUsage();
         }
-        
+
         String cns = parser.getOptionValue(neighbors);
         if (cns == null) {
             log.warn("No neighbor has been specified. Server starting nodeless.");
             cns = StringUtils.EMPTY;
-        } 
+        }
         Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
-        
+
 
         final String vcors = parser.getOptionValue(cors);
         if (vcors != null) {
             log.debug("Enabled CORS with value : {} ", vcors);
             Configuration.put(DefaultConfSettings.CORS_ENABLED, vcors);
+        }
+
+        final String vremoteapilimit = parser.getOptionValue(remoteLimitApi);
+        if (vremoteapilimit != null) {
+            log.debug("The following api calls are not allowed : {} ", vremoteapilimit);
+            Configuration.put(DefaultConfSettings.REMOTEAPILIMIT, vremoteapilimit);
         }
 
         final String vrport = parser.getOptionValue(rport);
@@ -121,7 +125,7 @@ public class IRI {
         if (parser.getOptionValue(headless) != null) {
             Configuration.put(DefaultConfSettings.HEADLESS, "true");
         }
-        
+
         if (parser.getOptionValue(remote) != null) {
             log.info("Remote access enabled. Binding API socket to listen any interface.");
             Configuration.put(DefaultConfSettings.API_HOST, "0.0.0.0");
@@ -135,7 +139,7 @@ public class IRI {
         if (Integer.parseInt(cport) < 1024) {
             log.warn("Warning: api port value seems too low.");
         }
-        
+
         if (parser.getOptionValue(debug) != null) {
             Configuration.put(DefaultConfSettings.DEBUG, "true");
             log.info(Configuration.allSettings());
@@ -144,16 +148,16 @@ public class IRI {
     }
 
     private static void printUsage() {
-        log.info("Usage: java -jar {}-{}.jar " + 
-                 "[{-p,--port} 14265] " + 
-                 "[{-r,--receiver-port} 14265] " + 
-                 "[{-c,--enabled-cors} *] " + 
-                 "[{-h}] [{--headless}] " + 
-                 "[{-d,--debug}] " + 
-                 "[{-e,--experimental}]" +
-                 "[{--remote}]" +
-                 // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
-                 "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
+        log.info("Usage: java -jar {}-{}.jar " +
+                "[{-p,--port} 14265] " +
+                "[{-r,--receiver-port} 14265] " +
+                "[{-c,--enabled-cors} *] " +
+                "[{-h}] [{--headless}] " +
+                "[{-d,--debug}] " +
+                "[{-e,--experimental}]" +
+                "[{--remote}]" +
+                // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
+                "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
         System.exit(0);
     }
 

@@ -20,9 +20,11 @@ import static java.nio.file.StandardWatchEventKinds.*;
 
 public class IXI {
 
-    //private static final ScriptEngine scriptEngine = (new ScriptEngineManager()).getEngineByName("JavaScript");
+    private static final ScriptEngine scriptEngine = (new ScriptEngineManager()).getEngineByName("JavaScript");
+    /*
     private static final ScriptEngine scriptEngine = (new NashornScriptEngineFactory()).getScriptEngine((classname) ->
             !"com.iota.iri.IXI".equals(classname));
+    */
     private static final Map<String, Map<String, CallableRequest<AbstractResponse>>> ixiAPI = new HashMap<>();
     private static final Map<String, Map<String, Runnable>> ixiLifetime = new HashMap<>();
     private static final Map<WatchKey, Path> watchKeys = new HashMap<>();

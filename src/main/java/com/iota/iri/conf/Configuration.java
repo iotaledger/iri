@@ -7,13 +7,13 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * All those settings are modificable at runtime, 
+ * All those settings are modificable at runtime,
  * but for most of them the node needs to be restarted.
  */
 public class Configuration {
-    
+
     private static final Logger log = LoggerFactory.getLogger(Configuration.class);
-    
+
     private static final Map<String, String> conf = new ConcurrentHashMap<>();
 
     public enum DefaultConfSettings {
@@ -23,25 +23,27 @@ public class Configuration {
         CORS_ENABLED,
         TESTNET, // not used yet
         HEADLESS,
+        REMOTEAPILIMIT,
         NEIGHBORS,
         DEBUG, 
         EXPERIMENTAL, // experimental features.
         IXI_DIR
     }
-    
+
     static {
-    	// defaults
+        // defaults
         conf.put(DefaultConfSettings.API_PORT.name(), "14265");
         conf.put(DefaultConfSettings.API_HOST.name(), "localhost");
         conf.put(DefaultConfSettings.TANGLE_RECEIVER_PORT.name(), "14265");
-        conf.put(DefaultConfSettings.CORS_ENABLED.name(), "*"); 
+        conf.put(DefaultConfSettings.CORS_ENABLED.name(), "*");
         conf.put(DefaultConfSettings.TESTNET.name(), "false");
         conf.put(DefaultConfSettings.HEADLESS.name(), "false");
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
+        conf.put(DefaultConfSettings.REMOTEAPILIMIT.name(), "");
         conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
         conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
     }
-    
+
     public static String allSettings() {
         final StringBuilder settings = new StringBuilder();
         conf.keySet().forEach(t -> settings.append("Set '").append(t).append("'\t -> ").append(conf.get(t)).append("\n"));
@@ -52,34 +54,40 @@ public class Configuration {
         log.debug("Setting {} with {}", k, v);
         conf.put(k, v);
     }
-    
+
     public static void put(final DefaultConfSettings d, String v) {
         log.debug("Setting {} with {}", d.name(), v);
         conf.put(d.name(), v);
     }
-    
+
     public static String string(String k) {
         return conf.get(k);
     }
+
     public static float floating(String k) {
         return Float.parseFloat(conf.get(k));
     }
+
     public static double doubling(String k) {
         return Double.parseDouble(conf.get(k));
     }
+
     public static int integer(String k) {
         return Integer.parseInt(conf.get(k));
     }
+
     public static boolean booling(String k) {
         return Boolean.parseBoolean(conf.get(k));
     }
-    
+
     public static String string(final DefaultConfSettings d) {
         return string(d.name());
     }
+
     public static int integer(final DefaultConfSettings d) {
         return integer(d.name());
     }
+
     public static boolean booling(final DefaultConfSettings d) {
         return booling(d.name());
     }

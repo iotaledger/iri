@@ -171,6 +171,7 @@ public class IRI {
                 TipsManager.instance().shutDown();
                 Node.instance().shutdown();
                 Storage.instance().shutdown();
+                IXI.instance().shutdown();
 
             } catch (final Exception e) {
                 log.error("Exception occurred shutting down IOTA node: ", e);

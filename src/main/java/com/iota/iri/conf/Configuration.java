@@ -25,8 +25,9 @@ public class Configuration {
         HEADLESS,
         REMOTEAPILIMIT,
         NEIGHBORS,
-        DEBUG,
-        EXPERIMENTAL // experimental features.
+        DEBUG, 
+        EXPERIMENTAL, // experimental features.
+        IXI_DIR
     }
 
     static {
@@ -40,6 +41,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
         conf.put(DefaultConfSettings.REMOTEAPILIMIT.name(), "");
         conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
+        conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
     }
 
     public static String allSettings() {

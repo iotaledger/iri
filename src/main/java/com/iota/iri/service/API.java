@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.iota.iri.*;
 import com.iota.iri.service.dto.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -31,10 +32,6 @@ import org.xnio.streams.ChannelInputStream;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.iota.iri.IRI;
-import com.iota.iri.Milestone;
-import com.iota.iri.Neighbor;
-import com.iota.iri.Snapshot;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
@@ -207,7 +204,7 @@ public class API {
                     return storeTransactionStatement(trytes);
                 }
                 default:
-                    return ErrorResponse.create("Command [" + command + "] is unknown");
+                    return IXI.instance().processCommand(command, request);
             }
 
         } catch (final Exception e) {

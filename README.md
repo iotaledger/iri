@@ -1,4 +1,4 @@
-##Dev branch build status: 
+## Master branch build status: 
 [![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=master)](https://travis-ci.org/iotaledger/iri)
 
 ##Introduction

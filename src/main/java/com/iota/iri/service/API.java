@@ -93,11 +93,11 @@ public class API {
 
         final long beginningTime = System.currentTimeMillis();
         final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
-        final AbstractResponse response = process(body);
+        final AbstractResponse response = process(body, exchange);
         sendResponse(exchange, response, beginningTime);
     }
 
-    private AbstractResponse process(final String requestString) throws UnsupportedEncodingException {
+    private AbstractResponse process(final String requestString, final HttpServerExchange exchange) throws UnsupportedEncodingException {
 
         try {
 
@@ -110,8 +110,7 @@ public class API {
             if (command == null) {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
-
-            if (Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command)) {
+            if (!exchange.getDestinationAddress().getHostName().equals("127.0.0.1") && Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command)) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 
@@ -517,7 +516,7 @@ public class API {
         ByteBuffer responseBuf = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
         exchange.setResponseContentLength(responseBuf.array().length);
         StreamSinkChannel sinkChannel = exchange.getResponseChannel();
-        sinkChannel.getWriteSetter().set( channel -> {
+        sinkChannel.getWriteSetter().set(channel -> {
             if (responseBuf.remaining() > 0)
                 try {
                     sinkChannel.write(responseBuf);
@@ -525,7 +524,7 @@ public class API {
                         exchange.endExchange();
                     }
                 } catch (IOException e) {
-                    log.error("Error writing response",e);
+                    log.error("Error writing response", e);
                     exchange.endExchange();
                 }
             else {

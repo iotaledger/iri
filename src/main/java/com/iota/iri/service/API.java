@@ -4,6 +4,7 @@ import static io.undertow.Handlers.path;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -96,11 +97,11 @@ public class API {
 
         final long beginningTime = System.currentTimeMillis();
         final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
-        final AbstractResponse response = process(body);
+        final AbstractResponse response = process(body, exchange.getSourceAddress());
         sendResponse(exchange, response, beginningTime);
     }
 
-    private AbstractResponse process(final String requestString) throws UnsupportedEncodingException {
+    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress) throws UnsupportedEncodingException {
 
         try {
 
@@ -114,7 +115,8 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            if (Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command)) {
+            if (Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command) &&
+                    !sourceAddress.getAddress().equals(InetAddress.getByName("localhost"))) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 

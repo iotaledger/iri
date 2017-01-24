@@ -116,7 +116,7 @@ public class API {
             }
 
             if (Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command) &&
-                    !sourceAddress.getAddress().equals(InetAddress.getByName("localhost"))) {
+                    !sourceAddress.getAddress().isLoopbackAddress()) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 

@@ -539,6 +539,15 @@ public class API {
         headerMap.add(new HttpString("Access-Control-Allow-Origin"),
                 Configuration.string(DefaultConfSettings.CORS_ENABLED));
         headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
+         
+        headerMap.add(new HttpString("Access-Control-Allow-Methods"),
+                "GET, POST, PUT, DELETE, OPTIONS");
+        headerMap.add(new HttpString("Access-Control-Max-Age"),
+                "3600");
+        headerMap.add(new HttpString("Access-Control-Allow-Headers"),
+               "authorization, content-type, xsrf-token");
+        headerMap.add(new HttpString("Access-Control-Expose-Headers"),
+                "xsrf-token");
     }
 
     public void shutDown() {

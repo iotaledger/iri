@@ -269,17 +269,19 @@ public class TipsManager {
                     }
                 }
             }
-            long hit = ThreadLocalRandom.current().nextLong(totalRating);
-			if (hit > 0L) {
-                for (final Map.Entry<Hash, Integer> entry : tailsRatings.entrySet()) {
+            if (totalRating > 0L) {
+                long hit = ThreadLocalRandom.current().nextLong(totalRating);
+                if (hit > 0L) {
+                    for (final Map.Entry<Hash, Integer> entry : tailsRatings.entrySet()) {
 
-                    if ((hit -= entry.getValue()) < 0) {
+                        if ((hit -= entry.getValue()) < 0) {
 
-                        log.info("{} extra transactions approved", entry.getValue());
-                        return entry.getKey();
+                            log.info("{} extra transactions approved", entry.getValue());
+                            return entry.getKey();
+                        }
                     }
-                }
-		    }
+		        }
+			}
             // Should never reach this point
             return preferableMilestone;
         }

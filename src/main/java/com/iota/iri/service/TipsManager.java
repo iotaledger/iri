@@ -186,6 +186,8 @@ public class TipsManager {
             log.info(tailsToAnalyze.size() + " tails need to be analyzed");
             Hash bestTip = preferableMilestone;
             int bestRating = 0;
+            final Map<Hash, Integer> tailsRatings = new HashMap<>();
+            long totalRating = 0;
             for (final Hash tail : tailsToAnalyze) {
 
             	StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
@@ -262,6 +264,8 @@ public class TipsManager {
                         }
 
                         if (extraTransactions != null) {
+                            tailsRatings.put(tail, extraTransactions.size());
+                            totalRating += extraTransactions.size();
                             if (extraTransactions.size() > bestRating) {
                                 bestTip = tail;
                                 bestRating = extraTransactions.size();
@@ -270,7 +274,16 @@ public class TipsManager {
                     }
                 }
             }
-            log.info("{} extra transactions approved", bestRating);
+            long hit = ThreadLocalRandom.current().nextLong(totalRating);
+            for (final Map.Entry<Hash, Integer> entry : tailsRatings.entrySet()) {
+
+                if ((hit -= entry.getValue()) < 0) {
+
+                    log.info("{} extra transactions approved", entry.getValue());
+                    return entry.getKey();
+                }
+            }
+            // Should never reach this point
             return bestTip;
         }
     }

@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,7 +62,7 @@ public class TipsManager {
         shuttingDown = true;
     }
 
-    static synchronized Hash transactionToApprove(final Hash extraTip, final int depth) {
+    static synchronized Hash transactionToApprove(final Hash extraTip, int depth) {
 
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
@@ -146,8 +145,7 @@ public class TipsManager {
             if (extraTip != null) {
 
                 Transaction transaction = StorageTransactions.instance().loadTransaction(StorageTransactions.instance().transactionPointer(tip.bytes()));
-                int depthCopy = depth;
-                while (depthCopy-- > 0 && !tip.equals(Hash.NULL_HASH)) {
+                while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 
                     tip = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
                     do {
@@ -188,13 +186,13 @@ public class TipsManager {
             log.info(tailsToAnalyze.size() + " tails need to be analyzed");
             Hash bestTip = preferableMilestone;
             int bestRating = 0;
+            final Map<Hash, Integer> tailsRatings = new HashMap<>();
+            long totalRating = 0;
             for (final Hash tail : tailsToAnalyze) {
 
             	StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
 
                 Set<Hash> extraTransactions = new HashSet<>();
-
-                if(getDepth(tail.bytes()) > depth) continue;
 
                 nonAnalyzedTransactions.clear();
                 nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(tail.bytes()));
@@ -266,6 +264,8 @@ public class TipsManager {
                         }
 
                         if (extraTransactions != null) {
+                            tailsRatings.put(tail, extraTransactions.size());
+                            totalRating += extraTransactions.size();
                             if (extraTransactions.size() > bestRating) {
                                 bestTip = tail;
                                 bestRating = extraTransactions.size();
@@ -274,27 +274,20 @@ public class TipsManager {
                     }
                 }
             }
-            log.info("{} extra transactions approved", bestRating);
+            long hit = ThreadLocalRandom.current().nextLong(totalRating);
+            for (final Map.Entry<Hash, Integer> entry : tailsRatings.entrySet()) {
+
+                if ((hit -= entry.getValue()) < 0) {
+
+                    log.info("{} extra transactions approved", entry.getValue());
+                    return entry.getKey();
+                }
+            }
+            // Should never reach this point
             return bestTip;
         }
     }
-
-    private static int getDepth(byte[] hash) {
-        final Queue<Long> depthQueue = new LinkedList<Long>(Collections.singleton(StorageTransactions.instance().transactionPointer(hash)));
-        Long pointer;
-        while((pointer = depthQueue.poll()) != null) {
-            final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-            if(Arrays.equals(transaction.address, Milestone.COORDINATOR.bytes())) {
-                int[] trits = new int[Transaction.TAG_SIZE];
-                Converter.getTrits(transaction.tag, trits);
-                return Milestone.latestMilestoneIndex - (int) Converter.longValue(trits, 0, Transaction.TAG_SIZE);
-            }
-            depthQueue.offer(transaction.trunkTransactionPointer);
-            depthQueue.offer(transaction.branchTransactionPointer);
-        }
-        return -1;
-    }
-
+    
     private static TipsManager instance = new TipsManager();
 
     private TipsManager() {}

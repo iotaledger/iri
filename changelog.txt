@@ -1,3 +1,11 @@
+1.1.2.4-3 Testnet Release
+    - CfB's TipsManager code without paulhandy's fix
+
+1.1.2.4-2 Testnet Release
+    - Paul H.'s (paulhandy) TipsManager code
+
+1.1.2.4-1 Testnet Release
+    - Alfred's fix to milestone update bundle problem
 
 1.1.2.3:
 

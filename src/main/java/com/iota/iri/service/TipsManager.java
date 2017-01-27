@@ -186,7 +186,7 @@ public class TipsManager {
 
             log.info(tailsToAnalyze.size() + " tails need to be analyzed");
             final Map<Hash, Integer> tailsRatings = new HashMap<>();
-            long totalRating = 0;
+            long totalRating = 0L;
             for (final Hash tail : tailsToAnalyze) {
 
             	StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
@@ -263,8 +263,9 @@ public class TipsManager {
                         }
 
                         if (extraTransactions != null) {
-                            tailsRatings.put(tail, extraTransactions.size());
-                            totalRating += extraTransactions.size();
+							long extraTransactionSizeSquared = extraTransactions.size() * extraTransactions.size();
+                            tailsRatings.put(tail, extraTransactionSizeSquared);
+                            totalRating += extraTransactionSizeSquared;
                         }
                     }
                 }

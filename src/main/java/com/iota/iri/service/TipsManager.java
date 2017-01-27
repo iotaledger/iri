@@ -185,7 +185,7 @@ public class TipsManager {
             }
 
             log.info(tailsToAnalyze.size() + " tails need to be analyzed");
-            final Map<Hash, Integer> tailsRatings = new HashMap<>();
+            final Map<Hash, Long> tailsRatings = new HashMap<>();
             long totalRating = 0L;
             for (final Hash tail : tailsToAnalyze) {
 
@@ -273,9 +273,9 @@ public class TipsManager {
             if (totalRating > 0L) {
                 long hit = ThreadLocalRandom.current().nextLong(totalRating);
                 if (hit > 0L) {
-                    for (final Map.Entry<Hash, Integer> entry : tailsRatings.entrySet()) {
+                    for (final Map.Entry<Hash, Long> entry : tailsRatings.entrySet()) {
 
-                        if ((hit -= entry.getValue()) < 0) {
+                        if ((hit -= entry.getValue()) < 0L) {
 
                             log.info("{} extra transactions approved", entry.getValue());
                             return entry.getKey();

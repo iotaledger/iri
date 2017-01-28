@@ -32,7 +32,7 @@ public class TipsManager {
 
     private volatile boolean shuttingDown;
     
-    private static class MilestoneInfo {
+    public class MilestoneInfo {
         int depth;
         Hash transactionHash;
     }
@@ -299,12 +299,13 @@ public class TipsManager {
         Long pointer;
         while((pointer = depthQueue.poll()) != null) {
             final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+            if (transaction.type == Storage.PREFILLED_SLOT) return null;
             if(Arrays.equals(transaction.address, Milestone.COORDINATOR.bytes())) {
                 int[] trits = new int[Transaction.TAG_SIZE];
                 Converter.getTrits(transaction.tag, trits);
-                MilestoneInfo info = new MilestoneInfo();
+                MilestoneInfo info = TipsManager.instance().new MilestoneInfo();
                 info.depth = Milestone.latestMilestoneIndex - (int) Converter.longValue(trits, 0, Transaction.TAG_SIZE);
-                info.transactionHash = new Hash(transaction.hash);
+                info.transactionHash = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
                 return info;
             }
             depthQueue.offer(transaction.trunkTransactionPointer);

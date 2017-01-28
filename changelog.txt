@@ -1,3 +1,6 @@
+1.1.2.4-5
+    - Re-integrated milestone depth control when selecting tips.
+
 1.1.2.4-4 Testnet Release
     - CfB's TipsManager code without paulhandy's fix
 	- CfB's suggestion to square the extraTransactions.size() in tip selection algorithm

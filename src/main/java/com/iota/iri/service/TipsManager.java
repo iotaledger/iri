@@ -24,12 +24,18 @@ import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageApprovers;
 import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.StorageTransactions;
+import com.iota.iri.utils.Converter;
 
 public class TipsManager {
 
     private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
     private volatile boolean shuttingDown;
+    
+    private static class MilestoneInfo {
+        int depth;
+        Hash transactionHash;
+    }
 
     public void init() {
 
@@ -63,7 +69,7 @@ public class TipsManager {
         shuttingDown = true;
     }
 
-    static synchronized Hash transactionToApprove(final Hash extraTip, int depth) {
+    static synchronized Hash transactionToApprove(final Hash extraTip, final int depth) {
 
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
@@ -146,12 +152,9 @@ public class TipsManager {
             if (extraTip != null) {
 
                 Transaction transaction = StorageTransactions.instance().loadTransaction(StorageTransactions.instance().transactionPointer(tip.bytes()));
-                while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
-
-                    tip = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
-                    do {
-                        transaction = StorageTransactions.instance().loadTransaction(transaction.trunkTransactionPointer);
-                    } while (transaction.currentIndex != 0);
+                MilestoneInfo milestoneInfo = getDepth(transaction.hash);
+                if (milestoneInfo != null && milestoneInfo.depth < depth) {
+                    tip = milestoneInfo.transactionHash;
                 }
             }
             final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions.instance().transactionPointer(tip.bytes())));
@@ -193,6 +196,9 @@ public class TipsManager {
 
                 Set<Hash> extraTransactions = new HashSet<>();
 
+                MilestoneInfo milestoneInfo = getDepth(tail.bytes());
+                if(milestoneInfo == null || milestoneInfo.depth > depth) continue;
+                
                 nonAnalyzedTransactions.clear();
                 nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(tail.bytes()));
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
@@ -263,7 +269,7 @@ public class TipsManager {
                         }
 
                         if (extraTransactions != null) {
-							long extraTransactionSizeSquared = extraTransactions.size() * extraTransactions.size();
+                            long extraTransactionSizeSquared = (long)(extraTransactions.size()) * ((long)extraTransactions.size());
                             tailsRatings.put(tail, extraTransactionSizeSquared);
                             totalRating += extraTransactionSizeSquared;
                         }
@@ -286,6 +292,25 @@ public class TipsManager {
             // Should never reach this point
             return preferableMilestone;
         }
+    }
+    
+    private static MilestoneInfo getDepth(byte[] hash) {
+        final Queue<Long> depthQueue = new LinkedList<Long>(Collections.singleton(StorageTransactions.instance().transactionPointer(hash)));
+        Long pointer;
+        while((pointer = depthQueue.poll()) != null) {
+            final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+            if(Arrays.equals(transaction.address, Milestone.COORDINATOR.bytes())) {
+                int[] trits = new int[Transaction.TAG_SIZE];
+                Converter.getTrits(transaction.tag, trits);
+                MilestoneInfo info = new MilestoneInfo();
+                info.depth = Milestone.latestMilestoneIndex - (int) Converter.longValue(trits, 0, Transaction.TAG_SIZE);
+                info.transactionHash = new Hash(transaction.hash);
+                return info;
+            }
+            depthQueue.offer(transaction.trunkTransactionPointer);
+            depthQueue.offer(transaction.branchTransactionPointer);
+        }
+        return null;
     }
     
     private static TipsManager instance = new TipsManager();

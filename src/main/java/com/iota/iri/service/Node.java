@@ -21,9 +21,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
-import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +32,7 @@ import com.iota.iri.Neighbor;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageScratchpad;
@@ -177,7 +176,7 @@ public class Node {
             log.info("Spawning Receiver Thread");
 
             final SecureRandom rnd = new SecureRandom();
-            long randomTipBroadcastCounter = 0;
+            long randomTipBroadcastCounter = 1;
 
             while (!shuttingDown.get()) {
 
@@ -202,28 +201,34 @@ public class Node {
                                     long transactionPointer = 0L;
                                     System.arraycopy(receivingPacket.getData(), Transaction.SIZE, requestedTransaction,
                                             0, Transaction.HASH_SIZE);
-                                    if (Arrays.equals(requestedTransaction, Hash.NULL_HASH.bytes())) {
+
+                                    if (Arrays.equals(requestedTransaction, Transaction.NULL_TRANSACTION_HASH_BYTES)) {
                                     	//
                                     	if (randomTipBroadcastCounter % 9 == 0) {
-                                            transactionPointer = StorageTransactions.instance()
-                                                    .transactionPointer(Milestone.latestMilestone.bytes());
-                                            log.info("Random Broadcaster - latestMilestone index==0.");
+                                    	    byte [] mBytes = Milestone.latestMilestone.bytes();
+                                    	    if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
+                                                transactionPointer = StorageTransactions.instance()
+                                                    .transactionPointer(mBytes);
+                                    	    }
                                         }
                                     	else if (randomTipBroadcastCounter % 6 == 0) {
-                                    		transactionPointer = StorageTransactions.instance()
-                                                    .transactionPointer(Milestone.latestMilestone.bytes());
-                                    		final Transaction milestoneTx = StorageTransactions.instance()
+                                    		byte [] mBytes = Milestone.latestMilestone.bytes();
+                                    		if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
+                                    	        transactionPointer = StorageTransactions.instance()
+                                                    .transactionPointer(mBytes);
+                                    		
+                                    	        final Transaction milestoneTx = StorageTransactions.instance()
                                                     .loadTransaction(transactionPointer);
-                                    		final Bundle bundle = new Bundle(milestoneTx.bundle);
-                                    		if (bundle != null) {
-                                    		    Collection<List<Transaction>> tList = bundle.getTransactions();
-                                    		    if (tList != null && tList.size() != 0) {              
-                                    		        for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
-                                    		            if (bundleTransactions.size() > 1) {
-                                                            transactionPointer = bundleTransactions.get(1).pointer;
-                                                            log.info("Random Broadcaster - latestMilestone index==1.");
+                                                final Bundle bundle = new Bundle(milestoneTx.bundle);
+                                    	        if (bundle != null) {
+                                    		        Collection<List<Transaction>> tList = bundle.getTransactions();
+                                    		        if (tList != null && tList.size() != 0) {              
+                                    		            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
+                                    		                if (bundleTransactions.size() > 1) {
+                                                                transactionPointer = bundleTransactions.get(1).pointer;
+                                    		                }
                                                         }
-                                                    }                                    			    
+                                    	            }
                                     	        }
                                     	    }
                                         }
@@ -235,8 +240,8 @@ public class Node {
 
                                             transactionPointer = StorageTransactions.instance()
                                                     .transactionPointer(rndTipHash.getBytes());
-                                    		log.info("Random Broadcaster - random tip.");
                                     	}
+                                        randomTipBroadcastCounter++;
 
                                     } else {
                                         transactionPointer = StorageTransactions.instance().transactionPointer(requestedTransaction);

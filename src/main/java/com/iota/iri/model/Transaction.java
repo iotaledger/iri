@@ -46,6 +46,8 @@ public class Transaction {
 
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
+	public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Transaction.HASH_SIZE];
+	
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
     public final int type;

@@ -482,7 +482,7 @@ public class API {
             System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
                     transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
                     Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
-
+            log.info("Starting PoW...");
             if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
                 transactions.clear();
                 break;

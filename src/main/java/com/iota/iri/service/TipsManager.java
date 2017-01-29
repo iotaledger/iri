@@ -32,6 +32,8 @@ public class TipsManager {
 
     private volatile boolean shuttingDown;
     
+    private static final Set<Long> analyzedTransactions = new HashSet<>();
+    
     public class MilestoneInfo {
         int depth;
         Hash transactionHash;
@@ -72,10 +74,13 @@ public class TipsManager {
     static synchronized Hash transactionToApprove(final Hash extraTip, final int depth) {
 
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
+        
+        final Set<Long> analyzedTransactions_1 = new HashSet<>();
+        final Set<Long> analyzedTransactions_2 = new HashSet<>();
 
-        synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
+        //synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
 
-        	StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
+        	//StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
             Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
@@ -86,7 +91,8 @@ public class TipsManager {
                 Long pointer;
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
+                    if (analyzedTransactions_1.add(pointer)) {
+                    //xx if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
                         numberOfAnalyzedTransactions++;
 
@@ -143,8 +149,8 @@ public class TipsManager {
                 }
             }
 
-            StorageScratchpad.instance().saveAnalyzedTransactionsFlags();
-            StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
+            //xx StorageScratchpad.instance().saveAnalyzedTransactionsFlags();
+            //xx StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
             final Set<Hash> tailsToAnalyze = new HashSet<>();
 
@@ -161,7 +167,8 @@ public class TipsManager {
             Long pointer;
             while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
+                if (analyzedTransactions_2.add(pointer)) {
+                //xx if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
                     final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 
@@ -181,7 +188,8 @@ public class TipsManager {
                 while (tailsToAnalyzeIterator.hasNext()) {
 
                     final Transaction tail = StorageTransactions.instance().loadTransaction(tailsToAnalyzeIterator.next().bytes());
-                    if (StorageScratchpad.instance().analyzedTransactionFlag(tail.pointer)) {
+                    if (analyzedTransactions_2.contains(pointer)) {
+            //xx        if (StorageScratchpad.instance().analyzedTransactionFlag(tail.pointer)) {
                         tailsToAnalyzeIterator.remove();
                     }
                 }
@@ -192,7 +200,7 @@ public class TipsManager {
             long totalRating = 0L;
             for (final Hash tail : tailsToAnalyze) {
 
-            	StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
+            //xx	StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
 
                 Set<Hash> extraTransactions = new HashSet<>();
 
@@ -203,7 +211,8 @@ public class TipsManager {
                 nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(tail.bytes()));
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
+                    //if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
+                    if (analyzedTransactions_1.add(pointer)) {
 
                         final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                         if (transaction.type == Storage.PREFILLED_SLOT) {
@@ -291,7 +300,7 @@ public class TipsManager {
 			}
             // Should never reach this point
             return preferableMilestone;
-        }
+        //}
     }
     
     private static MilestoneInfo getDepth(byte[] hash) {

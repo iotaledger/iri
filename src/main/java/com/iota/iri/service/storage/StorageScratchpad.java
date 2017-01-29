@@ -6,8 +6,10 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +26,7 @@ public class StorageScratchpad extends AbstractStorage {
     private static final String SCRATCHPAD_FILE_NAME = "scratchpad.iri";
 
     private ByteBuffer transactionsToRequest;
-    private ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy;
+    private ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy, analyzedTransactionsFlagsNolock;
     
     private final byte[] transactionToRequest = new byte[Transaction.HASH_SIZE];
     private final Object transactionToRequestMonitor = new Object();
@@ -53,15 +55,17 @@ public class StorageScratchpad extends AbstractStorage {
 	
 	public void transactionToRequest(final byte[] buffer, final int offset) {
 
+	    final Set<Long> analyzedTransactions = new HashSet<>();
+	    
         synchronized (transactionToRequestMonitor) {
 
             if (numberOfTransactionsToRequest == 0) {
 
                 final long beginningTime = System.currentTimeMillis();
 
-                synchronized (analyzedTransactionsFlags) {
+                //synchronized (analyzedTransactionsFlags) {
 
-                    clearAnalyzedTransactionsFlags();
+                    //clearAnalyzedTransactionsFlags();
 
                     final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
                     		
@@ -72,11 +76,11 @@ public class StorageScratchpad extends AbstractStorage {
                     Long pointer;
                     while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                        if (setAnalyzedTransactionFlag(pointer)) {
+                        if (analyzedTransactions.add(pointer)) {
+                        //if (setAnalyzedTransactionFlag(pointer)) {
 
                             final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                             if (transaction.type == Storage.PREFILLED_SLOT) {
-
                                 ((ByteBuffer) transactionsToRequest.position(numberOfTransactionsToRequest++ * Transaction.HASH_SIZE)).put(transaction.hash); // Only 2'917'776 hashes can be stored this way without overflowing the buffer, we assume that nodes will never need to store that many hashes, so we don't need to cap "numberOfTransactionsToRequest"
                             } else {
                                 nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
@@ -84,7 +88,7 @@ public class StorageScratchpad extends AbstractStorage {
                             }
                         }
                     }
-                }
+                //}
 
                 final long transactionsNextPointer = StorageTransactions.transactionsNextPointer;
                 log.info("Transactions to request = {}", numberOfTransactionsToRequest + " / " + (transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE + " (" + (System.currentTimeMillis() - beginningTime) + " ms / " + (numberOfTransactionsToRequest == 0 ? 0 : (previousNumberOfTransactions == 0 ? 0 : (((transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE - previousNumberOfTransactions) * 100) / numberOfTransactionsToRequest)) + "%)");

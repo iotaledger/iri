@@ -209,6 +209,7 @@ public class Node {
                                     	    if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                                 transactionPointer = StorageTransactions.instance()
                                                     .transactionPointer(mBytes);
+                                                log.info("Rebroadcast milestone idx 1");
                                     	    }
                                         }
                                     	else if (randomTipBroadcastCounter % 12 == 0) {
@@ -226,6 +227,7 @@ public class Node {
                                     		            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
                                     		                if (bundleTransactions.size() > 1) {
                                                                 transactionPointer = bundleTransactions.get(1).pointer;
+                                                                log.info("Rebroadcast milestone idx 2");
                                     		                }
                                                         }
                                     	            }
@@ -240,6 +242,7 @@ public class Node {
 
                                             transactionPointer = StorageTransactions.instance()
                                                     .transactionPointer(rndTipHash.getBytes());
+                                            log.info("Rebroadcast random tip");
                                     	}
                                         randomTipBroadcastCounter++;
 

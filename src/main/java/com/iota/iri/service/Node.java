@@ -204,15 +204,15 @@ public class Node {
 
                                     if (Arrays.equals(requestedTransaction, Transaction.NULL_TRANSACTION_HASH_BYTES)) {
                                     	//
-                                    	if (randomTipBroadcastCounter % 18 == 0) {
+                                    	if (randomTipBroadcastCounter % 42 == 0) {
                                     	    byte [] mBytes = Milestone.latestMilestone.bytes();
                                     	    if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                                 transactionPointer = StorageTransactions.instance()
                                                     .transactionPointer(mBytes);
-                                                log.info("Rebroadcast milestone idx 1");
+                                                log.info("Rebroadcast milestone bundle id 0");
                                     	    }
                                         }
-                                    	else if (randomTipBroadcastCounter % 12 == 0) {
+                                    	else if (randomTipBroadcastCounter % 36 == 0) {
                                     		byte [] mBytes = Milestone.latestMilestone.bytes();
                                     		if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                     	        transactionPointer = StorageTransactions.instance()
@@ -227,7 +227,7 @@ public class Node {
                                     		            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
                                     		                if (bundleTransactions.size() > 1) {
                                                                 transactionPointer = bundleTransactions.get(1).pointer;
-                                                                log.info("Rebroadcast milestone idx 2");
+                                                                log.info("Rebroadcast milestone bundle id 1");
                                     		                }
                                                         }
                                     	            }

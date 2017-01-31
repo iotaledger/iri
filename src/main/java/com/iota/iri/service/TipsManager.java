@@ -1,5 +1,6 @@
 package com.iota.iri.service;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -32,10 +33,17 @@ public class TipsManager {
 
     private volatile boolean shuttingDown;
 
-    public class MilestoneInfo {
+    private class MilestoneInfo {
         int depth;
-        Hash transactionHash;
+        Hash milestoneHash;
     }
+    
+    private class TargetInfo {
+        int milestoneIndex;
+        Hash milestoneHash;
+    }
+    
+    private static HashMap<ByteBuffer,TargetInfo> targetMap = new HashMap<>();
 
     public void init() {
 
@@ -128,14 +136,16 @@ public class TipsManager {
                                 return null;
                             }
                         }
-
-                        nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                        nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                        MilestoneInfo info = getDepth(transaction.hash);
+                        if (info != null && info.depth <= (depth-1)) {
+                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
+                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                        }
                     }
                 }
             }
 
-            log.info("Confirmed transactions = {}", numberOfAnalyzedTransactions);
+            log.info("Analyzed transactions = {}", numberOfAnalyzedTransactions);
         }
 
         final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
@@ -157,11 +167,10 @@ public class TipsManager {
         Hash tip = preferableMilestone;
         if (extraTip != null) {
 
-            Transaction transaction = StorageTransactions.instance()
-                    .loadTransaction(StorageTransactions.instance().transactionPointer(tip.bytes()));
+            Transaction transaction = StorageTransactions.instance().loadTransaction(StorageTransactions.instance().transactionPointer(tip.bytes()));
             MilestoneInfo milestoneInfo = getDepth(transaction.hash);
             if (milestoneInfo != null && milestoneInfo.depth < depth) {
-                tip = milestoneInfo.transactionHash;
+                tip = milestoneInfo.milestoneHash;
             }
         }
         final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
@@ -193,8 +202,7 @@ public class TipsManager {
             final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
             while (tailsToAnalyzeIterator.hasNext()) {
 
-                final Transaction tail = StorageTransactions.instance()
-                        .loadTransaction(tailsToAnalyzeIterator.next().bytes());
+                final Transaction tail = StorageTransactions.instance().loadTransaction(tailsToAnalyzeIterator.next().bytes());
                 if (analyzedTransactions_2.contains(pointer)) {
                     tailsToAnalyzeIterator.remove();
                 }
@@ -308,10 +316,20 @@ public class TipsManager {
         }
         // Should never reach this point
         return preferableMilestone;
-        // }
     }
 
     private static MilestoneInfo getDepth(byte[] hash) {
+        ByteBuffer bb = ByteBuffer.wrap(hash);
+        
+        TargetInfo tInfo = targetMap.get(bb);
+        if (tInfo != null) {
+            MilestoneInfo info = TipsManager.instance().new MilestoneInfo();
+            int milestoneIndex = tInfo.milestoneIndex;
+            info.depth = Milestone.latestMilestoneIndex - milestoneIndex;
+            info.milestoneHash = tInfo.milestoneHash;
+            return info;
+        }
+        
         final Queue<Long> depthQueue = new LinkedList<Long>(
                 Collections.singleton(StorageTransactions.instance().transactionPointer(hash)));
         Long pointer;
@@ -323,8 +341,13 @@ public class TipsManager {
                 int[] trits = new int[Transaction.TAG_SIZE];
                 Converter.getTrits(transaction.tag, trits);
                 MilestoneInfo info = TipsManager.instance().new MilestoneInfo();
-                info.depth = Milestone.latestMilestoneIndex - (int) Converter.longValue(trits, 0, Transaction.TAG_SIZE);
-                info.transactionHash = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
+                int milestoneIndex = (int)Converter.longValue(trits, 0, Transaction.TAG_SIZE);
+                info.depth = Milestone.latestMilestoneIndex - milestoneIndex;
+                info.milestoneHash = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
+                tInfo = TipsManager.instance().new TargetInfo();
+                tInfo.milestoneIndex = milestoneIndex;
+                tInfo.milestoneHash = info.milestoneHash;
+                targetMap.put(bb,tInfo);
                 return info;
             }
             depthQueue.offer(transaction.trunkTransactionPointer);

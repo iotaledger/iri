@@ -1,3 +1,7 @@
+1.1.2.4-7
+    - Caching of depth information
+	- Limit the depth for tangle validation
+
 1.1.2.4-6
     - Fixed locking problems when accessing database
 	- Fixed random rebroadcaster

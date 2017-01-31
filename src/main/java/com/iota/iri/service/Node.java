@@ -202,9 +202,11 @@ public class Node {
                                     System.arraycopy(receivingPacket.getData(), Transaction.SIZE, requestedTransaction,
                                             0, Transaction.HASH_SIZE);
 
-                                    if (Arrays.equals(requestedTransaction, Transaction.NULL_TRANSACTION_HASH_BYTES)) {
+                                    if (Arrays.equals(requestedTransaction, Transaction.NULL_TRANSACTION_HASH_BYTES) && 
+                                            (Milestone.latestMilestoneIndex > 0) && 
+                                            (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) { 
                                     	//
-                                    	if (randomTipBroadcastCounter % 42 == 0) {
+                                    	if (randomTipBroadcastCounter % 60 == 0) {
                                     	    byte [] mBytes = Milestone.latestMilestone.bytes();
                                     	    if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                                 transactionPointer = StorageTransactions.instance()
@@ -212,7 +214,7 @@ public class Node {
                                                 log.info("Rebroadcast milestone bundle id 0");
                                     	    }
                                         }
-                                    	else if (randomTipBroadcastCounter % 36 == 0) {
+                                    	else if (randomTipBroadcastCounter % 48 == 0) {
                                     		byte [] mBytes = Milestone.latestMilestone.bytes();
                                     		if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                     	        transactionPointer = StorageTransactions.instance()
@@ -234,7 +236,7 @@ public class Node {
                                     	        }
                                     	    }
                                         }
-                                    	else if (randomTipBroadcastCounter % 6 == 0) {
+                                    	else if (randomTipBroadcastCounter % 12 == 0) {
                                     		final String [] tips = StorageTransactions.instance().tips().stream()
                                                     .map(Hash::toString)
                                                     .toArray(size -> new String[size]);

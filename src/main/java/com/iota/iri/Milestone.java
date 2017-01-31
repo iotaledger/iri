@@ -37,6 +37,8 @@ public class Milestone {
 
     public static void updateLatestMilestone() { // refactor
 
+        final long now = System.currentTimeMillis();
+        
         for (final Long pointer : StorageAddresses.instance().addressesOf(COORDINATOR)) {
 
             if (analyzedMilestoneCandidates.add(pointer) || analyzedMilestoneRetryCandidates.remove(pointer)) {
@@ -45,7 +47,9 @@ public class Milestone {
                 if (transaction.currentIndex == 0) {
 
                     final int index = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET, 15);
-                    if (index > latestMilestoneIndex) {
+                    final long timestamp = (int) Converter.longValue(transaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
+                   
+                    if ((now - timestamp) < 3600000000L && index > latestMilestoneIndex) {
 
                         final Bundle bundle = new Bundle(transaction.bundle);
                         if (bundle.getTransactions().size() == 0) {

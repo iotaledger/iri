@@ -148,6 +148,7 @@ public class TipsManager {
             log.info("Analyzed transactions = {}", numberOfAnalyzedTransactions);
         }
 
+        /*
         final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
         while (stateIterator.hasNext()) {
 
@@ -161,6 +162,7 @@ public class TipsManager {
                 stateIterator.remove();
             }
         }
+        */
 
         final Set<Hash> tailsToAnalyze = new HashSet<>();
 

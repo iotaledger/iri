@@ -49,7 +49,7 @@ public class Milestone {
                     final int index = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET, 15);
                     final long timestamp = (int) Converter.longValue(transaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
                    
-                    if ((now - timestamp) < 3600000000L && index > latestMilestoneIndex) {
+                    if ((now - timestamp) < 3600000L && index > latestMilestoneIndex) {
 
                         final Bundle bundle = new Bundle(transaction.bundle);
                         if (bundle.getTransactions().size() == 0) {

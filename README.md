@@ -7,7 +7,7 @@ The IRI is the IOTA reference implementation project. It is a complete [[IOTA]](
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.2.4 Release
+* **Latest release:** 1.1.2.5 Release
 * **License:** GPLv3
 * **Readme updated:** 2016-12-12 13:26:43 (UTC)
 

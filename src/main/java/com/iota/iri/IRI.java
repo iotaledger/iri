@@ -48,7 +48,7 @@ public class IRI {
             Node.instance().init();
             TipsManager.instance().init();
             API.instance().init();
-            IXI.instance().init();
+            //IXI.instance().init();
 
         } catch (final Exception e) {
             log.error("Exception during IOTA node initialisation: ", e);
@@ -168,7 +168,7 @@ public class IRI {
             log.info("Shutting down IOTA node, please hold tight...");
             try {
 
-                IXI.instance().shutdown();
+                //IXI.instance().shutdown();
                 API.instance().shutDown();
                 TipsManager.instance().shutDown();
                 Node.instance().shutdown();

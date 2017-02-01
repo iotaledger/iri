@@ -1,4 +1,9 @@
 
+1.1.2.5:
+
+    - Different tip selection formula
+    - Reduced locking on database access
+    
 1.1.2.3:
 
     - Promoted DNS resolver from experimental (-e) to be activated by default

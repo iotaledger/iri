@@ -1,5 +1,6 @@
 package com.iota.iri.service;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,12 +25,25 @@ import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageApprovers;
 import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.StorageTransactions;
+import com.iota.iri.utils.Converter;
 
 public class TipsManager {
 
     private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
     private volatile boolean shuttingDown;
+
+    private class MilestoneInfo {
+        int depth;
+        Hash milestoneHash;
+    }
+
+    private class TargetInfo {
+        int milestoneIndex;
+        Hash milestoneHash;
+    }
+
+    private static HashMap<ByteBuffer, TargetInfo> targetMap = new HashMap<>();
 
     public void init() {
 
@@ -62,13 +77,12 @@ public class TipsManager {
         shuttingDown = true;
     }
 
-    static synchronized Hash transactionToApprove(final Hash extraTip, int depth) {
+    static synchronized Hash transactionToApprove(final Hash extraTip, final int depth) {
 
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
-        synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
-
-        	StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
+        final Set<Long> analyzedTransactions_1 = new HashSet<>();
+        final Set<Long> analyzedTransactions_2 = new HashSet<>();
 
             Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
@@ -79,7 +93,7 @@ public class TipsManager {
                 Long pointer;
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
+                    if (analyzedTransactions_1.add(pointer)) {
 
                         numberOfAnalyzedTransactions++;
 
@@ -99,7 +113,9 @@ public class TipsManager {
 
                                         validBundle = true;
 
-                                        bundleTransactions.stream().filter(bundleTransaction -> bundleTransaction.value != 0).forEach(bundleTransaction -> {
+                                        bundleTransactions.stream()
+                                            .filter(bundleTransaction -> bundleTransaction.value != 0)
+                                            .forEach(bundleTransaction -> {
                                             final Hash address = new Hash(bundleTransaction.address);
                                             final Long value = state.get(address);
                                             state.put(address, value == null ? bundleTransaction.value : (value + bundleTransaction.value));
@@ -112,52 +128,48 @@ public class TipsManager {
                                     return null;
                                 }
                             }
-
+                        MilestoneInfo info = getDepth(transaction.hash);
+                        if (info != null && info.depth <= (depth - 1)) {
                             nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
                             nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
                         }
                     }
                 }
-
-                log.info("Confirmed transactions = {}", numberOfAnalyzedTransactions);
             }
 
-            final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
-            while (stateIterator.hasNext()) {
-
-                final Map.Entry<Hash, Long> entry = stateIterator.next();
-                if (entry.getValue() <= 0) {
-
-                    if (entry.getValue() < 0) {
-                    	log.error("Ledger inconsistency detected");
-                        return null;
-                    }
-                    stateIterator.remove();
-                }
+            log.info("Analyzed transactions = {}", numberOfAnalyzedTransactions);
             }
 
-            StorageScratchpad.instance().saveAnalyzedTransactionsFlags();
-            StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
+        /*
+         * final Iterator<Map.Entry<Hash, Long>> stateIterator =
+         * state.entrySet().iterator(); while (stateIterator.hasNext()) {
+         * 
+         * final Map.Entry<Hash, Long> entry = stateIterator.next(); if
+         * (entry.getValue() <= 0) {
+         * 
+         * if (entry.getValue() < 0) {
+         * log.error("Ledger inconsistency detected"); return null; }
+         * stateIterator.remove(); }
+            }
+         */
 
-            final Set<Hash> tailsToAnalyze = new HashSet<>();
+        final Set<Hash> tailsToAnalyze = new HashSet<>();
 
             Hash tip = preferableMilestone;
             if (extraTip != null) {
 
-                Transaction transaction = StorageTransactions.instance().loadTransaction(StorageTransactions.instance().transactionPointer(tip.bytes()));
-                while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
-
-                    tip = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
-                    do {
-                        transaction = StorageTransactions.instance().loadTransaction(transaction.trunkTransactionPointer);
-                    } while (transaction.currentIndex != 0);
+                Transaction transaction = StorageTransactions.instance()
+                    .loadTransaction(StorageTransactions.instance().transactionPointer(tip.bytes()));
+            MilestoneInfo milestoneInfo = getDepth(transaction.hash);
+            if (milestoneInfo != null && milestoneInfo.depth < depth) {
+                tip = milestoneInfo.milestoneHash;
                 }
             }
             final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions.instance().transactionPointer(tip.bytes())));
             Long pointer;
             while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
+                if (analyzedTransactions_2.add(pointer)) {
 
                     final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 
@@ -165,7 +177,9 @@ public class TipsManager {
                         tailsToAnalyze.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
                     }
 
-                    StorageApprovers.instance().approveeTransactions(StorageApprovers.instance().approveePointer(transaction.hash)).forEach(nonAnalyzedTransactions::offer);
+                    StorageApprovers.instance()
+                        .approveeTransactions(StorageApprovers.instance().approveePointer(transaction.hash))
+                        .forEach(nonAnalyzedTransactions::offer);
                 }
             }
 
@@ -176,27 +190,30 @@ public class TipsManager {
                 final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
 
-                    final Transaction tail = StorageTransactions.instance().loadTransaction(tailsToAnalyzeIterator.next().bytes());
-                    if (StorageScratchpad.instance().analyzedTransactionFlag(tail.pointer)) {
+                    final Transaction tail = StorageTransactions.instance()
+                        .loadTransaction(tailsToAnalyzeIterator.next().bytes());
+                    if (analyzedTransactions_2.contains(pointer)) {
                         tailsToAnalyzeIterator.remove();
                     }
                 }
             }
 
             log.info(tailsToAnalyze.size() + " tails need to be analyzed");
-            Hash bestTip = preferableMilestone;
-            int bestRating = 0;
+        final Map<Hash, Long> tailsRatings = new HashMap<>();
+        long totalRating = 0L;
             for (final Hash tail : tailsToAnalyze) {
 
-            	StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
+            Set<Hash> extraTransactions = new HashSet<>();
 
-                Set<Hash> extraTransactions = new HashSet<>();
+            MilestoneInfo milestoneInfo = getDepth(tail.bytes());
+            if (milestoneInfo == null || milestoneInfo.depth > depth)
+                continue;
 
                 nonAnalyzedTransactions.clear();
                 nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(tail.bytes()));
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
+                    if (analyzedTransactions_1.add(pointer)) {
 
                         final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                         if (transaction.type == Storage.PREFILLED_SLOT) {
@@ -216,7 +233,8 @@ public class TipsManager {
 
                     for (final Hash extraTransaction : extraTransactions) {
 
-                        final Transaction transaction = StorageTransactions.instance().loadTransaction(extraTransaction.bytes());
+                        final Transaction transaction = StorageTransactions.instance()
+                            .loadTransaction(extraTransaction.bytes());
                         if (transaction != null && transaction.currentIndex == 0) {
 
                             final Bundle bundle = new Bundle(transaction.bundle);
@@ -246,7 +264,8 @@ public class TipsManager {
 
                         for (final Hash extraTransaction : extraTransactions) {
 
-                            final Transaction transaction = StorageTransactions.instance().loadTransaction(extraTransaction.bytes());
+                            final Transaction transaction = StorageTransactions.instance()
+                                .loadTransaction(extraTransaction.bytes());
                             if (transaction.value != 0) {
                                 final Hash address = new Hash(transaction.address);
                                 final Long value = stateCopy.get(address);
@@ -262,17 +281,67 @@ public class TipsManager {
                         }
 
                         if (extraTransactions != null) {
-                            if (extraTransactions.size() > bestRating) {
-                                bestTip = tail;
-                                bestRating = extraTransactions.size();
-                            }
-                        }
+                        long extraTransactionSizeSquared = (long) (extraTransactions.size())
+                                * ((long) extraTransactions.size());
+                        tailsRatings.put(tail, extraTransactionSizeSquared);
+                        totalRating += extraTransactionSizeSquared;
+                    }
                     }
                 }
             }
-            log.info("{} extra transactions approved", bestRating);
-            return bestTip;
+        if (totalRating > 0L) {
+            long hit = ThreadLocalRandom.current().nextLong(totalRating);
+            if (hit > 0L) {
+                for (final Map.Entry<Hash, Long> entry : tailsRatings.entrySet()) {
+
+                    if ((hit -= entry.getValue()) < 0L) {
+
+                        log.info("{} extra transactions approved", entry.getValue());
+            return entry.getKey();
+                    }
+                }
+            }
         }
+        // Should never reach this point
+        return preferableMilestone;
+    }
+
+    private static MilestoneInfo getDepth(byte[] hash) {
+        ByteBuffer bb = ByteBuffer.wrap(hash);
+
+        TargetInfo tInfo = targetMap.get(bb);
+        if (tInfo != null) {
+            MilestoneInfo info = TipsManager.instance().new MilestoneInfo();
+            int milestoneIndex = tInfo.milestoneIndex;
+            info.depth = Milestone.latestMilestoneIndex - milestoneIndex;
+            info.milestoneHash = tInfo.milestoneHash;
+            return info;
+        }
+
+        final Queue<Long> depthQueue = new LinkedList<Long>(
+                Collections.singleton(StorageTransactions.instance().transactionPointer(hash)));
+        Long pointer;
+        while ((pointer = depthQueue.poll()) != null) {
+            final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+            if (transaction.type == Storage.PREFILLED_SLOT)
+                return null;
+            if (Arrays.equals(transaction.address, Milestone.COORDINATOR.bytes())) {
+                int[] trits = new int[Transaction.TAG_SIZE];
+                Converter.getTrits(transaction.tag, trits);
+                MilestoneInfo info = TipsManager.instance().new MilestoneInfo();
+                int milestoneIndex = (int) Converter.longValue(trits, 0, Transaction.TAG_SIZE);
+                info.depth = Milestone.latestMilestoneIndex - milestoneIndex;
+                info.milestoneHash = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
+                tInfo = TipsManager.instance().new TargetInfo();
+                tInfo.milestoneIndex = milestoneIndex;
+                tInfo.milestoneHash = info.milestoneHash;
+                targetMap.put(bb, tInfo);
+                return info;
+            }
+            depthQueue.offer(transaction.trunkTransactionPointer);
+            depthQueue.offer(transaction.branchTransactionPointer);
+        }
+        return null;
     }
     
     private static TipsManager instance = new TipsManager();

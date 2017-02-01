@@ -33,22 +33,31 @@ public class Milestone {
     public static int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
 
     private static final Set<Long> analyzedMilestoneCandidates = new HashSet<>();
+    private static final Set<Long> analyzedMilestoneRetryCandidates = new HashSet<>();
     private static final Map<Integer, Hash> milestones = new ConcurrentHashMap<>();
 
     public static void updateLatestMilestone() { // refactor
 
+        final long now = System.currentTimeMillis() / 1000L;
+        
         for (final Long pointer : StorageAddresses.instance().addressesOf(COORDINATOR)) {
 
-            if (analyzedMilestoneCandidates.add(pointer)) {
+            if (analyzedMilestoneCandidates.add(pointer) || analyzedMilestoneRetryCandidates.remove(pointer)) {
 
                 final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                 if (transaction.currentIndex == 0) {
 
                     final int index = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET, 15);
-                    if (index > latestMilestoneIndex) {
+                    final long timestamp = (int) Converter.longValue(transaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
+                    if ((now - timestamp) < 7200L && index > latestMilestoneIndex) {
 
                         final Bundle bundle = new Bundle(transaction.bundle);
-                        for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
+                        if (bundle.getTransactions().size() == 0) {
+							// Bundle not available, try again later.
+                            analyzedMilestoneRetryCandidates.add(pointer);
+                        }
+                        else {
+                            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
 
                             if (bundleTransactions.get(0).pointer == transaction.pointer) {
 
@@ -87,6 +96,7 @@ public class Milestone {
                                     }
                                 }
                                 break;
+                                }
                             }
                         }
                     }

@@ -1,19 +1,8 @@
 package com.iota.iri.service.storage;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.channels.FileChannel;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
-import java.util.Collections;
-import java.util.LinkedList;
-import java.util.Queue;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.iota.iri.Milestone;
-import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 
 /**

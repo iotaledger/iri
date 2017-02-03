@@ -1,3 +1,6 @@
+1.1.2.4-9
+    - return lastestSolidMilestone when the tangle is temporary not solid
+	
 1.1.2.4-8
     - Reduced logging
 	- PearDiver threading synchronization

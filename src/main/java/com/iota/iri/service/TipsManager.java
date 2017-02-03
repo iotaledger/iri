@@ -98,15 +98,13 @@ public class TipsManager {
             while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
                 if (analyzedTransactions_1.add(pointer)) {
-                    // xx if
-                    // (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer))
-                    // {
 
                     numberOfAnalyzedTransactions++;
 
                     final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                     if (transaction.type == Storage.PREFILLED_SLOT) {
-                        return null;
+                        log.info("lastestSolidMilestone = {}",Milestone.latestSolidSubtangleMilestoneIndex);
+                        return preferableMilestone;
                     } else {
 
                         if (transaction.currentIndex == 0) {
@@ -133,11 +131,12 @@ public class TipsManager {
                             }
 
                             if (!validBundle) {
+                                log.info("Bundle not valid");
                                 return null;
                             }
                         }
                         MilestoneInfo info = getDepth(transaction.hash);
-                        if (info != null && info.depth <= (depth-1)) {
+                        if (info != null && info.depth <= (depth-12)) {
                             nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
                             nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
                         }
@@ -148,7 +147,6 @@ public class TipsManager {
             log.info("Analyzed transactions = {}", numberOfAnalyzedTransactions);
         }
 
-        /*
         final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
         while (stateIterator.hasNext()) {
 
@@ -162,7 +160,6 @@ public class TipsManager {
                 stateIterator.remove();
             }
         }
-        */
 
         final Set<Hash> tailsToAnalyze = new HashSet<>();
 
@@ -181,9 +178,6 @@ public class TipsManager {
         while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
             if (analyzedTransactions_2.add(pointer)) {
-                // xx if
-                // (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer))
-                // {
 
                 final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 

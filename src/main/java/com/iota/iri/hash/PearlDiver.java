@@ -147,7 +147,7 @@ public class PearlDiver {
 
         try {
             while (state == RUNNING) {
-                wait();
+                wait(20);
             }
         } catch (final InterruptedException e) {
             state = CANCELLED;

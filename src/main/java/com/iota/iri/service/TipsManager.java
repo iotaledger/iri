@@ -302,9 +302,8 @@ public class TipsManager {
             if (hit > 0L) {
                 for (final Map.Entry<Hash, Long> entry : tailsRatings.entrySet()) {
 
-                    if ((hit -= entry.getValue()) < 0L) {
-
-                        log.info("{} extra transactions approved", entry.getValue());
+                    if ((hit -= entry.getValue()) < 0L) {                     
+                        log.info("{} extra transactions approved", (int)Math.sqrt(entry.getValue()));
                         return entry.getKey();
                     }
                 }

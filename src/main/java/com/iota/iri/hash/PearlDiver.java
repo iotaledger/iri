@@ -126,19 +126,16 @@ public class PearlDiver {
                         }
                     }
                     if(mask == 0) continue;
+                    
                     synchronized (this) {
-
                         if (state == RUNNING) {
-
                             state = COMPLETED;
-
                             while((outMask & mask) == 0) {
                                 outMask <<= 1;
                             }
                             for (int i = 0; i < CURL_HASH_LENGTH; i++) {
                                 transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] = (midCurlStateCopyLow[i] & outMask) == 0 ? 1: (midCurlStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
                             }
-                            notifyAll();
                         }
                     }
                     break;

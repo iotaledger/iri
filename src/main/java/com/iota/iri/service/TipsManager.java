@@ -147,6 +147,7 @@ public class TipsManager {
             log.info("Analyzed transactions = {}", numberOfAnalyzedTransactions);
         }
 
+        /*
         final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
         while (stateIterator.hasNext()) {
 
@@ -154,12 +155,13 @@ public class TipsManager {
             if (entry.getValue() <= 0) {
 
                 if (entry.getValue() < 0) {
-                    log.error("Ledger inconsistency detected");
+                    log.error("Ledger inconsistency detected");                    
                     return null;
                 }
                 stateIterator.remove();
             }
         }
+        */
 
         final Set<Hash> tailsToAnalyze = new HashSet<>();
 

@@ -93,11 +93,11 @@ public class API {
 
         final long beginningTime = System.currentTimeMillis();
         final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
-        final AbstractResponse response = process(body, exchange);
+        final AbstractResponse response = process(body, exchange.getSourceAddress());
         sendResponse(exchange, response, beginningTime);
     }
 
-    private AbstractResponse process(final String requestString, final HttpServerExchange exchange) throws UnsupportedEncodingException {
+    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress) throws UnsupportedEncodingException {
 
         try {
 
@@ -110,7 +110,8 @@ public class API {
             if (command == null) {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
-            if (!exchange.getDestinationAddress().getHostName().equals("127.0.0.1") && Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command)) {
+            if (Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command) &&
+                    !sourceAddress.getAddress().isLoopbackAddress()) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 
@@ -203,7 +204,7 @@ public class API {
                     return storeTransactionStatement(trytes);
                 }
                 default:
-                    return IXI.instance().processCommand(command, request);
+                    return ErrorResponse.create("Command [" + command + "] is unknown");
             }
 
         } catch (final Exception e) {

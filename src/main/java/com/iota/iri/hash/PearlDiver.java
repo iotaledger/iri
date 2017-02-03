@@ -158,7 +158,7 @@ public class PearlDiver {
 
         for (int i = 0; i < workers.length; i++) {
             try {
-                workers[i].join();
+                workers[i].join(200);
             } catch (final InterruptedException e) {
                 state = CANCELLED;
             }

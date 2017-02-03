@@ -48,7 +48,7 @@ public class TipsManager {
     public void init() {
 
         (new Thread(() -> {
-        	
+
             while (!shuttingDown) {
 
                 try {
@@ -59,15 +59,18 @@ public class TipsManager {
                     Milestone.updateLatestSolidSubtangleMilestone();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
-                        log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex + " to #" + Milestone.latestMilestoneIndex);
+                        log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex + " to #"
+                                + Milestone.latestMilestoneIndex);
                     }
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
-                    	log.info("Latest SOLID SUBTANGLE milestone has changed from #" + previousSolidSubtangleLatestMilestoneIndex + " to #" + Milestone.latestSolidSubtangleMilestoneIndex);
+                        log.info("Latest SOLID SUBTANGLE milestone has changed from #"
+                                + previousSolidSubtangleLatestMilestoneIndex + " to #"
+                                + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
                     Thread.sleep(5000);
 
                 } catch (final Exception e) {
-                	log.error("Error during TipsManager Milestone updating", e);
+                    log.error("Error during TipsManager Milestone updating", e);
                 }
             }
         }, "Latest Milestone Tracker")).start();
@@ -84,52 +87,56 @@ public class TipsManager {
         final Set<Long> analyzedTransactions_1 = new HashSet<>();
         final Set<Long> analyzedTransactions_2 = new HashSet<>();
 
-            Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
+        Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
-            {
-                int numberOfAnalyzedTransactions = 0;
+        {
+            int numberOfAnalyzedTransactions = 0;
 
-                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions.instance().transactionPointer((extraTip == null ? preferableMilestone : extraTip).bytes())));
-                Long pointer;
-                while ((pointer = nonAnalyzedTransactions.poll()) != null) {
+            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions
+                    .instance().transactionPointer((extraTip == null ? preferableMilestone : extraTip).bytes())));
+            Long pointer;
+            while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (analyzedTransactions_1.add(pointer)) {
+                if (analyzedTransactions_1.add(pointer)) {
 
-                        numberOfAnalyzedTransactions++;
+                    numberOfAnalyzedTransactions++;
 
-                        final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                        if (transaction.type == Storage.PREFILLED_SLOT) {
-                            return null;
-                        } else {
+                    final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+                    if (transaction.type == Storage.PREFILLED_SLOT) {
+                        log.info("lastestSolidMilestone = {}", Milestone.latestSolidSubtangleMilestoneIndex);
+                        return preferableMilestone;
+                    } else {
 
-                            if (transaction.currentIndex == 0) {
+                        if (transaction.currentIndex == 0) {
 
-                                boolean validBundle = false;
+                            boolean validBundle = false;
 
-                                final Bundle bundle = new Bundle(transaction.bundle);
-                                for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
+                            final Bundle bundle = new Bundle(transaction.bundle);
+                            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
 
-                                    if (bundleTransactions.get(0).pointer == transaction.pointer) {
+                                if (bundleTransactions.get(0).pointer == transaction.pointer) {
 
-                                        validBundle = true;
+                                    validBundle = true;
 
-                                        bundleTransactions.stream()
+                                    bundleTransactions.stream()
                                             .filter(bundleTransaction -> bundleTransaction.value != 0)
                                             .forEach(bundleTransaction -> {
-                                            final Hash address = new Hash(bundleTransaction.address);
-                                            final Long value = state.get(address);
-                                            state.put(address, value == null ? bundleTransaction.value : (value + bundleTransaction.value));
-                                        });
-                                        break;
-                                    }
-                                }
-
-                                if (!validBundle) {
-                                    return null;
+                                                final Hash address = new Hash(bundleTransaction.address);
+                                                final Long value = state.get(address);
+                                                state.put(address, value == null ? bundleTransaction.value
+                                                        : (value + bundleTransaction.value));
+                                            });
+                                    break;
                                 }
                             }
+
+                            if (!validBundle) {
+                                log.info("Bundle not valid");
+                                return null;
+                            }
+                        }
                         MilestoneInfo info = getDepth(transaction.hash);
-                        if (info != null && info.depth <= (depth - 1)) {
+                        if (info != null && info.depth <= (depth - 6)) {
                             nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
                             nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
                         }
@@ -138,70 +145,72 @@ public class TipsManager {
             }
 
             log.info("Analyzed transactions = {}", numberOfAnalyzedTransactions);
-            }
+        }
 
-        /*
-         * final Iterator<Map.Entry<Hash, Long>> stateIterator =
-         * state.entrySet().iterator(); while (stateIterator.hasNext()) {
-         * 
-         * final Map.Entry<Hash, Long> entry = stateIterator.next(); if
-         * (entry.getValue() <= 0) {
-         * 
-         * if (entry.getValue() < 0) {
-         * log.error("Ledger inconsistency detected"); return null; }
-         * stateIterator.remove(); }
+        final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
+        while (stateIterator.hasNext()) {
+
+            final Map.Entry<Hash, Long> entry = stateIterator.next();
+            if (entry.getValue() <= 0) {
+
+                if (entry.getValue() < 0) {
+                    log.error("Ledger inconsistency detected");
+                    return null;
+                }
+                stateIterator.remove();
             }
-         */
+        }
 
         final Set<Hash> tailsToAnalyze = new HashSet<>();
 
-            Hash tip = preferableMilestone;
-            if (extraTip != null) {
+        Hash tip = preferableMilestone;
+        if (extraTip != null) {
 
-                Transaction transaction = StorageTransactions.instance()
+            Transaction transaction = StorageTransactions.instance()
                     .loadTransaction(StorageTransactions.instance().transactionPointer(tip.bytes()));
             MilestoneInfo milestoneInfo = getDepth(transaction.hash);
             if (milestoneInfo != null && milestoneInfo.depth < depth) {
                 tip = milestoneInfo.milestoneHash;
-                }
             }
-            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions.instance().transactionPointer(tip.bytes())));
-            Long pointer;
-            while ((pointer = nonAnalyzedTransactions.poll()) != null) {
+        }
+        final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
+                Collections.singleton(StorageTransactions.instance().transactionPointer(tip.bytes())));
+        Long pointer;
+        while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                if (analyzedTransactions_2.add(pointer)) {
+            if (analyzedTransactions_2.add(pointer)) {
 
-                    final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+                final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 
-                    if (transaction.currentIndex == 0) {
-                        tailsToAnalyze.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
-                    }
+                if (transaction.currentIndex == 0) {
+                    tailsToAnalyze.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
+                }
 
-                    StorageApprovers.instance()
+                StorageApprovers.instance()
                         .approveeTransactions(StorageApprovers.instance().approveePointer(transaction.hash))
                         .forEach(nonAnalyzedTransactions::offer);
-                }
             }
+        }
 
-            if (extraTip != null) {
+        if (extraTip != null) {
 
-                StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
+            StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
 
-                final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
-                while (tailsToAnalyzeIterator.hasNext()) {
+            final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
+            while (tailsToAnalyzeIterator.hasNext()) {
 
-                    final Transaction tail = StorageTransactions.instance()
+                final Transaction tail = StorageTransactions.instance()
                         .loadTransaction(tailsToAnalyzeIterator.next().bytes());
-                    if (analyzedTransactions_2.contains(pointer)) {
-                        tailsToAnalyzeIterator.remove();
-                    }
+                if (analyzedTransactions_2.contains(pointer)) {
+                    tailsToAnalyzeIterator.remove();
                 }
             }
+        }
 
-            log.info(tailsToAnalyze.size() + " tails need to be analyzed");
+        log.info(tailsToAnalyze.size() + " tails need to be analyzed");
         final Map<Hash, Long> tailsRatings = new HashMap<>();
         long totalRating = 0L;
-            for (final Hash tail : tailsToAnalyze) {
+        for (final Hash tail : tailsToAnalyze) {
 
             Set<Hash> extraTransactions = new HashSet<>();
 
@@ -209,86 +218,87 @@ public class TipsManager {
             if (milestoneInfo == null || milestoneInfo.depth > depth)
                 continue;
 
-                nonAnalyzedTransactions.clear();
-                nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(tail.bytes()));
-                while ((pointer = nonAnalyzedTransactions.poll()) != null) {
+            nonAnalyzedTransactions.clear();
+            nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(tail.bytes()));
+            while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (analyzedTransactions_1.add(pointer)) {
+                if (analyzedTransactions_1.add(pointer)) {
 
-                        final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                        if (transaction.type == Storage.PREFILLED_SLOT) {
-                            extraTransactions = null;
-                            break;
-                        } else {
-                            extraTransactions.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                    final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+                    if (transaction.type == Storage.PREFILLED_SLOT) {
+                        extraTransactions = null;
+                        break;
+                    } else {
+                        extraTransactions.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
+                        nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
+                        nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                    }
+                }
+            }
+
+            if (extraTransactions != null) {
+
+                Set<Hash> extraTransactionsCopy = new HashSet<>(extraTransactions);
+
+                for (final Hash extraTransaction : extraTransactions) {
+
+                    final Transaction transaction = StorageTransactions.instance()
+                            .loadTransaction(extraTransaction.bytes());
+                    if (transaction != null && transaction.currentIndex == 0) {
+
+                        final Bundle bundle = new Bundle(transaction.bundle);
+                        for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
+
+                            if (Arrays.equals(bundleTransactions.get(0).hash, transaction.hash)) {
+
+                                for (final Transaction bundleTransaction : bundleTransactions) {
+
+                                    if (!extraTransactionsCopy
+                                            .remove(new Hash(bundleTransaction.hash, 0, Transaction.HASH_SIZE))) {
+                                        extraTransactionsCopy = null;
+                                        break;
+                                    }
+                                }
+                                break;
+                            }
                         }
+                    }
+                    if (extraTransactionsCopy == null) {
+                        break;
                     }
                 }
 
-                if (extraTransactions != null) {
+                if (extraTransactionsCopy != null && extraTransactionsCopy.isEmpty()) {
 
-                    Set<Hash> extraTransactionsCopy = new HashSet<>(extraTransactions);
+                    final Map<Hash, Long> stateCopy = new HashMap<>(state);
 
                     for (final Hash extraTransaction : extraTransactions) {
 
                         final Transaction transaction = StorageTransactions.instance()
-                            .loadTransaction(extraTransaction.bytes());
-                        if (transaction != null && transaction.currentIndex == 0) {
-
-                            final Bundle bundle = new Bundle(transaction.bundle);
-                            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
-
-                                if (Arrays.equals(bundleTransactions.get(0).hash, transaction.hash)) {
-
-                                    for (final Transaction bundleTransaction : bundleTransactions) {
-
-                                        if (!extraTransactionsCopy.remove(new Hash(bundleTransaction.hash, 0, Transaction.HASH_SIZE))) {
-                                            extraTransactionsCopy = null;
-                                            break;
-                                        }
-                                    }
-                                    break;
-                                }
-                            }
+                                .loadTransaction(extraTransaction.bytes());
+                        if (transaction.value != 0) {
+                            final Hash address = new Hash(transaction.address);
+                            final Long value = stateCopy.get(address);
+                            stateCopy.put(address, value == null ? transaction.value : (value + transaction.value));
                         }
-                        if (extraTransactionsCopy == null) {
+                    }
+
+                    for (final long value : stateCopy.values()) {
+                        if (value < 0) {
+                            extraTransactions = null;
                             break;
                         }
                     }
 
-                    if (extraTransactionsCopy != null && extraTransactionsCopy.isEmpty()) {
-
-                        final Map<Hash, Long> stateCopy = new HashMap<>(state);
-
-                        for (final Hash extraTransaction : extraTransactions) {
-
-                            final Transaction transaction = StorageTransactions.instance()
-                                .loadTransaction(extraTransaction.bytes());
-                            if (transaction.value != 0) {
-                                final Hash address = new Hash(transaction.address);
-                                final Long value = stateCopy.get(address);
-                                stateCopy.put(address, value == null ? transaction.value : (value + transaction.value));
-                            }
-                        }
-
-                        for (final long value : stateCopy.values()) {
-                            if (value < 0) {
-                                extraTransactions = null;
-                                break;
-                            }
-                        }
-
-                        if (extraTransactions != null) {
+                    if (extraTransactions != null) {
                         long extraTransactionSizeSquared = (long) (extraTransactions.size())
                                 * ((long) extraTransactions.size());
                         tailsRatings.put(tail, extraTransactionSizeSquared);
                         totalRating += extraTransactionSizeSquared;
                     }
-                    }
                 }
             }
+        }
         if (totalRating > 0L) {
             long hit = ThreadLocalRandom.current().nextLong(totalRating);
             if (hit > 0L) {
@@ -296,8 +306,8 @@ public class TipsManager {
 
                     if ((hit -= entry.getValue()) < 0L) {
 
-                        log.info("{} extra transactions approved", entry.getValue());
-            return entry.getKey();
+                        log.info("{} extra transactions approved", (int) Math.sqrt(entry.getValue()));
+                        return entry.getKey();
                     }
                 }
             }
@@ -343,10 +353,11 @@ public class TipsManager {
         }
         return null;
     }
-    
+
     private static TipsManager instance = new TipsManager();
 
-    private TipsManager() {}
+    private TipsManager() {
+    }
 
     public static TipsManager instance() {
         return instance;

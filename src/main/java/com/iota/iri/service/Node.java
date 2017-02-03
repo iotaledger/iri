@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.iota.iri.Bundle;
 import com.iota.iri.Milestone;
 import com.iota.iri.Neighbor;
 import com.iota.iri.conf.Configuration;
@@ -175,7 +177,7 @@ public class Node {
             log.info("Spawning Receiver Thread");
 
             final SecureRandom rnd = new SecureRandom();
-            long randomTipBroadcastCounter = 0;
+            long randomTipBroadcastCounter = 1;
 
             while (!shuttingDown.get()) {
 
@@ -197,30 +199,55 @@ public class Node {
                                         broadcast(receivedTransaction);
                                     }
 
-                                    final long transactionPointer;
+                                    long transactionPointer = 0L;
                                     System.arraycopy(receivingPacket.getData(), Transaction.SIZE, requestedTransaction,
                                             0, Transaction.HASH_SIZE);
-                                    if (Arrays.equals(requestedTransaction, receivedTransaction.hash)) {
-
-                                        if (Configuration.booling(DefaultConfSettings.EXPERIMENTAL) &&
-                                                ++randomTipBroadcastCounter % 3 == 0) {
-                                            log.info("Experimental: Random Tip Broadcaster.");
-
-                                            final String [] tips = StorageTransactions.instance().tips().stream()
+                                    if (Arrays.equals(requestedTransaction, Transaction.NULL_TRANSACTION_HASH_BYTES) && 
+                                            (Milestone.latestMilestoneIndex > 0) && 
+                                            (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) { 
+                                    	//
+                                    	if (randomTipBroadcastCounter % 60 == 0) {
+                                    	    byte [] mBytes = Milestone.latestMilestone.bytes();
+                                    	    if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
+                                                transactionPointer = StorageTransactions.instance()
+                                                    .transactionPointer(mBytes);
+                                    	    }
+                                        }
+                                    	else if (randomTipBroadcastCounter % 48 == 0) {
+                                    	    byte [] mBytes = Milestone.latestMilestone.bytes();
+                                            if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
+                                                transactionPointer = StorageTransactions.instance()
+                                                    .transactionPointer(mBytes);
+                                            
+                                                final Transaction milestoneTx = StorageTransactions.instance()
+                                                    .loadTransaction(transactionPointer);
+                                                final Bundle bundle = new Bundle(milestoneTx.bundle);
+                                                if (bundle != null) {
+                                                    Collection<List<Transaction>> tList = bundle.getTransactions();
+                                                    if (tList != null && tList.size() != 0) {              
+                                                        for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
+                                                            if (bundleTransactions.size() > 1) {
+                                                                transactionPointer = bundleTransactions.get(1).pointer;
+                                                            }
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    	else if (randomTipBroadcastCounter % 12 == 0) {
+                                    		final String [] tips = StorageTransactions.instance().tips().stream()
                                                     .map(Hash::toString)
                                                     .toArray(size -> new String[size]);
                                             final String rndTipHash = tips[rnd.nextInt(tips.length)];
 
                                             transactionPointer = StorageTransactions.instance()
                                                     .transactionPointer(rndTipHash.getBytes());
-                                        } else {
-                                            transactionPointer = StorageTransactions.instance()
-                                                    .transactionPointer(Milestone.latestMilestone.bytes());
                                         }
-                                    } else {
+                                        randomTipBroadcastCounter++;
+                                        } else {
                                         transactionPointer = StorageTransactions.instance().transactionPointer(requestedTransaction);
                                     }
-                                    if (transactionPointer > Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET) {
+                                    if (transactionPointer != 0L && transactionPointer > (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET) ) {
                                         synchronized (sendingPacket) {
                                             System.arraycopy(
                                                     StorageTransactions.instance()

@@ -73,18 +73,6 @@
 			<version>${undertown.version}</version>
 		</dependency>
 
-		<dependency>
-			<groupId>io.undertow</groupId>
-			<artifactId>undertow-servlet</artifactId>
-			<version>${undertown.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>io.undertow</groupId>
-			<artifactId>undertow-websockets-jsr</artifactId>
-			<version>${undertown.version}</version>
-		</dependency>
-
 		<!-- CLI -->
 		<dependency>
 			<groupId>com.sanityinc</groupId>

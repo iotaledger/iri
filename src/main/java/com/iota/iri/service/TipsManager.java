@@ -235,11 +235,12 @@ public class TipsManager {
 
             Set<Hash> extraTransactions = new HashSet<>();
 
-            // Avoid tips that have a branch depth larger than depth            
+            // Avoid tips that have a branch depth larger than depth          
             long tailPointer = StorageTransactions.instance().transactionPointer(tail.bytes());
-            if ( getDepth( StorageTransactions.instance().loadTransaction(StorageTransactions.instance().loadTransaction(tailPointer).branchTransactionPointer).hash ) > depth) {
-                continue;
-            }
+            Transaction tailTx = StorageTransactions.instance().loadTransaction(tailPointer);
+            long branchPointer = tailTx.branchTransactionPointer;
+            Transaction branchTx = StorageTransactions.instance().loadTransaction(branchPointer);
+            if ( getDepth(branchTx.hash) > depth ) continue;
 
             nonAnalyzedTransactions.clear();
             nonAnalyzedTransactions.offer(tailPointer);

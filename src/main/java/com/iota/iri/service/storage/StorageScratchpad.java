@@ -53,11 +53,11 @@ public class StorageScratchpad extends AbstractStorage {
         }
 	}
 	
+    static long lastTime = 0L;
+    
 	public void transactionToRequest(final byte[] buffer, final int offset) {
 
 	    final Set<Long> analyzedTransactions = new HashSet<>();
-	    
-	    long lastTime = 0L;
 	    
         synchronized (transactionToRequestMonitor) {
 

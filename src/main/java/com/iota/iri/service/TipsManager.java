@@ -20,7 +20,6 @@ import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.TipsManager.MilestoneInfo;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageApprovers;
 import com.iota.iri.service.storage.StorageTransactions;

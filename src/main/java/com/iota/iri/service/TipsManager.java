@@ -240,7 +240,7 @@ public class TipsManager {
             long branchPointer = tailTx.branchTransactionPointer;
             Transaction branchTx = StorageTransactions.instance().loadTransaction(branchPointer);
             int criticalDepth = depth;
-            if (extraTip == null) criticalDepth = 1;
+            if (extraTip == null) criticalDepth = 0;
             if ( getDepth(branchTx.hash) > criticalDepth ) continue;
 
             nonAnalyzedTransactions.clear();

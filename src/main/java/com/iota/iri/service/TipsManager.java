@@ -180,7 +180,7 @@ public class TipsManager {
             int searchDepth = depth;
             Hash deepHash = null;
             while ( searchDepth-- > 0 ) {
-                deepHash = Milestone.getMilestone(Milestone.latestSolidSubtangleMilestoneIndex - searchDepth);
+                deepHash = Milestone.getMilestone(Milestone.latestMilestoneIndex - searchDepth);
                 if ( deepHash != null ) break;
             }
             if (deepHash != null) {

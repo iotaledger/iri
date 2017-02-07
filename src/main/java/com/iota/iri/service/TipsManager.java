@@ -353,7 +353,7 @@ public class TipsManager {
     private static int getDepth(byte[] hash) {
         final Queue<Long> depthQueue = new LinkedList<Long>(Collections.singleton(StorageTransactions.instance().transactionPointer(hash)));
         Long pointer;
-        while((pointer = depthQueue.poll()) != null && pointer > 0) {
+        while((pointer = depthQueue.poll()) != null && pointer > 0L) {
             final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
             if (transaction.type == Storage.PREFILLED_SLOT)
                 continue;

@@ -35,6 +35,10 @@ public class Milestone {
     private static final Set<Long> analyzedMilestoneRetryCandidates = new HashSet<>();
     private static final Map<Integer, Hash> milestones = new ConcurrentHashMap<>();
 
+    public static Hash getMilestone(int milestoneIndex) {
+        return milestones.get(milestoneIndex);
+    }
+    
     public static void updateLatestMilestone() { // refactor
 
         final long now = System.currentTimeMillis() / 1000L;

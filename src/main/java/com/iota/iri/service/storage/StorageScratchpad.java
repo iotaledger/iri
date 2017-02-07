@@ -26,7 +26,7 @@ public class StorageScratchpad extends AbstractStorage {
     private static final String SCRATCHPAD_FILE_NAME = "scratchpad.iri";
 
     private ByteBuffer transactionsToRequest;
-    private ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy, analyzedTransactionsFlagsNolock;
+    private ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy;
     
     private final byte[] transactionToRequest = new byte[Transaction.HASH_SIZE];
     private final Object transactionToRequestMonitor = new Object();
@@ -53,6 +53,8 @@ public class StorageScratchpad extends AbstractStorage {
         }
 	}
 	
+    static long lastTime = 0L;
+    
 	public void transactionToRequest(final byte[] buffer, final int offset) {
 
 	    final Set<Long> analyzedTransactions = new HashSet<>();
@@ -63,21 +65,15 @@ public class StorageScratchpad extends AbstractStorage {
 
                 final long beginningTime = System.currentTimeMillis();
 
-                //synchronized (analyzedTransactionsFlags) {
-
-                    //clearAnalyzedTransactionsFlags();
-
-                    final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
+                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
                     		
                     Collections.singleton(
-                        StorageTransactions.instance()
-                        .transactionPointer(Milestone.latestMilestone.bytes())));
+                        StorageTransactions.instance().transactionPointer(Milestone.latestMilestone.bytes())));
                     
                     Long pointer;
                     while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
                         if (analyzedTransactions.add(pointer)) {
-                        //if (setAnalyzedTransactionFlag(pointer)) {
 
                             final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
                             if (transaction.type == Storage.PREFILLED_SLOT) {
@@ -91,7 +87,11 @@ public class StorageScratchpad extends AbstractStorage {
                 //}
 
                 final long transactionsNextPointer = StorageTransactions.transactionsNextPointer;
-                //log.info("Transactions to request = {}", numberOfTransactionsToRequest + " / " + (transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE + " (" + (System.currentTimeMillis() - beginningTime) + " ms / " + (numberOfTransactionsToRequest == 0 ? 0 : (previousNumberOfTransactions == 0 ? 0 : (((transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE - previousNumberOfTransactions) * 100) / numberOfTransactionsToRequest)) + "%)");
+                long now = System.currentTimeMillis();
+                if ((now - lastTime) > 10000L) {
+                    lastTime = now;
+                    log.info("Transactions to request = {}", numberOfTransactionsToRequest + " / " + (transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE + " (" + (System.currentTimeMillis() - beginningTime) + " ms / " + (numberOfTransactionsToRequest == 0 ? 0 : (previousNumberOfTransactions == 0 ? 0 : (((transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE - previousNumberOfTransactions) * 100) / numberOfTransactionsToRequest)) + "%)");
+                }
                 previousNumberOfTransactions = (int) ((transactionsNextPointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) / CELL_SIZE);
             }
 

@@ -1,33 +1,6 @@
-1.1.2.4-9
-    - return lastestSolidMilestone when the tangle is temporary not solid
-	
-1.1.2.4-8
-    - Reduced logging
-	- PearDiver threading synchronization
-	
-1.1.2.4-7
-    - Caching of depth information
-	- Limit the depth for tangle validation
-
-1.1.2.4-6
-    - Fixed locking problems when accessing database
-	- Fixed random rebroadcaster
-
-1.1.2.4-5
-    - Re-integrated milestone depth control when selecting tips.
-
-1.1.2.4-4 Testnet Release
-    - CfB's TipsManager code without paulhandy's fix
-	- CfB's suggestion to square the extraTransactions.size() in tip selection algorithm
-
-1.1.2.4-3 Testnet Release
-    - CfB's TipsManager code without paulhandy's fix
-
-1.1.2.4-2 Testnet Release
-    - Paul H.'s (paulhandy) TipsManager code
-
-1.1.2.4-1 Testnet Release
-    - Alfred's fix to milestone update bundle problem
+1.1.2.6:
+    - Merge with dev branch
+	- Fixes tip selector
 
 1.1.2.3:
 

@@ -152,10 +152,10 @@ public class TipsManager {
                                 return null;
                             }
                         }
-                        if (getDepth(transaction.hash) <= ( depth - 10 )) {
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
-                        }
+
+                        nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
+                        nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+
                     }
                 }
             }

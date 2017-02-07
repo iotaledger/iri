@@ -190,11 +190,9 @@ public class TipsManager {
                 if ( deepHash != null ) break;
             }
             if (deepHash != null) {
-                StringBuffer sb = new StringBuffer();
+                StringBuffer sb = new StringBuffer(24);
                 sb.append("search depth ");
                 sb.append((searchDepth+1));
-                sb.append(", strategy is ");
-                sb.append(currentStrategyName);
                 log.info(sb.toString());
                 tip = deepHash;
             }            
@@ -225,7 +223,13 @@ public class TipsManager {
             }
         }
 
-        log.info(tailsToAnalyze.size() + " tails need to be analyzed");
+        StringBuffer sb = new StringBuffer(60);
+        sb.append(String.valueOf(tailsToAnalyze.size()));
+        sb.append(" tails need to be analyzed, stategy ");
+        sb.append(currentStrategyName);
+        log.info(sb.toString());
+        sb.append(", strategy is ");
+        sb.append(currentStrategyName);
         final Map<Hash, Long> tailsRatings = new HashMap<>();
         long totalRating = 0L;
         int bestRating = 0;

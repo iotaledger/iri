@@ -11,7 +11,7 @@ public class PearlDiver {
     private static final int CURL_STATE_LENGTH = CURL_HASH_LENGTH * 3;
 
     private static final long HIGH_BITS = 0b1111111111111111111111111111111111111111111111111111111111111111L;
-    private static final long LOW_BITS = 0b0000000000000000000000000000000000000000000000000000000000000000L;
+    //private static final long LOW_BITS = 0b0000000000000000000000000000000000000000000000000000000000000000L;
 
     private static final int RUNNING = 0;
     private static final int CANCELLED = 1;
@@ -136,7 +136,8 @@ public class PearlDiver {
                             for (int i = 0; i < CURL_HASH_LENGTH; i++) {
                                 transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] = (midCurlStateCopyLow[i] & outMask) == 0 ? 1: (midCurlStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
                             }
-                        }
+							notifyAll();
+						}
                     }
                     break;
                 }
@@ -147,7 +148,7 @@ public class PearlDiver {
 
         try {
             while (state == RUNNING) {
-                wait(20);
+                wait();
             }
         } catch (final InterruptedException e) {
             state = CANCELLED;
@@ -155,7 +156,7 @@ public class PearlDiver {
 
         for (int i = 0; i < workers.length; i++) {
             try {
-                workers[i].join();
+                workers[i].join(200);
             } catch (final InterruptedException e) {
                 state = CANCELLED;
             }

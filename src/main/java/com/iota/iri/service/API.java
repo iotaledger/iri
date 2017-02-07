@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,6 +22,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.iota.iri.*;
+
+import com.iota.iri.service.dto.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,31 +33,12 @@ import org.xnio.streams.ChannelInputStream;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.iota.iri.IRI;
-import com.iota.iri.Milestone;
-import com.iota.iri.Neighbor;
-import com.iota.iri.Snapshot;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.AccessLimitedResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
-import com.iota.iri.service.dto.AttachToTangleResponse;
-import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.ExceptionResponse;
-import com.iota.iri.service.dto.FindTransactionsResponse;
-import com.iota.iri.service.dto.GetBalancesResponse;
-import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
-import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.dto.GetTipsResponse;
-import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
-import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageApprovers;
@@ -109,11 +94,11 @@ public class API {
 
         final long beginningTime = System.currentTimeMillis();
         final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
-        final AbstractResponse response = process(body);
+        final AbstractResponse response = process(body, exchange.getSourceAddress());
         sendResponse(exchange, response, beginningTime);
     }
 
-    private AbstractResponse process(final String requestString) throws UnsupportedEncodingException {
+    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress) throws UnsupportedEncodingException {
 
         try {
 
@@ -127,7 +112,8 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            if (Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command)) {
+            if (Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command) &&
+                    !sourceAddress.getAddress().isLoopbackAddress()) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 
@@ -482,7 +468,6 @@ public class API {
             System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
                     transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
                     Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
-            log.info("Starting PoW...");
             if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
                 transactions.clear();
                 break;

@@ -77,7 +77,7 @@ public class IRI {
         final Option<Boolean> experimental = parser.addBooleanOption('e', "experimental");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Integer> strategyX = parser.addIntegerOption('x', "strategy-max");
-        final Option<Integer> strategyQ = parser.addIntegerOption('x', "strategy-rsq");
+        final Option<Integer> strategyQ = parser.addIntegerOption('q', "strategy-rsq");
 
         try {
             parser.parse(args);
@@ -157,7 +157,7 @@ public class IRI {
         
         final Integer valueQ = parser.getOptionValue(strategyQ);
         if (valueQ != null) {
-            log.info("Experimental strategy SQR is set to {}.",valueQ);
+            log.info("Experimental strategy RSQ is set to {}.",valueQ);
             TipsManager.setStrategyRSQBars(valueQ);
         }
     }

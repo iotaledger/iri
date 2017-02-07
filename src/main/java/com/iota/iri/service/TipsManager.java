@@ -31,12 +31,12 @@ public class TipsManager {
 
     private volatile boolean shuttingDown;
     
-    private static int strategyMAXBars = 10;
+    private static int strategyMAXBars = 1;
     public static void setStrategyMAXBars(int strategyMAXBars) {
         TipsManager.strategyMAXBars = strategyMAXBars;
     }
 
-    private static int strategyRSQBars = 0;
+    private static int strategyRSQBars = 2;
     public static void setStrategyRSQBars(int strategyRSQBars) {
         TipsManager.strategyRSQBars = strategyRSQBars;
     }
@@ -240,7 +240,7 @@ public class TipsManager {
             long branchPointer = tailTx.branchTransactionPointer;
             Transaction branchTx = StorageTransactions.instance().loadTransaction(branchPointer);
             int criticalDepth = depth;
-            if (extraTip == null) criticalDepth = 0;
+            if (extraTip == null) criticalDepth = 2;
             if ( getDepth(branchTx.hash) > criticalDepth ) continue;
 
             nonAnalyzedTransactions.clear();
@@ -254,12 +254,9 @@ public class TipsManager {
                         extraTransactions = null;
                         break;
                     } else {
-                        extraTransactions.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
-                        int itsDepth = getDepth(transaction.hash);                        
-
+                        extraTransactions.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));                   
                         nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
                         nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
-    
                     }
                 }
             }

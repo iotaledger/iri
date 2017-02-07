@@ -20,6 +20,7 @@ import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.service.TipsManager.MilestoneInfo;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageApprovers;
 import com.iota.iri.service.storage.StorageTransactions;
@@ -92,11 +93,12 @@ public class TipsManager {
 
         Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
-        strategyBarCount++;
+        if (extraTip == null) {
+            strategyBarCount++;
+        }
         if (strategyBarCount > (strategyMAXBars + strategyRSQBars) ) {
             strategyBarCount = 1;
         }
-
         if (strategyBarCount <= strategyMAXBars) {
             currentStrategy = strategyMAX;
             currentStrategyName = "MAX";
@@ -152,10 +154,11 @@ public class TipsManager {
                                 return null;
                             }
                         }
-
-                        nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                        nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
-
+                        int itsDepth = getDepth(transaction.hash);                        
+                        if (itsDepth <= (depth - 50)) {
+                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
+                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                        }
                     }
                 }
             }
@@ -215,11 +218,9 @@ public class TipsManager {
         }
 
         if (extraTip != null) {
-            // Avoid tails that where used for trunk selection
             final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
             while (tailsToAnalyzeIterator.hasNext()) {
-                final Transaction tail = StorageTransactions.instance()
-                        .loadTransaction(tailsToAnalyzeIterator.next().bytes());
+                final Transaction tail = StorageTransactions.instance().loadTransaction(tailsToAnalyzeIterator.next().bytes());
                 if (analyzedTransactions_1.contains(tail.pointer)) {
                     tailsToAnalyzeIterator.remove();
                 }
@@ -254,8 +255,11 @@ public class TipsManager {
                         break;
                     } else {
                         extraTransactions.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
-                        nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                        nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                        int itsDepth = getDepth(transaction.hash);                        
+                        if (itsDepth <= (depth - 50)) {
+                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
+                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                        }
                     }
                 }
             }

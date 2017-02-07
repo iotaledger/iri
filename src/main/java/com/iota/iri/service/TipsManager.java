@@ -97,7 +97,6 @@ public class TipsManager {
             strategyBarCount = 1;
         }
 
-        currentStrategy = strategyRSQ;
         if (strategyBarCount <= strategyMAXBars) {
             currentStrategy = strategyMAX;
             currentStrategyName = "MAX";
@@ -190,7 +189,12 @@ public class TipsManager {
                 if ( deepHash != null ) break;
             }
             if (deepHash != null) {
-                log.info("searchDepth {}, strategy is ",searchDepth+1,currentStrategyName);
+                StringBuffer sb = new StringBuffer();
+                sb.append("search depth ");
+                sb.append((searchDepth+1));
+                sb.append(", strategy is ");
+                sb.append(currentStrategyName);
+                log.info(sb.toString());
                 tip = deepHash;
             }            
         }

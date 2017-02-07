@@ -331,6 +331,7 @@ public class TipsManager {
         }
         
         if (currentStrategy == strategyMAX) {
+            log.info("{} extra transactions approved", bestRating);
             return bestTip;
         }
         

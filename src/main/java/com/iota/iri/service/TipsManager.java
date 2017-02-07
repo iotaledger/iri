@@ -152,12 +152,11 @@ public class TipsManager {
                                 log.info("Bundle not valid");
                                 return null;
                             }
-                        }
-                        int itsDepth = getDepth(transaction.hash);                        
-                        if (itsDepth <= (depth - 50)) {
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
-                        }
+                        }                     
+
+                        nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
+                        nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+
                     }
                 }
             }
@@ -240,7 +239,9 @@ public class TipsManager {
             Transaction tailTx = StorageTransactions.instance().loadTransaction(tailPointer);
             long branchPointer = tailTx.branchTransactionPointer;
             Transaction branchTx = StorageTransactions.instance().loadTransaction(branchPointer);
-            if ( getDepth(branchTx.hash) > depth ) continue;
+            int criticalDepth = depth;
+            if (extraTip == null) criticalDepth = 1;
+            if ( getDepth(branchTx.hash) > criticalDepth ) continue;
 
             nonAnalyzedTransactions.clear();
             nonAnalyzedTransactions.offer(tailPointer);
@@ -255,10 +256,10 @@ public class TipsManager {
                     } else {
                         extraTransactions.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
                         int itsDepth = getDepth(transaction.hash);                        
-                        if (itsDepth <= (depth - 50)) {
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
-                        }
+
+                        nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
+                        nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+    
                     }
                 }
             }

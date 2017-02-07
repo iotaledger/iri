@@ -353,7 +353,7 @@ public class TipsManager {
     private static int getDepth(byte[] hash) {
         final Queue<Long> depthQueue = new LinkedList<Long>(Collections.singleton(StorageTransactions.instance().transactionPointer(hash)));
         Long pointer;
-        while((pointer = depthQueue.poll()) != null) {
+        while((pointer = depthQueue.poll()) != 0L) {
             final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
             if(Arrays.equals(transaction.address, Milestone.COORDINATOR.bytes())) {
                 int[] trits = new int[Transaction.TAG_SIZE];

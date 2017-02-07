@@ -88,6 +88,7 @@ public class TipsManager {
         final Set<Long> analyzedTransactions_2 = new HashSet<>();
         
         int currentStrategy;
+        String currentStrategyName;
 
         Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
@@ -99,6 +100,11 @@ public class TipsManager {
         currentStrategy = strategyRSQ;
         if (strategyBarCount <= strategyMAXBars) {
             currentStrategy = strategyMAX;
+            currentStrategyName = "MAX";
+        }
+        else {
+            currentStrategy = strategyRSQ;
+            currentStrategyName = "RSQ";
         }
         
         {
@@ -147,7 +153,7 @@ public class TipsManager {
                                 return null;
                             }
                         }
-                        if (getDepth(transaction.hash) <= (depth- 6)) {
+                        if (getDepth(transaction.hash) <= ( depth - 10 )) {
                             nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
                             nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
                         }
@@ -184,7 +190,7 @@ public class TipsManager {
                 if ( deepHash != null ) break;
             }
             if (deepHash != null) {
-                log.info("searchDepth {}",searchDepth+1);
+                log.info("searchDepth {}, strategy is ",searchDepth+1,currentStrategyName);
                 tip = deepHash;
             }            
         }

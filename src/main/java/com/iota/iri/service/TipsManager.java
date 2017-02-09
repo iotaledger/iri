@@ -76,7 +76,9 @@ public class TipsManager {
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
 
-                    Thread.sleep((long)((long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L)+5000L);
+                    long latency = (long)((long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L)+5000L;
+                    log.info("Next milestone check in {} seconds",latency/1000L);
+                    Thread.sleep(latency);
                     
                 } catch (final Exception e) {
                     log.error("Error during TipsManager Milestone updating", e);

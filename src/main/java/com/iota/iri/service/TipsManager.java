@@ -1,5 +1,6 @@
 package com.iota.iri.service;
 
+import java.security.SecureRandom;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +46,8 @@ public class TipsManager {
     public void init() {
 
         (new Thread(() -> {
+            
+            final SecureRandom rnd = new SecureRandom();
 
             while (!shuttingDown) {
                 
@@ -67,7 +70,7 @@ public class TipsManager {
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
 
-                    Thread.sleep(5000);
+                    Thread.sleep((long)((long)rnd.nextInt(600)*1000L)+5000L);
                     
                 } catch (final Exception e) {
                     log.error("Error during TipsManager Milestone updating", e);

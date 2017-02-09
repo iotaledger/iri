@@ -236,7 +236,7 @@ public class Node {
                                     	        }
                                     	    }
                                         }
-                                    	else if (randomTipBroadcastCounter % 12 == 0) {
+                                    	else if (randomTipBroadcastCounter % 4 == 0) {
                                     		final String [] tips = StorageTransactions.instance().tips().stream()
                                                     .map(Hash::toString)
                                                     .toArray(size -> new String[size]);

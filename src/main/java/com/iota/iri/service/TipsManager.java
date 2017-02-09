@@ -28,6 +28,8 @@ public class TipsManager {
     private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
     private static int RATING_THRESHOLD = 50; // Must be in [0..100] range
+    
+    private static int ARTIFICAL_LATENCY = 1200; 
 
     static boolean shuttingDown;
 
@@ -41,6 +43,10 @@ public class TipsManager {
         if (value < 0) value = 0;
         if (value > 100) value = 100;
         RATING_THRESHOLD = value;
+    }
+    
+    public static void setARTIFICAL_LATENCY(int value) {
+        ARTIFICAL_LATENCY = value;
     }
     
     public void init() {
@@ -70,7 +76,7 @@ public class TipsManager {
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
 
-                    Thread.sleep((long)((long)rnd.nextInt(600)*1000L)+5000L);
+                    Thread.sleep((long)((long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L)+5000L);
                     
                 } catch (final Exception e) {
                     log.error("Error during TipsManager Milestone updating", e);

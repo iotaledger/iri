@@ -108,7 +108,7 @@ public class IXI {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ErrorResponse.create("Command [" + command + "] is unknown");
+        return null;
     }
 
     private static void processEvents() {

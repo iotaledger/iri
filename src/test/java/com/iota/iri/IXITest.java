@@ -53,14 +53,12 @@ public class IXITest {
         }
         // Allow IXI to load the file
         Map<String, Object> request = new HashMap<>();
-        Thread.sleep(1);
+        Thread.sleep(1000);
         AbstractResponse response = IXI.processCommand("test.getParser", request);
 
-        /*
         assertFalse(response instanceof ErrorResponse);
         assertTrue(response instanceof IXIResponse);
         assertNotNull(((IXIResponse)response).getResponse());
-        */
 
         testFile.delete();
 

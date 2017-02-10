@@ -1,7 +1,8 @@
 language: java
 jdk:
 - oraclejdk8
-before_script: echo "$GPG_KEY" > codesigning.asc && gpg --fast-import codesigning.asc
+before_install: openssl aes-256-cbc -K $encrypted_2f3c96d5a390_key -iv $encrypted_2f3c96d5a390_iv -in codesigning.asc.enc -out codesigning.asc -d
+before_script: gpg --fast-import codesigning.asc
 script: mvn package -P build-extras
 deploy:
   provider: releases

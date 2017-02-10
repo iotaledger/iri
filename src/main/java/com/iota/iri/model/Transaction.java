@@ -60,8 +60,16 @@ public class Transaction {
     
     public final long value; // <0 spending transaction, >=0 deposit transaction / message
     
-    public final long arrivalTime;
+    public long arrivalTime;
     
+    public void setArrivalTime(long arrivalTime) {
+        this.arrivalTime = arrivalTime;
+    }
+
+    public long getArrivalTime() {
+        return arrivalTime;
+    }
+
     public final byte[] tag; // milestone index only for milestone tx. Otherwise, arbitrary up to the tx issuer.
     public final long currentIndex; // index of tx in the bundle
     public final long lastIndex; // lastIndex is curIndex of the last tx from the same bundle
@@ -104,7 +112,7 @@ public class Transaction {
         branchTransactionPointer = 0;
         validity = 0;
 
-        arrivalTime = System.currentTimeMillis();
+        arrivalTime = System.currentTimeMillis() / 1000L;
         pointer = 0;
     }
 
@@ -149,7 +157,7 @@ public class Transaction {
         trunkTransactionPointer = 0;
         branchTransactionPointer = 0;
         validity = 0;
-        arrivalTime = System.currentTimeMillis();
+        arrivalTime = System.currentTimeMillis() / 1000L;
 
         pointer = 0;
     }

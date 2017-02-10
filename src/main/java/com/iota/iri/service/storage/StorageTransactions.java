@@ -181,11 +181,25 @@ public class StorageTransactions extends AbstractStorage {
     	}
     }
     
+    /*
     public void setArrivalTime(final long pointer, final long time) {
         synchronized (Storage.class) {
+            
+            buffer[offset] = (byte)value;
+            buffer[offset + 1] = (byte)(value >> 8);
+            buffer[offset + 2] = (byte)(value >> 16);
+            buffer[offset + 3] = (byte)(value >> 24);
+            buffer[offset + 4] = (byte)(value >> 32);
+            buffer[offset + 5] = (byte)(value >> 40);
+            buffer[offset + 6] = (byte)(value >> 48);
+            buffer[offset + 7] = (byte)(value >> 56);
+        }
+            setValue(final byte[] buffer, final int offset, final long value) {
+            transactionsChunks[(int)(pointer >> 27)]
             transactionsChunks[(int)(pointer >> 27)].putLong(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET, (long)time);
         }
     }
+    */
     
     public long storeTransaction(final byte[] hash, final Transaction transaction, final boolean tip) { // Returns the pointer or 0 if the transaction was already in the storage and "transaction" value is not null
 
@@ -205,6 +219,7 @@ public class StorageTransactions extends AbstractStorage {
                     setValue(mainBuffer, (hash[depth] + 128) << 3, pointer = transactionsNextPointer);
                     ((ByteBuffer)transactionsChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
+                    transaction.setArrivalTime(System.currentTimeMillis() / 1000L);
                     Transaction.dump(mainBuffer, hash, transaction);
                     appendToTransactions(transaction != null || tip);
                     if (transaction != null) {
@@ -238,6 +253,7 @@ public class StorageTransactions extends AbstractStorage {
                         setValue(mainBuffer, (hash[i] + 128) << 3, transactionsNextPointer + CELL_SIZE);
                         appendToTransactions(false);
 
+                        transaction.setArrivalTime(System.currentTimeMillis() / 1000L);
                         Transaction.dump(mainBuffer, hash, transaction);
                         pointer = transactionsNextPointer;
                         appendToTransactions(transaction != null || tip);
@@ -252,6 +268,7 @@ public class StorageTransactions extends AbstractStorage {
                 if (transaction != null) {
 
                     if (mainBuffer[Transaction.TYPE_OFFSET] == PREFILLED_SLOT) {
+                        transaction.setArrivalTime(System.currentTimeMillis() / 1000L);
                         Transaction.dump(mainBuffer, hash, transaction);
                         ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
                         Storage.instance().updateBundleAddressTagAndApprovers(pointer);

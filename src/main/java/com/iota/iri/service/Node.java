@@ -197,7 +197,6 @@ public class Node {
                                             receivedTransactionTrits, curl);
                                     if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.hash,
                                             receivedTransaction, false)) != 0L) {
-                                        StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis());
                                         neighbor.incNewTransactions();
                                         broadcast(receivedTransaction);
                                     }

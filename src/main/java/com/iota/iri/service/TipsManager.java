@@ -102,9 +102,9 @@ public class TipsManager {
         for (final Long pointer : StorageAddresses.instance().addressesOf(Milestone.COORDINATOR)) {
             final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
             if (transaction.currentIndex == 0) {
-                int milestoneIndex = (int) Converter.longValue(transaction.trits(), 0, Transaction.TAG_SIZE);
+                int milestoneIndex = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET, 15);
                 if (milestoneIndex >= oldestAcceptableMilestoneIndex) {
-                    long itsArrivalTime = transaction.arrivalTime;
+                    long itsArrivalTime = 1000L * transaction.arrivalTime;
                     final long timestamp = (int) Converter.longValue(transaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
                     if (itsArrivalTime == 0) itsArrivalTime = 1000*timestamp;
                     if (itsArrivalTime < criticalArrivalTime) {                        

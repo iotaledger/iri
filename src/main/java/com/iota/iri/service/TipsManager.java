@@ -103,6 +103,8 @@ public class TipsManager {
         
         final int oldestAcceptableMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex - depth;
         
+        Hash oldestAcceptableMilestone = preferableMilestone;
+        
         long criticalArrivalTime = Long.MAX_VALUE;
         for (final Long pointer : StorageAddresses.instance().addressesOf(Milestone.COORDINATOR)) {
             final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
@@ -114,6 +116,7 @@ public class TipsManager {
                     if (itsArrivalTime == 0) itsArrivalTime = 1000*timestamp;
                     if (itsArrivalTime < criticalArrivalTime) {                        
                         criticalArrivalTime = itsArrivalTime;
+                        oldestAcceptableMilestone = new Hash(transaction.hash);
                     }
                 }
             }
@@ -428,8 +431,11 @@ public class TipsManager {
         // System.out.ln(bestRating + " extra transactions approved");
 
         /**/if (tailsRaitings.isEmpty()) {
-            /**/
-            /**/return preferableMilestone;
+            /**/if (extraTip == null) {
+            /**/    return preferableMilestone;
+            /**/}
+            /**/else {
+            /**/    return oldestAcceptableMilestone;
             /**/}
 
         /**/final Map<Hash, Integer> filteredTailsRatings = new HashMap<>();

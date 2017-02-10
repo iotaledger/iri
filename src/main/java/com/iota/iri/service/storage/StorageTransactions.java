@@ -158,6 +158,19 @@ public class StorageTransactions extends AbstractStorage {
         }
     }
 	
+    public void setArrivalTime(final long pointer, final long value) {
+        synchronized (Storage.class) {            
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET, (byte)value);
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+1, (byte)(value >> 8));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+2, (byte)(value >> 16));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+3, (byte)(value >> 24));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+4, (byte)(value >> 32));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+5, (byte)(value >> 40));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+6, (byte)(value >> 48));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+7, (byte)(value >> 56));
+        }
+    }
+
     public boolean tipFlag(final long pointer) {
     	synchronized (Storage.class) {
             final long index = (pointer - (CELLS_OFFSET - SUPER_GROUPS_OFFSET)) >> 11;
@@ -181,25 +194,6 @@ public class StorageTransactions extends AbstractStorage {
     	}
     }
     
-    /*
-    public void setArrivalTime(final long pointer, final long time) {
-        synchronized (Storage.class) {
-            
-            buffer[offset] = (byte)value;
-            buffer[offset + 1] = (byte)(value >> 8);
-            buffer[offset + 2] = (byte)(value >> 16);
-            buffer[offset + 3] = (byte)(value >> 24);
-            buffer[offset + 4] = (byte)(value >> 32);
-            buffer[offset + 5] = (byte)(value >> 40);
-            buffer[offset + 6] = (byte)(value >> 48);
-            buffer[offset + 7] = (byte)(value >> 56);
-        }
-            setValue(final byte[] buffer, final int offset, final long value) {
-            transactionsChunks[(int)(pointer >> 27)]
-            transactionsChunks[(int)(pointer >> 27)].putLong(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET, (long)time);
-        }
-    }
-    */
     
     public long storeTransaction(final byte[] hash, final Transaction transaction, final boolean tip) { // Returns the pointer or 0 if the transaction was already in the storage and "transaction" value is not null
 

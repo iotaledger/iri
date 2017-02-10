@@ -262,6 +262,7 @@ public class API {
         for (final String trytes : trys) {
             final Transaction transaction = new Transaction(Converter.trits(trytes));
             pointer = StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
+            StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
         }
         return AbstractResponse.createEmptyResponse();
     }

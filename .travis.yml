@@ -21,5 +21,5 @@ deploy:
     repo: iotaledger/iri
     all_branches: true
 before_install:
-- openssl aes-256-cbc -K $encrypted_2f3c96d5a390_key -iv $encrypted_2f3c96d5a390_iv
+- openssl aes-256-cbc -K $encrypted_05a8efa47335_key -iv $encrypted_05a8efa47335_iv
   -in codesigning.asc.enc -out codesigning.asc -d

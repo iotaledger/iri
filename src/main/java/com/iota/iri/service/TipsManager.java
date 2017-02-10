@@ -106,7 +106,7 @@ public class TipsManager {
                 if (milestoneIndex >= oldestAcceptableMilestoneIndex) {
                     long itsArrivalTime = transaction.arrivalTime;
                     final long timestamp = (int) Converter.longValue(transaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
-                    if (itsArrivalTime == 0) itsArrivalTime = timestamp;
+                    if (itsArrivalTime == 0) itsArrivalTime = 1000*timestamp;
                     if (itsArrivalTime < criticalArrivalTime) {                        
                         criticalArrivalTime = itsArrivalTime;
                     }
@@ -348,7 +348,7 @@ public class TipsManager {
 
                                     final long timestamp = (int) Converter.longValue(bundleTransaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
                                     long itsArrivalTime = bundleTransaction.arrivalTime;
-                                    if (itsArrivalTime == 0) itsArrivalTime = timestamp;
+                                    if (itsArrivalTime == 0) itsArrivalTime = 1000*timestamp;
                                                                         
                                     if ( itsArrivalTime < criticalArrivalTime ) {
                                         formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");

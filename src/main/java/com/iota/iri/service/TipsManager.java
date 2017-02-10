@@ -81,8 +81,13 @@ public class TipsManager {
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
 
-                    long latency = (long)((long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L)+5000L;
-                    log.info("Next milestone check in {} seconds",latency/1000L);
+                    long latency = 5000;
+                    if (Milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX &&
+                            Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
+                        latency = (long)((long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L)+5000L;
+                    }
+                    //log.info("Next milestone check in {} seconds",latency/1000L);
+                    
                     Thread.sleep(latency);
                     
                 } catch (final Exception e) {

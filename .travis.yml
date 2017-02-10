@@ -1,7 +1,7 @@
 language: java
 jdk:
 - oraclejdk8
-before_script: gpg --fast-import codesigning.asc
+before_script: echo 'y' | gpg --fast-import codesigning.asc
 script: mvn package -P build-extras
 deploy:
   provider: releases

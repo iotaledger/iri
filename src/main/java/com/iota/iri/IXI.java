@@ -38,8 +38,6 @@ public class IXI {
      */
     public static void init() throws Exception {
         if(Configuration.string(DefaultConfSettings.IXI_DIR).length() > 0) {
-
-
             watcher = FileSystems.getDefault().newWatchService();
             Path path = Paths.get(Configuration.string(DefaultConfSettings.IXI_DIR));
             String s = path.toAbsolutePath().toString();

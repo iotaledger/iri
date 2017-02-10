@@ -437,6 +437,7 @@ public class TipsManager {
             /**/else {
             /**/    return oldestAcceptableMilestone;
             /**/}
+        /**/}
 
         /**/final Map<Hash, Integer> filteredTailsRatings = new HashMap<>();
         /**/long totalSquaredRating = 0;

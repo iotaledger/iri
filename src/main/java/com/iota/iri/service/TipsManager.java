@@ -1,6 +1,9 @@
 package com.iota.iri.service;
 
 import java.security.SecureRandom;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -103,13 +106,18 @@ public class TipsManager {
                 if (milestoneIndex >= oldestAcceptableMilestoneIndex) {
                     long itsArrivalTime = transaction.arrivalTime;
                     if (itsArrivalTime < criticalArrivalTime) {
+                        log.info("---discard this tail");
                         criticalArrivalTime = itsArrivalTime;
                     }
                 }
             }
         }
         
-        //int milestoneIndex = (int) Converter.longValue(trits, 0, Transaction.TAG_SIZE);
+        DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(criticalArrivalTime);
+        log.info("Oldest accepted solid milestone index "+oldestAcceptableMilestoneIndex+", arrival time "+formatter.format(calendar.getTime()));
+        
         System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
 
         Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);

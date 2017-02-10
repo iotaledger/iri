@@ -181,6 +181,12 @@ public class StorageTransactions extends AbstractStorage {
     	}
     }
     
+    public void setArrivalTime(final long pointer, final long time) {
+        synchronized (Storage.class) {
+            transactionsChunks[(int)(pointer >> 27)].putLong(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET, (long)time);
+        }
+    }
+    
     public long storeTransaction(final byte[] hash, final Transaction transaction, final boolean tip) { // Returns the pointer or 0 if the transaction was already in the storage and "transaction" value is not null
 
     	synchronized (Storage.class) {

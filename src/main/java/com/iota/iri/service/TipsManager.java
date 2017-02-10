@@ -20,8 +20,10 @@ import com.iota.iri.Snapshot;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageApprovers;
 import com.iota.iri.service.storage.StorageTransactions;
+import com.iota.iri.utils.Converter;
 
 public class TipsManager {
 
@@ -90,7 +92,24 @@ public class TipsManager {
     static Hash transactionToApprove(final Hash extraTip, int depth) {
 
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
-
+        
+        final int oldestAcceptableMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex - depth;
+        
+        long criticalArrivalTime = Long.MAX_VALUE;
+        for (final Long pointer : StorageAddresses.instance().addressesOf(Milestone.COORDINATOR)) {
+            final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+            if (transaction.currentIndex == 0) {
+                int milestoneIndex = (int) Converter.longValue(transaction.trits(), 0, Transaction.TAG_SIZE);
+                if (milestoneIndex >= oldestAcceptableMilestoneIndex) {
+                    long itsArrivalTime = transaction.arrivalTime;
+                    if (itsArrivalTime < criticalArrivalTime) {
+                        criticalArrivalTime = itsArrivalTime;
+                    }
+                }
+            }
+        }
+        
+        //int milestoneIndex = (int) Converter.longValue(trits, 0, Transaction.TAG_SIZE);
         System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
 
         Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
@@ -318,14 +337,16 @@ public class TipsManager {
 
                                 for (final Transaction bundleTransaction : bundleTransactions) {
 
-                                    if (!extraTransactionsCopy.remove(bundleTransaction.pointer)) {
-
+                                    if ( bundleTransaction.arrivalTime < criticalArrivalTime ) {
                                         extraTransactionsCopy = null;
-
+                                        break;
+                                    }
+                                    
+                                    if (!extraTransactionsCopy.remove(bundleTransaction.pointer)) {
+                                        extraTransactionsCopy = null;
                                         break;
                                     }
                                 }
-
                                 break;
                             }
                         }

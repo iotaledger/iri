@@ -258,9 +258,13 @@ public class API {
     }
 
     private AbstractResponse storeTransactionStatement(final List<String> trys) {
+        long pointer;
         for (final String trytes : trys) {
             final Transaction transaction = new Transaction(Converter.trits(trytes));
-            StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
+            pointer = StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
+            if (pointer != 0L) {
+                StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis());
+            }
         }
         return AbstractResponse.createEmptyResponse();
     }

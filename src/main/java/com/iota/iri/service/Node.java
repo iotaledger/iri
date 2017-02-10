@@ -179,6 +179,7 @@ public class Node {
 
             final SecureRandom rnd = new SecureRandom();
             long randomTipBroadcastCounter = 1;
+            long pointer;
 
             while (!shuttingDown.get()) {
 
@@ -194,8 +195,9 @@ public class Node {
                                     neighbor.incAllTransactions();
                                     final Transaction receivedTransaction = new Transaction(receivingPacket.getData(),
                                             receivedTransactionTrits, curl);
-                                    if (StorageTransactions.instance().storeTransaction(receivedTransaction.hash,
-                                            receivedTransaction, false) != 0) {
+                                    if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.hash,
+                                            receivedTransaction, false)) != 0L) {
+                                        StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis());
                                         neighbor.incNewTransactions();
                                         broadcast(receivedTransaction);
                                     }

@@ -140,7 +140,7 @@ public class StorageTransactions extends AbstractStorage {
 
     public Transaction loadTransaction(final long pointer) {
         synchronized (Storage.class) {
-            ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
+            ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);            
             return new Transaction(mainBuffer, pointer);
     	}
     }
@@ -219,7 +219,6 @@ public class StorageTransactions extends AbstractStorage {
                     setValue(mainBuffer, (hash[depth] + 128) << 3, pointer = transactionsNextPointer);
                     ((ByteBuffer)transactionsChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
-                    transaction.setArrivalTime(System.currentTimeMillis() / 1000L);
                     Transaction.dump(mainBuffer, hash, transaction);
                     appendToTransactions(transaction != null || tip);
                     if (transaction != null) {
@@ -253,7 +252,6 @@ public class StorageTransactions extends AbstractStorage {
                         setValue(mainBuffer, (hash[i] + 128) << 3, transactionsNextPointer + CELL_SIZE);
                         appendToTransactions(false);
 
-                        transaction.setArrivalTime(System.currentTimeMillis() / 1000L);
                         Transaction.dump(mainBuffer, hash, transaction);
                         pointer = transactionsNextPointer;
                         appendToTransactions(transaction != null || tip);
@@ -268,7 +266,6 @@ public class StorageTransactions extends AbstractStorage {
                 if (transaction != null) {
 
                     if (mainBuffer[Transaction.TYPE_OFFSET] == PREFILLED_SLOT) {
-                        transaction.setArrivalTime(System.currentTimeMillis() / 1000L);
                         Transaction.dump(mainBuffer, hash, transaction);
                         ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
                         Storage.instance().updateBundleAddressTagAndApprovers(pointer);

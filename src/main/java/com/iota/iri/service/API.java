@@ -204,7 +204,8 @@ public class API {
                     return storeTransactionStatement(trytes);
                 }
                 default:
-                    return ErrorResponse.create("Command [" + command + "] is unknown");
+                    return IXI.instance().processCommand(command, request); 
+                    //return ErrorResponse.create("Command [" + command + "] is unknown");
             }
 
         } catch (final Exception e) {

@@ -23,9 +23,7 @@ import static org.junit.Assert.*;
 public class IXITest {
     @Test
     public void init() throws Exception {
-        final String ixiPath = Configuration.string(Configuration.DefaultConfSettings.IXI_DIR);
-        final File ixiDir = new File(ixiPath);
-        if(!ixiDir.exists()) ixiDir.mkdir();
+        final String ixiPath = "ixi";
 
         IXI.instance().init();
 

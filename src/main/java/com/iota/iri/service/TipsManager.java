@@ -105,8 +105,9 @@ public class TipsManager {
                 int milestoneIndex = (int) Converter.longValue(transaction.trits(), 0, Transaction.TAG_SIZE);
                 if (milestoneIndex >= oldestAcceptableMilestoneIndex) {
                     long itsArrivalTime = transaction.arrivalTime;
-                    if (itsArrivalTime < criticalArrivalTime) {
-                        log.info("---discard this tail");
+                    final long timestamp = (int) Converter.longValue(transaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
+                    if (itsArrivalTime == 0) itsArrivalTime = timestamp;
+                    if (itsArrivalTime < criticalArrivalTime) {                        
                         criticalArrivalTime = itsArrivalTime;
                     }
                 }
@@ -345,7 +346,15 @@ public class TipsManager {
 
                                 for (final Transaction bundleTransaction : bundleTransactions) {
 
-                                    if ( bundleTransaction.arrivalTime < criticalArrivalTime ) {
+                                    final long timestamp = (int) Converter.longValue(bundleTransaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
+                                    long itsArrivalTime = bundleTransaction.arrivalTime;
+                                    if (itsArrivalTime == 0) itsArrivalTime = timestamp;
+                                                                        
+                                    if ( itsArrivalTime < criticalArrivalTime ) {
+                                        formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+                                        calendar = Calendar.getInstance();
+                                        calendar.setTimeInMillis(criticalArrivalTime);
+                                        log.info("---discard this tail with arrival time "+formatter.format(calendar.getTime()));
                                         extraTransactionsCopy = null;
                                         break;
                                     }

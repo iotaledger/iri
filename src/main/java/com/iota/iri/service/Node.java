@@ -210,7 +210,7 @@ public class Node {
                                             (Milestone.latestMilestoneIndex > 0) && 
                                             (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) { 
                                     	//
-                                    	if (randomTipBroadcastCounter % 50 == 0) {
+                                    	if (randomTipBroadcastCounter % 60 == 0) {
                                     	    byte [] mBytes = Milestone.latestMilestone.bytes();
                                     	    if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                                 transactionPointer = StorageTransactions.instance()

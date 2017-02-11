@@ -210,14 +210,14 @@ public class Node {
                                             (Milestone.latestMilestoneIndex > 0) && 
                                             (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) { 
                                     	//
-                                    	if (randomTipBroadcastCounter % 72 == 0) {
+                                    	if (randomTipBroadcastCounter % 50 == 0) {
                                     	    byte [] mBytes = Milestone.latestMilestone.bytes();
                                     	    if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                                 transactionPointer = StorageTransactions.instance()
                                                     .transactionPointer(mBytes);
                                     	    }
                                         }
-                                    	else if (randomTipBroadcastCounter % 60 == 0) {
+                                    	else if (randomTipBroadcastCounter % 48 == 0) {
                                     		byte [] mBytes = Milestone.latestMilestone.bytes();
                                     		if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                     	        transactionPointer = StorageTransactions.instance()
@@ -238,8 +238,7 @@ public class Node {
                                     	        }
                                     	    }
                                         }
-                                    	/*
-                                    	else if (randomTipBroadcastCounter % 4 == 0) {
+                                    	else if (randomTipBroadcastCounter % 24 == 0) {
                                     		final String [] tips = StorageTransactions.instance().tips().stream()
                                                     .map(Hash::toString)
                                                     .toArray(size -> new String[size]);
@@ -248,7 +247,6 @@ public class Node {
                                             transactionPointer = StorageTransactions.instance()
                                                     .transactionPointer(rndTipHash.getBytes());
                                     	}
-                                    	*/
                                         randomTipBroadcastCounter++;
 
                                     } else {

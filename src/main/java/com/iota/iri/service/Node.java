@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
+import ch.qos.logback.classic.Level;
 import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -68,7 +69,16 @@ public class Node {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
 
+    /**
+     * description asda sdas
+     * @throws Exception
+     */
     public void init() throws Exception {
+
+        if (!Configuration.booling(DefaultConfSettings.DEBUG.name())) {
+            ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(Node.class);
+            logger.setLevel(Level.OFF);
+        }
 
         socket = new DatagramSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT));
 
@@ -99,7 +109,10 @@ public class Node {
     }
 
     private Map<String, String> neighborIpCache = new HashMap<>();
-    
+
+    /**
+     * @return Runnable
+     */
     private Runnable spawnNeighborDNSRefresherThread() {
         return () -> {
 
@@ -144,7 +157,11 @@ public class Node {
             log.info("Shutting down Neighbor DNS Resolver Thread");
         };
     }
-    
+
+    /**
+     * @param dnsName
+     * @return Optional&lt;String&gt;
+     */
     private Optional<String> checkIp(final String dnsName) {
         
         if (StringUtils.isEmpty(dnsName)) {

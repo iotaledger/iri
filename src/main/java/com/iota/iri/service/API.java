@@ -22,6 +22,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import ch.qos.logback.classic.Level;
 import com.iota.iri.*;
 import com.iota.iri.service.dto.*;
 import io.undertow.util.*;
@@ -66,6 +67,11 @@ public class API {
 
     public void init() throws IOException {
 
+        if (!Configuration.booling(DefaultConfSettings.DEBUG.name())) {
+            ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(API.class);
+            logger.setLevel(Level.OFF);
+        }
+
         final int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
         final String apiHost = Configuration.string(DefaultConfSettings.API_HOST);
 
@@ -83,8 +89,8 @@ public class API {
                             exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, MimeMappings.DEFAULT_MIME_MAPPINGS.get("txt"));
                             exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, 0);
                             exchange.getResponseHeaders().put(Headers.ALLOW, allowedMethods);
-                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Origin"),"*");
-                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Headers"),"Origin, X-Requested-With, Content-Type, Accept");
+                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Origin"), "*");
+                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Headers"), "Origin, X-Requested-With, Content-Type, Accept");
                             exchange.getResponseSender().close();
                             return;
                         }

@@ -165,7 +165,7 @@ public class IRI {
         final Long ts = parser.getOptionValue(timestampThreshold);
         if (ts != null) {
             log.info("Timestamp threshold is set to {}.",ts);
-            Node.setTIMESTAMP_THRESHOLD(aLatency);
+            Node.setTIMESTAMP_THRESHOLD(ts);
         }
         
     }

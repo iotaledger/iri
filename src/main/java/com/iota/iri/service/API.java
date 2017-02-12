@@ -24,6 +24,7 @@ import java.util.stream.Collectors;
 
 import com.iota.iri.*;
 import com.iota.iri.service.dto.*;
+import io.undertow.util.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,9 +51,6 @@ import com.iota.iri.utils.Converter;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -77,6 +75,20 @@ public class API {
                 .setHandler(path().addPrefixPath("/", new HttpHandler() {
                     @Override
                     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+                        HttpString requestMethod = exchange.getRequestMethod();
+                        if (Methods.OPTIONS.equals(requestMethod)) {
+                            String allowedMethods = "GET,HEAD,POST,PUT,DELETE,TRACE,OPTIONS,CONNECT,PATCH";
+                            //return list of allowed methods in response headers
+                            exchange.setStatusCode(StatusCodes.OK);
+                            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, MimeMappings.DEFAULT_MIME_MAPPINGS.get("txt"));
+                            exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, 0);
+                            exchange.getResponseHeaders().put(Headers.ALLOW, allowedMethods);
+                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Origin"),"*");
+                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Headers"),"Origin, X-Requested-With, Content-Type, Accept");
+                            exchange.getResponseSender().close();
+                            return;
+                        }
+
                         if (exchange.isInIoThread()) {
                             exchange.dispatch(this);
                             return;

@@ -1,0 +1,24 @@
+name: iri
+version: "1.1.2.6"
+summary: IOTA Reference Implementation
+description: IRI is the first IOTA Reference Implementation and node.
+grade: stable
+confinement: strict
+
+apps:
+  iri:
+    command: wrapper.sh
+    plugs: [home, network, network-bind]
+
+parts:
+  # Github repository for IOTA reference implementation: https://github.com/iotaledger/iri.git
+  iri:
+    source: https://github.com/iotaledger/iri.git
+    plugin: maven
+    snap: [-usr/lib/jvm/java-8-openjdk-amd64/jre/lib/security/cacerts]
+  # This script contains all the commands needed (sets env variables, launches the jar file...) to
+  # execute the application
+  exec:
+    plugin: dump
+    source: .
+

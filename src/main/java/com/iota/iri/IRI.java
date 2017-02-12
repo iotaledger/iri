@@ -30,7 +30,7 @@ public class IRI {
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
     public static final String NAME = "IRI Testnet";
-    public static final String VERSION = "1.1.2.8";
+    public static final String VERSION = "1.1.2.9";
 
     public static void main(final String[] args) {
 
@@ -78,6 +78,7 @@ public class IRI {
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Integer> ratingThr = parser.addIntegerOption('x', "rating-threshold");
         final Option<Integer> artLatency = parser.addIntegerOption('a', "art-latency");
+        final Option<Long> timestampThreshold = parser.addLongOption('t', "timestamp-threshold");
 
         try {
             parser.parse(args);
@@ -161,6 +162,12 @@ public class IRI {
             TipsManager.setARTIFICAL_LATENCY(aLatency);
         }
         
+        final Long ts = parser.getOptionValue(timestampThreshold);
+        if (ts != null) {
+            log.info("Timestamp threshold is set to {}.",ts);
+            Node.setTIMESTAMP_THRESHOLD(aLatency);
+        }
+        
     }
 
     private static void printUsage() {
@@ -172,8 +179,9 @@ public class IRI {
                 "[{-d,--debug}] " +
                 "[{-e,--experimental}]" +
                 "[{--remote}]" +
-                "[{--rating-threshold} 50]" +
-                "[{--art-latency} 1200]" +
+                "[{--rating-threshold} 75]" +
+                "[{--art-latency} 120]" +
+                "[{--timestamp-threshold} 0]" +
                 // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
                 "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
         System.exit(0);

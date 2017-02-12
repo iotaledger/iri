@@ -32,9 +32,9 @@ public class TipsManager {
 
     private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
-    private static int RATING_THRESHOLD = 50; // Must be in [0..100] range
+    private static int RATING_THRESHOLD = 75; // Must be in [0..100] range
     
-    private static int ARTIFICAL_LATENCY = 1200; 
+    private static int ARTIFICAL_LATENCY = 120; // in seconds 
 
     static boolean shuttingDown;
 
@@ -102,8 +102,6 @@ public class TipsManager {
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
         
         final int oldestAcceptableMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex - depth;
-        
-        Hash oldestAcceptableMilestone = preferableMilestone;
         
         long criticalArrivalTime = Long.MAX_VALUE;
         for (final Long pointer : StorageAddresses.instance().addressesOf(Milestone.COORDINATOR)) {
@@ -434,9 +432,6 @@ public class TipsManager {
             /**/if (extraTip == null) {
             /**/    return preferableMilestone;
             /**/}
-            /**/else {
-            /**/    return oldestAcceptableMilestone;
-            /**/}
         /**/}
 
         /**/final Map<Hash, Integer> filteredTailsRatings = new HashMap<>();
@@ -447,17 +442,17 @@ public class TipsManager {
                 /**/
                 /**/filteredTailsRatings.put(entry.getKey(), entry.getValue());
                 /**/totalSquaredRating += ((long) entry.getValue()) * entry.getValue();
-                /**/}
             /**/}
+        /**/}
         /**/long hit = java.util.concurrent.ThreadLocalRandom.current().nextLong(totalSquaredRating);
         /**/for (final Map.Entry<Hash, Integer> entry : filteredTailsRatings.entrySet()) {
-            /**/
+        /**/
             /**/if ((hit -= ((long) entry.getValue()) * entry.getValue()) < 0) {
                 /**/
                 /**/log.info(entry.getValue() + "/" + bestRating + " extra transactions approved");
                 /**/return entry.getKey();
-                /**/}
             /**/}
+        /**/}
 
         /**/throw new RuntimeException("Must never be reached!");
 

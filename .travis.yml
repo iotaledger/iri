@@ -6,8 +6,7 @@ jdk:
 sudo: required
 
 services:
-- docker
-000ctGQcXVGUjeURqQeHclLLpst2Td0uR6SgAGLEOxjeQ9ghzQWC/4x9BPW7xf7SkxhESWB2MMTvxma8xaV7hmNSsUK7tHyMLZPGdhDnPuUx2E6eNG4IZzUvcmHI4U=
+- docker 000ctGQcXVGUjeURqQeHclLLpst2Td0uR6SgAGLEOxjeQ9ghzQWC/4x9BPW7xf7SkxhESWB2MMTvxma8xaV7hmNSsUK7tHyMLZPGdhDnPuUx2E6eNG4IZzUvcmHI4U=
 
 before_install:
 - openssl aes-256-cbc -K $encrypted_05a8efa47335_key -iv $encrypted_05a8efa47335_iv

@@ -72,6 +72,7 @@ public class IRI {
         final Option<String> remoteLimitApi = parser.addStringOption("remote-limit-api");
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
         final Option<String> dataDir = parser.addStringOption( "data-dir");
+        final Option<String> auth = parser.addStringOption('a',"auth");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
 
         try {
@@ -110,6 +111,12 @@ public class IRI {
         if (vcors != null) {
             log.debug("Enabled CORS with value : {} ", vcors);
             Configuration.put(DefaultConfSettings.CORS_ENABLED, vcors);
+        }
+
+        final String vauth = parser.getOptionValue(auth);
+        if (vauth != null) {
+            log.debug("Remote authentication for user {} activated ", vauth.split(":")[0]);
+            Configuration.put(DefaultConfSettings.AUTH, vauth);
         }
 
         String vpath = parser.getOptionValue(dataDir);
@@ -156,6 +163,7 @@ public class IRI {
                 "[{-d,--debug}] " +
                 "[{--data-dir} '/tmp'] " +
                 "[{--remote}]" +
+                "[{-a,--auth} 'user:password']" +
                 "[{--remote-limit-api} '<list of api calls>']" +
                 // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
                 "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);

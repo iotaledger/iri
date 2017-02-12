@@ -444,14 +444,19 @@ public class TipsManager {
                 /**/totalSquaredRating += ((long) entry.getValue()) * entry.getValue();
             /**/}
         /**/}
-        /**/long hit = java.util.concurrent.ThreadLocalRandom.current().nextLong(totalSquaredRating);
-        /**/for (final Map.Entry<Hash, Integer> entry : filteredTailsRatings.entrySet()) {
-        /**/
-            /**/if ((hit -= ((long) entry.getValue()) * entry.getValue()) < 0) {
-                /**/
-                /**/log.info(entry.getValue() + "/" + bestRating + " extra transactions approved");
-                /**/return entry.getKey();
+        /**/if (totalSquaredRating > 0L) {
+            /**/long hit = java.util.concurrent.ThreadLocalRandom.current().nextLong(totalSquaredRating);
+            /**/for (final Map.Entry<Hash, Integer> entry : filteredTailsRatings.entrySet()) {
+            /**/
+                /**/if ((hit -= ((long) entry.getValue()) * entry.getValue()) < 0) {
+                    /**/
+                    /**/log.info(entry.getValue() + "/" + bestRating + " extra transactions approved");
+                    /**/return entry.getKey();
+                /**/}
             /**/}
+        /**/}
+        /**/else {
+            /**/return preferableMilestone;
         /**/}
 
         /**/throw new RuntimeException("Must never be reached!");

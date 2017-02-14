@@ -4,7 +4,7 @@
   <groupId>groupId</groupId>
   <artifactId>iri-testnet</artifactId>
   <name>IRI Testnet</name>
-  <version>1.1.2.9</version>
+  <version>1.1.2.10</version>
 
   <description>IOTA Reference Implementation.</description>
   <build>

@@ -33,7 +33,7 @@ public class ISC {
     public static Function<String, String> encrypt(String key) {
         final int[] keyTrits = Converter.trits(key);
         return (plainText) -> {
-            assert key.length() == plainText.length();
+            assert key.length() >= plainText.length();
             final int[] plainTrits = Converter.trits(plainText);
             return Converter.trytes(
                     IntStream.range(0, plainTrits.length).parallel()

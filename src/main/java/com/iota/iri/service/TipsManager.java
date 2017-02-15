@@ -372,15 +372,6 @@ public class TipsManager {
                                             itsArrivalTime = timestamp;
 
                                         if (itsArrivalTime < criticalArrivalTime) {
-                                            // formatter = new
-                                            // SimpleDateFormat("yyyy/MM/dd
-                                            // HH:mm:ss");
-                                            // calendar =
-                                            // Calendar.getInstance();
-                                            // calendar.setTimeInMillis(criticalArrivalTime);
-                                            // log.info("---discard this tail
-                                            // with arrival time
-                                            // "+formatter.format(calendar.getTime()));
                                             extraTransactionsCopy = null;
                                             break;
                                         }
@@ -430,10 +421,7 @@ public class TipsManager {
                         if (!extraTransactions.isEmpty()) {
 
                             // --Coo only--
-                            // bestTip = new
-                            // Hash(Storage.loadTransaction(tailPointer).hash,
-                            // 0,
-                            // Transaction.HASH_SIZE);
+                            // bestTip = new Hash(Storage.loadTransaction(tailPointer).hash, 0, Transaction.HASH_SIZE);
                             // bestRating = extraTransactions.size();
                             // seenTails.addAll(extraTransactions);
 
@@ -482,7 +470,6 @@ public class TipsManager {
                 /**/}
 
             /**/throw new RuntimeException("Must never be reached!");
-
             // return bestTip;
 
         } finally {

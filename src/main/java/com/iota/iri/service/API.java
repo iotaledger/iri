@@ -268,12 +268,12 @@ public class API {
         API.incCounter_getTxToApprove();
         if ( ( getCounter_getTxToApprove() % 100) == 0 ) {
             StringBuffer sb = new StringBuffer(80);
-            sb.append("Executed ");
-            sb.append(API.getCounter_getTxToApprove());
-            sb.append(" getTransactionToApprove, consumed ");
+            sb.append("Last 100 getTxToApprove consumed ");
             sb.append(API.getEllapsedTime_getTxToApprove()/1000000000L);
-            sb.append(" seconds processing time.");
+            sb.append(" seconds processing time.");            
             log.info(sb.toString());
+            counter_getTxToApprove = 0;
+            ellapsedTime_getTxToApprove = 0L;
         }
         return GetTransactionsToApproveResponse.create(trunkTransactionToApprove, branchTransactionToApprove);
     }
@@ -525,12 +525,12 @@ public class API {
                 API.incCounter_PoW();
                 if ( ( API.getCounter_PoW() % 100) == 0 ) {
                     StringBuffer sb = new StringBuffer(80);
-                    sb.append("Executed ");
-                    sb.append(API.getCounter_getTxToApprove());
-                    sb.append(" PoW, consumed ");
-                    sb.append(API.getEllapsedTime_getTxToApprove()/1000000000L);
+                    sb.append("Last 100 PoW consumed ");
+                    sb.append(API.getEllapsedTime_PoW()/1000000000L);
                     sb.append(" seconds processing time.");
                     log.info(sb.toString());
+                    counter_PoW = 0;
+                    ellapsedTime_PoW = 0L;
                 }
             }
         }

@@ -1,6 +1,11 @@
 package com.iota.iri.hash;
 
+import com.iota.iri.utils.Converter;
+
 import java.util.Arrays;
+import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
 
 /**
  * (c) 2016 Come-from-Beyond
@@ -200,5 +205,43 @@ public class ISS {
         hash.squeeze(digest, 0, digest.length);
 
         return digest;
+    }
+    /*
+                B
+          | -   0   +
+        __|____________
+        - | 1   -1   0
+      A 0 |-1   0    1
+        + | 0   1   -1
+     */
+    private static IntFunction<Integer> sum (int a) {
+        return (b) -> {
+            int s = a + b;
+            return s == 2 ? -1 : s == -2 ? 1 : s;
+        };
+    }
+
+    /*
+        Vernam Cipher for trinary logic
+        plain (+) key = cipher
+     */
+    public static Function<int[], int[]> encrypt(int[] key) {
+        return (plainTrits) -> {
+            assert key.length >= plainTrits.length;
+            return IntStream.range(0, plainTrits.length).parallel()
+                    .map(i -> sum(plainTrits[i]).apply(key[i]))
+                    .toArray();
+        };
+    }
+    /*
+        cipher (+) !key = plain
+     */
+    public static Function<int[], int[]> decrypt(int[] key) {
+        return (cipherTrits) -> {
+            assert key.length >= cipherTrits.length;
+            return IntStream.range(0, cipherTrits.length).parallel()
+                    .map(i -> sum(cipherTrits[i]).apply( - key[i]))
+                    .toArray();
+        };
     }
 }

@@ -1,14 +1,13 @@
 package com.iota.iri.hash;
 
-import com.iota.iri.utils.Converter;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 /**
- * (c) 2016 Come-from-Beyond
+ * (c) 2016 Come-from-Beyond and Paul Handy
  */
 public class ISS {
 
@@ -48,6 +47,15 @@ public class ISS {
         return subseed;
     }
 
+    private static int[] privateKey(final int[] subseed, final int keySize) {
+        final int[] key = new int[keySize];
+
+        final Curl hash = new Curl();
+        hash.absorb(subseed, 0, subseed.length);
+        hash.squeeze(key, 0, key.length);
+        return key;
+    }
+
     public static int[] key(final int[] subseed, final int numberOfFragments) {
 
         if (subseed.length != Curl.HASH_LENGTH) {
@@ -56,13 +64,7 @@ public class ISS {
         if (numberOfFragments <= 0) {
             throw new RuntimeException("Invalid number of key fragments: " + numberOfFragments);
         }
-
-        final int[] key = new int[FRAGMENT_LENGTH * numberOfFragments];
-
-        final Curl hash = new Curl();
-        hash.absorb(subseed, 0, subseed.length);
-        hash.squeeze(key, 0, key.length);
-        return key;
+        return privateKey(subseed, FRAGMENT_LENGTH * numberOfFragments);
     }
 
     public static int[] digests(final int[] key) {
@@ -93,19 +95,21 @@ public class ISS {
         return digests;
     }
 
-    public static int[] address(final int[] digests) {
-
+    public static int[] publicKey(final int[] digests, final int keySize) {
         if (digests.length == 0 || digests.length % Curl.HASH_LENGTH != 0) {
             throw new RuntimeException("Invalid digests length: " + digests.length);
         }
 
-        final int[] address = new int[Curl.HASH_LENGTH];
+        final int[] publicKey = new int[keySize];
 
         final Curl hash = new Curl();
         hash.absorb(digests, 0, digests.length);
-        hash.squeeze(address, 0, address.length);
+        hash.squeeze(publicKey, 0, publicKey.length);
 
-        return address;
+        return publicKey;
+    }
+    public static int[] address(final int[] digests) {
+        return publicKey(digests, Curl.HASH_LENGTH);
     }
 
     public static int[] normalizedBundle(final int[] bundle) {
@@ -206,19 +210,46 @@ public class ISS {
 
         return digest;
     }
-    /*
-                B
-          | -   0   +
-        __|____________
-        - | 1   -1   0
-      A 0 |-1   0    1
-        + | 0   1   -1
-     */
-    private static IntFunction<Integer> sum (int a) {
-        return (b) -> {
-            int s = a + b;
-            return s == 2 ? -1 : s == -2 ? 1 : s;
-        };
+
+    public static MerkleHash merkleTree(int[] seed, int startingIndex, int numberOfKeysToCreate, final int merkleKeySize) {
+        if(merkleKeySize % 81 != 0)
+            throw new RuntimeException("Invalid key Size: " + merkleKeySize);
+        int hashSize;
+        MerkleHash[] keys = (MerkleHash[]) IntStream.range(0, numberOfKeysToCreate).parallel()
+                .mapToObj(i -> MerkleHash.create(
+                        publicKey(
+                                digests(
+                                        privateKey(
+                                                subseed(
+                                                        seed,
+                                                        i + startingIndex),
+                                                merkleKeySize)
+                                ),
+                                merkleKeySize
+                        )
+                )).toArray();
+        while((hashSize = 1 << (31 - Integer.numberOfLeadingZeros(keys.length))) > 1) {
+            MerkleHash[] finalKeys = keys;
+            keys = (MerkleHash[]) IntStream.range(0, hashSize).parallel()
+                    .mapToObj(i -> {
+                        if(finalKeys.length <= i * 2) {
+                            return MerkleHash.create(new int[Curl.HASH_LENGTH]);
+                        } else {
+                            Curl hash = new Curl();
+                            int[] hashTrits = new int[Curl.HASH_LENGTH];
+                            MerkleHash second = i*2 + 1 == finalKeys.length ? MerkleHash.create(new int[Curl.HASH_LENGTH]): finalKeys[i*2+1];
+                            hash.absorb(ArrayUtils.addAll(finalKeys[i*2].value,second.value),
+                                    0,
+                                    Curl.HASH_LENGTH);
+                            hash.squeeze(hashTrits, 0, Curl.HASH_LENGTH);
+                            MerkleHash mHash = MerkleHash.create(new int[Curl.HASH_LENGTH]);
+                            mHash.first = finalKeys[i*2];
+                            mHash.second = second;
+                            return mHash;
+                        }
+                    }).toArray();
+        }
+        return keys[0];
     }
 
     /*
@@ -229,7 +260,7 @@ public class ISS {
         return (plainTrits) -> {
             assert key.length >= plainTrits.length;
             return IntStream.range(0, plainTrits.length).parallel()
-                    .map(i -> sum(plainTrits[i]).apply(key[i]))
+                    .map(i -> Trinary.sum(plainTrits[i]).apply(key[i]))
                     .toArray();
         };
     }
@@ -240,7 +271,7 @@ public class ISS {
         return (cipherTrits) -> {
             assert key.length >= cipherTrits.length;
             return IntStream.range(0, cipherTrits.length).parallel()
-                    .map(i -> sum(cipherTrits[i]).apply( - key[i]))
+                    .map(i -> Trinary.sum(cipherTrits[i]).apply( - key[i]))
                     .toArray();
         };
     }

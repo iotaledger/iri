@@ -59,18 +59,26 @@ public class Curl {
     }
 
     private static Tuple[] transform(final Tuple[] state) {
-        Tuple[] scratchpad = new Tuple[STATE_LENGTH];
-        IntStream.range(0, NUMBER_OF_ROUNDS).forEach(round -> {
-            System.arraycopy(state, 0, scratchpad, 0, STATE_LENGTH);
-            IntStream.range(0, STATE_LENGTH).parallel()
-                    .forEach(j -> {
-                        final int t0, t1;
-                        t0 = j == 0? 0:(((j - 1)%2)+1)*HALF_LENGTH - ((j-1)>>1);
-                        t1 = ((j%2)+1)*HALF_LENGTH - ((j)>>1);
+        final Tuple[] scratchpad = new Tuple[STATE_LENGTH];
+        int scratchpadIndex = 0;
+        for (int round = 0; round < NUMBER_OF_ROUNDS; round++) {
 
-                        state[j] = new Tuple(TRUTH_TABLE[scratchpad[t0].value() + scratchpad[t1].value() * 3 + 4]);
-                    });
-        });
+            System.arraycopy(IntStream.range(0, STATE_LENGTH).parallel().mapToObj(i -> {
+                        Tuple tuple = new Tuple();
+                        final int t0, t1;
+                        t0 = i == 0 ? 0 : (((i - 1) % 2) + 1) * HALF_LENGTH - ((i - 1) >> 1);
+                        t1 = ((i % 2) + 1) * HALF_LENGTH - ((i) >> 1);
+
+                        final int alpha = state[t0].low;
+                        final int beta = state[t0].hi;
+                        final int gamma = state[t1].hi;
+                        final int delta = (alpha | (~gamma)) & (state[t1].low ^ beta);
+                        tuple.low = ~delta;
+                        tuple.hi = (alpha ^ gamma) | delta;
+                        return tuple;
+                    }).toArray(Tuple[]::new)
+                    , 0, state, 0, STATE_LENGTH);
+        }
         return state;
     }
 

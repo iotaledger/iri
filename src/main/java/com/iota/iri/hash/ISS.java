@@ -215,41 +215,38 @@ public class ISS {
         if(merkleKeySize % 81 != 0)
             throw new RuntimeException("Invalid key Size: " + merkleKeySize);
         int hashSize;
-        MerkleHash[] keys = (MerkleHash[]) IntStream.range(0, numberOfKeysToCreate).parallel()
+        Object[] keys = IntStream.range(0, numberOfKeysToCreate).parallel()
                 .mapToObj(i -> MerkleHash.create(
                         publicKey(
                                 digests(
                                         privateKey(
-                                                subseed(
-                                                        seed,
-                                                        i + startingIndex),
-                                                merkleKeySize)
-                                ),
-                                merkleKeySize
-                        )
-                )).toArray();
-        while((hashSize = 1 << (31 - Integer.numberOfLeadingZeros(keys.length))) > 1) {
-            MerkleHash[] finalKeys = keys;
-            keys = (MerkleHash[]) IntStream.range(0, hashSize).parallel()
+                                                subseed(seed,i + startingIndex),
+                                                merkleKeySize)),
+                                merkleKeySize))).toArray();
+        hashSize = 1 << (31 - Integer.numberOfLeadingZeros(keys.length));
+        while(hashSize > 1) {
+            Object[] finalKeys = keys;
+            keys = IntStream.range(0, hashSize).parallel()
                     .mapToObj(i -> {
                         if(finalKeys.length <= i * 2) {
-                            return MerkleHash.create(new int[Curl.HASH_LENGTH]);
+                            return MerkleHash.create(new int[merkleKeySize]);
                         } else {
                             Curl hash = new Curl();
-                            int[] hashTrits = new int[Curl.HASH_LENGTH];
-                            MerkleHash second = i*2 + 1 == finalKeys.length ? MerkleHash.create(new int[Curl.HASH_LENGTH]): finalKeys[i*2+1];
-                            hash.absorb(ArrayUtils.addAll(finalKeys[i*2].value,second.value),
+                            int[] hashTrits = new int[merkleKeySize];
+                            MerkleHash second = i*2 + 1 == finalKeys.length ? MerkleHash.create(new int[merkleKeySize]): (MerkleHash) finalKeys[i*2+1];
+                            hash.absorb(ArrayUtils.addAll(((MerkleHash)finalKeys[i*2]).value,second.value),
                                     0,
-                                    Curl.HASH_LENGTH);
-                            hash.squeeze(hashTrits, 0, Curl.HASH_LENGTH);
-                            MerkleHash mHash = MerkleHash.create(new int[Curl.HASH_LENGTH]);
-                            mHash.first = finalKeys[i*2];
+                                    merkleKeySize*2);
+                            hash.squeeze(hashTrits, 0, merkleKeySize);
+                            MerkleHash mHash = MerkleHash.create(hashTrits);
+                            mHash.first = (MerkleHash)finalKeys[i*2];
                             mHash.second = second;
                             return mHash;
                         }
                     }).toArray();
+            hashSize = 1 << (30 - Integer.numberOfLeadingZeros(keys.length));
         }
-        return keys[0];
+        return (MerkleHash) keys[0];
     }
 
     /*

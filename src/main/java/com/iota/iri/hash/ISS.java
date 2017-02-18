@@ -4,6 +4,7 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 
 /**
@@ -14,6 +15,7 @@ public class ISS {
     public static final int NUMBER_OF_FRAGMENT_CHUNKS = 27;
     private static final int FRAGMENT_LENGTH = Curl.HASH_LENGTH * NUMBER_OF_FRAGMENT_CHUNKS;
     private static final int NUMBER_OF_SECURITY_LEVELS = 3;
+
 
     private static final int MIN_TRIT_VALUE = -1, MAX_TRIT_VALUE = 1;
     private static final int TRYTE_WIDTH = 3;
@@ -226,20 +228,25 @@ public class ISS {
         hashSize = 1 << (31 - Integer.numberOfLeadingZeros(keys.length));
         while(hashSize > 1) {
             Object[] finalKeys = keys;
-            keys = IntStream.range(0, hashSize).parallel()
+            //keys = IntStream.range(0, hashSize).parallel()
+            keys = IntStream.iterate(0, i -> i + 2).limit(hashSize).parallel()
                     .mapToObj(i -> {
-                        if(finalKeys.length <= i * 2) {
+                        //if(finalKeys.length <= i * 2) {
+                        if(finalKeys.length <= i) {
                             return MerkleHash.create(new int[merkleKeySize]);
                         } else {
                             Curl hash = new Curl();
                             int[] hashTrits = new int[merkleKeySize];
-                            MerkleHash second = i*2 + 1 == finalKeys.length ? MerkleHash.create(new int[merkleKeySize]): (MerkleHash) finalKeys[i*2+1];
-                            hash.absorb(ArrayUtils.addAll(((MerkleHash)finalKeys[i*2]).value,second.value),
+                            //MerkleHash second = i*2 + 1 == finalKeys.length ? MerkleHash.create(new int[merkleKeySize]): (MerkleHash) finalKeys[i*2+1];
+                            MerkleHash second = i + 1 == finalKeys.length ? MerkleHash.create(new int[merkleKeySize]): (MerkleHash) finalKeys[i+1];
+                            //hash.absorb(ArrayUtils.addAll(((MerkleHash)finalKeys[i*2]).value,second.value),
+                            hash.absorb(ArrayUtils.addAll(((MerkleHash)finalKeys[i]).value,second.value),
                                     0,
                                     merkleKeySize*2);
                             hash.squeeze(hashTrits, 0, merkleKeySize);
                             MerkleHash mHash = MerkleHash.create(hashTrits);
-                            mHash.first = (MerkleHash)finalKeys[i*2];
+                            //mHash.first = (MerkleHash)finalKeys[i*2];
+                            mHash.first = (MerkleHash)finalKeys[i];
                             mHash.second = second;
                             return mHash;
                         }

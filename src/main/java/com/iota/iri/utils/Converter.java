@@ -1,6 +1,9 @@
 package com.iota.iri.utils;
 
+import com.iota.iri.hash.Tuple;
+
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class Converter {
 
@@ -16,6 +19,9 @@ public class Converter {
     public static final String TRYTE_ALPHABET = "9ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
     public static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
+
+    private static final int HIGH_BITS = 0b11111111111111111111111111111111;
+    private static final int LOW_BITS = 0b00000000000000000000000000000000;
 
     static {
 
@@ -39,6 +45,24 @@ public class Converter {
             value = value * RADIX + trits[offset + i];
         }
         return value;
+    }
+
+
+    public static Tuple[] tuple(int[] trits) {
+        Tuple[] tuples = new Tuple[trits.length];
+        IntStream.range(0, trits.length).parallel().forEach(i -> {
+            tuples[i] = new Tuple(trits[i]);
+        });
+        return tuples;
+    }
+
+    public static int[] trits(Tuple[] tuples) {
+        return IntStream.range(0, tuples.length).parallel()
+                .map(i -> tuples[i].value())
+                .toArray();
+    }
+    public static String trytes(final Tuple[] trits) {
+        return trytes(trits(trits));
     }
 
     public static byte[] bytes(final int[] trits, final int offset, final int size) {

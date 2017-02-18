@@ -28,6 +28,16 @@ public class ISSTest {
         assert(Converter.trytes(ISS.decrypt(Converter.trits(key)).apply(Converter.trits(cipher))).equals(plain));
     }
 
+
+    @Test
+    public void stateTritConversion() throws Exception {
+        final String seedStr = "MYSEEDSARETHEBEST9SEEDSWHODONTUSEMYSEEDARESADALLSEEDSSHOULDBEZEROLENGTHORGREATER9";
+        int[] seed = Converter.trits(seedStr);
+        Tuple[] state = Converter.tuple(seed);
+        int[] outSeed = Converter.trits(state);
+        assert(seedStr.equals(Converter.trytes(outSeed)));
+    }
+
     @Test
     public void merkleHash() throws Exception {
         final String seedStr;

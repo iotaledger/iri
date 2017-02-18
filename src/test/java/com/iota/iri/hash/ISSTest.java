@@ -8,7 +8,7 @@ import static org.junit.Assert.*;
 /**
  * Created by paul on 2/13/17.
  */
-public class ISSTests {
+public class ISSTest {
     @Test
     public void encrypt() throws Exception {
         final String key, plain, cipher;

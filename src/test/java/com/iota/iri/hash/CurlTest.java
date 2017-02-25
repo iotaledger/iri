@@ -1,5 +1,6 @@
 package com.iota.iri.hash;
 
+import com.iota.iri.hash.keys.Tuple;
 import com.iota.iri.utils.Converter;
 import org.junit.Test;
 
@@ -21,6 +22,7 @@ public class CurlTest {
 
         curlTrits = Converter.trits(curlStr);
         curlState = Converter.tuple(curlTrits);
+
         staticState = Curl.absorb(curlState, 0, curlTrits.length)
                 .andThen(Curl.squeeze(
                         Arrays.stream(new Tuple[Curl.HASH_LENGTH])
@@ -51,7 +53,7 @@ public class CurlTest {
         curlState = Converter.tuple(curlTrits);
 
         startTime = System.nanoTime();
-        int max = (int)2e4;
+        int max = (int)2e1;
         do {
             Curl.absorb(curlState, 0, curlTrits.length)
                     .andThen(Curl.squeeze(
@@ -70,6 +72,14 @@ public class CurlTest {
         while(r++ < max);
         System.out.println((System.nanoTime() - startTime) / 1e9);
         startTime = System.nanoTime();
+        Curl.squeeze(Curl.absorb(Curl.state(), curlState, 0, curlState.length), new Tuple[Curl.HASH_LENGTH], 0, Curl.HASH_LENGTH);
+        System.out.println("cx: " + 1e9/((System.nanoTime() - startTime) / 32));
+        startTime = System.nanoTime();
+        IntStream.range(0,8).parallel().forEach(j ->
+        Curl.squeeze(Curl.absorb(Curl.state(), curlState, 0, curlState.length), new Tuple[Curl.HASH_LENGTH], 0, Curl.HASH_LENGTH)
+        );
+        System.out.println("cy: " + 1e9/((System.nanoTime() - startTime) / (8*32)));
+        startTime = System.nanoTime();
         Curl.absorb(curlState, 0, curlTrits.length)
                 .andThen(Curl.squeeze(
                         Arrays.stream(new Tuple[Curl.HASH_LENGTH])
@@ -78,26 +88,37 @@ public class CurlTest {
                                 .toArray(Tuple[]::new), 0, Curl.HASH_LENGTH)
                 )
                 .apply(Curl.state());
-        diff1 = System.nanoTime() - startTime;
+        System.out.println("c0: " + 1e9/((System.nanoTime() - startTime) / 32));
+        startTime = System.nanoTime();
+        IntStream.range(0,8).parallel().forEach(j ->
+                Curl.absorb(curlState, 0, curlTrits.length)
+                        .andThen(Curl.squeeze(
+                                Arrays.stream(new Tuple[Curl.HASH_LENGTH])
+                                        .parallel()
+                                        .map(i -> new Tuple(0))
+                                        .toArray(Tuple[]::new), 0, Curl.HASH_LENGTH)
+                        )
+                        .apply(Curl.state())
+        );
+        diff1 = (System.nanoTime() - startTime) / (32 * 8);
 
         startTime = System.nanoTime();
-        for(int i = 0; i < 32; i++) {
+        //for(int i = 0; i < 32; i++) {
             curl.absorb(curlTrits, 0, curlTrits.length);
             curl.squeeze(new int[Curl.HASH_LENGTH], 0, Curl.HASH_LENGTH);
             curl.reset();
-        }
-        diff2 = System.nanoTime() - startTime;
+        //}
+        diff3 = System.nanoTime() - startTime;
         startTime = System.nanoTime();
-        IntStream.range(0,32).parallel().forEach(i -> {
+        IntStream.range(0,8).parallel().forEach(i -> {
             curl.absorb(curlTrits, 0, curlTrits.length);
             curl.squeeze(new int[Curl.HASH_LENGTH], 0, Curl.HASH_LENGTH);
             curl.reset();
         });
-        diff3 = System.nanoTime() - startTime;
-        System.out.println(diff1 / 1e9);
-        System.out.println(diff3 / 1e9);
-        System.out.println(diff2 / 1e9);
+        diff2 = (System.nanoTime() - startTime)/8;
+        System.out.println(1e9/diff1);
+        System.out.println(1e9/diff3);
+        System.out.println(1e9/diff2);
 
     }
-
 }

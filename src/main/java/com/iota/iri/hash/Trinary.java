@@ -1,5 +1,8 @@
 package com.iota.iri.hash;
 
+import com.iota.iri.utils.Converter;
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -80,6 +83,33 @@ public class Trinary {
         return (p0) -> cons(c0).apply(p0);
     }
 
+    private static int carry(final int[] a, final int i) {
+        if(a[i] > Converter.MAX_TRIT_VALUE) {
+            a[i] = Converter.MIN_TRIT_VALUE;
+            return Converter.MAX_TRIT_VALUE;
+        } else if (a[i] < Converter.MIN_TRIT_VALUE) {
+            a[i] = Converter.MAX_TRIT_VALUE;
+            return Converter.MIN_TRIT_VALUE;
+        }
+        return 0;
+    }
+
+    public static void addSeries (final int[] out, final int[] b) {
+        int carry = 0, i;
+        for(i = 0; i < b.length; i++) {
+            if(i == out.length) return;
+            out[i] = carry + b[i];
+            carry = carry(out, i);
+        }
+        while(i < out.length) {
+            if(carry == 0) {
+                break;
+            } else {
+                out[i] += carry;
+                carry = carry(out, i++);
+            }
+        }
+    }
     /*
     public static int[] increment(int[] trits) {
         int lz = 31-Integer.numberOfLeadingZeros(trits.length);

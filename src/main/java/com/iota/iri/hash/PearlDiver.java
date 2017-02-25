@@ -167,7 +167,7 @@ public class PearlDiver {
         return state == COMPLETED;
     }
 
-    private static void transform(final long[] curlStateLow, final long[] curlStateHigh, final long[] curlScratchpadLow, final long[] curlScratchpadHigh) {
+    public static void transform(final long[] curlStateLow, final long[] curlStateHigh, final long[] curlScratchpadLow, final long[] curlScratchpadHigh) {
 
         int curlScratchpadIndex = 0;
         for (int round = 27; round-- > 0; ) {

@@ -22,8 +22,19 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import ch.qos.logback.classic.Level;
 import com.iota.iri.*;
 import com.iota.iri.service.dto.*;
+import com.iota.iri.utils.MapIdentityManager;
+import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.AuthenticationMode;
+import io.undertow.security.handlers.AuthenticationCallHandler;
+import io.undertow.security.handlers.AuthenticationConstraintHandler;
+import io.undertow.security.handlers.AuthenticationMechanismsHandler;
+import io.undertow.security.handlers.SecurityInitialHandler;
+import io.undertow.security.idm.IdentityManager;
+import io.undertow.security.impl.BasicAuthenticationMechanism;
+import io.undertow.util.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,9 +61,6 @@ import com.iota.iri.utils.Converter;
 import io.undertow.Undertow;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -68,22 +76,43 @@ public class API {
 
     public void init() throws IOException {
 
+        if (!Configuration.booling(DefaultConfSettings.DEBUG.name())) {
+            ch.qos.logback.classic.Logger logger = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(API.class);
+            logger.setLevel(Level.OFF);
+        }
+
         final int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
         final String apiHost = Configuration.string(DefaultConfSettings.API_HOST);
+
+
 
         log.debug("Binding JSON-REST API Undertown server on {}:{}", apiHost, apiPort);
 
         server = Undertow.builder().addHttpListener(apiPort, apiHost)
-                .setHandler(path().addPrefixPath("/", new HttpHandler() {
+                .setHandler(path().addPrefixPath("/", addSecurity(new HttpHandler() {
                     @Override
                     public void handleRequest(final HttpServerExchange exchange) throws Exception {
+                        HttpString requestMethod = exchange.getRequestMethod();
+                        if (Methods.OPTIONS.equals(requestMethod)) {
+                            String allowedMethods = "GET,HEAD,POST,PUT,DELETE,TRACE,OPTIONS,CONNECT,PATCH";
+                            //return list of allowed methods in response headers
+                            exchange.setStatusCode(StatusCodes.OK);
+                            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, MimeMappings.DEFAULT_MIME_MAPPINGS.get("txt"));
+                            exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, 0);
+                            exchange.getResponseHeaders().put(Headers.ALLOW, allowedMethods);
+                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Origin"), "*");
+                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Headers"), "Origin, X-Requested-With, Content-Type, Accept");
+                            exchange.getResponseSender().close();
+                            return;
+                        }
+
                         if (exchange.isInIoThread()) {
                             exchange.dispatch(this);
                             return;
                         }
                         processRequest(exchange);
                     }
-                })).build();
+                }))).build();
         server.start();
     }
 
@@ -543,6 +572,23 @@ public class API {
         headerMap.add(new HttpString("Access-Control-Allow-Origin"),
                 Configuration.string(DefaultConfSettings.CORS_ENABLED));
         headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
+    }
+
+    private HttpHandler addSecurity(final HttpHandler toWrap) {
+        String credentials = Configuration.string(DefaultConfSettings.AUTH);
+        if(credentials == null || credentials.isEmpty()) return toWrap;
+
+        final Map<String, char[]> users = new HashMap<>(2);
+        users.put(credentials.split(":")[0], credentials.split(":")[1].toCharArray());
+
+        IdentityManager identityManager = new MapIdentityManager(users);
+        HttpHandler handler = toWrap;
+        handler = new AuthenticationCallHandler(handler);
+        handler = new AuthenticationConstraintHandler(handler);
+        final List<AuthenticationMechanism> mechanisms = Collections.singletonList(new BasicAuthenticationMechanism("Iota Realm"));
+        handler = new AuthenticationMechanismsHandler(handler, mechanisms);
+        handler = new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, identityManager, handler);
+        return handler;
     }
 
     public void shutDown() {

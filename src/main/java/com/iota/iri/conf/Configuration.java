@@ -19,6 +19,7 @@ public class Configuration {
     public enum DefaultConfSettings {
         API_PORT,
         API_HOST,
+        AUTH,
         TANGLE_RECEIVER_PORT,
         CORS_ENABLED,
         TESTNET, // not used yet
@@ -27,7 +28,8 @@ public class Configuration {
         NEIGHBORS,
         DEBUG,
         IXI_DIR,
-        EXPERIMENTAL // experimental features.
+        DATA_DIR,
+        HELP
     }
 
     static {
@@ -41,7 +43,9 @@ public class Configuration {
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
         conf.put(DefaultConfSettings.REMOTEAPILIMIT.name(), "");
         conf.put(DefaultConfSettings.IXI_DIR.name(), "");
-        conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
+        conf.put(DefaultConfSettings.DATA_DIR.name(), "");
+        conf.put(DefaultConfSettings.HELP.name(), "false");
+        conf.put(DefaultConfSettings.AUTH.name(), "");
     }
 
     public static String allSettings() {

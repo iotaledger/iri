@@ -8,6 +8,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.iota.iri.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,9 @@ public class StorageAddresses extends AbstractStorage {
 
 	@Override
 	public void init() throws IOException {
-		addressesChannel = FileChannel.open(Paths.get(ADDRESSES_FILE_NAME), StandardOpenOption.CREATE,
+        final String dataDir = Configuration.string(Configuration.DefaultConfSettings.DATA_DIR);
+
+		addressesChannel = FileChannel.open(Paths.get(dataDir + ADDRESSES_FILE_NAME), StandardOpenOption.CREATE,
 		        StandardOpenOption.READ, StandardOpenOption.WRITE);
 		addressesChunks[0] = addressesChannel.map(FileChannel.MapMode.READ_WRITE, 0, SUPER_GROUPS_SIZE);
 		final long addressesChannelSize = addressesChannel.size();

@@ -1,11 +1,13 @@
 package com.iota.iri;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import ch.qos.logback.classic.Level;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,9 +20,6 @@ import com.iota.iri.service.TipsManager;
 import com.iota.iri.service.storage.Storage;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
-
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.core.util.StatusPrinter;
 
 /**
  * Main IOTA Reference Implementation starting class
@@ -39,7 +38,7 @@ public class IRI {
         shutdownHook();
 
         if (!Configuration.booling(DefaultConfSettings.HEADLESS)) {
-            showIotaLogo();
+            //showIotaLogo();
         }
 
         try {
@@ -60,8 +59,7 @@ public class IRI {
     private static void validateParams(final String[] args) {
 
         if (args == null || args.length < 2) {
-            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
-            printUsage();
+            log.warn("No api port number provided (i.e. '-p 14265') using default value 14265.");
         }
 
         final CmdLineParser parser = new CmdLineParser();
@@ -69,13 +67,13 @@ public class IRI {
         final Option<String> port = parser.addStringOption('p', "port");
         final Option<String> rport = parser.addStringOption('r', "receiver-port");
         final Option<String> cors = parser.addStringOption('c', "enabled-cors");
-        final Option<Boolean> headless = parser.addBooleanOption("headless");
         final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
         final Option<Boolean> remote = parser.addBooleanOption("remote");
         final Option<String> remoteLimitApi = parser.addStringOption("remote-limit-api");
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
+        final Option<String> dataDir = parser.addStringOption( "data-dir");
+        final Option<String> auth = parser.addStringOption('a',"auth");
         final Option<String> ixiDir = parser.addStringOption('x', "ixi-dir");
-        final Option<Boolean> experimental = parser.addBooleanOption('e', "experimental");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
 
         try {
@@ -86,13 +84,16 @@ public class IRI {
             System.exit(2);
         }
 
-        // mandatory args
-        final String cport = parser.getOptionValue(port);
+        // optional args
+        String cport = parser.getOptionValue(port);
         if (cport == null) {
-            log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
-            printUsage();
+            cport = Configuration.integer(DefaultConfSettings.API_PORT) + "";
+            log.warn("No port specified, using default port " + Configuration.integer(DefaultConfSettings.API_PORT));
         }
-        Configuration.put(DefaultConfSettings.API_PORT, cport);
+
+        if (Integer.parseInt(cport) < 1024) {
+            log.warn("Warning: api port value seems too low.");
+        }
 
         // optional flags
         if (parser.getOptionValue(help) != null) {
@@ -100,7 +101,7 @@ public class IRI {
         }
 
         String cns = parser.getOptionValue(neighbors);
-        if (cns == null) {
+        if (cns == null || cns.isEmpty()) {
             log.warn("No neighbor has been specified. Server starting nodeless.");
             cns = StringUtils.EMPTY;
         }
@@ -111,6 +112,21 @@ public class IRI {
         if (vcors != null) {
             log.debug("Enabled CORS with value : {} ", vcors);
             Configuration.put(DefaultConfSettings.CORS_ENABLED, vcors);
+        }
+
+        final String vauth = parser.getOptionValue(auth);
+        if (vauth != null) {
+            log.debug("Remote authentication for user {} activated ", vauth.split(":")[0]);
+            Configuration.put(DefaultConfSettings.AUTH, vauth);
+        }
+
+        String vpath = parser.getOptionValue(dataDir);
+        if (vpath != null) {
+            log.debug("Custom data dir : {} ", vpath);
+            if(!vpath.endsWith("\\") && !vpath.endsWith("/") ){
+                vpath += File.separator;
+            }
+            Configuration.put(DefaultConfSettings.DATA_DIR, vpath);
         }
 
         final String vremoteapilimit = parser.getOptionValue(remoteLimitApi);
@@ -124,10 +140,6 @@ public class IRI {
             Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT, vrport);
         }
 
-        if (parser.getOptionValue(headless) != null) {
-            Configuration.put(DefaultConfSettings.HEADLESS, "true");
-        }
-
         if (parser.getOptionValue(remote) != null) {
             log.info("Remote access enabled. Binding API socket to listen any interface.");
             Configuration.put(DefaultConfSettings.API_HOST, "0.0.0.0");
@@ -139,19 +151,13 @@ public class IRI {
             Configuration.put(DefaultConfSettings.IXI_DIR, ixiDirVal);
         }
 
-        if (parser.getOptionValue(experimental) != null) {
-            log.info("Experimental IOTA features turned on.");
-            Configuration.put(DefaultConfSettings.EXPERIMENTAL, "true");
-        }
-
-        if (Integer.parseInt(cport) < 1024) {
-            log.warn("Warning: api port value seems too low.");
-        }
-
         if (parser.getOptionValue(debug) != null) {
             Configuration.put(DefaultConfSettings.DEBUG, "true");
             log.info(Configuration.allSettings());
-            StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
+            //StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
+        } else{
+            ch.qos.logback.classic.Logger root = (ch.qos.logback.classic.Logger) LoggerFactory.getLogger(IRI.class);
+            root.setLevel(Level.OFF);
         }
     }
 
@@ -162,8 +168,10 @@ public class IRI {
                 "[{-c,--enabled-cors} *] " +
                 "[{-h}] [{--headless}] " +
                 "[{-d,--debug}] " +
-                "[{-e,--experimental}]" +
+                "[{--data-dir} '/tmp'] " +
                 "[{--remote}]" +
+                "[{-a,--auth} 'user:password']" +
+                "[{--remote-limit-api} '<list of api calls>']" +
                 // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
                 "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
         System.exit(0);
@@ -192,7 +200,7 @@ public class IRI {
 
         try {
             final Path path = Paths.get("logo.utf8.ans");
-            Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
+            Files.readAllLines(path, Charset.forName(charset)).forEach(System.out::println);
         } catch (IOException e) {
             log.error("Impossible to display logo. Charset {} not supported by terminal.", charset);
         }

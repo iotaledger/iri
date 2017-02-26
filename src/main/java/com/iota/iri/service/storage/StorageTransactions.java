@@ -1,5 +1,6 @@
 package com.iota.iri.service.storage;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
@@ -9,6 +10,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.iota.iri.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,8 +33,9 @@ public class StorageTransactions extends AbstractStorage {
     
     @Override
 	public void init() throws IOException {
-		
-        transactionsChannel = FileChannel.open(Paths.get(TRANSACTIONS_FILE_NAME), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
+        final String dataDir = Configuration.string(Configuration.DefaultConfSettings.DATA_DIR);
+
+        transactionsChannel = FileChannel.open(Paths.get(dataDir + TRANSACTIONS_FILE_NAME), StandardOpenOption.CREATE, StandardOpenOption.READ, StandardOpenOption.WRITE);
         transactionsTipsFlags = transactionsChannel.map(FileChannel.MapMode.READ_WRITE, TIPS_FLAGS_OFFSET, TIPS_FLAGS_SIZE);
         transactionsChunks[0] = transactionsChannel.map(FileChannel.MapMode.READ_WRITE, SUPER_GROUPS_OFFSET, SUPER_GROUPS_SIZE);
         final long transactionsChannelSize = transactionsChannel.size();

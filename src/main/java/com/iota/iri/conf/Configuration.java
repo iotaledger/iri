@@ -42,7 +42,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.HEADLESS.name(), "false");
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
         conf.put(DefaultConfSettings.REMOTEAPILIMIT.name(), "");
-        conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
+        conf.put(DefaultConfSettings.IXI_DIR.name(), "");
         conf.put(DefaultConfSettings.DATA_DIR.name(), "");
         conf.put(DefaultConfSettings.HELP.name(), "false");
         conf.put(DefaultConfSettings.AUTH.name(), "");

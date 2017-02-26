@@ -47,7 +47,7 @@ public class IRI {
             Node.instance().init();
             TipsManager.instance().init();
             API.instance().init();
-            //IXI.instance().init();
+            IXI.instance().init();
 
         } catch (final Exception e) {
             log.error("Exception during IOTA node initialisation: ", e);
@@ -73,6 +73,7 @@ public class IRI {
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
         final Option<String> dataDir = parser.addStringOption( "data-dir");
         final Option<String> auth = parser.addStringOption('a',"auth");
+        final Option<String> ixiDir = parser.addStringOption('x', "ixi-dir");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
 
         try {
@@ -144,6 +145,12 @@ public class IRI {
             Configuration.put(DefaultConfSettings.API_HOST, "0.0.0.0");
         }
 
+        final String ixiDirVal = parser.getOptionValue(ixiDir);
+        if (ixiDirVal != null) {
+            log.info("IXI enabled on directory: " + ixiDirVal);
+            Configuration.put(DefaultConfSettings.IXI_DIR, ixiDirVal);
+        }
+
         if (parser.getOptionValue(debug) != null) {
             Configuration.put(DefaultConfSettings.DEBUG, "true");
             log.info(Configuration.allSettings());
@@ -176,7 +183,7 @@ public class IRI {
             log.info("Shutting down IOTA node, please hold tight...");
             try {
 
-                //IXI.instance().shutdown();
+                IXI.instance().shutdown();
                 API.instance().shutDown();
                 TipsManager.instance().shutDown();
                 Node.instance().shutdown();

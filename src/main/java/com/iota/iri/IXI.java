@@ -37,24 +37,30 @@ public class IXI {
     TODO: create events for target added/changed/removed
      */
     public static void init() throws Exception {
-        watcher = FileSystems.getDefault().newWatchService();
-        Path path = Paths.get(Configuration.string(DefaultConfSettings.IXI_DIR));
-        String s = path.toAbsolutePath().toString();
-        register(path);
-        dirWatchThread = (new Thread(IXI::processEvents));
-        dirWatchThread.start();
+        if(Configuration.string(DefaultConfSettings.IXI_DIR).length() > 0) {
+            watcher = FileSystems.getDefault().newWatchService();
+            Path path = Paths.get(Configuration.string(DefaultConfSettings.IXI_DIR));
+            String s = path.toAbsolutePath().toString();
+            final File ixiDir = new File(s);
+            if(!ixiDir.exists()) ixiDir.mkdir();
+            register(path);
+            dirWatchThread = (new Thread(IXI::processEvents));
+            dirWatchThread.start();
+        }
     }
 
     public static void shutdown() {
-        try {
-            dirWatchThread.interrupt();
-            dirWatchThread.join();
-        } catch(InterruptedException e) {
-            e.printStackTrace();
-        }
-        Object[] keys = ixiAPI.keySet().toArray();
-        for (Object key : keys) {
-            detach((String)key);
+        if(dirWatchThread != null) {
+            try {
+                dirWatchThread.interrupt();
+                dirWatchThread.join();
+            } catch(InterruptedException e) {
+                e.printStackTrace();
+            }
+            Object[] keys = ixiAPI.keySet().toArray();
+            for (Object key : keys) {
+                detach((String)key);
+            }
         }
     }
 
@@ -95,15 +101,14 @@ public class IXI {
                 if(command.substring(0, key.length()).equals(key)) {
                     String subCmd = command.substring(key.length()+1);
                     ixiMap = ixiAPI.get(key);
-                    CallableRequest<AbstractResponse> c = ixiMap.get(subCmd);
-                    res = c.call(request);
+                    res = ((CallableRequest<AbstractResponse>)ixiMap.get(subCmd)).call(request);
                     if(res != null) return res;
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return ErrorResponse.create("Command [" + command + "] is unknown");
+        return null;
     }
 
     private static void processEvents() {

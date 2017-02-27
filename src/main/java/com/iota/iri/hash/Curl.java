@@ -100,29 +100,7 @@ public class Curl {
         return dest;
     };
     public static Function<Tuple[], Tuple[]> absorb(final Tuple[] trits, int offset, int length) {
-        //return (state) -> sponge.apply(state).apply(offset).apply(length).apply(true).apply(state);
-        return (state) -> {
-            int o = offset, l = length, i = 0;
-            do {
-                System.arraycopy(trits, o, state, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
-                state = transform(state);
-                o += HASH_LENGTH;
-            } while ((l -= HASH_LENGTH) > 0);
-            return state;
-        };
-    }
-    public static Function<Tuple[], Tuple[]> squeeze(final Tuple[] trits, int offset, int length) {
-        //return sponge.apply(trits).apply(offset).apply(length).apply(false);
-        return (state) -> {
-            int o = offset,
-                    l = length;
-            do {
-                System.arraycopy(state, 0, trits, o, l < HASH_LENGTH ? l : HASH_LENGTH);
-                transform(state);
-                o += HASH_LENGTH;
-            } while ((l -= HASH_LENGTH) > 0);
-            return trits;
-        };
+        return (state) -> Curl.absorb(state, trits, offset, length);
     }
     public static Tuple[] absorb(final Tuple[] state, final Tuple[] trits, int offset, int length) {
         int o = offset, l = length, i = 0;
@@ -132,6 +110,10 @@ public class Curl {
             o += HASH_LENGTH;
         } while ((l -= HASH_LENGTH) > 0);
         return state;
+    }
+
+    public static Function<Tuple[], Tuple[]> squeeze(final Tuple[] trits, int offset, int length) {
+        return (state) -> Curl.squeeze(state, trits, offset, length);
     }
     public static Tuple[] squeeze(final Tuple[] state, final Tuple[] trits, int offset, int length) {
         int o = offset,

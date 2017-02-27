@@ -1,6 +1,9 @@
 package com.iota.iri.utils;
 
+import com.iota.iri.hash.keys.Tuple;
+
 import java.util.Arrays;
+import java.util.stream.IntStream;
 
 public class Converter {
 
@@ -16,6 +19,9 @@ public class Converter {
     public static final String TRYTE_ALPHABET = "9ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
     public static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
+
+    private static final int HIGH_BITS = 0b11111111111111111111111111111111;
+    private static final int LOW_BITS = 0b00000000000000000000000000000000;
 
     static {
 
@@ -39,6 +45,35 @@ public class Converter {
             value = value * RADIX + trits[offset + i];
         }
         return value;
+    }
+
+
+    public static Tuple[] tuple(int[] trits) {
+        Tuple[] tuples = new Tuple[trits.length];
+        for(int i = 0; i < trits.length; i++) {
+            tuples[i] = new Tuple(trits[i]);
+        }
+        return tuples;
+    }
+
+    public static int[] trits(Tuple[] tuples, int index) {
+        assert index < 32;
+        int[] trits = new int[tuples.length];
+        for(int i = 0; i < tuples.length; i++) {
+            trits[i] = tuples[i].value(index);
+        }
+        return trits;
+    }
+    public static int[] trits(Tuple[] tuples) {
+        return trits(tuples, 0);
+    }
+    public static String[] trytes(final Tuple[] tuples, int bitIndex) {
+        return IntStream.range(0, bitIndex).parallel().mapToObj(i ->
+            trytes(IntStream.range(0, tuples.length).parallel()
+                    .map(j -> tuples[j].value(i))
+                    .toArray())
+        ).toArray(String[]::new);
+        //return trytes(trits(tuples));
     }
 
     public static byte[] bytes(final int[] trits, final int offset, final int size) {
@@ -124,7 +159,7 @@ public class Converter {
         return trits[offset] + trits[offset + 1] * 3 + trits[offset + 2] * 9;
     }
 
-    private static void increment(final int[] trits, final int size) {
+    public static void increment(final int[] trits, final int size) {
         for (int i = 0; i < size; i++) {
             if (++trits[i] > Converter.MAX_TRIT_VALUE) {
                 trits[i] = Converter.MIN_TRIT_VALUE;

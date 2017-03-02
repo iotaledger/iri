@@ -25,8 +25,8 @@ public class Transaction {
     public static final int BUNDLE_OFFSET = LAST_INDEX_OFFSET + LAST_INDEX_SIZE + ((Long.BYTES - (LAST_INDEX_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), BUNDLE_SIZE = 49;
     private static final int TRUNK_TRANSACTION_OFFSET = BUNDLE_OFFSET + BUNDLE_SIZE + ((Long.BYTES - (BUNDLE_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), TRUNK_TRANSACTION_SIZE = HASH_SIZE;
     private static final int BRANCH_TRANSACTION_OFFSET = TRUNK_TRANSACTION_OFFSET + TRUNK_TRANSACTION_SIZE + ((Long.BYTES - (TRUNK_TRANSACTION_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), BRANCH_TRANSACTION_SIZE = HASH_SIZE;
-
     public static final int VALIDITY_OFFSET = BRANCH_TRANSACTION_OFFSET + BRANCH_TRANSACTION_SIZE + ((Long.BYTES - (BRANCH_TRANSACTION_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), VALIDITY_SIZE = 1;
+    public static final int ARRIVAL_TIME_OFFSET = VALIDITY_OFFSET + VALIDITY_SIZE + ((Long.BYTES - (VALIDITY_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), ARIVAL_TIME_SIZE = Long.BYTES;
 
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2
 
@@ -58,6 +58,8 @@ public class Transaction {
     
     public final long value; // <0 spending transaction, >=0 deposit transaction / message
     
+    public long arrivalTime;
+
     public final byte[] tag; // milestone index only for milestone tx. Otherwise, arbitrary up to the tx issuer.
     public final long currentIndex; // index of tx in the bundle
     public final long lastIndex; // lastIndex is curIndex of the last tx from the same bundle
@@ -93,13 +95,13 @@ public class Transaction {
         System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, bundle = new byte[BUNDLE_SIZE], 0, BUNDLE_SIZE);
         System.arraycopy(Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE), 0, trunkTransaction = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
         System.arraycopy(Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE), 0, branchTransaction = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
-
+        
         type = Storage.FILLED_SLOT;
 
         trunkTransactionPointer = 0;
         branchTransactionPointer = 0;
         validity = 0;
-
+        arrivalTime = 0;
         pointer = 0;
     }
 
@@ -144,6 +146,7 @@ public class Transaction {
         trunkTransactionPointer = 0;
         branchTransactionPointer = 0;
         validity = 0;
+        arrivalTime = 0;
 
         pointer = 0;
     }
@@ -174,6 +177,8 @@ public class Transaction {
         }
 
         validity = mainBuffer[VALIDITY_OFFSET];
+        
+        arrivalTime = Storage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
 
         this.pointer = pointer;
     }

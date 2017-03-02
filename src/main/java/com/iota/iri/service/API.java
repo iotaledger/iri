@@ -240,6 +240,22 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
+    private static int counter_getTxToApprove = 0;
+    public static int getCounter_getTxToApprove() {
+        return counter_getTxToApprove;
+    }
+    public static void incCounter_getTxToApprove() {
+        counter_getTxToApprove++;
+    }
+    
+    private static long ellapsedTime_getTxToApprove = 0L;
+    public static long getEllapsedTime_getTxToApprove() {
+        return ellapsedTime_getTxToApprove;
+    }
+    public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
+        ellapsedTime_getTxToApprove += ellapsedTime;
+    }
+   
     private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) {
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth);
         if (trunkTransactionToApprove == null) {
@@ -248,6 +264,16 @@ public class API {
         final Hash branchTransactionToApprove = TipsManager.transactionToApprove(trunkTransactionToApprove, depth);
         if (branchTransactionToApprove == null) {
             return ErrorResponse.create("The subtangle is not solid");
+        }
+        API.incCounter_getTxToApprove();
+        if ( ( getCounter_getTxToApprove() % 100) == 0 ) {
+            StringBuffer sb = new StringBuffer(80);
+            sb.append("Last 100 getTxToApprove consumed ");
+            sb.append(API.getEllapsedTime_getTxToApprove()/1000000000L);
+            sb.append(" seconds processing time.");            
+            log.info(sb.toString());
+            counter_getTxToApprove = 0;
+            ellapsedTime_getTxToApprove = 0L;
         }
         return GetTransactionsToApproveResponse.create(trunkTransactionToApprove, branchTransactionToApprove);
     }
@@ -258,9 +284,11 @@ public class API {
     }
 
     private AbstractResponse storeTransactionStatement(final List<String> trys) {
+        long pointer;
         for (final String trytes : trys) {
             final Transaction transaction = new Transaction(Converter.trits(trytes));
-            StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
+            pointer = StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
+            StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
         }
         return AbstractResponse.createEmptyResponse();
     }
@@ -453,6 +481,22 @@ public class API {
         return GetBalancesResponse.create(elements, milestone, milestoneIndex);
     }
 
+    private static int counter_PoW = 0;
+    public static int getCounter_PoW() {
+        return counter_PoW;
+    }
+    public static void incCounter_PoW() {
+        API.counter_PoW++;;
+    }
+
+    private static long ellapsedTime_PoW = 0L;
+    public static long getEllapsedTime_PoW() {
+        return ellapsedTime_PoW;
+    }
+    public static void incEllapsedTime_PoW(long ellapsedTime) {
+        ellapsedTime_PoW += ellapsedTime;
+    }
+    
     private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
         final List<Transaction> transactions = new LinkedList<>();
@@ -460,21 +504,35 @@ public class API {
         Hash prevTransaction = null;
 
         for (final String tryte : trytes) {
-
-            final int[] transactionTrits = Converter.trits(tryte);
-            System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
-                    transactionTrits, Transaction.TRUNK_TRANSACTION_TRINARY_OFFSET,
-                    Transaction.TRUNK_TRANSACTION_TRINARY_SIZE);
-            System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
-                    transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
-                    Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
-            if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
-                transactions.clear();
-                break;
+            long startTime = System.nanoTime();
+            try {
+                final int[] transactionTrits = Converter.trits(tryte);
+                System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
+                        transactionTrits, Transaction.TRUNK_TRANSACTION_TRINARY_OFFSET,
+                        Transaction.TRUNK_TRANSACTION_TRINARY_SIZE);
+                System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
+                        transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
+                        Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
+                if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
+                    transactions.clear();
+                    break;
+                }
+                final Transaction transaction = new Transaction(transactionTrits);
+                transactions.add(transaction);
+                prevTransaction = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
+            } finally {
+                API.incEllapsedTime_PoW(System.nanoTime() - startTime);
+                API.incCounter_PoW();
+                if ( ( API.getCounter_PoW() % 100) == 0 ) {
+                    StringBuffer sb = new StringBuffer(80);
+                    sb.append("Last 100 PoW consumed ");
+                    sb.append(API.getEllapsedTime_PoW()/1000000000L);
+                    sb.append(" seconds processing time.");
+                    log.info(sb.toString());
+                    counter_PoW = 0;
+                    ellapsedTime_PoW = 0L;
+                }
             }
-            final Transaction transaction = new Transaction(transactionTrits);
-            transactions.add(transaction);
-            prevTransaction = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
         }
 
         final List<String> elements = new LinkedList<>();

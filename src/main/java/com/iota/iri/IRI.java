@@ -30,7 +30,7 @@ public class IRI {
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
     public static final String NAME = "IRI Testnet";
-    public static final String VERSION = "1.1.2.6";
+    public static final String VERSION = "1.1.2.10";
 
     public static void main(final String[] args) {
 
@@ -48,7 +48,7 @@ public class IRI {
             Node.instance().init();
             TipsManager.instance().init();
             API.instance().init();
-            //IXI.instance().init();
+            //IXI.init();
 
         } catch (final Exception e) {
             log.error("Exception during IOTA node initialisation: ", e);
@@ -76,8 +76,9 @@ public class IRI {
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
         final Option<Boolean> experimental = parser.addBooleanOption('e', "experimental");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
-        final Option<Integer> strategyX = parser.addIntegerOption('x', "strategy-max");
-        final Option<Integer> strategyQ = parser.addIntegerOption('q', "strategy-rsq");
+        final Option<Integer> ratingThr = parser.addIntegerOption('x', "rating-threshold");
+        final Option<Integer> artLatency = parser.addIntegerOption('a', "art-latency");
+        final Option<Long> timestampThreshold = parser.addLongOption('t', "timestamp-threshold");
 
         try {
             parser.parse(args);
@@ -149,17 +150,24 @@ public class IRI {
             StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
         }
         
-        final Integer valueX = parser.getOptionValue(strategyX);
-        if (valueX != null) {
-            log.info("Experimental strategy MAX is set to {}.",valueX);
-            TipsManager.setStrategyMAXBars(valueX);
+        final Integer ratingThreshold = parser.getOptionValue(ratingThr);
+        if (ratingThreshold != null) {
+            log.info("Rating Threshold for TipManager is set to {}.",ratingThreshold);
+            TipsManager.setRATING_THRESHOLD(ratingThreshold);
         }
         
-        final Integer valueQ = parser.getOptionValue(strategyQ);
-        if (valueQ != null) {
-            log.info("Experimental strategy RSQ is set to {}.",valueQ);
-            TipsManager.setStrategyRSQBars(valueQ);
+        final Integer aLatency = parser.getOptionValue(artLatency);
+        if (aLatency != null) {
+            log.info("Artifical Latency for milestone updater is set to {}.",aLatency);
+            TipsManager.setARTIFICAL_LATENCY(aLatency);
         }
+        
+        final Long ts = parser.getOptionValue(timestampThreshold);
+        if (ts != null) {
+            log.info("Timestamp threshold is set to {}.",ts);
+            Node.setTIMESTAMP_THRESHOLD(ts);
+        }
+        
     }
 
     private static void printUsage() {
@@ -171,6 +179,9 @@ public class IRI {
                 "[{-d,--debug}] " +
                 "[{-e,--experimental}]" +
                 "[{--remote}]" +
+                "[{--rating-threshold} 75]" +
+                "[{--art-latency} 120]" +
+                "[{--timestamp-threshold} 0]" +
                 // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
                 "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
         System.exit(0);
@@ -181,8 +192,7 @@ public class IRI {
 
             log.info("Shutting down IOTA node, please hold tight...");
             try {
-
-                //IXI.instance().shutdown();
+                //IXI.shutdown();
                 API.instance().shutDown();
                 TipsManager.instance().shutDown();
                 Node.instance().shutdown();

@@ -2,6 +2,7 @@ package com.iota.iri.service.storage;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
+import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,6 +30,19 @@ public class ReplicatorSinkPool {
     public void createSink(Neighbor neighbor) {
         Runnable proc = new ReplicatorSinkProcessor( neighbor );
         sinkPool.submit(proc);
+    }
+    
+    public void shutdownSink(Neighbor neighbor) {
+        Socket socket = neighbor.getSink();
+        if (socket != null) {
+            if (!socket.isClosed()) {
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+        neighbor.setSink(null);
     }
     
     public void shutdown() {

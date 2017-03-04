@@ -60,7 +60,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                 Node.instance().getNeighbors().add(fresh_neighbor);
                 fresh_neighbor.setSource(connection);
             } else {
-                log.info("Got connected from configured neighbor {}", inet_address.getAddress().getHostAddress());
+                log.info("Source from configured neighbor {}", inet_address.getAddress().getHostAddress());
                 neighbor = Replicator.instance().getNeighborByAddress(inet_address);
             }
             
@@ -80,14 +80,16 @@ public class ReplicatorSourceProcessor implements Runnable {
             }
         } catch (IOException e) {
             // TODO Auto-generated catch block
-            log.error("Could not read input ", e);
+            log.error("Connection reset by neighbor {}", neighbor.getAddress().getAddress().getHostAddress());
+            ReplicatorSinkPool.instance().shutdownSink(neighbor);
         } catch (URISyntaxException e) {
             log.error("URI syntax error ", e);
         } finally {
             try {
-                log.info("session closed");                
+                log.info("source session closed");                
                 connection.close();
                 neighbor.setSource(null);
+                ReplicatorSinkPool.instance().shutdownSink(neighbor);
             } catch (IOException ex) {
                 log.error("Could not close connection", ex);
             }

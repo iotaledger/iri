@@ -26,6 +26,8 @@ public class ReplicatorSinkProcessor implements Runnable {
             if (neighbor.getSink() == null) {
                 Socket socket = new Socket(remoteAddress, ReplicatorSourcePool.REPLICATOR_PORT);
                 neighbor.setSink(socket);
+                
+                
             }
         } catch (Exception e) {
             log.error("Could not create outbound connection to host {} port {}", remoteAddress,

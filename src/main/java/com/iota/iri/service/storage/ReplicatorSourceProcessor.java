@@ -64,7 +64,9 @@ public class ReplicatorSourceProcessor implements Runnable {
                 neighbor = Replicator.instance().getNeighborByAddress(inet_address);
             }
             
-            ReplicatorSinkPool.instance().createSink(neighbor);
+            if (neighbor.getSink() == null) {
+                ReplicatorSinkPool.instance().createSink(neighbor);
+            }
 
             InputStream stream = connection.getInputStream();
             while (!shutdown) {

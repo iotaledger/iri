@@ -1,9 +1,12 @@
 package com.iota.iri;
 
-import com.iota.iri.service.Node;
-
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
+import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.util.concurrent.ArrayBlockingQueue;
+
+import com.iota.iri.service.Node;
 
 public class Neighbor {
 
@@ -12,6 +15,29 @@ public class Neighbor {
     private int numberOfAllTransactions;
     private int numberOfNewTransactions;
     private int numberOfInvalidTransactions;
+    
+    public ArrayBlockingQueue<Long> sendQueue = new ArrayBlockingQueue<>(50);
+    public ArrayBlockingQueue<ByteBuffer> receiveQueue = new ArrayBlockingQueue<>(10);
+    
+    private Socket source = null;
+    
+    public Socket getSource() {
+        return source;
+    }
+
+    public void setSource(Socket source) {
+        this.source = source;
+    }
+
+    private Socket sink = null;
+
+    public Socket getSink() {
+        return sink;
+    }
+
+    public void setSink(Socket sink) {
+        this.sink = sink;
+    }
 
     public Neighbor(final InetSocketAddress address) {
         this.address = address;

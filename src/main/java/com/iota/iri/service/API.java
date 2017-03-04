@@ -205,9 +205,6 @@ public class API {
                     log.debug("Invoking 'storeTransactions' with {}", trytes);
                     return storeTransactionStatement(trytes);
                 }
-                case "exportToExternalDB": {
-                    return exportToExternalDBStatement(request);
-                }
                 default:
                     return ErrorResponse.create("Command [" + command + "] is unknown");
             }
@@ -559,10 +556,6 @@ public class API {
             }
         }
         return AddedNeighborsResponse.create(numberOfAddedNeighbors);
-    }
-
-    private AbstractResponse exportToExternalDBStatement() {
-        return exportToExternalDBResponse();
     }
     
     private void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime)

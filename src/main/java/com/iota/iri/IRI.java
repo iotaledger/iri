@@ -15,6 +15,7 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.API;
 import com.iota.iri.service.Node;
 import com.iota.iri.service.TipsManager;
+import com.iota.iri.service.storage.Replicator;
 import com.iota.iri.service.storage.Storage;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
@@ -39,12 +40,12 @@ public class IRI {
         shutdownHook();
 
         if (!Configuration.booling(DefaultConfSettings.HEADLESS)) {
-            showIotaLogo();
+            //showIotaLogo();
         }
 
         try {
-
-            Storage.instance().init();
+            Replicator.instance().init();
+            Storage.instance().init();            
             Node.instance().init();
             TipsManager.instance().init();
             API.instance().init();

@@ -60,6 +60,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                 Node.instance().getNeighbors().add(fresh_neighbor);
                 fresh_neighbor.setSource(connection);
             } else {
+                if (neighbor.getSource() != null) return;
                 log.info("Source {} open (known neighbor)", inet_address.getAddress().getHostAddress());
                 neighbor = Replicator.instance().getNeighborByAddress(inet_address);
             }

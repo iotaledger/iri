@@ -28,6 +28,7 @@ public class ReplicatorSinkPool {
     }
 
     public void createSink(Neighbor neighbor) {
+        if (neighbor.getSink() != null) return;
         Runnable proc = new ReplicatorSinkProcessor( neighbor );
         sinkPool.submit(proc);
     }
@@ -38,6 +39,7 @@ public class ReplicatorSinkPool {
             if (!socket.isClosed()) {
                 try {
                     socket.close();
+                    log.info("Sink {} closed", neighbor.getAddress().getAddress().getHostAddress());
                 } catch (IOException e) {
                 }
             }

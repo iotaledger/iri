@@ -114,7 +114,7 @@ public class Node {
                             final String neighborAddress = neighborIpCache.get(hostname);
                             
                             if (neighborAddress == null) {
-                                neighborIpCache.put(neighborAddress, ip);
+                                neighborIpCache.put(hostname, ip);
                             } else {
                                 if (neighborAddress.equals(ip)) {
                                     log.info("{} seems fine.", hostname);

@@ -68,7 +68,7 @@ public class Node {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
     
-    private static long TIMESTAMP_THRESHOLD = 0L;
+    public static long TIMESTAMP_THRESHOLD = 0L;
 
     public static void setTIMESTAMP_THRESHOLD(long tIMESTAMP_THRESHOLD) {
         TIMESTAMP_THRESHOLD = tIMESTAMP_THRESHOLD;

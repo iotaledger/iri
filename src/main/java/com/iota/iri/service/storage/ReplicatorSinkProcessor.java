@@ -1,6 +1,9 @@
 package com.iota.iri.service.storage;
 
+import java.io.IOException;
+import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,9 +27,27 @@ public class ReplicatorSinkProcessor implements Runnable {
         try {
             if (neighbor.getSink() == null) {
                 Socket socket = new Socket(remoteAddress, Replicator.REPLICATOR_PORT);
+                socket.setSoTimeout(30000);
+                OutputStream out = socket.getOutputStream();
                 neighbor.setSink(socket);
                 neighbor.setWaitingForSinkOpen(false);
                 log.info("Sink {} is open, configured = {}", remoteAddress, neighbor.isFlagged());
+                while ( !ReplicatorSinkPool.instance().shutdown ) {
+                    try {
+                        ByteBuffer message = neighbor.getNextMessage();
+                        log.info("Next message");  // TODO don't log that
+                        try {
+                            out.write(message.array());
+                            log.info("Next message send successfully");  // TODO don't log that
+                        }
+                        catch (IOException e2) {
+                            log.error("Error wrting to sink: {}", e2);
+                        }
+                    }
+                    catch (InterruptedException e) {
+                        log.error("Interrupted while waiting for send buffer");
+                    }
+                }
             }
         } catch (Exception e) {
             log.error("Could not create outbound connection to host {} port {}", remoteAddress,

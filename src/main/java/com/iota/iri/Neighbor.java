@@ -16,8 +16,7 @@ public class Neighbor {
     private int numberOfNewTransactions;
     private int numberOfInvalidTransactions;
     
-    public ArrayBlockingQueue<Long> sendQueue = new ArrayBlockingQueue<>(50);
-    public ArrayBlockingQueue<ByteBuffer> receiveQueue = new ArrayBlockingQueue<>(10);
+    public ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(50);
     
     private boolean flagged = false;
     
@@ -77,11 +76,18 @@ public class Neighbor {
     }
 
     public void send(final DatagramPacket packet) {
-        try {
-            packet.setSocketAddress(address);
-            Node.instance().send(packet);
-        } catch (final Exception e) {
-        	// ignore
+        if (isTcpip()) {
+            if ( sendQueue.remainingCapacity() > 0 ) {
+                sendQueue.add(ByteBuffer.wrap(packet.getData()));
+            }
+        }
+        else {
+            try {
+                packet.setSocketAddress(address);
+                Node.instance().send(packet);
+            } catch (final Exception e) {
+                // ignore
+            }
         }
     }
     
@@ -128,4 +134,8 @@ public class Neighbor {
     public int getNumberOfNewTransactions() {
 		return numberOfNewTransactions;
 	}
+    
+    public ByteBuffer getNextMessage() throws InterruptedException {
+        return (this.sendQueue.take());
+    }
 }

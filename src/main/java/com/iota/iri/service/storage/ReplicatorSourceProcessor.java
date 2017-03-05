@@ -2,18 +2,26 @@ package com.iota.iri.service.storage;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.iota.iri.Bundle;
+import com.iota.iri.Milestone;
 import com.iota.iri.Neighbor;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.service.Node;
+import com.iota.iri.utils.Converter;
 
 public class ReplicatorSourceProcessor implements Runnable {
 
@@ -21,8 +29,7 @@ public class ReplicatorSourceProcessor implements Runnable {
 
     private Socket connection;
 
-    final static int TRANSACTION_PACKET_SIZE = 10;
-
+    final static int TRANSACTION_PACKET_SIZE = Node.TRANSACTION_PACKET_SIZE;
     private volatile boolean shutdown = false;
     
     private boolean existingNeighbor;
@@ -32,6 +39,12 @@ public class ReplicatorSourceProcessor implements Runnable {
     public ReplicatorSourceProcessor(Socket connection) {
         this.connection = connection;
     }
+    
+    final int[] receivedTransactionTrits = new int[Transaction.TRINARY_SIZE];
+    final byte[] requestedTransaction = new byte[Transaction.HASH_SIZE];
+    
+    private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
+            TRANSACTION_PACKET_SIZE);
 
     @Override
     public void run() {
@@ -40,9 +53,12 @@ public class ReplicatorSourceProcessor implements Runnable {
         int offset = 0;        
 
         try {
+            final Curl curl = new Curl();
+            
             SocketAddress address = connection.getRemoteSocketAddress();
             InetSocketAddress inet_socket_address = (InetSocketAddress) address;
             InetSocketAddress inet_socket_address_normalized = new InetSocketAddress(inet_socket_address.getAddress(),Replicator.REPLICATOR_PORT);
+            long pointer;
             
             existingNeighbor = false;
             List<Neighbor> neighbors = Node.instance().getNeighbors();            
@@ -84,11 +100,44 @@ public class ReplicatorSourceProcessor implements Runnable {
                 }
                 if (count == -1)
                     break;
-                log.info("offset = {}", offset);
+              
                 offset = 0;
+                                
+                log.info("new incoming message");
+                try {
+                    neighbor.incAllTransactions();
+                    final Transaction receivedTransaction = new Transaction(data, receivedTransactionTrits, curl);
+                    long timestamp = (int) Converter.longValue(receivedTransaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
+                    if (timestamp > Node.TIMESTAMP_THRESHOLD) {
+                        if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.hash, receivedTransaction, false)) != 0L) {
+                            StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
+                            neighbor.incNewTransactions();
+                            Node.instance().broadcast(receivedTransaction); // the UDP path
+                            ReplicatorSinkPool.instance().broadcast(receivedTransaction, neighbor); // the TCP path
+                        }
+
+                        long transactionPointer = 0L;
+                        System.arraycopy(data, Transaction.SIZE, requestedTransaction, 0, Transaction.HASH_SIZE);
+
+                        if (!Arrays.equals(requestedTransaction, Transaction.NULL_TRANSACTION_HASH_BYTES)) {
+                            transactionPointer = StorageTransactions.instance().transactionPointer(requestedTransaction);
+
+                            if (transactionPointer != 0L && transactionPointer > (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) {
+                                synchronized (sendingPacket) {
+                                    System.arraycopy( StorageTransactions.instance().loadTransaction(transactionPointer).bytes, 0, sendingPacket.getData(), 0, Transaction.SIZE);
+                                    StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
+                                    neighbor.send(sendingPacket);
+                                }
+                            }
+                        }
+                    }
+                } catch (final RuntimeException e) {
+                    log.error("Received an Invalid Transaction. Dropping it...");
+                    neighbor.incInvalidTransactions();
+                }
+
             }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             log.error("TCP onnection reset by neighbor {}", neighbor.getAddress().getAddress().getHostAddress());
             ReplicatorSinkPool.instance().shutdownSink(neighbor);
         } finally {

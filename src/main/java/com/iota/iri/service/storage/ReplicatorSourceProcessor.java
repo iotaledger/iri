@@ -90,7 +90,6 @@ public class ReplicatorSourceProcessor implements Runnable {
             while (!shutdown) {
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1)
                         && (offset < TRANSACTION_PACKET_SIZE)) {
-                    log.info("received {} bytes", count);
                     offset += count;
                 }
                 if (count == -1)
@@ -98,7 +97,6 @@ public class ReplicatorSourceProcessor implements Runnable {
               
                 offset = 0;
                                 
-                log.info("new incoming message");
                 try {
                     neighbor.incAllTransactions();
                     final Transaction receivedTransaction = new Transaction(data, receivedTransactionTrits, curl);

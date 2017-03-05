@@ -38,8 +38,7 @@ public class ReplicatorSourceProcessor implements Runnable {
     final int[] receivedTransactionTrits = new int[Transaction.TRINARY_SIZE];
     final byte[] requestedTransaction = new byte[Transaction.HASH_SIZE];
     
-    private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
-            TRANSACTION_PACKET_SIZE);
+    private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
 
     @Override
     public void run() {

@@ -80,23 +80,26 @@ public class ReplicatorSinkPool  implements Runnable {
     public void broadcast(Transaction transaction, Neighbor neighbor) {
         if (transaction != null) {
             List<Neighbor> neighbors = Node.instance().getNeighbors();
-            neighbors.forEach(n -> {
-                if (neighbor.getSink() != n.getSink()) {
-                    if (n.isTcpip() && (n.getSink() != null) && !n.isWaitingForSinkOpen()) {
+            if (neighbors != null) {
+                neighbors.forEach(n -> {
+                    if ( (neighbor == null) || (neighbor.getSink() != n.getSink()) ) {
+                        if (n.isTcpip() && (n.getSink() != null) && !n.isWaitingForSinkOpen()) {
 
-                        try {
-                            synchronized (sendingPacket) {
-                                System.arraycopy(transaction.bytes, 0, sendingPacket.getData(), 0, Transaction.SIZE);
-                                StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(),
-                                        Transaction.SIZE);
-                                neighbor.send(sendingPacket);
+                            try {
+                                synchronized (sendingPacket) {
+                                    System.arraycopy(transaction.bytes, 0, sendingPacket.getData(), 0,
+                                            Transaction.SIZE);
+                                    StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(),
+                                            Transaction.SIZE);
+                                    neighbor.send(sendingPacket);
+                                }
+                            } catch (final Exception e) {
+                                // ignore
                             }
-                        } catch (final Exception e) {
-                            // ignore
                         }
                     }
-                }
-            });
+                });
+            }
         }
     }
     

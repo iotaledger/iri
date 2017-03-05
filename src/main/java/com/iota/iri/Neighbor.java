@@ -28,6 +28,16 @@ public class Neighbor {
     public void setFlagged(boolean flagged) {
         this.flagged = flagged;
     }
+    
+    private boolean tcpip = false;
+    
+    public boolean isTcpip() {
+        return tcpip;
+    }
+
+    public void setTcpip(boolean tcpip) {
+        this.tcpip = tcpip;
+    }
 
     private Socket source = null;
     
@@ -49,8 +59,10 @@ public class Neighbor {
         this.sink = sink;
     }
 
-    public Neighbor(final InetSocketAddress address) {
+    public Neighbor(final InetSocketAddress address, boolean isTcp, boolean isConfigured) {
         this.address = address;
+        this.tcpip = isTcp;
+        this.flagged = isConfigured;
     }
 
     public void send(final DatagramPacket packet) {

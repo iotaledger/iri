@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +24,10 @@ public class ReplicatorSourceProcessor implements Runnable {
     final static int TRANSACTION_PACKET_SIZE = 10;
 
     private volatile boolean shutdown = false;
+    
+    private boolean existingNeighbor;
+    
+    private Neighbor neighbor;
 
     public ReplicatorSourceProcessor(Socket connection) {
         this.connection = connection;
@@ -32,32 +37,37 @@ public class ReplicatorSourceProcessor implements Runnable {
     public void run() {
         int count;
         byte[] data = new byte[2000];
-        int offset = 0;
-
-        Neighbor neighbor = null;
+        int offset = 0;        
 
         try {
             SocketAddress address = connection.getRemoteSocketAddress();
-            InetSocketAddress inet_address = (InetSocketAddress) address;
+            InetSocketAddress inet_socket_address = (InetSocketAddress) address;
+            InetSocketAddress inet_socket_address_normalized = new InetSocketAddress(inet_socket_address.getAddress(),Replicator.REPLICATOR_PORT);
             
-            String uriString = "tcp://" + inet_address.getAddress().getHostAddress();
-            final URI uri = new URI(uriString);
-            final Neighbor fresh_neighbor = new Neighbor(
-                    new InetSocketAddress(uri.getHost(), Replicator.REPLICATOR_PORT));
-            if (!Replicator.instance().getNeighbors().contains(fresh_neighbor)) {
+            existingNeighbor = false;
+            List<Neighbor> neighbors = Node.instance().getNeighbors();            
+            neighbors.forEach(n -> {
+                if (n.isTcpip() && n.getAddress().equals(inet_socket_address_normalized)) {
+                    existingNeighbor = true;
+                    neighbor = n;
+                }
+            });
+            
+            Neighbor fresh_neighbor = new Neighbor(inet_socket_address_normalized, true, false);
+            if (!existingNeighbor) {
                 StringBuffer sb = new StringBuffer(80);
                 sb.append("Got connected from unknown neighbor tcp://")
-                    .append(inet_address.getHostName())
+                    .append(inet_socket_address.getHostName())
                     .append(":")
-                    .append(String.valueOf(inet_address.getPort()))
+                    .append(String.valueOf(inet_socket_address.getPort()))
                     .append(" (")
-                    .append(inet_address.getAddress().getHostAddress())
+                    .append(inet_socket_address.getAddress().getHostAddress())
                     .append(")");
                 log.info(sb.toString());
                 Node.instance().getNeighbors().add(fresh_neighbor);
                 fresh_neighbor.setSource(connection);
-            } else {
-                neighbor = Replicator.instance().getNeighborByAddress(inet_address);
+                neighbor = fresh_neighbor;
+                neighbor.setTcpip(true);
             }
             
             if (neighbor.getSink() == null) {
@@ -65,7 +75,7 @@ public class ReplicatorSourceProcessor implements Runnable {
             }
             
             InputStream stream = connection.getInputStream();
-            log.info("Source {} open, configured = {}", inet_address.getAddress().getHostAddress(), neighbor.isFlagged());
+            log.info("Source {} open, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
             while (!shutdown) {
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1)
                         && (offset < TRANSACTION_PACKET_SIZE)) {
@@ -81,8 +91,6 @@ public class ReplicatorSourceProcessor implements Runnable {
             // TODO Auto-generated catch block
             log.error("TCP onnection reset by neighbor {}", neighbor.getAddress().getAddress().getHostAddress());
             ReplicatorSinkPool.instance().shutdownSink(neighbor);
-        } catch (URISyntaxException e) {
-            log.error("URI syntax error ", e);
         } finally {
             try {
                 log.info("Source {} closed", neighbor.getAddress().getAddress().getHostAddress());                

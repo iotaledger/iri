@@ -2,6 +2,7 @@ package com.iota.iri.service.storage;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -9,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Neighbor;
+import com.iota.iri.service.Node;
 
 public class ReplicatorSinkPool  implements Runnable {
     
@@ -20,17 +22,28 @@ public class ReplicatorSinkPool  implements Runnable {
     public void run() {
         
         sinkPool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
-        Replicator.instance().getNeighbors().forEach(neighbor -> {
-            if (neighbor.getSink() == null) {
-                createSink(neighbor);
-            }
-        });
+        {
+            List<Neighbor> neighbors = Node.instance().getNeighbors();
+            neighbors.forEach(n -> {
+                if (n.isTcpip() && n.isFlagged()) {
+                    createSink(n);
+                }
+            });
+        }
         
         while (true) {
-            try {
+            try {                
                 Thread.sleep(5000);
+                List<Neighbor> neighbors = Node.instance().getNeighbors();
+                neighbors.forEach(n -> {
+                    if (n.isTcpip()) {
+                        if ( n.isTcpip() && n.isFlagged() && (n.getSink() == null) ) {
+                            createSink(n);
+                        }
+                    }
+                });
             } catch (InterruptedException e) {
-                log.error("Interreupted");
+                log.error("Interrupted");
             }
         }        
     }

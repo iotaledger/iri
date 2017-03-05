@@ -78,23 +78,29 @@ public class Node {
 
         socket = new DatagramSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT));
 
-        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS)
-                .split(" "))
-                .distinct()
-                .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get)
-                .peek(u -> {
+        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
+                .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
                     if (!"udp".equals(u.getScheme())) {
                         log.warn("WARNING: '{}' is not a valid udp:// uri schema.", u);
                     }
-                })
-                .filter(u -> "udp".equals(u.getScheme()))
-                .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort())))
-                .peek(u -> {
+                }).filter(u -> "udp".equals(u.getScheme()))
+                .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()),false,true)).peek(u -> {
                     if (Configuration.booling(DefaultConfSettings.DEBUG)) {
                         log.debug("-> Adding neighbor : {} ", u.getAddress());
                     }
-                })
-                .forEach(neighbors::add);
+                }).forEach(neighbors::add);
+        
+        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
+        .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
+            if (!"tcp".equals(u.getScheme())) {
+                log.warn("WARNING: '{}' is not a valid tcp:// uri schema.", u);
+            }
+        }).filter(u -> "tcp".equals(u.getScheme()))
+        .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()),true,true)).peek(u -> {
+            if (Configuration.booling(DefaultConfSettings.DEBUG)) {
+                log.debug("-> Adding neighbor : {} ", u.getAddress());
+            }
+        }).forEach(neighbors::add);
 
         executor.submit(spawnReceiverThread());
         executor.submit(spawnBroadcasterThread());
@@ -370,11 +376,15 @@ public class Node {
     // helpers methods
 
     public boolean removeNeighbor(final URI uri) {
-        return neighbors.remove(new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort())));
+        return neighbors.remove(new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),false,false));
     }
 
     public boolean addNeighbor(final URI uri) {
-        final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()));
+        boolean isTcp = false;
+        if (uri.toString().contains("tcp:")) {
+            isTcp = true;
+        }
+        final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),isTcp,false);
         if (!Node.instance().getNeighbors().contains(neighbor)) {
             return Node.instance().getNeighbors().add(neighbor);
         }

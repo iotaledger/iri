@@ -72,7 +72,7 @@ public class Transaction {
     public long branchTransactionPointer;
     private final int validity;
 
-    private int[] trits;
+    public int[] trits;
     public final long pointer;
     public int weightMagnitude;
 

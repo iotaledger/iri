@@ -39,6 +39,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.service.storage.ReplicatorSinkPool;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageApprovers;
@@ -424,7 +425,8 @@ public class API {
         for (final String tryte : trytes2) {
             final Transaction transaction = new Transaction(Converter.trits(tryte));
             transaction.weightMagnitude = Curl.HASH_LENGTH;
-            Node.instance().broadcast(transaction);
+            Node.instance().broadcast(transaction);  // the UDP path
+            ReplicatorSinkPool.instance().broadcast(transaction, null); // the TCP path
         }
         return AbstractResponse.createEmptyResponse();
     }

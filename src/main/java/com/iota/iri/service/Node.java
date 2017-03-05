@@ -34,6 +34,7 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.service.storage.ReplicatorSinkPool;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.StorageTransactions;
@@ -210,6 +211,7 @@ public class Node {
                                             StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
                                             neighbor.incNewTransactions();
                                             broadcast(receivedTransaction);
+                                            ReplicatorSinkPool.instance().broadcast(receivedTransaction, null); // the TCP path
                                         }
 
                                         long transactionPointer = 0L;

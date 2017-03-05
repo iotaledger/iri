@@ -17,6 +17,7 @@ public class ITransaction {
     @IotaModelIndex
     public byte[] hash;
 
+    @IotaModelStoredItem
     @IotaModelSecondaryIndex
     public byte[] bundle;
 

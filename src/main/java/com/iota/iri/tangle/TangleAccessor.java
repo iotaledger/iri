@@ -18,9 +18,9 @@ public class TangleAccessor {
     IPersistenceProvider persistenceProvider;
     private ExecutorService executor;
 
-    Map<Class<?>, String> modelPrimaryKeys;
-    Map<Class<?>, Set<String>> modelIndices;
-    Map<Class<?>, Set<String>> modelStoredItems;
+    Map<Class<?>, Field> modelPrimaryKeys;
+    Map<Class<?>, Set<Field>> modelIndices;
+    Map<Class<?>, Set<Field>> modelStoredItems;
 
     public void setPersistenceProvider(IPersistenceProvider provider) {
         this.persistenceProvider = provider;
@@ -37,6 +37,9 @@ public class TangleAccessor {
         this.persistenceProvider.shutdown();
     }
 
+    public IPersistenceProvider getPersistenceProvider() {
+        return this.persistenceProvider;
+    }
 
     private void populateModelMaps() {
         modelPrimaryKeys = new HashMap<>();
@@ -57,20 +60,20 @@ public class TangleAccessor {
                             primaryIndex
                                     .stream()
                                     .filter(field -> field.getDeclaringClass().equals(model))
-                                    .map(field -> field.getName())
+                                    //.map(field -> field.getName())
                                     .findFirst()
                                     .get());
                     modelIndices.put(model,
                             secondaryIndex
                                     .stream()
                                     .filter(field -> field.getDeclaringClass().equals(model))
-                                    .map(field -> field.getName())
+                                    //.map(field -> field.getName())
                                     .collect(Collectors.toSet()));
                     modelStoredItems.put(model,
                             storageItems
                                     .stream()
                                     .filter(field -> field.getDeclaringClass().equals(model))
-                                    .map(field -> field.getName())
+                                    //.map(field -> field.getName())
                                     .collect(Collectors.toSet()));
                 });
     }

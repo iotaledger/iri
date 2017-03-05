@@ -38,7 +38,7 @@ public class TransactionViewModel {
         transaction.bytes = bytes;
     }
 
-    public void save() {
+    public void save() throws Exception {
         this.transaction.hash = Converter.bytes(this.getHash());
         TransactionViewModel.storageProvider.save(transaction);
     }

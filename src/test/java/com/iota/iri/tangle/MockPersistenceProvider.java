@@ -1,7 +1,6 @@
 package com.iota.iri.tangle;
 
-import org.omg.CORBA.Object;
-
+import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,7 +24,7 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean save(java.lang.Object o) {
+    public boolean save(java.lang.Object o) throws Exception {
         return true;
     }
 
@@ -36,10 +35,12 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public void setColumns(Map<Class<?>, String> modelPrimaryKey, Map<Class<?>, Set<String>> modelIndices, Map<Class<?>, Set<String>> modelStoredItems) {
+    public void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Set<Field>> modelIndices, Map<Class<?>, Set<Field>> modelStoredItems) {
+        /*
         this.modelPrimaryKey = modelPrimaryKey;
         this.modelIndices = modelIndices;
         this.modelStoredItems = modelStoredItems;
+        */
     }
 
     @Override

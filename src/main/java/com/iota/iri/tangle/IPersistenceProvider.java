@@ -1,7 +1,7 @@
 package com.iota.iri.tangle;
 
+import java.lang.reflect.Field;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -10,10 +10,10 @@ import java.util.Set;
 public interface IPersistenceProvider {
     void init() throws Exception;
     void shutdown();
-    boolean save(Object o);
+    boolean save(Object o) throws Exception;
     boolean get(Object c, Object key) throws Exception;
 
-    void setColumns(Map<Class<?>, String> modelPrimaryKey, Map<Class<?>, Set<String>> modelIndices, Map<Class<?>, Set<String>> modelStoredItems);
+    void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Set<Field>> modelIndices, Map<Class<?>, Set<Field>> modelStoredItems);
 
     boolean query(Object model, String index, Object value) throws Exception;
     /*

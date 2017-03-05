@@ -31,6 +31,7 @@ public class ReplicatorSinkProcessor implements Runnable {
         } catch (Exception e) {
             log.error("Could not create outbound connection to host {} port {}", remoteAddress,
                     Replicator.REPLICATOR_PORT);
+            neighbor.setWaitingForSinkOpen(false);
             return;
         }
 

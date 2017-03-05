@@ -37,7 +37,7 @@ public class ReplicatorSinkPool  implements Runnable {
                 List<Neighbor> neighbors = Node.instance().getNeighbors();
                 neighbors.forEach(n -> {
                     if (n.isTcpip()) {
-                        if ( n.isTcpip() && n.isFlagged() && (n.getSink() == null) ) {
+                        if ( n.isTcpip() && n.isFlagged() && (n.getSink() == null) && !n.isWaitingForSinkOpen() ) {
                             createSink(n);
                         }
                     }

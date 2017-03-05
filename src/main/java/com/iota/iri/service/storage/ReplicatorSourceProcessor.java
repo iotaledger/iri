@@ -96,6 +96,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                 log.info("Source {} closed", neighbor.getAddress().getAddress().getHostAddress());                
                 connection.close();
                 neighbor.setSource(null);
+                neighbor.setWaitingForSinkOpen(false);
                 ReplicatorSinkPool.instance().shutdownSink(neighbor);
             } catch (IOException ex) {
                 log.error("Could not close connection", ex);

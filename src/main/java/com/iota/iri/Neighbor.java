@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -45,6 +46,12 @@ public class Neighbor {
     }
 
     public void setSource(Socket source) {
+        if (this.source != null && !source.isClosed()) {
+            try {
+                this.source.close();
+            } catch (IOException e) {
+            }
+        }
         this.source = source;
     }
 
@@ -55,6 +62,12 @@ public class Neighbor {
     }
 
     public void setSink(Socket sink) {
+        if (this.sink != null && !sink.isClosed()) {
+            try {
+                this.sink.close();
+            } catch (IOException e) {
+            }
+        }
         this.sink = sink;
     }
 

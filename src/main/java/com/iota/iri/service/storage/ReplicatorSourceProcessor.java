@@ -6,19 +6,14 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Bundle;
-import com.iota.iri.Milestone;
 import com.iota.iri.Neighbor;
 import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.Node;
 import com.iota.iri.utils.Converter;

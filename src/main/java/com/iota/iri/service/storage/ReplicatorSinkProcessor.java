@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Neighbor;
+import com.iota.iri.service.Node;
 
 public class ReplicatorSinkProcessor implements Runnable {
 
@@ -35,13 +36,16 @@ public class ReplicatorSinkProcessor implements Runnable {
                 while ( !ReplicatorSinkPool.instance().shutdown ) {
                     try {
                         ByteBuffer message = neighbor.getNextMessage();
-                        log.info("Next message");  // TODO don't log that
-                        try {
-                            out.write(message.array());
-                            log.info("Next message send successfully");  // TODO don't log that
-                        }
-                        catch (IOException e2) {
-                            log.error("Error wrting to sink: {}", e2);
+                        byte [] bytes = message.array();
+                        if (bytes.length == Node.TRANSACTION_PACKET_SIZE && socket.isConnected()) {
+                            log.info("Next message");  // TODO don't log that
+                            try {
+                                out.write(message.array());
+                                log.info("Next message send successfully");  // TODO don't log that
+                            }
+                            catch (IOException e2) {
+                                log.error("Error wrting to sink: {}", e2);
+                            }
                         }
                     }
                     catch (InterruptedException e) {

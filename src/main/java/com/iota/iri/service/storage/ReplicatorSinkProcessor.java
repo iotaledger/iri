@@ -1,6 +1,5 @@
 package com.iota.iri.service.storage;
 
-import java.net.InetSocketAddress;
 import java.net.Socket;
 
 import org.slf4j.Logger;
@@ -24,13 +23,13 @@ public class ReplicatorSinkProcessor implements Runnable {
         String remoteAddress = neighbor.getAddress().getAddress().getHostAddress();
         try {
             if (neighbor.getSink() == null) {
-                Socket socket = new Socket(remoteAddress, ReplicatorSourcePool.REPLICATOR_PORT);
+                Socket socket = new Socket(remoteAddress, Replicator.REPLICATOR_PORT);
                 neighbor.setSink(socket);
-                log.info("Sink {} is open", remoteAddress);
+                log.info("Sink {} is open, configured = {}", remoteAddress, neighbor.isFlagged());
             }
         } catch (Exception e) {
             log.error("Could not create outbound connection to host {} port {}", remoteAddress,
-                    ReplicatorSourcePool.REPLICATOR_PORT);
+                    Replicator.REPLICATOR_PORT);
             return;
         }
 

@@ -19,6 +19,16 @@ public class Neighbor {
     public ArrayBlockingQueue<Long> sendQueue = new ArrayBlockingQueue<>(50);
     public ArrayBlockingQueue<ByteBuffer> receiveQueue = new ArrayBlockingQueue<>(10);
     
+    private boolean flagged = false;
+    
+    public boolean isFlagged() {
+        return flagged;
+    }
+
+    public void setFlagged(boolean flagged) {
+        this.flagged = flagged;
+    }
+
     private Socket source = null;
     
     public Socket getSource() {

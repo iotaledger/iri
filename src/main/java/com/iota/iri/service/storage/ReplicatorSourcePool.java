@@ -10,10 +10,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ReplicatorSourcePool implements Runnable {
-
-    public static final int NUM_THREADS = 32;
-
-    public static final int REPLICATOR_PORT = 14600;
     
     private ServerSocket server;
     
@@ -23,9 +19,9 @@ public class ReplicatorSourcePool implements Runnable {
 
     @Override
     public void run() {
-        ExecutorService pool = Executors.newFixedThreadPool(NUM_THREADS);
+        ExecutorService pool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
         try {
-            server = new ServerSocket(REPLICATOR_PORT); 
+            server = new ServerSocket(Replicator.REPLICATOR_PORT); 
             log.info("Replicator is accepting connections on port " + server.getLocalPort());
             while (!shutdown) {
                 try {
@@ -38,7 +34,7 @@ public class ReplicatorSourcePool implements Runnable {
             }
             log.info("ReplicatorSinkPool shutting down");
         } catch (IOException e) {
-            log.error("Error createing Server Socket on port {}", REPLICATOR_PORT);
+            log.error("Error createing Server Socket on port {}", Replicator.REPLICATOR_PORT);
         }
     }
 

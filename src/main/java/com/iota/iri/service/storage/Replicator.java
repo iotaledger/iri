@@ -2,7 +2,6 @@ package com.iota.iri.service.storage;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -17,6 +16,10 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.Node;
 
 public class Replicator {
+    
+    public static final int NUM_THREADS = 32;
+
+    public static final int REPLICATOR_PORT = 15600;
     
     private static final Logger log = LoggerFactory.getLogger(Replicator.class);
     
@@ -56,7 +59,11 @@ public class Replicator {
                     }
                 }).forEach(neighbors::add);
 
-        ReplicatorSinkPool.instance().init();
+        neighbors.forEach(n -> {
+            n.setFlagged(true);
+        });
+        
+        new Thread(ReplicatorSinkPool.instance()).start();
         new Thread(ReplicatorSourcePool.instance()).start();
         log.info("Started ReplicatorSourcePool");
     }

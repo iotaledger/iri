@@ -7,8 +7,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +33,6 @@ public class ReplicatorSourceProcessor implements Runnable {
         int count;
         byte[] data = new byte[2000];
         int offset = 0;
-        boolean knownNeighbor = false;
 
         Neighbor neighbor = null;
 
@@ -46,7 +43,7 @@ public class ReplicatorSourceProcessor implements Runnable {
             String uriString = "tcp://" + inet_address.getAddress().getHostAddress();
             final URI uri = new URI(uriString);
             final Neighbor fresh_neighbor = new Neighbor(
-                    new InetSocketAddress(uri.getHost(), ReplicatorSourcePool.REPLICATOR_PORT));
+                    new InetSocketAddress(uri.getHost(), Replicator.REPLICATOR_PORT));
             if (!Replicator.instance().getNeighbors().contains(fresh_neighbor)) {
                 StringBuffer sb = new StringBuffer(80);
                 sb.append("Got connected from unknown neighbor tcp://")
@@ -60,16 +57,15 @@ public class ReplicatorSourceProcessor implements Runnable {
                 Node.instance().getNeighbors().add(fresh_neighbor);
                 fresh_neighbor.setSource(connection);
             } else {
-                if (neighbor.getSource() != null) return;
-                log.info("Source {} open (known neighbor)", inet_address.getAddress().getHostAddress());
                 neighbor = Replicator.instance().getNeighborByAddress(inet_address);
             }
             
             if (neighbor.getSink() == null) {
                 ReplicatorSinkPool.instance().createSink(neighbor);
             }
-
+            
             InputStream stream = connection.getInputStream();
+            log.info("Source {} open, configured = {}", inet_address.getAddress().getHostAddress(), neighbor.isFlagged());
             while (!shutdown) {
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1)
                         && (offset < TRANSACTION_PACKET_SIZE)) {

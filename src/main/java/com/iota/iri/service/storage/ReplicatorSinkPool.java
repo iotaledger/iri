@@ -50,6 +50,7 @@ public class ReplicatorSinkPool  implements Runnable {
     
     public void createSink(Neighbor neighbor) {
         if (neighbor.getSink() != null) return;
+        neighbor.setWaitingForSinkOpen(true);
         Runnable proc = new ReplicatorSinkProcessor( neighbor );
         sinkPool.submit(proc);
     }

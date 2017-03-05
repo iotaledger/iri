@@ -70,7 +70,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                 neighbor.setTcpip(true);
             }
             
-            if (neighbor.getSink() == null) {
+            if (neighbor.getSink() == null && !neighbor.isWaitingForSinkOpen() ) {
                 ReplicatorSinkPool.instance().createSink(neighbor);
             }
             

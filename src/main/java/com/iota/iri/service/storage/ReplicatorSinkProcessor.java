@@ -25,6 +25,7 @@ public class ReplicatorSinkProcessor implements Runnable {
             if (neighbor.getSink() == null) {
                 Socket socket = new Socket(remoteAddress, Replicator.REPLICATOR_PORT);
                 neighbor.setSink(socket);
+                neighbor.setWaitingForSinkOpen(false);
                 log.info("Sink {} is open, configured = {}", remoteAddress, neighbor.isFlagged());
             }
         } catch (Exception e) {

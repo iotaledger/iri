@@ -6,6 +6,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.iota.iri.tangle.TangleAccessor;
+import com.iota.iri.tangle.rocksDB.RocksDBPersistenceProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +45,7 @@ public class IRI {
         }
 
         try {
-
+            TangleAccessor.instance().setPersistenceProvider(new RocksDBPersistenceProvider());
             Storage.instance().init();
             Node.instance().init();
             TipsManager.instance().init();

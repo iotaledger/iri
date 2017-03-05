@@ -1,20 +1,28 @@
 package com.iota.iri.viewModel;
 
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.dataAccess.IStorageProvider;
+import com.iota.iri.tangle.IPersistenceProvider;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.ITransaction;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
 
 import java.nio.ByteBuffer;
-import java.nio.LongBuffer;
 
 /**
  * Created by paul on 3/2/17 for iri.
  */
 public class TransactionViewModel {
-    public static IStorageProvider storageProvider;
+    static	final	int	SIGNATURE_MESSAGE_OFFSET	=	0,	SIGNATURE_MESSAGE_LENGTH	=	19683;
+    static	final	int	CHECKSUM_OFFSET	=	SIGNATURE_MESSAGE_OFFSET	+	SIGNATURE_MESSAGE_LENGTH,	CHECKSUM_LENGTH	=	243;
+    static	final	int	ADDRESS_OFFSET	=	CHECKSUM_OFFSET	+	CHECKSUM_LENGTH,	ADDRESS_LENGTH	=	243;
+    static	final	int	VALUE_OFFSET	=	ADDRESS_OFFSET	+	ADDRESS_LENGTH,	VALUE_LENGTH	=	81;
+    static	final	int	TAG_OFFSET	=	VALUE_OFFSET	+	VALUE_LENGTH,	TAG_LENGTH	=	81;
+    static	final	int	TIMESTAMP_OFFSET	=	TAG_OFFSET	+	TAG_LENGTH,	TIMESTAMP_LENGTH	=	81;
+    static	final	int	TRUNK_OFFSET	=	TIMESTAMP_OFFSET	+	TIMESTAMP_LENGTH,	TRUNK_LENGTH	=	243;
+    static	final	int	BRANCH_OFFSET	=	TRUNK_OFFSET	+	TRUNK_LENGTH,	BRANCH_LENGTH	=	243;
+    static	final	int	NONCE_OFFSET	=	BRANCH_OFFSET	+	BRANCH_LENGTH,	NONCE_SIZE	=	243;
+    public static final int TRINARY_SIZE = 8019;//NONCE_TRINARY_OFFSET + NONCE_TRINARY_SIZE;
+
+    public static IPersistenceProvider storageProvider;
     ITransaction transaction;
     int[] hash;
     int[] trits;
@@ -37,7 +45,7 @@ public class TransactionViewModel {
 
     public int[] getTrits() {
         if(trits == null) {
-            trits = new int[ITransaction.TRINARY_SIZE];
+            trits = new int[TRINARY_SIZE];
             Converter.getTrits(transaction.bytes, trits);
         }
         return trits;
@@ -56,13 +64,15 @@ public class TransactionViewModel {
         transaction.hash = Converter.bytes(this.hash);
     }
 
-    public static TransactionViewModel fromPointer(long pointer) {
+    /*
+    public static TransactionViewModel fromAddress(long pointer) {
         ByteBuffer bytePointer = ByteBuffer.allocate(Long.BYTES);
         bytePointer.putLong(pointer);
-        return new TransactionViewModel(storageProvider.load(ITransaction.class, 0, bytePointer.array()));
+        return new TransactionViewModel(storageProvider.load(ITransaction.class, bytePointer.array()));
     }
 
     public static TransactionViewModel fromHash(int[] hash) {
-        return new TransactionViewModel(storageProvider.load(ITransaction.class, 0, Converter.bytes(hash)));
+        return new TransactionViewModel(storageProvider.load(ITransaction.class, Converter.bytes(hash)));
     }
+    */
 }

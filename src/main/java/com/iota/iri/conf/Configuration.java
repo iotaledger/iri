@@ -27,6 +27,7 @@ public class Configuration {
         NEIGHBORS,
         DEBUG,
         IXI_DIR,
+        DB_PATH,
         EXPERIMENTAL // experimental features.
     }
 
@@ -41,6 +42,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
         conf.put(DefaultConfSettings.REMOTEAPILIMIT.name(), "");
         conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
+        conf.put(DefaultConfSettings.DB_PATH.name(), "db-test-path");
         conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
     }
 

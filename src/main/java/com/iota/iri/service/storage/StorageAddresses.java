@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 
 public class StorageAddresses extends AbstractStorage {
 
@@ -137,7 +137,7 @@ public class StorageAddresses extends AbstractStorage {
 	
 	public void updateAddresses(final long transactionPointer, final Transaction transaction) {
 		{
-            long pointer = ((transaction.address[0] + 128) + ((transaction.address[1] + 128) << 8)) << 11, prevPointer = 0;
+            long pointer = ((transaction.getAddress()[0] + 128) + ((transaction.getAddress()[1] + 128) << 8)) << 11, prevPointer = 0;
             for (int depth = 2; depth < Transaction.ADDRESS_SIZE; depth++) {
 
                 ((ByteBuffer)addressesChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
@@ -145,14 +145,14 @@ public class StorageAddresses extends AbstractStorage {
                 if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
 
                     prevPointer = pointer;
-                    if ((pointer = value(mainBuffer, (transaction.address[depth] + 128) << 3)) == 0) {
+                    if ((pointer = value(mainBuffer, (transaction.getAddress()[depth] + 128) << 3)) == 0) {
 
-                        setValue(mainBuffer, (transaction.address[depth] + 128) << 3, addressesNextPointer);
+                        setValue(mainBuffer, (transaction.getAddress()[depth] + 128) << 3, addressesNextPointer);
                         ((ByteBuffer)addressesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                         System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
                         mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                        System.arraycopy(transaction.address, 0, mainBuffer, 8, Transaction.ADDRESS_SIZE);
+                        System.arraycopy(transaction.getAddress(), 0, mainBuffer, 8, Transaction.ADDRESS_SIZE);
                         setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                         appendToAddresses();
 
@@ -165,29 +165,29 @@ public class StorageAddresses extends AbstractStorage {
 
                     for (int i = depth; i < Transaction.ADDRESS_SIZE; i++) {
 
-                        if (mainBuffer[Transaction.HASH_OFFSET + i] != transaction.address[i]) {
+                        if (mainBuffer[Transaction.HASH_OFFSET + i] != transaction.getAddress()[i]) {
 
                             final int differentHashByte = mainBuffer[Transaction.HASH_OFFSET + i];
 
                             ((ByteBuffer)addressesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
-                            setValue(mainBuffer, (transaction.address[depth - 1] + 128) << 3, addressesNextPointer);
+                            setValue(mainBuffer, (transaction.getAddress()[depth - 1] + 128) << 3, addressesNextPointer);
                             ((ByteBuffer)addressesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                             for (int j = depth; j < i; j++) {
 
                                 System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
-                                setValue(mainBuffer, (transaction.address[j] + 128) << 3, addressesNextPointer + CELL_SIZE);
+                                setValue(mainBuffer, (transaction.getAddress()[j] + 128) << 3, addressesNextPointer + CELL_SIZE);
                                 appendToAddresses();
                             }
 
                             System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
                             setValue(mainBuffer, (differentHashByte + 128) << 3, pointer);
-                            setValue(mainBuffer, (transaction.address[i] + 128) << 3, addressesNextPointer + CELL_SIZE);
+                            setValue(mainBuffer, (transaction.getAddress()[i] + 128) << 3, addressesNextPointer + CELL_SIZE);
                             appendToAddresses();
 
                             System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
                             mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                            System.arraycopy(transaction.address, 0, mainBuffer, 8, Transaction.ADDRESS_SIZE);
+                            System.arraycopy(transaction.getAddress(), 0, mainBuffer, 8, Transaction.ADDRESS_SIZE);
                             setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                             appendToAddresses();
 

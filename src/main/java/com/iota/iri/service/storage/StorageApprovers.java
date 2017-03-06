@@ -11,7 +11,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 
 public class StorageApprovers extends AbstractStorage {
 

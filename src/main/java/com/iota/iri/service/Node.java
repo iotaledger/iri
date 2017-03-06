@@ -22,8 +22,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import java.util.stream.Collectors;
-
 import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -35,7 +33,7 @@ import com.iota.iri.Neighbor;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.StorageTransactions;
@@ -202,7 +200,7 @@ public class Node {
                                     final Transaction receivedTransaction = new Transaction(receivingPacket.getData(), receivedTransactionTrits, curl);
                                     long timestamp = (int) Converter.longValue(receivedTransaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
                                     if (timestamp > TIMESTAMP_THRESHOLD) {
-                                        if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.hash, receivedTransaction, false)) != 0L) {
+                                        if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.getHash(), receivedTransaction, false)) != 0L) {
                                             StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
                                             neighbor.incNewTransactions();
                                             broadcast(receivedTransaction);
@@ -226,7 +224,7 @@ public class Node {
                                                     transactionPointer = StorageTransactions.instance().transactionPointer(mBytes);
 
                                                     final Transaction milestoneTx = StorageTransactions.instance().loadTransaction(transactionPointer);
-                                                    final Bundle bundle = new Bundle(milestoneTx.bundle);
+                                                    final Bundle bundle = new Bundle(milestoneTx.getBundle());
                                                     if (bundle != null) {
                                                         Collection<List<Transaction>> tList = bundle.getTransactions();
                                                         if (tList != null && tList.size() != 0) {
@@ -252,7 +250,7 @@ public class Node {
                                         if (transactionPointer != 0L && transactionPointer > (Storage.CELLS_OFFSET
                                                 - Storage.SUPER_GROUPS_OFFSET)) {
                                             synchronized (sendingPacket) {
-                                                System.arraycopy(StorageTransactions.instance().loadTransaction(transactionPointer).bytes, 0, sendingPacket.getData(), 0, Transaction.SIZE);
+                                                System.arraycopy(StorageTransactions.instance().loadTransaction(transactionPointer).getBytes(), 0, sendingPacket.getData(), 0, Transaction.SIZE);
                                                 StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
                                                 neighbor.send(sendingPacket);
                                             }
@@ -290,7 +288,7 @@ public class Node {
                         for (final Neighbor neighbor : neighbors) {
                             try {
                                 synchronized (sendingPacket) {
-                                    System.arraycopy(transaction.bytes, 0, sendingPacket.getData(), 0,
+                                    System.arraycopy(transaction.getBytes(), 0, sendingPacket.getData(), 0,
                                             Transaction.SIZE);
                                     StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(),
                                             Transaction.SIZE);
@@ -320,8 +318,8 @@ public class Node {
                 try {
                     final Transaction transaction = StorageTransactions.instance()
                             .loadMilestone(Milestone.latestMilestone);
-                    System.arraycopy(transaction.bytes, 0, tipRequestingPacket.getData(), 0, Transaction.SIZE);
-                    System.arraycopy(transaction.hash, 0, tipRequestingPacket.getData(), Transaction.SIZE,
+                    System.arraycopy(transaction.getBytes(), 0, tipRequestingPacket.getData(), 0, Transaction.SIZE);
+                    System.arraycopy(transaction.getHash(), 0, tipRequestingPacket.getData(), Transaction.SIZE,
                             Transaction.HASH_SIZE);
 
                     neighbors.forEach(n -> n.send(tipRequestingPacket));
@@ -339,8 +337,8 @@ public class Node {
         return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
             if (transaction1.weightMagnitude == transaction2.weightMagnitude) {
                 for (int i = 0; i < Transaction.HASH_SIZE; i++) {
-                    if (transaction1.hash[i] != transaction2.hash[i]) {
-                        return transaction2.hash[i] - transaction1.hash[i];
+                    if (transaction1.getHash()[i] != transaction2.getHash()[i]) {
+                        return transaction2.getHash()[i] - transaction1.getHash()[i];
                     }
                 }
                 return 0;

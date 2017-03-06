@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageScratchpad;
@@ -48,14 +48,14 @@ public class Milestone {
             if (analyzedMilestoneCandidates.add(pointer) || analyzedMilestoneRetryCandidates.remove(pointer)) {
 
                 final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                if (transaction.currentIndex == 0) {
+                if (transaction.getCurrentIndex() == 0) {
 
                     final int index = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET, 15);
                     final long timestamp = (int) Converter.longValue(transaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
                    
                     if ((now - timestamp) < 7200L && index > latestMilestoneIndex) {
 
-                        final Bundle bundle = new Bundle(transaction.bundle);
+                        final Bundle bundle = new Bundle(transaction.getBundle());
                         if (bundle.getTransactions().size() == 0) {
 							// Bundle not available, try again later.
                             analyzedMilestoneRetryCandidates.add(pointer);
@@ -70,7 +70,7 @@ public class Milestone {
                                             && transaction.branchTransactionPointer == transaction2.trunkTransactionPointer) {
 
                                         final int[] trunkTransactionTrits = new int[Transaction.TRUNK_TRANSACTION_TRINARY_SIZE];
-                                        Converter.getTrits(transaction.trunkTransaction, trunkTransactionTrits);
+                                        Converter.getTrits(transaction.getTrunkTransaction(), trunkTransactionTrits);
                                         final int[] signatureFragmentTrits = Arrays.copyOfRange(transaction.trits(), Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
                                         final int[] hash = ISS.address(ISS.digest(Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits), ISS.NUMBER_OF_FRAGMENT_CHUNKS), signatureFragmentTrits));
@@ -93,7 +93,7 @@ public class Milestone {
 
                                         if ((new Hash(hash)).equals(COORDINATOR)) {
 
-                                            latestMilestone = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
+                                            latestMilestone = new Hash(transaction.getHash(), 0, Transaction.HASH_SIZE);
                                             latestMilestoneIndex = index;
 
                                             milestones.put(latestMilestoneIndex, latestMilestone);

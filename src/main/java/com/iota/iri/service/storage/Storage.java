@@ -5,7 +5,7 @@ import java.io.IOException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 
 /**
  * Storage is organized as 243-value tree
@@ -70,10 +70,10 @@ public class Storage extends AbstractStorage {
         StorageBundle.instance().updateBundle(transactionPointer, transaction);
         StorageAddresses.instance().updateAddresses(transactionPointer, transaction);
         StorageTags.instance().updateTags(transactionPointer, transaction);
-        StorageApprovers.instance().updateApprover(transaction.trunkTransaction, transactionPointer);
+        StorageApprovers.instance().updateApprover(transaction.getTrunkTransaction(), transactionPointer);
         
         if (transaction.branchTransactionPointer != transaction.trunkTransactionPointer) {
-        	StorageApprovers.instance().updateApprover(transaction.branchTransaction, transactionPointer);
+        	StorageApprovers.instance().updateApprover(transaction.getBranchTransaction(), transactionPointer);
         }
     }
     

@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 
 public class StorageTransactions extends AbstractStorage {
 	
@@ -186,7 +186,7 @@ public class StorageTransactions extends AbstractStorage {
             while (pointer < transactionsNextPointer) {
     
                 if (tipFlag(pointer)) {
-                    tips.add(new Hash(loadTransaction(pointer).hash, 0, Transaction.HASH_SIZE));
+                    tips.add(new Hash(loadTransaction(pointer).getHash(), 0, Transaction.HASH_SIZE));
                 }
                 pointer += CELL_SIZE;
             }

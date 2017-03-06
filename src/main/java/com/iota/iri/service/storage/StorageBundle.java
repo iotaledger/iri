@@ -11,7 +11,7 @@ import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 
 public class StorageBundle extends AbstractStorage {
 
@@ -140,7 +140,7 @@ public class StorageBundle extends AbstractStorage {
     
     public void updateBundle(final long transactionPointer, final Transaction transaction) {
 		{
-            long pointer = ((transaction.bundle[0] + 128) + ((transaction.bundle[1] + 128) << 8)) << 11, prevPointer = 0;
+            long pointer = ((transaction.getBundle()[0] + 128) + ((transaction.getBundle()[1] + 128) << 8)) << 11, prevPointer = 0;
             for (int depth = 2; depth < Transaction.BUNDLE_SIZE; depth++) {
 
                 ((ByteBuffer)bundlesChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
@@ -148,14 +148,14 @@ public class StorageBundle extends AbstractStorage {
                 if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
 
                     prevPointer = pointer;
-                    if ((pointer = value(mainBuffer, (transaction.bundle[depth] + 128) << 3)) == 0) {
+                    if ((pointer = value(mainBuffer, (transaction.getBundle()[depth] + 128) << 3)) == 0) {
 
-                        setValue(mainBuffer, (transaction.bundle[depth] + 128) << 3, bundlesNextPointer);
+                        setValue(mainBuffer, (transaction.getBundle()[depth] + 128) << 3, bundlesNextPointer);
                         ((ByteBuffer)bundlesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                         emptyMainBuffer();
                         mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                        System.arraycopy(transaction.bundle, 0, mainBuffer, 8, Transaction.BUNDLE_SIZE);
+                        System.arraycopy(transaction.getBundle(), 0, mainBuffer, 8, Transaction.BUNDLE_SIZE);
                         setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                         appendToBundles();
                         break;
@@ -167,28 +167,28 @@ public class StorageBundle extends AbstractStorage {
 
                     for (int i = depth; i < Transaction.BUNDLE_SIZE; i++) {
 
-                        if (mainBuffer[Transaction.HASH_OFFSET + i] != transaction.bundle[i]) {
+                        if (mainBuffer[Transaction.HASH_OFFSET + i] != transaction.getBundle()[i]) {
 
                             final int differentHashByte = mainBuffer[Transaction.HASH_OFFSET + i];
 
                             ((ByteBuffer)bundlesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
-                            setValue(mainBuffer, (transaction.bundle[depth - 1] + 128) << 3, bundlesNextPointer);
+                            setValue(mainBuffer, (transaction.getBundle()[depth - 1] + 128) << 3, bundlesNextPointer);
                             ((ByteBuffer)bundlesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                             for (int j = depth; j < i; j++) {
                                 emptyMainBuffer();
-                                setValue(mainBuffer, (transaction.bundle[j] + 128) << 3, bundlesNextPointer + CELL_SIZE);
+                                setValue(mainBuffer, (transaction.getBundle()[j] + 128) << 3, bundlesNextPointer + CELL_SIZE);
                                 appendToBundles();
                             }
 
                             System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
                             setValue(mainBuffer, (differentHashByte + 128) << 3, pointer);
-                            setValue(mainBuffer, (transaction.bundle[i] + 128) << 3, bundlesNextPointer + CELL_SIZE);
+                            setValue(mainBuffer, (transaction.getBundle()[i] + 128) << 3, bundlesNextPointer + CELL_SIZE);
                             appendToBundles();
 
                             System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
                             mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                            System.arraycopy(transaction.bundle, 0, mainBuffer, 8, Transaction.BUNDLE_SIZE);
+                            System.arraycopy(transaction.getBundle(), 0, mainBuffer, 8, Transaction.BUNDLE_SIZE);
                             setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                             appendToBundles();
 

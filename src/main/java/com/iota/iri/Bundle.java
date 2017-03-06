@@ -8,7 +8,7 @@ import java.util.Map;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 import com.iota.iri.service.storage.StorageBundle;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
@@ -33,11 +33,11 @@ public class Bundle {
         
         for (Transaction transaction : bundleTransactions.values()) {
 
-            if (transaction.currentIndex == 0 && transaction.validity() >= 0) {
+            if (transaction.getCurrentIndex() == 0 && transaction.validity() >= 0) {
 
                 final List<Transaction> instanceTransactions = new LinkedList<>();
 
-                final long lastIndex = transaction.lastIndex;
+                final long lastIndex = transaction.getLastIndex();
                 long bundleValue = 0;
                 int i = 0;
             MAIN_LOOP:
@@ -45,8 +45,8 @@ public class Bundle {
 
                     instanceTransactions.add(transaction);
 
-                    if (transaction.currentIndex != i || transaction.lastIndex != lastIndex
-                            || ((bundleValue += transaction.value) < -Transaction.SUPPLY || bundleValue > Transaction.SUPPLY)) {
+                    if (transaction.getCurrentIndex() != i || transaction.getLastIndex() != lastIndex
+                            || ((bundleValue += transaction.value()) < -Transaction.SUPPLY || bundleValue > Transaction.SUPPLY)) {
                         StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                         break;
                     }
@@ -63,14 +63,14 @@ public class Bundle {
                                 }
                                 final int[] bundleHashTrits = new int[Transaction.BUNDLE_TRINARY_SIZE];
                                 bundleHash.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
-                                if (Arrays.equals(Converter.bytes(bundleHashTrits, 0, Transaction.BUNDLE_TRINARY_SIZE), instanceTransactions.get(0).bundle)) {
+                                if (Arrays.equals(Converter.bytes(bundleHashTrits, 0, Transaction.BUNDLE_TRINARY_SIZE), instanceTransactions.get(0).getBundle())) {
 
                                     final int[] normalizedBundle = ISS.normalizedBundle(bundleHashTrits);
 
                                     for (int j = 0; j < instanceTransactions.size(); ) {
 
                                         transaction = instanceTransactions.get(j);
-                                        if (transaction.value < 0) { // let's recreate the address of the transaction.
+                                        if (transaction.value() < 0) { // let's recreate the address of the transaction.
 
                                             final Curl address = new Curl();
                                             int offset = 0;
@@ -82,12 +82,12 @@ public class Bundle {
                                                         0, Curl.HASH_LENGTH);
 
                                             } while (++j < instanceTransactions.size()
-                                                    && Arrays.equals(instanceTransactions.get(j).address, transaction.address)
-                                                    && instanceTransactions.get(j).value == 0);
+                                                    && Arrays.equals(instanceTransactions.get(j).getAddress(), transaction.getAddress())
+                                                    && instanceTransactions.get(j).value() == 0);
                                             
                                             final int[] addressTrits = new int[Transaction.ADDRESS_TRINARY_SIZE];
                                             address.squeeze(addressTrits, 0, addressTrits.length);
-                                            if (!Arrays.equals(Converter.bytes(addressTrits, 0, Transaction.ADDRESS_TRINARY_SIZE), transaction.address)) {
+                                            if (!Arrays.equals(Converter.bytes(addressTrits, 0, Transaction.ADDRESS_TRINARY_SIZE), transaction.getAddress())) {
                                                 StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                                                 break MAIN_LOOP;
                                             }

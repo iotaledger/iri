@@ -9,7 +9,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -38,7 +37,7 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageApprovers;
@@ -287,7 +286,7 @@ public class API {
         long pointer;
         for (final String trytes : trys) {
             final Transaction transaction = new Transaction(Converter.trits(trytes));
-            pointer = StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
+            pointer = StorageTransactions.instance().storeTransaction(transaction.getHash(), transaction, false);
             StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
         }
         return AbstractResponse.createEmptyResponse();
@@ -331,7 +330,7 @@ public class API {
                             return ErrorResponse.create("The subtangle is not solid");
                         } else {
 
-                            final Hash transactionHash = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
+                            final Hash transactionHash = new Hash(transaction.getHash(), 0, Transaction.HASH_SIZE);
                             for (int i = 0; i < inclusionStates.length; i++) {
 
                                 if (!inclusionStates[i] && transactionHash.equals(transactions.get(i))) {
@@ -413,7 +412,7 @@ public class API {
         }
 
         final List<String> elements = foundTransactions.stream()
-                .map(pointer -> new Hash(StorageTransactions.instance().loadTransaction(pointer).hash, 0,
+                .map(pointer -> new Hash(StorageTransactions.instance().loadTransaction(pointer).getHash(), 0,
                         Transaction.HASH_SIZE).toString())
                 .collect(Collectors.toCollection(LinkedList::new));
 
@@ -460,13 +459,13 @@ public class API {
 
                     final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 
-                    if (transaction.value != 0) {
+                    if (transaction.value() != 0) {
 
-                        final Hash address = new Hash(transaction.address, 0, Transaction.ADDRESS_SIZE);
+                        final Hash address = new Hash(transaction.getAddress(), 0, Transaction.ADDRESS_SIZE);
                         final Long balance = balances.get(address);
                         if (balance != null) {
 
-                            balances.put(address, balance + transaction.value);
+                            balances.put(address, balance + transaction.value());
                         }
                     }
                     nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
@@ -519,7 +518,7 @@ public class API {
                 }
                 final Transaction transaction = new Transaction(transactionTrits);
                 transactions.add(transaction);
-                prevTransaction = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
+                prevTransaction = new Hash(transaction.getHash(), 0, Transaction.HASH_SIZE);
             } finally {
                 API.incEllapsedTime_PoW(System.nanoTime() - startTime);
                 API.incCounter_PoW();

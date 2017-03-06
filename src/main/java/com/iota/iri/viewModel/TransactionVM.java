@@ -2,15 +2,13 @@ package com.iota.iri.viewModel;
 
 import com.iota.iri.tangle.IPersistenceProvider;
 import com.iota.iri.hash.Curl;
-import com.iota.iri.model.ITransaction;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
-
-import java.nio.ByteBuffer;
 
 /**
  * Created by paul on 3/2/17 for iri.
  */
-public class TransactionViewModel {
+public class TransactionVM {
     public static final int SIZE = 1604;
 
     public static final int TYPE_OFFSET = 0, TYPE_SIZE = Byte.BYTES;
@@ -44,24 +42,24 @@ public class TransactionViewModel {
     public static final int TRINARY_SIZE = 8019;//NONCE_TRINARY_OFFSET + NONCE_TRINARY_SIZE;
 
     public static IPersistenceProvider storageProvider;
-    ITransaction transaction;
+    Transaction transaction;
     int[] hash;
     int[] trits;
 
-    public TransactionViewModel(int[] trits) {
-        this.transaction = new ITransaction();
+    public TransactionVM(int[] trits) {
+        this.transaction = new Transaction();
         this.transaction.bytes = Converter.bytes(trits);
         this.trits = trits;
     }
 
-    public TransactionViewModel(byte[] bytes) {
-        this.transaction = new ITransaction();
+    public TransactionVM(byte[] bytes) {
+        this.transaction = new Transaction();
         transaction.bytes = bytes;
     }
 
     public void save() throws Exception {
         this.transaction.hash = Converter.bytes(this.getHash());
-        TransactionViewModel.storageProvider.save(transaction);
+        TransactionVM.storageProvider.save(transaction);
     }
 
     public int[] getTrits() {
@@ -86,14 +84,14 @@ public class TransactionViewModel {
     }
 
     /*
-    public static TransactionViewModel fromAddress(long pointer) {
+    public static TransactionVM fromAddress(long pointer) {
         ByteBuffer bytePointer = ByteBuffer.allocate(Long.BYTES);
         bytePointer.putLong(pointer);
-        return new TransactionViewModel(storageProvider.load(ITransaction.class, bytePointer.array()));
+        return new TransactionVM(storageProvider.load(Transaction.class, bytePointer.array()));
     }
 
-    public static TransactionViewModel fromHash(int[] hash) {
-        return new TransactionViewModel(storageProvider.load(ITransaction.class, Converter.bytes(hash)));
+    public static TransactionVM fromHash(int[] hash) {
+        return new TransactionVM(storageProvider.load(Transaction.class, Converter.bytes(hash)));
     }
     */
 }

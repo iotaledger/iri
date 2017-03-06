@@ -1,9 +1,6 @@
 package com.iota.iri.service;
 
 import java.security.SecureRandom;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -21,7 +18,7 @@ import com.iota.iri.Bundle;
 import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.viewModel.Transaction;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageApprovers;
@@ -110,7 +107,7 @@ public class TipsManager {
         try {
             for (final Long pointer : StorageAddresses.instance().addressesOf(Milestone.COORDINATOR)) {
                 final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                if (transaction.currentIndex == 0) {
+                if (transaction.getCurrentIndex() == 0) {
                     int milestoneIndex = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET,
                             15);
                     if (milestoneIndex >= oldestAcceptableMilestoneIndex) {
@@ -160,11 +157,11 @@ public class TipsManager {
 
                         } else {
 
-                            if (transaction.currentIndex == 0) {
+                            if (transaction.getCurrentIndex() == 0) {
 
                                 boolean validBundle = false;
 
-                                final Bundle bundle = new Bundle(transaction.bundle);
+                                final Bundle bundle = new Bundle(transaction.getBundle());
                                 for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
 
                                     if (bundleTransactions.get(0).pointer == transaction.pointer) {
@@ -173,12 +170,12 @@ public class TipsManager {
 
                                         for (final Transaction bundleTransaction : bundleTransactions) {
 
-                                            if (bundleTransaction.value != 0) {
+                                            if (bundleTransaction.value() != 0) {
 
-                                                final Hash address = new Hash(bundleTransaction.address);
+                                                final Hash address = new Hash(bundleTransaction.getAddress());
                                                 final Long value = state.get(address);
-                                                state.put(address, value == null ? bundleTransaction.value
-                                                        : (value + bundleTransaction.value));
+                                                state.put(address, value == null ? bundleTransaction.value()
+                                                        : (value + bundleTransaction.value()));
                                             }
                                         }
 
@@ -244,7 +241,7 @@ public class TipsManager {
                         transaction = StorageTransactions.instance()
                                 .loadTransaction(transaction.trunkTransactionPointer);
 
-                    } while (transaction.currentIndex != 0);
+                    } while (transaction.getCurrentIndex() != 0);
                 }
             }
             
@@ -257,15 +254,15 @@ public class TipsManager {
 
                     final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
 
-                    if (transaction.currentIndex == 0 && !tailsToAnalyze.contains(transaction.pointer)) {
+                    if (transaction.getCurrentIndex() == 0 && !tailsToAnalyze.contains(transaction.pointer)) {
 
                         tailsToAnalyze.add(transaction.pointer);
                     }
 
-                    final long approveePointer = StorageApprovers.instance().approveePointer(transaction.hash);
+                    final long approveePointer = StorageApprovers.instance().approveePointer(transaction.getHash());
                     if (approveePointer == 0) {
 
-                        if (transaction.currentIndex == 0) {
+                        if (transaction.getCurrentIndex() == 0) {
 
                             tailsWithoutApprovers.add(pointer);
                         }
@@ -356,9 +353,9 @@ public class TipsManager {
 
                         final Transaction transaction = StorageTransactions.instance()
                                 .loadTransaction(extraTransactionPointer);
-                        if (transaction.currentIndex == 0) {
+                        if (transaction.getCurrentIndex() == 0) {
 
-                            final Bundle bundle = new Bundle(transaction.bundle);
+                            final Bundle bundle = new Bundle(transaction.getBundle());
                             for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
 
                                 if (bundleTransactions.get(0).pointer == transaction.pointer) {
@@ -400,11 +397,11 @@ public class TipsManager {
 
                             final Transaction transaction = StorageTransactions.instance()
                                     .loadTransaction(extraTransactionPointer);
-                            if (transaction.value != 0) {
+                            if (transaction.value() != 0) {
 
-                                final Hash address = new Hash(transaction.address);
+                                final Hash address = new Hash(transaction.getAddress());
                                 final Long value = stateCopy.get(address);
-                                stateCopy.put(address, value == null ? transaction.value : (value + transaction.value));
+                                stateCopy.put(address, value == null ? transaction.value() : (value + transaction.value()));
                             }
                         }
 
@@ -426,7 +423,7 @@ public class TipsManager {
                             // seenTails.addAll(extraTransactions);
 
                             /**/tailsRaitings
-                                    .put(new Hash(StorageTransactions.instance().loadTransaction(tailPointer).hash, 0,
+                                    .put(new Hash(StorageTransactions.instance().loadTransaction(tailPointer).getHash(), 0,
                                             Transaction.HASH_SIZE), extraTransactions.size());
                             /**/if (extraTransactions.size() > bestRating) {
                                 /**/

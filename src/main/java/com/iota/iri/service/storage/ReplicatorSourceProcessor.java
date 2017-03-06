@@ -132,7 +132,7 @@ log.info("Received new tx");
 
             }
         } catch (IOException e) {
-            log.error("TCP onnection reset by neighbor {}", neighbor.getAddress().getAddress().getHostAddress());
+            log.error("TCP onnection reset by neighbor {}, source closed", neighbor.getAddress().getAddress().getHostAddress());
             ReplicatorSinkPool.instance().shutdownSink(neighbor);
         } finally {
             neighbor.setSource(null);

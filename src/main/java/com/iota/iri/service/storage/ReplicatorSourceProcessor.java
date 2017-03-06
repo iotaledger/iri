@@ -104,8 +104,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                     if (timestamp > Node.TIMESTAMP_THRESHOLD) {
                         if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.hash, receivedTransaction, false)) != 0L) {
                             StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
-                            neighbor.incNewTransactions();
-log.info("Received new tx");                            
+                            neighbor.incNewTransactions();                         
                             Node.instance().broadcast(receivedTransaction); // the UDP path
                             ReplicatorSinkPool.instance().broadcast(receivedTransaction, neighbor); // the TCP path
                         }

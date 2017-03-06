@@ -3,7 +3,6 @@ package com.iota.iri.tangle;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.viewModel.TransactionVM;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -46,7 +45,7 @@ public class TangleAccessorTest {
         Transaction transaction = new Transaction();
         Random r = new Random();
         int[] hash = new int[Curl.HASH_LENGTH],
-                trits = Arrays.stream(new int[TransactionVM.TRINARY_SIZE])
+                trits = Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE])
                         .map(i -> r.nextInt(3)-1).toArray();
         Curl curl = new Curl();
         curl.absorb(trits, 0, trits.length);
@@ -62,7 +61,7 @@ public class TangleAccessorTest {
         Transaction transaction = new Transaction();
         Random r = new Random();
         int[] hash = new int[Curl.HASH_LENGTH],
-                trits = Arrays.stream(new int[TransactionVM.TRINARY_SIZE])
+                trits = Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE])
                         .map(i -> r.nextInt(3)-1).toArray();
         Curl curl = new Curl();
         curl.absorb(trits, 0, trits.length);

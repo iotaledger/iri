@@ -4,7 +4,6 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.tangle.TangleAccessor;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.viewModel.TransactionVM;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +31,7 @@ public class RocksDBPersistenceProviderTest {
     @Test
     public void save() throws Exception {
         Random r = new Random();
-        int[] trits = Arrays.stream(new int[TransactionVM.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
+        int[] trits = Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
         hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction();
         transaction.bytes = Converter.bytes(trits);
@@ -47,7 +46,7 @@ public class RocksDBPersistenceProviderTest {
     @Test
     public void get() throws Exception {
         Random r = new Random();
-        int[] trits = Arrays.stream(new int[TransactionVM.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
+        int[] trits = Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
                 hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction();
         transaction.bytes = Converter.bytes(trits);
@@ -66,7 +65,7 @@ public class RocksDBPersistenceProviderTest {
     @Test
     public void query() throws Exception {
         Random r = new Random();
-        int[] trits = Arrays.stream(new int[TransactionVM.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
+        int[] trits = Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
                 hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction(), queryTransaction = new Transaction();
         transaction.bytes = Converter.bytes(trits);

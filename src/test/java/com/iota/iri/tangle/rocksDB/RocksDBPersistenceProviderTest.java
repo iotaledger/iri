@@ -79,7 +79,7 @@ public class RocksDBPersistenceProviderTest {
         transaction.hash = Converter.bytes(hash);
 
         TangleAccessor.instance().getPersistenceProvider().save(transaction);
-        TangleAccessor.instance().getPersistenceProvider().query(queryTransaction, "address", transaction.hash);
+        TangleAccessor.instance().getPersistenceProvider().query(queryTransaction, "address", transaction.address);
 
         assertArrayEquals(queryTransaction.hash, transaction.hash);
         assertArrayEquals(queryTransaction.bytes, transaction.bytes);

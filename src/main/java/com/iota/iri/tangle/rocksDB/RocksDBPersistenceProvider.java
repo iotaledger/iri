@@ -83,7 +83,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         FieldInfo fieldInfo = modelColumns.get(modelClass).get(index);
         if(fieldInfo != null && fieldInfo.indexHandle != null) {
             byte[] key = db.get(fieldInfo.indexHandle, serialize(value));
-            return get(thing, deserialize(key, modelPrimaryKey.get(modelClass).getType()));
+            if(key != null) {
+                return get(thing, deserialize(key, modelPrimaryKey.get(modelClass).getType()));
+            }
         }
         return false;
     }

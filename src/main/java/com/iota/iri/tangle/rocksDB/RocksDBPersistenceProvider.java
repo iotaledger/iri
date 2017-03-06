@@ -39,40 +39,53 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public boolean save(Object thing) throws Exception {
         WriteBatch batch = new WriteBatch();
-        Class model = thing.getClass();
-        byte[] primaryKey = serialize(modelPrimaryKey.get(model).get(thing));
-        modelColumns.get(model).entrySet().stream().forEach(set -> {
-            try {
-                String fieldName = set.getKey();
-                FieldInfo fieldInfo = set.getValue();
-                byte[] fieldValue = serialize(model.getDeclaredField(fieldName).get(thing));
-                if(fieldInfo.itemHandle != null) {
-                    batch.put(fieldInfo.itemHandle, primaryKey, fieldValue);
-                }
-                if(fieldInfo.indexHandle != null) {
-                    byte[] current = db.get(fieldInfo.indexHandle, fieldValue);
-                    current = current == null ? new byte[0]: current;
-                    if(current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
-                        current = ArrayUtils.addAll(current, primaryKey);
-                    }
-                    batch.put(fieldInfo.indexHandle, fieldValue, current);
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
+        Class modelClass = thing.getClass();
+        byte[] primaryKey = serialize(modelPrimaryKey.get(modelClass).get(thing));
+        for(Map.Entry<String, FieldInfo> set: modelColumns.get(modelClass).entrySet()) {
+            String fieldName = set.getKey();
+            FieldInfo fieldInfo = set.getValue();
+            byte[] fieldValue = serialize(modelClass.getDeclaredField(fieldName).get(thing));
+            if(fieldInfo.itemHandle != null) {
+                batch.put(fieldInfo.itemHandle, primaryKey, fieldValue);
             }
-        });
+            if(fieldInfo.indexHandle != null) {
+                byte[] current = db.get(fieldInfo.indexHandle, fieldValue);
+                current = current == null ? new byte[0]: current;
+                if(current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
+                    current = ArrayUtils.addAll(current, primaryKey);
+                }
+                batch.put(fieldInfo.indexHandle, fieldValue, current);
+            }
+        }
         db.write(new WriteOptions(), batch);
         return false;
     }
 
     @Override
-    public boolean get(Object c, Object key) throws Exception{
+    public boolean get(Object thing, Object key) throws Exception{
+        Class modelClass = thing.getClass();
+        modelPrimaryKey.get(modelClass).set(thing, key);
+        byte[] primaryKey = serialize(key);
+        for(Map.Entry<String, FieldInfo> set: modelColumns.get(modelClass).entrySet()) {
+            FieldInfo fieldInfo = set.getValue();
+            if(fieldInfo.itemHandle != null) {
+                Field field = modelClass.getDeclaredField(set.getKey());
+                byte[] result = db.get(fieldInfo.itemHandle, primaryKey);
+                field.set(thing, deserialize(result, field.getType()));
+            }
+        }
         return true;
     }
 
     @Override
-    public boolean query(Object model, String index, Object value) throws Exception{
-        return true;
+    public boolean query(Object thing, String index, Object value) throws Exception{
+        Class modelClass = thing.getClass();
+        FieldInfo fieldInfo = modelColumns.get(modelClass).get(index);
+        if(fieldInfo != null && fieldInfo.indexHandle != null) {
+            byte[] key = db.get(fieldInfo.indexHandle, serialize(value));
+            return get(thing, deserialize(key, modelPrimaryKey.get(modelClass).getType()));
+        }
+        return false;
     }
 
     @Override
@@ -196,7 +209,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
     }
 
-    public static Object deserialize(byte[] bytes) throws IOException, ClassNotFoundException {
+    public static Object deserialize(byte[] bytes, Class target) throws IOException, ClassNotFoundException {
+        if(target == Byte[].class) {
+            return bytes;
+        }
         try(ByteArrayInputStream b = new ByteArrayInputStream(bytes)){
             try(ObjectInputStream o = new ObjectInputStream(b)){
                 return o.readObject();

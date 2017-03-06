@@ -10,6 +10,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -33,12 +34,12 @@ public class RocksDBPersistenceProviderTest {
     @Test
     public void save() throws Exception {
         Random r = new Random();
-        int[] trytes = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
+        int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
         hash = new int[Curl.HASH_LENGTH];
         ITransaction transaction = new ITransaction();
-        transaction.bytes = Converter.bytes(trytes);
+        transaction.bytes = Converter.bytes(trits);
         Curl curl = new Curl();
-        curl.absorb(trytes, 0, trytes.length);
+        curl.absorb(trits, 0, trits.length);
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
         transaction.hash = Converter.bytes(hash);
 
@@ -47,12 +48,42 @@ public class RocksDBPersistenceProviderTest {
 
     @Test
     public void get() throws Exception {
+        Random r = new Random();
+        int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
+                hash = new int[Curl.HASH_LENGTH];
+        ITransaction transaction = new ITransaction();
+        transaction.bytes = Converter.bytes(trits);
+        Curl curl = new Curl();
+        curl.absorb(trits, 0, trits.length);
+        curl.squeeze(hash, 0, Curl.HASH_LENGTH);
+        transaction.hash = Converter.bytes(hash);
 
+        TangleAccessor.instance().getPersistenceProvider().save(transaction);
+        ITransaction getTransaction = new ITransaction();
+        TangleAccessor.instance().getPersistenceProvider().get(getTransaction, transaction.hash);
+        assertArrayEquals(getTransaction.hash, transaction.hash);
+        assertArrayEquals(getTransaction.bytes, transaction.bytes);
     }
 
     @Test
     public void query() throws Exception {
+        Random r = new Random();
+        int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
+                hash = new int[Curl.HASH_LENGTH];
+        ITransaction transaction = new ITransaction(), queryTransaction = new ITransaction();
+        transaction.bytes = Converter.bytes(trits);
+        transaction.address = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        Curl curl = new Curl();
+        curl.absorb(trits, 0, trits.length);
+        curl.squeeze(hash, 0, Curl.HASH_LENGTH);
+        transaction.hash = Converter.bytes(hash);
 
+        TangleAccessor.instance().getPersistenceProvider().save(transaction);
+        TangleAccessor.instance().getPersistenceProvider().query(queryTransaction, "address", transaction.hash);
+
+        assertArrayEquals(queryTransaction.hash, transaction.hash);
+        assertArrayEquals(queryTransaction.bytes, transaction.bytes);
+        assertArrayEquals(queryTransaction.address, transaction.address);
     }
 
 }

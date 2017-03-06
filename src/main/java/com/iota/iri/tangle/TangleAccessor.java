@@ -1,5 +1,6 @@
 package com.iota.iri.tangle;
 
+import com.iota.iri.model.Transaction;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
 import org.reflections.scanners.SubTypesScanner;
@@ -103,10 +104,29 @@ public class TangleAccessor {
         });
     }
 
+    public Future<Boolean> update(Object model, String item, Object value) {
+        return executor.submit(() -> {
+            boolean success = this.persistenceProvider.update(model, item, value);
+            if(success) {
+                // notify neighbors?
+            }
+            return success;
+        });
+    }
+
     public static TangleAccessor instance() {
         return instance;
     }
 
+    public Future<Object[]> queryMany(Class<?> modelClass, String index, Object key, int length) {
+        return executor.submit(() -> {
+            Object[] output = this.persistenceProvider.queryMany(modelClass, index, key, length);
+            if(output == null) {
+                // get it from neighbors
+            }
+            return output;
+        });
+    }
 }
 /*
 Map<Class<?>, Set<Field>[]> classMap;

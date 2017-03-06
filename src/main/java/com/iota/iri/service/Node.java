@@ -224,7 +224,7 @@ public class Node {
                                                     transactionPointer = StorageTransactions.instance().transactionPointer(mBytes);
 
                                                     final Transaction milestoneTx = StorageTransactions.instance().loadTransaction(transactionPointer);
-                                                    final Bundle bundle = new Bundle(milestoneTx.getBundle());
+                                                    final Bundle bundle = new Bundle(milestoneTx.getBundleHash());
                                                     if (bundle != null) {
                                                         Collection<List<Transaction>> tList = bundle.getTransactions();
                                                         if (tList != null && tList.size() != 0) {

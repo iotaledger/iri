@@ -1,6 +1,7 @@
 package com.iota.iri.tangle.rocksDB;
 
 import com.iota.iri.conf.Configuration;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.tangle.IPersistenceProvider;
 import org.apache.commons.lang3.ArrayUtils;
 import org.rocksdb.*;
@@ -40,21 +41,24 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public boolean save(Object thing) throws Exception {
         WriteBatch batch = new WriteBatch();
         Class modelClass = thing.getClass();
-        byte[] primaryKey = serialize(modelPrimaryKey.get(modelClass).get(thing));
+        Field primaryKeyField = modelPrimaryKey.get(modelClass);
+        byte[] primaryKey = serialize(primaryKeyField.get(thing));
         for(Map.Entry<String, FieldInfo> set: modelColumns.get(modelClass).entrySet()) {
             String fieldName = set.getKey();
             FieldInfo fieldInfo = set.getValue();
             byte[] fieldValue = serialize(modelClass.getDeclaredField(fieldName).get(thing));
-            if(fieldInfo.itemHandle != null) {
-                batch.put(fieldInfo.itemHandle, primaryKey, fieldValue);
-            }
-            if(fieldInfo.indexHandle != null) {
-                byte[] current = db.get(fieldInfo.indexHandle, fieldValue);
-                current = current == null ? new byte[0]: current;
-                if(current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
-                    current = ArrayUtils.addAll(current, primaryKey);
+            if(fieldValue != null) {
+                if(fieldInfo.itemHandle != null) {
+                    batch.put(fieldInfo.itemHandle, primaryKey, fieldValue);
                 }
-                batch.put(fieldInfo.indexHandle, fieldValue, current);
+                if(fieldInfo.indexHandle != null) {
+                    byte[] current = db.get(fieldInfo.indexHandle, fieldValue);
+                    if(current == null) current = new byte[0];
+                    if(current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
+                        current = ArrayUtils.addAll(current, primaryKey);
+                    }
+                    batch.put(fieldInfo.indexHandle, fieldValue, current);
+                }
             }
         }
         db.write(new WriteOptions(), batch);
@@ -71,7 +75,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             if(fieldInfo.itemHandle != null) {
                 Field field = modelClass.getDeclaredField(set.getKey());
                 byte[] result = db.get(fieldInfo.itemHandle, primaryKey);
-                field.set(thing, deserialize(result, field.getType()));
+                if(result != null) {
+                    field.set(thing, deserialize(result, field.getType()));
+                }
             }
         }
         return true;
@@ -87,6 +93,42 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             if(key != null) {
                 return get(thing, deserialize(key, modelPrimaryKey.get(modelClass).getType()));
             }
+        }
+        return false;
+    }
+
+    @Override
+    public Object[] queryMany(Class<?> modelClass, String index, Object value, int keyLength) throws Exception {
+        Map<String, FieldInfo> map = modelColumns.get(modelClass);
+        FieldInfo fieldInfo = map.get(index);
+        if(fieldInfo != null && fieldInfo.indexHandle != null) {
+            int numberOfKeys;
+            byte[] secondaryKey = serialize(value);
+            byte[] primaryKeys = db.get(fieldInfo.indexHandle, secondaryKey);
+            if(primaryKeys != null && (numberOfKeys = primaryKeys.length / keyLength) != 0) {
+                Object[] output = new Object[numberOfKeys];
+                for(int i = 0; i < numberOfKeys; i++) {
+                    byte[] key = Arrays.copyOfRange(primaryKeys, i*numberOfKeys, (i+1)*numberOfKeys);
+                    output[i] = modelClass.newInstance();
+                    if(!get(output[i], key)) {
+                        return null;
+                    }
+                }
+                return output;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public boolean update(Object thing, String item, Object value) throws Exception {
+        Class modelClass = thing.getClass();
+        FieldInfo fieldInfo = modelColumns.get(modelClass).get(item);
+        if(fieldInfo != null && fieldInfo.itemHandle != null) {
+            Field primaryKeyField = modelPrimaryKey.get(modelClass);
+            byte[] primaryKey = serialize(primaryKeyField.get(thing));
+            byte[] newValue = serialize(value);
+            db.put(fieldInfo.itemHandle, primaryKey, newValue);
         }
         return false;
     }
@@ -201,8 +243,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     private static byte[] serialize(Object obj) throws IOException{
-        if(obj instanceof Byte[]) {
+        if(obj instanceof byte[]) {
             return (byte[])obj;
+        } else if (obj == null) {
+            return null;
         }
         try(ByteArrayOutputStream b = new ByteArrayOutputStream()){
             try(ObjectOutputStream o = new ObjectOutputStream(b)){
@@ -213,7 +257,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     public static Object deserialize(byte[] bytes, Class target) throws IOException, ClassNotFoundException {
-        if(target == Byte[].class) {
+        if(target == byte[].class) {
             return bytes;
         }
         try(ByteArrayInputStream b = new ByteArrayInputStream(bytes)){

@@ -161,7 +161,7 @@ public class TipsManager {
 
                                 boolean validBundle = false;
 
-                                final Bundle bundle = new Bundle(transaction.getBundle());
+                                final Bundle bundle = new Bundle(transaction.getBundleHash());
                                 for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
 
                                     if (bundleTransactions.get(0).pointer == transaction.pointer) {
@@ -355,7 +355,7 @@ public class TipsManager {
                                 .loadTransaction(extraTransactionPointer);
                         if (transaction.getCurrentIndex() == 0) {
 
-                            final Bundle bundle = new Bundle(transaction.getBundle());
+                            final Bundle bundle = new Bundle(transaction.getBundleHash());
                             for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
 
                                 if (bundleTransactions.get(0).pointer == transaction.pointer) {

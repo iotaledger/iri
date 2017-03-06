@@ -1,5 +1,7 @@
 package com.iota.iri.tangle;
 
+import com.iota.iri.model.Transaction;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Set;
@@ -48,6 +50,16 @@ public class MockPersistenceProvider implements IPersistenceProvider {
         assert modelIndices.get(model.getClass()).contains(index);
         model.getClass().getDeclaredField(modelPrimaryKey.get(model.getClass())).set(model, "Some bad value".getBytes());
         return true;
+    }
+
+    @Override
+    public boolean update(Object model, String item, Object value) {
+        return true;
+    }
+
+    @Override
+    public Object[] queryMany(Class<?> modelClass, String index, Object key, int hashLength) throws Exception {
+        return new Object[0];
     }
 
 }

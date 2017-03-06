@@ -83,4 +83,25 @@ public class RocksDBPersistenceProviderTest {
         assertArrayEquals(queryTransaction.address, transaction.address);
     }
 
+    @Test
+    public void queryManyTest() throws Exception {
+        Random r = new Random();
+        byte[] bundleHash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        Transaction[] bundle, transactions;
+        transactions = Arrays.stream(new Transaction[4]).map(t -> {
+            Transaction transaction = new Transaction();
+            transaction.bundle = bundleHash.clone();
+            transaction.bytes = Converter.bytes(Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+            return transaction;
+        }).toArray(Transaction[]::new);
+        transactions[0].hash = bundleHash.clone();
+
+        for(Transaction transaction: transactions) {
+            TangleAccessor.instance().getPersistenceProvider().save(transaction);
+        }
+        bundle = Arrays.stream(TangleAccessor.instance().getPersistenceProvider().queryMany(Transaction.class, "bundle", bundleHash, bundleHash.length)).toArray(Transaction[]::new);
+        assertEquals(bundle.length, transactions.length);
+    }
+
 }

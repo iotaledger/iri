@@ -1,6 +1,9 @@
 package com.iota.iri.viewModel;
 
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeoutException;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
@@ -49,31 +52,31 @@ public class Transaction {
 
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
-	public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Transaction.HASH_SIZE];
-	
+    public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Transaction.HASH_SIZE];
+
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
     public final int type;
-    
+
     //public final byte[] hash;
     //public final byte[] bytes; // stores entire tx bytes. message occupies always first part named 'signatureMessageFragment'
     //public final byte[] address;
-    
+
     //public final long value; // <0 spending transaction, >=0 deposit transaction / message
-    
+
     public long arrivalTime;
 
     //public final byte[] tag; // milestone index only for milestone tx. Otherwise, arbitrary up to the tx issuer.
     //public final long currentIndex; // index of tx in the bundle
     //public final long lastIndex; // lastIndex is curIndex of the last tx from the same bundle
-    
+
     //public final byte[] bundle;
     //public final byte[] trunkTransaction;
     //public final byte[] branchTransaction;
 
     public long trunkTransactionPointer;
     public long branchTransactionPointer;
-    //private final int validity;
+    //private final int getValidity;
 
     private int[] trits;
     public final long pointer;
@@ -110,8 +113,6 @@ public class Transaction {
 
         type = Storage.FILLED_SLOT;
 
-        trunkTransactionPointer = 0;
-        branchTransactionPointer = 0;
         transaction.validity = 0;
         arrivalTime = 0;
         pointer = 0;
@@ -149,8 +150,10 @@ public class Transaction {
 
         type = Storage.FILLED_SLOT;
 
+        /*
         trunkTransactionPointer = 0;
         branchTransactionPointer = 0;
+        */
         transaction.validity = 0;
         arrivalTime = 0;
 
@@ -173,6 +176,7 @@ public class Transaction {
         System.arraycopy(mainBuffer, TRUNK_TRANSACTION_OFFSET, transaction.trunk = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
         System.arraycopy(mainBuffer, BRANCH_TRANSACTION_OFFSET, transaction.branch = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
 
+        /* Don't need this anymore. just get it from the db.
         trunkTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.trunk);
         if (trunkTransactionPointer < 0) {
             trunkTransactionPointer = -trunkTransactionPointer;
@@ -181,9 +185,10 @@ public class Transaction {
         if (branchTransactionPointer < 0) {
             branchTransactionPointer = -branchTransactionPointer;
         }
+        */
 
         transaction.validity = mainBuffer[VALIDITY_OFFSET];
-        
+
         arrivalTime = Storage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
 
         this.pointer = pointer;
@@ -198,6 +203,22 @@ public class Transaction {
         System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, transaction.bundle = new byte[BUNDLE_SIZE], 0, BUNDLE_SIZE);
         System.arraycopy(Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE), 0, transaction.trunk = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
         System.arraycopy(Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE), 0, transaction.branch = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
+    }
+
+    public void update(String item) throws Exception {
+        TangleAccessor.instance().update(transaction, item, Transaction.class.getDeclaredField(item).get(transaction));
+    }
+
+    public Transaction getBranchTransaction() {
+        com.iota.iri.model.Transaction branch = new com.iota.iri.model.Transaction();
+        TangleAccessor.instance().query(branch, "branch", transaction.branch);
+        return new Transaction(branch);
+    }
+
+    public Transaction getTrunkTransaction() {
+        com.iota.iri.model.Transaction trunk = new com.iota.iri.model.Transaction();
+        TangleAccessor.instance().query(trunk, "trunk", transaction.branch);
+        return new Transaction(trunk);
     }
 
     public synchronized int[] trits() {
@@ -226,12 +247,12 @@ public class Transaction {
             Storage.setValue(mainBuffer, CURRENT_INDEX_OFFSET, transaction.getCurrentIndex());
             Storage.setValue(mainBuffer, LAST_INDEX_OFFSET, transaction.getLastIndex());
             System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, mainBuffer, BUNDLE_OFFSET, BUNDLE_SIZE);
-            System.arraycopy(transaction.getTrunkTransaction(), 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
-            System.arraycopy(transaction.getBranchTransaction(), 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
+            System.arraycopy(transaction.getTrunkTransactionHash(), 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
+            System.arraycopy(transaction.getBranchTransactionHash(), 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
 
-            long approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.getTrunkTransaction());
+            long approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.getTrunkTransactionHash());
             if (approvedTransactionPointer == 0) {
-                Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.getTrunkTransaction();
+                Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.getTrunkTransactionHash();
             } else {
 
                 if (approvedTransactionPointer < 0) {
@@ -239,14 +260,14 @@ public class Transaction {
                 }
                 final long index = (approvedTransactionPointer - (AbstractStorage.CELLS_OFFSET - AbstractStorage.SUPER_GROUPS_OFFSET)) >> 11;
                 StorageTransactions.instance().transactionsTipsFlags().put(
-                		(int)(index >> 3),
-                		(byte)(StorageTransactions.instance().transactionsTipsFlags().get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
+                        (int)(index >> 3),
+                        (byte)(StorageTransactions.instance().transactionsTipsFlags().get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
             }
-            if (!Arrays.equals(transaction.getBranchTransaction(), transaction.getTrunkTransaction())) {
+            if (!Arrays.equals(transaction.getBranchTransactionHash(), transaction.getTrunkTransactionHash())) {
 
-                approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.getBranchTransaction());
+                approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.getBranchTransactionHash());
                 if (approvedTransactionPointer == 0) {
-                    Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.getBranchTransaction();
+                    Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.getBranchTransactionHash();
                 } else {
 
                     if (approvedTransactionPointer < 0) {
@@ -254,11 +275,24 @@ public class Transaction {
                     }
                     final long index = (approvedTransactionPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11;
                     StorageTransactions.instance().transactionsTipsFlags().put(
-                    		(int) (index >> 3),
-                    		(byte) (StorageTransactions.instance().transactionsTipsFlags().get((int) (index >> 3)) & (0xFF ^ (1 << (index & 7)))));
+                            (int) (index >> 3),
+                            (byte) (StorageTransactions.instance().transactionsTipsFlags().get((int) (index >> 3)) & (0xFF ^ (1 << (index & 7)))));
                 }
             }
         }
+    }
+
+    public Future<Boolean> store() {
+        return TangleAccessor.instance().save(transaction);
+    }
+
+    public Transaction[] getBundleTransactions() throws InterruptedException, ExecutionException, TimeoutException {
+        TangleAccessor accessor = TangleAccessor.instance();
+        Future<Object[]> transactionFuture = accessor.queryMany(com.iota.iri.model.Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE);
+        com.iota.iri.model.Transaction[] transactionModels = Arrays.stream(transactionFuture.get()).toArray(com.iota.iri.model.Transaction[]::new);
+        Transaction[] transactions = Arrays.stream(transactionModels).map(bundleTransaction -> new Transaction((com.iota.iri.model.Transaction) bundleTransaction)).toArray(Transaction[]::new);
+                //.get(45, TimeUnit.MILLISECONDS))
+        return transactions;
     }
 
     public byte[] getBytes() {
@@ -277,15 +311,15 @@ public class Transaction {
         return transaction.tag;
     }
 
-    public byte[] getBundle() {
+    public byte[] getBundleHash() {
         return transaction.bundle;
     }
 
-    public byte[] getTrunkTransaction() {
+    public byte[] getTrunkTransactionHash() {
         return transaction.trunk;
     }
 
-    public byte[] getBranchTransaction() {
+    public byte[] getBranchTransactionHash() {
         return transaction.branch;
     }
 
@@ -294,13 +328,24 @@ public class Transaction {
     }
 
     public long value() {
-		return transaction.value;
-	}
+        return transaction.value;
+    }
 
-    public int validity() {
-		return transaction.validity;
-	}
-	public long getCurrentIndex() {
+    public void setValidity(int validity, boolean update) {
+        transaction.validity = validity;
+        if(update) {
+            try {
+                update("validity");
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public int getValidity() {
+        return transaction.validity;
+    }
+    public long getCurrentIndex() {
         return transaction.currentIndex;
     }
 

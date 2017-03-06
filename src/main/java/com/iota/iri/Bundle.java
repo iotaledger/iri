@@ -8,9 +8,8 @@ import java.util.Map;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
-import com.iota.iri.viewModel.Transaction;
-import com.iota.iri.service.storage.StorageBundle;
 import com.iota.iri.service.storage.StorageTransactions;
+import com.iota.iri.viewModel.Transaction;
 import com.iota.iri.utils.Converter;
 
 /**
@@ -25,15 +24,15 @@ public class Bundle {
 
     public Bundle(final byte[] bundle) {
 
-        final long bundlePointer = StorageBundle.instance().bundlePointer(bundle);
-        if (bundlePointer == 0) {
-        	return;
+        final Transaction bundleTransaction = Transaction.fromHash(bundle);
+        if(bundleTransaction == null) {
+            return;
         }
-        final Map<Long, Transaction> bundleTransactions = loadTransactionsFromTangle(bundlePointer);
+        final Map<byte[], Transaction> bundleTransactions = loadTransactionsFromTangle(bundleTransaction);
         
         for (Transaction transaction : bundleTransactions.values()) {
 
-            if (transaction.getCurrentIndex() == 0 && transaction.validity() >= 0) {
+            if (transaction.getCurrentIndex() == 0 && transaction.getValidity() >= 0) {
 
                 final List<Transaction> instanceTransactions = new LinkedList<>();
 
@@ -47,7 +46,8 @@ public class Bundle {
 
                     if (transaction.getCurrentIndex() != i || transaction.getLastIndex() != lastIndex
                             || ((bundleValue += transaction.value()) < -Transaction.SUPPLY || bundleValue > Transaction.SUPPLY)) {
-                        StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                        //StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                        instanceTransactions.get(0).setValidity(-1, true);
                         break;
                     }
 
@@ -55,7 +55,7 @@ public class Bundle {
 
                         if (bundleValue == 0) {
 
-                            if (instanceTransactions.get(0).validity() == 0) {
+                            if (instanceTransactions.get(0).getValidity() == 0) {
 
                                 final Curl bundleHash = new Curl();
                                 for (final Transaction transaction2 : instanceTransactions) {
@@ -63,7 +63,7 @@ public class Bundle {
                                 }
                                 final int[] bundleHashTrits = new int[Transaction.BUNDLE_TRINARY_SIZE];
                                 bundleHash.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
-                                if (Arrays.equals(Converter.bytes(bundleHashTrits, 0, Transaction.BUNDLE_TRINARY_SIZE), instanceTransactions.get(0).getBundle())) {
+                                if (Arrays.equals(Converter.bytes(bundleHashTrits, 0, Transaction.BUNDLE_TRINARY_SIZE), instanceTransactions.get(0).getBundleHash())) {
 
                                     final int[] normalizedBundle = ISS.normalizedBundle(bundleHashTrits);
 
@@ -88,7 +88,8 @@ public class Bundle {
                                             final int[] addressTrits = new int[Transaction.ADDRESS_TRINARY_SIZE];
                                             address.squeeze(addressTrits, 0, addressTrits.length);
                                             if (!Arrays.equals(Converter.bytes(addressTrits, 0, Transaction.ADDRESS_TRINARY_SIZE), transaction.getAddress())) {
-                                                StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                                                //StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                                                instanceTransactions.get(0).setValidity(-1, true);
                                                 break MAIN_LOOP;
                                             }
                                         } else {
@@ -96,16 +97,16 @@ public class Bundle {
                                         }
                                     }
 
-                                    StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, 1);
+                                    instanceTransactions.get(0).setValidity(1, true);
                                     transactions.add(instanceTransactions);
                                 } else {
-                                	StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                                    instanceTransactions.get(0).setValidity(-1, true);
                                 }
                             } else {
                                 transactions.add(instanceTransactions);
                             }
                         } else {
-                            StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
+                            instanceTransactions.get(0).setValidity(-1, true);
                         }
                         break;
 
@@ -121,13 +122,15 @@ public class Bundle {
     }
 
 
-    private Map<Long, Transaction> loadTransactionsFromTangle(final long bundlePointer) {
-        final Map<Long, Transaction> bundleTransactions = new HashMap<>();
-        for (final long transactionPointer : StorageBundle.instance().bundleTransactions(bundlePointer)) {
+    private Map<byte[], Transaction> loadTransactionsFromTangle(final Transaction bundleTransaction) {
+        final Map<byte[], Transaction> bundleTransactions = new HashMap<>();
+        /*
+        for (final long transactionPointer : StorageBundle.instance().bundleTransactions(bundleTransaction.pointer)) {
             bundleTransactions
                 .put(transactionPointer, StorageTransactions.instance()
                 .loadTransaction(transactionPointer));
         }
+        */
         return bundleTransactions;
     }
     

@@ -55,7 +55,7 @@ public class Milestone {
                    
                     if ((now - timestamp) < 7200L && index > latestMilestoneIndex) {
 
-                        final Bundle bundle = new Bundle(transaction.getBundle());
+                        final Bundle bundle = new Bundle(transaction.getBundleHash());
                         if (bundle.getTransactions().size() == 0) {
 							// Bundle not available, try again later.
                             analyzedMilestoneRetryCandidates.add(pointer);
@@ -65,12 +65,13 @@ public class Milestone {
 
                                 if (bundleTransactions.get(0).pointer == transaction.pointer) {
 
-                                    final Transaction transaction2 = StorageTransactions.instance().loadTransaction(transaction.trunkTransactionPointer);
+                                    //final Transaction transaction2 = StorageTransactions.instance().loadTransaction(transaction.trunkTransactionPointer);
+                                    final Transaction transaction2 = transaction.getTrunkTransaction();
                                     if (transaction2.type == AbstractStorage.FILLED_SLOT
                                             && transaction.branchTransactionPointer == transaction2.trunkTransactionPointer) {
 
                                         final int[] trunkTransactionTrits = new int[Transaction.TRUNK_TRANSACTION_TRINARY_SIZE];
-                                        Converter.getTrits(transaction.getTrunkTransaction(), trunkTransactionTrits);
+                                        Converter.getTrits(transaction.getTrunkTransactionHash(), trunkTransactionTrits);
                                         final int[] signatureFragmentTrits = Arrays.copyOfRange(transaction.trits(), Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
                                         final int[] hash = ISS.address(ISS.digest(Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits), ISS.NUMBER_OF_FRAGMENT_CHUNKS), signatureFragmentTrits));

@@ -86,6 +86,7 @@ public class ReplicatorSourceProcessor implements Runnable {
             
             InputStream stream = connection.getInputStream();
             log.info("Source {} open, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
+            
             while (!shutdown) {
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1)
                         && (offset < TRANSACTION_PACKET_SIZE)) {
@@ -104,6 +105,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                         if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.hash, receivedTransaction, false)) != 0L) {
                             StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
                             neighbor.incNewTransactions();
+log.info("Received new tx");                            
                             Node.instance().broadcast(receivedTransaction); // the UDP path
                             ReplicatorSinkPool.instance().broadcast(receivedTransaction, neighbor); // the TCP path
                         }
@@ -133,15 +135,11 @@ public class ReplicatorSourceProcessor implements Runnable {
             log.error("TCP onnection reset by neighbor {}", neighbor.getAddress().getAddress().getHostAddress());
             ReplicatorSinkPool.instance().shutdownSink(neighbor);
         } finally {
-            try {
-                log.info("Source {} closed", neighbor.getAddress().getAddress().getHostAddress());                
-                connection.close();
-                neighbor.setSource(null);
-                neighbor.setWaitingForSinkOpen(false);
-                ReplicatorSinkPool.instance().shutdownSink(neighbor);
-            } catch (IOException ex) {
-                log.error("Could not close connection", ex);
-            }
+            neighbor.setSource(null);
+            neighbor.setWaitingForSinkOpen(false);
+            neighbor.setSink(null);
+            ReplicatorSinkPool.instance().shutdownSink(neighbor);
+
         }
     }
 }

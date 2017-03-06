@@ -7,9 +7,15 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.service.Node;
+import com.iota.iri.service.storage.ReplicatorSourceProcessor;
 
 public class Neighbor {
+    
+    private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
 
     private final InetSocketAddress address;
     
@@ -46,10 +52,14 @@ public class Neighbor {
     }
 
     public void setSource(Socket source) {
-        if (this.source != null && !source.isClosed()) {
-            try {
-                this.source.close();
-            } catch (IOException e) {
+        if (source == null) {
+            if (this.source != null && !this.source.isClosed()) {
+                try {
+                    this.source.close();
+                    log.info("Source {} closed", getAddress().getAddress().getHostAddress());
+                } catch (IOException e) {
+                    log.info("Source {} close failure {}", getAddress().getAddress().getHostAddress(), e.getMessage());
+                }
             }
         }
         this.source = source;
@@ -62,10 +72,14 @@ public class Neighbor {
     }
 
     public void setSink(Socket sink) {
-        if (this.sink != null && !sink.isClosed()) {
-            try {
-                this.sink.close();
-            } catch (IOException e) {
+        if (sink == null) {
+            if (this.sink != null && !this.sink.isClosed()) {
+                try {
+                    this.sink.close();
+                    log.info("Sink {} closed", getAddress().getAddress().getHostAddress());
+                } catch (IOException e) {
+                    log.info("Source {} close failure {}", getAddress().getAddress().getHostAddress(), e.getMessage());
+                }
             }
         }
         this.sink = sink;

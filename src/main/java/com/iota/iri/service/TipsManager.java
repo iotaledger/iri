@@ -32,9 +32,9 @@ public class TipsManager {
 
     private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
-    private static int RATING_THRESHOLD = 75; // Must be in [0..100] range
+    private static int RATING_THRESHOLD = 80; // Must be in [0..100] range
     
-    private static int ARTIFICAL_LATENCY = 120; // in seconds 
+    private static int ARTIFICAL_LATENCY = 30; // in seconds 
 
     static boolean shuttingDown;
 

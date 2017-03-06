@@ -43,8 +43,8 @@ public class ReplicatorSinkProcessor implements Runnable {
                             }
                             catch (IOException e2) {
                                 log.error("Error wrting to sink, closing now");
-                                out.close();
                                 neighbor.setSink(null);
+                                neighbor.setSource(null);
                                 break;
                             }
                         }

@@ -102,8 +102,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                     final Transaction receivedTransaction = new Transaction(data, receivedTransactionTrits, curl);
                     long timestamp = (int) Converter.longValue(receivedTransaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
                     if (timestamp > Node.TIMESTAMP_THRESHOLD) {
-                        if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.hash, receivedTransaction, false)) != 0L) {
-log.info("Stored a new tx originating from TCP");                            
+                        if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.hash, receivedTransaction, false)) != 0L) {                         
                             StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
                             neighbor.incNewTransactions();                         
                             Node.instance().broadcast(receivedTransaction); // the UDP path

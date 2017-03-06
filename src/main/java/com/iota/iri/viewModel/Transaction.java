@@ -295,13 +295,51 @@ public class Transaction {
         return TangleAccessor.instance().save(transaction);
     }
 
-    public Transaction[] getBundleTransactions() throws InterruptedException, ExecutionException, TimeoutException {
+    public Transaction[] getBundleTransactions() {
         TangleAccessor accessor = TangleAccessor.instance();
         Future<Object[]> transactionFuture = accessor.queryMany(com.iota.iri.model.Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE);
-        com.iota.iri.model.Transaction[] transactionModels = Arrays.stream(transactionFuture.get()).toArray(com.iota.iri.model.Transaction[]::new);
+        com.iota.iri.model.Transaction[] transactionModels = new com.iota.iri.model.Transaction[0];
+        try {
+            transactionModels = Arrays.stream(transactionFuture.get()).toArray(com.iota.iri.model.Transaction[]::new);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
         Transaction[] transactions = Arrays.stream(transactionModels).map(bundleTransaction -> new Transaction((com.iota.iri.model.Transaction) bundleTransaction)).toArray(Transaction[]::new);
                 //.get(45, TimeUnit.MILLISECONDS))
         return transactions;
+    }
+
+    public static Hash[] hashesFromQuery(String index, Object value) {
+        Hash[] transactionHashes;
+        TangleAccessor accessor = TangleAccessor.instance();
+        Future<Object[]> tipTxs = accessor.queryMany(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE);
+        try {
+            com.iota.iri.model.Transaction[] transactionModels = Arrays.stream(tipTxs.get()).toArray(com.iota.iri.model.Transaction[]::new);
+            transactionHashes = Arrays.stream(transactionModels).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
+        } catch (Exception e) {
+            e.printStackTrace();
+            transactionHashes = new Hash[0];
+        }
+        return transactionHashes;
+    }
+
+    public static Hash[] fromApprovers(Hash hash) {
+        return Transaction.fromHash(hash).getApprovers();
+    }
+    public static Hash[] fromTag(Hash tag) {
+        return hashesFromQuery("tag", tag.bytes());
+    }
+    public static Hash[] fromBundle(Hash bundle) {
+        return hashesFromQuery("bundle", bundle.bytes());
+    }
+    public static Hash[] fromAddress(Hash address) {
+        return hashesFromQuery("address", address.bytes());
+    }
+
+    public static Hash[] getTipHashes() {
+        return hashesFromQuery("isTip", true);
     }
 
     public Hash[] getApprovers() {
@@ -319,24 +357,14 @@ public class Transaction {
         return approvers;
     }
 
-    public static Hash[] getTipHashes() {
-        Hash[] tips;
-        TangleAccessor accessor = TangleAccessor.instance();
-        Future<Object[]> tipTxs = accessor.queryMany(com.iota.iri.model.Transaction.class, "isTip", true, BUNDLE_SIZE);
-        try {
-            com.iota.iri.model.Transaction[] approverTransactions = Arrays.stream(tipTxs.get()).toArray(com.iota.iri.model.Transaction[]::new);
-            tips = Arrays.stream(approverTransactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
-        } catch (Exception e) {
-            e.printStackTrace();
-            tips = new Hash[0];
-        }
-        return tips;
-    }
 
     public void setArrivalTime(long time) {
         transaction.arrivalTime = time;
     }
 
+    public long getArrivalTime() {
+        return transaction.arrivalTime;
+    }
     public byte[] getBytes() {
         return transaction.bytes;
     }
@@ -394,4 +422,5 @@ public class Transaction {
     public long getLastIndex() {
         return transaction.lastIndex;
     }
+
 }

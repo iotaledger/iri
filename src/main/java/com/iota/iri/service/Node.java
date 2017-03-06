@@ -250,8 +250,8 @@ public class Node {
                                         } else {
                                             transactionPointer = requestedTransaction;
                                         }
-                                        if (transactionPointer != 0L && transactionPointer > (Storage.CELLS_OFFSET
-                                                - Storage.SUPER_GROUPS_OFFSET)) {
+                                        if (!Arrays.equals(transactionPointer, Hash.NULL_HASH.bytes())
+                                                && transactionPointer > (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) {
                                             synchronized (sendingPacket) {
                                                 System.arraycopy(Transaction.fromHash(transactionPointer).getBytes(), 0, sendingPacket.getData(), 0, Transaction.SIZE);
                                                 StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);

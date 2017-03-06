@@ -111,7 +111,7 @@ public class TipsManager {
                     int milestoneIndex = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET,
                             15);
                     if (milestoneIndex >= oldestAcceptableMilestoneIndex) {
-                        long itsArrivalTime = transaction.arrivalTime;
+                        long itsArrivalTime = transaction.getArrivalTime();
                         final long timestamp = (int) Converter.longValue(transaction.trits(),
                                 Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
                         if (itsArrivalTime == 0)
@@ -261,8 +261,8 @@ public class TipsManager {
                         tailsToAnalyze.add(transaction.getHash());
                     }
 
-                    final byte[] approveePointer = transaction.getTrunkTransactionHash();// StorageApprovers.instance().approveePointer(transaction.getHash());
-                    if (approveePointer == 0) {
+                    final byte[] approveePointer = transaction.getApprovers()[0].bytes();// StorageApprovers.instance().approveePointer(transaction.getHash());
+                    if (approveePointer == null) {
 
                         if (transaction.getCurrentIndex() == 0) {
 
@@ -274,12 +274,6 @@ public class TipsManager {
                         for (final Hash approverPointer : Transaction.fromHash(approveePointer).getApprovers()) {
                             nonAnalyzedTransactions.offer(approverPointer.bytes());
                         }
-                        /*
-                        for (final Hash approverPointer : StorageApprovers.instance()
-                                .approveeTransactions(approveePointer)) {
-
-                        }
-                        */
                     }
                 }
             }
@@ -345,8 +339,8 @@ public class TipsManager {
 
                             extraTransactions.add(pointer);
 
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                            nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
                         }
                     }
                 }
@@ -370,7 +364,7 @@ public class TipsManager {
 
                                         final long timestamp = (int) Converter.longValue(bundleTransaction.trits(),
                                                 Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
-                                        long itsArrivalTime = bundleTransaction.arrivalTime;
+                                        long itsArrivalTime = bundleTransaction.getArrivalTime();
                                         if (itsArrivalTime == 0)
                                             itsArrivalTime = timestamp;
 

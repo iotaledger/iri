@@ -9,16 +9,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.iota.iri.*;
@@ -353,15 +346,14 @@ public class API {
     }
 
     private AbstractResponse findTransactionStatement(final Map<String, Object> request) {
-        final Set<Long> bundlesTransactions = new HashSet<>();
+        final Set<byte[]> bundlesTransactions = new HashSet<>();
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
-                bundlesTransactions.addAll(StorageBundle.instance()
-                        .bundleTransactions(StorageBundle.instance().bundlePointer((new Hash(bundle)).bytes())));
+                bundlesTransactions.addAll(Arrays.stream(Transaction.fromBundle(new Hash(bundle))).map(t -> t.bytes()).collect(Collectors.toSet()));
             }
         }
 
-        final Set<Long> addressesTransactions = new HashSet<>();
+        final Set<byte[]> addressesTransactions = new HashSet<>();
         if (request.containsKey("addresses")) {
             final List<String> addresses = (List<String>) request.get("addresses");
             log.debug("Searching: {}", addresses.stream().reduce((a, b) -> a += ',' + b));
@@ -370,33 +362,34 @@ public class API {
                 if (address.length() != 81) {
                     log.error("Address {} doesn't look a valid address", address);
                 }
-                addressesTransactions.addAll(StorageAddresses.instance()
-                        .addressTransactions(StorageAddresses.instance().addressPointer((new Hash(address)).bytes())));
+                addressesTransactions.addAll(Arrays.stream(Transaction.fromAddress(new Hash(address))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
             }
         }
 
-        final Set<Long> tagsTransactions = new HashSet<>();
+        final Set<byte[]> tagsTransactions = new HashSet<>();
         if (request.containsKey("tags")) {
             for (String tag : (List<String>) request.get("tags")) {
                 while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
                     tag += Converter.TRYTE_ALPHABET.charAt(0);
                 }
-                tagsTransactions.addAll(StorageTags.instance()
-                        .tagTransactions(StorageTags.instance().tagPointer((new Hash(tag)).bytes())));
+                tagsTransactions.addAll(Arrays.stream(Transaction.fromTag(new Hash(tag))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
             }
         }
 
-        final Set<Long> approveeTransactions = new HashSet<>();
+        final Set<byte[]> approveeTransactions = new HashSet<>();
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
+                approveeTransactions.addAll(Arrays.stream(Transaction.fromApprovers(new Hash(approvee))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
+                /*
                 approveeTransactions.addAll(StorageApprovers.instance().approveeTransactions(
                         StorageApprovers.instance().approveePointer((new Hash(approvee)).bytes())));
+                        */
             }
         }
 
         // need refactoring
-        final Set<Long> foundTransactions = bundlesTransactions.isEmpty() ? (addressesTransactions.isEmpty()
+        final Set<byte[]> foundTransactions = bundlesTransactions.isEmpty() ? (addressesTransactions.isEmpty()
                 ? (tagsTransactions.isEmpty()
                 ? (approveeTransactions.isEmpty() ? new HashSet<>() : approveeTransactions) : tagsTransactions)
                 : addressesTransactions) : bundlesTransactions;
@@ -412,7 +405,7 @@ public class API {
         }
 
         final List<String> elements = foundTransactions.stream()
-                .map(pointer -> new Hash(StorageTransactions.instance().loadTransaction(pointer).getHash(), 0,
+                .map(pointer -> new Hash(pointer, 0,
                         Transaction.HASH_SIZE).toString())
                 .collect(Collectors.toCollection(LinkedList::new));
 
@@ -450,14 +443,14 @@ public class API {
 
             StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
 
-            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
-                    Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.bytes())));
-            Long pointer;
+            final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone.bytes()));
+                    //Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.bytes())));
+            byte[] pointer;
             while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
                 if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
-                    final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+                    final Transaction transaction = Transaction.fromHash(pointer);
 
                     if (transaction.value() != 0) {
 
@@ -468,8 +461,8 @@ public class API {
                             balances.put(address, balance + transaction.value());
                         }
                     }
-                    nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                    nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                    nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
                 }
             }
         }

@@ -52,7 +52,6 @@ public class TangleAccessor {
         Set<Field> storageItems = reflections.getFieldsAnnotatedWith(IotaModelStoredItem.class);
         Set<Field> primaryIndex = reflections.getFieldsAnnotatedWith(IotaModelIndex.class);
         Set<Field> secondaryIndex = reflections.getFieldsAnnotatedWith(IotaModelSecondaryIndex.class);
-        Set<Field> iotaModelItems = reflections.getFieldsAnnotatedWith(IotaModelItem.class);
         reflections.getTypesAnnotatedWith(IotaModel.class)
                 .stream()
                 .forEach(model -> {
@@ -60,20 +59,17 @@ public class TangleAccessor {
                             primaryIndex
                                     .stream()
                                     .filter(field -> field.getDeclaringClass().equals(model))
-                                    //.map(field -> field.getName())
                                     .findFirst()
                                     .get());
                     modelIndices.put(model,
                             secondaryIndex
                                     .stream()
                                     .filter(field -> field.getDeclaringClass().equals(model))
-                                    //.map(field -> field.getName())
                                     .collect(Collectors.toSet()));
                     modelStoredItems.put(model,
                             storageItems
                                     .stream()
                                     .filter(field -> field.getDeclaringClass().equals(model))
-                                    //.map(field -> field.getName())
                                     .collect(Collectors.toSet()));
                 });
     }

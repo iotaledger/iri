@@ -52,5 +52,7 @@ public class Transaction {
     public long lastIndex;
 
     @IotaModelStoredItem
+    public long arrivalTime;
+    @IotaModelStoredItem
     public boolean isTip;
 }

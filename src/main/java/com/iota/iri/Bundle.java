@@ -5,10 +5,11 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
-import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.viewModel.Transaction;
 import com.iota.iri.utils.Converter;
 
@@ -46,7 +47,6 @@ public class Bundle {
 
                     if (transaction.getCurrentIndex() != i || transaction.getLastIndex() != lastIndex
                             || ((bundleValue += transaction.value()) < -Transaction.SUPPLY || bundleValue > Transaction.SUPPLY)) {
-                        //StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                         instanceTransactions.get(0).setValidity(-1, true);
                         break;
                     }
@@ -88,7 +88,6 @@ public class Bundle {
                                             final int[] addressTrits = new int[Transaction.ADDRESS_TRINARY_SIZE];
                                             address.squeeze(addressTrits, 0, addressTrits.length);
                                             if (!Arrays.equals(Converter.bytes(addressTrits, 0, Transaction.ADDRESS_TRINARY_SIZE), transaction.getAddress())) {
-                                                //StorageTransactions.instance().setTransactionValidity(instanceTransactions.get(0).pointer, -1);
                                                 instanceTransactions.get(0).setValidity(-1, true);
                                                 break MAIN_LOOP;
                                             }
@@ -124,13 +123,13 @@ public class Bundle {
 
     private Map<byte[], Transaction> loadTransactionsFromTangle(final Transaction bundleTransaction) {
         final Map<byte[], Transaction> bundleTransactions = new HashMap<>();
-        /*
-        for (final long transactionPointer : StorageBundle.instance().bundleTransactions(bundleTransaction.pointer)) {
-            bundleTransactions
-                .put(transactionPointer, StorageTransactions.instance()
-                .loadTransaction(transactionPointer));
+        try {
+            for (final Transaction transaction: bundleTransaction.getBundleTransactions()) {
+                bundleTransactions.put(transaction.getHash(), transaction);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        */
         return bundleTransactions;
     }
     

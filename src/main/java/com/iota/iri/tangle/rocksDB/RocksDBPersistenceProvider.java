@@ -108,7 +108,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             if(primaryKeys != null && (numberOfKeys = primaryKeys.length / keyLength) != 0) {
                 Object[] output = new Object[numberOfKeys];
                 for(int i = 0; i < numberOfKeys; i++) {
-                    byte[] key = Arrays.copyOfRange(primaryKeys, i*numberOfKeys, (i+1)*numberOfKeys);
+                    byte[] key = Arrays.copyOfRange(primaryKeys, i*keyLength, (i+1)*keyLength);
                     output[i] = modelClass.newInstance();
                     if(!get(output[i], key)) {
                         return null;

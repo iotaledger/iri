@@ -12,6 +12,7 @@ import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.tangle.TangleAccessor;
 import com.iota.iri.utils.Converter;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class Transaction {
     private final com.iota.iri.model.Transaction transaction;
@@ -64,7 +65,6 @@ public class Transaction {
 
     //public final long value; // <0 spending transaction, >=0 deposit transaction / message
 
-    public long arrivalTime;
 
     //public final byte[] tag; // milestone index only for milestone tx. Otherwise, arbitrary up to the tx issuer.
     //public final long currentIndex; // index of tx in the bundle
@@ -84,13 +84,22 @@ public class Transaction {
 
     public static Transaction fromHash(final byte[] hash) {
         com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
-        TangleAccessor.instance().load(transaction, hash);
+        try {
+            TangleAccessor.instance().load(transaction, hash).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
         return new Transaction(transaction);
     }
     public static Transaction fromHash(final int[] hash) {
         return fromHash(Converter.bytes(hash));
     }
 
+    public static Transaction fromHash(final Hash hash) {
+        return Transaction.fromHash(hash.bytes());
+    }
     public Transaction(final com.iota.iri.model.Transaction transaction) {
         this.transaction = transaction;
         type = Storage.FILLED_SLOT;
@@ -114,7 +123,7 @@ public class Transaction {
         type = Storage.FILLED_SLOT;
 
         transaction.validity = 0;
-        arrivalTime = 0;
+        transaction.arrivalTime = 0;
         pointer = 0;
     }
 
@@ -155,7 +164,7 @@ public class Transaction {
         branchTransactionPointer = 0;
         */
         transaction.validity = 0;
-        arrivalTime = 0;
+        transaction.arrivalTime = 0;
 
         pointer = 0;
     }
@@ -189,7 +198,7 @@ public class Transaction {
 
         transaction.validity = mainBuffer[VALIDITY_OFFSET];
 
-        arrivalTime = Storage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
+        transaction.arrivalTime = Storage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
 
         this.pointer = pointer;
     }
@@ -293,6 +302,39 @@ public class Transaction {
         Transaction[] transactions = Arrays.stream(transactionModels).map(bundleTransaction -> new Transaction((com.iota.iri.model.Transaction) bundleTransaction)).toArray(Transaction[]::new);
                 //.get(45, TimeUnit.MILLISECONDS))
         return transactions;
+    }
+
+    public Hash[] getApprovers() {
+        Hash[] approvers;
+        TangleAccessor accessor = TangleAccessor.instance();
+        Future<Object[]> branchApprovers = accessor.queryMany(com.iota.iri.model.Transaction.class, "branch", transaction.hash, BUNDLE_SIZE);
+        Future<Object[]> trunkApprovers = accessor.queryMany(com.iota.iri.model.Transaction.class, "trunk", transaction.hash, BUNDLE_SIZE);
+        try {
+            com.iota.iri.model.Transaction[] approverTransactions = Arrays.stream(ArrayUtils.addAll(branchApprovers.get(), trunkApprovers.get())).toArray(com.iota.iri.model.Transaction[]::new);
+            approvers = Arrays.stream(approverTransactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
+        } catch (Exception e) {
+            e.printStackTrace();
+            approvers = new Hash[0];
+        }
+        return approvers;
+    }
+
+    public static Hash[] getTipHashes() {
+        Hash[] tips;
+        TangleAccessor accessor = TangleAccessor.instance();
+        Future<Object[]> tipTxs = accessor.queryMany(com.iota.iri.model.Transaction.class, "isTip", true, BUNDLE_SIZE);
+        try {
+            com.iota.iri.model.Transaction[] approverTransactions = Arrays.stream(tipTxs.get()).toArray(com.iota.iri.model.Transaction[]::new);
+            tips = Arrays.stream(approverTransactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
+        } catch (Exception e) {
+            e.printStackTrace();
+            tips = new Hash[0];
+        }
+        return tips;
+    }
+
+    public void setArrivalTime(long time) {
+        transaction.arrivalTime = time;
     }
 
     public byte[] getBytes() {

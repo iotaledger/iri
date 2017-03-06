@@ -141,16 +141,19 @@ public class TipsManager {
             {
                 int numberOfAnalyzedTransactions = 0;
 
+                /*
                 final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions
                         .instance().transactionPointer((extraTip == null ? preferableMilestone : extraTip).bytes())));
-                Long pointer;
-                while ((pointer = nonAnalyzedTransactions.poll()) != null) {
+                        */
+                final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Transaction.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
+                byte[] transactionHash;
+                while ((transactionHash = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (setAnalyzedTransactionFlag(pointer)) {
+                    if (setAnalyzedTransactionFlag(transactionHash)) {
 
                         numberOfAnalyzedTransactions++;
 
-                        final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+                        final Transaction transaction = Transaction.fromHash(transactionHash);
                         if (transaction.type == Storage.PREFILLED_SLOT) {
 
                             return null;
@@ -189,8 +192,8 @@ public class TipsManager {
                                 }
                             }
 
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                            nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
                         }
                     }
                 }
@@ -227,39 +230,38 @@ public class TipsManager {
             System.arraycopy(analyzedTransactionsFlags, 0, analyzedTransactionsFlagsCopy, 0, 134217728);
             System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
 
-            final List<Long> tailsToAnalyze = new LinkedList<>();
+            final List<byte[]> tailsToAnalyze = new LinkedList<>();
 
-            long tip = StorageTransactions.instance().transactionPointer(preferableMilestone.bytes());
+            byte[] tip = preferableMilestone.bytes(); //StorageTransactions.instance().transactionPointer(preferableMilestone.bytes());
             if (extraTip != null) {
 
-                Transaction transaction = StorageTransactions.instance().loadTransaction(tip);
+                Transaction transaction = Transaction.fromHash(tip);//StorageTransactions.instance().loadTransaction(tip);
                 while (depth-- > 0 && tip != Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET) {
 
-                    tip = transaction.pointer;
+                    tip = transaction.getHash();
                     do {
 
-                        transaction = StorageTransactions.instance()
-                                .loadTransaction(transaction.trunkTransactionPointer);
+                        transaction = transaction.getTrunkTransaction();
 
                     } while (transaction.getCurrentIndex() != 0);
                 }
             }
             
-            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
-            Long pointer;
-            final Set<Long> tailsWithoutApprovers = new HashSet<>();
+            final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
+            byte[] pointer;
+            final Set<byte[]> tailsWithoutApprovers = new HashSet<>();
             while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
                 if (setAnalyzedTransactionFlag(pointer)) {
 
-                    final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+                    final Transaction transaction = Transaction.fromHash(pointer);
 
                     if (transaction.getCurrentIndex() == 0 && !tailsToAnalyze.contains(transaction.pointer)) {
 
-                        tailsToAnalyze.add(transaction.pointer);
+                        tailsToAnalyze.add(transaction.getHash());
                     }
 
-                    final long approveePointer = StorageApprovers.instance().approveePointer(transaction.getHash());
+                    final byte[] approveePointer = transaction.getTrunkTransactionHash();// StorageApprovers.instance().approveePointer(transaction.getHash());
                     if (approveePointer == 0) {
 
                         if (transaction.getCurrentIndex() == 0) {
@@ -269,11 +271,15 @@ public class TipsManager {
 
                     } else {
 
-                        for (final Long approverPointer : StorageApprovers.instance()
+                        for (final Hash approverPointer : Transaction.fromHash(approveePointer).getApprovers()) {
+                            nonAnalyzedTransactions.offer(approverPointer.bytes());
+                        }
+                        /*
+                        for (final Hash approverPointer : StorageApprovers.instance()
                                 .approveeTransactions(approveePointer)) {
 
-                            nonAnalyzedTransactions.offer(approverPointer);
                         }
+                        */
                     }
                 }
             }
@@ -284,10 +290,10 @@ public class TipsManager {
 
                 System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
 
-                final Iterator<Long> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
+                final Iterator<byte[]> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
 
-                    final Long tailPointer = tailsToAnalyzeIterator.next();
+                    final byte[] tailPointer = tailsToAnalyzeIterator.next();
                     if ((analyzedTransactionsFlags[(int) ((tailPointer
                             - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> (11 + 3))]
                             & (1 << (((tailPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11)
@@ -308,7 +314,7 @@ public class TipsManager {
 
             for (int i = tailsToAnalyze.size(); i-- > 0;) {
 
-                final Long tailPointer = tailsToAnalyze.get(i);
+                final byte[] tailPointer = tailsToAnalyze.get(i);
                 /*
                  * -- Coo only-- if (seenTails.contains(tailPointer)) {
                  * 
@@ -317,7 +323,7 @@ public class TipsManager {
 
                 System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
 
-                final Set<Long> extraTransactions = new HashSet<>();
+                final Set<byte[]> extraTransactions = new HashSet<>();
 
                 nonAnalyzedTransactions.clear();
                 nonAnalyzedTransactions.offer(tailPointer);
@@ -347,9 +353,9 @@ public class TipsManager {
 
                 if (extraTransactions.size() > /* bestRating */0) {
 
-                    Set<Long> extraTransactionsCopy = new HashSet<>(extraTransactions);
+                    Set<byte[]> extraTransactionsCopy = new HashSet<>(extraTransactions);
 
-                    for (final Long extraTransactionPointer : extraTransactions) {
+                    for (final byte[] extraTransactionPointer : extraTransactions) {
 
                         final Transaction transaction = StorageTransactions.instance()
                                 .loadTransaction(extraTransactionPointer);
@@ -393,10 +399,9 @@ public class TipsManager {
 
                         final Map<Hash, Long> stateCopy = new HashMap<>(state);
 
-                        for (final Long extraTransactionPointer : extraTransactions) {
+                        for (final byte[] extraTransactionPointer : extraTransactions) {
 
-                            final Transaction transaction = StorageTransactions.instance()
-                                    .loadTransaction(extraTransactionPointer);
+                            final Transaction transaction = Transaction.fromHash(extraTransactionPointer);
                             if (transaction.value() != 0) {
 
                                 final Hash address = new Hash(transaction.getAddress());
@@ -423,7 +428,7 @@ public class TipsManager {
                             // seenTails.addAll(extraTransactions);
 
                             /**/tailsRaitings
-                                    .put(new Hash(StorageTransactions.instance().loadTransaction(tailPointer).getHash(), 0,
+                                    .put(new Hash(tailPointer, 0,
                                             Transaction.HASH_SIZE), extraTransactions.size());
                             /**/if (extraTransactions.size() > bestRating) {
                                 /**/

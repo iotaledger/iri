@@ -46,7 +46,7 @@ public class IRI {
 
         try {
             TangleAccessor.instance().setPersistenceProvider(new RocksDBPersistenceProvider());
-            Storage.instance().init();
+            //Storage.instance().init();
             Node.instance().init();
             TipsManager.instance().init();
             API.instance().init();
@@ -198,7 +198,7 @@ public class IRI {
                 API.instance().shutDown();
                 TipsManager.instance().shutDown();
                 Node.instance().shutdown();
-                Storage.instance().shutdown();
+                //Storage.instance().shutdown();
 
             } catch (final Exception e) {
                 log.error("Exception occurred shutting down IOTA node: ", e);

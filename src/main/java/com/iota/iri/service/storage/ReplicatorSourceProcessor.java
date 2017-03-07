@@ -90,15 +90,16 @@ public class ReplicatorSourceProcessor implements Runnable {
             log.info("----- NETWORK INFO ----- Source {} is connected, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
             
             while (!shutdown) {
+                log.info("start reading");
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1)
                         && (offset < TRANSACTION_PACKET_SIZE)) {
+                    if (count == -1)
+                        break;
                     offset += count;
                 }
-                if (count == -1)
-                    break;
               
                 offset = 0;
-                                
+                log.info("done reading");                
                 try {
                     neighbor.incAllTransactions();
                     final Transaction receivedTransaction = new Transaction(data, receivedTransactionTrits, curl);

@@ -93,7 +93,6 @@ public class ReplicatorSourceProcessor implements Runnable {
             
             while (!shutdown) {
                 boolean readError = false;
-                log.info("start reading");
 
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1) && (offset < TRANSACTION_PACKET_SIZE)) {
                     offset += count;
@@ -105,9 +104,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                 }
                 
                 offset = 0;
-                
-                log.info("done reading");
-                
+
                 if (!readError) {
                     try {
                         neighbor.incAllTransactions();

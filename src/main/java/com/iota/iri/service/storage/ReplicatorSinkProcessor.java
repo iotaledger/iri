@@ -48,17 +48,12 @@ public class ReplicatorSinkProcessor implements Runnable {
                                 byte[] bytes = message.array();
                                 if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
                                     try {
-                                        log.info("---Writing to sink");
                                         out.write(message.array());
                                         out.flush();
-                                    } catch (IOException e2) {
+                                    } catch (IOException e2) {                                        
+                                        // Caution: another sink process might already be active now.
+                                        // Don't close the source here!
                                         return;
-                                        /*
-                                        log.error("***** NETWORK ALERT ***** Error writing to sink, closing connection, {}", e2.getMessage());
-                                        neighbor.setSink(null);
-                                        neighbor.setSource(null);
-                                        break;
-                                        */
                                     }
                                 }
                             }

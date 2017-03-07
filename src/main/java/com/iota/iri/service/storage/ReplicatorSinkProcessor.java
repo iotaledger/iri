@@ -37,7 +37,7 @@ public class ReplicatorSinkProcessor implements Runnable {
             }            
             if (socket != null) {
                 socket.connect(new InetSocketAddress(remoteAddress, Replicator.REPLICATOR_PORT), 30000);
-                if (socket.isConnected()) {
+                if (!socket.isClosed()) {
                     OutputStream out = socket.getOutputStream();
                     log.info("----- NETWORK INFO ----- Sink {} is connected, configured = {}", remoteAddress, neighbor.isFlagged());
                     while (!ReplicatorSinkPool.instance().shutdown) {
@@ -46,16 +46,19 @@ public class ReplicatorSinkProcessor implements Runnable {
                             if ((neighbor.getSink() != null && neighbor.getSink().isConnected())
                                     && (neighbor.getSource() != null && neighbor.getSource().isConnected())) {
                                 byte[] bytes = message.array();
-                                if (bytes.length == Node.TRANSACTION_PACKET_SIZE && socket.isConnected()) {
+                                if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
                                     try {
                                         log.info("---Writing to sink");
                                         out.write(message.array());
                                         out.flush();
                                     } catch (IOException e2) {
+                                        return;
+                                        /*
                                         log.error("***** NETWORK ALERT ***** Error writing to sink, closing connection, {}", e2.getMessage());
                                         neighbor.setSink(null);
                                         neighbor.setSource(null);
                                         break;
+                                        */
                                     }
                                 }
                             }

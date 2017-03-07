@@ -90,8 +90,7 @@ public class ReplicatorSinkPool  implements Runnable {
                 neighbors.forEach(n -> {
                     //if ( (neighbor == null) || (neighbor.getSink() != n.getSink()) ) {
                     {
-                        if (n.isTcpip() && (n.getSink() != null) && !n.getSink().isConnected()) {
-
+                        if (n.isTcpip() && (n.getSink() != null) && !n.getSink().isClosed()) {
                             try {
                                 synchronized (sendingPacket) {
                                     System.arraycopy(transaction.bytes, 0, sendingPacket.getData(), 0,

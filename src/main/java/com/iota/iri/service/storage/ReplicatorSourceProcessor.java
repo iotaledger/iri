@@ -94,7 +94,7 @@ public class ReplicatorSourceProcessor implements Runnable {
             while (!shutdown) {
                 boolean readError = false;
                 log.info("start reading");
-                if ( connection.isClosed() ) readError = true;
+
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1) && (offset < TRANSACTION_PACKET_SIZE)) {
                     offset += count;
                 }

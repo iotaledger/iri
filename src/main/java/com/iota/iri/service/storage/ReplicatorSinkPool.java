@@ -29,8 +29,17 @@ public class ReplicatorSinkPool  implements Runnable {
     public void run() {
         
         sinkPool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
-        {
+        {           
             List<Neighbor> neighbors = Node.instance().getNeighbors();
+            // wait until list is populated
+            int loopcnt = 10;
+            while ((loopcnt-- > 0) && neighbors.size() == 0) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    log.error("Interrupted");
+                }
+            }
             neighbors.forEach(n -> {
                 if (n.isTcpip() && n.isFlagged()) {
                     createSink(n);
@@ -41,7 +50,7 @@ public class ReplicatorSinkPool  implements Runnable {
         while (true) {
             // Restart attempt for neighbors that are in the configuration.
             try {                
-                Thread.sleep(10000);
+                Thread.sleep(30000);
                 List<Neighbor> neighbors = Node.instance().getNeighbors();
                 neighbors.forEach(n -> {
                     if (n.isTcpip() && n.isFlagged() && n.getSink() == null) {

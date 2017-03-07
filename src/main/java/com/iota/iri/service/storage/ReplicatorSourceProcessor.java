@@ -87,7 +87,7 @@ public class ReplicatorSourceProcessor implements Runnable {
             ReplicatorSinkPool.instance().createSink(neighbor);
 
             InputStream stream = connection.getInputStream();
-            log.info("----- NETWORK INFO ----- Source {} open, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
+            log.info("----- NETWORK INFO ----- Source {} is connected, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
             
             while (!shutdown) {
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1)
@@ -133,7 +133,7 @@ public class ReplicatorSourceProcessor implements Runnable {
 
             }
         } catch (IOException e) {
-            log.error("***** NETWORK ALERT ***** TCP onnection reset by neighbor {}, source closed, {}", neighbor.getAddress().getAddress().getHostAddress(), e.getMessage());
+            log.error("***** NETWORK ALERT ***** TCP connection reset by neighbor {}, source closed, {}", neighbor.getAddress().getAddress().getHostAddress(), e.getMessage());
             ReplicatorSinkPool.instance().shutdownSink(neighbor);
         } finally {
             if (neighbor != null) {

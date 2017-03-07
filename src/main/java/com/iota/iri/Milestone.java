@@ -13,6 +13,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.service.TipsManager;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageScratchpad;
@@ -145,6 +146,7 @@ public class Milestone {
                 if (solid) {
                     latestSolidSubtangleMilestone = milestone;
                     latestSolidSubtangleMilestoneIndex = milestoneIndex;
+                    TipsManager.milestoneArrivalTimeTable.put(latestSolidSubtangleMilestoneIndex, System.currentTimeMillis() / 1000L);
                     return;
                 }
             }

@@ -550,14 +550,14 @@ public class API {
         for (final String uriString : uris) {
             final URI uri = new URI(uriString);
             if ("udp".equals(uri.getScheme())) {
-                final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),false,false);
+                final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),false,true);
                 if (!Node.instance().getNeighbors().contains(neighbor)) {
                     Node.instance().getNeighbors().add(neighbor);
                     numberOfAddedNeighbors++;
                 }
             }
             if ("tcp".equals(uri.getScheme())) {
-                final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true,false);
+                final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true,true);
                 if (!Node.instance().getNeighbors().contains(neighbor)) {
                     Node.instance().getNeighbors().add(neighbor);
                     numberOfAddedNeighbors++;

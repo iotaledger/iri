@@ -2,6 +2,7 @@ package com.iota.iri.service.storage;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
@@ -16,7 +17,7 @@ public class ReplicatorSinkProcessor implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSinkProcessor.class);
 
     private Neighbor neighbor;
-    
+
     public ReplicatorSinkProcessor(Neighbor neighbor) {
         this.neighbor = neighbor;
     }
@@ -27,36 +28,39 @@ public class ReplicatorSinkProcessor implements Runnable {
         String remoteAddress = neighbor.getAddress().getAddress().getHostAddress();
         try {
             if (neighbor.getSink() == null) {
-                Socket socket = new Socket(remoteAddress, Replicator.REPLICATOR_PORT);
+                Socket socket = new Socket();
                 socket.setSoTimeout(30000);
+                socket.connect(new InetSocketAddress(remoteAddress, Replicator.REPLICATOR_PORT), 30000);
                 OutputStream out = socket.getOutputStream();
                 neighbor.setSink(socket);
                 neighbor.setWaitingForSinkOpen(false);
                 log.info("Sink {} is open, configured = {}", remoteAddress, neighbor.isFlagged());
-                while ( !ReplicatorSinkPool.instance().shutdown ) {
+                while (!ReplicatorSinkPool.instance().shutdown) {
                     try {
                         ByteBuffer message = neighbor.getNextMessage();
-                        byte [] bytes = message.array();
-                        if (bytes.length == Node.TRANSACTION_PACKET_SIZE && !socket.isClosed()) {
-                            try {
-                                out.write(message.array());
-                            }
-                            catch (IOException e2) {
-                                log.error("Error wrting to sink, closing now");
-                                neighbor.setSink(null);
-                                neighbor.setSource(null);
-                                break;
+                        if ((neighbor.getSink() != null && neighbor.getSink().isConnected())
+                                && (neighbor.getSource() != null && neighbor.getSource().isConnected())) {
+                            byte[] bytes = message.array();
+                            if (bytes.length == Node.TRANSACTION_PACKET_SIZE && !socket.isClosed()) {
+                                try {
+                                    out.write(message.array());
+                                } catch (IOException e2) {
+                                    log.error("Error wrting to sink, closing connection");
+                                    neighbor.setSink(null);
+                                    neighbor.setSource(null);
+                                    break;
+                                }
                             }
                         }
-                    }
-                    catch (InterruptedException e) {
+                    } catch (InterruptedException e) {
                         log.error("Interrupted while waiting for send buffer");
                     }
                 }
             }
         } catch (Exception e) {
-            log.error("Could not create outbound connection to host {} port {}", remoteAddress,
-                    Replicator.REPLICATOR_PORT);
+            log.error("*****ATTENTION*****:  Could not create outbound connection to host {} port {}", remoteAddress, Replicator.REPLICATOR_PORT);
+            neighbor.setSource(null);
+            neighbor.setSink(null);            
             neighbor.setWaitingForSinkOpen(false);
             return;
         }

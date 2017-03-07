@@ -72,12 +72,15 @@ public class ReplicatorSourceProcessor implements Runnable {
                     .append(String.valueOf(inet_socket_address.getPort()))
                     .append(" (")
                     .append(inet_socket_address.getAddress().getHostAddress())
-                    .append(")");
+                    .append(") - closing connection");
                 log.info(sb.toString());
+                connection.close();
+                /* -- This is possible code if tethering is disabled 
                 Node.instance().getNeighbors().add(fresh_neighbor);
                 fresh_neighbor.setSource(connection);
                 neighbor = fresh_neighbor;
                 neighbor.setTcpip(true);
+                */
             }
             
             if (neighbor.getSink() == null && !neighbor.isWaitingForSinkOpen() ) {

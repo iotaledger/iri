@@ -123,33 +123,45 @@ public class Node {
 
                 try {
                     neighbors.forEach(n -> {
-                        final String hostname = n.getAddress().getHostName();
-                        checkIp(hostname).ifPresent(ip -> {
-                            log.info("DNS Checker: Validating DNS Address '{}' with '{}'", hostname, ip);
-                            final String neighborAddress = neighborIpCache.get(hostname);
-                            
-                            if (neighborAddress == null) {
-                                neighborIpCache.put(neighborAddress, ip);
-                            } else {
-                                if (neighborAddress.equals(ip)) {
-                                    log.info("{} seems fine.", hostname);
-                                } else {
-                                    log.info("CHANGED IP for {}! Updating...", hostname);
-                                    
-                                    uri("udp://" + hostname).ifPresent(uri -> {
-                                        removeNeighbor(uri);
-                                        
-                                        uri("udp://" + ip).ifPresent(nuri -> {
-                                            addNeighbor(nuri);
-                                            neighborIpCache.put(hostname, ip);
-                                        });
-                                    });
-                                }
-                            }
-                        });
-                    });
+                        if (!n.isTcpip()) {  // TODO, handle also the TCP case
+                            final String hostname = n.getAddress().getHostName();
+                            checkIp(hostname).ifPresent(ip -> {
+                                log.info("DNS Checker: Validating DNS Address '{}' with '{}'", hostname, ip);
+                                final String neighborAddress = neighborIpCache.get(hostname);
 
-                    Thread.sleep(1000*60*30);
+                                if (neighborAddress == null) {
+                                    neighborIpCache.put(hostname, ip);
+                                } else {
+                                    if (neighborAddress.equals(ip)) {
+                                        log.info("{} seems fine.", hostname);
+                                    } else {
+                                        log.info("CHANGED IP for {}! Updating...", hostname);
+                                        if (n.isTcpip()) {
+                                            uri("tcp://" + hostname).ifPresent(uri -> {
+                                                removeNeighbor(uri);
+
+                                                uri("tcp://" + ip).ifPresent(nuri -> {
+                                                    addNeighbor(nuri, true);
+                                                    neighborIpCache.put(hostname, ip);
+                                                });
+                                            });
+                                        }
+                                        {
+                                            uri("udp://" + hostname).ifPresent(uri -> {
+                                                removeNeighbor(uri);
+
+                                                uri("udp://" + ip).ifPresent(nuri -> {
+                                                    addNeighbor(nuri, true);
+                                                    neighborIpCache.put(hostname, ip);
+                                                });
+                                            });
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    Thread.sleep(1000 * 60 * 30);
                 } catch (final Exception e) {
                     log.error("Neighbor DNS Refresher Thread Exception:", e);
                 }
@@ -381,12 +393,12 @@ public class Node {
         return neighbors.remove(new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),false,false));
     }
 
-    public boolean addNeighbor(final URI uri) {
+    public boolean addNeighbor(final URI uri, boolean isConfigured) {
         boolean isTcp = false;
         if (uri.toString().contains("tcp:")) {
             isTcp = true;
         }
-        final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),isTcp,false);
+        final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, isConfigured);
         if (!Node.instance().getNeighbors().contains(neighbor)) {
             return Node.instance().getNeighbors().add(neighbor);
         }

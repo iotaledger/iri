@@ -39,8 +39,9 @@ public class ReplicatorSinkPool  implements Runnable {
         }
         
         while (true) {
+            // Restart attempt for neighbors that are in the configuration.
             try {                
-                Thread.sleep(5000);
+                Thread.sleep(10000);
                 List<Neighbor> neighbors = Node.instance().getNeighbors();
                 neighbors.forEach(n -> {
                     if (n.isTcpip()) {
@@ -56,7 +57,10 @@ public class ReplicatorSinkPool  implements Runnable {
     }
     
     public void createSink(Neighbor neighbor) {
-        if (neighbor.getSink() != null) return;
+        
+        if (neighbor.getSink() != null) 
+            return;
+        
         neighbor.setWaitingForSinkOpen(true);
         Runnable proc = new ReplicatorSinkProcessor( neighbor );
         sinkPool.submit(proc);

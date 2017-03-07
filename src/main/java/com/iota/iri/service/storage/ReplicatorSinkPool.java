@@ -45,8 +45,10 @@ public class ReplicatorSinkPool  implements Runnable {
                 List<Neighbor> neighbors = Node.instance().getNeighbors();
                 neighbors.forEach(n -> {
                     if (n.isTcpip()) {
-                        if ( n.isTcpip() && n.isFlagged() && (n.getSink() == null) && !n.isWaitingForSinkOpen() ) {
-                            createSink(n);
+                        synchronized (n) {
+                            if (n.isTcpip() && n.isFlagged() && n.getSink() != null) {
+                                createSink(n);
+                            }
                         }
                     }
                 });
@@ -58,10 +60,10 @@ public class ReplicatorSinkPool  implements Runnable {
     
     public void createSink(Neighbor neighbor) {
         
-        if (neighbor.getSink() != null) 
-            return;
-        
-        neighbor.setWaitingForSinkOpen(true);
+        synchronized (neighbor) {
+            if (neighbor.getSink() != null) 
+                return;
+        }
         Runnable proc = new ReplicatorSinkProcessor( neighbor );
         sinkPool.submit(proc);
     }
@@ -88,7 +90,7 @@ public class ReplicatorSinkPool  implements Runnable {
                 neighbors.forEach(n -> {
                     //if ( (neighbor == null) || (neighbor.getSink() != n.getSink()) ) {
                     {
-                        if (n.isTcpip() && (n.getSink() != null) && !n.isWaitingForSinkOpen()) {
+                        if (n.isTcpip() && (n.getSink() != null) && !n.getSink().isConnected()) {
 
                             try {
                                 synchronized (sendingPacket) {

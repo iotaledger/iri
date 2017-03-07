@@ -84,10 +84,8 @@ public class ReplicatorSourceProcessor implements Runnable {
             neighbor.setTcpip(true);
             neighbor.setSource(connection);
             
-            if (neighbor.getSink() == null && !neighbor.isWaitingForSinkOpen() ) {
-                ReplicatorSinkPool.instance().createSink(neighbor);
-            }
-            
+            ReplicatorSinkPool.instance().createSink(neighbor);
+
             InputStream stream = connection.getInputStream();
             log.info("----- NETWORK INFO ----- Source {} open, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
             
@@ -140,7 +138,6 @@ public class ReplicatorSourceProcessor implements Runnable {
         } finally {
             if (neighbor != null) {
                 neighbor.setSource(null);
-                neighbor.setWaitingForSinkOpen(false);
                 neighbor.setSink(null);
                 ReplicatorSinkPool.instance().shutdownSink(neighbor);
             }

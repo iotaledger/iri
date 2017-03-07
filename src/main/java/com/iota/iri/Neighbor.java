@@ -85,21 +85,10 @@ public class Neighbor {
         this.sink = sink;
     }
 
-    private boolean waitingForSinkOpen;
-    
-    public boolean isWaitingForSinkOpen() {
-        return waitingForSinkOpen;
-    }
-
-    public void setWaitingForSinkOpen(boolean waitingForSinkOpen) {
-        this.waitingForSinkOpen = waitingForSinkOpen;
-    }
-
     public Neighbor(final InetSocketAddress address, boolean isTcp, boolean isConfigured) {
         this.address = address;
         this.tcpip = isTcp;
         this.flagged = isConfigured;
-        this.waitingForSinkOpen = false;
     }
 
     public void send(final DatagramPacket packet) {

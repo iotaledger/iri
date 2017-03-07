@@ -95,15 +95,15 @@ public class ReplicatorSourceProcessor implements Runnable {
                 boolean readError = false;
                 log.info("start reading");
                 if ( connection.isClosed() ) readError = true;
-                while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1)
-                        && (offset < TRANSACTION_PACKET_SIZE)) {
-                    if ( count == -1 || connection.isClosed() ) {
-                        readError = true;
-                        break;
-                    }
+                while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1) && (offset < TRANSACTION_PACKET_SIZE)) {
                     offset += count;
                 }
               
+                if ( count == -1 || connection.isClosed() ) {
+                    readError = true;
+                    break;
+                }
+                
                 offset = 0;
                 
                 log.info("done reading");

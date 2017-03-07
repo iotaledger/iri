@@ -41,11 +41,11 @@ public class ReplicatorSinkProcessor implements Runnable {
                         if ((neighbor.getSink() != null && neighbor.getSink().isConnected())
                                 && (neighbor.getSource() != null && neighbor.getSource().isConnected())) {
                             byte[] bytes = message.array();
-                            if (bytes.length == Node.TRANSACTION_PACKET_SIZE && !socket.isClosed()) {
+                            if (bytes.length == Node.TRANSACTION_PACKET_SIZE && socket.isConnected()) {
                                 try {
                                     out.write(message.array());
                                 } catch (IOException e2) {
-                                    log.error("***** NETWORK ALERT ***** Error wrting to sink, closing connection");
+                                    log.error("***** NETWORK ALERT ***** Error wrting to sink, closing connection, {}", e2.getMessage());
                                     neighbor.setSink(null);
                                     neighbor.setSource(null);
                                     break;

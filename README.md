@@ -9,7 +9,7 @@ This is the testnet branch of the main IRI repository, as this is a IOTA referen
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.3.0 Testnet Release
+* **Latest release:** 1.1.3.1 Testnet Release
 * **License:** GPLv3
 
 # Purpose of this repository
@@ -54,7 +54,7 @@ This will create in the `target` directory of the project an executable jar pack
 
 * To execute:
 
-`java -jar IRI-${version}.jar [{-p,--port} 14265] [{-r,--receiver-port} 14265] [{-c,--enabled-cors} *] [{-h}] [[--headless}] [{-d,--debug}] [{-n,--neighbors} '<list of neighbors>'] [{-e,--experimental}]`
+`java -jar IRI-${version}.jar [{-p,--port} 14700] [{-r,--receiver-port} 14700] [{-c,--enabled-cors} *] [{-h}] [[--headless}] [{-d,--debug}] [{-n,--neighbors} '<list of neighbors>'] [{-e,--experimental}]`
 
 Where
 

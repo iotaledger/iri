@@ -31,7 +31,7 @@ public class IRI {
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
     public static final String NAME = "IRI Testnet";
-    public static final String VERSION = "1.1.3.0";
+    public static final String VERSION = "1.1.3.1";
 
     public static void main(final String[] args) {
 
@@ -61,7 +61,7 @@ public class IRI {
     private static void validateParams(final String[] args) {
 
         if (args == null || args.length < 2) {
-            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
+            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14700').");
             printUsage();
         }
 
@@ -173,8 +173,8 @@ public class IRI {
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " +
-                "[{-p,--port} 14265] " +
-                "[{-r,--receiver-port} 14265] " +
+                "[{-p,--port} 14700] " +
+                "[{-r,--receiver-port} 14700] " +
                 "[{-c,--enabled-cors} *] " +
                 "[{-h}] [{--headless}] " +
                 "[{-d,--debug}] " +

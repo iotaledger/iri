@@ -34,7 +34,7 @@ public class ReplicatorSourcePool implements Runnable {
             }
             log.info("ReplicatorSinkPool shutting down");
         } catch (IOException e) {
-            log.error("Error createing Server Socket on port {}", Replicator.REPLICATOR_PORT);
+            log.error("***** NETWORK ALERT ***** Cannot create server socket on port {}, {}", Replicator.REPLICATOR_PORT, e.getMessage());
         }
     }
 

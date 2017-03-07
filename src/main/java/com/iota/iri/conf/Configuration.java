@@ -32,9 +32,9 @@ public class Configuration {
 
     static {
         // defaults
-        conf.put(DefaultConfSettings.API_PORT.name(), "14265");
+        conf.put(DefaultConfSettings.API_PORT.name(), "14700");
         conf.put(DefaultConfSettings.API_HOST.name(), "localhost");
-        conf.put(DefaultConfSettings.TANGLE_RECEIVER_PORT.name(), "14265");
+        conf.put(DefaultConfSettings.TANGLE_RECEIVER_PORT.name(), "14700");
         conf.put(DefaultConfSettings.CORS_ENABLED.name(), "*");
         conf.put(DefaultConfSettings.TESTNET.name(), "false");
         conf.put(DefaultConfSettings.HEADLESS.name(), "false");

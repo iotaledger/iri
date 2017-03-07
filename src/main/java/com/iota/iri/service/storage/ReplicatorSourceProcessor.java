@@ -66,7 +66,7 @@ public class ReplicatorSourceProcessor implements Runnable {
             Neighbor fresh_neighbor = new Neighbor(inet_socket_address_normalized, true, false);
             if (!existingNeighbor) {
                 StringBuffer sb = new StringBuffer(80);
-                sb.append("Got connected from unknown neighbor tcp://")
+                sb.append("***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://")
                     .append(inet_socket_address.getHostName())
                     .append(":")
                     .append(String.valueOf(inet_socket_address.getPort()))
@@ -75,20 +75,21 @@ public class ReplicatorSourceProcessor implements Runnable {
                     .append(") - closing connection");
                 log.info(sb.toString());
                 connection.close();
+                return;
                 /* -- This is possible code if tethering is disabled 
                 Node.instance().getNeighbors().add(fresh_neighbor);
-                fresh_neighbor.setSource(connection);
                 neighbor = fresh_neighbor;
-                neighbor.setTcpip(true);
                 */
             }
+            neighbor.setTcpip(true);
+            neighbor.setSource(connection);
             
             if (neighbor.getSink() == null && !neighbor.isWaitingForSinkOpen() ) {
                 ReplicatorSinkPool.instance().createSink(neighbor);
             }
             
             InputStream stream = connection.getInputStream();
-            log.info("Source {} open, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
+            log.info("----- NETWORK INFO ----- Source {} open, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
             
             while (!shutdown) {
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1)
@@ -134,14 +135,15 @@ public class ReplicatorSourceProcessor implements Runnable {
 
             }
         } catch (IOException e) {
-            log.error("TCP onnection reset by neighbor {}, source closed", neighbor.getAddress().getAddress().getHostAddress());
+            log.error("***** NETWORK ALERT ***** TCP onnection reset by neighbor {}, source closed, {}", neighbor.getAddress().getAddress().getHostAddress(), e.getMessage());
             ReplicatorSinkPool.instance().shutdownSink(neighbor);
         } finally {
-            neighbor.setSource(null);
-            neighbor.setWaitingForSinkOpen(false);
-            neighbor.setSink(null);
-            ReplicatorSinkPool.instance().shutdownSink(neighbor);
-
+            if (neighbor != null) {
+                neighbor.setSource(null);
+                neighbor.setWaitingForSinkOpen(false);
+                neighbor.setSink(null);
+                ReplicatorSinkPool.instance().shutdownSink(neighbor);
+            }
         }
     }
 }

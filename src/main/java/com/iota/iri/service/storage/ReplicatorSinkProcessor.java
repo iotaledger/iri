@@ -34,7 +34,7 @@ public class ReplicatorSinkProcessor implements Runnable {
                 OutputStream out = socket.getOutputStream();
                 neighbor.setSink(socket);
                 neighbor.setWaitingForSinkOpen(false);
-                log.info("Sink {} is open, configured = {}", remoteAddress, neighbor.isFlagged());
+                log.info("----- NETWORK INFO ----- Sink {} is open, configured = {}", remoteAddress, neighbor.isFlagged());
                 while (!ReplicatorSinkPool.instance().shutdown) {
                     try {
                         ByteBuffer message = neighbor.getNextMessage();
@@ -45,7 +45,7 @@ public class ReplicatorSinkProcessor implements Runnable {
                                 try {
                                     out.write(message.array());
                                 } catch (IOException e2) {
-                                    log.error("Error wrting to sink, closing connection");
+                                    log.error("***** NETWORK ALERT ***** Error wrting to sink, closing connection");
                                     neighbor.setSink(null);
                                     neighbor.setSource(null);
                                     break;
@@ -58,7 +58,7 @@ public class ReplicatorSinkProcessor implements Runnable {
                 }
             }
         } catch (Exception e) {
-            log.error("*****ATTENTION*****:  Could not create outbound connection to host {} port {}", remoteAddress, Replicator.REPLICATOR_PORT);
+            log.error("***** NETWORK ALERT ***** Could not create outbound connection to host {} port {}", remoteAddress, Replicator.REPLICATOR_PORT);
             neighbor.setSource(null);
             neighbor.setSink(null);            
             neighbor.setWaitingForSinkOpen(false);

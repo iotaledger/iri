@@ -89,12 +89,15 @@ public class ReplicatorSourceProcessor implements Runnable {
             InputStream stream = connection.getInputStream();
             log.info("----- NETWORK INFO ----- Source {} is connected, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
             
-            boolean readError = false;
+            connection.setSoTimeout(0);
+            
             while (!shutdown) {
+                boolean readError = false;
                 log.info("start reading");
+                if ( connection.isClosed() ) readError = true;
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1)
                         && (offset < TRANSACTION_PACKET_SIZE)) {
-                    if (count == -1) {
+                    if ( count == -1 || connection.isClosed() ) {
                         readError = true;
                         break;
                     }

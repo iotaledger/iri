@@ -133,10 +133,10 @@ public class TipsManager {
                 }
             }
 
-            DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
-            Calendar calendar = Calendar.getInstance();
-            calendar.setTimeInMillis(criticalArrivalTime);
-            log.info("Oldest accepted solid milestone index"+oldestAcceptableMilestoneIndex+", arrival time"+formatter.format(calendar.getTime()));
+            //DateFormat formatter = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+            //Calendar calendar = Calendar.getInstance();
+            //calendar.setTimeInMillis(criticalArrivalTime*1000);
+            //log.info("Oldest accepted solid milestone index"+oldestAcceptableMilestoneIndex+", arrival time "+formatter.format(calendar.getTime()));
             
             System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
 

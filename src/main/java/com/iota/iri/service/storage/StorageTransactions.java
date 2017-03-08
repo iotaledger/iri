@@ -9,11 +9,11 @@ import java.nio.file.StandardOpenOption;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.iota.iri.viewModel.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.viewModel.Transaction;
 
 public class StorageTransactions extends AbstractStorage {
 	
@@ -65,7 +65,7 @@ public class StorageTransactions extends AbstractStorage {
 		if (transactionsNextPointer == CELLS_OFFSET - SUPER_GROUPS_OFFSET) {
 
             // No need to zero "mainBuffer", it already contains only zeros
-            setValue(mainBuffer, Transaction.TYPE_OFFSET, FILLED_SLOT);
+            setValue(mainBuffer, TransactionViewModel.TYPE_OFFSET, FILLED_SLOT);
             appendToTransactions(true);
 
             emptyMainBuffer();
@@ -87,7 +87,7 @@ public class StorageTransactions extends AbstractStorage {
         try {
 			transactionsChannel.close();
 		} catch (IOException e) {
-			log.error("Shutting down Storage Transaction error: ", e);
+			log.error("Shutting down Storage TransactionViewModel error: ", e);
 		}
 	}
 	
@@ -114,38 +114,38 @@ public class StorageTransactions extends AbstractStorage {
 
         synchronized (Storage.class) {
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11;
-        for (int depth = 2; depth < Transaction.HASH_SIZE; depth++) {
+        for (int depth = 2; depth < TransactionViewModel.HASH_SIZE; depth++) {
 
             ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(auxBuffer);
 
-            if (auxBuffer[Transaction.TYPE_OFFSET] == GROUP) {
+            if (auxBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
                 if ((pointer = value(auxBuffer, (hash[depth] + 128) << 3)) == 0) {
                     return 0;
                 }
 
             } else {
 
-                for (; depth < Transaction.HASH_SIZE; depth++) {
-                    if (auxBuffer[Transaction.HASH_OFFSET + depth] != hash[depth]) {
+                for (; depth < TransactionViewModel.HASH_SIZE; depth++) {
+                    if (auxBuffer[TransactionViewModel.HASH_OFFSET + depth] != hash[depth]) {
                         return 0;
                     }
                 }
 
-                return auxBuffer[Transaction.TYPE_OFFSET] == PREFILLED_SLOT ? -pointer : pointer;
+                return auxBuffer[TransactionViewModel.TYPE_OFFSET] == PREFILLED_SLOT ? -pointer : pointer;
             }
         }
         }
         throw new IllegalStateException("Corrupted storage");
     }
 
-    public Transaction loadTransaction(final long pointer) {
+    public TransactionViewModel loadTransaction(final long pointer) {
         synchronized (Storage.class) {
             ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);            
-            return new Transaction(mainBuffer, pointer);
+            return new TransactionViewModel(mainBuffer, pointer);
     	}
     }
 
-    public Transaction loadTransaction(final byte[] hash) {
+    public TransactionViewModel loadTransaction(final byte[] hash) {
         synchronized (Storage.class) {
             final long pointer = transactionPointer(hash);
             return pointer > 0 ? loadTransaction(pointer) : null;
@@ -154,20 +154,20 @@ public class StorageTransactions extends AbstractStorage {
     
     public void setTransactionValidity(final long pointer, final int validity) {
         synchronized (Storage.class) {
-            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.VALIDITY_OFFSET, (byte)validity);
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + TransactionViewModel.VALIDITY_OFFSET, (byte)validity);
         }
     }
 	
     public void setArrivalTime(final long pointer, final long value) {
         synchronized (Storage.class) {            
-            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET, (byte)value);
-            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+1, (byte)(value >> 8));
-            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+2, (byte)(value >> 16));
-            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+3, (byte)(value >> 24));
-            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+4, (byte)(value >> 32));
-            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+5, (byte)(value >> 40));
-            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+6, (byte)(value >> 48));
-            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + Transaction.ARRIVAL_TIME_OFFSET+7, (byte)(value >> 56));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + TransactionViewModel.ARRIVAL_TIME_OFFSET, (byte)value);
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + TransactionViewModel.ARRIVAL_TIME_OFFSET+1, (byte)(value >> 8));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + TransactionViewModel.ARRIVAL_TIME_OFFSET+2, (byte)(value >> 16));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + TransactionViewModel.ARRIVAL_TIME_OFFSET+3, (byte)(value >> 24));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + TransactionViewModel.ARRIVAL_TIME_OFFSET+4, (byte)(value >> 32));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + TransactionViewModel.ARRIVAL_TIME_OFFSET+5, (byte)(value >> 40));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + TransactionViewModel.ARRIVAL_TIME_OFFSET+6, (byte)(value >> 48));
+            transactionsChunks[(int)(pointer >> 27)].put(((int)(pointer & (CHUNK_SIZE - 1))) + TransactionViewModel.ARRIVAL_TIME_OFFSET+7, (byte)(value >> 56));
         }
     }
 
@@ -186,7 +186,7 @@ public class StorageTransactions extends AbstractStorage {
             while (pointer < transactionsNextPointer) {
     
                 if (tipFlag(pointer)) {
-                    tips.add(new Hash(loadTransaction(pointer).getHash(), 0, Transaction.HASH_SIZE));
+                    tips.add(new Hash(loadTransaction(pointer).getHash(), 0, TransactionViewModel.HASH_SIZE));
                 }
                 pointer += CELL_SIZE;
             }
@@ -195,17 +195,17 @@ public class StorageTransactions extends AbstractStorage {
     }
     
     
-    public long storeTransaction(final byte[] hash, final Transaction transaction, final boolean tip) { // Returns the pointer or 0 if the transaction was already in the storage and "transaction" value is not null
+    public long storeTransaction(final byte[] hash, final TransactionViewModel transactionViewModel, final boolean tip) { // Returns the pointer or 0 if the transactionViewModel was already in the storage and "transactionViewModel" value is not null
 
     	synchronized (Storage.class) {
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11, prevPointer = 0;
 
     MAIN_LOOP:
-        for (int depth = 2; depth < Transaction.HASH_SIZE; depth++) {
+        for (int depth = 2; depth < TransactionViewModel.HASH_SIZE; depth++) {
 
             ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
 
-            if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
+            if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
 
                 prevPointer = pointer;
                 if ((pointer = value(mainBuffer, (hash[depth] + 128) << 3)) == 0) {
@@ -213,9 +213,9 @@ public class StorageTransactions extends AbstractStorage {
                     setValue(mainBuffer, (hash[depth] + 128) << 3, pointer = transactionsNextPointer);
                     ((ByteBuffer)transactionsChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
-                    Transaction.dump(mainBuffer, hash, transaction);
-                    appendToTransactions(transaction != null || tip);
-                    if (transaction != null) {
+                    TransactionViewModel.dump(mainBuffer, hash, transactionViewModel);
+                    appendToTransactions(transactionViewModel != null || tip);
+                    if (transactionViewModel != null) {
                         Storage.instance().updateBundleAddressTagAndApprovers(pointer);
                     }
 
@@ -224,11 +224,11 @@ public class StorageTransactions extends AbstractStorage {
 
             } else {
 
-                for (int i = depth; i < Transaction.HASH_SIZE; i++) {
+                for (int i = depth; i < TransactionViewModel.HASH_SIZE; i++) {
 
-                    if (mainBuffer[Transaction.HASH_OFFSET + i] != hash[i]) {
+                    if (mainBuffer[TransactionViewModel.HASH_OFFSET + i] != hash[i]) {
 
-                        final int differentHashByte = mainBuffer[Transaction.HASH_OFFSET + i];
+                        final int differentHashByte = mainBuffer[TransactionViewModel.HASH_OFFSET + i];
 
                         ((ByteBuffer)transactionsChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
                         setValue(mainBuffer, (hash[depth - 1] + 128) << 3, transactionsNextPointer);
@@ -246,10 +246,10 @@ public class StorageTransactions extends AbstractStorage {
                         setValue(mainBuffer, (hash[i] + 128) << 3, transactionsNextPointer + CELL_SIZE);
                         appendToTransactions(false);
 
-                        Transaction.dump(mainBuffer, hash, transaction);
+                        TransactionViewModel.dump(mainBuffer, hash, transactionViewModel);
                         pointer = transactionsNextPointer;
-                        appendToTransactions(transaction != null || tip);
-                        if (transaction != null) {
+                        appendToTransactions(transactionViewModel != null || tip);
+                        if (transactionViewModel != null) {
                             Storage.instance().updateBundleAddressTagAndApprovers(pointer);
                         }
 
@@ -257,10 +257,10 @@ public class StorageTransactions extends AbstractStorage {
                     }
                 }
 
-                if (transaction != null) {
+                if (transactionViewModel != null) {
 
-                    if (mainBuffer[Transaction.TYPE_OFFSET] == PREFILLED_SLOT) {
-                        Transaction.dump(mainBuffer, hash, transaction);
+                    if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == PREFILLED_SLOT) {
+                        TransactionViewModel.dump(mainBuffer, hash, transactionViewModel);
                         ((ByteBuffer)transactionsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
                         Storage.instance().updateBundleAddressTagAndApprovers(pointer);
                     } else {
@@ -283,7 +283,7 @@ public class StorageTransactions extends AbstractStorage {
 		return instance;
 	}
 
-	public Transaction loadMilestone(final Hash latestMilestone) {
+	public TransactionViewModel loadMilestone(final Hash latestMilestone) {
 		return loadTransaction(transactionPointer(latestMilestone.bytes()));
 	}
 }

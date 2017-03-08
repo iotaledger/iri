@@ -12,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
-import com.iota.iri.viewModel.Transaction;
+import com.iota.iri.viewModel.TransactionViewModel;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.storage.StorageAddresses;
 import com.iota.iri.service.storage.StorageScratchpad;
@@ -47,32 +47,32 @@ public class Milestone {
 
             if (analyzedMilestoneCandidates.add(pointer) || analyzedMilestoneRetryCandidates.remove(pointer)) {
 
-                final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                if (transaction.getCurrentIndex() == 0) {
+                final TransactionViewModel transactionViewModel = StorageTransactions.instance().loadTransaction(pointer);
+                if (transactionViewModel.getCurrentIndex() == 0) {
 
-                    final int index = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET, 15);
-                    final long timestamp = (int) Converter.longValue(transaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
+                    final int index = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
+                    final long timestamp = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                    
                     if ((now - timestamp) < 7200L && index > latestMilestoneIndex) {
 
-                        final Bundle bundle = new Bundle(transaction.getBundleHash());
+                        final Bundle bundle = new Bundle(transactionViewModel.getBundleHash());
                         if (bundle.getTransactions().size() == 0) {
 							// Bundle not available, try again later.
                             analyzedMilestoneRetryCandidates.add(pointer);
                         }
                         else {
-                            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
+                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 
-                                if (bundleTransactions.get(0).pointer == transaction.pointer) {
+                                if (bundleTransactionViewModels.get(0).pointer == transactionViewModel.pointer) {
 
-                                    //final Transaction transaction2 = StorageTransactions.instance().loadTransaction(transaction.trunkTransactionPointer);
-                                    final Transaction transaction2 = transaction.getTrunkTransaction();
-                                    if (transaction2.type == AbstractStorage.FILLED_SLOT
-                                            && transaction.branchTransactionPointer == transaction2.trunkTransactionPointer) {
+                                    //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
+                                    final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction();
+                                    if (transactionViewModel2.type == AbstractStorage.FILLED_SLOT
+                                            && transactionViewModel.branchTransactionPointer == transactionViewModel2.trunkTransactionPointer) {
 
-                                        final int[] trunkTransactionTrits = new int[Transaction.TRUNK_TRANSACTION_TRINARY_SIZE];
-                                        Converter.getTrits(transaction.getTrunkTransactionHash(), trunkTransactionTrits);
-                                        final int[] signatureFragmentTrits = Arrays.copyOfRange(transaction.trits(), Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
+                                        final int[] trunkTransactionTrits = new int[TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE];
+                                        Converter.getTrits(transactionViewModel.getTrunkTransactionHash(), trunkTransactionTrits);
+                                        final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
                                         final int[] hash = ISS.address(ISS.digest(Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits), ISS.NUMBER_OF_FRAGMENT_CHUNKS), signatureFragmentTrits));
 
@@ -82,9 +82,9 @@ public class Milestone {
                                             final Curl curl = new Curl();
                                             if ((indexCopy & 1) == 0) {
                                                 curl.absorb(hash, 0, hash.length);
-                                                curl.absorb(transaction2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
+                                                curl.absorb(transactionViewModel2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                                             } else {
-                                                curl.absorb(transaction2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
+                                                curl.absorb(transactionViewModel2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                                                 curl.absorb(hash, 0, hash.length);
                                             }
                                             curl.squeeze(hash, 0, hash.length);
@@ -94,7 +94,7 @@ public class Milestone {
 
                                         if ((new Hash(hash)).equals(COORDINATOR)) {
 
-                                            latestMilestone = new Hash(transaction.getHash(), 0, Transaction.HASH_SIZE);
+                                            latestMilestone = new Hash(transactionViewModel.getHash(), 0, TransactionViewModel.HASH_SIZE);
                                             latestMilestoneIndex = index;
 
                                             milestones.put(latestMilestoneIndex, latestMilestone);
@@ -130,14 +130,14 @@ public class Milestone {
 
                         if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
-                            final Transaction transaction2 = StorageTransactions.instance().loadTransaction(pointer);
-                            if (transaction2.type == AbstractStorage.PREFILLED_SLOT) {
+                            final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(pointer);
+                            if (transactionViewModel2.type == AbstractStorage.PREFILLED_SLOT) {
                                 solid = false;
                                 break;
 
                             } else {
-                                nonAnalyzedTransactions.offer(transaction2.trunkTransactionPointer);
-                                nonAnalyzedTransactions.offer(transaction2.branchTransactionPointer);
+                                nonAnalyzedTransactions.offer(transactionViewModel2.trunkTransactionPointer);
+                                nonAnalyzedTransactions.offer(transactionViewModel2.branchTransactionPointer);
                             }
                         }
                     }

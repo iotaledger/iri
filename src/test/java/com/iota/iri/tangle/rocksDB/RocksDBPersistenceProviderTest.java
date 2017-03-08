@@ -2,8 +2,9 @@ package com.iota.iri.tangle.rocksDB;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.tangle.TangleAccessor;
+import com.iota.iri.tangle.Tangle;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.viewModel.TransactionViewModel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,19 +20,19 @@ import static org.junit.Assert.*;
 public class RocksDBPersistenceProviderTest {
     @Before
     public void setUp() throws Exception {
-        TangleAccessor.instance().setPersistenceProvider(new RocksDBPersistenceProvider());
-        TangleAccessor.instance().init();
+        Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
+        Tangle.instance().init();
     }
 
     @After
     public void tearDown() throws Exception {
-        TangleAccessor.instance().shutdown();
+        Tangle.instance().shutdown();
     }
 
     @Test
     public void save() throws Exception {
         Random r = new Random();
-        int[] trits = Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
+        int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
         hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction();
         transaction.bytes = Converter.bytes(trits);
@@ -40,13 +41,13 @@ public class RocksDBPersistenceProviderTest {
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
         transaction.hash = Converter.bytes(hash);
 
-        TangleAccessor.instance().getPersistenceProvider().save(transaction);
+        Tangle.instance().getPersistenceProviders().get(0).save(transaction);
     }
 
     @Test
     public void get() throws Exception {
         Random r = new Random();
-        int[] trits = Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
+        int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
                 hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction();
         transaction.bytes = Converter.bytes(trits);
@@ -55,9 +56,9 @@ public class RocksDBPersistenceProviderTest {
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
         transaction.hash = Converter.bytes(hash);
 
-        TangleAccessor.instance().getPersistenceProvider().save(transaction);
+        Tangle.instance().getPersistenceProviders().get(0).save(transaction);
         Transaction getTransaction = new Transaction();
-        TangleAccessor.instance().getPersistenceProvider().get(getTransaction, transaction.hash);
+        Tangle.instance().getPersistenceProviders().get(0).get(getTransaction, transaction.hash);
         assertArrayEquals(getTransaction.hash, transaction.hash);
         assertArrayEquals(getTransaction.bytes, transaction.bytes);
     }
@@ -65,22 +66,29 @@ public class RocksDBPersistenceProviderTest {
     @Test
     public void query() throws Exception {
         Random r = new Random();
-        int[] trits = Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
+        int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
                 hash = new int[Curl.HASH_LENGTH];
-        Transaction transaction = new Transaction(), queryTransaction = new Transaction();
+        Transaction transaction = new Transaction(), queryTransaction;
         transaction.bytes = Converter.bytes(trits);
-        transaction.address = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        transaction.address.bytes = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
         Curl curl = new Curl();
         curl.absorb(trits, 0, trits.length);
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
         transaction.hash = Converter.bytes(hash);
 
-        TangleAccessor.instance().getPersistenceProvider().save(transaction);
-        TangleAccessor.instance().getPersistenceProvider().query(queryTransaction, "address", transaction.address);
-
+        Tangle.instance().getPersistenceProviders().get(0).save(transaction);
+        queryTransaction = Arrays.stream(
+                Arrays.stream(
+                        Tangle.instance()
+                                .query(Transaction.class, "address", transaction.address, TransactionViewModel.BUNDLE_SIZE)
+                                .get())
+                        .toArray(Transaction[]::new))
+                .findFirst()
+                .orElse(null);
+        assertNotNull(queryTransaction);
         assertArrayEquals(queryTransaction.hash, transaction.hash);
         assertArrayEquals(queryTransaction.bytes, transaction.bytes);
-        assertArrayEquals(queryTransaction.address, transaction.address);
+        assertArrayEquals(queryTransaction.address.bytes, transaction.address.bytes);
     }
 
     @Test
@@ -90,17 +98,21 @@ public class RocksDBPersistenceProviderTest {
         Transaction[] bundle, transactions;
         transactions = Arrays.stream(new Transaction[4]).map(t -> {
             Transaction transaction = new Transaction();
-            transaction.bundle = bundleHash.clone();
-            transaction.bytes = Converter.bytes(Arrays.stream(new int[com.iota.iri.viewModel.Transaction.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.bundle.hash = bundleHash.clone();
             transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
             return transaction;
         }).toArray(Transaction[]::new);
         transactions[0].hash = bundleHash.clone();
 
         for(Transaction transaction: transactions) {
-            TangleAccessor.instance().getPersistenceProvider().save(transaction);
+            Tangle.instance().getPersistenceProviders().get(0).save(transaction);
         }
-        bundle = Arrays.stream(TangleAccessor.instance().getPersistenceProvider().queryMany(Transaction.class, "bundle", bundleHash, bundleHash.length)).toArray(Transaction[]::new);
+        Object[] queryOutput = Tangle.instance()
+                        .query(Transaction.class, "bundle", transactions[0].bundle, bundleHash.length)
+                        .get();
+        bundle = Arrays.stream(queryOutput).toArray(Transaction[]::new);
+        //bundle = Arrays.stream(Tangle.instance().getPersistenceProviders().get(0).queryMany(Transaction.class, "bundle", bundleHash, bundleHash.length)).toArray(Transaction[]::new);
         assertEquals(bundle.length, transactions.length);
     }
 

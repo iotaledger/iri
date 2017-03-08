@@ -1,58 +1,39 @@
 package com.iota.iri.model;
 
-import com.iota.iri.tangle.IotaModelIndex;
-import com.iota.iri.tangle.IotaModel;
-import com.iota.iri.tangle.IotaModelStoredItem;
-import com.iota.iri.tangle.IotaModelSecondaryIndex;
+import com.iota.iri.tangle.*;
 
-import java.nio.ByteBuffer;
+import java.sql.Time;
 
 /**
  * Created by paul on 3/2/17 for iri.
  */
-@IotaModel
+@Model
 public class Transaction {
-    @IotaModelStoredItem
-    public byte[] bytes;
-    @IotaModelIndex
-    public byte[] hash;
+    @ModelIndex public byte[] hash;
 
-    @IotaModelStoredItem
-    @IotaModelSecondaryIndex
-    public byte[] bundle;
+    @BelongsTo public Tag tag;
+    @BelongsTo public Address address;
+    @BelongsTo public Timestamp timestamp;
+    @BelongsTo public Bundle bundle;
+    @BelongsTo public Approvee trunk;
+    @BelongsTo public Approvee branch;
 
-    @IotaModelStoredItem
-    @IotaModelSecondaryIndex
-    public byte[] tag;
+    @HasOne public byte[] bytes;
 
-    @IotaModelStoredItem
-    @IotaModelSecondaryIndex
-    public byte[] address;
+    @HasOne public int validity;
+    @HasOne public long value;
+    @HasOne public long currentIndex;
+    @HasOne public long lastIndex;
+    @HasOne public long arrivalTime;
+    @HasOne public boolean isTip;
+    @HasOne public boolean analyzedFLag;
 
-
-    @IotaModelStoredItem
-    @IotaModelSecondaryIndex
-    public byte[] timestamp;
-    @IotaModelStoredItem
-    @IotaModelSecondaryIndex
-    public byte[] trunk;
-    @IotaModelStoredItem
-    @IotaModelSecondaryIndex
-    public byte[] branch;
-
-    @IotaModelStoredItem
-    public int validity;
-
-    @IotaModelStoredItem
-    public long value;
-
-    @IotaModelStoredItem
-    public long currentIndex;
-    @IotaModelStoredItem
-    public long lastIndex;
-
-    @IotaModelStoredItem
-    public long arrivalTime;
-    @IotaModelStoredItem
-    public boolean isTip;
+    public Transaction() {
+        tag = new Tag();
+        this.bundle = new Bundle();
+        this.trunk = new Approvee();
+        this.branch = new Approvee();
+        address = new Address();
+        timestamp = new Timestamp();
+    }
 }

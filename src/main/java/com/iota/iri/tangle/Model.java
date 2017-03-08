@@ -9,5 +9,5 @@ import java.lang.annotation.RetentionPolicy;
  */
 //@Retention(RetentionPolicy.RUNTIME)
 @Inherited
-public @interface IotaModel {
+public @interface Model {
 }

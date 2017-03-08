@@ -8,10 +8,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.iota.iri.viewModel.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.iota.iri.viewModel.Transaction;
 
 public class StorageApprovers extends AbstractStorage {
 
@@ -75,19 +74,19 @@ public class StorageApprovers extends AbstractStorage {
 		synchronized (Storage.class) {
 
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11;
-        for (int depth = 2; depth < Transaction.HASH_SIZE; depth++) {
+        for (int depth = 2; depth < TransactionViewModel.HASH_SIZE; depth++) {
 
             ((ByteBuffer)approversChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
 
-            if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
+            if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
                 if ((pointer = value(mainBuffer, (hash[depth] + 128) << 3)) == 0) {
                     return 0;
                 }
 
             } else {
 
-                for (; depth < Transaction.HASH_SIZE; depth++) {
-                    if (mainBuffer[Transaction.HASH_OFFSET + depth] != hash[depth]) {
+                for (; depth < TransactionViewModel.HASH_SIZE; depth++) {
+                    if (mainBuffer[TransactionViewModel.HASH_OFFSET + depth] != hash[depth]) {
                         return 0;
                     }
                 }
@@ -154,11 +153,11 @@ public class StorageApprovers extends AbstractStorage {
     public void updateApprover(final byte[] hash, final long transactionPointer) {
 
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11, prevPointer = 0;
-        for (int depth = 2; depth < Transaction.HASH_SIZE; depth++) {
+        for (int depth = 2; depth < TransactionViewModel.HASH_SIZE; depth++) {
 
             ((ByteBuffer)approversChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
 
-            if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
+            if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
 
                 prevPointer = pointer;
                 if ((pointer = value(mainBuffer, (hash[depth] + 128) << 3)) == 0) {
@@ -167,8 +166,8 @@ public class StorageApprovers extends AbstractStorage {
                     ((ByteBuffer)approversChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                     System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
-                    mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                    System.arraycopy(hash, 0, mainBuffer, 8, Transaction.HASH_SIZE);
+                    mainBuffer[TransactionViewModel.TYPE_OFFSET] = FILLED_SLOT;
+                    System.arraycopy(hash, 0, mainBuffer, 8, TransactionViewModel.HASH_SIZE);
                     setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                     appendToApprovers();
 
@@ -177,11 +176,11 @@ public class StorageApprovers extends AbstractStorage {
 
             } else {
 
-                for (int i = depth; i < Transaction.HASH_SIZE; i++) {
+                for (int i = depth; i < TransactionViewModel.HASH_SIZE; i++) {
 
-                    if (mainBuffer[Transaction.HASH_OFFSET + i] != hash[i]) {
+                    if (mainBuffer[TransactionViewModel.HASH_OFFSET + i] != hash[i]) {
 
-                        final int differentHashByte = mainBuffer[Transaction.HASH_OFFSET + i];
+                        final int differentHashByte = mainBuffer[TransactionViewModel.HASH_OFFSET + i];
 
                         ((ByteBuffer)approversChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
                         setValue(mainBuffer, (hash[depth - 1] + 128) << 3, approversNextPointer);
@@ -200,8 +199,8 @@ public class StorageApprovers extends AbstractStorage {
                         appendToApprovers();
 
                         System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
-                        mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                        System.arraycopy(hash, 0, mainBuffer, 8, Transaction.HASH_SIZE);
+                        mainBuffer[TransactionViewModel.TYPE_OFFSET] = FILLED_SLOT;
+                        System.arraycopy(hash, 0, mainBuffer, 8, TransactionViewModel.HASH_SIZE);
                         setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                         appendToApprovers();
 

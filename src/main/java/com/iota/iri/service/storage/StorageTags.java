@@ -8,10 +8,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.iota.iri.viewModel.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.iota.iri.viewModel.Transaction;
 
 public class StorageTags extends AbstractStorage {
 
@@ -74,18 +73,18 @@ public class StorageTags extends AbstractStorage {
 	public long tagPointer(final byte[] hash) {
 		synchronized (Storage.class) {
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11;
-        for (int depth = 2; depth < Transaction.TAG_SIZE; depth++) {
+        for (int depth = 2; depth < TransactionViewModel.TAG_SIZE; depth++) {
 
             ((ByteBuffer) tagsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
 
-            if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
+            if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
                 if ((pointer = value(mainBuffer, (hash[depth] + 128) << 3)) == 0) {
                     return 0;
                 }
             } else {
 
-                for (; depth < Transaction.TAG_SIZE; depth++) {
-                    if (mainBuffer[Transaction.HASH_OFFSET + depth] != hash[depth]) {
+                for (; depth < TransactionViewModel.TAG_SIZE; depth++) {
+                    if (mainBuffer[TransactionViewModel.HASH_OFFSET + depth] != hash[depth]) {
                         return 0;
                     }
                 }
@@ -147,27 +146,28 @@ public class StorageTags extends AbstractStorage {
         }
     }
 	
-	public void updateTags(final long transactionPointer, final Transaction transaction) {
-		for (int i = 0; i < Transaction.TAG_SIZE; i++) {
+	public void updateTags(final long transactionPointer, final TransactionViewModel transactionViewModel) {
+		for (int i = 0; i < TransactionViewModel.TAG_SIZE; i++) {
 
-            if (transaction.getTag()[i] != 0) {
+            if (transactionViewModel.getTag().getHash().bytes()[i] != 0) {
 
-                long pointer = ((transaction.getTag()[0] + 128) + ((transaction.getTag()[1] + 128) << 8)) << 11, prevPointer = 0;
-                for (int depth = 2; depth < Transaction.TAG_SIZE; depth++) {
+                byte[] tagBytes  = transactionViewModel.getTag().getHash().bytes();
+                long pointer = ((tagBytes[0] + 128) + ((tagBytes[1] + 128) << 8)) << 11, prevPointer = 0;
+                for (int depth = 2; depth < TransactionViewModel.TAG_SIZE; depth++) {
 
                     ((ByteBuffer) tagsChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
 
-                    if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
+                    if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
 
                         prevPointer = pointer;
-                        if ((pointer = value(mainBuffer, (transaction.getTag()[depth] + 128) << 3)) == 0) {
+                        if ((pointer = value(mainBuffer, (transactionViewModel.getTag().getHash().bytes()[depth] + 128) << 3)) == 0) {
 
-                            setValue(mainBuffer, (transaction.getTag()[depth] + 128) << 3, tagsNextPointer);
+                            setValue(mainBuffer, (tagBytes[depth] + 128) << 3, tagsNextPointer);
                             ((ByteBuffer) tagsChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                             System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
-                            mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                            System.arraycopy(transaction.getTag(), 0, mainBuffer, 8, Transaction.TAG_SIZE);
+                            mainBuffer[TransactionViewModel.TYPE_OFFSET] = FILLED_SLOT;
+                            System.arraycopy(transactionViewModel.getTag(), 0, mainBuffer, 8, TransactionViewModel.TAG_SIZE);
                             setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                             appendToTags();
 
@@ -178,31 +178,31 @@ public class StorageTags extends AbstractStorage {
 
                         boolean sameTag = true;
 
-                        for (int j = depth; j < Transaction.TAG_SIZE; j++) {
+                        for (int j = depth; j < TransactionViewModel.TAG_SIZE; j++) {
 
-                            if (mainBuffer[Transaction.HASH_OFFSET + j] != transaction.getTag()[j]) {
+                            if (mainBuffer[TransactionViewModel.HASH_OFFSET + j] != tagBytes[j]) {
 
-                                final int differentHashByte = mainBuffer[Transaction.HASH_OFFSET + j];
+                                final int differentHashByte = mainBuffer[TransactionViewModel.HASH_OFFSET + j];
 
                                 ((ByteBuffer) tagsChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
-                                setValue(mainBuffer, (transaction.getTag()[depth - 1] + 128) << 3, tagsNextPointer);
+                                setValue(mainBuffer, (tagBytes[depth - 1] + 128) << 3, tagsNextPointer);
                                 ((ByteBuffer) tagsChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                                 for (int k = depth; k < j; k++) {
 
                                     System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
-                                    setValue(mainBuffer, (transaction.getTag()[k] + 128) << 3, tagsNextPointer + CELL_SIZE);
+                                    setValue(mainBuffer, (tagBytes[k] + 128) << 3, tagsNextPointer + CELL_SIZE);
                                     appendToTags();
                                 }
 
                                 System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
                                 setValue(mainBuffer, (differentHashByte + 128) << 3, pointer);
-                                setValue(mainBuffer, (transaction.getTag()[j] + 128) << 3, tagsNextPointer + CELL_SIZE);
+                                setValue(mainBuffer, (tagBytes[j] + 128) << 3, tagsNextPointer + CELL_SIZE);
                                 appendToTags();
 
                                 System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
-                                mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                                System.arraycopy(transaction.getTag(), 0, mainBuffer, 8, Transaction.TAG_SIZE);
+                                mainBuffer[TransactionViewModel.TYPE_OFFSET] = FILLED_SLOT;
+                                System.arraycopy(transactionViewModel.getTag(), 0, mainBuffer, 8, TransactionViewModel.TAG_SIZE);
                                 setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                                 appendToTags();
 

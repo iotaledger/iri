@@ -3,18 +3,18 @@ package com.iota.iri.viewModel;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeoutException;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.storage.StorageTransactions;
-import com.iota.iri.tangle.TangleAccessor;
+import com.iota.iri.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 
-public class Transaction {
+public class TransactionViewModel {
     private final com.iota.iri.model.Transaction transaction;
 
     public static final int SIZE = 1604;
@@ -53,7 +53,7 @@ public class Transaction {
 
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
-    public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Transaction.HASH_SIZE];
+    public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[TransactionViewModel.HASH_SIZE];
 
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
@@ -82,31 +82,31 @@ public class Transaction {
     public final long pointer;
     public int weightMagnitude;
 
-    public static Transaction fromHash(final byte[] hash) {
+    public static TransactionViewModel fromHash(final byte[] hash) {
         com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
         try {
-            TangleAccessor.instance().load(transaction, hash).get();
+            Tangle.instance().load(transaction, hash).get();
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        return new Transaction(transaction);
+        return new TransactionViewModel(transaction);
     }
-    public static Transaction fromHash(final int[] hash) {
+    public static TransactionViewModel fromHash(final int[] hash) {
         return fromHash(Converter.bytes(hash));
     }
 
-    public static Transaction fromHash(final Hash hash) {
-        return Transaction.fromHash(hash.bytes());
+    public static TransactionViewModel fromHash(final Hash hash) {
+        return TransactionViewModel.fromHash(hash.bytes());
     }
-    public Transaction(final com.iota.iri.model.Transaction transaction) {
+    public TransactionViewModel(final com.iota.iri.model.Transaction transaction) {
         this.transaction = transaction;
         type = Storage.FILLED_SLOT;
         pointer = 0;
     }
 
-    public Transaction(final int[] trits) {
+    public TransactionViewModel(final int[] trits) {
         transaction = new com.iota.iri.model.Transaction();
 
         this.trits = trits;
@@ -128,7 +128,7 @@ public class Transaction {
     }
 
 
-    public Transaction(final byte[] bytes, final int[] trits, final Curl curl) {
+    public TransactionViewModel(final byte[] bytes, final int[] trits, final Curl curl) {
         transaction = new com.iota.iri.model.Transaction();
         this.transaction.bytes = Arrays.copyOf(bytes, BYTES_SIZE);
         Converter.getTrits(this.getBytes(), this.trits = trits);
@@ -169,21 +169,20 @@ public class Transaction {
         pointer = 0;
     }
 
-    public Transaction(final byte[] mainBuffer, final long pointer) {
+    public TransactionViewModel(final byte[] mainBuffer, final long pointer) {
         transaction = new com.iota.iri.model.Transaction();
         type = mainBuffer[TYPE_OFFSET];
         System.arraycopy(mainBuffer, HASH_OFFSET, this.transaction.hash = new byte[HASH_SIZE], 0, HASH_SIZE);
 
-        System.arraycopy(mainBuffer, BYTES_OFFSET, this.transaction.bytes = new byte[BYTES_SIZE], 0, BYTES_SIZE);
+        System.arraycopy(mainBuffer, BYTES_OFFSET, this.transaction.bytes, 0, BYTES_SIZE);
 
-        System.arraycopy(mainBuffer, ADDRESS_OFFSET, transaction.address = new byte[ADDRESS_SIZE], 0, ADDRESS_SIZE);
+        System.arraycopy(mainBuffer, ADDRESS_OFFSET, transaction.address.bytes = new byte[ADDRESS_SIZE], 0, ADDRESS_SIZE);
         transaction.value = AbstractStorage.value(mainBuffer, VALUE_OFFSET);
-        System.arraycopy(mainBuffer, TAG_OFFSET, transaction.tag = new byte[TAG_SIZE], 0, TAG_SIZE);
+        System.arraycopy(mainBuffer, TAG_OFFSET, transaction.tag.bytes = new byte[TAG_SIZE], 0, TAG_SIZE);
         transaction.currentIndex = Storage.value(mainBuffer, CURRENT_INDEX_OFFSET);
         transaction.lastIndex = Storage.value(mainBuffer, LAST_INDEX_OFFSET);
-        System.arraycopy(mainBuffer, BUNDLE_OFFSET, transaction.bundle = new byte[BUNDLE_SIZE], 0, BUNDLE_SIZE);
-        System.arraycopy(mainBuffer, TRUNK_TRANSACTION_OFFSET, transaction.trunk = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
-        System.arraycopy(mainBuffer, BRANCH_TRANSACTION_OFFSET, transaction.branch = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
+        System.arraycopy(mainBuffer, TRUNK_TRANSACTION_OFFSET, transaction.trunk.hash = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
+        System.arraycopy(mainBuffer, BRANCH_TRANSACTION_OFFSET, transaction.branch.hash = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
 
         /* Don't need this anymore. just get it from the db.
         trunkTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.trunk);
@@ -207,27 +206,36 @@ public class Transaction {
         transaction.currentIndex = Converter.longValue(trits, CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
         transaction.lastIndex = Converter.longValue(trits, LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
         transaction.value = Converter.longValue(trits, VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
-        transaction.address = Converter.bytes(trits, ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
-        System.arraycopy(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, transaction.tag = new byte[TAG_SIZE], 0, TAG_SIZE);
-        System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, transaction.bundle = new byte[BUNDLE_SIZE], 0, BUNDLE_SIZE);
-        System.arraycopy(Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE), 0, transaction.trunk = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
-        System.arraycopy(Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE), 0, transaction.branch = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
+        transaction.address.bytes = Converter.bytes(trits, ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
+        System.arraycopy(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, transaction.tag.bytes = new byte[TAG_SIZE], 0, TAG_SIZE);
+        System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, transaction.bundle.hash = new byte[BUNDLE_SIZE], 0, BUNDLE_SIZE);
+        System.arraycopy(Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE), 0, transaction.trunk.hash = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
+        System.arraycopy(Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE), 0, transaction.branch.hash = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
     }
 
     public void update(String item) throws Exception {
-        TangleAccessor.instance().update(transaction, item, Transaction.class.getDeclaredField(item).get(transaction));
+        Tangle.instance().update(transaction, item, TransactionViewModel.class.getDeclaredField(item).get(transaction));
     }
 
-    public Transaction getBranchTransaction() {
-        com.iota.iri.model.Transaction branch = new com.iota.iri.model.Transaction();
-        TangleAccessor.instance().query(branch, "branch", transaction.branch);
-        return new Transaction(branch);
+    private TransactionViewModel getTransaction(byte[] hash) {
+        Transaction transactionToLoad = new Transaction();
+        try {
+            Tangle.instance().load(transactionToLoad, hash).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        //Transaction trunk = ((Transaction) Arrays.stream(Tangle.instance().query(Transaction.class, "", transaction.trunk, BUNDLE_SIZE).get()).findAny().orElse(null));
+        return new TransactionViewModel(transactionToLoad);
     }
 
-    public Transaction getTrunkTransaction() {
-        com.iota.iri.model.Transaction trunk = new com.iota.iri.model.Transaction();
-        TangleAccessor.instance().query(trunk, "trunk", transaction.branch);
-        return new Transaction(trunk);
+    public TransactionViewModel getBranchTransaction() {
+        return getTransaction(transaction.branch.hash);
+    }
+
+    public TransactionViewModel getTrunkTransaction() {
+        return getTransaction(transaction.trunk.hash);
     }
 
     public synchronized int[] trits() {
@@ -239,29 +247,29 @@ public class Transaction {
         return trits;
     }
 
-    public static void dump(final byte[] mainBuffer, final byte[] hash, final Transaction transaction) {
+    public static void dump(final byte[] mainBuffer, final byte[] hash, final TransactionViewModel transactionViewModel) {
 
         System.arraycopy(new byte[AbstractStorage.CELL_SIZE], 0, mainBuffer, 0, AbstractStorage.CELL_SIZE);
         System.arraycopy(hash, 0, mainBuffer, HASH_OFFSET, HASH_SIZE);
 
-        if (transaction == null) {
+        if (transactionViewModel == null) {
             mainBuffer[TYPE_OFFSET] = Storage.PREFILLED_SLOT;
         } else {
-            mainBuffer[TYPE_OFFSET] = (byte)transaction.type;
-            System.arraycopy(transaction.getBytes(), 0, mainBuffer, BYTES_OFFSET, BYTES_SIZE);
-            System.arraycopy(transaction.getAddress(), 0, mainBuffer, ADDRESS_OFFSET, ADDRESS_SIZE);
-            Storage.setValue(mainBuffer, VALUE_OFFSET, transaction.value());
-            final int[] trits = transaction.trits();
+            mainBuffer[TYPE_OFFSET] = (byte) transactionViewModel.type;
+            System.arraycopy(transactionViewModel.getBytes(), 0, mainBuffer, BYTES_OFFSET, BYTES_SIZE);
+            System.arraycopy(transactionViewModel.getAddress(), 0, mainBuffer, ADDRESS_OFFSET, ADDRESS_SIZE);
+            Storage.setValue(mainBuffer, VALUE_OFFSET, transactionViewModel.value());
+            final int[] trits = transactionViewModel.trits();
             System.arraycopy(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, mainBuffer, TAG_OFFSET, TAG_SIZE);
-            Storage.setValue(mainBuffer, CURRENT_INDEX_OFFSET, transaction.getCurrentIndex());
-            Storage.setValue(mainBuffer, LAST_INDEX_OFFSET, transaction.getLastIndex());
+            Storage.setValue(mainBuffer, CURRENT_INDEX_OFFSET, transactionViewModel.getCurrentIndex());
+            Storage.setValue(mainBuffer, LAST_INDEX_OFFSET, transactionViewModel.getLastIndex());
             System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, mainBuffer, BUNDLE_OFFSET, BUNDLE_SIZE);
-            System.arraycopy(transaction.getTrunkTransactionHash(), 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
-            System.arraycopy(transaction.getBranchTransactionHash(), 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
+            System.arraycopy(transactionViewModel.getTrunkTransactionHash(), 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
+            System.arraycopy(transactionViewModel.getBranchTransactionHash(), 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
 
-            long approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.getTrunkTransactionHash());
+            long approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transactionViewModel.getTrunkTransactionHash());
             if (approvedTransactionPointer == 0) {
-                Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.getTrunkTransactionHash();
+                Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transactionViewModel.getTrunkTransactionHash();
             } else {
 
                 if (approvedTransactionPointer < 0) {
@@ -272,11 +280,11 @@ public class Transaction {
                         (int)(index >> 3),
                         (byte)(StorageTransactions.instance().transactionsTipsFlags().get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
             }
-            if (!Arrays.equals(transaction.getBranchTransactionHash(), transaction.getTrunkTransactionHash())) {
+            if (!Arrays.equals(transactionViewModel.getBranchTransactionHash(), transactionViewModel.getTrunkTransactionHash())) {
 
-                approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.getBranchTransactionHash());
+                approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transactionViewModel.getBranchTransactionHash());
                 if (approvedTransactionPointer == 0) {
-                    Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.getBranchTransactionHash();
+                    Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transactionViewModel.getBranchTransactionHash();
                 } else {
 
                     if (approvedTransactionPointer < 0) {
@@ -292,12 +300,12 @@ public class Transaction {
     }
 
     public Future<Boolean> store() {
-        return TangleAccessor.instance().save(transaction);
+        return Tangle.instance().save(transaction);
     }
 
-    public Transaction[] getBundleTransactions() {
-        TangleAccessor accessor = TangleAccessor.instance();
-        Future<Object[]> transactionFuture = accessor.queryMany(com.iota.iri.model.Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE);
+    public TransactionViewModel[] getBundleTransactions() {
+        Tangle accessor = Tangle.instance();
+        Future<Object[]> transactionFuture = accessor.query(com.iota.iri.model.Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE);
         com.iota.iri.model.Transaction[] transactionModels = new com.iota.iri.model.Transaction[0];
         try {
             transactionModels = Arrays.stream(transactionFuture.get()).toArray(com.iota.iri.model.Transaction[]::new);
@@ -306,18 +314,18 @@ public class Transaction {
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        Transaction[] transactions = Arrays.stream(transactionModels).map(bundleTransaction -> new Transaction((com.iota.iri.model.Transaction) bundleTransaction)).toArray(Transaction[]::new);
+        TransactionViewModel[] transactionViewModels = Arrays.stream(transactionModels).map(bundleTransaction -> new TransactionViewModel((com.iota.iri.model.Transaction) bundleTransaction)).toArray(TransactionViewModel[]::new);
                 //.get(45, TimeUnit.MILLISECONDS))
-        return transactions;
+        return transactionViewModels;
     }
 
     public static Hash[] hashesFromQuery(String index, Object value) {
         Hash[] transactionHashes;
-        TangleAccessor accessor = TangleAccessor.instance();
-        Future<Object[]> tipTxs = accessor.queryMany(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE);
+        Tangle accessor = Tangle.instance();
+        Future<Object[]> tipTxs = accessor.query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE);
         try {
             com.iota.iri.model.Transaction[] transactionModels = Arrays.stream(tipTxs.get()).toArray(com.iota.iri.model.Transaction[]::new);
-            transactionHashes = Arrays.stream(transactionModels).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
+            transactionHashes = Arrays.stream(transactionModels).map(transaction -> transaction.hash).toArray(Hash[]::new);
         } catch (Exception e) {
             e.printStackTrace();
             transactionHashes = new Hash[0];
@@ -326,8 +334,9 @@ public class Transaction {
     }
 
     public static Hash[] fromApprovers(Hash hash) {
-        return Transaction.fromHash(hash).getApprovers();
+        return TransactionViewModel.fromHash(hash).getApprovers();
     }
+
     public static Hash[] fromTag(Hash tag) {
         return hashesFromQuery("tag", tag.bytes());
     }
@@ -338,18 +347,23 @@ public class Transaction {
         return hashesFromQuery("address", address.bytes());
     }
 
+    public static int getTransactionAnalyzedFlag(byte[] hash) {
+        int analyzedTransactionFlag = 0;
+        return analyzedTransactionFlag;
+    }
+
     public static Hash[] getTipHashes() {
         return hashesFromQuery("isTip", true);
     }
 
     public Hash[] getApprovers() {
         Hash[] approvers;
-        TangleAccessor accessor = TangleAccessor.instance();
-        Future<Object[]> branchApprovers = accessor.queryMany(com.iota.iri.model.Transaction.class, "branch", transaction.hash, BUNDLE_SIZE);
-        Future<Object[]> trunkApprovers = accessor.queryMany(com.iota.iri.model.Transaction.class, "trunk", transaction.hash, BUNDLE_SIZE);
+        Tangle accessor = Tangle.instance();
+        Future<Object[]> branchApprovers = accessor.query(com.iota.iri.model.Transaction.class, "branch", transaction.hash, BUNDLE_SIZE);
+        Future<Object[]> trunkApprovers = accessor.query(com.iota.iri.model.Transaction.class, "trunk", transaction.hash, BUNDLE_SIZE);
         try {
             com.iota.iri.model.Transaction[] approverTransactions = Arrays.stream(ArrayUtils.addAll(branchApprovers.get(), trunkApprovers.get())).toArray(com.iota.iri.model.Transaction[]::new);
-            approvers = Arrays.stream(approverTransactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
+            approvers = Arrays.stream(approverTransactions).map(transaction -> transaction.hash).toArray(Hash[]::new);
         } catch (Exception e) {
             e.printStackTrace();
             approvers = new Hash[0];
@@ -373,24 +387,24 @@ public class Transaction {
         return transaction.hash;
     }
 
-    public byte[] getAddress() {
-        return transaction.address;
+    public AddressViewModel getAddress() {
+        return new AddressViewModel(transaction.address.bytes);
     }
 
-    public byte[] getTag() {
-        return transaction.tag;
+    public TagViewModel getTag() {
+        return new TagViewModel(transaction.tag);
     }
 
     public byte[] getBundleHash() {
-        return transaction.bundle;
+        return transaction.bundle.hash;
     }
 
     public byte[] getTrunkTransactionHash() {
-        return transaction.trunk;
+        return transaction.trunk.hash;
     }
 
     public byte[] getBranchTransactionHash() {
-        return transaction.branch;
+        return transaction.branch.hash;
     }
 
     public final long getValue() {

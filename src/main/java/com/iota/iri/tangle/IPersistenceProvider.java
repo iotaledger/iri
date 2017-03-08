@@ -15,17 +15,18 @@ public interface IPersistenceProvider {
     boolean save(Object o) throws Exception;
     boolean get(Object c, Object key) throws Exception;
 
-    void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Set<Field>> modelIndices, Map<Class<?>, Set<Field>> modelStoredItems);
+    void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Map<String, ModelFieldInfo>> modelItems);
 
-    boolean query(Object model, String index, Object value) throws Exception;
+    Object query(Class<?> model, String index, Object value, int keyLength) throws Exception;
 
     boolean update(Object model, String item, Object value) throws Exception;
 
     Object[] queryMany(Class<?> modelClass, String index, Object key, int keyLength) throws Exception;
     /*
-    IStorageQuery<T> find(int index);
-    interface IStorageQuery<T> {
-        Function<String, byte[]> where(String s);
+    interface QueryBuilder {
+        QueryBuilder where(String index, Object value);
+        QueryBuilder and();
+        Object execute();
     }
     */
 }

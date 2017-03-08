@@ -8,10 +8,9 @@ import java.nio.file.StandardOpenOption;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.iota.iri.viewModel.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.iota.iri.viewModel.Transaction;
 
 public class StorageBundle extends AbstractStorage {
 
@@ -79,17 +78,17 @@ public class StorageBundle extends AbstractStorage {
 	public long bundlePointer(final byte[] hash) {
 		synchronized (Storage.class) {
         long pointer = ((hash[0] + 128) + ((hash[1] + 128) << 8)) << 11;
-        for (int depth = 2; depth < Transaction.BUNDLE_SIZE; depth++) {
+        for (int depth = 2; depth < TransactionViewModel.BUNDLE_SIZE; depth++) {
 
             ((ByteBuffer)bundlesChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
 
-            if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
+            if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
                 if ((pointer = value(mainBuffer, (hash[depth] + 128) << 3)) == 0) {
                     return 0;
                 }
             } else {
-                for (; depth < Transaction.BUNDLE_SIZE; depth++) {
-                    if (mainBuffer[Transaction.HASH_OFFSET + depth] != hash[depth]) {
+                for (; depth < TransactionViewModel.BUNDLE_SIZE; depth++) {
+                    if (mainBuffer[TransactionViewModel.HASH_OFFSET + depth] != hash[depth]) {
                         return 0;
                     }
                 }
@@ -138,24 +137,24 @@ public class StorageBundle extends AbstractStorage {
     	}
     }
     
-    public void updateBundle(final long transactionPointer, final Transaction transaction) {
+    public void updateBundle(final long transactionPointer, final TransactionViewModel transactionViewModel) {
 		{
-            long pointer = ((transaction.getBundleHash()[0] + 128) + ((transaction.getBundleHash()[1] + 128) << 8)) << 11, prevPointer = 0;
-            for (int depth = 2; depth < Transaction.BUNDLE_SIZE; depth++) {
+            long pointer = ((transactionViewModel.getBundleHash()[0] + 128) + ((transactionViewModel.getBundleHash()[1] + 128) << 8)) << 11, prevPointer = 0;
+            for (int depth = 2; depth < TransactionViewModel.BUNDLE_SIZE; depth++) {
 
                 ((ByteBuffer)bundlesChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
 
-                if (mainBuffer[Transaction.TYPE_OFFSET] == GROUP) {
+                if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
 
                     prevPointer = pointer;
-                    if ((pointer = value(mainBuffer, (transaction.getBundleHash()[depth] + 128) << 3)) == 0) {
+                    if ((pointer = value(mainBuffer, (transactionViewModel.getBundleHash()[depth] + 128) << 3)) == 0) {
 
-                        setValue(mainBuffer, (transaction.getBundleHash()[depth] + 128) << 3, bundlesNextPointer);
+                        setValue(mainBuffer, (transactionViewModel.getBundleHash()[depth] + 128) << 3, bundlesNextPointer);
                         ((ByteBuffer)bundlesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                         emptyMainBuffer();
-                        mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                        System.arraycopy(transaction.getBundleHash(), 0, mainBuffer, 8, Transaction.BUNDLE_SIZE);
+                        mainBuffer[TransactionViewModel.TYPE_OFFSET] = FILLED_SLOT;
+                        System.arraycopy(transactionViewModel.getBundleHash(), 0, mainBuffer, 8, TransactionViewModel.BUNDLE_SIZE);
                         setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                         appendToBundles();
                         break;
@@ -165,30 +164,30 @@ public class StorageBundle extends AbstractStorage {
 
                     boolean sameBundle = true;
 
-                    for (int i = depth; i < Transaction.BUNDLE_SIZE; i++) {
+                    for (int i = depth; i < TransactionViewModel.BUNDLE_SIZE; i++) {
 
-                        if (mainBuffer[Transaction.HASH_OFFSET + i] != transaction.getBundleHash()[i]) {
+                        if (mainBuffer[TransactionViewModel.HASH_OFFSET + i] != transactionViewModel.getBundleHash()[i]) {
 
-                            final int differentHashByte = mainBuffer[Transaction.HASH_OFFSET + i];
+                            final int differentHashByte = mainBuffer[TransactionViewModel.HASH_OFFSET + i];
 
                             ((ByteBuffer)bundlesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
-                            setValue(mainBuffer, (transaction.getBundleHash()[depth - 1] + 128) << 3, bundlesNextPointer);
+                            setValue(mainBuffer, (transactionViewModel.getBundleHash()[depth - 1] + 128) << 3, bundlesNextPointer);
                             ((ByteBuffer)bundlesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                             for (int j = depth; j < i; j++) {
                                 emptyMainBuffer();
-                                setValue(mainBuffer, (transaction.getBundleHash()[j] + 128) << 3, bundlesNextPointer + CELL_SIZE);
+                                setValue(mainBuffer, (transactionViewModel.getBundleHash()[j] + 128) << 3, bundlesNextPointer + CELL_SIZE);
                                 appendToBundles();
                             }
 
                             System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
                             setValue(mainBuffer, (differentHashByte + 128) << 3, pointer);
-                            setValue(mainBuffer, (transaction.getBundleHash()[i] + 128) << 3, bundlesNextPointer + CELL_SIZE);
+                            setValue(mainBuffer, (transactionViewModel.getBundleHash()[i] + 128) << 3, bundlesNextPointer + CELL_SIZE);
                             appendToBundles();
 
                             System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
-                            mainBuffer[Transaction.TYPE_OFFSET] = FILLED_SLOT;
-                            System.arraycopy(transaction.getBundleHash(), 0, mainBuffer, 8, Transaction.BUNDLE_SIZE);
+                            mainBuffer[TransactionViewModel.TYPE_OFFSET] = FILLED_SLOT;
+                            System.arraycopy(transactionViewModel.getBundleHash(), 0, mainBuffer, 8, TransactionViewModel.BUNDLE_SIZE);
                             setValue(mainBuffer, ZEROTH_POINTER_OFFSET, transactionPointer);
                             appendToBundles();
 

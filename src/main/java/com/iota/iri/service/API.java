@@ -11,12 +11,12 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import com.iota.iri.*;
 
 import com.iota.iri.service.dto.*;
+import com.iota.iri.viewModel.TransactionViewModel;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,13 +30,8 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
-import com.iota.iri.viewModel.Transaction;
 import com.iota.iri.service.storage.Storage;
-import com.iota.iri.service.storage.StorageAddresses;
-import com.iota.iri.service.storage.StorageApprovers;
-import com.iota.iri.service.storage.StorageBundle;
 import com.iota.iri.service.storage.StorageScratchpad;
-import com.iota.iri.service.storage.StorageTags;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
 
@@ -224,9 +219,9 @@ public class API {
     private AbstractResponse getTrytesStatement(List<String> hashes) {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
-            final Transaction transaction = StorageTransactions.instance().loadTransaction((new Hash(hash)).bytes());
-            if (transaction != null) {
-                elements.add(Converter.trytes(transaction.trits()));
+            final TransactionViewModel transactionViewModel = StorageTransactions.instance().loadTransaction((new Hash(hash)).bytes());
+            if (transactionViewModel != null) {
+                elements.add(Converter.trytes(transactionViewModel.trits()));
             }
         }
         return GetTrytesResponse.create(elements);
@@ -278,8 +273,8 @@ public class API {
     private AbstractResponse storeTransactionStatement(final List<String> trys) {
         long pointer;
         for (final String trytes : trys) {
-            final Transaction transaction = new Transaction(Converter.trits(trytes));
-            pointer = StorageTransactions.instance().storeTransaction(transaction.getHash(), transaction, false);
+            final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
+            pointer = StorageTransactions.instance().storeTransaction(transactionViewModel.getHash(), transactionViewModel, false);
             StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
         }
         return AbstractResponse.createEmptyResponse();
@@ -318,12 +313,12 @@ public class API {
 
                     if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
-                        final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                        if (transaction.type == Storage.PREFILLED_SLOT) {
+                        final TransactionViewModel transactionViewModel = StorageTransactions.instance().loadTransaction(pointer);
+                        if (transactionViewModel.type == Storage.PREFILLED_SLOT) {
                             return ErrorResponse.create("The subtangle is not solid");
                         } else {
 
-                            final Hash transactionHash = new Hash(transaction.getHash(), 0, Transaction.HASH_SIZE);
+                            final Hash transactionHash = new Hash(transactionViewModel.getHash(), 0, TransactionViewModel.HASH_SIZE);
                             for (int i = 0; i < inclusionStates.length; i++) {
 
                                 if (!inclusionStates[i] && transactionHash.equals(transactions.get(i))) {
@@ -335,8 +330,8 @@ public class API {
                                     }
                                 }
                             }
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                            nonAnalyzedTransactions.offer(transactionViewModel.trunkTransactionPointer);
+                            nonAnalyzedTransactions.offer(transactionViewModel.branchTransactionPointer);
                         }
                     }
                 }
@@ -349,7 +344,7 @@ public class API {
         final Set<byte[]> bundlesTransactions = new HashSet<>();
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
-                bundlesTransactions.addAll(Arrays.stream(Transaction.fromBundle(new Hash(bundle))).map(t -> t.bytes()).collect(Collectors.toSet()));
+                bundlesTransactions.addAll(Arrays.stream(TransactionViewModel.fromBundle(new Hash(bundle))).map(t -> t.bytes()).collect(Collectors.toSet()));
             }
         }
 
@@ -362,7 +357,7 @@ public class API {
                 if (address.length() != 81) {
                     log.error("Address {} doesn't look a valid address", address);
                 }
-                addressesTransactions.addAll(Arrays.stream(Transaction.fromAddress(new Hash(address))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
+                addressesTransactions.addAll(Arrays.stream(TransactionViewModel.fromAddress(new Hash(address))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
             }
         }
 
@@ -372,7 +367,7 @@ public class API {
                 while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
                     tag += Converter.TRYTE_ALPHABET.charAt(0);
                 }
-                tagsTransactions.addAll(Arrays.stream(Transaction.fromTag(new Hash(tag))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
+                tagsTransactions.addAll(Arrays.stream(TransactionViewModel.fromTag(new Hash(tag))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
             }
         }
 
@@ -380,7 +375,7 @@ public class API {
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
-                approveeTransactions.addAll(Arrays.stream(Transaction.fromApprovers(new Hash(approvee))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
+                approveeTransactions.addAll(Arrays.stream(TransactionViewModel.fromApprovers(new Hash(approvee))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
                 /*
                 approveeTransactions.addAll(StorageApprovers.instance().approveeTransactions(
                         StorageApprovers.instance().approveePointer((new Hash(approvee)).bytes())));
@@ -406,7 +401,7 @@ public class API {
 
         final List<String> elements = foundTransactions.stream()
                 .map(pointer -> new Hash(pointer, 0,
-                        Transaction.HASH_SIZE).toString())
+                        TransactionViewModel.HASH_SIZE).toString())
                 .collect(Collectors.toCollection(LinkedList::new));
 
         return FindTransactionsResponse.create(elements);
@@ -414,9 +409,9 @@ public class API {
 
     private AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
         for (final String tryte : trytes2) {
-            final Transaction transaction = new Transaction(Converter.trits(tryte));
-            transaction.weightMagnitude = Curl.HASH_LENGTH;
-            Node.instance().broadcast(transaction);
+            final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(tryte));
+            transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
+            Node.instance().broadcast(transactionViewModel);
         }
         return AbstractResponse.createEmptyResponse();
     }
@@ -445,24 +440,26 @@ public class API {
 
             final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone.bytes()));
                     //Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.bytes())));
-            byte[] pointer;
-            while ((pointer = nonAnalyzedTransactions.poll()) != null) {
+            byte[] hash;
+            long pointer;
+            while ((hash = nonAnalyzedTransactions.poll()) != null) {
 
+                pointer = StorageTransactions.instance().transactionPointer(hash);
                 if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
-                    final Transaction transaction = Transaction.fromHash(pointer);
+                    final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
 
-                    if (transaction.value() != 0) {
+                    if (transactionViewModel.value() != 0) {
 
-                        final Hash address = new Hash(transaction.getAddress(), 0, Transaction.ADDRESS_SIZE);
+                        final Hash address = new Hash(transactionViewModel.getAddress().getHash().bytes(), 0, TransactionViewModel.ADDRESS_SIZE);
                         final Long balance = balances.get(address);
                         if (balance != null) {
 
-                            balances.put(address, balance + transaction.value());
+                            balances.put(address, balance + transactionViewModel.value());
                         }
                     }
-                    nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
-                    nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
+                    nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                 }
             }
         }
@@ -491,7 +488,7 @@ public class API {
     
     private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
-        final List<Transaction> transactions = new LinkedList<>();
+        final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
 
         Hash prevTransaction = null;
 
@@ -500,18 +497,18 @@ public class API {
             try {
                 final int[] transactionTrits = Converter.trits(tryte);
                 System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
-                        transactionTrits, Transaction.TRUNK_TRANSACTION_TRINARY_OFFSET,
-                        Transaction.TRUNK_TRANSACTION_TRINARY_SIZE);
+                        transactionTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
+                        TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
                 System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
-                        transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
-                        Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
+                        transactionTrits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
+                        TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
                 if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
-                    transactions.clear();
+                    transactionViewModels.clear();
                     break;
                 }
-                final Transaction transaction = new Transaction(transactionTrits);
-                transactions.add(transaction);
-                prevTransaction = new Hash(transaction.getHash(), 0, Transaction.HASH_SIZE);
+                final TransactionViewModel transactionViewModel = new TransactionViewModel(transactionTrits);
+                transactionViewModels.add(transactionViewModel);
+                prevTransaction = new Hash(transactionViewModel.getHash(), 0, TransactionViewModel.HASH_SIZE);
             } finally {
                 API.incEllapsedTime_PoW(System.nanoTime() - startTime);
                 API.incCounter_PoW();
@@ -528,8 +525,8 @@ public class API {
         }
 
         final List<String> elements = new LinkedList<>();
-        for (int i = transactions.size(); i-- > 0; ) {
-            elements.add(Converter.trytes(transactions.get(i).trits()));
+        for (int i = transactionViewModels.size(); i-- > 0; ) {
+            elements.add(Converter.trytes(transactionViewModels.get(i).trits()));
         }
         return AttachToTangleResponse.create(elements);
     }

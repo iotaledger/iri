@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.viewModel.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,6 @@ import com.iota.iri.Neighbor;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
-import com.iota.iri.viewModel.Transaction;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.service.storage.StorageTransactions;
@@ -57,7 +57,7 @@ public class Node {
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
-    private final ConcurrentSkipListSet<Transaction> queuedTransactions = weightQueue();
+    private final ConcurrentSkipListSet<TransactionViewModel> queuedTransactionViewModels = weightQueue();
 
     private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
@@ -177,8 +177,8 @@ public class Node {
         return () -> {
 
             final Curl curl = new Curl();
-            final int[] receivedTransactionTrits = new int[Transaction.TRINARY_SIZE];
-            final byte[] requestedTransaction = new byte[Transaction.HASH_SIZE];
+            final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
+            final byte[] requestedTransaction = new byte[TransactionViewModel.HASH_SIZE];
 
             log.info("Spawning Receiver Thread");
 
@@ -197,21 +197,21 @@ public class Node {
                             if (neighbor.getAddress().equals(receivingPacket.getSocketAddress())) {
                                 try {
                                     neighbor.incAllTransactions();
-                                    final Transaction receivedTransaction = new Transaction(receivingPacket.getData(), receivedTransactionTrits, curl);
-                                    long timestamp = (int) Converter.longValue(receivedTransaction.trits(), Transaction.TIMESTAMP_TRINARY_OFFSET, 27);
+                                    final TransactionViewModel receivedTransactionViewModel = new TransactionViewModel(receivingPacket.getData(), receivedTransactionTrits, curl);
+                                    long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                                     if (timestamp > TIMESTAMP_THRESHOLD) {
-                                        //if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransaction.getHash(), receivedTransaction, false)) != 0L) {
-                                        if(!receivedTransaction.store().get()) {
-                                            receivedTransaction.setArrivalTime(System.currentTimeMillis() / 1000L);
-                                            receivedTransaction.update("arrivalTime");
+                                        //if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransactionViewModel.getHash(), receivedTransactionViewModel, false)) != 0L) {
+                                        if(!receivedTransactionViewModel.store().get()) {
+                                            receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
+                                            receivedTransactionViewModel.update("arrivalTime");
                                             neighbor.incNewTransactions();
-                                            broadcast(receivedTransaction);
+                                            broadcast(receivedTransactionViewModel);
                                         }
 
                                         byte[] transactionPointer = Hash.NULL_HASH.bytes();
-                                        System.arraycopy(receivingPacket.getData(), Transaction.SIZE, requestedTransaction, 0, Transaction.HASH_SIZE);
+                                        System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
-                                        if (Arrays.equals(requestedTransaction, Transaction.NULL_TRANSACTION_HASH_BYTES)
+                                        if (Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)
                                                 && (Milestone.latestMilestoneIndex > 0)
                                                 && (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) {
                                             //
@@ -225,21 +225,21 @@ public class Node {
                                                 if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                                     transactionPointer = mBytes;
 
-                                                    final Transaction milestoneTx = StorageTransactions.instance().loadTransaction(transactionPointer);
+                                                    final TransactionViewModel milestoneTx = StorageTransactions.instance().loadTransaction(transactionPointer);
                                                     final Bundle bundle = new Bundle(milestoneTx.getBundleHash());
                                                     if (bundle != null) {
-                                                        Collection<List<Transaction>> tList = bundle.getTransactions();
+                                                        Collection<List<TransactionViewModel>> tList = bundle.getTransactions();
                                                         if (tList != null && tList.size() != 0) {
-                                                            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
-                                                                if (bundleTransactions.size() > 1) {
-                                                                    transactionPointer = bundleTransactions.get(1).getHash();
+                                                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
+                                                                if (bundleTransactionViewModels.size() > 1) {
+                                                                    transactionPointer = bundleTransactionViewModels.get(1).getHash();
                                                                 }
                                                             }
                                                         }
                                                     }
                                                 }
                                             } else if (randomTipBroadcastCounter % 24 == 0) {
-                                                final Hash[] tips = Transaction.getTipHashes();
+                                                final Hash[] tips = TransactionViewModel.getTipHashes();
                                                 //final String[] tips = StorageTransactions.instance().tips().stream().map(Hash::toString).toArray(size -> new String[size]);
                                                 final Hash rndTipHash = tips[rnd.nextInt(tips.length)];
 
@@ -251,16 +251,16 @@ public class Node {
                                             transactionPointer = requestedTransaction;
                                         }
                                         if (!Arrays.equals(transactionPointer, Hash.NULL_HASH.bytes())
-                                                && transactionPointer > (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) {
+                                                && transactionPointer != Hash.NULL_HASH.bytes()) {
                                             synchronized (sendingPacket) {
-                                                System.arraycopy(Transaction.fromHash(transactionPointer).getBytes(), 0, sendingPacket.getData(), 0, Transaction.SIZE);
-                                                StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(), Transaction.SIZE);
+                                                System.arraycopy(TransactionViewModel.fromHash(transactionPointer).getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
+                                                StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
                                                 neighbor.send(sendingPacket);
                                             }
                                         }
                                     }
                                 } catch (final RuntimeException e) {
-                                    log.error("Received an Invalid Transaction. Dropping it...");
+                                    log.error("Received an Invalid TransactionViewModel. Dropping it...");
                                     neighbor.incInvalidTransactions();
                                 }
                                 break;
@@ -285,16 +285,16 @@ public class Node {
             while (!shuttingDown.get()) {
 
                 try {
-                    final Transaction transaction = queuedTransactions.pollFirst();
-                    if (transaction != null) {
+                    final TransactionViewModel transactionViewModel = queuedTransactionViewModels.pollFirst();
+                    if (transactionViewModel != null) {
 
                         for (final Neighbor neighbor : neighbors) {
                             try {
                                 synchronized (sendingPacket) {
-                                    System.arraycopy(transaction.getBytes(), 0, sendingPacket.getData(), 0,
-                                            Transaction.SIZE);
+                                    System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0,
+                                            TransactionViewModel.SIZE);
                                     StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(),
-                                            Transaction.SIZE);
+                                            TransactionViewModel.SIZE);
                                     neighbor.send(sendingPacket);
                                 }
                             } catch (final Exception e) {
@@ -319,10 +319,10 @@ public class Node {
             while (!shuttingDown.get()) {
 
                 try {
-                    final Transaction transaction = Transaction.fromHash(Milestone.latestMilestone);
-                    System.arraycopy(transaction.getBytes(), 0, tipRequestingPacket.getData(), 0, Transaction.SIZE);
-                    System.arraycopy(transaction.getHash(), 0, tipRequestingPacket.getData(), Transaction.SIZE,
-                            Transaction.HASH_SIZE);
+                    final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Milestone.latestMilestone);
+                    System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
+                    System.arraycopy(transactionViewModel.getHash(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
+                            TransactionViewModel.HASH_SIZE);
 
                     neighbors.forEach(n -> n.send(tipRequestingPacket));
 
@@ -335,10 +335,10 @@ public class Node {
         };
     }
 
-    private static ConcurrentSkipListSet<Transaction> weightQueue() {
+    private static ConcurrentSkipListSet<TransactionViewModel> weightQueue() {
         return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
             if (transaction1.weightMagnitude == transaction2.weightMagnitude) {
-                for (int i = 0; i < Transaction.HASH_SIZE; i++) {
+                for (int i = 0; i < TransactionViewModel.HASH_SIZE; i++) {
                     if (transaction1.getHash()[i] != transaction2.getHash()[i]) {
                         return transaction2.getHash()[i] - transaction1.getHash()[i];
                     }
@@ -349,10 +349,10 @@ public class Node {
         });
     }
 
-    public void broadcast(final Transaction transaction) {
-        queuedTransactions.add(transaction);
-        if (queuedTransactions.size() > QUEUE_SIZE) {
-            queuedTransactions.pollLast();
+    public void broadcast(final TransactionViewModel transactionViewModel) {
+        queuedTransactionViewModels.add(transactionViewModel);
+        if (queuedTransactionViewModels.size() > QUEUE_SIZE) {
+            queuedTransactionViewModels.pollLast();
         }
     }
 
@@ -397,7 +397,7 @@ public class Node {
     }
 
     public int queuedTransactionsSize() {
-        return queuedTransactions.size();
+        return queuedTransactionViewModels.size();
     }
 
     public int howManyNeighbors() {

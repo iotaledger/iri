@@ -5,12 +5,10 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeoutException;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
-import com.iota.iri.viewModel.Transaction;
+import com.iota.iri.viewModel.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
 /**
@@ -21,33 +19,33 @@ import com.iota.iri.utils.Converter;
  */
 public class Bundle {
 
-    private final List<List<Transaction>> transactions = new LinkedList<>();
+    private final List<List<TransactionViewModel>> transactions = new LinkedList<>();
 
     public Bundle(final byte[] bundle) {
 
-        final Transaction bundleTransaction = Transaction.fromHash(bundle);
-        if(bundleTransaction == null) {
+        final TransactionViewModel bundleTransactionViewModel = TransactionViewModel.fromHash(bundle);
+        if(bundleTransactionViewModel == null) {
             return;
         }
-        final Map<byte[], Transaction> bundleTransactions = loadTransactionsFromTangle(bundleTransaction);
+        final Map<byte[], TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(bundleTransactionViewModel);
         
-        for (Transaction transaction : bundleTransactions.values()) {
+        for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
-            if (transaction.getCurrentIndex() == 0 && transaction.getValidity() >= 0) {
+            if (transactionViewModel.getCurrentIndex() == 0 && transactionViewModel.getValidity() >= 0) {
 
-                final List<Transaction> instanceTransactions = new LinkedList<>();
+                final List<TransactionViewModel> instanceTransactionViewModels = new LinkedList<>();
 
-                final long lastIndex = transaction.getLastIndex();
+                final long lastIndex = transactionViewModel.getLastIndex();
                 long bundleValue = 0;
                 int i = 0;
             MAIN_LOOP:
                 while (true) {
 
-                    instanceTransactions.add(transaction);
+                    instanceTransactionViewModels.add(transactionViewModel);
 
-                    if (transaction.getCurrentIndex() != i || transaction.getLastIndex() != lastIndex
-                            || ((bundleValue += transaction.value()) < -Transaction.SUPPLY || bundleValue > Transaction.SUPPLY)) {
-                        instanceTransactions.get(0).setValidity(-1, true);
+                    if (transactionViewModel.getCurrentIndex() != i || transactionViewModel.getLastIndex() != lastIndex
+                            || ((bundleValue += transactionViewModel.value()) < -TransactionViewModel.SUPPLY || bundleValue > TransactionViewModel.SUPPLY)) {
+                        instanceTransactionViewModels.get(0).setValidity(-1, true);
                         break;
                     }
 
@@ -55,22 +53,22 @@ public class Bundle {
 
                         if (bundleValue == 0) {
 
-                            if (instanceTransactions.get(0).getValidity() == 0) {
+                            if (instanceTransactionViewModels.get(0).getValidity() == 0) {
 
                                 final Curl bundleHash = new Curl();
-                                for (final Transaction transaction2 : instanceTransactions) {
-                                    bundleHash.absorb(transaction2.trits(), Transaction.ESSENCE_TRINARY_OFFSET, Transaction.ESSENCE_TRINARY_SIZE);
+                                for (final TransactionViewModel transactionViewModel2 : instanceTransactionViewModels) {
+                                    bundleHash.absorb(transactionViewModel2.trits(), TransactionViewModel.ESSENCE_TRINARY_OFFSET, TransactionViewModel.ESSENCE_TRINARY_SIZE);
                                 }
-                                final int[] bundleHashTrits = new int[Transaction.BUNDLE_TRINARY_SIZE];
+                                final int[] bundleHashTrits = new int[TransactionViewModel.BUNDLE_TRINARY_SIZE];
                                 bundleHash.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
-                                if (Arrays.equals(Converter.bytes(bundleHashTrits, 0, Transaction.BUNDLE_TRINARY_SIZE), instanceTransactions.get(0).getBundleHash())) {
+                                if (Arrays.equals(Converter.bytes(bundleHashTrits, 0, TransactionViewModel.BUNDLE_TRINARY_SIZE), instanceTransactionViewModels.get(0).getBundleHash())) {
 
                                     final int[] normalizedBundle = ISS.normalizedBundle(bundleHashTrits);
 
-                                    for (int j = 0; j < instanceTransactions.size(); ) {
+                                    for (int j = 0; j < instanceTransactionViewModels.size(); ) {
 
-                                        transaction = instanceTransactions.get(j);
-                                        if (transaction.value() < 0) { // let's recreate the address of the transaction.
+                                        transactionViewModel = instanceTransactionViewModels.get(j);
+                                        if (transactionViewModel.value() < 0) { // let's recreate the address of the transactionViewModel.
 
                                             final Curl address = new Curl();
                                             int offset = 0;
@@ -78,17 +76,17 @@ public class Bundle {
 
                                                 address.absorb(
                                                         ISS.digest(Arrays.copyOfRange(normalizedBundle, offset, offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE)),
-                                                        Arrays.copyOfRange(instanceTransactions.get(j).trits(), Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE)),
+                                                        Arrays.copyOfRange(instanceTransactionViewModels.get(j).trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE)),
                                                         0, Curl.HASH_LENGTH);
 
-                                            } while (++j < instanceTransactions.size()
-                                                    && Arrays.equals(instanceTransactions.get(j).getAddress(), transaction.getAddress())
-                                                    && instanceTransactions.get(j).value() == 0);
+                                            } while (++j < instanceTransactionViewModels.size()
+                                                    && Arrays.equals(instanceTransactionViewModels.get(j).getAddress().getHash().bytes(), transactionViewModel.getAddress().getHash().bytes())
+                                                    && instanceTransactionViewModels.get(j).value() == 0);
                                             
-                                            final int[] addressTrits = new int[Transaction.ADDRESS_TRINARY_SIZE];
+                                            final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
                                             address.squeeze(addressTrits, 0, addressTrits.length);
-                                            if (!Arrays.equals(Converter.bytes(addressTrits, 0, Transaction.ADDRESS_TRINARY_SIZE), transaction.getAddress())) {
-                                                instanceTransactions.get(0).setValidity(-1, true);
+                                            if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
+                                                instanceTransactionViewModels.get(0).setValidity(-1, true);
                                                 break MAIN_LOOP;
                                             }
                                         } else {
@@ -96,22 +94,22 @@ public class Bundle {
                                         }
                                     }
 
-                                    instanceTransactions.get(0).setValidity(1, true);
-                                    transactions.add(instanceTransactions);
+                                    instanceTransactionViewModels.get(0).setValidity(1, true);
+                                    transactions.add(instanceTransactionViewModels);
                                 } else {
-                                    instanceTransactions.get(0).setValidity(-1, true);
+                                    instanceTransactionViewModels.get(0).setValidity(-1, true);
                                 }
                             } else {
-                                transactions.add(instanceTransactions);
+                                transactions.add(instanceTransactionViewModels);
                             }
                         } else {
-                            instanceTransactions.get(0).setValidity(-1, true);
+                            instanceTransactionViewModels.get(0).setValidity(-1, true);
                         }
                         break;
 
                     } else {
-                        transaction = bundleTransactions.get(transaction.trunkTransactionPointer);
-                        if (transaction == null) {
+                        transactionViewModel = bundleTransactions.get(transactionViewModel.trunkTransactionPointer);
+                        if (transactionViewModel == null) {
                             break;
                         }
                     }
@@ -121,11 +119,11 @@ public class Bundle {
     }
 
 
-    private Map<byte[], Transaction> loadTransactionsFromTangle(final Transaction bundleTransaction) {
-        final Map<byte[], Transaction> bundleTransactions = new HashMap<>();
+    private Map<byte[], TransactionViewModel> loadTransactionsFromTangle(final TransactionViewModel bundleTransactionViewModel) {
+        final Map<byte[], TransactionViewModel> bundleTransactions = new HashMap<>();
         try {
-            for (final Transaction transaction: bundleTransaction.getBundleTransactions()) {
-                bundleTransactions.put(transaction.getHash(), transaction);
+            for (final TransactionViewModel transactionViewModel : bundleTransactionViewModel.getBundleTransactions()) {
+                bundleTransactions.put(transactionViewModel.getHash(), transactionViewModel);
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -133,7 +131,7 @@ public class Bundle {
         return bundleTransactions;
     }
     
-    public List<List<Transaction>> getTransactions() {
+    public List<List<TransactionViewModel>> getTransactions() {
         return transactions;
     }
 }

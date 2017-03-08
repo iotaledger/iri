@@ -11,12 +11,12 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
+import com.iota.iri.viewModel.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Milestone;
 import com.iota.iri.model.Hash;
-import com.iota.iri.viewModel.Transaction;
 
 public class StorageScratchpad extends AbstractStorage {
 
@@ -28,7 +28,7 @@ public class StorageScratchpad extends AbstractStorage {
     private ByteBuffer transactionsToRequest;
     private ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy;
     
-    private final byte[] transactionToRequest = new byte[Transaction.HASH_SIZE];
+    private final byte[] transactionToRequest = new byte[TransactionViewModel.HASH_SIZE];
     private final Object transactionToRequestMonitor = new Object();
     private int previousNumberOfTransactions;
 
@@ -75,12 +75,12 @@ public class StorageScratchpad extends AbstractStorage {
 
                         if (analyzedTransactions.add(pointer)) {
 
-                            final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                            if (transaction.type == Storage.PREFILLED_SLOT) {
-                                ((ByteBuffer) transactionsToRequest.position(numberOfTransactionsToRequest++ * Transaction.HASH_SIZE)).put(transaction.getHash()); // Only 2'917'776 hashes can be stored this way without overflowing the buffer, we assume that nodes will never need to store that many hashes, so we don't need to cap "numberOfTransactionsToRequest"
+                            final TransactionViewModel transactionViewModel = StorageTransactions.instance().loadTransaction(pointer);
+                            if (transactionViewModel.type == Storage.PREFILLED_SLOT) {
+                                ((ByteBuffer) transactionsToRequest.position(numberOfTransactionsToRequest++ * TransactionViewModel.HASH_SIZE)).put(transactionViewModel.getHash()); // Only 2'917'776 hashes can be stored this way without overflowing the buffer, we assume that nodes will never need to store that many hashes, so we don't need to cap "numberOfTransactionsToRequest"
                             } else {
-                                nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                                nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                                nonAnalyzedTransactions.offer(transactionViewModel.trunkTransactionPointer);
+                                nonAnalyzedTransactions.offer(transactionViewModel.branchTransactionPointer);
                             }
                         }
                     }
@@ -96,10 +96,10 @@ public class StorageScratchpad extends AbstractStorage {
             }
 
             if (numberOfTransactionsToRequest == 0) {
-                System.arraycopy(Hash.NULL_HASH.bytes(), 0, buffer, offset, Transaction.HASH_SIZE);
+                System.arraycopy(Hash.NULL_HASH.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
             } else {
-                ((ByteBuffer) transactionsToRequest.position(--numberOfTransactionsToRequest * Transaction.HASH_SIZE)).get(transactionToRequest);
-                System.arraycopy(transactionToRequest, 0, buffer, offset, Transaction.HASH_SIZE);
+                ((ByteBuffer) transactionsToRequest.position(--numberOfTransactionsToRequest * TransactionViewModel.HASH_SIZE)).get(transactionToRequest);
+                System.arraycopy(transactionToRequest, 0, buffer, offset, TransactionViewModel.HASH_SIZE);
             }
         }
     }

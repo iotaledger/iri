@@ -2,10 +2,9 @@ package com.iota.iri.service.storage;
 
 import java.io.IOException;
 
+import com.iota.iri.viewModel.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.iota.iri.viewModel.Transaction;
 
 /**
  * Storage is organized as 243-value tree
@@ -61,19 +60,19 @@ public class Storage extends AbstractStorage {
 
     void updateBundleAddressTagAndApprovers(final long transactionPointer) {
 
-        final Transaction transaction = new Transaction(mainBuffer, transactionPointer);
+        final TransactionViewModel transactionViewModel = new TransactionViewModel(mainBuffer, transactionPointer);
         for (int j = 0; j < numberOfApprovedTransactionsToStore; j++) {
             StorageTransactions.instance().storeTransaction(approvedTransactionsToStore[j], null, false);
         }
         numberOfApprovedTransactionsToStore = 0;
 
-        StorageBundle.instance().updateBundle(transactionPointer, transaction);
-        StorageAddresses.instance().updateAddresses(transactionPointer, transaction);
-        StorageTags.instance().updateTags(transactionPointer, transaction);
-        StorageApprovers.instance().updateApprover(transaction.getTrunkTransactionHash(), transactionPointer);
+        StorageBundle.instance().updateBundle(transactionPointer, transactionViewModel);
+        StorageAddresses.instance().updateAddresses(transactionPointer, transactionViewModel);
+        StorageTags.instance().updateTags(transactionPointer, transactionViewModel);
+        StorageApprovers.instance().updateApprover(transactionViewModel.getTrunkTransactionHash(), transactionPointer);
         
-        if (transaction.branchTransactionPointer != transaction.trunkTransactionPointer) {
-        	StorageApprovers.instance().updateApprover(transaction.getBranchTransactionHash(), transactionPointer);
+        if (transactionViewModel.branchTransactionPointer != transactionViewModel.trunkTransactionPointer) {
+        	StorageApprovers.instance().updateApprover(transactionViewModel.getBranchTransactionHash(), transactionPointer);
         }
     }
     

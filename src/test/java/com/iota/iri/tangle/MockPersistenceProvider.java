@@ -11,8 +11,8 @@ import java.util.Set;
  */
 public class MockPersistenceProvider implements IPersistenceProvider {
 
-    private Map<Class<?>, String> modelPrimaryKey;
-    private Map<Class<?>, Set<String>> modelIndices;
+    private Map<Class<?>, Field> modelPrimaryKey;
+    private Map<Class<?>, Map<String, ModelFieldInfo>> modelIndices;
     private Map<Class<?>, Set<String>> modelStoredItems;
 
     @Override
@@ -32,23 +32,28 @@ public class MockPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean get(java.lang.Object c, java.lang.Object key) throws Exception {
-        c.getClass().getDeclaredField(modelPrimaryKey.get(c.getClass())).set(c, key);
+        modelPrimaryKey.get(c.getClass()).set(c, key);
         return true;
     }
 
     @Override
-    public void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Set<Field>> modelIndices, Map<Class<?>, Set<Field>> modelStoredItems) {
-        /*
+    public void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Map<String, ModelFieldInfo>> modelItems) {
         this.modelPrimaryKey = modelPrimaryKey;
-        this.modelIndices = modelIndices;
-        this.modelStoredItems = modelStoredItems;
-        */
+        this.modelIndices = modelItems;
     }
 
     @Override
+    public Object query(Class<?> model, String index, Object value, int keyLength) throws Exception {
+        assert modelIndices.get(model.getClass()).get(index) != null;
+        Object out = model.newInstance();
+        modelPrimaryKey.get(model).set(out, "SomeBadVal".getBytes());
+        return out;
+    }
+
+
     public boolean query(java.lang.Object model, String index, java.lang.Object value) throws Exception {
-        assert modelIndices.get(model.getClass()).contains(index);
-        model.getClass().getDeclaredField(modelPrimaryKey.get(model.getClass())).set(model, "Some bad value".getBytes());
+        assert modelIndices.get(model.getClass()).get(index) != null;
+        modelPrimaryKey.get(model.getClass()).set(model, "SomeBadVal".getBytes());
         return true;
     }
 

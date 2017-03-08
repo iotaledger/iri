@@ -3,10 +3,12 @@ package com.iota.iri.tangle.rocksDB;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.tangle.IPersistenceProvider;
 import com.iota.iri.tangle.ModelFieldInfo;
+import com.iota.iri.tangle.SizedArray;
 import org.apache.commons.lang3.ArrayUtils;
 import org.rocksdb.*;
 
 import java.io.*;
+import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -68,27 +70,46 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean get(Object thing, Object key) throws Exception{
-        Class modelClass = thing.getClass();
+    public Object get(Class<?> modelClass, Object key) throws Exception{
+        Object thing = modelClass.newInstance();
         modelPrimaryKey.get(modelClass).set(thing, key);
         byte[] primaryKey = serialize(key);
+        boolean foundAny = false;
         for(Map.Entry<String, RocksField> set: modelColumns.get(modelClass).entrySet()) {
             RocksField rocksField = set.getValue();
             if(rocksField.handle != null) {
                 Field field = modelClass.getDeclaredField(set.getKey());
                 byte[] result = db.get(rocksField.handle, primaryKey);
                 if(result != null) {
+                    foundAny = true;
                     Field subField;
-                    if((subField = modelPrimaryKey.get(field.getType())) != null) {
-                        field.set(thing, field.getType().newInstance());
-                        subField.set(field.get(thing), deserialize(result, subField.getType()));
+                    subField = field.getType().isArray() ? modelPrimaryKey.get(field.getType().getComponentType()): modelPrimaryKey.get(field.getType());
+                    if(subField != null) {
+                        SizedArray sizedArray = subField.getAnnotation(SizedArray.class);
+                        if(sizedArray != null) {
+                            int numberOfKeys;
+                            if((numberOfKeys = result.length / sizedArray.length()) != 0) {
+                                field.set(thing, Array.newInstance(field.getType().getComponentType(), numberOfKeys));
+                                Object[] subArray = (Object[]) field.get(thing);
+                                for(int i = 0; i < numberOfKeys; i++) {
+                                    subArray[i] = field.getType().getComponentType().newInstance();
+                                    byte[] theKey = Arrays.copyOfRange(result, i*sizedArray.length(), (i+1)*sizedArray.length());
+                                    subField.set(subArray[i], deserialize(theKey, subField.getType()));
+                                    //Array.set(field.get(thing), i, deserialize(theKey, subField.getType()));
+                                }
+                            }
+                        } else {
+                            field.set(thing, field.getType().newInstance());
+                            subField.set(field.get(thing), deserialize(result, subField.getType()));
+                        }
                     } else {
                         field.set(thing, deserialize(result, field.getType()));
                     }
                 }
             }
         }
-        return true;
+        if(!foundAny) thing = null;
+        return thing;
     }
 
     @Override
@@ -136,8 +157,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 Object[] output = new Object[numberOfKeys];
                 for(int i = 0; i < numberOfKeys; i++) {
                     byte[] key = Arrays.copyOfRange(primaryKeys, i*keyLength, (i+1)*keyLength);
-                    output[i] = modelClass.newInstance();
-                    if(!get(output[i], key)) {
+                    output[i] = get(modelClass, key);
+                    if(output[i] == null) {
                         return null;
                     }
                 }
@@ -158,8 +179,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 Object[] output = new Object[numberOfKeys];
                 for(int i = 0; i < numberOfKeys; i++) {
                     byte[] key = Arrays.copyOfRange(primaryKeys, i*keyLength, (i+1)*keyLength);
-                    output[i] = modelClass.newInstance();
-                    if(!get(output[i], key)) {
+                    output[i] = get(modelClass, key);
+                    if(output[i] == null) {
                         return null;
                     }
                 }

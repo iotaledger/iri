@@ -58,7 +58,8 @@ public class TangleTest {
         transaction.bytes = Converter.bytes(trits);
         byte[] byteHash = Converter.bytes(hash);
 
-        assertTrue("Should be a transaction type", Tangle.instance().load(transaction, byteHash).get());
+        transaction = (Transaction) Tangle.instance().load(Transaction.class, byteHash).get();
+        assertNotNull(transaction);
         assertArrayEquals(transaction.hash, byteHash);
     }
 

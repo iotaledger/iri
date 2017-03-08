@@ -31,9 +31,10 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean get(java.lang.Object c, java.lang.Object key) throws Exception {
-        modelPrimaryKey.get(c.getClass()).set(c, key);
-        return true;
+    public Object get(Class<?> modelClass, java.lang.Object key) throws Exception {
+        Object c = modelClass.newInstance();
+        modelPrimaryKey.get(modelClass).set(c, key);
+        return c;
     }
 
     @Override
@@ -50,13 +51,6 @@ public class MockPersistenceProvider implements IPersistenceProvider {
         return out;
     }
 
-
-    public boolean query(java.lang.Object model, String index, java.lang.Object value) throws Exception {
-        assert modelIndices.get(model.getClass()).get(index) != null;
-        modelPrimaryKey.get(model.getClass()).set(model, "SomeBadVal".getBytes());
-        return true;
-    }
-
     @Override
     public boolean update(Object model, String item, Object value) {
         return true;
@@ -64,7 +58,9 @@ public class MockPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public Object[] queryMany(Class<?> modelClass, String index, Object key, int hashLength) throws Exception {
-        return new Object[0];
+        Object o = modelClass.newInstance();
+        modelPrimaryKey.get(modelClass).set(o, key);
+        return new Object[]{o};
     }
 
 }

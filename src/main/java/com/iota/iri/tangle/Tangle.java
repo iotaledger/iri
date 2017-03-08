@@ -110,16 +110,16 @@ public class Tangle {
     }
     */
 
-    public Future<Boolean> load(Object model, Object value) {
+    public Future<Object> load(Class<?> modelClass, Object value) {
         return executor.submit(() -> {
-            boolean success = false;
+            Object loadableObject = null;
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.get(model, value)) {
-                    success = true;
+                loadableObject = provider.get(modelClass, value);
+                if(loadableObject != null) {
                     break;
                 }
             }
-            return success;
+            return loadableObject;
         });
     }
 

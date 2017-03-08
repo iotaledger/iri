@@ -58,7 +58,7 @@ public class RocksDBPersistenceProviderTest {
 
         Tangle.instance().getPersistenceProviders().get(0).save(transaction);
         Transaction getTransaction = new Transaction();
-        Tangle.instance().getPersistenceProviders().get(0).get(getTransaction, transaction.hash);
+        getTransaction = (Transaction) Tangle.instance().getPersistenceProviders().get(0).get(Transaction.class, transaction.hash);
         assertArrayEquals(getTransaction.hash, transaction.hash);
         assertArrayEquals(getTransaction.bytes, transaction.bytes);
     }

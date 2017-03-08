@@ -13,7 +13,7 @@ public interface IPersistenceProvider {
     void init() throws Exception;
     void shutdown();
     boolean save(Object o) throws Exception;
-    boolean get(Object c, Object key) throws Exception;
+    Object get(Class<?> modelClass, Object key) throws Exception;
 
     void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Map<String, ModelFieldInfo>> modelItems);
 

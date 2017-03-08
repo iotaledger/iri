@@ -1,6 +1,7 @@
 package com.iota.iri.model;
 
 import com.iota.iri.tangle.*;
+import com.iota.iri.viewModel.TransactionViewModel;
 
 import java.sql.Time;
 
@@ -9,6 +10,7 @@ import java.sql.Time;
  */
 @Model
 public class Transaction {
+    @SizedArray(length = 49)
     @ModelIndex public byte[] hash;
 
     @BelongsTo public Tag tag;

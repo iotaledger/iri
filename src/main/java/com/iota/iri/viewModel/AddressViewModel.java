@@ -5,6 +5,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.tangle.Tangle;
 
 import java.util.Arrays;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 3/6/17 for iri.
@@ -21,7 +22,14 @@ public class AddressViewModel {
     }
 
     public Hash[] getTransactionHashes() {
-        Tangle.instance().load(address, address.bytes);
+        try {
+            Address txAddress = (Address) Tangle.instance().load(Address.class, address.bytes).get();
+            address.transactions = txAddress.transactions.clone();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
         return Arrays.stream(address.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
     }
 

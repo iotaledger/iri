@@ -1,6 +1,7 @@
 package com.iota.iri.viewModel;
 
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.tangle.Tangle;
 import com.iota.iri.tangle.rocksDB.RocksDBPersistenceProvider;
@@ -56,20 +57,6 @@ public class TransactionViewModelTest {
         Tangle.instance().shutdown();
         assertEquals(bundle.length, transactionViewModels.length);
     }
-    @Test
-    public void fromHash() throws Exception {
-
-    }
-
-    @Test
-    public void fromHash1() throws Exception {
-
-    }
-
-    @Test
-    public void update() throws Exception {
-
-    }
 
     @Test
     public void getBranchTransaction() throws Exception {
@@ -123,6 +110,49 @@ public class TransactionViewModelTest {
         TransactionViewModel trunkTransactionQuery = transactionViewModel.getTrunkTransaction();
         Tangle.instance().shutdown();
         assertArrayEquals(trunkTransactionQuery.getHash(), trunkTransactionViewModel.getHash());
+    }
+
+    @Test
+    public void getApprovers() throws Exception {
+        Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
+        Tangle.instance().init();
+        Random seed = new Random();
+        TransactionViewModel transactionViewModel, trunkTxApprover, branchTxApprover;
+
+        Transaction transaction;
+        transactionViewModel = new TransactionViewModel(getRandomTransaction(seed));
+
+        transaction = getRandomTransaction(seed);
+        transaction.trunk.hash = transactionViewModel.getHash();
+        trunkTxApprover = new TransactionViewModel(transaction);
+
+        transaction = getRandomTransaction(seed);
+        transaction.trunk.hash = transactionViewModel.getHash();
+        branchTxApprover = new TransactionViewModel(transaction);
+
+        transactionViewModel.store().get();
+        trunkTxApprover.store().get();
+        branchTxApprover.store().get();
+
+        Hash[] approvers = transactionViewModel.getApprovers();
+        Tangle.instance().shutdown();
+        assertNotEquals(Arrays.stream(approvers).filter(hash -> Arrays.equals(hash.bytes(), trunkTxApprover.getHash())).toArray().length, 0);
+        assertNotEquals(Arrays.stream(approvers).filter(hash -> Arrays.equals(hash.bytes(), branchTxApprover.getHash())).toArray().length, 0);
+    }
+
+    @Test
+    public void fromHash() throws Exception {
+
+    }
+
+    @Test
+    public void fromHash1() throws Exception {
+
+    }
+
+    @Test
+    public void update() throws Exception {
+
     }
 
     @Test
@@ -195,4 +225,10 @@ public class TransactionViewModelTest {
 
     }
 
+    private Transaction getRandomTransaction(Random seed) {
+        Transaction transaction = new Transaction();
+        transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> seed.nextInt(3)-1).toArray());
+        transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray());
+        return transaction;
+    }
 }

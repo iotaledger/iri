@@ -17,6 +17,7 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.API;
 import com.iota.iri.service.Node;
 import com.iota.iri.service.TipsManager;
+import com.iota.iri.service.storage.Replicator;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
 
@@ -49,6 +50,7 @@ public class IRI {
             Node.instance().init();
             TipsManager.instance().init();
             API.instance().init();
+            Replicator.instance().init();
             //IXI.init();
 
         } catch (final Exception e) {

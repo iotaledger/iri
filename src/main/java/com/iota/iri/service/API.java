@@ -206,7 +206,7 @@ public class API {
     private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
         final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
         uris.stream().map(Node::uri).map(Optional::get).filter(u -> "udp".equals(u.getScheme())).forEach(u -> {
-            if (Node.instance().removeNeighbor(u)) {
+            if (Node.instance().removeNeighbor(u,true)) {
                 numberOfRemovedNeighbors.incrementAndGet();
             }
         });
@@ -268,7 +268,6 @@ public class API {
     }
 
     private AbstractResponse storeTransactionStatement(final List<String> trys) {
-        long pointer;
         for (final String trytes : trys) {
             final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
@@ -532,8 +531,10 @@ public class API {
         int numberOfAddedNeighbors = 0;
         for (final String uriString : uris) {
             final URI uri = new URI(uriString);
+            
             if ("udp".equals(uri.getScheme())) {
-                final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()));
+                // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
+                final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),false,true);
                 if (!Node.instance().getNeighbors().contains(neighbor)) {
                     Node.instance().getNeighbors().add(neighbor);
                     numberOfAddedNeighbors++;

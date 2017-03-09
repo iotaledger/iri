@@ -45,7 +45,7 @@ public class Node {
 
     private static final Node instance = new Node();
 
-    private static final int TRANSACTION_PACKET_SIZE = 1650;
+    public  static final int TRANSACTION_PACKET_SIZE = 1650;
     private static final int QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
 
@@ -65,7 +65,7 @@ public class Node {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
     
-    private static long TIMESTAMP_THRESHOLD = 0L;
+    public static long TIMESTAMP_THRESHOLD = 0L;
 
     public static void setTIMESTAMP_THRESHOLD(long tIMESTAMP_THRESHOLD) {
         TIMESTAMP_THRESHOLD = tIMESTAMP_THRESHOLD;
@@ -75,24 +75,30 @@ public class Node {
 
         socket = new DatagramSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT));
 
-        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS)
-                .split(" "))
-                .distinct()
-                .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get)
-                .peek(u -> {
-                    if (!"udp".equals(u.getScheme())) {
-                        log.warn("WARNING: '{}' is not a valid udp:// uri schema.", u);
-                    }
-                })
-                .filter(u -> "udp".equals(u.getScheme()))
-                .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort())))
-                .peek(u -> {
-                    if (Configuration.booling(DefaultConfSettings.DEBUG)) {
-                        log.debug("-> Adding neighbor : {} ", u.getAddress());
-                    }
-                })
-                .forEach(neighbors::add);
+        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
+        .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
+            if (!"udp".equals(u.getScheme())) {
+                log.warn("WARNING: '{}' is not a valid udp:// uri schema.", u);
+            }
+        }).filter(u -> "udp".equals(u.getScheme()))
+        .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()),false,true)).peek(u -> {
+            if (Configuration.booling(DefaultConfSettings.DEBUG)) {
+                log.debug("-> Adding neighbor : {} ", u.getAddress());
+            }
+        }).forEach(neighbors::add);
 
+        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
+        .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
+            if (!"tcp".equals(u.getScheme())) {
+                log.warn("WARNING: '{}' is not a valid tcp:// uri schema.", u);
+            }
+        }).filter(u -> "tcp".equals(u.getScheme()))
+        .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()),true,true)).peek(u -> {
+            if (Configuration.booling(DefaultConfSettings.DEBUG)) {
+                log.debug("-> Adding neighbor : {} ", u.getAddress());
+            }
+        }).forEach(neighbors::add);
+        
         executor.submit(spawnReceiverThread());
         executor.submit(spawnBroadcasterThread());
         executor.submit(spawnTipRequesterThread());
@@ -127,10 +133,10 @@ public class Node {
                                     log.info("CHANGED IP for {}! Updating...", hostname);
                                     
                                     uri("udp://" + hostname).ifPresent(uri -> {
-                                        removeNeighbor(uri);
+                                        removeNeighbor(uri, n.isFlagged());
                                         
                                         uri("udp://" + ip).ifPresent(nuri -> {
-                                            addNeighbor(nuri);
+                                            addNeighbor(nuri, n.isFlagged());
                                             neighborIpCache.put(hostname, ip);
                                         });
                                     });
@@ -181,7 +187,6 @@ public class Node {
 
             final SecureRandom rnd = new SecureRandom();
             long randomTipBroadcastCounter = 1;
-            long pointer;
 
             while (!shuttingDown.get()) {
 
@@ -368,12 +373,20 @@ public class Node {
     
     // helpers methods
 
-    public boolean removeNeighbor(final URI uri) {
-        return neighbors.remove(new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort())));
+    public boolean removeNeighbor(final URI uri, boolean isConfigured) {
+        boolean isTcp = false;
+        if (uri.toString().contains("tcp:")) {
+            isTcp = true;
+        }
+        return neighbors.remove(new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, isConfigured));
     }
 
-    public boolean addNeighbor(final URI uri) {
-        final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()));
+    public boolean addNeighbor(final URI uri, boolean isConfigured) {
+        boolean isTcp = false;
+        if (uri.toString().contains("tcp:")) {
+            isTcp = true;
+        }
+        final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, isConfigured);
         if (!Node.instance().getNeighbors().contains(neighbor)) {
             return Node.instance().getNeighbors().add(neighbor);
         }

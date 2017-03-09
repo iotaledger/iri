@@ -4,10 +4,12 @@ import com.iota.iri.Bundle;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.tangle.IPersistenceProvider;
 import com.iota.iri.tangle.ModelFieldInfo;
-import com.iota.iri.tangle.annotations.SizedArray;
+import com.iota.iri.tangle.annotations.*;
+import com.sun.org.apache.xpath.internal.operations.Mod;
 import org.apache.commons.lang3.ArrayUtils;
 import org.rocksdb.*;
 
+import javax.annotation.ManagedBean;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -22,8 +24,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     private Map<Class<?>, Field> modelPrimaryKey;
     private Map<Class<?>, Map<String, RocksField>> modelColumns;
-    private Map<Object, ColumnFamilyHandle> transientHandles;
-    private Map<Object, Field> transientPrimaryKey;
+    private Map<Object, Map<String, RocksField>> transientColumns = new HashMap<>();
+    private Map<Object, ColumnFamilyHandle> transientHandles = new HashMap<>();
+    private Map<Object, Field> transientPrimaryKey = new HashMap<>();
 
     RocksDB db;
     DBOptions options;
@@ -182,6 +185,29 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                             uuid.toString().getBytes(),
                             new ColumnFamilyOptions()));
             transientHandles.put(uuid, columnFamilyHandle);
+            transientPrimaryKey.put(uuid, modelPrimaryKey.get(model));
+            transientColumns.put(uuid,
+                    modelColumns.get(model).entrySet().stream().map(set -> {
+                        String key = set.getKey();
+                        RocksField field = new RocksField(set.getValue().info);
+                        try {
+                            field.handle =
+                                    db.createColumnFamily(
+                                    new ColumnFamilyDescriptor(
+                                            new String(uuid.toString() + field.info.name).getBytes(),
+                                            new ColumnFamilyOptions()));
+                            if(field.info.belongsTo != null) {
+                                field.ownerHandle =
+                                        db.createColumnFamily(
+                                                new ColumnFamilyDescriptor(
+                                                        new String(uuid.toString() + field.info.belongsTo.getName()).getBytes(),
+                                                        new ColumnFamilyOptions()));
+                            }
+                        } catch (RocksDBException e) {
+                            e.printStackTrace();
+                        }
+                        return new HashMap.SimpleEntry<String, RocksField>(key, field);
+                    }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
             return true;
         } catch (RocksDBException e) {
             e.printStackTrace();
@@ -190,33 +216,107 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public void dropTransientHandle(Object uuid) {
+    public void dropTransientHandle(Object uuid) throws Exception{
         ColumnFamilyHandle handle = transientHandles.get(uuid);
-        try {
-            db.dropColumnFamily(handle);
-        } catch (RocksDBException e) {
-            e.printStackTrace();
-        }
+        db.dropColumnFamily(handle);
     }
 
     @Override
-    public boolean maybeHas(Object uuid, Object key) {
-        return db.keyMayExist(transientHandles.get(uuid), (byte[])key, new StringBuffer());
+    public boolean save(Object uuid, Object model) throws Exception {
+        WriteBatch batch = new WriteBatch();;
+
+        /*
+        ColumnFamilyHandle handle = transientHandles.get(uuid);
+        */
+        Field keyField = transientPrimaryKey.get(uuid);
+        byte[] primaryKey = serialize(keyField.get(model));
+
+
+        Class modelClass = model.getClass();
+        for(Map.Entry<String, RocksField> set: transientColumns.get(uuid).entrySet()) {
+            String fieldName = set.getKey();
+            RocksField rocksField = set.getValue();
+            Object thingToSerialize;
+            thingToSerialize = modelClass.getDeclaredField(fieldName).get(model);
+            if(rocksField.info.belongsTo != null && thingToSerialize != null) {
+                Field indexField = modelPrimaryKey.get(rocksField.info.belongsTo);
+                thingToSerialize = indexField.get(thingToSerialize);
+            }
+            byte[] fieldValue = serialize(thingToSerialize);
+            if(fieldValue != null) {
+                if(rocksField.handle != null) {
+                    batch.put(rocksField.handle, primaryKey, fieldValue);
+                }
+                if(rocksField.ownerHandle != null) {
+                    byte[] current = db.get(rocksField.ownerHandle, fieldValue);
+                    if(current == null) current = new byte[0];
+                    if(current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
+                        current = ArrayUtils.addAll(current, primaryKey);
+                    }
+                    batch.put(rocksField.ownerHandle, fieldValue, current);
+                }
+            }
+        }
+        db.write(new WriteOptions(), batch);
+        return false;
+    }
+
+    @Override
+    public boolean mayExist(Object uuid, Object index) throws Exception {
+        StringBuffer stringBuffer = new StringBuffer();
+        byte[] primaryKey = serialize(index);
+        boolean mayExist = false;
+        for(Map.Entry<String, RocksField> set: transientColumns.get(uuid).entrySet()) {
+            RocksField rocksField = set.getValue();
+            if(rocksField.handle != null) {
+                mayExist = db.keyMayExist(rocksField.handle, primaryKey, stringBuffer);
+                if (mayExist) break;
+            }
+            if(rocksField.ownerHandle != null) {
+                mayExist = db.keyMayExist(rocksField.ownerHandle, primaryKey, stringBuffer);
+                if (mayExist) break;
+            }
+        }
+        return mayExist;
     }
 
     @Override
     public Object get(Object uuid, Class<?> model, Object key) throws Exception {
         Object out = model.newInstance();
-        byte[] value = db.get(transientHandles.get(uuid), serialize(key));
         Field f = transientPrimaryKey.get(uuid);
-        f.set(out, deserialize(value, f.getType()));
+        f.set(out, key);
+        byte[] primaryKey = serialize(key);
+
+
+        for(Map.Entry<String, RocksField> set: transientColumns.get(uuid).entrySet()) {
+            RocksField rocksField = set.getValue();
+            if(rocksField.handle != null) {
+                f = model.getDeclaredField(set.getKey());
+                f.set(out, deserialize(db.get(rocksField.handle, primaryKey), f.getType()));
+            }
+            if(rocksField.ownerHandle != null) {
+                f = modelPrimaryKey.get(rocksField.ownerHandle);
+                f.set(out, deserialize(db.get(rocksField.ownerHandle, primaryKey), f.getType()));
+            }
+        }
         return out;
     }
+
 
     @Override
     public void deleteTransientObject(Object uuid, Object key) throws Exception{
         ColumnFamilyHandle handle = transientHandles.get(uuid);
         db.delete(handle, serialize(key));
+        byte[] primaryKey = serialize(key);
+        for(Map.Entry<String, RocksField> set: transientColumns.get(uuid).entrySet()) {
+            RocksField rocksField = set.getValue();
+            if (rocksField.handle != null) {
+                db.delete(rocksField.handle, primaryKey);
+            }
+            if (rocksField.ownerHandle != null) {
+                db.delete(rocksField.ownerHandle, primaryKey);
+            }
+        }
     }
 
     @Override
@@ -329,7 +429,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                                     .findAny()
                                     .orElse(null);
                         })
-        );
+                );
     }
 
     private static byte[] serialize(Object obj) throws IOException{

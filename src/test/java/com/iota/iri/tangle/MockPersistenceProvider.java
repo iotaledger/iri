@@ -74,7 +74,12 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean maybeHas(Object handle, Object key) {
+    public boolean save(Object handle, Object model) throws Exception {
+        return false;
+    }
+
+    @Override
+    public boolean mayExist(Object handle, Object key) {
         return false;
     }
 

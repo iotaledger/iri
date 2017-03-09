@@ -84,8 +84,10 @@ public class Tangle {
         }
     }
 
-    public void shutdown() {
-        this.persistenceProviders.forEach(provider -> transientDBList.stream().forEach(value -> provider.dropTransientHandle(value)));
+    public void shutdown() throws Exception {
+        for(UUID uuid: transientDBList) {
+            dropList(uuid);
+        }
         this.persistenceProviders.forEach(provider -> provider.shutdown());
         this.persistenceProviders.clear();
     }
@@ -95,8 +97,11 @@ public class Tangle {
         this.persistenceProviders.forEach(provider -> provider.setTransientHandle(model,(Object) uuid));
         return uuid;
     }
-    public void dropList(Object key) {
-        this.persistenceProviders.forEach(provider -> provider.dropTransientHandle(key));
+    public void dropList(Object uuid) throws Exception {
+        for(IPersistenceProvider provider : persistenceProviders) {
+            provider.dropTransientHandle(uuid);
+        }
+        this.transientDBList.remove(uuid);
     }
 
     public List<IPersistenceProvider> getPersistenceProviders() {
@@ -186,12 +191,34 @@ public class Tangle {
         return executor.submit(() -> {
             Object[] output = null;
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.maybeHas(handle, key)) return true;
+                if(provider.mayExist(handle, key)) return true;
             }
             return false;
         });
     }
 
+    public Future<Void> delete(Object handle, Object model) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                try {
+                    provider.deleteTransientObject(handle, model);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            return null;
+        });
+    }
+    public Future<Boolean> save(Object handle, Object model) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(!provider.save(handle, model)) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }
     public Future<Object> load(Object handle, Class<?> model, byte[] key) {
         return executor.submit(() -> {
             Object loadableObject = null;
@@ -205,54 +232,3 @@ public class Tangle {
         });
     }
 }
-/*
-Map<Class<?>, Set<Field>[]> classMap;
-classMap = new HashMap<>();
-classMap.put(model, new Set[]{
-                new HashSet<>(primaryIndex
-                        .stream()
-                        .filter(field -> field.getDeclaringClass().equals(model))
-                        .collect(Collectors.toSet())),
-                new HashSet<>(secondaryIndex
-                        .stream()
-                        .filter(field -> field.getDeclaringClass().equals(model))
-                        .collect(Collectors.toSet())),
-                new HashSet<>(iotaModelItems
-                        .stream()
-                        .filter(field -> field.getDeclaringClass().equals(model))
-                        .collect(Collectors.toSet())),
-                new HashSet<>(storageItems
-                        .stream()
-                        .filter(field -> field.getDeclaringClass().equals(model))
-                        .collect(Collectors.toSet()))
-        }
-);
-
-
-
-            modelHasOne.put(model,
-                    hasOneFields
-                            .stream()
-                            .filter(field -> field.getDeclaringClass().equals(model))
-                            .collect(Collectors.toSet()));
-            modelHasMany.put(model,
-                    hasManyFields
-                            .stream()
-                            .filter(field -> field.getDeclaringClass().equals(model))
-                            .collect(Collectors.toSet()));
-            modelClassReference.put(model,
-                    hasOneFields
-                            .stream()
-                            .filter(field ->{
-                              Class<?> c = field.getType();
-                              boolean b = modelClasses.contains(field.getType());
-                              boolean t = field.getDeclaringClass().equals(model);
-                              return field.getDeclaringClass().equals(model) && modelClasses.contains(field.getType());
-                            })
-                            .collect(Collectors.toSet()));
-            modelClassReference.get(model).addAll(
-                    hasManyFields
-                            .stream()
-                            .filter(field -> field.getDeclaringClass().equals(model) && modelClasses.contains(field.getType().getComponentType()))
-                            .collect(Collectors.toSet()));
- */

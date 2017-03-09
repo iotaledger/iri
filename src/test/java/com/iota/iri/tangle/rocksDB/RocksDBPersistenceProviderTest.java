@@ -1,6 +1,7 @@
 package com.iota.iri.tangle.rocksDB;
 
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Flag;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.tangle.Tangle;
 import com.iota.iri.utils.Converter;
@@ -11,6 +12,7 @@ import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.UUID;
 
 import static org.junit.Assert.*;
 
@@ -18,6 +20,7 @@ import static org.junit.Assert.*;
  * Created by paul on 3/4/17 for iri.
  */
 public class RocksDBPersistenceProviderTest {
+
     @Before
     public void setUp() throws Exception {
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
@@ -116,4 +119,71 @@ public class RocksDBPersistenceProviderTest {
         assertEquals(bundle.length, transactions.length);
     }
 
+    @Test
+    public void setTransientHandle() throws Exception {
+        Object uuid = Tangle.instance().createTransientList(Flag.class);
+        assertNotNull(UUID.class.equals(uuid.getClass()));
+    }
+
+    @Test
+    public void dropTransientHandle() throws Exception {
+        Object uuid = Tangle.instance().createTransientList(Flag.class);
+        Tangle.instance().dropList(uuid);
+        try {
+            Tangle.instance().dropList(uuid);
+            assertFalse("Oh no You Dinnit", true);
+        } catch (Exception e) {
+            assertTrue("Did not exist", true);
+        }
+    }
+
+    @Test
+    public void transientSave() throws Exception {
+        Object uuid = Tangle.instance().createTransientList(Flag.class);
+        Flag flag = new Flag();
+        flag.hash = "SOMESTRINGOROTHER".getBytes();
+        try {
+            Tangle.instance().save(uuid, flag);
+            assertTrue("Got this far", true);
+        } catch (Exception e) {
+            assertTrue("Failed to save", false);
+        }
+
+    }
+
+    @Test
+    public void maybeHas() throws Exception {
+        Object uuid = Tangle.instance().createTransientList(Flag.class);
+        Flag flag = new Flag();
+        flag.hash = "SOMESTRINGOROTHER".getBytes();
+        Tangle.instance().save(uuid, flag).get();
+        boolean maybeHas = Tangle.instance().maybeHas(uuid, "9OBADBYTES".getBytes()).get();
+        assertFalse("Should not contain junk", maybeHas);
+        maybeHas = Tangle.instance().maybeHas(uuid, flag.hash).get();
+        assertTrue("Should have it in DB", maybeHas);
+    }
+
+    @Test
+    public void get1() throws Exception {
+        Object uuid = Tangle.instance().createTransientList(Flag.class);
+        Flag flag = new Flag();
+        flag.hash = "SOMESTRINGOROTHER".getBytes();
+        flag.status = false;
+        Tangle.instance().save(uuid, flag).get();
+        Flag output = (Flag)Tangle.instance().load(uuid, Flag.class, flag.hash).get();
+        assertArrayEquals(output.hash, flag.hash);
+        assertEquals(output.status, flag.status);
+    }
+
+    @Test
+    public void deleteTransientObject() throws Exception {
+        Object uuid = Tangle.instance().createTransientList(Flag.class);
+        Flag flag = new Flag();
+        flag.hash = "SOMESTRINGOROTHER".getBytes();
+        flag.status = false;
+        Tangle.instance().save(uuid, flag).get();
+        assertTrue(Tangle.instance().maybeHas(uuid, flag.hash).get());
+        Tangle.instance().delete(uuid, flag.hash).get();
+        assertFalse(Tangle.instance().maybeHas(uuid, flag.hash).get());
+    }
 }

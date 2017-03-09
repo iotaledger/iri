@@ -7,10 +7,7 @@ import com.iota.iri.tangle.IPersistenceProvider;
 import com.iota.iri.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.service.TransactionViewModel;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.Arrays;
@@ -24,17 +21,16 @@ import static org.junit.Assert.*;
  */
 public class RocksDBPersistenceProviderTest {
 
-    @Rule
-    public TemporaryFolder dbFolder = new TemporaryFolder();
-
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void setUp() throws Exception {
+        TemporaryFolder dbFolder = new TemporaryFolder();
+        dbFolder.create();
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
         Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
     }
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterClass
+    public static void tearDown() throws Exception {
         Tangle.instance().shutdown();
     }
 
@@ -149,7 +145,7 @@ public class RocksDBPersistenceProviderTest {
         Flag flag = new Flag();
         flag.hash = "SOMESTRINGOROTHER".getBytes();
         try {
-            Tangle.instance().save(uuid, flag);
+            Tangle.instance().save(uuid, flag).get();
             assertTrue("Got this far", true);
         } catch (Exception e) {
             assertTrue("Failed to save", false);

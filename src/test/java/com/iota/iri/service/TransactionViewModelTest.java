@@ -8,10 +8,7 @@ import com.iota.iri.tangle.Tangle;
 import com.iota.iri.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.Arrays;
@@ -23,17 +20,16 @@ import static org.junit.Assert.*;
  * Created by paul on 3/5/17 for iri.
  */
 public class TransactionViewModelTest {
-    @Rule
-    public TemporaryFolder dbFolder = new TemporaryFolder();
-
-    @Before
-    public void setUp() throws Exception {
+    @BeforeClass
+    public static void setUp() throws Exception {
+        TemporaryFolder dbFolder = new TemporaryFolder();
+        dbFolder.create();
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-         Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
+        Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
     }
 
-    @After
-    public void tearDown() throws Exception {
+    @AfterClass
+    public static void tearDown() throws Exception {
         Tangle.instance().shutdown();
     }
 

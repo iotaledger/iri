@@ -46,6 +46,7 @@ public class IRI {
 
         try {
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
+            Tangle.instance().init();
             //Storage.instance().init();
             Node.instance().init();
             TipsManager.instance().init();
@@ -199,6 +200,7 @@ public class IRI {
                 API.instance().shutDown();
                 TipsManager.instance().shutDown();
                 Node.instance().shutdown();
+                Tangle.instance().shutdown();
                 //Storage.instance().shutdown();
 
             } catch (final Exception e) {

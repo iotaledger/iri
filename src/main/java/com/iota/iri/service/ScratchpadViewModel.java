@@ -2,26 +2,31 @@ package com.iota.iri.service;
 
 import com.iota.iri.model.Flag;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Created by paul on 3/8/17 for iri.
  */
 public class ScratchpadViewModel {
-    public void requestTransaction(byte[] hash) {
-    }
+    public static ScratchpadViewModel instance;
 
-    public void clearAnalyzedTransactionFlags() {
+    List<byte[]> analyzedTransactions = new ArrayList<>();
+    int numberOfTransactionsToRequest = 0;
+
+    public void requestTransaction(byte[] hash) {
+        numberOfTransactionsToRequest++;
     }
 
     public boolean analyzedTransactionFlag(byte[] hash) {
-        return true;
+        return analyzedTransactions.contains(hash);
     }
 
     public boolean setAnalyzedTransactionFlag(byte[] hash) {
-        return false;
+        return analyzedTransactions.add(hash);
     }
 
     public void saveAnalyzedTransactionsFlags() {
-
     }
 
     public void loadAnalyzedTransactionsFlags() {
@@ -29,21 +34,22 @@ public class ScratchpadViewModel {
     }
 
     public Flag[] getAnalyzedTransactionsFlags() {
-        return null;
+        return analyzedTransactions.stream().map(b -> new Flag(b)).toArray(Flag[]::new);
     }
 
     public Flag[] getAnalyzedTransactionsFlagsCopy() {
-        return null;
+        return getAnalyzedTransactionsFlags();
     }
 
     public int getNumberOfTransactionsToRequest() {
-        return 0;
+        return numberOfTransactionsToRequest;
     }
 
     public static ScratchpadViewModel instance() {
-        return new ScratchpadViewModel();
+        return instance;
     }
 
     public void clearAnalyzedTransactionsFlags() {
+        analyzedTransactions.clear();
     }
 }

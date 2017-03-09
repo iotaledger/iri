@@ -63,5 +63,30 @@ public class MockPersistenceProvider implements IPersistenceProvider {
         return new Object[]{o};
     }
 
+    @Override
+    public boolean setTransientHandle(Class<?> model, Object uuid) {
+        return false;
+    }
+
+    @Override
+    public void dropTransientHandle(Object handle) {
+
+    }
+
+    @Override
+    public boolean maybeHas(Object handle, Object key) {
+        return false;
+    }
+
+    @Override
+    public Object get(Object handle, Class<?> model, Object key) throws Exception {
+        return null;
+    }
+
+    @Override
+    public void deleteTransientObject(Object uuid, Object key) throws Exception {
+
+    }
+
 }
 

@@ -1,4 +1,4 @@
-package com.iota.iri.viewModel;
+package com.iota.iri.service;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
@@ -7,14 +7,12 @@ import java.util.concurrent.Future;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Tag;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.tangle.Tangle;
 import com.iota.iri.utils.Converter;
-import org.apache.commons.lang3.ArrayUtils;
 
 public class TransactionViewModel {
     private final com.iota.iri.model.Transaction transaction;
@@ -81,7 +79,6 @@ public class TransactionViewModel {
     //private final int getValidity;
 
     private int[] trits;
-    public final long pointer;
     public int weightMagnitude;
 
     public static TransactionViewModel fromHash(final byte[] hash) {
@@ -105,7 +102,6 @@ public class TransactionViewModel {
     public TransactionViewModel(final com.iota.iri.model.Transaction transaction) {
         this.transaction = transaction;
         type = Storage.FILLED_SLOT;
-        pointer = 0;
     }
 
     public TransactionViewModel(final int[] trits) {
@@ -126,7 +122,6 @@ public class TransactionViewModel {
 
         transaction.validity = 0;
         transaction.arrivalTime = 0;
-        pointer = 0;
     }
 
 
@@ -168,7 +163,6 @@ public class TransactionViewModel {
         transaction.validity = 0;
         transaction.arrivalTime = 0;
 
-        pointer = 0;
     }
 
     public TransactionViewModel(final byte[] mainBuffer, final long pointer) {
@@ -201,7 +195,6 @@ public class TransactionViewModel {
 
         transaction.arrivalTime = Storage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
 
-        this.pointer = pointer;
     }
 
     private final void populateTransaction(int[] trits) {
@@ -217,6 +210,13 @@ public class TransactionViewModel {
 
     public void update(String item) throws Exception {
         Tangle.instance().update(transaction, item, TransactionViewModel.class.getDeclaredField(item).get(transaction));
+    }
+
+    public static void setAnalyzed(byte[] hash, boolean analyzed) {
+        Transaction transaction = new Transaction();
+        transaction.hash = hash;
+        Tangle.instance().update(transaction, "analyzed", analyzed);
+        Tangle.instance().update(transaction, "nonAnalyzed", !analyzed);
     }
 
     private TransactionViewModel getTransaction(byte[] hash) {
@@ -323,10 +323,10 @@ public class TransactionViewModel {
 
     public static Hash[] hashesFromQuery(String index, Object value) {
         Hash[] transactionHashes;
-        Tangle accessor = Tangle.instance();
-        Future<Object[]> tipTxs = accessor.query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE);
         try {
-            com.iota.iri.model.Transaction[] transactionModels = Arrays.stream(tipTxs.get()).toArray(com.iota.iri.model.Transaction[]::new);
+            Tangle accessor = Tangle.instance();
+            Future<Object[]> tipTxs = accessor.query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE);
+            Transaction[] transactionModels = Arrays.stream(tipTxs.get()).toArray(com.iota.iri.model.Transaction[]::new);
             transactionHashes = Arrays.stream(transactionModels).map(transaction -> transaction.hash).toArray(Hash[]::new);
         } catch (Exception e) {
             e.printStackTrace();
@@ -361,13 +361,8 @@ public class TransactionViewModel {
     public Hash[] getApprovers() {
         Hash[] approvers;
         Tangle accessor = Tangle.instance();
-        //Future<Object[]> trunkApprovers = accessor.query(com.iota.iri.model.Approvee.class, "trunk", transaction.hash, BUNDLE_SIZE);
         try {
             Approvee self = ((Approvee) accessor.load(Approvee.class, transaction.hash).get());
-            //Arrays.stream(accessor.query(Approvee.class, "transactions", transaction.hash, BUNDLE_SIZE).get()).toArray(Approvee[]::new);
-
-            //Transaction[] stufss = Arrays.stream(accessor.query(Transaction.class, "trunk", transaction.hash, BUNDLE_SIZE).get()).toArray(Transaction[]::new);
-            //com.iota.iri.model.Transaction[] approverTransactions = Arrays.stream(ArrayUtils.addAll(branchApprovers.get(), trunkApprovers.get())).toArray(com.iota.iri.model.Transaction[]::new);
             approvers = Arrays.stream(self.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
         } catch (Exception e) {
             e.printStackTrace();

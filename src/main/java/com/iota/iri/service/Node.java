@@ -23,7 +23,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.viewModel.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,9 +33,7 @@ import com.iota.iri.Neighbor;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
-import com.iota.iri.service.storage.Storage;
 import com.iota.iri.service.storage.StorageScratchpad;
-import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
 
 /**
@@ -225,7 +222,7 @@ public class Node {
                                                 if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
                                                     transactionPointer = mBytes;
 
-                                                    final TransactionViewModel milestoneTx = StorageTransactions.instance().loadTransaction(transactionPointer);
+                                                    final TransactionViewModel milestoneTx = TransactionViewModel.fromHash(transactionPointer);
                                                     final Bundle bundle = new Bundle(milestoneTx.getBundleHash());
                                                     if (bundle != null) {
                                                         Collection<List<TransactionViewModel>> tList = bundle.getTransactions();

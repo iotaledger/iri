@@ -1,9 +1,6 @@
 package com.iota.iri.model;
 
-import com.iota.iri.tangle.*;
-import com.iota.iri.viewModel.TransactionViewModel;
-
-import java.sql.Time;
+import com.iota.iri.tangle.annotations.*;
 
 /**
  * Created by paul on 3/2/17 for iri.
@@ -11,16 +8,19 @@ import java.sql.Time;
 @Model
 public class Transaction {
     @SizedArray(length = 49)
-    @ModelIndex public byte[] hash;
+    @ModelIndex
+    public byte[] hash;
 
-    @BelongsTo public Tag tag;
+    @BelongsTo
+    public Tag tag;
     @BelongsTo public Address address;
     @BelongsTo public Timestamp timestamp;
     @BelongsTo public Bundle bundle;
     @BelongsTo public Approvee trunk;
     @BelongsTo public Approvee branch;
 
-    @HasOne public byte[] bytes;
+    @HasOne
+    public byte[] bytes;
 
     @HasOne public int validity;
     @HasOne public long value;
@@ -28,7 +28,7 @@ public class Transaction {
     @HasOne public long lastIndex;
     @HasOne public long arrivalTime;
     @HasOne public boolean isTip;
-    @HasOne public boolean analyzedFLag;
+    @HasOne public boolean analyzed;
 
     public Transaction() {
         tag = new Tag();

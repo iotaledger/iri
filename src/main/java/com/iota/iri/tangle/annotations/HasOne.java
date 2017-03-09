@@ -1,4 +1,4 @@
-package com.iota.iri.tangle;
+package com.iota.iri.tangle.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

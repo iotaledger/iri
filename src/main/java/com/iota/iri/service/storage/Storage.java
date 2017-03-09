@@ -2,7 +2,7 @@ package com.iota.iri.service.storage;
 
 import java.io.IOException;
 
-import com.iota.iri.viewModel.TransactionViewModel;
+import com.iota.iri.service.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

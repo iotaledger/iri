@@ -1,15 +1,17 @@
 package com.iota.iri.tangle.rocksDB;
 
+import com.iota.iri.Bundle;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.tangle.IPersistenceProvider;
 import com.iota.iri.tangle.ModelFieldInfo;
-import com.iota.iri.tangle.SizedArray;
+import com.iota.iri.tangle.annotations.SizedArray;
 import org.apache.commons.lang3.ArrayUtils;
 import org.rocksdb.*;
 
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -20,6 +22,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     private Map<Class<?>, Field> modelPrimaryKey;
     private Map<Class<?>, Map<String, RocksField>> modelColumns;
+    private Map<Object, ColumnFamilyHandle> transientHandles;
+    private Map<Object, Field> transientPrimaryKey;
 
     RocksDB db;
     DBOptions options;
@@ -48,7 +52,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             Object thingToSerialize;
             thingToSerialize = modelClass.getDeclaredField(fieldName).get(thing);
             if(rocksField.info.belongsTo != null && thingToSerialize != null) {
-                thingToSerialize = modelPrimaryKey.get(rocksField.info.belongsTo).get(thingToSerialize);
+                Field indexField = modelPrimaryKey.get(rocksField.info.belongsTo);
+                thingToSerialize = indexField.get(thingToSerialize);
             }
             byte[] fieldValue = serialize(thingToSerialize);
             if(fieldValue != null) {
@@ -168,26 +173,50 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return null;
     }
 
-    public Object[] queryMany2(Class<?> modelClass, String index, Object value, int keyLength) throws Exception {
-        Map<String, RocksField> map = modelColumns.get(modelClass);
-        RocksField rocksField = map.get(index);
-        if(rocksField != null && rocksField.handle != null) {
-            int numberOfKeys;
-            byte[] secondaryKey = serialize(value);
-            byte[] primaryKeys = db.get(rocksField.handle, secondaryKey);
-            if(primaryKeys != null && (numberOfKeys = primaryKeys.length / keyLength) != 0) {
-                Object[] output = new Object[numberOfKeys];
-                for(int i = 0; i < numberOfKeys; i++) {
-                    byte[] key = Arrays.copyOfRange(primaryKeys, i*keyLength, (i+1)*keyLength);
-                    output[i] = get(modelClass, key);
-                    if(output[i] == null) {
-                        return null;
-                    }
-                }
-                return output;
-            }
+    @Override
+    public boolean setTransientHandle(Class<?> model, Object uuid) {
+        final ColumnFamilyHandle columnFamilyHandle;
+        try {
+            columnFamilyHandle = db.createColumnFamily(
+                    new ColumnFamilyDescriptor(
+                            uuid.toString().getBytes(),
+                            new ColumnFamilyOptions()));
+            transientHandles.put(uuid, columnFamilyHandle);
+            return true;
+        } catch (RocksDBException e) {
+            e.printStackTrace();
         }
-        return null;
+        return false;
+    }
+
+    @Override
+    public void dropTransientHandle(Object uuid) {
+        ColumnFamilyHandle handle = transientHandles.get(uuid);
+        try {
+            db.dropColumnFamily(handle);
+        } catch (RocksDBException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Override
+    public boolean maybeHas(Object uuid, Object key) {
+        return db.keyMayExist(transientHandles.get(uuid), (byte[])key, new StringBuffer());
+    }
+
+    @Override
+    public Object get(Object uuid, Class<?> model, Object key) throws Exception {
+        Object out = model.newInstance();
+        byte[] value = db.get(transientHandles.get(uuid), serialize(key));
+        Field f = transientPrimaryKey.get(uuid);
+        f.set(out, deserialize(value, f.getType()));
+        return out;
+    }
+
+    @Override
+    public void deleteTransientObject(Object uuid, Object key) throws Exception{
+        ColumnFamilyHandle handle = transientHandles.get(uuid);
+        db.delete(handle, serialize(key));
     }
 
     @Override

@@ -1,8 +1,9 @@
-package com.iota.iri.viewModel;
+package com.iota.iri.service;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.service.TransactionViewModel;
 import com.iota.iri.tangle.Tangle;
 import com.iota.iri.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
@@ -62,18 +63,12 @@ public class TransactionViewModelTest {
     public void getBranchTransaction() throws Exception {
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
         Tangle.instance().init();
-        Random r = new Random();
-        //byte[] bundleHash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        Random seed = new Random();
         TransactionViewModel transactionViewModel, branchTransaction;
 
-        Transaction transaction = new Transaction();
-        transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-        transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
-        branchTransaction = new TransactionViewModel(transaction);
+        branchTransaction = new TransactionViewModel(getRandomTransaction(seed));
 
-        transaction = new Transaction();
-        transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-        transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        Transaction transaction = getRandomTransaction(seed);
         transaction.branch.hash = branchTransaction.getHash();
         transactionViewModel = new TransactionViewModel(transaction);
 
@@ -89,18 +84,12 @@ public class TransactionViewModelTest {
     public void getTrunkTransaction() throws Exception {
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
         Tangle.instance().init();
-        Random r = new Random();
-        //byte[] bundleHash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        Random seed = new Random();
         TransactionViewModel transactionViewModel, trunkTransactionViewModel;
 
-        Transaction transaction = new Transaction();
-        transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-        transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
-        trunkTransactionViewModel = new TransactionViewModel(transaction);
+        trunkTransactionViewModel = new TransactionViewModel(getRandomTransaction(seed));
 
-        transaction = new Transaction();
-        transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-        transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        Transaction transaction = getRandomTransaction(seed);
         transaction.trunk.hash = trunkTransactionViewModel.getHash();
         transactionViewModel = new TransactionViewModel(transaction);
 

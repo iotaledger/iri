@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 import com.iota.iri.*;
 
 import com.iota.iri.service.dto.*;
-import com.iota.iri.viewModel.TransactionViewModel;
+import com.iota.iri.service.storage.AbstractStorage;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,9 +30,6 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.storage.Storage;
-import com.iota.iri.service.storage.StorageScratchpad;
-import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
 
 import io.undertow.Undertow;
@@ -157,8 +154,8 @@ public class API {
                             Runtime.getRuntime().totalMemory(), Milestone.latestMilestone, Milestone.latestMilestoneIndex,
                             Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                             Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
-                            System.currentTimeMillis(), StorageTransactions.instance().tips().size(),
-                            StorageScratchpad.instance().getNumberOfTransactionsToRequest());
+                            System.currentTimeMillis(), TransactionViewModel.getTipHashes().length,
+                            ScratchpadViewModel.instance().getNumberOfTransactionsToRequest());
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -219,7 +216,7 @@ public class API {
     private AbstractResponse getTrytesStatement(List<String> hashes) {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
-            final TransactionViewModel transactionViewModel = StorageTransactions.instance().loadTransaction((new Hash(hash)).bytes());
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(new Hash(hash));
             if (transactionViewModel != null) {
                 elements.add(Converter.trytes(transactionViewModel.trits()));
             }
@@ -267,15 +264,15 @@ public class API {
 
     private AbstractResponse getTipsStatement() {
         return GetTipsResponse.create(
-                StorageTransactions.instance().tips().stream().map(Hash::toString).collect(Collectors.toList()));
+                Arrays.stream(TransactionViewModel.getTipHashes()).map(Hash::toString).collect(Collectors.toList()));
     }
 
     private AbstractResponse storeTransactionStatement(final List<String> trys) {
         long pointer;
         for (final String trytes : trys) {
             final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
-            pointer = StorageTransactions.instance().storeTransaction(transactionViewModel.getHash(), transactionViewModel, false);
-            StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
+            transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
+            transactionViewModel.store();
         }
         return AbstractResponse.createEmptyResponse();
     }
@@ -292,29 +289,30 @@ public class API {
         int numberOfNonMetTransactions = transactions.size();
         final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];
 
-        synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
+        synchronized (ScratchpadViewModel.instance().getAnalyzedTransactionsFlags()) {
 
-            StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
+            ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
 
-            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
+            final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>();
             for (final Hash tip : tips) {
 
-                final long pointer = StorageTransactions.instance().transactionPointer(tip.bytes());
-                if (pointer <= 0) {
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
+                if (Arrays.equals(transactionViewModel.getHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)){
                     return ErrorResponse.create("One of the tips absents");
                 }
-                nonAnalyzedTransactions.offer(pointer);
+                nonAnalyzedTransactions.offer(tip.bytes());
             }
 
             {
-                Long pointer;
+                byte[] pointer;
                 MAIN_LOOP:
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
-                        final TransactionViewModel transactionViewModel = StorageTransactions.instance().loadTransaction(pointer);
-                        if (transactionViewModel.type == Storage.PREFILLED_SLOT) {
+                    if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(pointer)) {
+
+                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(pointer);
+                        if (transactionViewModel.type == AbstractStorage.PREFILLED_SLOT) {
                             return ErrorResponse.create("The subtangle is not solid");
                         } else {
 
@@ -330,8 +328,8 @@ public class API {
                                     }
                                 }
                             }
-                            nonAnalyzedTransactions.offer(transactionViewModel.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transactionViewModel.branchTransactionPointer);
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                         }
                     }
                 }
@@ -434,18 +432,16 @@ public class API {
         final Hash milestone = Milestone.latestSolidSubtangleMilestone;
         final int milestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
-        synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
+        synchronized (ScratchpadViewModel.instance().getAnalyzedTransactionsFlags()) {
 
-            StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
+            ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
 
             final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone.bytes()));
                     //Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.bytes())));
             byte[] hash;
-            long pointer;
             while ((hash = nonAnalyzedTransactions.poll()) != null) {
 
-                pointer = StorageTransactions.instance().transactionPointer(hash);
-                if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
+                if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hash)) {
 
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
 

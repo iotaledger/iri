@@ -1,5 +1,6 @@
 package com.iota.iri.tangle;
 
+import com.iota.iri.tangle.annotations.*;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
 import org.reflections.scanners.SubTypesScanner;
@@ -21,6 +22,7 @@ public class Tangle {
     private ExecutorService executor;
     private final Map<Class<?>, Field> modelPrimaryKeys = new HashMap<>();
     private final Map<Class<?>, Map<String, ModelFieldInfo>> modelFieldInfo = new HashMap<>();
+    private final List<UUID> transientDBList = new ArrayList<>();
 
     {
         FieldAnnotationsScanner scanner = new FieldAnnotationsScanner();
@@ -83,8 +85,18 @@ public class Tangle {
     }
 
     public void shutdown() {
+        this.persistenceProviders.forEach(provider -> transientDBList.stream().forEach(value -> provider.dropTransientHandle(value)));
         this.persistenceProviders.forEach(provider -> provider.shutdown());
         this.persistenceProviders.clear();
+    }
+
+    public Object createTransientList(Class<?> model) {
+        UUID uuid = UUID.randomUUID();
+        this.persistenceProviders.forEach(provider -> provider.setTransientHandle(model,(Object) uuid));
+        return uuid;
+    }
+    public void dropList(Object key) {
+        this.persistenceProviders.forEach(provider -> provider.dropTransientHandle(key));
     }
 
     public List<IPersistenceProvider> getPersistenceProviders() {
@@ -136,6 +148,8 @@ public class Tangle {
         });
     }
 
+
+
     public Future<Boolean> update(Object model, String item, Object value) {
         return executor.submit(() -> {
             boolean success = true;
@@ -165,6 +179,29 @@ public class Tangle {
                 }
             }
             return output;
+        });
+    }
+
+    public Future<Boolean> maybeHas(Object handle, Object key) {
+        return executor.submit(() -> {
+            Object[] output = null;
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.maybeHas(handle, key)) return true;
+            }
+            return false;
+        });
+    }
+
+    public Future<Object> load(Object handle, Class<?> model, byte[] key) {
+        return executor.submit(() -> {
+            Object loadableObject = null;
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                loadableObject = provider.get(handle, model, key);
+                if(loadableObject != null) {
+                    break;
+                }
+            }
+            return loadableObject;
         });
     }
 }

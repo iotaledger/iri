@@ -4,7 +4,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.tangle.Tangle;
 import com.iota.iri.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.viewModel.TransactionViewModel;
+import com.iota.iri.service.TransactionViewModel;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.Test;
 

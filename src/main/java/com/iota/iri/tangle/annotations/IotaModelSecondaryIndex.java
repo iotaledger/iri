@@ -1,11 +1,11 @@
-package com.iota.iri.tangle;
+package com.iota.iri.tangle.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Created by paul on 3/7/17 for iri.
+ * Created by paul on 3/4/17 for iri.
  */
 @Retention(RetentionPolicy.RUNTIME)
-public @interface BelongsTo {
+public @interface IotaModelSecondaryIndex {
 }

@@ -3,7 +3,7 @@ package com.iota.iri.tangle;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.viewModel.TransactionViewModel;
+import com.iota.iri.service.TransactionViewModel;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -20,8 +20,10 @@ public class TangleTest {
 
     @Before
     public void setUp() throws Exception {
-        Tangle.instance().addPersistenceProvider(new MockPersistenceProvider());
-        Tangle.instance().init();
+        Tangle instance;
+        instance = Tangle.instance();
+        instance.addPersistenceProvider(new MockPersistenceProvider());
+        instance.init();
     }
 
     @After

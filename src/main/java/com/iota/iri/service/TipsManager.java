@@ -10,10 +10,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
-import com.iota.iri.model.Transaction;
-import com.iota.iri.viewModel.AddressViewModel;
-import com.iota.iri.viewModel.TransactionViewModel;
+import com.iota.iri.model.Address;
+import com.iota.iri.model.Flag;
+import com.iota.iri.model.Scratchpad;
+import com.iota.iri.service.storage.AbstractStorage;
+import com.iota.iri.tangle.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,9 +24,6 @@ import com.iota.iri.Bundle;
 import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.storage.Storage;
-import com.iota.iri.service.storage.StorageAddresses;
-import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
 
 public class TipsManager {
@@ -104,10 +104,13 @@ public class TipsManager {
         final int oldestAcceptableMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex - depth;
         
         long criticalArrivalTime = Long.MAX_VALUE;
-        
+
+        Object transientHandle = Tangle.instance().createTransientList(Flag.class);
         try {
-            for (final Long pointer : StorageAddresses.instance().addressesOf(Milestone.COORDINATOR)) {
-                final TransactionViewModel transactionViewModel = StorageTransactions.instance().loadTransaction(pointer);
+            AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR.bytes());
+            //StorageAddresses.instance().addressesOf(Milestone.COORDINATOR)
+            for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
+                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
                 if (transactionViewModel.getCurrentIndex() == 0) {
                     int milestoneIndex = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET,
                             15);
@@ -150,12 +153,12 @@ public class TipsManager {
                 byte[] transactionHash;
                 while ((transactionHash = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (setAnalyzedTransactionFlag(StorageTransactions.instance().transactionPointer(transactionHash))) {
+                    if (setAnalyzedTransactionFlag(transientHandle, transactionHash)) {
 
                         numberOfAnalyzedTransactions++;
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
-                        if (transactionViewModel.type == Storage.PREFILLED_SLOT) {
+                        if (transactionViewModel.type == AbstractStorage.PREFILLED_SLOT) {
 
                             return null;
 
@@ -168,7 +171,7 @@ public class TipsManager {
                                 final Bundle bundle = new Bundle(transactionViewModel.getBundleHash());
                                 for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 
-                                    if (bundleTransactionViewModels.get(0).pointer == transactionViewModel.pointer) {
+                                    if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
                                         validBundle = true;
 
@@ -254,11 +257,11 @@ public class TipsManager {
             final Set<byte[]> tailsWithoutApprovers = new HashSet<>();
             while ((transactionHash = nonAnalyzedTransactions.poll()) != null) {
 
-                if (setAnalyzedTransactionFlag(StorageTransactions.instance().transactionPointer(transactionHash))) {
+                if (setAnalyzedTransactionFlag(transientHandle, transactionHash)) {
 
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
 
-                    if (transactionViewModel.getCurrentIndex() == 0 && !tailsToAnalyze.contains(transactionViewModel.pointer)) {
+                    if (transactionViewModel.getCurrentIndex() == 0 && !tailsToAnalyze.contains(transactionViewModel.getHash())) {
 
                         tailsToAnalyze.add(transactionViewModel.getHash());
                     }
@@ -290,6 +293,19 @@ public class TipsManager {
                 while (tailsToAnalyzeIterator.hasNext()) {
 
                     final byte[] tailHash = tailsToAnalyzeIterator.next();
+                    try {
+                        if (Tangle.instance().maybeHas(transientHandle, tailHash).get()) {
+                            if (Tangle.instance().load(transientHandle, Flag.class, tailHash).get() != null) {
+                                tailsToAnalyzeIterator.remove();
+                            }
+                        }
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    } catch (ExecutionException e) {
+                        e.printStackTrace();
+                    }
+
+                    /*
                     long tailPointer = StorageTransactions.instance().transactionPointer(tailHash);
                     if ((analyzedTransactionsFlags[(int) ((tailPointer
                             - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> (11 + 3))]
@@ -298,6 +314,7 @@ public class TipsManager {
 
                         tailsToAnalyzeIterator.remove();
                     }
+                    */
                 }
             }
 
@@ -326,11 +343,10 @@ public class TipsManager {
                 nonAnalyzedTransactions.offer(tailHash);
                 while ((transactionHash = nonAnalyzedTransactions.poll()) != null) {
 
-                    long pointer = StorageTransactions.instance().transactionPointer(transactionHash);
-                    if (setAnalyzedTransactionFlag(pointer)) {
+                    if (setAnalyzedTransactionFlag(transientHandle, transactionHash)) {
 
-                        final TransactionViewModel transactionViewModel = StorageTransactions.instance().loadTransaction(transactionHash);
-                        if (transactionViewModel.type == Storage.PREFILLED_SLOT) {
+                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
+                        if (transactionViewModel.type == AbstractStorage.PREFILLED_SLOT) {
 
                             // -- Coo only--
                             // seenTails.addAll(extraTransactions);
@@ -355,14 +371,13 @@ public class TipsManager {
 
                     for (final byte[] extraTransactionPointer : extraTransactions) {
 
-                        final TransactionViewModel transactionViewModel = StorageTransactions.instance()
-                                .loadTransaction(extraTransactionPointer);
+                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(extraTransactionPointer);
                         if (transactionViewModel.getCurrentIndex() == 0) {
 
                             final Bundle bundle = new Bundle(transactionViewModel.getBundleHash());
                             for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 
-                                if (bundleTransactionViewModels.get(0).pointer == transactionViewModel.pointer) {
+                                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
                                     for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
 
@@ -377,7 +392,7 @@ public class TipsManager {
                                             break;
                                         }
 
-                                        if (!extraTransactionsCopy.remove(bundleTransactionViewModel.pointer)) {
+                                        if (!extraTransactionsCopy.remove(bundleTransactionViewModel.getHash())) {
                                             extraTransactionsCopy = null;
                                             break;
                                         }
@@ -474,20 +489,26 @@ public class TipsManager {
 
         } finally {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
+            Tangle.instance().dropList(transientHandle);
         }
     }
 
-    private static boolean setAnalyzedTransactionFlag(long pointer) {
+    private static boolean setAnalyzedTransactionFlag(Object handle, byte[] hash) {
 
-        pointer -= Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET;
-
-        final int value = analyzedTransactionsFlags[(int) (pointer >> (11 + 3))];
-        if ((value & (1 << ((pointer >> 11) & 7))) == 0) {
-            analyzedTransactionsFlags[(int) (pointer >> (11 + 3))] = (byte) (value | (1 << ((pointer >> 11) & 7)));
+        try {
+            if(Tangle.instance().maybeHas(handle, hash).get()) {
+                if(Tangle.instance().load(handle, Flag.class, hash).get() != null) {
+                    return false;
+                }
+            }
+            Tangle.instance().save(new Flag(hash)).get();
             return true;
-        } else {
-            return false;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
         }
+        return false;
     }
     
     public void shutDown() {

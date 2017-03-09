@@ -8,7 +8,7 @@ import java.util.Map;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
-import com.iota.iri.viewModel.TransactionViewModel;
+import com.iota.iri.service.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
 /**

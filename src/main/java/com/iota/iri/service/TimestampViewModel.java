@@ -1,4 +1,4 @@
-package com.iota.iri.viewModel;
+package com.iota.iri.service;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Timestamp;

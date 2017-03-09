@@ -1,10 +1,10 @@
 package com.iota.iri.tangle;
 
-import com.iota.iri.model.Transaction;
+import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
+import java.nio.Buffer;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * Created by paul on 3/2/17 for iri.
@@ -22,11 +22,10 @@ public interface IPersistenceProvider {
     boolean update(Object model, String item, Object value) throws Exception;
 
     Object[] queryMany(Class<?> modelClass, String index, Object key, int keyLength) throws Exception;
-    /*
-    interface QueryBuilder {
-        QueryBuilder where(String index, Object value);
-        QueryBuilder and();
-        Object execute();
-    }
-    */
+
+    boolean setTransientHandle(Class<?> model, Object uuid);
+    void dropTransientHandle(Object handle);
+    boolean maybeHas(Object handle, Object key);
+    Object get(Object handle, Class<?> model, Object key) throws Exception;
+    void deleteTransientObject(Object uuid, Object key) throws Exception;
 }

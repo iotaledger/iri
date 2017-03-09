@@ -209,7 +209,7 @@ public class TransactionViewModel {
     }
 
     public void update(String item) throws Exception {
-        Tangle.instance().update(transaction, item, TransactionViewModel.class.getDeclaredField(item).get(transaction));
+        Tangle.instance().update(transaction, item, Transaction.class.getDeclaredField(item).get(transaction));
     }
 
     public static void setAnalyzed(byte[] hash, boolean analyzed) {

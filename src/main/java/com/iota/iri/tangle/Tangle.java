@@ -76,6 +76,13 @@ public class Tangle {
         this.persistenceProviders.add(provider);
     }
 
+    public void init(String path) throws Exception {
+        executor = Executors.newCachedThreadPool();
+        for(IPersistenceProvider provider: this.persistenceProviders) {
+            provider.setColumns(modelPrimaryKeys, modelFieldInfo);
+            provider.init(path);
+        }
+    }
     public void init() throws Exception {
         executor = Executors.newCachedThreadPool();
         for(IPersistenceProvider provider: this.persistenceProviders) {

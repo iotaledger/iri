@@ -21,6 +21,11 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public void init(String path) throws Exception {
+
+    }
+
+    @Override
     public void shutdown() {
 
     }

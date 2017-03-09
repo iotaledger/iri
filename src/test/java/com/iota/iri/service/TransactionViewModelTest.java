@@ -10,7 +10,9 @@ import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -21,18 +23,22 @@ import static org.junit.Assert.*;
  * Created by paul on 3/5/17 for iri.
  */
 public class TransactionViewModelTest {
+    @Rule
+    public TemporaryFolder dbFolder = new TemporaryFolder();
+
     @Before
     public void setUp() throws Exception {
+        Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
+         Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
     }
 
     @After
     public void tearDown() throws Exception {
+        Tangle.instance().shutdown();
     }
 
     @Test
     public void getBundleTransactions() throws Exception {
-        Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init();
         Random r = new Random();
         byte[] bundleHash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
         TransactionViewModel[] bundle, transactionViewModels;
@@ -55,14 +61,11 @@ public class TransactionViewModelTest {
         }
 
         bundle = transactionViewModels[0].getBundleTransactions();
-        Tangle.instance().shutdown();
         assertEquals(bundle.length, transactionViewModels.length);
     }
 
     @Test
     public void getBranchTransaction() throws Exception {
-        Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init();
         Random seed = new Random();
         TransactionViewModel transactionViewModel, branchTransaction;
 
@@ -76,14 +79,11 @@ public class TransactionViewModelTest {
         branchTransaction.store().get();
 
         TransactionViewModel branchTransactionQuery = transactionViewModel.getBranchTransaction();
-        Tangle.instance().shutdown();
         assertArrayEquals(branchTransactionQuery.getHash(), branchTransaction.getHash());
     }
 
     @Test
     public void getTrunkTransaction() throws Exception {
-        Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init();
         Random seed = new Random();
         TransactionViewModel transactionViewModel, trunkTransactionViewModel;
 
@@ -97,14 +97,11 @@ public class TransactionViewModelTest {
         trunkTransactionViewModel.store().get();
 
         TransactionViewModel trunkTransactionQuery = transactionViewModel.getTrunkTransaction();
-        Tangle.instance().shutdown();
         assertArrayEquals(trunkTransactionQuery.getHash(), trunkTransactionViewModel.getHash());
     }
 
     @Test
     public void getApprovers() throws Exception {
-        Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init();
         Random seed = new Random();
         TransactionViewModel transactionViewModel, trunkTxApprover, branchTxApprover;
 
@@ -124,7 +121,6 @@ public class TransactionViewModelTest {
         branchTxApprover.store().get();
 
         Hash[] approvers = transactionViewModel.getApprovers();
-        Tangle.instance().shutdown();
         assertNotEquals(Arrays.stream(approvers).filter(hash -> Arrays.equals(hash.bytes(), trunkTxApprover.getHash())).toArray().length, 0);
         assertNotEquals(Arrays.stream(approvers).filter(hash -> Arrays.equals(hash.bytes(), branchTxApprover.getHash())).toArray().length, 0);
     }

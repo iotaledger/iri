@@ -3,12 +3,15 @@ package com.iota.iri.tangle.rocksDB;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Flag;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.tangle.IPersistenceProvider;
 import com.iota.iri.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.service.TransactionViewModel;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -21,10 +24,13 @@ import static org.junit.Assert.*;
  */
 public class RocksDBPersistenceProviderTest {
 
+    @Rule
+    public TemporaryFolder dbFolder = new TemporaryFolder();
+
     @Before
     public void setUp() throws Exception {
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init();
+        Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
     }
 
     @After
@@ -36,7 +42,7 @@ public class RocksDBPersistenceProviderTest {
     public void save() throws Exception {
         Random r = new Random();
         int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
-        hash = new int[Curl.HASH_LENGTH];
+                hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction();
         transaction.bytes = Converter.bytes(trits);
         Curl curl = new Curl();
@@ -112,8 +118,8 @@ public class RocksDBPersistenceProviderTest {
             Tangle.instance().getPersistenceProviders().get(0).save(transaction);
         }
         Object[] queryOutput = Tangle.instance()
-                        .query(Transaction.class, "bundle", transactions[0].bundle, bundleHash.length)
-                        .get();
+                .query(Transaction.class, "bundle", transactions[0].bundle, bundleHash.length)
+                .get();
         bundle = Arrays.stream(queryOutput).toArray(Transaction[]::new);
         //bundle = Arrays.stream(Tangle.instance().getPersistenceProviders().get(0).queryMany(Transaction.class, "bundle", bundleHash, bundleHash.length)).toArray(Transaction[]::new);
         assertEquals(bundle.length, transactions.length);

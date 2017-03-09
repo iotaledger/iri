@@ -33,6 +33,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     WriteOptions writeOptions;
 
     @Override
+    public void init(String path) throws Exception{
+        initDB(path);
+    }
+
+    @Override
     public void init() throws Exception {
         initDB(Configuration.string(Configuration.DefaultConfSettings.DB_PATH));
     }
@@ -49,24 +54,24 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Class modelClass = thing.getClass();
         Field primaryKeyField = modelPrimaryKey.get(modelClass);
         byte[] primaryKey = serialize(primaryKeyField.get(thing));
-        for(Map.Entry<String, RocksField> set: modelColumns.get(modelClass).entrySet()) {
+        for (Map.Entry<String, RocksField> set : modelColumns.get(modelClass).entrySet()) {
             String fieldName = set.getKey();
             RocksField rocksField = set.getValue();
             Object thingToSerialize;
             thingToSerialize = modelClass.getDeclaredField(fieldName).get(thing);
-            if(rocksField.info.belongsTo != null && thingToSerialize != null) {
+            if (rocksField.info.belongsTo != null && thingToSerialize != null) {
                 Field indexField = modelPrimaryKey.get(rocksField.info.belongsTo);
                 thingToSerialize = indexField.get(thingToSerialize);
             }
             byte[] fieldValue = serialize(thingToSerialize);
-            if(fieldValue != null) {
-                if(rocksField.handle != null) {
+            if (fieldValue != null) {
+                if (rocksField.handle != null) {
                     batch.put(rocksField.handle, primaryKey, fieldValue);
                 }
-                if(rocksField.ownerHandle != null) {
+                if (rocksField.ownerHandle != null) {
                     byte[] current = db.get(rocksField.ownerHandle, fieldValue);
-                    if(current == null) current = new byte[0];
-                    if(current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
+                    if (current == null) current = new byte[0];
+                    if (current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
                         current = ArrayUtils.addAll(current, primaryKey);
                     }
                     batch.put(rocksField.ownerHandle, fieldValue, current);
@@ -78,30 +83,30 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public Object get(Class<?> modelClass, Object key) throws Exception{
+    public Object get(Class<?> modelClass, Object key) throws Exception {
         Object thing = modelClass.newInstance();
         modelPrimaryKey.get(modelClass).set(thing, key);
         byte[] primaryKey = serialize(key);
         boolean foundAny = false;
-        for(Map.Entry<String, RocksField> set: modelColumns.get(modelClass).entrySet()) {
+        for (Map.Entry<String, RocksField> set : modelColumns.get(modelClass).entrySet()) {
             RocksField rocksField = set.getValue();
-            if(rocksField.handle != null) {
+            if (rocksField.handle != null) {
                 Field field = modelClass.getDeclaredField(set.getKey());
                 byte[] result = db.get(rocksField.handle, primaryKey);
-                if(result != null) {
+                if (result != null) {
                     foundAny = true;
                     Field subField;
-                    subField = field.getType().isArray() ? modelPrimaryKey.get(field.getType().getComponentType()): modelPrimaryKey.get(field.getType());
-                    if(subField != null) {
+                    subField = field.getType().isArray() ? modelPrimaryKey.get(field.getType().getComponentType()) : modelPrimaryKey.get(field.getType());
+                    if (subField != null) {
                         SizedArray sizedArray = subField.getAnnotation(SizedArray.class);
-                        if(sizedArray != null) {
+                        if (sizedArray != null) {
                             int numberOfKeys;
-                            if((numberOfKeys = result.length / sizedArray.length()) != 0) {
+                            if ((numberOfKeys = result.length / sizedArray.length()) != 0) {
                                 field.set(thing, Array.newInstance(field.getType().getComponentType(), numberOfKeys));
                                 Object[] subArray = (Object[]) field.get(thing);
-                                for(int i = 0; i < numberOfKeys; i++) {
+                                for (int i = 0; i < numberOfKeys; i++) {
                                     subArray[i] = field.getType().getComponentType().newInstance();
-                                    byte[] theKey = Arrays.copyOfRange(result, i*sizedArray.length(), (i+1)*sizedArray.length());
+                                    byte[] theKey = Arrays.copyOfRange(result, i * sizedArray.length(), (i + 1) * sizedArray.length());
                                     subField.set(subArray[i], deserialize(theKey, subField.getType()));
                                     //Array.set(field.get(thing), i, deserialize(theKey, subField.getType()));
                                 }
@@ -116,7 +121,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 }
             }
         }
-        if(!foundAny) thing = null;
+        if (!foundAny) thing = null;
         return thing;
     }
 
@@ -134,12 +139,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                                 .map(field -> new HashMap.SimpleEntry<String, RocksField>(
                                         field.getKey(),
                                         new RocksField(field.getValue())))
-                                .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue))))
-                .collect(Collectors.toMap(Map.Entry::getKey,Map.Entry::getValue));
+                                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
     @Override
-    public Object query(Class<?> modelClass, String index, Object value, int keyLength) throws Exception{
+    public Object query(Class<?> modelClass, String index, Object value, int keyLength) throws Exception {
         return queryMany(modelClass, index, value, keyLength);
         /*
         Class modelClass = thing.getClass();
@@ -153,20 +158,21 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
         */
     }
+
     @Override
     public Object[] queryMany(Class<?> modelClass, String index, Object value, int keyLength) throws Exception {
         RocksField rocksField = modelColumns.get(modelClass).get(index);
-        if(rocksField != null && rocksField.ownerHandle != null) {
+        if (rocksField != null && rocksField.ownerHandle != null) {
             int numberOfKeys;
             Field field = modelPrimaryKey.get(rocksField.info.belongsTo);
             byte[] secondaryKey = serialize(field.get(value));
             byte[] primaryKeys = db.get(rocksField.ownerHandle, secondaryKey);
-            if(primaryKeys != null && (numberOfKeys = primaryKeys.length / keyLength) != 0) {
+            if (primaryKeys != null && (numberOfKeys = primaryKeys.length / keyLength) != 0) {
                 Object[] output = new Object[numberOfKeys];
-                for(int i = 0; i < numberOfKeys; i++) {
-                    byte[] key = Arrays.copyOfRange(primaryKeys, i*keyLength, (i+1)*keyLength);
+                for (int i = 0; i < numberOfKeys; i++) {
+                    byte[] key = Arrays.copyOfRange(primaryKeys, i * keyLength, (i + 1) * keyLength);
                     output[i] = get(modelClass, key);
-                    if(output[i] == null) {
+                    if (output[i] == null) {
                         return null;
                     }
                 }
@@ -193,10 +199,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                         try {
                             field.handle =
                                     db.createColumnFamily(
-                                    new ColumnFamilyDescriptor(
-                                            new String(uuid.toString() + field.info.name).getBytes(),
-                                            new ColumnFamilyOptions()));
-                            if(field.info.belongsTo != null) {
+                                            new ColumnFamilyDescriptor(
+                                                    new String(uuid.toString() + field.info.name).getBytes(),
+                                                    new ColumnFamilyOptions()));
+                            if (field.info.belongsTo != null) {
                                 field.ownerHandle =
                                         db.createColumnFamily(
                                                 new ColumnFamilyDescriptor(
@@ -216,14 +222,15 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public void dropTransientHandle(Object uuid) throws Exception{
+    public void dropTransientHandle(Object uuid) throws Exception {
         ColumnFamilyHandle handle = transientHandles.get(uuid);
         db.dropColumnFamily(handle);
     }
 
     @Override
     public boolean save(Object uuid, Object model) throws Exception {
-        WriteBatch batch = new WriteBatch();;
+        WriteBatch batch = new WriteBatch();
+        ;
 
         /*
         ColumnFamilyHandle handle = transientHandles.get(uuid);
@@ -233,24 +240,24 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
 
         Class modelClass = model.getClass();
-        for(Map.Entry<String, RocksField> set: transientColumns.get(uuid).entrySet()) {
+        for (Map.Entry<String, RocksField> set : transientColumns.get(uuid).entrySet()) {
             String fieldName = set.getKey();
             RocksField rocksField = set.getValue();
             Object thingToSerialize;
             thingToSerialize = modelClass.getDeclaredField(fieldName).get(model);
-            if(rocksField.info.belongsTo != null && thingToSerialize != null) {
+            if (rocksField.info.belongsTo != null && thingToSerialize != null) {
                 Field indexField = modelPrimaryKey.get(rocksField.info.belongsTo);
                 thingToSerialize = indexField.get(thingToSerialize);
             }
             byte[] fieldValue = serialize(thingToSerialize);
-            if(fieldValue != null) {
-                if(rocksField.handle != null) {
+            if (fieldValue != null) {
+                if (rocksField.handle != null) {
                     batch.put(rocksField.handle, primaryKey, fieldValue);
                 }
-                if(rocksField.ownerHandle != null) {
+                if (rocksField.ownerHandle != null) {
                     byte[] current = db.get(rocksField.ownerHandle, fieldValue);
-                    if(current == null) current = new byte[0];
-                    if(current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
+                    if (current == null) current = new byte[0];
+                    if (current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
                         current = ArrayUtils.addAll(current, primaryKey);
                     }
                     batch.put(rocksField.ownerHandle, fieldValue, current);
@@ -266,13 +273,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         StringBuffer stringBuffer = new StringBuffer();
         byte[] primaryKey = serialize(index);
         boolean mayExist = false;
-        for(Map.Entry<String, RocksField> set: transientColumns.get(uuid).entrySet()) {
+        for (Map.Entry<String, RocksField> set : transientColumns.get(uuid).entrySet()) {
             RocksField rocksField = set.getValue();
-            if(rocksField.handle != null) {
+            if (rocksField.handle != null) {
                 mayExist = db.keyMayExist(rocksField.handle, primaryKey, stringBuffer);
                 if (mayExist) break;
             }
-            if(rocksField.ownerHandle != null) {
+            if (rocksField.ownerHandle != null) {
                 mayExist = db.keyMayExist(rocksField.ownerHandle, primaryKey, stringBuffer);
                 if (mayExist) break;
             }
@@ -288,13 +295,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         byte[] primaryKey = serialize(key);
 
 
-        for(Map.Entry<String, RocksField> set: transientColumns.get(uuid).entrySet()) {
+        for (Map.Entry<String, RocksField> set : transientColumns.get(uuid).entrySet()) {
             RocksField rocksField = set.getValue();
-            if(rocksField.handle != null) {
+            if (rocksField.handle != null) {
                 f = model.getDeclaredField(set.getKey());
                 f.set(out, deserialize(db.get(rocksField.handle, primaryKey), f.getType()));
             }
-            if(rocksField.ownerHandle != null) {
+            if (rocksField.ownerHandle != null) {
                 f = modelPrimaryKey.get(rocksField.ownerHandle);
                 f.set(out, deserialize(db.get(rocksField.ownerHandle, primaryKey), f.getType()));
             }
@@ -304,11 +311,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
 
     @Override
-    public void deleteTransientObject(Object uuid, Object key) throws Exception{
+    public void deleteTransientObject(Object uuid, Object key) throws Exception {
         ColumnFamilyHandle handle = transientHandles.get(uuid);
         db.delete(handle, serialize(key));
         byte[] primaryKey = serialize(key);
-        for(Map.Entry<String, RocksField> set: transientColumns.get(uuid).entrySet()) {
+        for (Map.Entry<String, RocksField> set : transientColumns.get(uuid).entrySet()) {
             RocksField rocksField = set.getValue();
             if (rocksField.handle != null) {
                 db.delete(rocksField.handle, primaryKey);
@@ -323,7 +330,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public boolean update(Object thing, String item, Object value) throws Exception {
         Class modelClass = thing.getClass();
         RocksField rocksField = modelColumns.get(modelClass).get(item);
-        if(rocksField != null && rocksField.handle != null) {
+        if (rocksField != null && rocksField.handle != null) {
             Field primaryKeyField = modelPrimaryKey.get(modelClass);
             byte[] primaryKey = serialize(primaryKeyField.get(thing));
             byte[] newValue = serialize(value);
@@ -336,6 +343,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     void initDB(String path) throws Exception {
         RocksDB.loadLibrary();
         options = new DBOptions().setCreateIfMissing(true);
+        db = RocksDB.open(new Options().setCreateIfMissing(true), path);
+        db.close();
 
         List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
         List<ColumnFamilyDescriptor> familyDescriptors = modelColumns
@@ -355,7 +364,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
         fillMissingColumns(familyDescriptors, familyHandles, path);
 
-        db = RocksDB.open(options,  path, familyDescriptors, familyHandles);
+        db = RocksDB.open(options, path, familyDescriptors, familyHandles);
 
         fillmodelColumnHandles(familyDescriptors, familyHandles);
     }
@@ -368,16 +377,15 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         columnFamilies.add(0, familyDescriptors.get(0));
         List<ColumnFamilyDescriptor> missingFromDatabase = familyDescriptors.stream().filter(d -> columnFamilies.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
         List<ColumnFamilyDescriptor> missingFromDescription = columnFamilies.stream().filter(d -> familyDescriptors.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
-        if(missingFromDatabase.size() != 0)
-        {
+        if (missingFromDatabase.size() != 0) {
             missingFromDatabase.remove(familyDescriptors.get(0));
-            db = RocksDB.open(options,  path, columnFamilies, familyHandles);
-            for(ColumnFamilyDescriptor description : missingFromDatabase) {
-                System.out.println(new String(description.columnFamilyName()));
+            db = RocksDB.open(options, path, columnFamilies, familyHandles);
+            for (ColumnFamilyDescriptor description : missingFromDatabase) {
                 addColumnFamily(description.columnFamilyName(), db);
             }
+            db.close();
         }
-        if(missingFromDescription.size() != 0) {
+        if (missingFromDescription.size() != 0) {
             missingFromDescription.stream().forEach(familyDescriptors::add);
         }
 
@@ -391,7 +399,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     private void fillmodelColumnHandles(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles) {
-        for(ColumnFamilyDescriptor d: familyDescriptors) {
+        for (ColumnFamilyDescriptor d : familyDescriptors) {
             String name = new String(d.columnFamilyName());
             RocksField f = modelColumns.values()
                     .stream()
@@ -408,15 +416,15 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                     .filter(n -> n != null)
                     .findAny()
                     .orElse(null);
-            if(f != null && f.info != null) {
-                if(name.equals(f.info.name)) {
+            if (f != null && f.info != null) {
+                if (name.equals(f.info.name)) {
                     f.handle = familyHandles.get(familyDescriptors.indexOf(d));
                 }
             }
         }
         modelColumns.values()
                 .stream()
-                .forEach( s -> s.values()
+                .forEach(s -> s.values()
                         .stream()
                         .filter(f -> f.info.belongsTo != null)
                         .forEach(f -> {
@@ -432,14 +440,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 );
     }
 
-    private static byte[] serialize(Object obj) throws IOException{
-        if(obj instanceof byte[]) {
-            return (byte[])obj;
+    private static byte[] serialize(Object obj) throws IOException {
+        if (obj instanceof byte[]) {
+            return (byte[]) obj;
         } else if (obj == null) {
             return null;
         }
-        try(ByteArrayOutputStream b = new ByteArrayOutputStream()){
-            try(ObjectOutputStream o = new ObjectOutputStream(b)){
+        try (ByteArrayOutputStream b = new ByteArrayOutputStream()) {
+            try (ObjectOutputStream o = new ObjectOutputStream(b)) {
                 o.writeObject(obj);
             }
             return b.toByteArray();
@@ -447,11 +455,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     public static Object deserialize(byte[] bytes, Class target) throws IOException, ClassNotFoundException {
-        if(target == byte[].class) {
+        if (target == byte[].class) {
             return bytes;
         }
-        try(ByteArrayInputStream b = new ByteArrayInputStream(bytes)){
-            try(ObjectInputStream o = new ObjectInputStream(b)){
+        try (ByteArrayInputStream b = new ByteArrayInputStream(bytes)) {
+            try (ObjectInputStream o = new ObjectInputStream(b)) {
                 return o.readObject();
             }
         }
@@ -462,42 +470,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         ColumnFamilyHandle handle;
         ColumnFamilyHandle ownerHandle;
 
-        public RocksField() {}
+        public RocksField() {
+        }
+
         public RocksField(ModelFieldInfo info) {
             this.info = info;
         }
     }
-
-    /*
-    public void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Set<Field>> modelIndices, Map<Class<?>, Set<Field>> modelStoredItems) {
-        this.modelPrimaryKey = modelPrimaryKey;
-
-        Map<Class<?>, Map<String, RocksField>> modelColumns = modelIndices.entrySet().parallelStream()
-                .map(entrySet ->
-                        new HashMap.SimpleEntry<Class<?>, Map<String, RocksField>>(entrySet.getKey(),
-                                entrySet.getValue().stream()
-                                        .map(entry -> {
-                                            RocksField rocksField = new RocksField();
-                                            rocksField.indexColumnName = SECONDARY_INDEX_PRE + entrySet.getKey().getSimpleName() + COLUMN_DELIMETER + entry.getName();
-                                            if(modelStoredItems.get(entrySet.getKey()).contains(entry)) {
-                                                rocksField.itemColumnName = entrySet.getKey().getSimpleName() + COLUMN_DELIMETER + entry.getName();
-                                            }
-                                            return new HashMap.SimpleEntry<>(entry.getName(), rocksField);
-                                        })
-                                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))))
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        modelStoredItems.entrySet().stream().forEach(entrySet -> {
-            entrySet.getValue().parallelStream().forEach(entry -> {
-                RocksField rocksField = modelColumns.get(entrySet.getKey()).get(entry.getName());
-                if(rocksField == null) {
-                    rocksField = new RocksField();
-                    rocksField.itemColumnName = entrySet.getKey().getSimpleName() + COLUMN_DELIMETER + entry.getName();
-                    modelColumns.get(entrySet.getKey()).put(entry.getName(), rocksField);
-                }
-            });
-        });
-    }
-    */
 }
-
-

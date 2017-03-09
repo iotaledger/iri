@@ -11,6 +11,7 @@ import java.util.Map;
  */
 public interface IPersistenceProvider {
     void init() throws Exception;
+    void init(String path) throws Exception;
     void shutdown();
     boolean save(Object o) throws Exception;
     Object get(Class<?> modelClass, Object key) throws Exception;
@@ -29,4 +30,5 @@ public interface IPersistenceProvider {
     boolean mayExist(Object handle, Object key) throws Exception;
     Object get(Object handle, Class<?> model, Object key) throws Exception;
     void deleteTransientObject(Object uuid, Object key) throws Exception;
+
 }

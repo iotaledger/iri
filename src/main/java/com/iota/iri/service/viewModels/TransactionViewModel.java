@@ -96,7 +96,11 @@ public class TransactionViewModel {
         return TransactionViewModel.fromHash(hash.bytes());
     }
     public TransactionViewModel(final com.iota.iri.model.Transaction transaction) {
-        this.transaction = transaction;
+        if(transaction == null) {
+            this.transaction = new Transaction();
+        } else {
+            this.transaction = transaction;
+        }
         type = AbstractStorage.FILLED_SLOT;
     }
 

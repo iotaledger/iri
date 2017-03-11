@@ -340,11 +340,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         RocksDB.loadLibrary();
         options = new DBOptions().setCreateIfMissing(true);
 
-        /*
-        db = RocksDB.open(new Options().setCreateIfMissing(true), path);
-        db.close();
-        */
-
         List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
         List<ColumnFamilyDescriptor> familyDescriptors = modelColumns
                 .values()

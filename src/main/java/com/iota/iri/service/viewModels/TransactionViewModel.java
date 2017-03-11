@@ -50,6 +50,7 @@ public class TransactionViewModel {
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
     public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[TransactionViewModel.HASH_SIZE];
+    public static final byte[] NULL_TRANSACTION_BYTES = new byte[TransactionViewModel.SIZE];
 
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
@@ -98,6 +99,8 @@ public class TransactionViewModel {
     public TransactionViewModel(final com.iota.iri.model.Transaction transaction) {
         if(transaction == null) {
             this.transaction = new Transaction();
+            this.transaction.bytes = NULL_TRANSACTION_BYTES;
+            this.transaction.hash = NULL_TRANSACTION_HASH_BYTES;
         } else {
             this.transaction = transaction;
         }

@@ -406,14 +406,26 @@ public class TransactionViewModel {
     }
 
     public byte[] getBundleHash() {
+        if(this.transaction.bundle == null) {
+            this.transaction.bundle = new Bundle();
+            this.transaction.bundle.hash = NULL_TRANSACTION_HASH_BYTES;
+        }
         return transaction.bundle.hash;
     }
 
     public byte[] getTrunkTransactionHash() {
+        if(this.transaction.trunk == null) {
+            this.transaction.trunk = new Approvee();
+            this.transaction.trunk.hash = NULL_TRANSACTION_HASH_BYTES;
+        }
         return transaction.trunk.hash;
     }
 
     public byte[] getBranchTransactionHash() {
+        if(this.transaction.branch == null) {
+            this.transaction.branch = new Approvee();
+            this.transaction.branch.hash = NULL_TRANSACTION_HASH_BYTES;
+        }
         return transaction.branch.hash;
     }
 

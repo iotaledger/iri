@@ -1,9 +1,6 @@
-package com.iota.iri.tangle;
-
-import org.rocksdb.RocksDBException;
+package com.iota.iri.service.tangle;
 
 import java.lang.reflect.Field;
-import java.nio.Buffer;
 import java.util.Map;
 
 /**

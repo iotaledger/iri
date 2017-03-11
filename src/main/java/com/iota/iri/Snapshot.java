@@ -1,5 +1,5 @@
 package com.iota.iri;
-import com.iota.iri.service.TransactionViewModel;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import java.util.HashMap;
 import java.util.Map;

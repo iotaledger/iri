@@ -1,6 +1,6 @@
 package com.iota.iri.model;
 
-import com.iota.iri.tangle.annotations.*;
+import com.iota.iri.service.tangle.annotations.*;
 
 /**
  * Created by paul on 3/2/17 for iri.
@@ -30,12 +30,4 @@ public class Transaction {
     @HasOne public boolean isTip;
     @HasOne public boolean analyzed;
 
-    public Transaction() {
-        tag = new Tag();
-        this.bundle = new Bundle();
-        this.trunk = new Approvee();
-        this.branch = new Approvee();
-        address = new Address();
-        timestamp = new Timestamp();
-    }
 }

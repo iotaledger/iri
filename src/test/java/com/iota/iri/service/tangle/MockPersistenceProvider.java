@@ -1,6 +1,4 @@
-package com.iota.iri.tangle;
-
-import com.iota.iri.model.Transaction;
+package com.iota.iri.service.tangle;
 
 import java.lang.reflect.Field;
 import java.util.Map;

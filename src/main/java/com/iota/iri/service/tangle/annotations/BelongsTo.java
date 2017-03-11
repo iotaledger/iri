@@ -1,12 +1,11 @@
-package com.iota.iri.tangle.annotations;
+package com.iota.iri.service.tangle.annotations;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Created by paul on 3/8/17 for iri.
+ * Created by paul on 3/7/17 for iri.
  */
 @Retention(RetentionPolicy.RUNTIME)
-public @interface SizedArray {
-    int length();
+public @interface BelongsTo {
 }

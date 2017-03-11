@@ -1,6 +1,6 @@
-package com.iota.iri.tangle;
+package com.iota.iri.service.tangle;
 
-import com.iota.iri.tangle.annotations.*;
+import com.iota.iri.service.tangle.annotations.*;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
 import org.reflections.scanners.SubTypesScanner;

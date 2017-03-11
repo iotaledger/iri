@@ -1,8 +1,8 @@
-package com.iota.iri.service;
+package com.iota.iri.service.viewModels;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Timestamp;
-import com.iota.iri.tangle.Tangle;
+import com.iota.iri.service.tangle.Tangle;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;

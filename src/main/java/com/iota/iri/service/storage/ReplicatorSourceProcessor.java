@@ -10,13 +10,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import com.iota.iri.service.ScratchpadViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Neighbor;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.service.Node;
-import com.iota.iri.service.TransactionViewModel;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
 public class ReplicatorSourceProcessor implements Runnable {
@@ -126,14 +127,19 @@ public class ReplicatorSourceProcessor implements Runnable {
                             System.arraycopy(data, TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
                             if (!Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
-                                transactionPointer = StorageTransactions.instance().transactionPointer(requestedTransaction);
+                                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(requestedTransaction);
 
+                                /*
+                                transactionPointer = StorageTransactions.instance().transactionPointer(requestedTransaction);
                                 if (transactionPointer != 0L
                                         && transactionPointer > (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) {
-                                    synchronized (sendingPacket) {
                                         System.arraycopy( StorageTransactions.instance().loadTransaction(transactionPointer).getBytes(),
+                                        */
+                                if(transactionViewModel.getBytes() != null) {
+                                    synchronized (sendingPacket) {
+                                        System.arraycopy( transactionViewModel,
                                                 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-                                        StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
+                                        ScratchpadViewModel.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
                                         neighbor.send(sendingPacket);
                                     }
                                 }

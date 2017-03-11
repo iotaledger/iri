@@ -1,19 +1,15 @@
-package com.iota.iri.tangle.rocksDB;
+package com.iota.iri.service.tangle.rocksDB;
 
-import com.iota.iri.Bundle;
 import com.iota.iri.conf.Configuration;
-import com.iota.iri.tangle.IPersistenceProvider;
-import com.iota.iri.tangle.ModelFieldInfo;
-import com.iota.iri.tangle.annotations.*;
-import com.sun.org.apache.xpath.internal.operations.Mod;
+import com.iota.iri.service.tangle.IPersistenceProvider;
+import com.iota.iri.service.tangle.ModelFieldInfo;
+import com.iota.iri.service.tangle.annotations.*;
 import org.apache.commons.lang3.ArrayUtils;
 import org.rocksdb.*;
 
-import javax.annotation.ManagedBean;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
-import java.nio.Buffer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,26 +51,26 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Field primaryKeyField = modelPrimaryKey.get(modelClass);
         byte[] primaryKey = serialize(primaryKeyField.get(thing));
         for (Map.Entry<String, RocksField> set : modelColumns.get(modelClass).entrySet()) {
-            String fieldName = set.getKey();
-            RocksField rocksField = set.getValue();
-            Object thingToSerialize;
-            thingToSerialize = modelClass.getDeclaredField(fieldName).get(thing);
-            if (rocksField.info.belongsTo != null && thingToSerialize != null) {
-                Field indexField = modelPrimaryKey.get(rocksField.info.belongsTo);
-                thingToSerialize = indexField.get(thingToSerialize);
-            }
-            byte[] fieldValue = serialize(thingToSerialize);
-            if (fieldValue != null) {
-                if (rocksField.handle != null) {
-                    batch.put(rocksField.handle, primaryKey, fieldValue);
+            Object thingToSerialize = modelClass.getDeclaredField(set.getKey()).get(thing);
+            if(thingToSerialize != null) {
+                RocksField rocksField = set.getValue();
+                if (rocksField.info.belongsTo != null && thingToSerialize != null) {
+                    Field indexField = modelPrimaryKey.get(rocksField.info.belongsTo);
+                    thingToSerialize = indexField.get(thingToSerialize);
                 }
-                if (rocksField.ownerHandle != null) {
-                    byte[] current = db.get(rocksField.ownerHandle, fieldValue);
-                    if (current == null) current = new byte[0];
-                    if (current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
-                        current = ArrayUtils.addAll(current, primaryKey);
+                byte[] fieldValue = serialize(thingToSerialize);
+                if (fieldValue != null) {
+                    if (rocksField.handle != null) {
+                        batch.put(rocksField.handle, primaryKey, fieldValue);
                     }
-                    batch.put(rocksField.ownerHandle, fieldValue, current);
+                    if (rocksField.ownerHandle != null) {
+                        byte[] current = db.get(rocksField.ownerHandle, fieldValue);
+                        if (current == null) current = new byte[0];
+                        if (current.length < primaryKey.length || !Arrays.asList(current).containsAll(Arrays.asList(primaryKey))) {
+                            current = ArrayUtils.addAll(current, primaryKey);
+                        }
+                        batch.put(rocksField.ownerHandle, fieldValue, current);
+                    }
                 }
             }
         }
@@ -91,10 +87,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for (Map.Entry<String, RocksField> set : modelColumns.get(modelClass).entrySet()) {
             RocksField rocksField = set.getValue();
             if (rocksField.handle != null) {
-                Field field = modelClass.getDeclaredField(set.getKey());
                 byte[] result = db.get(rocksField.handle, primaryKey);
                 if (result != null) {
                     foundAny = true;
+                    Field field = modelClass.getDeclaredField(set.getKey());
                     Field subField;
                     subField = field.getType().isArray() ? modelPrimaryKey.get(field.getType().getComponentType()) : modelPrimaryKey.get(field.getType());
                     if (subField != null) {
@@ -343,8 +339,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     void initDB(String path) throws Exception {
         RocksDB.loadLibrary();
         options = new DBOptions().setCreateIfMissing(true);
+
+        /*
         db = RocksDB.open(new Options().setCreateIfMissing(true), path);
         db.close();
+        */
 
         List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
         List<ColumnFamilyDescriptor> familyDescriptors = modelColumns

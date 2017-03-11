@@ -2,8 +2,8 @@ package com.iota.iri.service;
 
 import com.iota.iri.model.Flag;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * Created by paul on 3/8/17 for iri.
@@ -11,7 +11,7 @@ import java.util.List;
 public class ScratchpadViewModel {
     public static ScratchpadViewModel instance;
 
-    List<byte[]> analyzedTransactions = new ArrayList<>();
+    Set<byte[]> analyzedTransactions = new TreeSet<>();
     int numberOfTransactionsToRequest = 0;
 
     public void requestTransaction(byte[] hash) {
@@ -51,5 +51,8 @@ public class ScratchpadViewModel {
 
     public void clearAnalyzedTransactionsFlags() {
         analyzedTransactions.clear();
+    }
+
+    public void transactionToRequest(byte[] data, int size) {
     }
 }

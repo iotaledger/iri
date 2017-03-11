@@ -1,10 +1,10 @@
 package com.iota.iri;
 
 import com.iota.iri.hash.Curl;
-import com.iota.iri.tangle.Tangle;
-import com.iota.iri.tangle.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.service.tangle.Tangle;
+import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.service.TransactionViewModel;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -41,6 +41,7 @@ public class BundleTest {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.bundle = new com.iota.iri.model.Bundle();
             transaction.bundle.hash = bundleHash.clone();
             return new TransactionViewModel(transaction);
         }).toArray(TransactionViewModel[]::new);
@@ -48,6 +49,7 @@ public class BundleTest {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = bundleHash.clone();
+            transaction.bundle = new com.iota.iri.model.Bundle();
             transaction.bundle.hash = bundleHash.clone();
             transactionViewModels = ArrayUtils.addAll(transactionViewModels, new TransactionViewModel(transaction));
         }

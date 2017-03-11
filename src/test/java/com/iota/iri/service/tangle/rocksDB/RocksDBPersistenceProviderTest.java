@@ -1,12 +1,13 @@
-package com.iota.iri.tangle.rocksDB;
+package com.iota.iri.service.tangle.rocksDB;
 
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Address;
+import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Flag;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.tangle.IPersistenceProvider;
-import com.iota.iri.tangle.Tangle;
+import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.service.TransactionViewModel;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
@@ -62,8 +63,7 @@ public class RocksDBPersistenceProviderTest {
         transaction.hash = Converter.bytes(hash);
 
         Tangle.instance().getPersistenceProviders().get(0).save(transaction);
-        Transaction getTransaction = new Transaction();
-        getTransaction = (Transaction) Tangle.instance().getPersistenceProviders().get(0).get(Transaction.class, transaction.hash);
+        Transaction getTransaction = (Transaction) Tangle.instance().getPersistenceProviders().get(0).get(Transaction.class, transaction.hash);
         assertArrayEquals(getTransaction.hash, transaction.hash);
         assertArrayEquals(getTransaction.bytes, transaction.bytes);
     }
@@ -75,6 +75,7 @@ public class RocksDBPersistenceProviderTest {
                 hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction(), queryTransaction;
         transaction.bytes = Converter.bytes(trits);
+        transaction.address = new Address();
         transaction.address.bytes = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
         Curl curl = new Curl();
         curl.absorb(trits, 0, trits.length);
@@ -104,6 +105,7 @@ public class RocksDBPersistenceProviderTest {
         transactions = Arrays.stream(new Transaction[4]).map(t -> {
             Transaction transaction = new Transaction();
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.bundle = new Bundle();
             transaction.bundle.hash = bundleHash.clone();
             transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
             return transaction;

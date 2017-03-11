@@ -1,4 +1,4 @@
-package com.iota.iri.tangle;
+package com.iota.iri.service.tangle;
 
 /**
  * Created by paul on 3/6/17 for iri.

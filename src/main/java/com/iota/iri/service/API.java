@@ -17,6 +17,7 @@ import com.iota.iri.*;
 
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.storage.AbstractStorage;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -12,11 +12,11 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-import com.iota.iri.model.Address;
 import com.iota.iri.model.Flag;
-import com.iota.iri.model.Scratchpad;
 import com.iota.iri.service.storage.AbstractStorage;
-import com.iota.iri.tangle.Tangle;
+import com.iota.iri.service.tangle.Tangle;
+import com.iota.iri.service.viewModels.AddressViewModel;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

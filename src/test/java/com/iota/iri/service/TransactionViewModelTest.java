@@ -1,11 +1,13 @@
 package com.iota.iri.service;
 
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Approvee;
+import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.TransactionViewModel;
-import com.iota.iri.tangle.Tangle;
-import com.iota.iri.tangle.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.service.tangle.Tangle;
+import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.*;
@@ -20,9 +22,10 @@ import static org.junit.Assert.*;
  * Created by paul on 3/5/17 for iri.
  */
 public class TransactionViewModelTest {
+    static TemporaryFolder dbFolder = new TemporaryFolder();
+
     @BeforeClass
     public static void setUp() throws Exception {
-        TemporaryFolder dbFolder = new TemporaryFolder();
         dbFolder.create();
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
         Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
@@ -31,6 +34,7 @@ public class TransactionViewModelTest {
     @AfterClass
     public static void tearDown() throws Exception {
         Tangle.instance().shutdown();
+        dbFolder.delete();
     }
 
     @Test
@@ -40,6 +44,7 @@ public class TransactionViewModelTest {
         TransactionViewModel[] bundle, transactionViewModels;
         transactionViewModels = Arrays.stream(new com.iota.iri.model.Transaction[4]).map(t -> {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
+            transaction.bundle = new Bundle();
             transaction.bundle.hash = bundleHash.clone();
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
@@ -47,6 +52,7 @@ public class TransactionViewModelTest {
         }).toArray(TransactionViewModel[]::new);
         {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
+            transaction.bundle = new Bundle();
             transaction.bundle.hash = bundleHash.clone();
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = bundleHash.clone();
@@ -68,6 +74,7 @@ public class TransactionViewModelTest {
         branchTransaction = new TransactionViewModel(getRandomTransaction(seed));
 
         Transaction transaction = getRandomTransaction(seed);
+        transaction.branch = new Approvee();
         transaction.branch.hash = branchTransaction.getHash();
         transactionViewModel = new TransactionViewModel(transaction);
 
@@ -86,6 +93,7 @@ public class TransactionViewModelTest {
         trunkTransactionViewModel = new TransactionViewModel(getRandomTransaction(seed));
 
         Transaction transaction = getRandomTransaction(seed);
+        transaction.trunk = new Approvee();
         transaction.trunk.hash = trunkTransactionViewModel.getHash();
         transactionViewModel = new TransactionViewModel(transaction);
 
@@ -105,10 +113,12 @@ public class TransactionViewModelTest {
         transactionViewModel = new TransactionViewModel(getRandomTransaction(seed));
 
         transaction = getRandomTransaction(seed);
+        transaction.trunk = new Approvee();
         transaction.trunk.hash = transactionViewModel.getHash();
         trunkTxApprover = new TransactionViewModel(transaction);
 
         transaction = getRandomTransaction(seed);
+        transaction.trunk = new Approvee();
         transaction.trunk.hash = transactionViewModel.getHash();
         branchTxApprover = new TransactionViewModel(transaction);
 

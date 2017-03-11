@@ -1,6 +1,6 @@
 package com.iota.iri.model;
 
-import com.iota.iri.tangle.annotations.*;
+import com.iota.iri.service.tangle.annotations.*;
 
 /**
  * Created by paul on 3/8/17 for iri.

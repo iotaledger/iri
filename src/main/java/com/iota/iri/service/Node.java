@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,6 @@ import com.iota.iri.Neighbor;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
-import com.iota.iri.service.storage.StorageScratchpad;
 import com.iota.iri.utils.Converter;
 
 /**
@@ -256,7 +256,7 @@ public class Node {
                                                 && transactionPointer != Hash.NULL_HASH.bytes()) {
                                             synchronized (sendingPacket) {
                                                 System.arraycopy(TransactionViewModel.fromHash(transactionPointer).getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-                                                StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
+                                                ScratchpadViewModel.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
                                                 neighbor.send(sendingPacket);
                                             }
                                         }
@@ -295,7 +295,7 @@ public class Node {
                                 synchronized (sendingPacket) {
                                     System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0,
                                             TransactionViewModel.SIZE);
-                                    StorageScratchpad.instance().transactionToRequest(sendingPacket.getData(),
+                                    ScratchpadViewModel.instance().transactionToRequest(sendingPacket.getData(),
                                             TransactionViewModel.SIZE);
                                     neighbor.send(sendingPacket);
                                 }

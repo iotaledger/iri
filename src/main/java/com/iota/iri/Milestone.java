@@ -12,9 +12,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.AddressViewModel;
+import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.ScratchpadViewModel;
-import com.iota.iri.service.TransactionViewModel;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.utils.Converter;
 

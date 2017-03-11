@@ -137,7 +137,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                                         */
                                 if(transactionViewModel.getBytes() != null) {
                                     synchronized (sendingPacket) {
-                                        System.arraycopy( transactionViewModel,
+                                        System.arraycopy( transactionViewModel.getBytes(),
                                                 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
                                         ScratchpadViewModel.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
                                         neighbor.send(sendingPacket);

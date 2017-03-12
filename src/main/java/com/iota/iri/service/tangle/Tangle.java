@@ -160,7 +160,24 @@ public class Tangle {
         });
     }
 
+    public Future<Void> delete(Object model) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: persistenceProviders) {
+                provider.delete(model);
+            }
+            return null;
+        });
+    }
 
+    public Future<Object> getLatest(Class<?> model) {
+        return executor.submit(() -> {
+            Object latest = null;
+            for(IPersistenceProvider provider: persistenceProviders) {
+                latest = provider.latest(model);
+            }
+            return latest;
+        });
+    }
 
     public Future<Boolean> update(Object model, String item, Object value) {
         return executor.submit(() -> {
@@ -194,9 +211,17 @@ public class Tangle {
         });
     }
 
+    public Future<Boolean> maybeHas(Class<?> model, Object key) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.mayExist(model, key)) return true;
+            }
+            return false;
+        });
+    }
+
     public Future<Boolean> maybeHas(Object handle, Object key) {
         return executor.submit(() -> {
-            Object[] output = null;
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(provider.mayExist(handle, key)) return true;
             }

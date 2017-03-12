@@ -11,6 +11,7 @@ public interface IPersistenceProvider {
     void init(String path) throws Exception;
     void shutdown();
     boolean save(Object o) throws Exception;
+    void delete(Object o) throws Exception;
     Object get(Class<?> modelClass, Object key) throws Exception;
 
     void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Map<String, ModelFieldInfo>> modelItems);
@@ -25,7 +26,9 @@ public interface IPersistenceProvider {
     void dropTransientHandle(Object handle) throws Exception;
     boolean save(Object handle, Object model) throws Exception;
     boolean mayExist(Object handle, Object key) throws Exception;
+    boolean mayExist(Class<?> model, Object key) throws Exception;
     Object get(Object handle, Class<?> model, Object key) throws Exception;
     void deleteTransientObject(Object uuid, Object key) throws Exception;
 
+    Object latest(Class<?> model) throws  Exception;
 }

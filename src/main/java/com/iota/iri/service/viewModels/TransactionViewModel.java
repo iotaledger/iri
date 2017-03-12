@@ -79,15 +79,15 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     public static TransactionViewModel fromHash(final byte[] hash) {
-        com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
         try {
-            transaction = ((Transaction) Tangle.instance().load(Transaction.class, hash).get());
+            Transaction transaction = ((Transaction) Tangle.instance().load(Transaction.class, hash).get());
+            return new TransactionViewModel(transaction);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        return new TransactionViewModel(transaction);
+        return null;
     }
     public static TransactionViewModel fromHash(final int[] hash) {
         return fromHash(Converter.bytes(hash));
@@ -96,6 +96,18 @@ public class TransactionViewModel {
     public static TransactionViewModel fromHash(final Hash hash) {
         return TransactionViewModel.fromHash(hash.bytes());
     }
+
+    public static boolean hasTransaction(byte[] hash) {
+        try {
+            return Tangle.instance().maybeHas(Transaction.class, hash).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
     public TransactionViewModel(final com.iota.iri.model.Transaction transaction) {
         if(transaction == null) {
             this.transaction = new Transaction();

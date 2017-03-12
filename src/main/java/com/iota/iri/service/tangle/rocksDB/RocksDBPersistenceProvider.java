@@ -27,10 +27,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     RocksDB db;
     DBOptions options;
     WriteOptions writeOptions;
+    Random random;
 
     @Override
     public void init(String path) throws Exception{
         initDB(path);
+        random = new Random();
     }
 
     @Override
@@ -76,6 +78,22 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
         db.write(new WriteOptions(), batch);
         return false;
+    }
+
+    @Override
+    public void delete(Object thing) throws Exception {
+        Class modelClass = thing.getClass();
+        Field primaryKeyField = modelPrimaryKey.get(modelClass);
+        byte[] primaryKey = serialize(primaryKeyField.get(thing));
+        for (Map.Entry<String, RocksField> set : modelColumns.get(modelClass).entrySet()) {
+            RocksField rocksField = set.getValue();
+            if(rocksField.handle != null) {
+                db.delete(rocksField.handle, primaryKey);
+            }
+            if(rocksField.ownerHandle != null) {
+                db.delete(rocksField.ownerHandle, primaryKey);
+            }
+        }
     }
 
     @Override
@@ -265,6 +283,24 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public boolean mayExist(Class<?> modelClass, Object index) throws Exception {
+        StringBuffer stringBuffer = new StringBuffer();
+        byte[] primaryKey = serialize(index);
+        boolean mayExist = false;
+        for (RocksField rocksField: modelColumns.get(modelClass).values()) {
+            if (rocksField.handle != null) {
+                mayExist = db.keyMayExist(rocksField.handle, primaryKey, stringBuffer);
+                if (mayExist) break;
+            }
+            if (rocksField.ownerHandle != null) {
+                mayExist = db.keyMayExist(rocksField.ownerHandle, primaryKey, stringBuffer);
+                if (mayExist) break;
+            }
+        }
+        return mayExist;
+    }
+
+    @Override
     public boolean mayExist(Object uuid, Object index) throws Exception {
         StringBuffer stringBuffer = new StringBuffer();
         byte[] primaryKey = serialize(index);
@@ -320,6 +356,30 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 db.delete(rocksField.ownerHandle, primaryKey);
             }
         }
+    }
+
+    @Override
+    public Object latest(Class<?> model) throws Exception{
+        RocksIterator iterator;
+        ReadOptions tailIterator = new ReadOptions().setTailing(true);
+        Object thing = model.newInstance();
+        byte[] primaryKey, randomBytes = new byte[49];
+        random.nextBytes(randomBytes);
+        Field primaryField = modelPrimaryKey.get(model), field;
+        for(Map.Entry<String, RocksField> set: modelColumns.get(model).entrySet()) {
+            RocksField rocksField = set.getValue();
+            ColumnFamilyHandle handle = rocksField.handle != null ? rocksField.handle : rocksField.ownerHandle;
+            iterator = db.newIterator(handle);
+            iterator.seek(randomBytes);
+            iterator.next();
+            if(primaryField.get(thing) == null) {
+                primaryKey = iterator.key();
+                primaryField.set(thing, deserialize(primaryKey, primaryField.getType()));
+            }
+            field = model.getDeclaredField(set.getKey());
+            field.set(thing, deserialize(iterator.value(), field.getType()));
+        }
+        return thing;
     }
 
     @Override

@@ -34,6 +34,11 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public void delete(Object o) throws Exception {
+
+    }
+
+    @Override
     public Object get(Class<?> modelClass, java.lang.Object key) throws Exception {
         Object c = modelClass.newInstance();
         modelPrimaryKey.get(modelClass).set(c, key);
@@ -94,6 +99,11 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     @Override
     public void deleteTransientObject(Object uuid, Object key) throws Exception {
 
+    }
+
+    @Override
+    public Object latest(Class<?> model) throws Exception {
+        return null;
     }
 
 }

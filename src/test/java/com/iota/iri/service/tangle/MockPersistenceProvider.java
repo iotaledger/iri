@@ -92,6 +92,11 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public boolean mayExist(Class<?> model, Object key) throws Exception {
+        return false;
+    }
+
+    @Override
     public Object get(Object handle, Class<?> model, Object key) throws Exception {
         return null;
     }

@@ -107,6 +107,11 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public void copyTransientList(Object sourceId, Object destId) throws Exception {
+        
+    }
+
+    @Override
     public Object latest(Class<?> model) throws Exception {
         return null;
     }

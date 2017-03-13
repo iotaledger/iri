@@ -289,8 +289,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         byte[] primaryKey = serialize(index);
         boolean mayExist = false;
         Field primaryField = modelPrimaryKey.get(modelClass);
-        for (RocksField: modelColumns.get(modelClass).values()) {
-            RocksField rocksField = set.getValue();
+        for (RocksField rocksField: modelColumns.get(modelClass).values()) {
             if (rocksField.handle != null) {
                 mayExist = db.keyMayExist(rocksField.handle, primaryKey, stringBuffer);
                 if (mayExist) break;

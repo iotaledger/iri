@@ -54,7 +54,7 @@ public class TransactionViewModel {
 
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
-    public final int type;
+    //public final int type;
 
     //public final byte[] hash;
     //public final byte[] bytes; // stores entire tx bytes. message occupies always first part named 'signatureMessageFragment'
@@ -108,17 +108,18 @@ public class TransactionViewModel {
         return false;
     }
 
-    public TransactionViewModel(final com.iota.iri.model.Transaction transaction) {
+    public TransactionViewModel(final Transaction transaction) {
         if(transaction == null) {
             this.transaction = new Transaction();
             this.transaction.bytes = NULL_TRANSACTION_BYTES;
             this.transaction.hash = NULL_TRANSACTION_HASH_BYTES;
+            this.transaction.type = AbstractStorage.PREFILLED_SLOT;
         } else {
             this.transaction = transaction;
+            this.transaction.type = AbstractStorage.FILLED_SLOT;
         }
         this.trits = new int[TRINARY_SIZE];
         Converter.getTrits(this.transaction.bytes, this.trits);
-        type = AbstractStorage.FILLED_SLOT;
         //type = transaction.bytes[TYPE_OFFSET];
         populateTransaction(this.trits);
     }
@@ -137,7 +138,7 @@ public class TransactionViewModel {
 
         populateTransaction(trits);
 
-        type = AbstractStorage.FILLED_SLOT;
+        transaction.type = AbstractStorage.FILLED_SLOT;
 
         transaction.validity = 0;
         transaction.arrivalTime = 0;
@@ -173,7 +174,7 @@ public class TransactionViewModel {
 
         populateTransaction(trits);
 
-        type = AbstractStorage.FILLED_SLOT;
+        transaction.type = AbstractStorage.FILLED_SLOT;
 
         /*
         trunkTransactionPointer = 0;
@@ -186,7 +187,7 @@ public class TransactionViewModel {
 
     public TransactionViewModel(final byte[] mainBuffer, final long pointer) {
         transaction = new com.iota.iri.model.Transaction();
-        type = mainBuffer[TYPE_OFFSET];
+        transaction.type = mainBuffer[TYPE_OFFSET];
         System.arraycopy(mainBuffer, HASH_OFFSET, this.transaction.hash = new byte[HASH_SIZE], 0, HASH_SIZE);
 
         System.arraycopy(mainBuffer, BYTES_OFFSET, this.transaction.bytes, 0, BYTES_SIZE);
@@ -397,6 +398,9 @@ public class TransactionViewModel {
         return approvers;
     }
 
+    public final int getType() {
+        return transaction.type;
+    }
 
     public void setArrivalTime(long time) {
         transaction.arrivalTime = time;

@@ -153,7 +153,7 @@ public class TipsManager {
                         numberOfAnalyzedTransactions++;
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
-                        if (transactionViewModel.type == AbstractStorage.PREFILLED_SLOT) {
+                        if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
 
                             return null;
 
@@ -348,7 +348,7 @@ public class TipsManager {
                     if (setAnalyzedTransactionFlag(transientHandle, transactionHash)) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
-                        if (transactionViewModel.type == AbstractStorage.PREFILLED_SLOT) {
+                        if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
 
                             // -- Coo only--
                             // seenTails.addAll(extraTransactions);

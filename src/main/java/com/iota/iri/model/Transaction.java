@@ -23,6 +23,7 @@ public class Transaction {
     public byte[] bytes;
 
     @HasOne public int validity;
+    @HasOne public int type;
     @HasOne public long value;
     @HasOne public long currentIndex;
     @HasOne public long lastIndex;

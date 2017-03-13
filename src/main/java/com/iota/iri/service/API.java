@@ -312,7 +312,7 @@ public class API {
                     if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(pointer)) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(pointer);
-                        if (transactionViewModel.type == AbstractStorage.PREFILLED_SLOT) {
+                        if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
                             return ErrorResponse.create("The subtangle is not solid");
                         } else {
 

@@ -67,7 +67,7 @@ public class Milestone {
 
                                     //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
                                     final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction();
-                                    if (transactionViewModel2.type == AbstractStorage.FILLED_SLOT
+                                    if (transactionViewModel2.getType() == AbstractStorage.FILLED_SLOT
                                             && transactionViewModel.branchTransactionPointer == transactionViewModel2.trunkTransactionPointer) {
 
                                         final int[] trunkTransactionTrits = new int[TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE];
@@ -131,7 +131,7 @@ public class Milestone {
                         if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashBytes)) {
 
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashBytes);
-                            if (transactionViewModel2.type == AbstractStorage.PREFILLED_SLOT) {
+                            if (transactionViewModel2.getType() == AbstractStorage.PREFILLED_SLOT) {
                                 solid = false;
                                 break;
 

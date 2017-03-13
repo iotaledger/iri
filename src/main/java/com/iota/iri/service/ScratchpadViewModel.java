@@ -36,7 +36,7 @@ public class ScratchpadViewModel {
 
     static long lastTime = 0L;
 
-    public static ScratchpadViewModel instance;
+    public static ScratchpadViewModel instance = new ScratchpadViewModel();
 
     Set<byte[]> analyzedTransactions = new TreeSet<>();
 

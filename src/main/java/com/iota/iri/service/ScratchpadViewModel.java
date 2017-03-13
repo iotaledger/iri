@@ -77,7 +77,14 @@ public class ScratchpadViewModel {
     public void clearReceivedTransaction(byte[] hash) {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
-        Tangle.instance().delete(scratchpad);
+        try {
+            if(Tangle.instance().maybeHas(Scratchpad.class, hash).get())
+                Tangle.instance().delete(scratchpad);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
     }
 
     public void transactionToRequest(byte[] buffer, int offset) {

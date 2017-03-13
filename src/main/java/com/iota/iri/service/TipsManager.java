@@ -1,15 +1,7 @@
 package com.iota.iri.service;
 
 import java.security.SecureRandom;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.model.Flag;
@@ -38,6 +30,8 @@ public class TipsManager {
 
     static int numberOfConfirmedTransactions;
 
+    static final Set<byte[]> analyzedTransactionFlagSet = new TreeSet<>();
+    static final Set<byte[]> analyzedTransactionFlagSetCopy = new TreeSet<>();
     static final byte[] analyzedTransactionsFlags = new byte[134217728];
     static final byte[] analyzedTransactionsFlagsCopy = new byte[134217728];
     static final byte[] zeroedAnalyzedTransactionsFlags = new byte[134217728];
@@ -138,7 +132,8 @@ public class TipsManager {
             // "+formatter.format(calendar.getTime()));
 
             
-            System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
+            //System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
+            analyzedTransactionFlagSet.clear();
 
             Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
@@ -231,8 +226,11 @@ public class TipsManager {
                 ////////////
             }
 
-            System.arraycopy(analyzedTransactionsFlags, 0, analyzedTransactionsFlagsCopy, 0, 134217728);
-            System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
+            //System.arraycopy(analyzedTransactionsFlags, 0, analyzedTransactionsFlagsCopy, 0, 134217728);
+            analyzedTransactionFlagSetCopy.clear();
+            analyzedTransactionFlagSetCopy.addAll(analyzedTransactionFlagSet);
+            //System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
+            analyzedTransactionFlagSet.clear();
 
             final List<byte[]> tailsToAnalyze = new LinkedList<>();
 
@@ -287,7 +285,9 @@ public class TipsManager {
 
             if (extraTip != null) {
 
-                System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
+                //System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
+                analyzedTransactionFlagSet.clear();
+                analyzedTransactionFlagSet.addAll(analyzedTransactionFlagSetCopy);
 
                 final Iterator<byte[]> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
@@ -335,7 +335,9 @@ public class TipsManager {
                  * continue; }
                  */
 
-                System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
+                //System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
+                analyzedTransactionFlagSet.clear();
+                analyzedTransactionFlagSet.addAll(analyzedTransactionFlagSetCopy);
 
                 final Set<byte[]> extraTransactions = new HashSet<>();
 
@@ -499,6 +501,7 @@ public class TipsManager {
 
     private static boolean setAnalyzedTransactionFlag(Object handle, byte[] hash) {
 
+        /*
         try {
             if(Tangle.instance().maybeHas(handle, hash).get()) {
                 if(Tangle.instance().load(handle, Flag.class, hash).get() != null) {
@@ -511,6 +514,10 @@ public class TipsManager {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
+        }
+        */
+        if(analyzedTransactionFlagSet.contains(hash)) {
+            return true;
         }
         return false;
     }

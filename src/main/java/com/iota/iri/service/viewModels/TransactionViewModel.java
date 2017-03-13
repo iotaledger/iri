@@ -97,7 +97,7 @@ public class TransactionViewModel {
         return TransactionViewModel.fromHash(hash.bytes());
     }
 
-    public static boolean hasTransaction(byte[] hash) {
+    public static boolean mightExist(byte[] hash) {
         try {
             return Tangle.instance().maybeHas(Transaction.class, hash).get();
         } catch (InterruptedException e) {

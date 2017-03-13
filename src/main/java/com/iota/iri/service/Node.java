@@ -213,6 +213,8 @@ public class Node {
                                         byte[] transactionPointer = Hash.NULL_HASH.bytes();
                                         System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
+                                        TransactionViewModel transactionViewModel;
+
                                         if (Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)
                                                 && (Milestone.latestMilestoneIndex > 0)
                                                 && (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) {
@@ -252,10 +254,18 @@ public class Node {
                                         } else {
                                             transactionPointer = requestedTransaction;
                                         }
+                                        ScratchpadViewModel.instance().clearReceivedTransaction(requestedTransaction);
+                                        transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
+                                        if(!TransactionViewModel.mightExist(transactionViewModel.getBranchTransactionHash())) {
+                                            ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
+                                        }
+                                        if(!TransactionViewModel.mightExist(transactionViewModel.getTrunkTransactionHash())) {
+                                            ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
+                                        }
                                         if (!Arrays.equals(transactionPointer, Hash.NULL_HASH.bytes())
                                                 && transactionPointer != Hash.NULL_HASH.bytes()) {
                                             synchronized (sendingPacket) {
-                                                System.arraycopy(TransactionViewModel.fromHash(transactionPointer).getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
+                                                System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
                                                 ScratchpadViewModel.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
                                                 neighbor.send(sendingPacket);
                                             }

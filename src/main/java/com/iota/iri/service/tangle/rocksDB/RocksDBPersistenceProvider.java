@@ -52,6 +52,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Class modelClass = thing.getClass();
         Field primaryKeyField = modelPrimaryKey.get(modelClass);
         byte[] primaryKey = serialize(primaryKeyField.get(thing));
+        boolean exists = mayExist(modelClass, primaryKey);
         for (Map.Entry<String, RocksField> set : modelColumns.get(modelClass).entrySet()) {
             Object thingToSerialize = modelClass.getDeclaredField(set.getKey()).get(thing);
             if(thingToSerialize != null) {
@@ -77,7 +78,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             }
         }
         db.write(new WriteOptions(), batch);
-        return false;
+        return exists;
     }
 
     @Override
@@ -287,7 +288,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         StringBuffer stringBuffer = new StringBuffer();
         byte[] primaryKey = serialize(index);
         boolean mayExist = false;
-        for (RocksField rocksField: modelColumns.get(modelClass).values()) {
+        Field primaryField = modelPrimaryKey.get(modelClass);
+        for (RocksField: modelColumns.get(modelClass).values()) {
+            RocksField rocksField = set.getValue();
             if (rocksField.handle != null) {
                 mayExist = db.keyMayExist(rocksField.handle, primaryKey, stringBuffer);
                 if (mayExist) break;

@@ -24,13 +24,6 @@ import static com.iota.iri.service.storage.AbstractStorage.*;
 public class ScratchpadViewModel {
     private static final Logger log = LoggerFactory.getLogger(ScratchpadViewModel.class);
 
-    private ByteBuffer transactionsToRequest;
-    private ByteBuffer analyzedTransactionsFlags, analyzedTransactionsFlagsCopy;
-
-    private final byte[] transactionToRequest = new byte[TransactionViewModel.HASH_SIZE];
-    private final Object transactionToRequestMonitor = new Object();
-    private int previousNumberOfTransactions;
-
     protected static final byte[] ZEROED_BUFFER = new byte[CELL_SIZE];
     public volatile int numberOfTransactionsToRequest;
 
@@ -48,10 +41,6 @@ public class ScratchpadViewModel {
         numberOfTransactionsToRequest++;
     }
 
-    public boolean getAnalyzedTransactionFlag(byte[] hash) {
-        return analyzedTransactions.contains(hash);
-    }
-
     public boolean setAnalyzedTransactionFlag(byte[] hash) {
         return analyzedTransactions.add(hash);
     }
@@ -60,19 +49,12 @@ public class ScratchpadViewModel {
         return analyzedTransactions.stream().map(b -> new Flag(b)).toArray(Flag[]::new);
     }
 
+    public void clearAnalyzedTransactionsFlags() {
+        analyzedTransactions.clear();
+    }
+
     public int getNumberOfTransactionsToRequest() {
         return numberOfTransactionsToRequest;
-    }
-
-    public static ScratchpadViewModel instance() {
-        return instance;
-    }
-
-    public void clearAnalyzedTransactionsFlags() {
-        analyzedTransactionsFlags.position(0);
-        for (int i = 0; i < ANALYZED_TRANSACTIONS_FLAGS_SIZE / CELL_SIZE; i++) {
-            analyzedTransactionsFlags.put(ZEROED_BUFFER);
-        }
     }
 
     public void clearReceivedTransaction(byte[] hash) {
@@ -104,5 +86,9 @@ public class ScratchpadViewModel {
                 System.arraycopy(transactionViewModel.getHash(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
             }
         }
+    }
+
+    public static ScratchpadViewModel instance() {
+        return instance;
     }
 }

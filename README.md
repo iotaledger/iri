@@ -9,7 +9,7 @@ This is the testnet branch of the main IRI repository, as this is a IOTA referen
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.2.10 Testnet Release
+* **Latest release:** 1.1.3.2 Testnet Release
 * **License:** GPLv3
 
 # Purpose of this repository

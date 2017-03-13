@@ -11,9 +11,4 @@ import com.iota.iri.service.tangle.annotations.ModelIndex;
 public class Scratchpad {
     @ModelIndex public byte[] hash;
     @HasOne public byte[] bytes;
-    /*
-    @HasMany public Transaction[] transactionsToRequest;
-    @HasMany Flag analyzedTransactionsFlags, analyzedTransactionsFlagsCopy;
-    @HasOne public volatile int numberOfTransactionsToRequest;
-    */
 }

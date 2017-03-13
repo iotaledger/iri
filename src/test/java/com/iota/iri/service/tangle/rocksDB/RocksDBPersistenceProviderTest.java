@@ -172,7 +172,7 @@ public class RocksDBPersistenceProviderTest {
         Object uuid = Tangle.instance().createTransientList(Flag.class);
         Flag flag = new Flag();
         flag.hash = "SOMESTRINGOROTHER".getBytes();
-        flag.status = false;
+        flag.status = 1;
         Tangle.instance().save(uuid, flag).get();
         Flag output = (Flag)Tangle.instance().load(uuid, Flag.class, flag.hash).get();
         assertArrayEquals(output.hash, flag.hash);
@@ -184,7 +184,7 @@ public class RocksDBPersistenceProviderTest {
         Object uuid = Tangle.instance().createTransientList(Flag.class);
         Flag flag = new Flag();
         flag.hash = "SOMESTRINGOROTHER".getBytes();
-        flag.status = false;
+        flag.status = 1;
         Tangle.instance().save(uuid, flag).get();
         assertTrue(Tangle.instance().maybeHas(uuid, flag.hash).get());
         Tangle.instance().delete(uuid, flag.hash).get();

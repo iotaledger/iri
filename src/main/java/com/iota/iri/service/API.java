@@ -374,7 +374,7 @@ public class API {
                 approveeTransactions.addAll(Arrays.stream(TransactionViewModel.fromApprovers(new Hash(approvee))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
                 /*
                 approveeTransactions.addAll(StorageApprovers.instance().approveeTransactions(
-                        StorageApprovers.instance().approveePointer((new Hash(approvee)).bytes())));
+                        StorageApprovers.instance().approveePointer((new Hash(approvee)).value())));
                         */
             }
         }
@@ -434,7 +434,7 @@ public class API {
             ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
 
             final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone.bytes()));
-                    //Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.bytes())));
+                    //Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.value())));
             byte[] hash;
             while ((hash = nonAnalyzedTransactions.poll()) != null) {
 

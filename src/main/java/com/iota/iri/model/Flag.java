@@ -12,7 +12,7 @@ public class Flag {
     @ModelIndex
     public byte[] hash;
     @HasOne
-    public boolean status = true;
+    public byte status = 0;
 
     public Flag() {}
     public Flag(byte[] hashBytes) {

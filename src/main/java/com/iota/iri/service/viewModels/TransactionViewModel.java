@@ -57,7 +57,7 @@ public class TransactionViewModel {
     //public final int type;
 
     //public final byte[] hash;
-    //public final byte[] bytes; // stores entire tx bytes. message occupies always first part named 'signatureMessageFragment'
+    //public final byte[] value; // stores entire tx value. message occupies always first part named 'signatureMessageFragment'
     //public final byte[] address;
 
     //public final long value; // <0 spending transaction, >=0 deposit transaction / message
@@ -121,7 +121,7 @@ public class TransactionViewModel {
         }
         this.trits = new int[TRINARY_SIZE];
         Converter.getTrits(this.transaction.bytes, this.trits);
-        //type = transaction.bytes[TYPE_OFFSET];
+        //type = transaction.value[TYPE_OFFSET];
         populateTransaction(this.trits);
     }
 
@@ -289,10 +289,10 @@ public class TransactionViewModel {
             System.arraycopy(transactionViewModel.getAddress(), 0, mainBuffer, ADDRESS_OFFSET, ADDRESS_SIZE);
             AbstractStorage.setValue(mainBuffer, VALUE_OFFSET, transactionViewModel.value());
             final int[] trits = transactionViewModel.trits();
-            System.arraycopy(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, mainBuffer, TAG_OFFSET, TAG_SIZE);
+            System.arraycopy(Converter.value(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, mainBuffer, TAG_OFFSET, TAG_SIZE);
             AbstractStorage.setValue(mainBuffer, CURRENT_INDEX_OFFSET, transactionViewModel.getCurrentIndex());
             AbstractStorage.setValue(mainBuffer, LAST_INDEX_OFFSET, transactionViewModel.getLastIndex());
-            System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, mainBuffer, BUNDLE_OFFSET, BUNDLE_SIZE);
+            System.arraycopy(Converter.value(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, mainBuffer, BUNDLE_OFFSET, BUNDLE_SIZE);
             System.arraycopy(transactionViewModel.getTrunkTransactionHash(), 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
             System.arraycopy(transactionViewModel.getBranchTransactionHash(), 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
 

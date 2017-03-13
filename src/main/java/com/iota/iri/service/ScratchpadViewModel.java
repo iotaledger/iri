@@ -1,15 +1,11 @@
 package com.iota.iri.service;
 
-import com.iota.iri.Milestone;
 import com.iota.iri.model.*;
-import com.iota.iri.service.storage.AbstractStorage;
-import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
@@ -36,7 +32,7 @@ public class ScratchpadViewModel {
     public void requestTransaction(byte[] hash) {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
-        scratchpad.bytes = new byte[]{1};
+        scratchpad.value = 1;
         try {
             Tangle.instance().save(scratchpad).get();
         } catch (InterruptedException e) {

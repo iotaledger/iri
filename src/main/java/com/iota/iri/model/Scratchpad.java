@@ -10,5 +10,5 @@ import com.iota.iri.service.tangle.annotations.ModelIndex;
 @Model
 public class Scratchpad {
     @ModelIndex public byte[] hash;
-    @HasOne public byte[] bytes;
+    @HasOne public byte value;
 }

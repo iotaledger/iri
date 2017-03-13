@@ -143,7 +143,7 @@ public class TipsManager {
 
                 /*
                 final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions
-                        .instance().transactionPointer((extraTip == null ? preferableMilestone : extraTip).bytes())));
+                        .instance().transactionPointer((extraTip == null ? preferableMilestone : extraTip).value())));
                         */
                 final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
                 byte[] transactionHash;
@@ -238,7 +238,7 @@ public class TipsManager {
 
             final List<byte[]> tailsToAnalyze = new LinkedList<>();
 
-            byte[] tip = preferableMilestone.bytes(); //StorageTransactions.instance().transactionPointer(preferableMilestone.bytes());
+            byte[] tip = preferableMilestone.bytes(); //StorageTransactions.instance().transactionPointer(preferableMilestone.value());
             if (extraTip != null) {
 
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);//StorageTransactions.instance().loadTransaction(tip);

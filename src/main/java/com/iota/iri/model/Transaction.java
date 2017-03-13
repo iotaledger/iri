@@ -28,7 +28,7 @@ public class Transaction {
     @HasOne public long currentIndex;
     @HasOne public long lastIndex;
     @HasOne public long arrivalTime;
-    @HasOne public boolean isTip;
-    @HasOne public boolean analyzed;
+    @HasOne public byte isTip;
+    @HasOne public byte analyzed;
 
 }

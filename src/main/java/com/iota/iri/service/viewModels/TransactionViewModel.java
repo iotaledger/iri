@@ -351,9 +351,8 @@ public class TransactionViewModel {
     public static Hash[] hashesFromQuery(String index, Object value) {
         Hash[] transactionHashes;
         try {
-            Tangle accessor = Tangle.instance();
-            Future<Object[]> tipTxs = accessor.query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE);
-            Transaction[] transactionModels = Arrays.stream(tipTxs.get()).toArray(com.iota.iri.model.Transaction[]::new);
+            Object[] tipTxs = Tangle.instance().query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE).get();
+            Transaction[] transactionModels = Arrays.stream(tipTxs).toArray(com.iota.iri.model.Transaction[]::new);
             transactionHashes = Arrays.stream(transactionModels).map(transaction -> transaction.hash).toArray(Hash[]::new);
         } catch (Exception e) {
             e.printStackTrace();

@@ -254,6 +254,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         byte[] primaryKey = serialize(keyField.get(model));
 
 
+
+        boolean exists = mayExist(uuid, primaryKey);
         Class modelClass = model.getClass();
         for (Map.Entry<String, RocksField> set : transientColumns.get(uuid).entrySet()) {
             String fieldName = set.getKey();
@@ -280,7 +282,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             }
         }
         db.write(new WriteOptions(), batch);
-        return false;
+        return exists;
     }
 
     @Override

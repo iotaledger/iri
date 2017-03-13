@@ -186,7 +186,7 @@ public class APIIntegrationTests {
 
         final Map<String, Object> request = new HashMap<>();
         request.put("command", "getTrytes");
-        request.put("addresses", new String [] {"OAATQS9VQLSXCLDJVJJVYUGONXAXOFMJOZNSYWRZSWECMXAQQURHQBJNLD9IOFEPGZEPEMPXCIVRX9999"});
+        request.put("hashes", new String [] {"OAATQS9VQLSXCLDJVJJVYUGONXAXOFMJOZNSYWRZSWECMXAQQURHQBJNLD9IOFEPGZEPEMPXCIVRX9999"});
         given().
                 contentType("application/json").
                 body(gson.toJson(request)).
@@ -209,7 +209,7 @@ public class APIIntegrationTests {
 
         final Map<String, Object> request = new HashMap<>();
         request.put("command", "getInclusionStates");
-        request.put("addresses", new String [] {"QHBYXQWRAHQJZEIARWSQGZJTAIITOZRMBFICIPAVD9YRJMXFXBDPFDTRAHHHP9YPDUVTNOFWZGFGWMYHEKNAGNJHMW"});
+        request.put("hashes", new String [] {"QHBYXQWRAHQJZEIARWSQGZJTAIITOZRMBFICIPAVD9YRJMXFXBDPFDTRAHHHP9YPDUVTNOFWZGFGWMYHEKNAGNJHMW"});
         given().
                 contentType("application/json").
                 body(gson.toJson(request)).

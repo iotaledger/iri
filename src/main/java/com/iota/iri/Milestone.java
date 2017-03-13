@@ -119,7 +119,6 @@ public class Milestone {
 
                 boolean solid = true;
 
-                synchronized (ScratchpadViewModel.instance().getAnalyzedTransactionsFlags()) {
 
                 	ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
 
@@ -141,7 +140,6 @@ public class Milestone {
                             }
                         }
                     }
-                }
 
                 if (solid) {
                     latestSolidSubtangleMilestone = milestone;

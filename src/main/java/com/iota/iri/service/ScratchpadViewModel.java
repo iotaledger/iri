@@ -1,10 +1,7 @@
 package com.iota.iri.service;
 
 import com.iota.iri.Milestone;
-import com.iota.iri.model.Flag;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.Scratchpad;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.model.*;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.service.tangle.Tangle;
@@ -30,8 +27,11 @@ public class ScratchpadViewModel {
     static long lastTime = 0L;
 
     public static ScratchpadViewModel instance = new ScratchpadViewModel();
+    private Object analyzedTransactionHandle;
 
-    Set<byte[]> analyzedTransactions = new TreeSet<>();
+    public ScratchpadViewModel() {
+        analyzedTransactionHandle = Tangle.instance().createTransientList(AnalyzedFlag.class);
+    }
 
     public void requestTransaction(byte[] hash) {
         Scratchpad scratchpad = new Scratchpad();
@@ -42,15 +42,26 @@ public class ScratchpadViewModel {
     }
 
     public boolean setAnalyzedTransactionFlag(byte[] hash) {
-        return analyzedTransactions.add(hash);
-    }
-
-    public Flag[] getAnalyzedTransactionsFlags() {
-        return analyzedTransactions.stream().map(b -> new Flag(b)).toArray(Flag[]::new);
+        AnalyzedFlag flag = new AnalyzedFlag();
+        flag.hash = hash;
+        flag.bytes = new byte[]{0};
+        try {
+            return Tangle.instance().save(analyzedTransactionHandle, flag).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return false;
     }
 
     public void clearAnalyzedTransactionsFlags() {
-        analyzedTransactions.clear();
+        try {
+            Tangle.instance().dropList(analyzedTransactionHandle);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        analyzedTransactionHandle = Tangle.instance().createTransientList(AnalyzedFlag.class);
     }
 
     public int getNumberOfTransactionsToRequest() {

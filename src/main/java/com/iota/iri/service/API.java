@@ -289,7 +289,6 @@ public class API {
         int numberOfNonMetTransactions = transactions.size();
         final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];
 
-        synchronized (ScratchpadViewModel.instance().getAnalyzedTransactionsFlags()) {
 
             ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
 
@@ -335,7 +334,6 @@ public class API {
                 }
                 return GetInclusionStatesResponse.create(inclusionStates);
             }
-        }
     }
 
     private AbstractResponse findTransactionStatement(final Map<String, Object> request) {
@@ -432,7 +430,6 @@ public class API {
         final Hash milestone = Milestone.latestSolidSubtangleMilestone;
         final int milestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
-        synchronized (ScratchpadViewModel.instance().getAnalyzedTransactionsFlags()) {
 
             ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
 
@@ -458,7 +455,6 @@ public class API {
                     nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                 }
             }
-        }
 
         final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())
                 .collect(Collectors.toCollection(LinkedList::new));

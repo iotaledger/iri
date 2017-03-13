@@ -198,7 +198,7 @@ public class Tangle {
 
     public Future<Object[]> query(Class<?> modelClass, String index, Object key, int length) {
         return executor.submit(() -> {
-            Object[] output = null;
+            Object[] output = new Object[0];
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 try {
                     output = provider.queryMany(modelClass, index, key, length);

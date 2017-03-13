@@ -22,6 +22,7 @@ public interface IPersistenceProvider {
 
     Object[] queryMany(Class<?> modelClass, String index, Object key, int keyLength) throws Exception;
 
+
     boolean setTransientHandle(Class<?> model, Object uuid);
     void dropTransientHandle(Object handle) throws Exception;
     boolean save(Object handle, Object model) throws Exception;

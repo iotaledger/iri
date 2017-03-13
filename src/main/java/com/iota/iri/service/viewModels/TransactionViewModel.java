@@ -232,6 +232,8 @@ public class TransactionViewModel {
         System.arraycopy(Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE), 0, transaction.trunk.hash = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
         transaction.branch = new Approvee();
         System.arraycopy(Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE), 0, transaction.branch.hash = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
+        transaction.timestamp = new Timestamp();
+        System.arraycopy(Converter.bytes(trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE), 0, transaction.timestamp.bytes = new byte[6], 0, 6);
     }
 
     public void update(String item) throws Exception {

@@ -24,6 +24,12 @@ public class ReplicatorSinkProcessor implements Runnable {
 
     @Override
     public void run() {
+    	try {
+    		Thread.sleep(1000);
+    	}
+    	catch (InterruptedException e) {
+    		log.info("Interrupted");
+    	}
 
         String remoteAddress = neighbor.getAddress().getAddress().getHostAddress();
         try {

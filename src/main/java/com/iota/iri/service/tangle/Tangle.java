@@ -154,14 +154,14 @@ public class Tangle {
 
     public Future<Boolean> save(Object model) {
         return executor.submit(() -> {
-            boolean isNew = true;
+            boolean exists = false;
             for(IPersistenceProvider provider: persistenceProviders) {
                 if(!provider.save(model)) {
-                    isNew = false;
+                    exists = true;
                     break;
                 }
             }
-            return isNew;
+            return exists;
         });
     }
 

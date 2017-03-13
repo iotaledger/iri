@@ -79,15 +79,16 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     public static TransactionViewModel fromHash(final byte[] hash) {
+        Transaction transaction = null;
         try {
-            Transaction transaction = ((Transaction) Tangle.instance().load(Transaction.class, hash).get());
-            return new TransactionViewModel(transaction);
+            Object maybeTransaction = Tangle.instance().load(Transaction.class, hash).get();
+            transaction = ((Transaction) maybeTransaction);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
         }
-        return null;
+        return new TransactionViewModel(transaction);
     }
     public static TransactionViewModel fromHash(final int[] hash) {
         return fromHash(Converter.bytes(hash));

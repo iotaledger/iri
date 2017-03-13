@@ -138,7 +138,12 @@ public class Tangle {
         return executor.submit(() -> {
             Object loadableObject = null;
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                loadableObject = provider.get(modelClass, value);
+                try {
+                    loadableObject = provider.get(modelClass, value);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
                 if(loadableObject != null) {
                     break;
                 }

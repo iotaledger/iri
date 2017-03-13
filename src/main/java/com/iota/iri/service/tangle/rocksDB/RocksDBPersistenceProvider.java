@@ -371,16 +371,16 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             RocksField rocksField = set.getValue();
             if (rocksField.handle != null) {
                 iterator = db.newIterator(set.getValue().handle);
-                iterator.seekToFirst();
-                while(iterator.key() != null) {
+                for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                     batch.put(transientColumns.get(destId).get(set.getKey()).handle, iterator.key(), iterator.value());
+                    iterator.next();
                 }
             }
             if (rocksField.ownerHandle != null) {
                 iterator = db.newIterator(set.getValue().ownerHandle);
-                iterator.seekToFirst();
-                while(iterator.key() != null) {
+                for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                     batch.put(transientColumns.get(destId).get(set.getKey()).ownerHandle, iterator.key(), iterator.value());
+                    iterator.next();
                 }
             }
         }
@@ -390,7 +390,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public Object latest(Class<?> model) throws Exception{
         RocksIterator iterator;
-        ReadOptions tailIterator = new ReadOptions().setTailing(true);
         Object thing = model.newInstance();
         byte[] primaryKey, randomBytes = new byte[49];
         random.nextBytes(randomBytes);
@@ -399,14 +398,19 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             RocksField rocksField = set.getValue();
             ColumnFamilyHandle handle = rocksField.handle != null ? rocksField.handle : rocksField.ownerHandle;
             iterator = db.newIterator(handle);
-            iterator.seek(randomBytes);
-            iterator.next();
-            if(primaryField.get(thing) == null) {
-                primaryKey = iterator.key();
-                primaryField.set(thing, deserialize(primaryKey, primaryField.getType()));
+            for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                System.out.println("Game On!");
+                if (primaryField.get(thing) == null) {
+                    primaryKey = iterator.key();
+                    primaryField.set(thing, deserialize(primaryKey, primaryField.getType()));
+                }
+                field = model.getDeclaredField(set.getKey());
+                field.set(thing, deserialize(iterator.value(), field.getType()));
+                break;
             }
-            field = model.getDeclaredField(set.getKey());
-            field.set(thing, deserialize(iterator.value(), field.getType()));
+        }
+        if (primaryField.get(thing) == null) {
+            thing = null;
         }
         return thing;
     }

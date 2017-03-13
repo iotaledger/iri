@@ -36,8 +36,14 @@ public class ScratchpadViewModel {
     public void requestTransaction(byte[] hash) {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
-        scratchpad.bytes = new byte[]{0};
-        Tangle.instance().save(scratchpad);
+        scratchpad.bytes = new byte[]{1};
+        try {
+            Tangle.instance().save(scratchpad).get();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
         numberOfTransactionsToRequest++;
     }
 
@@ -94,9 +100,14 @@ public class ScratchpadViewModel {
         }
 
         if(scratchpad != null) {
+            /*
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(scratchpad.hash);
-            if(Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
+            if(transactionViewModel != null && Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                 System.arraycopy(transactionViewModel.getHash(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
+            }
+            */
+            if(!Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
+                System.arraycopy(scratchpad.hash, 0, buffer, offset, TransactionViewModel.HASH_SIZE);
             }
         }
     }

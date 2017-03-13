@@ -84,7 +84,9 @@ public class ScratchpadViewModel {
     public void transactionToRequest(byte[] buffer, int offset) {
         Scratchpad scratchpad = null;
         try {
-            scratchpad = ((Scratchpad) Tangle.instance().getLatest(Scratchpad.class).get());
+            Object latest = Tangle.instance().getLatest(Scratchpad.class).get();
+            if(latest != null)
+                scratchpad = ((Scratchpad) latest);
         } catch (InterruptedException e) {
             e.printStackTrace();
         } catch (ExecutionException e) {

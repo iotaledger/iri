@@ -85,6 +85,7 @@ public class ScratchpadViewModel {
 
     public void transactionToRequest(byte[] buffer, int offset) {
         Scratchpad scratchpad = null;
+        final long beginningTime = System.currentTimeMillis();
         try {
             Object latest = Tangle.instance().getLatest(Scratchpad.class).get();
             if(latest != null)
@@ -105,6 +106,11 @@ public class ScratchpadViewModel {
             if(!Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
                 System.arraycopy(scratchpad.hash, 0, buffer, offset, TransactionViewModel.HASH_SIZE);
             }
+        }
+        long now = System.currentTimeMillis();
+        if ((now - lastTime) > 10000L) {
+            lastTime = now;
+            log.info("Transactions to request = {}", numberOfTransactionsToRequest + ".  (" + (System.currentTimeMillis() - beginningTime) + " ms )");
         }
     }
 

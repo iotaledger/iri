@@ -27,7 +27,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     RocksDB db;
     DBOptions options;
     WriteOptions writeOptions;
-    Random random;
+    private Random random;
 
     @Override
     public void init(String path) throws Exception{
@@ -38,6 +38,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public void init() throws Exception {
         initDB(Configuration.string(Configuration.DefaultConfSettings.DB_PATH));
+        random = new Random();
     }
 
     @Override
@@ -242,10 +243,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         db.dropColumnFamily(handle);
     }
 
+
     @Override
     public boolean save(Object uuid, Object model) throws Exception {
         WriteBatch batch = new WriteBatch();
-        ;
 
         /*
         ColumnFamilyHandle handle = transientHandles.get(uuid);
@@ -360,6 +361,30 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 db.delete(rocksField.ownerHandle, primaryKey);
             }
         }
+    }
+
+    @Override
+    public void copyTransientList(Object sourceId, Object destId) throws Exception {
+        RocksIterator iterator;
+        WriteBatch batch = new WriteBatch();
+        for (Map.Entry<String, RocksField> set : transientColumns.get(sourceId).entrySet()) {
+            RocksField rocksField = set.getValue();
+            if (rocksField.handle != null) {
+                iterator = db.newIterator(set.getValue().handle);
+                iterator.seekToFirst();
+                while(iterator.key() != null) {
+                    batch.put(transientColumns.get(destId).get(set.getKey()).handle, iterator.key(), iterator.value());
+                }
+            }
+            if (rocksField.ownerHandle != null) {
+                iterator = db.newIterator(set.getValue().ownerHandle);
+                iterator.seekToFirst();
+                while(iterator.key() != null) {
+                    batch.put(transientColumns.get(destId).get(set.getKey()).ownerHandle, iterator.key(), iterator.value());
+                }
+            }
+        }
+        db.write(new WriteOptions(), batch);
     }
 
     @Override

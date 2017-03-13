@@ -30,6 +30,7 @@ public interface IPersistenceProvider {
     boolean mayExist(Class<?> model, Object key) throws Exception;
     Object get(Object handle, Class<?> model, Object key) throws Exception;
     void deleteTransientObject(Object uuid, Object key) throws Exception;
+    void copyTransientList(Object sourceId, Object destId) throws Exception;
 
     Object latest(Class<?> model) throws  Exception;
 }

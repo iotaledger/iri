@@ -30,8 +30,9 @@ public class TipsManager {
 
     static int numberOfConfirmedTransactions;
 
-    static final Set<byte[]> analyzedTransactionFlagSet = new TreeSet<>();
-    static final Set<byte[]> analyzedTransactionFlagSetCopy = new TreeSet<>();
+    //static final Set<byte[]> analyzedTransactionFlagSet = new TreeSet<>();
+    //static final Set<byte[]> analyzedTransactionFlagSetCopy = new TreeSet<>();
+    private static Object analyzedTransactionFlagPersistentHandle;
     static final byte[] analyzedTransactionsFlags = new byte[134217728];
     static final byte[] analyzedTransactionsFlagsCopy = new byte[134217728];
     static final byte[] zeroedAnalyzedTransactionsFlags = new byte[134217728];
@@ -48,6 +49,7 @@ public class TipsManager {
     
     public void init() {
 
+        analyzedTransactionFlagPersistentHandle = Tangle.instance().createTransientList(Flag.class);
         (new Thread(() -> {
             
             final SecureRandom rnd = new SecureRandom();
@@ -133,7 +135,6 @@ public class TipsManager {
 
             
             //System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
-            analyzedTransactionFlagSet.clear();
 
             Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
@@ -227,10 +228,13 @@ public class TipsManager {
             }
 
             //System.arraycopy(analyzedTransactionsFlags, 0, analyzedTransactionsFlagsCopy, 0, 134217728);
-            analyzedTransactionFlagSetCopy.clear();
-            analyzedTransactionFlagSetCopy.addAll(analyzedTransactionFlagSet);
+
+            Tangle.instance().dropList(analyzedTransactionFlagPersistentHandle);
+            analyzedTransactionFlagPersistentHandle = Tangle.instance().createTransientList(Flag.class);
+            Tangle.instance().copyTransientList(transientHandle, analyzedTransactionFlagPersistentHandle);
             //System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
-            analyzedTransactionFlagSet.clear();
+            Tangle.instance().dropList(transientHandle);
+            transientHandle = Tangle.instance().createTransientList(Flag.class);
 
             final List<byte[]> tailsToAnalyze = new LinkedList<>();
 
@@ -285,9 +289,9 @@ public class TipsManager {
 
             if (extraTip != null) {
 
-                //System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
-                analyzedTransactionFlagSet.clear();
-                analyzedTransactionFlagSet.addAll(analyzedTransactionFlagSetCopy);
+                Tangle.instance().dropList(transientHandle);
+                transientHandle = Tangle.instance().createTransientList(Flag.class);
+                Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle);
 
                 final Iterator<byte[]> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
@@ -336,8 +340,9 @@ public class TipsManager {
                  */
 
                 //System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
-                analyzedTransactionFlagSet.clear();
-                analyzedTransactionFlagSet.addAll(analyzedTransactionFlagSetCopy);
+                Tangle.instance().dropList(transientHandle);
+                transientHandle = Tangle.instance().createTransientList(Flag.class);
+                Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle);
 
                 final Set<byte[]> extraTransactions = new HashSet<>();
 
@@ -489,6 +494,8 @@ public class TipsManager {
             /**/throw new RuntimeException("Must never be reached!");
             // return bestTip;
 
+        } catch (Exception e) {
+            e.printStackTrace();
         } finally {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
             try {
@@ -497,11 +504,11 @@ public class TipsManager {
                 e.printStackTrace();
             }
         }
+        return null;
     }
 
     private static boolean setAnalyzedTransactionFlag(Object handle, byte[] hash) {
 
-        /*
         try {
             if(Tangle.instance().maybeHas(handle, hash).get()) {
                 if(Tangle.instance().load(handle, Flag.class, hash).get() != null) {
@@ -514,10 +521,6 @@ public class TipsManager {
             e.printStackTrace();
         } catch (ExecutionException e) {
             e.printStackTrace();
-        }
-        */
-        if(analyzedTransactionFlagSet.contains(hash)) {
-            return true;
         }
         return false;
     }

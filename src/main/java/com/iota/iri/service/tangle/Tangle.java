@@ -263,4 +263,13 @@ public class Tangle {
             return loadableObject;
         });
     }
+
+    public Future<Void> copyTransientList(Object sourceHandle, Object destHandle) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                provider.copyTransientList(sourceHandle, destHandle);
+            }
+            return null;
+        });
+    }
 }

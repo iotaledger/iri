@@ -400,7 +400,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             ColumnFamilyHandle handle = rocksField.handle != null ? rocksField.handle : rocksField.ownerHandle;
             iterator = db.newIterator(handle);
             for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                System.out.println("Game On!");
                 if (primaryField.get(thing) == null) {
                     primaryKey = iterator.key();
                     primaryField.set(thing, Serializer.deserialize(primaryKey, primaryField.getType()));

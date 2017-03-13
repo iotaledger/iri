@@ -43,6 +43,7 @@ public class ScratchpadViewModel {
     public void requestTransaction(byte[] hash) {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
+        scratchpad.bytes = new byte[]{0};
         Tangle.instance().save(scratchpad);
         numberOfTransactionsToRequest++;
     }

@@ -119,6 +119,7 @@ public class TransactionViewModel {
         this.trits = new int[TRINARY_SIZE];
         Converter.getTrits(this.transaction.bytes, this.trits);
         type = AbstractStorage.FILLED_SLOT;
+        //type = transaction.bytes[TYPE_OFFSET];
         populateTransaction(this.trits);
     }
 

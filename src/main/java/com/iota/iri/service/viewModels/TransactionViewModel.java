@@ -369,11 +369,8 @@ public class TransactionViewModel {
     }
 
     public Hash[] getApprovers() throws ExecutionException, InterruptedException {
-        Hash[] approvers;
-        Tangle accessor = Tangle.instance();
-            Approvee self = ((Approvee) accessor.load(Approvee.class, transaction.hash).get());
-            approvers = Arrays.stream(self.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
-        return approvers;
+        Approvee self = ((Approvee) Tangle.instance().load(Approvee.class, transaction.hash).get());
+        return self.transactions != null? Arrays.stream(self.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new): new Hash[0];
     }
 
     public final int getType() {

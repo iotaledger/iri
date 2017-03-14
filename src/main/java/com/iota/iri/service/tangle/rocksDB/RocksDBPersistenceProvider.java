@@ -72,7 +72,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                         byte[] current = db.get(rocksField.ownerHandle, fieldValue);
                         if (current == null) current = new byte[0];
                         //!Arrays.asList(current).containsAll(Arrays.asList(primaryKey))
-                        if (current.length < primaryKey.length || new String(current).indexOf(new String(primaryKey)) != -1) {
+                        if (current.length < primaryKey.length || new String(current).indexOf(new String(primaryKey)) == -1) {
                             current = ArrayUtils.addAll(current, primaryKey);
                         }
                         batch.put(rocksField.ownerHandle, fieldValue, current);
@@ -274,7 +274,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                     byte[] current = db.get(rocksField.ownerHandle, fieldValue);
                     if (current == null) current = new byte[0];
 
-                    if (current.length < primaryKey.length || new String(current).indexOf(new String(primaryKey)) != -1) {
+                    if (current.length < primaryKey.length || new String(current).indexOf(new String(primaryKey)) == -1) {
                         current = ArrayUtils.addAll(current, primaryKey);
                     }
                     batch.put(rocksField.ownerHandle, fieldValue, current);

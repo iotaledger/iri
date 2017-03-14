@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
@@ -38,7 +39,7 @@ public class Milestone {
         return milestones.get(milestoneIndex);
     }
     
-    public static void updateLatestMilestone() { // refactor
+    public static void updateLatestMilestone() throws Exception { // refactor
 
         final long now = System.currentTimeMillis() / 1000L;
 
@@ -110,7 +111,7 @@ public class Milestone {
         }
     }
 
-    public static void updateLatestSolidSubtangleMilestone() {
+    public static void updateLatestSolidSubtangleMilestone() throws Exception {
 
         for (int milestoneIndex = latestMilestoneIndex; milestoneIndex > latestSolidSubtangleMilestoneIndex; milestoneIndex--) {
 

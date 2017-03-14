@@ -18,15 +18,9 @@ public class TimestampViewModel {
         timestamp.bytes = bytes;
     }
 
-    public Hash[] getTransactionHashes() {
-        try {
-            Timestamp timestampLoad = (Timestamp) Tangle.instance().load(Timestamp.class, timestamp.bytes).get();
-            this.timestamp.transactions = timestampLoad.transactions;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+    public Hash[] getTransactionHashes() throws ExecutionException, InterruptedException {
+        Timestamp timestampLoad = (Timestamp) Tangle.instance().load(Timestamp.class, timestamp.bytes).get();
+        this.timestamp.transactions = timestampLoad.transactions;
         return Arrays.stream(timestamp.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
     }
 }

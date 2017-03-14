@@ -25,18 +25,12 @@ public class AddressViewModel {
         address.transactions = ArrayUtils.addAll(address.transactions, transaction);
     }
 
-    public Hash[] getTransactionHashes() {
-        try {
-            Address txAddress = (Address) Tangle.instance().load(Address.class, address.bytes).get();
-            if(txAddress != null && address.transactions != null) {
-                address.transactions = txAddress.transactions.clone();
-            } else {
-                address.transactions = new Transaction[0];
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+    public Hash[] getTransactionHashes() throws ExecutionException, InterruptedException {
+        Address txAddress = (Address) Tangle.instance().load(Address.class, address.bytes).get();
+        if(txAddress != null && address.transactions != null) {
+            address.transactions = txAddress.transactions.clone();
+        } else {
+            address.transactions = new Transaction[0];
         }
         return Arrays.stream(address.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
     }

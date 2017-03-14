@@ -21,7 +21,7 @@ public class Bundle {
 
     private final List<List<TransactionViewModel>> transactions = new LinkedList<>();
 
-    public Bundle(final byte[] bundle) {
+    public Bundle(final byte[] bundle) throws Exception {
 
         final TransactionViewModel bundleTransactionViewModel = TransactionViewModel.fromHash(bundle);
         if(bundleTransactionViewModel == null) {

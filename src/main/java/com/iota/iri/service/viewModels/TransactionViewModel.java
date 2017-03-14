@@ -78,35 +78,22 @@ public class TransactionViewModel {
     private int[] trits;
     public int weightMagnitude;
 
-    public static TransactionViewModel fromHash(final byte[] hash) {
+    public static TransactionViewModel fromHash(final byte[] hash) throws Exception {
         Transaction transaction = null;
-        try {
-            Object maybeTransaction = Tangle.instance().load(Transaction.class, hash).get();
-            transaction = ((Transaction) maybeTransaction);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+        Object maybeTransaction = Tangle.instance().load(Transaction.class, hash).get();
+        transaction = ((Transaction) maybeTransaction);
         return new TransactionViewModel(transaction);
     }
-    public static TransactionViewModel fromHash(final int[] hash) {
+    public static TransactionViewModel fromHash(final int[] hash) throws Exception{
         return fromHash(Converter.bytes(hash));
     }
 
-    public static TransactionViewModel fromHash(final Hash hash) {
+    public static TransactionViewModel fromHash(final Hash hash) throws Exception {
         return TransactionViewModel.fromHash(hash.bytes());
     }
 
-    public static boolean mightExist(byte[] hash) {
-        try {
-            return Tangle.instance().maybeHas(Transaction.class, hash).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-        return false;
+    public static boolean mightExist(byte[] hash) throws ExecutionException, InterruptedException {
+        return Tangle.instance().maybeHas(Transaction.class, hash).get();
     }
 
     public TransactionViewModel(final Transaction transaction) {
@@ -248,24 +235,18 @@ public class TransactionViewModel {
         Tangle.instance().update(transaction, "nonAnalyzed", !analyzed);
     }
 
-    private TransactionViewModel getTransaction(byte[] hash) {
+    private TransactionViewModel getTransaction(byte[] hash) throws ExecutionException, InterruptedException {
         Transaction transactionToLoad = new Transaction();
-        try {
-            transactionToLoad = ((Transaction) Tangle.instance().load(Transaction.class, hash).get());
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+        transactionToLoad = ((Transaction) Tangle.instance().load(Transaction.class, hash).get());
         //Transaction trunk = ((Transaction) Arrays.stream(Tangle.instance().query(Transaction.class, "", transaction.trunk, BUNDLE_SIZE).get()).findAny().orElse(null));
         return new TransactionViewModel(transactionToLoad);
     }
 
-    public TransactionViewModel getBranchTransaction() {
+    public TransactionViewModel getBranchTransaction() throws ExecutionException, InterruptedException {
         return getTransaction(transaction.branch.hash);
     }
 
-    public TransactionViewModel getTrunkTransaction() {
+    public TransactionViewModel getTrunkTransaction() throws ExecutionException, InterruptedException {
         return getTransaction(transaction.trunk.hash);
     }
 
@@ -332,73 +313,49 @@ public class TransactionViewModel {
         */
     }
 
-    public boolean store() {
-        try {
-            boolean status = Tangle.instance().save(transaction).get();
-            updateApprovers();
-            return status;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-        return false;
+    public boolean store() throws Exception {
+        boolean status = Tangle.instance().save(transaction).get();
+        updateApprovers();
+        return status;
     }
 
-    public void updateApprovers() {
+    public void updateApprovers() throws Exception {
         for(Hash approver: getApprovers()) {
-            try {
-                Transaction approvingTransaction = (Transaction) Tangle.instance().load(Transaction.class, approver.bytes()).get();
-                approvingTransaction.type = AbstractStorage.FILLED_SLOT;
-                new TransactionViewModel(approvingTransaction).store();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-            }
+            Transaction approvingTransaction = (Transaction) Tangle.instance().load(Transaction.class, approver.bytes()).get();
+            approvingTransaction.type = AbstractStorage.FILLED_SLOT;
+            new TransactionViewModel(approvingTransaction).store();
         }
     }
 
-    public TransactionViewModel[] getBundleTransactions() {
+    public TransactionViewModel[] getBundleTransactions() throws ExecutionException, InterruptedException {
         Tangle accessor = Tangle.instance();
         Future<Object[]> transactionFuture = accessor.query(com.iota.iri.model.Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE);
         com.iota.iri.model.Transaction[] transactionModels = new com.iota.iri.model.Transaction[0];
-        try {
-            transactionModels = Arrays.stream(transactionFuture.get()).toArray(com.iota.iri.model.Transaction[]::new);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+        transactionModels = Arrays.stream(transactionFuture.get()).toArray(com.iota.iri.model.Transaction[]::new);
         TransactionViewModel[] transactionViewModels = Arrays.stream(transactionModels).map(bundleTransaction -> new TransactionViewModel((com.iota.iri.model.Transaction) bundleTransaction)).toArray(TransactionViewModel[]::new);
                 //.get(45, TimeUnit.MILLISECONDS))
         return transactionViewModels;
     }
 
-    public static Hash[] hashesFromQuery(String index, Object value) {
+    public static Hash[] hashesFromQuery(String index, Object value) throws ExecutionException, InterruptedException {
         Hash[] transactionHashes;
-        try {
-            Object[] tipTxs = Tangle.instance().query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE).get();
-            Transaction[] transactionModels = Arrays.stream(tipTxs).toArray(com.iota.iri.model.Transaction[]::new);
-            transactionHashes = Arrays.stream(transactionModels).map(transaction -> transaction.hash).toArray(Hash[]::new);
-        } catch (Exception e) {
-            e.printStackTrace();
-            transactionHashes = new Hash[0];
-        }
+        Object[] tipTxs = Tangle.instance().query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE).get();
+        Transaction[] transactionModels = Arrays.stream(tipTxs).toArray(com.iota.iri.model.Transaction[]::new);
+        transactionHashes = Arrays.stream(transactionModels).map(transaction -> transaction.hash).toArray(Hash[]::new);
         return transactionHashes;
     }
 
-    public static Hash[] fromApprovers(Hash hash) {
+    public static Hash[] fromApprovers(Hash hash) throws Exception {
         return TransactionViewModel.fromHash(hash).getApprovers();
     }
 
-    public static Hash[] fromTag(Hash tag) {
+    public static Hash[] fromTag(Hash tag) throws ExecutionException, InterruptedException {
         return hashesFromQuery("tag", tag.bytes());
     }
-    public static Hash[] fromBundle(Hash bundle) {
+    public static Hash[] fromBundle(Hash bundle) throws ExecutionException, InterruptedException {
         return hashesFromQuery("bundle", bundle.bytes());
     }
-    public static Hash[] fromAddress(Hash address) {
+    public static Hash[] fromAddress(Hash address) throws ExecutionException, InterruptedException {
         return hashesFromQuery("address", address.bytes());
     }
 
@@ -407,20 +364,15 @@ public class TransactionViewModel {
         return analyzedTransactionFlag;
     }
 
-    public static Hash[] getTipHashes() {
+    public static Hash[] getTipHashes() throws ExecutionException, InterruptedException {
         return hashesFromQuery("isTip", true);
     }
 
-    public Hash[] getApprovers() {
+    public Hash[] getApprovers() throws ExecutionException, InterruptedException {
         Hash[] approvers;
         Tangle accessor = Tangle.instance();
-        try {
             Approvee self = ((Approvee) accessor.load(Approvee.class, transaction.hash).get());
             approvers = Arrays.stream(self.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
-        } catch (Exception e) {
-            e.printStackTrace();
-            approvers = new Hash[0];
-        }
         return approvers;
     }
 
@@ -483,14 +435,10 @@ public class TransactionViewModel {
         return transaction.value;
     }
 
-    public void setValidity(int validity, boolean update) {
+    public void setValidity(int validity, boolean update) throws Exception {
         transaction.validity = validity;
         if(update) {
-            try {
-                update("validity");
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            update("validity");
         }
     }
 

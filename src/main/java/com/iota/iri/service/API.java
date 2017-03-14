@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -214,7 +215,7 @@ public class API {
         return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
     }
 
-    private AbstractResponse getTrytesStatement(List<String> hashes) {
+    private AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
             final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(new Hash(hash));
@@ -263,12 +264,12 @@ public class API {
         return GetTransactionsToApproveResponse.create(trunkTransactionToApprove, branchTransactionToApprove);
     }
 
-    private AbstractResponse getTipsStatement() {
+    private AbstractResponse getTipsStatement() throws ExecutionException, InterruptedException {
         return GetTipsResponse.create(
                 Arrays.stream(TransactionViewModel.getTipHashes()).map(Hash::toString).collect(Collectors.toList()));
     }
 
-    private AbstractResponse storeTransactionStatement(final List<String> trys) {
+    private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {
         for (final String trytes : trys) {
             final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
@@ -281,7 +282,7 @@ public class API {
         return GetNeighborsResponse.create(Node.instance().getNeighbors());
     }
 
-    private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) {
+    private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) throws Exception {
 
         final List<Hash> transactions = trans.stream().map(s -> new Hash(s)).collect(Collectors.toList());
         final List<Hash> tips = tps.stream().map(s -> new Hash(s)).collect(Collectors.toList());
@@ -336,7 +337,7 @@ public class API {
             }
     }
 
-    private AbstractResponse findTransactionStatement(final Map<String, Object> request) {
+    private AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {
         final Set<byte[]> bundlesTransactions = new HashSet<>();
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
@@ -412,7 +413,7 @@ public class API {
         return AbstractResponse.createEmptyResponse();
     }
 
-    private AbstractResponse getBalancesStatement(final List<String> addrss, final int threshold) {
+    private AbstractResponse getBalancesStatement(final List<String> addrss, final int threshold) throws Exception {
 
         if (threshold <= 0 || threshold > 100) {
             return ErrorResponse.create("Illegal 'threshold'");

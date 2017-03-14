@@ -59,7 +59,7 @@ public class TransactionViewModelTest {
             transactionViewModels = ArrayUtils.addAll(transactionViewModels, new TransactionViewModel(transaction));
         }
         for(TransactionViewModel transactionViewModel : transactionViewModels) {
-            transactionViewModel.store().get();
+            transactionViewModel.store();
         }
 
         bundle = transactionViewModels[0].getBundleTransactions();
@@ -78,8 +78,8 @@ public class TransactionViewModelTest {
         transaction.branch.hash = branchTransaction.getHash();
         transactionViewModel = new TransactionViewModel(transaction);
 
-        transactionViewModel.store().get();
-        branchTransaction.store().get();
+        transactionViewModel.store();
+        branchTransaction.store();
 
         TransactionViewModel branchTransactionQuery = transactionViewModel.getBranchTransaction();
         //assertArrayEquals(branchTransactionQuery.getHash(), branchTransaction.getHash());
@@ -97,8 +97,8 @@ public class TransactionViewModelTest {
         transaction.trunk.hash = trunkTransactionViewModel.getHash();
         transactionViewModel = new TransactionViewModel(transaction);
 
-        transactionViewModel.store().get();
-        trunkTransactionViewModel.store().get();
+        transactionViewModel.store();
+        trunkTransactionViewModel.store();
 
         TransactionViewModel trunkTransactionQuery = transactionViewModel.getTrunkTransaction();
         assertArrayEquals(trunkTransactionQuery.getHash(), trunkTransactionViewModel.getHash());
@@ -122,9 +122,9 @@ public class TransactionViewModelTest {
         transaction.trunk.hash = transactionViewModel.getHash();
         branchTxApprover = new TransactionViewModel(transaction);
 
-        transactionViewModel.store().get();
-        trunkTxApprover.store().get();
-        branchTxApprover.store().get();
+        transactionViewModel.store();
+        trunkTxApprover.store();
+        branchTxApprover.store();
 
         Hash[] approvers = transactionViewModel.getApprovers();
         assertNotEquals(Arrays.stream(approvers).filter(hash -> Arrays.equals(hash.bytes(), trunkTxApprover.getHash())).toArray().length, 0);

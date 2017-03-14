@@ -1,5 +1,7 @@
 package com.iota.iri.service.tangle;
 
+import com.iota.iri.model.Tip;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 
@@ -33,4 +35,6 @@ public interface IPersistenceProvider {
     void copyTransientList(Object sourceId, Object destId) throws Exception;
 
     Object latest(Class<?> model) throws  Exception;
+
+    Object[] getAll(Class<?> modelClass) throws Exception;
 }

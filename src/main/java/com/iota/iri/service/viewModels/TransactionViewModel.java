@@ -318,12 +318,25 @@ public class TransactionViewModel {
         */
     }
 
-    public boolean store() throws Exception {
-        boolean exists = Tangle.instance().save(transaction).get();
-        updateApprovers();
+    public void updateTips() throws ExecutionException, InterruptedException {
+        if(getApprovers().length == 0) {
+            TipsViewModel.addTipHash(transaction.hash);
+        } else {
+            TipsViewModel.removeTipHash(transaction.hash);
+        }
+    }
+
+    public void updateReceivedTransactionCount(boolean exists) {
         if(!exists) {
             receivedTransactionCount.incrementAndGet();
         }
+    }
+
+    public boolean store() throws Exception {
+        boolean exists = Tangle.instance().save(transaction).get();
+        updateApprovers();
+        updateTips();
+        updateReceivedTransactionCount(exists);
         return exists;
     }
 
@@ -348,13 +361,13 @@ public class TransactionViewModel {
 
     public static Hash[] hashesFromQuery(String index, Object value) throws ExecutionException, InterruptedException {
         Hash[] transactionHashes;
-        Object[] tipTxs = Tangle.instance().query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE).get();
-        Transaction[] transactionModels = Arrays.stream(tipTxs).toArray(com.iota.iri.model.Transaction[]::new);
+        Object[] transactions = Tangle.instance().query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE).get();
+        Transaction[] transactionModels = Arrays.stream(transactions).toArray(com.iota.iri.model.Transaction[]::new);
         transactionHashes = Arrays.stream(transactionModels).map(transaction -> transaction.hash).toArray(Hash[]::new);
         return transactionHashes;
     }
 
-    public static Hash[] fromApprovers(Hash hash) throws Exception {
+    public static Hash[] approversFromHash(Hash hash) throws Exception {
         return TransactionViewModel.fromHash(hash).getApprovers();
     }
 
@@ -373,9 +386,6 @@ public class TransactionViewModel {
         return analyzedTransactionFlag;
     }
 
-    public static Hash[] getTipHashes() throws ExecutionException, InterruptedException {
-        return hashesFromQuery("isTip", true);
-    }
 
     public Hash[] getApprovers() throws ExecutionException, InterruptedException {
         Approvee self = ((Approvee) Tangle.instance().load(Approvee.class, Arrays.copyOfRange(transaction.hash, 0, HASH_SIZE)).get());

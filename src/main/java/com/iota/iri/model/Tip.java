@@ -11,6 +11,6 @@ import com.iota.iri.service.tangle.annotations.ModelIndex;
 @ArrayModel
 @Model
 public class Tip {
-    @ModelIndex byte[] hash;
-    @HasMany  public boolean isTip = false;
+    @ModelIndex public byte[] hash;
+    @HasMany  public byte value = 1;
 }

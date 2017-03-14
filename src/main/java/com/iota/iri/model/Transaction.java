@@ -18,6 +18,7 @@ public class Transaction {
     @BelongsTo public Bundle bundle;
     @BelongsTo public Approvee trunk;
     @BelongsTo public Approvee branch;
+    @BelongsTo public Tip isTip;
 
     @HasOne
     public byte[] bytes;
@@ -28,7 +29,6 @@ public class Transaction {
     @HasOne public long currentIndex;
     @HasOne public long lastIndex;
     @HasOne public long arrivalTime;
-    @HasOne public byte isTip;
     @HasOne public byte analyzed;
 
 }

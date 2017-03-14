@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.viewModels.TipsViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -243,7 +244,7 @@ public class Node {
                                                     }
                                                 }
                                             } else if (randomTipBroadcastCounter % 24 == 0) {
-                                                final Hash[] tips = TransactionViewModel.getTipHashes();
+                                                final Hash[] tips = TipsViewModel.getTipHashes();
                                                 //final String[] tips = StorageTransactions.instance().tips().stream().map(Hash::toString).toArray(size -> new String[size]);
                                                 final Hash rndTipHash = tips[rnd.nextInt(tips.length)];
 

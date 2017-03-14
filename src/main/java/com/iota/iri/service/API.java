@@ -18,6 +18,7 @@ import com.iota.iri.*;
 
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.storage.AbstractStorage;
+import com.iota.iri.service.viewModels.TipsViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -156,7 +157,7 @@ public class API {
                             Runtime.getRuntime().totalMemory(), Milestone.latestMilestone, Milestone.latestMilestoneIndex,
                             Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                             Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
-                            System.currentTimeMillis(), TransactionViewModel.getTipHashes().length,
+                            System.currentTimeMillis(), TipsViewModel.getTipHashes().length,
                             ScratchpadViewModel.instance().getNumberOfTransactionsToRequest());
                 }
                 case "getTips": {
@@ -266,7 +267,7 @@ public class API {
 
     private AbstractResponse getTipsStatement() throws ExecutionException, InterruptedException {
         return GetTipsResponse.create(
-                Arrays.stream(TransactionViewModel.getTipHashes()).map(Hash::toString).collect(Collectors.toList()));
+                Arrays.stream(TipsViewModel.getTipHashes()).map(Hash::toString).collect(Collectors.toList()));
     }
 
     private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {
@@ -372,7 +373,7 @@ public class API {
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
-                approveeTransactions.addAll(Arrays.stream(TransactionViewModel.fromApprovers(new Hash(approvee))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
+                approveeTransactions.addAll(Arrays.stream(TransactionViewModel.approversFromHash(new Hash(approvee))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
                 /*
                 approveeTransactions.addAll(StorageApprovers.instance().approveeTransactions(
                         StorageApprovers.instance().approveePointer((new Hash(approvee)).value())));

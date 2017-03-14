@@ -1,5 +1,6 @@
 package com.iota.iri.service.tangle;
 
+import com.iota.iri.model.Tip;
 import com.iota.iri.service.tangle.annotations.*;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
@@ -262,6 +263,19 @@ public class Tangle {
                 provider.copyTransientList(sourceHandle, destHandle);
             }
             return null;
+        });
+    }
+
+    public Future<Object[]> loadAll(Class<Tip> modelClass) {
+        return executor.submit(() -> {
+            Object[] output = new Object[0];
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                output = provider.getAll(modelClass);
+                if(output != null && output.length > 0) {
+                    break;
+                }
+            }
+            return output;
         });
     }
 }

@@ -103,6 +103,9 @@ public class TransactionViewModel {
             this.transaction.hash = NULL_TRANSACTION_HASH_BYTES;
         } else {
             this.transaction = transaction;
+            if(this.transaction.bytes == null) {
+                this.transaction.bytes = NULL_TRANSACTION_BYTES;
+            }
         }
         this.trits = new int[TRINARY_SIZE];
         Converter.getTrits(this.transaction.bytes, this.trits);

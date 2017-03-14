@@ -114,14 +114,11 @@ public class TransactionViewModel {
             this.transaction = new Transaction();
             this.transaction.bytes = NULL_TRANSACTION_BYTES;
             this.transaction.hash = NULL_TRANSACTION_HASH_BYTES;
-            this.transaction.type = AbstractStorage.PREFILLED_SLOT;
         } else {
             this.transaction = transaction;
-            this.transaction.type = AbstractStorage.FILLED_SLOT;
         }
         this.trits = new int[TRINARY_SIZE];
         Converter.getTrits(this.transaction.bytes, this.trits);
-        //type = transaction.value[TYPE_OFFSET];
         populateTransaction(this.trits);
     }
 
@@ -335,8 +332,31 @@ public class TransactionViewModel {
         */
     }
 
-    public Future<Boolean> store() {
-        return Tangle.instance().save(transaction);
+    public boolean store() {
+        try {
+            boolean status = Tangle.instance().save(transaction).get();
+            updateApprovers();
+            return status;
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        } catch (ExecutionException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    public void updateApprovers() {
+        for(Hash approver: getApprovers()) {
+            try {
+                Transaction approvingTransaction = (Transaction) Tangle.instance().load(Transaction.class, approver.bytes()).get();
+                approvingTransaction.type = AbstractStorage.FILLED_SLOT;
+                new TransactionViewModel(approvingTransaction).store();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            } catch (ExecutionException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public TransactionViewModel[] getBundleTransactions() {

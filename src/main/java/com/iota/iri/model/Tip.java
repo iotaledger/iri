@@ -1,9 +1,6 @@
 package com.iota.iri.model;
 
-import com.iota.iri.service.tangle.annotations.ArrayModel;
-import com.iota.iri.service.tangle.annotations.HasMany;
-import com.iota.iri.service.tangle.annotations.Model;
-import com.iota.iri.service.tangle.annotations.ModelIndex;
+import com.iota.iri.service.tangle.annotations.*;
 
 /**
  * Created by paul on 3/8/17 for iri.
@@ -12,5 +9,5 @@ import com.iota.iri.service.tangle.annotations.ModelIndex;
 @Model
 public class Tip {
     @ModelIndex public byte[] hash;
-    @HasMany  public byte value = 1;
+    @HasOne public byte value = 1;
 }

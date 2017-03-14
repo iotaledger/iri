@@ -18,7 +18,7 @@ public class Transaction {
     @BelongsTo public Bundle bundle;
     @BelongsTo public Approvee trunk;
     @BelongsTo public Approvee branch;
-    @BelongsTo public Tip isTip;
+    //@BelongsTo public Tip isTip;
 
     @HasOne
     public byte[] bytes;

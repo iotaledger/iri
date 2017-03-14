@@ -428,9 +428,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 iterator = db.newIterator();
                 for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                     primaryKey = iterator.key();
-                    if((thing = objects.get(primaryKey)) == null) {
+                    if((thing = objects.get(new String(primaryKey))) == null) {
                         thing = modelClass.newInstance();
-                        objects.put(primaryKey, thing);
+                        objects.put(new String(primaryKey), thing);
                     }
                     if (primaryField.get(thing) == null) {
                         primaryField.set(thing, Serializer.deserialize(primaryKey, primaryField.getType()));

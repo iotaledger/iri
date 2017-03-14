@@ -104,13 +104,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Object thing = modelClass.newInstance();
         modelPrimaryKey.get(modelClass).set(thing, key);
         byte[] primaryKey = Serializer.serialize(key);
-        boolean foundAny = false;
         for (Map.Entry<String, RocksField> set : modelColumns.get(modelClass).entrySet()) {
             RocksField rocksField = set.getValue();
             if (rocksField.handle != null) {
                 byte[] result = db.get(rocksField.handle, primaryKey);
                 if (result != null) {
-                    foundAny = true;
                     Field field = modelClass.getDeclaredField(set.getKey());
                     Field subField;
                     subField = field.getType().isArray() ? modelPrimaryKey.get(field.getType().getComponentType()) : modelPrimaryKey.get(field.getType());
@@ -138,7 +136,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 }
             }
         }
-        if (!foundAny) thing = null;
         return thing;
     }
 

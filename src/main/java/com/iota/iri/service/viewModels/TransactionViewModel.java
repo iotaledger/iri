@@ -3,6 +3,7 @@ package com.iota.iri.service.viewModels;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
@@ -54,6 +55,7 @@ public class TransactionViewModel {
 
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
+    public static final AtomicLong receivedTransactionCount = new AtomicLong(0);
     //public final int type;
 
     //public final byte[] hash;
@@ -319,6 +321,9 @@ public class TransactionViewModel {
     public boolean store() throws Exception {
         boolean status = Tangle.instance().save(transaction).get();
         updateApprovers();
+        if(status) {
+            receivedTransactionCount.incrementAndGet();
+        }
         return status;
     }
 

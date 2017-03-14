@@ -29,40 +29,23 @@ public class ScratchpadViewModel {
         analyzedTransactionHandle = Tangle.instance().createTransientList(AnalyzedFlag.class);
     }
 
-    public void requestTransaction(byte[] hash) {
+    public void requestTransaction(byte[] hash) throws ExecutionException, InterruptedException {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
         scratchpad.value = 1;
-        try {
-            Tangle.instance().save(scratchpad).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+        Tangle.instance().save(scratchpad).get();
         numberOfTransactionsToRequest++;
     }
 
-    public boolean setAnalyzedTransactionFlag(byte[] hash) {
+    public boolean setAnalyzedTransactionFlag(byte[] hash) throws ExecutionException, InterruptedException {
         AnalyzedFlag flag = new AnalyzedFlag();
         flag.hash = hash;
         flag.bytes = new byte[]{0};
-        try {
-            return Tangle.instance().save(analyzedTransactionHandle, flag).get();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
-        return false;
+        return Tangle.instance().save(analyzedTransactionHandle, flag).get();
     }
 
-    public void clearAnalyzedTransactionsFlags() {
-        try {
-            Tangle.instance().dropList(analyzedTransactionHandle);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    public void clearAnalyzedTransactionsFlags() throws Exception {
+        Tangle.instance().dropList(analyzedTransactionHandle);
         analyzedTransactionHandle = Tangle.instance().createTransientList(AnalyzedFlag.class);
     }
 
@@ -70,31 +53,21 @@ public class ScratchpadViewModel {
         return numberOfTransactionsToRequest;
     }
 
-    public void clearReceivedTransaction(byte[] hash) {
+    public void clearReceivedTransaction(byte[] hash) throws ExecutionException, InterruptedException {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
-        try {
-            if(Tangle.instance().maybeHas(Scratchpad.class, hash).get())
-                Tangle.instance().delete(scratchpad);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
+        if(Tangle.instance().maybeHas(Scratchpad.class, hash).get()) {
+            Tangle.instance().delete(scratchpad);
+            numberOfTransactionsToRequest--;
         }
     }
 
-    public void transactionToRequest(byte[] buffer, int offset) {
+    public void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
         Scratchpad scratchpad = null;
         final long beginningTime = System.currentTimeMillis();
-        try {
-            Object latest = Tangle.instance().getLatest(Scratchpad.class).get();
-            if(latest != null)
-                scratchpad = ((Scratchpad) latest);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
-        }
+        Object latest = Tangle.instance().getLatest(Scratchpad.class).get();
+        if(latest != null)
+            scratchpad = ((Scratchpad) latest);
 
         if(scratchpad != null) {
             /*
@@ -110,7 +83,8 @@ public class ScratchpadViewModel {
         long now = System.currentTimeMillis();
         if ((now - lastTime) > 10000L) {
             lastTime = now;
-            log.info("Transactions to request = {}", numberOfTransactionsToRequest + ".  (" + (System.currentTimeMillis() - beginningTime) + " ms )");
+            //log.info("Transactions to request = {}", numberOfTransactionsToRequest + ".  (" + (System.currentTimeMillis() - beginningTime) + " ms )");
+            log.info("Transactions to request = {}", numberOfTransactionsToRequest + " / " + TransactionViewModel.receivedTransactionCount.get() + " (" + (System.currentTimeMillis() - beginningTime) + " ms )");
         }
     }
 

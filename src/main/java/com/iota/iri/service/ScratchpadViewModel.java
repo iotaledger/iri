@@ -69,16 +69,8 @@ public class ScratchpadViewModel {
         if(latest != null)
             scratchpad = ((Scratchpad) latest);
 
-        if(scratchpad != null) {
-            /*
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(scratchpad.hash);
-            if(transactionViewModel != null && Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
-                System.arraycopy(transactionViewModel.getHash(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
-            }
-            */
-            if(!Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
-                System.arraycopy(scratchpad.hash, 0, buffer, offset, TransactionViewModel.HASH_SIZE);
-            }
+        if(scratchpad != null && !Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
+            System.arraycopy(scratchpad.hash, 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
         long now = System.currentTimeMillis();
         if ((now - lastTime) > 10000L) {

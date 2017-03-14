@@ -319,16 +319,17 @@ public class TransactionViewModel {
     }
 
     public boolean store() throws Exception {
-        boolean status = Tangle.instance().save(transaction).get();
+        boolean exists = Tangle.instance().save(transaction).get();
         updateApprovers();
-        if(status) {
+        if(!exists) {
             receivedTransactionCount.incrementAndGet();
         }
-        return status;
+        return exists;
     }
 
     public void updateApprovers() throws Exception {
-        for(Hash approver: getApprovers()) {
+        Hash[] approvers = getApprovers();
+        for(Hash approver: approvers) {
             Transaction approvingTransaction = (Transaction) Tangle.instance().load(Transaction.class, approver.bytes()).get();
             approvingTransaction.type = AbstractStorage.FILLED_SLOT;
             new TransactionViewModel(approvingTransaction).store();

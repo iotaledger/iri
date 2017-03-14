@@ -138,12 +138,7 @@ public class Tangle {
         return executor.submit(() -> {
             Object loadableObject = null;
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                try {
-                    loadableObject = provider.get(modelClass, value);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    return null;
-                }
+                loadableObject = provider.get(modelClass, value);
                 if(loadableObject != null) {
                     break;
                 }
@@ -205,12 +200,8 @@ public class Tangle {
         return executor.submit(() -> {
             Object[] output = new Object[0];
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                try {
-                    output = provider.queryMany(modelClass, index, key, length);
-                    break;
-                }  catch (Exception e) {
-                    e.printStackTrace();
-                }
+                output = provider.queryMany(modelClass, index, key, length);
+                if(output != null) break;
             }
             return output;
         });
@@ -237,11 +228,7 @@ public class Tangle {
     public Future<Void> delete(Object handle, Object model) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                try {
-                    provider.deleteTransientObject(handle, model);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                provider.deleteTransientObject(handle, model);
             }
             return null;
         });

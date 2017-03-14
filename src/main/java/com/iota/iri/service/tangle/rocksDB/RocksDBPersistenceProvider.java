@@ -200,7 +200,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean setTransientHandle(Class<?> model, Object uuid) {
+    public boolean setTransientHandle(Class<?> model, Object uuid) throws ExceptionInInitializerError {
         final ColumnFamilyHandle columnFamilyHandle;
         try {
             columnFamilyHandle = db.createColumnFamily(
@@ -227,15 +227,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                                                         new ColumnFamilyOptions()));
                             }
                         } catch (RocksDBException e) {
-                            e.printStackTrace();
+                            throw new ExceptionInInitializerError(e);
                         }
                         return new HashMap.SimpleEntry<String, RocksField>(key, field);
                     }).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
             return true;
         } catch (RocksDBException e) {
-            e.printStackTrace();
+            throw new ExceptionInInitializerError(e);
         }
-        return false;
     }
 
     @Override

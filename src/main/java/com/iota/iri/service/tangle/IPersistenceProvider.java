@@ -36,5 +36,5 @@ public interface IPersistenceProvider {
 
     Object latest(Class<?> model) throws  Exception;
 
-    Object[] getAll(Class<?> modelClass) throws Exception;
+    Object[] getKeys(Class<?> modelClass) throws Exception;
 }

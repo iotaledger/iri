@@ -318,8 +318,21 @@ public class TransactionViewModel {
         */
     }
 
-    public void updateTips() throws ExecutionException, InterruptedException {
-        if(getApprovers().length == 0) {
+    public boolean store() throws Exception {
+        boolean exists = Tangle.instance().save(transaction).get();
+        update(exists);
+        return exists;
+    }
+
+    private void update (boolean exists) throws Exception {
+        Hash[] approvers = getApprovers();
+        updateApprovers(approvers);
+        updateTips(approvers);
+        updateReceivedTransactionCount(exists);
+    }
+
+    public void updateTips(Hash[] approvers) throws ExecutionException, InterruptedException {
+        if(approvers.length == 0) {
             TipsViewModel.addTipHash(transaction.hash);
         } else {
             TipsViewModel.removeTipHash(transaction.hash);
@@ -332,16 +345,7 @@ public class TransactionViewModel {
         }
     }
 
-    public boolean store() throws Exception {
-        boolean exists = Tangle.instance().save(transaction).get();
-        updateApprovers();
-        updateTips();
-        updateReceivedTransactionCount(exists);
-        return exists;
-    }
-
-    public void updateApprovers() throws Exception {
-        Hash[] approvers = getApprovers();
+    public void updateApprovers(Hash[] approvers) throws Exception {
         for(Hash approver: approvers) {
             Transaction approvingTransaction = (Transaction) Tangle.instance().load(Transaction.class, approver.bytes()).get();
             approvingTransaction.type = AbstractStorage.FILLED_SLOT;

@@ -1,6 +1,5 @@
 package com.iota.iri.service.tangle;
 
-import com.iota.iri.model.Tip;
 
 import java.lang.reflect.Field;
 import java.util.Map;
@@ -119,7 +118,7 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public Object[] getAll(Class<?> modelClass) throws Exception {
+    public Object[] getKeys(Class<?> modelClass) throws Exception {
         return new Object[0];
     }
 

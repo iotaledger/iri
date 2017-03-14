@@ -1,7 +1,6 @@
 package com.iota.iri.service.tangle.rocksDB;
 
 import com.iota.iri.conf.Configuration;
-import com.iota.iri.model.Tip;
 import com.iota.iri.service.tangle.IPersistenceProvider;
 import com.iota.iri.service.tangle.ModelFieldInfo;
 import com.iota.iri.service.tangle.Serializer;
@@ -415,7 +414,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public Object[] getAll(Class<?> modelClass) throws Exception {
+    public Object[] getKeys(Class<?> modelClass) throws Exception {
         Map<Object, Object> objects = new TreeMap<>();
         Field primaryField = modelPrimaryKey.get(modelClass), field;
         byte[] primaryKey;
@@ -428,15 +427,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 iterator = db.newIterator();
                 for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                     primaryKey = iterator.key();
-                    if((thing = objects.get(new String(primaryKey))) == null) {
+                    if(objects.get(new String(primaryKey)) == null) {
                         thing = modelClass.newInstance();
+                        primaryField.set(thing, Serializer.deserialize(primaryKey, primaryField.getType()));
                         objects.put(new String(primaryKey), thing);
                     }
-                    if (primaryField.get(thing) == null) {
-                        primaryField.set(thing, Serializer.deserialize(primaryKey, primaryField.getType()));
-                    }
-                    field = modelClass.getDeclaredField(set.getKey());
-                    field.set(thing, Serializer.deserialize(iterator.value(), field.getType()));
                 }
             }
         }

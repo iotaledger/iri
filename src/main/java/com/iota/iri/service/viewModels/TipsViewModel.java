@@ -13,9 +13,11 @@ import java.util.concurrent.ExecutionException;
 public class TipsViewModel {
 
     public static void addTipHash (byte[] hash) throws ExecutionException, InterruptedException {
-        Tip tip = new Tip();
-        tip.hash = hash;
-        Tangle.instance().save(tip).get();
+        if(!Tangle.instance().maybeHas(Tip.class, hash).get()) {
+            Tip tip = new Tip();
+            tip.hash = hash;
+            Tangle.instance().save(tip).get();
+        }
     }
 
     public static void removeTipHash (byte[] hash) throws ExecutionException, InterruptedException {

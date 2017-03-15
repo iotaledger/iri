@@ -46,7 +46,7 @@ public class Node {
 
     private static final Node instance = new Node();
 
-    public  static final int TRANSACTION_PACKET_SIZE = 1650;
+    public  static final int TRANSACTION_PACKET_SIZE = 1653; // was 1650;
     private static final int QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
 

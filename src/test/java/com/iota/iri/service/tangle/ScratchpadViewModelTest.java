@@ -1,10 +1,8 @@
-package com.iota.iri.service;
+package com.iota.iri.service.tangle;
 
 import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Hash;
 import com.iota.iri.model.Scratchpad;
-import com.iota.iri.model.Transaction;
-import com.iota.iri.service.storage.StorageScratchpad;
+import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.service.viewModels.TransactionViewModel;

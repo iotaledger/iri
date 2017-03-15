@@ -13,13 +13,13 @@ import java.util.concurrent.ExecutionException;
 public class TimestampViewModel {
     private final Timestamp timestamp;
 
-    public TimestampViewModel(byte[] bytes) {
+    public TimestampViewModel(Long val) {
         timestamp = new Timestamp();
-        timestamp.bytes = bytes;
+        timestamp.value = val;
     }
 
     public Hash[] getTransactionHashes() throws ExecutionException, InterruptedException {
-        Timestamp timestampLoad = (Timestamp) Tangle.instance().load(Timestamp.class, timestamp.bytes).get();
+        Timestamp timestampLoad = (Timestamp) Tangle.instance().load(Timestamp.class, timestamp.value).get();
         this.timestamp.transactions = timestampLoad.transactions;
         return Arrays.stream(timestamp.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
     }

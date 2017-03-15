@@ -52,10 +52,14 @@ public class TransactionViewModel {
 
     public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[TransactionViewModel.HASH_SIZE];
     public static final byte[] NULL_TRANSACTION_BYTES = new byte[TransactionViewModel.SIZE];
+    public static final byte[] NULL_ADDRESS_HASH_BYTES = new byte[ADDRESS_SIZE];
+    public static final byte[] NULL_TAG_HASH_BYTES = new byte[TAG_SIZE];
 
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
     public static final AtomicLong receivedTransactionCount = new AtomicLong(0);
+    public final byte[] bytes = NULL_TRANSACTION_BYTES;
+
     //public final int type;
 
     //public final byte[] hash;
@@ -101,24 +105,99 @@ public class TransactionViewModel {
     public TransactionViewModel(final Transaction transaction) {
         if(transaction == null) {
             this.transaction = new Transaction();
-            this.transaction.bytes = NULL_TRANSACTION_BYTES;
             this.transaction.hash = NULL_TRANSACTION_HASH_BYTES;
         } else {
             this.transaction = transaction;
-            if(this.transaction.bytes == null) {
-                this.transaction.bytes = NULL_TRANSACTION_BYTES;
-            }
         }
-        this.trits = new int[TRINARY_SIZE];
-        Converter.getTrits(this.transaction.bytes, this.trits);
-        populateTransaction(this.trits);
+        /*
+        if(this.transaction.bytes == null) {
+            this.transaction.bytes = NULL_TRANSACTION_BYTES;
+        }
+        */
+        populateTrits();
+        System.arraycopy(Converter.bytes(trits), 0, bytes, 0, BYTES_SIZE);
     }
+
+    private void populateTrits() {
+        int[] partialTrits = null;
+        this.trits = new int[TRINARY_SIZE];
+        Converter.copyTrits(transaction.currentIndex, trits, CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
+        Converter.copyTrits(transaction.lastIndex, trits, LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
+        Converter.copyTrits(transaction.value, trits, VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
+        Converter.copyTrits(transaction.timestamp.value, trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+
+        populateSignatureTrits(partialTrits);
+        populateAddressTrits(partialTrits);
+        populateTagTrits(partialTrits);
+        populateBundleTrits(partialTrits);
+        populateTrunkTrits(partialTrits);
+        populateBranchTrits(partialTrits);
+    }
+
+    private void populateSignatureTrits(int[] partialTrits) {
+        if(this.transaction.signature == null) {
+            this.transaction.signature = NULL_TRANSACTION_BYTES;
+        }
+        partialTrits = new int[SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
+        Converter.getTrits(transaction.signature, partialTrits);
+        System.arraycopy(partialTrits, 0, trits, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
+    }
+
+    private void populateBranchTrits(int[] partialTrits) {
+        if(transaction.branch.hash == null) {
+            transaction.branch.hash = NULL_TRANSACTION_HASH_BYTES;
+        }
+        partialTrits = new int[BRANCH_TRANSACTION_TRINARY_SIZE];
+        Converter.getTrits(transaction.branch.hash, partialTrits);
+        System.arraycopy(partialTrits, 0, trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE);
+    }
+
+    private void populateTrunkTrits(int[] partialTrits) {
+        if(transaction.trunk.hash == null) {
+            transaction.trunk.hash = NULL_TRANSACTION_HASH_BYTES;
+        }
+        partialTrits = new int[TRUNK_TRANSACTION_TRINARY_SIZE];
+        Converter.getTrits(transaction.trunk.hash, partialTrits);
+        System.arraycopy(partialTrits, 0, trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
+    }
+
+    private void populateBundleTrits(int[] partialTrits) {
+        if(transaction.bundle.hash == null) {
+            transaction.bundle.hash = NULL_TRANSACTION_HASH_BYTES;
+        }
+        partialTrits = new int[BUNDLE_TRINARY_SIZE];
+        Converter.getTrits(transaction.bundle.hash, partialTrits);
+        System.arraycopy(partialTrits, 0, trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE);
+    }
+
+    private void populateAddressTrits(int[] partialTrits) {
+        partialTrits = new int[ADDRESS_TRINARY_SIZE];
+        if(transaction.address.bytes == null) {
+            transaction.address.bytes = NULL_ADDRESS_HASH_BYTES;
+        }
+        Converter.getTrits(transaction.address.bytes, partialTrits);
+        System.arraycopy(partialTrits, 0, trits, ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
+
+    }
+
+
+    private void populateTagTrits(int[] partialTrits) {
+        if(transaction.tag.bytes == null) {
+            transaction.tag.bytes = NULL_TAG_HASH_BYTES;
+        }
+        partialTrits = new int[TAG_TRINARY_SIZE];
+        Converter.getTrits(transaction.tag.bytes, partialTrits);
+        System.arraycopy(partialTrits, 0, trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE);
+
+    }
+
 
     public TransactionViewModel(final int[] trits) {
         transaction = new com.iota.iri.model.Transaction();
 
         this.trits = trits;
-        transaction.bytes = Converter.bytes(trits);
+        System.arraycopy(Converter.bytes(trits), 0, this.bytes, 0, BYTES_SIZE);
+        //transaction.value = Converter.value(trits);
 
         final Curl curl = new Curl();
         curl.absorb(trits, 0, TRINARY_SIZE);
@@ -137,7 +216,8 @@ public class TransactionViewModel {
 
     public TransactionViewModel(final byte[] bytes, final int[] trits, final Curl curl) {
         transaction = new com.iota.iri.model.Transaction();
-        this.transaction.bytes = Arrays.copyOf(bytes, BYTES_SIZE);
+        //this.transaction.value = Arrays.copyOf(value, BYTES_SIZE);
+        System.arraycopy(bytes, 0, this.bytes, 0, BYTES_SIZE);
         Converter.getTrits(this.getBytes(), this.trits = trits);
 
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
@@ -180,7 +260,8 @@ public class TransactionViewModel {
         transaction.type = mainBuffer[TYPE_OFFSET];
         System.arraycopy(mainBuffer, HASH_OFFSET, this.transaction.hash = new byte[HASH_SIZE], 0, HASH_SIZE);
 
-        System.arraycopy(mainBuffer, BYTES_OFFSET, this.transaction.bytes, 0, BYTES_SIZE);
+        //System.arraycopy(mainBuffer, BYTES_OFFSET, this.transaction.value, 0, BYTES_SIZE);
+        System.arraycopy(mainBuffer, BYTES_OFFSET, this.bytes, 0, BYTES_SIZE);
 
         System.arraycopy(mainBuffer, ADDRESS_OFFSET, transaction.address.bytes = new byte[ADDRESS_SIZE], 0, ADDRESS_SIZE);
         transaction.value = AbstractStorage.value(mainBuffer, VALUE_OFFSET);
@@ -211,6 +292,7 @@ public class TransactionViewModel {
         transaction.currentIndex = Converter.longValue(trits, CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
         transaction.lastIndex = Converter.longValue(trits, LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
         transaction.value = Converter.longValue(trits, VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
+        transaction.signature = Converter.bytes(trits, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
         transaction.address = new Address();
         transaction.address.bytes = Converter.bytes(trits, ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         transaction.tag = new Tag();
@@ -225,8 +307,7 @@ public class TransactionViewModel {
     }
 
     private void setTimestamp() {
-        transaction.timestamp = new Timestamp();
-        System.arraycopy(Converter.bytes(trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE), 0, transaction.timestamp.bytes = new byte[6], 0, 6);
+        transaction.timestamp.value = Converter.longValue(trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
     }
 
     public void update(String item) throws Exception {
@@ -259,7 +340,8 @@ public class TransactionViewModel {
 
         if (trits == null) {
             trits = new int[TRINARY_SIZE];
-            Converter.getTrits(this.transaction.bytes, trits);
+            //Converter.getTrits(this.transaction.bytes, trits);
+            Converter.getTrits(this.bytes, trits);
         }
         return trits;
     }
@@ -408,7 +490,7 @@ public class TransactionViewModel {
         return transaction.arrivalTime;
     }
     public byte[] getBytes() {
-        return transaction.bytes;
+        return this.bytes;
     }
 
     public byte[] getHash() {
@@ -460,15 +542,6 @@ public class TransactionViewModel {
         if(update) {
             update("validity");
         }
-    }
-
-    public long getTimestampLong() {
-        if(transaction.timestamp == null) {
-            setTimestamp();
-        }
-        int[] timestamp = new int[TIMESTAMP_TRINARY_SIZE];
-        Converter.getTrits(transaction.timestamp.bytes, timestamp);
-        return Converter.longValue(timestamp, 0, TIMESTAMP_TRINARY_SIZE);
     }
 
     public int getValidity() {

@@ -11,17 +11,16 @@ public class Transaction {
     @ModelIndex
     public byte[] hash;
 
-    @BelongsTo
-    public Tag tag;
-    @BelongsTo public Address address;
-    @BelongsTo public Timestamp timestamp;
-    @BelongsTo public Bundle bundle;
-    @BelongsTo public Approvee trunk;
-    @BelongsTo public Approvee branch;
-    //@BelongsTo public Tip isTip;
+    @BelongsTo public Tag tag = new Tag();
+    @BelongsTo public Address address = new Address();
+    @BelongsTo public Timestamp timestamp = new Timestamp();
+    @BelongsTo public Bundle bundle = new Bundle();
+    @BelongsTo public Approvee trunk = new Approvee();
+    @BelongsTo public Approvee branch = new Approvee();
+    @HasOne public byte[] signature;
 
-    @HasOne
-    public byte[] bytes;
+    //@HasOne public byte[] bytes;
+
 
     @HasOne public int validity;
     @HasOne public int type;

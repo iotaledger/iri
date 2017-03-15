@@ -41,7 +41,7 @@ public class RocksDBPersistenceProviderTest {
         int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
                 hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction();
-        transaction.bytes = Converter.bytes(trits);
+        transaction.signature = Converter.bytes(trits);
         Curl curl = new Curl();
         curl.absorb(trits, 0, trits.length);
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
@@ -56,7 +56,7 @@ public class RocksDBPersistenceProviderTest {
         int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
                 hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction();
-        transaction.bytes = Converter.bytes(trits);
+        transaction.signature = Converter.bytes(trits);
         Curl curl = new Curl();
         curl.absorb(trits, 0, trits.length);
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
@@ -65,7 +65,7 @@ public class RocksDBPersistenceProviderTest {
         Tangle.instance().getPersistenceProviders().get(0).save(transaction);
         Transaction getTransaction = (Transaction) Tangle.instance().getPersistenceProviders().get(0).get(Transaction.class, transaction.hash);
         assertArrayEquals(getTransaction.hash, transaction.hash);
-        assertArrayEquals(getTransaction.bytes, transaction.bytes);
+        assertArrayEquals(getTransaction.signature, transaction.signature);
     }
 
     @Test
@@ -74,7 +74,7 @@ public class RocksDBPersistenceProviderTest {
         int[] trits = Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray(),
                 hash = new int[Curl.HASH_LENGTH];
         Transaction transaction = new Transaction(), queryTransaction;
-        transaction.bytes = Converter.bytes(trits);
+        transaction.signature = Converter.bytes(trits);
         transaction.address = new Address();
         transaction.address.bytes = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
         Curl curl = new Curl();
@@ -93,7 +93,7 @@ public class RocksDBPersistenceProviderTest {
                 .orElse(null);
         assertNotNull(queryTransaction);
         assertArrayEquals(queryTransaction.hash, transaction.hash);
-        assertArrayEquals(queryTransaction.bytes, transaction.bytes);
+        assertArrayEquals(queryTransaction.signature, transaction.signature);
         assertArrayEquals(queryTransaction.address.bytes, transaction.address.bytes);
     }
 
@@ -104,7 +104,7 @@ public class RocksDBPersistenceProviderTest {
         Transaction[] bundle, transactions;
         transactions = Arrays.stream(new Transaction[4]).map(t -> {
             Transaction transaction = new Transaction();
-            transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.signature = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.bundle = new Bundle();
             transaction.bundle.hash = bundleHash.clone();
             transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());

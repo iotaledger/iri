@@ -9,6 +9,6 @@ import com.iota.iri.service.tangle.annotations.ModelIndex;
  */
 @Model
 public class Timestamp {
-    @ModelIndex public byte[] bytes;
+    @ModelIndex public long value;
     @HasMany public Transaction[] transactions;
 }

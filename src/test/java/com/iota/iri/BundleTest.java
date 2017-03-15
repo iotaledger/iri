@@ -39,7 +39,7 @@ public class BundleTest {
         TransactionViewModel[] transactionViewModels;
         transactionViewModels = Arrays.stream(new com.iota.iri.model.Transaction[4]).map(t -> {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
-            transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.signature = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
             transaction.bundle = new com.iota.iri.model.Bundle();
             transaction.bundle.hash = bundleHash.clone();
@@ -47,7 +47,7 @@ public class BundleTest {
         }).toArray(TransactionViewModel[]::new);
         {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
-            transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.signature = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = bundleHash.clone();
             transaction.bundle = new com.iota.iri.model.Bundle();
             transaction.bundle.hash = bundleHash.clone();

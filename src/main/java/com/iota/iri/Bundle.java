@@ -8,6 +8,7 @@ import java.util.Map;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
+import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
@@ -23,12 +24,16 @@ public class Bundle {
 
     public Bundle(final byte[] bundle) throws Exception {
 
+        final BundleViewModel bundleViewModel = BundleViewModel.fromHash(bundle);
+        /*
         final TransactionViewModel bundleTransactionViewModel = TransactionViewModel.fromHash(bundle);
         if(bundleTransactionViewModel == null) {
             return;
         }
         final Map<byte[], TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(bundleTransactionViewModel);
-        
+        */
+        final Map<byte[], TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(bundleViewModel);
+
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
             if (transactionViewModel.getCurrentIndex() == 0 && transactionViewModel.getValidity() >= 0) {
@@ -108,7 +113,7 @@ public class Bundle {
                         break;
 
                     } else {
-                        transactionViewModel = bundleTransactions.get(transactionViewModel.trunkTransactionPointer);
+                        transactionViewModel = bundleTransactions.get(transactionViewModel.getTrunkTransactionHash());
                         if (transactionViewModel == null) {
                             break;
                         }
@@ -119,10 +124,10 @@ public class Bundle {
     }
 
 
-    private Map<byte[], TransactionViewModel> loadTransactionsFromTangle(final TransactionViewModel bundleTransactionViewModel) {
+    private Map<byte[], TransactionViewModel> loadTransactionsFromTangle(final BundleViewModel bundleViewModel) {
         final Map<byte[], TransactionViewModel> bundleTransactions = new HashMap<>();
         try {
-            for (final TransactionViewModel transactionViewModel : bundleTransactionViewModel.getBundleTransactions()) {
+            for (final TransactionViewModel transactionViewModel : bundleViewModel.getTransactions()) {
                 bundleTransactions.put(transactionViewModel.getHash(), transactionViewModel);
             }
         } catch (Exception e) {

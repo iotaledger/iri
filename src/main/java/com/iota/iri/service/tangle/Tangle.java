@@ -17,7 +17,7 @@ import java.util.stream.Collectors;
 public class Tangle {
     private static final char COLUMN_DELIMETER = '.';
 
-    public static Tangle instance = new Tangle();
+    private static Tangle instance = new Tangle();
     List<IPersistenceProvider> persistenceProviders = new ArrayList<>();
     private ExecutorService executor;
     private final Map<Class<?>, Field> modelPrimaryKeys = new HashMap<>();

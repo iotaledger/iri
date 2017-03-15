@@ -1,6 +1,7 @@
 package com.iota.iri.service.storage;
 
 import java.io.IOException;
+import java.util.Arrays;
 
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
@@ -70,8 +71,8 @@ public class Storage extends AbstractStorage {
         StorageAddresses.instance().updateAddresses(transactionPointer, transactionViewModel);
         StorageTags.instance().updateTags(transactionPointer, transactionViewModel);
         StorageApprovers.instance().updateApprover(transactionViewModel.getTrunkTransactionHash(), transactionPointer);
-        
-        if (transactionViewModel.branchTransactionPointer != transactionViewModel.trunkTransactionPointer) {
+
+        if (Arrays.equals(transactionViewModel.getBranchTransactionHash(), transactionViewModel.getTrunkTransactionHash())) {
         	StorageApprovers.instance().updateApprover(transactionViewModel.getBranchTransactionHash(), transactionPointer);
         }
     }

@@ -69,7 +69,7 @@ public class Milestone {
                                     //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
                                     final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction();
                                     if (transactionViewModel2.getType() == AbstractStorage.FILLED_SLOT
-                                            && transactionViewModel.branchTransactionPointer == transactionViewModel2.trunkTransactionPointer) {
+                                            && Arrays.equals(transactionViewModel.getBranchTransactionHash(), transactionViewModel2.getTrunkTransactionHash())) {
 
                                         final int[] trunkTransactionTrits = new int[TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE];
                                         Converter.getTrits(transactionViewModel.getTrunkTransactionHash(), trunkTransactionTrits);

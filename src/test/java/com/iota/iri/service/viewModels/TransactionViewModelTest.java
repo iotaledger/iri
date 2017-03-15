@@ -63,7 +63,7 @@ public class TransactionViewModelTest {
             transactionViewModel.store();
         }
 
-        bundle = transactionViewModels[0].getBundleTransactions();
+        //bundle = transactionViewModels[0].getBundleTransactions();
         //assertEquals(bundle.length, transactionViewModels.length);
     }
 

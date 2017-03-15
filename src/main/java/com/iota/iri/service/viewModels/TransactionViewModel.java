@@ -81,8 +81,6 @@ public class TransactionViewModel {
     //public final byte[] trunkTransaction;
     //public final byte[] branchTransaction;
 
-    public long trunkTransactionPointer;
-    public long branchTransactionPointer;
     //private final int getValidity;
 
     private int[] trits;
@@ -443,13 +441,15 @@ public class TransactionViewModel {
         }
     }
 
+    /*
     public TransactionViewModel[] getBundleTransactions() throws ExecutionException, InterruptedException {
-        Object[] bundles = Tangle.instance().query(com.iota.iri.model.Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE).get();
-        Transaction[] transactionModels = Arrays.stream(bundles).toArray(com.iota.iri.model.Transaction[]::new);
+        Transaction[] transactionModels = Arrays.stream(Tangle.instance().query(Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE).get())
+                .toArray(com.iota.iri.model.Transaction[]::new);
         TransactionViewModel[] transactionViewModels = Arrays.stream(transactionModels).map(bundleTransaction -> new TransactionViewModel((com.iota.iri.model.Transaction) bundleTransaction)).toArray(TransactionViewModel[]::new);
                 //.get(45, TimeUnit.MILLISECONDS))
         return transactionViewModels;
     }
+    */
 
     public static Hash[] hashesFromQuery(String index, Object value) throws ExecutionException, InterruptedException {
         Hash[] transactionHashes;

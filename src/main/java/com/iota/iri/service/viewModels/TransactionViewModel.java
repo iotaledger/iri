@@ -418,6 +418,14 @@ public class TransactionViewModel {
         updateTips(approvers);
         updateReceivedTransactionCount(exists);
     }
+    
+    public void updateApprovers(Hash[] approvers) throws Exception {
+        for(Hash approver: approvers) {
+            Transaction approvingTransaction = (Transaction) Tangle.instance().load(Transaction.class, approver.bytes()).get();
+            approvingTransaction.type = AbstractStorage.FILLED_SLOT;
+            new TransactionViewModel(approvingTransaction).store();
+        }
+    }
 
     public void updateTips(Hash[] approvers) throws ExecutionException, InterruptedException {
         if(approvers.length == 0) {
@@ -433,13 +441,6 @@ public class TransactionViewModel {
         }
     }
 
-    public void updateApprovers(Hash[] approvers) throws Exception {
-        for(Hash approver: approvers) {
-            Transaction approvingTransaction = (Transaction) Tangle.instance().load(Transaction.class, approver.bytes()).get();
-            approvingTransaction.type = AbstractStorage.FILLED_SLOT;
-            new TransactionViewModel(approvingTransaction).store();
-        }
-    }
 
     /*
     public TransactionViewModel[] getBundleTransactions() throws ExecutionException, InterruptedException {

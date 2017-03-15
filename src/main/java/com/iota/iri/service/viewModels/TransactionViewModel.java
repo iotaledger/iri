@@ -418,7 +418,7 @@ public class TransactionViewModel {
         updateTips(approvers);
         updateReceivedTransactionCount(exists);
     }
-    
+
     public void updateApprovers(Hash[] approvers) throws Exception {
         for(Hash approver: approvers) {
             Transaction approvingTransaction = (Transaction) Tangle.instance().load(Transaction.class, approver.bytes()).get();

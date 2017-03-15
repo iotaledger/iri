@@ -23,10 +23,11 @@ public class BundleViewModel {
         if(this.bundle.transactions == null) {
             this.bundle.transactions = ((Bundle) Tangle.instance().load(Bundle.class, bundle.hash).get()).transactions;
         }
-        TransactionViewModel[] transactionViewModels = new TransactionViewModel[this.bundle.transactions.length];
+        TransactionViewModel[] transactionViewModels = new TransactionViewModel[this.bundle.transactions.length];// + 1];
         for(int i = 0; i < bundle.transactions.length; i++) {
             transactionViewModels[i] = TransactionViewModel.fromHash(this.bundle.transactions[i].hash);
         }
+        //transactionViewModels[transactionViewModels.length-1] = TransactionViewModel.fromHash(bundle.hash);
         return transactionViewModels;
     }
 }

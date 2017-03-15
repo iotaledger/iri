@@ -5,6 +5,7 @@ import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.service.tangle.Serializer;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.service.viewModels.TransactionViewModel;
@@ -24,6 +25,8 @@ import static org.junit.Assert.*;
 public class TransactionViewModelTest {
 
     static TemporaryFolder dbFolder = new TemporaryFolder();
+
+    public static Random seed = new Random();
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -69,7 +72,6 @@ public class TransactionViewModelTest {
 
     @Test
     public void getBranchTransaction() throws Exception {
-        Random seed = new Random();
         TransactionViewModel transactionViewModel, branchTransaction;
 
         branchTransaction = new TransactionViewModel(getRandomTransactionTrits(seed));
@@ -88,7 +90,6 @@ public class TransactionViewModelTest {
 
     @Test
     public void getTrunkTransaction() throws Exception {
-        Random seed = new Random();
         TransactionViewModel transactionViewModel, trunkTransactionViewModel;
 
         trunkTransactionViewModel = new TransactionViewModel(getRandomTransaction(seed));
@@ -107,7 +108,6 @@ public class TransactionViewModelTest {
 
     @Test
     public void getApprovers() throws Exception {
-        Random seed = new Random();
         TransactionViewModel transactionViewModel, trunkTxApprover, branchTxApprover;
 
 
@@ -151,12 +151,30 @@ public class TransactionViewModelTest {
 
     @Test
     public void trits() throws Exception {
-
+        int[] blanks = new int[13];
+        for(int i=0; i++ < 1000;) {
+            int[] trits = getRandomTransactionTrits(seed), searchTrits;
+            System.arraycopy(new int[TransactionViewModel.VALUE_TRINARY_SIZE], 0, trits, TransactionViewModel.VALUE_TRINARY_OFFSET, TransactionViewModel.VALUE_TRINARY_SIZE);
+            Converter.copyTrits(seed.nextLong(), trits, TransactionViewModel.VALUE_TRINARY_OFFSET, TransactionViewModel.VALUE_USABLE_TRINARY_SIZE);
+            System.arraycopy(blanks, 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET-blanks.length, blanks.length);
+            System.arraycopy(blanks, 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET-blanks.length, blanks.length);
+            System.arraycopy(blanks, 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET + TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE-blanks.length, blanks.length);
+            TransactionViewModel transactionViewModel = new TransactionViewModel(trits);
+            transactionViewModel.store();
+            assertArrayEquals(transactionViewModel.trits(), TransactionViewModel.fromHash(transactionViewModel.getHash()).trits());
+        }
     }
 
     @Test
     public void getBytes() throws Exception {
-
+        for(int i=0; i++ < 1000;) {
+            int[] trits = getRandomTransactionTrits(seed);
+            System.arraycopy(new int[TransactionViewModel.VALUE_TRINARY_SIZE], 0, trits, TransactionViewModel.VALUE_TRINARY_OFFSET, TransactionViewModel.VALUE_TRINARY_SIZE);
+            Converter.copyTrits(seed.nextLong(), trits, TransactionViewModel.VALUE_TRINARY_OFFSET, TransactionViewModel.VALUE_USABLE_TRINARY_SIZE);
+            TransactionViewModel transactionViewModel = new TransactionViewModel(trits);
+            transactionViewModel.store();
+            assertArrayEquals(transactionViewModel.getBytes(), TransactionViewModel.fromHash(transactionViewModel.getHash()).getBytes());
+        }
     }
 
     @Test

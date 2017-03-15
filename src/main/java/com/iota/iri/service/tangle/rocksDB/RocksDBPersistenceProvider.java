@@ -192,9 +192,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             Field field = modelPrimaryKey.get(rocksField.info.belongsTo);
             secondaryKey = Serializer.serialize(field.get(value));
             primaryKeys = db.get(rocksField.ownerHandle, secondaryKey);
-            primaryKeys = db.get(rocksField.handle, secondaryKey);
+            //primaryKeys = db.get(rocksField.handle, secondaryKey);
             if (primaryKeys != null && (numberOfKeys = primaryKeys.length / keyLength) != 0) {
-                output = (Object[]) Array.newInstance(modelClass, 0);
+                output = (Object[]) Array.newInstance(modelClass, numberOfKeys);
                 for (int i = 0; i < numberOfKeys; i++) {
                     byte[] key = Arrays.copyOfRange(primaryKeys, i * keyLength, (i + 1) * keyLength);
                     output[i] = get(modelClass, key);

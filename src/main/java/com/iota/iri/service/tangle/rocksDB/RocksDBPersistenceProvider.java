@@ -104,14 +104,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public Object get(Class<?> modelClass, Object key) throws Exception {
         Object thing = modelClass.newInstance();
         modelPrimaryKey.get(modelClass).set(thing, key);
-        byte[] primaryKey = Serializer.serialize(key);
+        byte[] primaryKey = Serializer.serialize(key), result;
+        Field field, subField;
         for (Map.Entry<String, RocksField> set : modelColumns.get(modelClass).entrySet()) {
             RocksField rocksField = set.getValue();
             if (rocksField.handle != null) {
-                byte[] result = db.get(rocksField.handle, primaryKey);
+                result = db.get(rocksField.handle, primaryKey);
                 if (result != null) {
-                    Field field = modelClass.getDeclaredField(set.getKey());
-                    Field subField;
+                    field = modelClass.getDeclaredField(set.getKey());
                     subField = field.getType().isArray() ? modelPrimaryKey.get(field.getType().getComponentType()) : modelPrimaryKey.get(field.getType());
                     if (subField != null) {
                         SizedArray sizedArray = subField.getAnnotation(SizedArray.class);
@@ -134,6 +134,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                     } else {
                         field.set(thing, Serializer.deserialize(result, field.getType()));
                     }
+                }
+            }
+            if(rocksField.ownerHandle != null) {
+                result = db.get(rocksField.ownerHandle, primaryKey);
+                if(result != null) {
+                    field = modelClass.getDeclaredField(set.getKey());
+                    subField = modelPrimaryKey.get(rocksField.info.belongsTo);
+                    subField.set(field.get(thing), Serializer.deserialize(result, subField.getType()));
                 }
             }
         }
@@ -177,13 +185,15 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public Object[] queryMany(Class<?> modelClass, String index, Object value, int keyLength) throws Exception {
         RocksField rocksField = modelColumns.get(modelClass).get(index);
+        Object[] output = (Object[]) Array.newInstance(modelClass, 0);
+        byte[] secondaryKey, primaryKeys;
         if (rocksField != null && rocksField.ownerHandle != null) {
             int numberOfKeys;
             Field field = modelPrimaryKey.get(rocksField.info.belongsTo);
-            byte[] secondaryKey = Serializer.serialize(field.get(value));
-            byte[] primaryKeys = db.get(rocksField.ownerHandle, secondaryKey);
+            secondaryKey = Serializer.serialize(field.get(value));
+            primaryKeys = db.get(rocksField.ownerHandle, secondaryKey);
             if (primaryKeys != null && (numberOfKeys = primaryKeys.length / keyLength) != 0) {
-                Object[] output = new Object[numberOfKeys];
+                output = (Object[]) Array.newInstance(modelClass, 0);
                 for (int i = 0; i < numberOfKeys; i++) {
                     byte[] key = Arrays.copyOfRange(primaryKeys, i * keyLength, (i + 1) * keyLength);
                     output[i] = get(modelClass, key);
@@ -191,10 +201,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                         return null;
                     }
                 }
-                return output;
             }
         }
-        return null;
+        return output;
     }
 
     @Override

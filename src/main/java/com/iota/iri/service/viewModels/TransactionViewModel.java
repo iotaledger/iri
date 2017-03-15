@@ -89,9 +89,7 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     public static TransactionViewModel fromHash(final byte[] hash) throws Exception {
-        Transaction transaction = null;
-        Object maybeTransaction = Tangle.instance().load(Transaction.class, hash).get();
-        transaction = ((Transaction) maybeTransaction);
+        Transaction transaction = ((Transaction) Tangle.instance().load(Transaction.class, hash).get());
         return new TransactionViewModel(transaction);
     }
     public static TransactionViewModel fromHash(final int[] hash) throws Exception{
@@ -446,10 +444,8 @@ public class TransactionViewModel {
     }
 
     public TransactionViewModel[] getBundleTransactions() throws ExecutionException, InterruptedException {
-        Tangle accessor = Tangle.instance();
-        Future<Object[]> transactionFuture = accessor.query(com.iota.iri.model.Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE);
-        com.iota.iri.model.Transaction[] transactionModels = new com.iota.iri.model.Transaction[0];
-        transactionModels = Arrays.stream(transactionFuture.get()).toArray(com.iota.iri.model.Transaction[]::new);
+        Object[] bundles = Tangle.instance().query(com.iota.iri.model.Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE).get();
+        Transaction[] transactionModels = Arrays.stream(bundles).toArray(com.iota.iri.model.Transaction[]::new);
         TransactionViewModel[] transactionViewModels = Arrays.stream(transactionModels).map(bundleTransaction -> new TransactionViewModel((com.iota.iri.model.Transaction) bundleTransaction)).toArray(TransactionViewModel[]::new);
                 //.get(45, TimeUnit.MILLISECONDS))
         return transactionViewModels;

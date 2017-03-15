@@ -27,7 +27,7 @@ public class AddressViewModel {
 
     public Hash[] getTransactionHashes() throws ExecutionException, InterruptedException {
         Address txAddress = (Address) Tangle.instance().load(Address.class, address.bytes).get();
-        if(txAddress != null && address.transactions != null) {
+        if(txAddress != null && txAddress.transactions != null) {
             address.transactions = txAddress.transactions.clone();
         } else {
             address.transactions = new Transaction[0];

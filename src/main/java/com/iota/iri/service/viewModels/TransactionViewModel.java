@@ -5,14 +5,18 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
+import com.iota.iri.Milestone;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionViewModel {
     private final com.iota.iri.model.Transaction transaction;
+    private static final Logger log = LoggerFactory.getLogger(TransactionViewModel.class);
 
     public static final int SIZE = 1604;
 
@@ -132,6 +136,7 @@ public class TransactionViewModel {
         populateBundleTrits(partialTrits);
         populateTrunkTrits(partialTrits);
         populateBranchTrits(partialTrits);
+        populateNonceTrits(partialTrits);
     }
 
     private void populateSignatureTrits(int[] partialTrits) {
@@ -191,6 +196,14 @@ public class TransactionViewModel {
 
     }
 
+    private void populateNonceTrits(int[] partialTrits) {
+        if(this.transaction.nonce == null) {
+            this.transaction.nonce = NULL_TRANSACTION_HASH_BYTES;
+        }
+        partialTrits = new int[NONCE_TRINARY_SIZE];
+        Converter.getTrits(transaction.nonce, partialTrits);
+        System.arraycopy(partialTrits, 0, trits, NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
+    }
 
     public TransactionViewModel(final int[] trits) {
         transaction = new com.iota.iri.model.Transaction();
@@ -303,11 +316,8 @@ public class TransactionViewModel {
         System.arraycopy(Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE), 0, transaction.trunk.hash = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
         transaction.branch = new Approvee();
         System.arraycopy(Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE), 0, transaction.branch.hash = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
-        setTimestamp();
-    }
-
-    private void setTimestamp() {
         transaction.timestamp.value = Converter.longValue(trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+        transaction.nonce = Converter.bytes(trits, NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
     }
 
     public void update(String item) throws Exception {

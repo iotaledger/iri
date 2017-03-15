@@ -18,6 +18,7 @@ public class Transaction {
     @BelongsTo public Approvee trunk = new Approvee();
     @BelongsTo public Approvee branch = new Approvee();
     @HasOne public byte[] signature;
+    @HasOne public byte[] nonce;
 
     //@HasOne public byte[] bytes;
 

@@ -74,8 +74,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                         //!Arrays.asList(current).containsAll(Arrays.asList(primaryKey))
                         if (current.length < primaryKey.length || new String(current).indexOf(new String(primaryKey)) == -1) {
                             current = ArrayUtils.addAll(current, primaryKey);
+                            batch.put(rocksField.ownerHandle, fieldValue, current);
                         }
-                        batch.put(rocksField.ownerHandle, fieldValue, current);
                     }
                 }
             }

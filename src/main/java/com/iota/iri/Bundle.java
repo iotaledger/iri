@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -32,7 +33,7 @@ public class Bundle {
         }
         final Map<byte[], TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(bundleTransactionViewModel);
         */
-        final Map<byte[], TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(bundleViewModel);
+        final Map<ByteBuffer, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(bundleViewModel);
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
@@ -113,7 +114,7 @@ public class Bundle {
                         break;
 
                     } else {
-                        transactionViewModel = bundleTransactions.get(transactionViewModel.getTrunkTransactionHash());
+                        transactionViewModel = bundleTransactions.get(ByteBuffer.wrap(transactionViewModel.getTrunkTransactionHash()));
                         if (transactionViewModel == null) {
                             break;
                         }
@@ -124,11 +125,11 @@ public class Bundle {
     }
 
 
-    private Map<byte[], TransactionViewModel> loadTransactionsFromTangle(final BundleViewModel bundleViewModel) {
-        final Map<byte[], TransactionViewModel> bundleTransactions = new HashMap<>();
+    private Map<ByteBuffer, TransactionViewModel> loadTransactionsFromTangle(final BundleViewModel bundleViewModel) {
+        final Map<ByteBuffer, TransactionViewModel> bundleTransactions = new HashMap<>();
         try {
             for (final TransactionViewModel transactionViewModel : bundleViewModel.getTransactions()) {
-                bundleTransactions.put(transactionViewModel.getHash(), transactionViewModel);
+                bundleTransactions.put(ByteBuffer.wrap(transactionViewModel.getHash()), transactionViewModel);
             }
         } catch (Exception e) {
             e.printStackTrace();

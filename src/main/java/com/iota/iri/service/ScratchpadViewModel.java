@@ -58,7 +58,8 @@ public class ScratchpadViewModel {
         scratchpad.hash = hash;
         if(Tangle.instance().maybeHas(Scratchpad.class, hash).get()) {
             Tangle.instance().delete(scratchpad);
-            numberOfTransactionsToRequest--;
+            if(numberOfTransactionsToRequest != 0)
+                numberOfTransactionsToRequest--;
         }
     }
 

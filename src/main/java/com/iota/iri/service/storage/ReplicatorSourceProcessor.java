@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import com.iota.iri.model.Hash;
 import com.iota.iri.service.ScratchpadViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,7 +39,7 @@ public class ReplicatorSourceProcessor implements Runnable {
     }
     
     final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
-    final byte[] requestedTransaction = new byte[TransactionViewModel.HASH_SIZE];
+    final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
     
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
 
@@ -118,30 +119,27 @@ public class ReplicatorSourceProcessor implements Runnable {
                                 receivedTransactionViewModel.update("arrivalTime");
                                 neighbor.incNewTransactions();
                                 // The UDP transport route
+                                //assert(Arrays.equals(receivedTransactionViewModel.getHash(), new TransactionViewModel(TransactionViewModel.fromHash(receivedTransactionViewModel.getHash()).trits()).getHash()));
                                 Node.instance().broadcast(receivedTransactionViewModel);
                                 // The TCP transport route
                                 ReplicatorSinkPool.instance().broadcast(receivedTransactionViewModel, neighbor);                        
                             }
 
                             long transactionPointer = 0L;
-                            System.arraycopy(data, TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
+                            System.arraycopy(data, TransactionViewModel.SIZE, requestedTransaction, 0, Hash.SIZE_IN_BYTES);
 
                             if (!Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
                                 ScratchpadViewModel.instance().clearReceivedTransaction(requestedTransaction);
                                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(requestedTransaction);
-                                if(!TransactionViewModel.mightExist(transactionViewModel.getBranchTransactionHash())) {
-                                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
-                                }
-                                if(!TransactionViewModel.mightExist(transactionViewModel.getTrunkTransactionHash())) {
-                                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
-                                }
-                                /*
-                                transactionPointer = StorageTransactions.instance().transactionPointer(requestedTransaction);
-                                if (transactionPointer != 0L
-                                        && transactionPointer > (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) {
-                                        System.arraycopy( StorageTransactions.instance().loadTransaction(transactionPointer).getBytes(),
-                                        */
-                                if(transactionViewModel.getBytes() != null) {
+                                if (!Arrays.equals(transactionViewModel.getBranchTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+                                    if (!TransactionViewModel.mightExist(transactionViewModel.getBranchTransactionHash())) {
+                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
+                                    }
+                                if (!Arrays.equals(transactionViewModel.getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+                                    if (!TransactionViewModel.mightExist(transactionViewModel.getTrunkTransactionHash())) {
+                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
+                                    }
+                                if(!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                                     synchronized (sendingPacket) {
                                         System.arraycopy( transactionViewModel.getBytes(),
                                                 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);

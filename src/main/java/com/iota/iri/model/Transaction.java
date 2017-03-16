@@ -7,7 +7,7 @@ import com.iota.iri.service.tangle.annotations.*;
  */
 @Model
 public class Transaction {
-    @SizedArray(length = 49)
+    @SizedArray(length = Hash.SIZE_IN_BYTES)
     @ModelIndex
     public byte[] hash;
 

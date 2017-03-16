@@ -96,7 +96,7 @@ public class Milestone {
 
                                         if ((new Hash(hashTrits)).equals(COORDINATOR)) {
 
-                                            latestMilestone = new Hash(transactionViewModel.getHash(), 0, TransactionViewModel.HASH_SIZE);
+                                            latestMilestone = new Hash(transactionViewModel.getHash());
                                             latestMilestoneIndex = index;
 
                                             milestones.put(latestMilestoneIndex, latestMilestone);

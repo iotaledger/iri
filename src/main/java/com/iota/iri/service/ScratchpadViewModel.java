@@ -63,11 +63,8 @@ public class ScratchpadViewModel {
     }
 
     public void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
-        Scratchpad scratchpad = null;
         final long beginningTime = System.currentTimeMillis();
-        Object latest = Tangle.instance().getLatest(Scratchpad.class).get();
-        if(latest != null)
-            scratchpad = ((Scratchpad) latest);
+        Scratchpad scratchpad = ((Scratchpad) Tangle.instance().getLatest(Scratchpad.class).get());
 
         if(scratchpad != null && !Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
             System.arraycopy(scratchpad.hash, 0, buffer, offset, TransactionViewModel.HASH_SIZE);

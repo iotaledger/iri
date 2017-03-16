@@ -29,6 +29,8 @@ public interface IPersistenceProvider {
     void dropTransientHandle(Object handle) throws Exception;
     boolean save(Object handle, Object model) throws Exception;
     boolean mayExist(Object handle, Object key) throws Exception;
+    boolean exists(Object handle, Object key) throws Exception;
+    boolean exists(Class<?> model, Object key) throws Exception;
     boolean mayExist(Class<?> model, Object key) throws Exception;
     Object get(Object handle, Class<?> model, Object key) throws Exception;
     void deleteTransientObject(Object uuid, Object key) throws Exception;

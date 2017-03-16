@@ -1,6 +1,7 @@
 package com.iota.iri.service.tangle;
 
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.Scratchpad;
 import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.tangle.Tangle;
@@ -77,7 +78,7 @@ public class ScratchpadViewModelTest {
         ScratchpadViewModel.instance().transactionToRequest(hashRequest, 0);
         assertArrayEquals("Hash should be null hash", hashRequest, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
 
-        newRequest = Arrays.copyOf(Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray()), TransactionViewModel.HASH_SIZE);
+        newRequest = Arrays.copyOf(Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray()), Hash.SIZE_IN_BYTES);
         ScratchpadViewModel.instance().requestTransaction(newRequest);
         Object o = Tangle.instance().load(Scratchpad.class, newRequest).get();
 

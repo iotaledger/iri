@@ -448,8 +448,7 @@ public class TipsManager {
                             // seenTails.addAll(extraTransactions);
 
                             /**/tailsRaitings
-                                    .put(new Hash(tailHash, 0,
-                                            TransactionViewModel.HASH_SIZE), extraTransactions.size());
+                                    .put(new Hash(tailHash), extraTransactions.size());
                             /**/if (extraTransactions.size() > bestRating) {
                                 /**/
                                 /**/bestRating = extraTransactions.size();

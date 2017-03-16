@@ -54,7 +54,7 @@ public class TransactionViewModel {
 
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
-    public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[TransactionViewModel.HASH_SIZE];
+    public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Hash.SIZE_IN_BYTES];
     public static final byte[] NULL_TRANSACTION_BYTES = new byte[TransactionViewModel.SIZE];
     public static final byte[] NULL_ADDRESS_HASH_BYTES = new byte[ADDRESS_SIZE];
     public static final byte[] NULL_TAG_HASH_BYTES = new byte[TAG_SIZE];
@@ -62,26 +62,7 @@ public class TransactionViewModel {
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
     public static final AtomicLong receivedTransactionCount = new AtomicLong(0);
-    public final byte[] bytes = NULL_TRANSACTION_BYTES;
-
-    //public final int type;
-
-    //public final byte[] hash;
-    //public final byte[] value; // stores entire tx value. message occupies always first part named 'signatureMessageFragment'
-    //public final byte[] address;
-
-    //public final long value; // <0 spending transaction, >=0 deposit transaction / message
-
-
-    //public final byte[] tag; // milestone index only for milestone tx. Otherwise, arbitrary up to the tx issuer.
-    //public final long currentIndex; // index of tx in the bundle
-    //public final long lastIndex; // lastIndex is curIndex of the last tx from the same bundle
-
-    //public final byte[] bundle;
-    //public final byte[] trunkTransaction;
-    //public final byte[] branchTransaction;
-
-    //private final int getValidity;
+    public final byte[] bytes = new byte[TransactionViewModel.SIZE];
 
     private int[] trits;
     public int weightMagnitude;
@@ -105,15 +86,10 @@ public class TransactionViewModel {
     public TransactionViewModel(final Transaction transaction) {
         if(transaction == null) {
             this.transaction = new Transaction();
-            this.transaction.hash = NULL_TRANSACTION_HASH_BYTES;
+            this.transaction.hash = new byte[Hash.SIZE_IN_BYTES];
         } else {
             this.transaction = transaction;
         }
-        /*
-        if(this.transaction.bytes == null) {
-            this.transaction.bytes = NULL_TRANSACTION_BYTES;
-        }
-        */
         populateTrits();
         System.arraycopy(Converter.bytes(trits), 0, bytes, 0, BYTES_SIZE);
     }
@@ -137,7 +113,7 @@ public class TransactionViewModel {
 
     private void populateSignatureTrits(int[] partialTrits) {
         if(this.transaction.signature == null) {
-            this.transaction.signature = NULL_TRANSACTION_BYTES;
+            this.transaction.signature = new byte[TransactionViewModel.SIZE];
         }
         partialTrits = new int[SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
         Converter.getTrits(transaction.signature, partialTrits);
@@ -146,7 +122,7 @@ public class TransactionViewModel {
 
     private void populateBranchTrits(int[] partialTrits) {
         if(transaction.branch.hash == null) {
-            transaction.branch.hash = NULL_TRANSACTION_HASH_BYTES;
+            transaction.branch.hash = new byte[Hash.SIZE_IN_BYTES];
         }
         partialTrits = new int[BRANCH_TRANSACTION_TRINARY_SIZE];
         Converter.getTrits(transaction.branch.hash, partialTrits);
@@ -155,7 +131,7 @@ public class TransactionViewModel {
 
     private void populateTrunkTrits(int[] partialTrits) {
         if(transaction.trunk.hash == null) {
-            transaction.trunk.hash = NULL_TRANSACTION_HASH_BYTES;
+            transaction.trunk.hash = new byte[Hash.SIZE_IN_BYTES];
         }
         partialTrits = new int[TRUNK_TRANSACTION_TRINARY_SIZE];
         Converter.getTrits(transaction.trunk.hash, partialTrits);
@@ -164,7 +140,7 @@ public class TransactionViewModel {
 
     private void populateBundleTrits(int[] partialTrits) {
         if(transaction.bundle.hash == null) {
-            transaction.bundle.hash = NULL_TRANSACTION_HASH_BYTES;
+            transaction.bundle.hash = new byte[Hash.SIZE_IN_BYTES];
         }
         partialTrits = new int[BUNDLE_TRINARY_SIZE];
         Converter.getTrits(transaction.bundle.hash, partialTrits);
@@ -174,7 +150,7 @@ public class TransactionViewModel {
     private void populateAddressTrits(int[] partialTrits) {
         partialTrits = new int[ADDRESS_TRINARY_SIZE];
         if(transaction.address.bytes == null) {
-            transaction.address.bytes = NULL_ADDRESS_HASH_BYTES;
+            transaction.address.bytes = new byte[Hash.SIZE_IN_BYTES];
         }
         Converter.getTrits(transaction.address.bytes, partialTrits);
         System.arraycopy(partialTrits, 0, trits, ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
@@ -184,7 +160,7 @@ public class TransactionViewModel {
 
     private void populateTagTrits(int[] partialTrits) {
         if(transaction.tag.bytes == null) {
-            transaction.tag.bytes = NULL_TAG_HASH_BYTES;
+            transaction.tag.bytes = new byte[TAG_SIZE];
         }
         partialTrits = new int[TAG_TRINARY_SIZE];
         Converter.getTrits(transaction.tag.bytes, partialTrits);
@@ -194,7 +170,7 @@ public class TransactionViewModel {
 
     private void populateNonceTrits(int[] partialTrits) {
         if(this.transaction.nonce == null) {
-            this.transaction.nonce = NULL_TRANSACTION_HASH_BYTES;
+            this.transaction.nonce = new byte[Hash.SIZE_IN_BYTES];
         }
         partialTrits = new int[NONCE_TRINARY_SIZE];
         Converter.getTrits(transaction.nonce, partialTrits);
@@ -212,7 +188,7 @@ public class TransactionViewModel {
         curl.absorb(trits, 0, TRINARY_SIZE);
         final int[] hashTrits = new int[Curl.HASH_LENGTH];
         curl.squeeze(hashTrits, 0, hashTrits.length);
-        transaction.hash = Arrays.copyOf(Converter.bytes(hashTrits), HASH_SIZE);
+        transaction.hash = Converter.bytes(hashTrits);//Arrays.copyOf(, HASH_SIZE);
 
         populateTransaction(trits);
 
@@ -309,9 +285,11 @@ public class TransactionViewModel {
         transaction.bundle = new Bundle();
         System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, transaction.bundle.hash = new byte[BUNDLE_SIZE], 0, BUNDLE_SIZE);
         transaction.trunk = new Approvee();
-        System.arraycopy(Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE), 0, transaction.trunk.hash = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
+        transaction.trunk.hash = Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
+        //System.arraycopy(Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE), 0, transaction.trunk.hash = new byte[Hash.SIZE_IN_BYTES], 0, TRUNK_TRANSACTION_SIZE);
         transaction.branch = new Approvee();
-        System.arraycopy(Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE), 0, transaction.branch.hash = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
+        transaction.branch.hash = Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE);
+        //System.arraycopy(Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE), 0, transaction.branch.hash = new byte[Hash.SIZE_IN_BYTES], 0, BRANCH_TRANSACTION_SIZE);
         transaction.timestamp.value = Converter.longValue(trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
         transaction.nonce = Converter.bytes(trits, NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
     }
@@ -324,7 +302,6 @@ public class TransactionViewModel {
         Transaction transaction = new Transaction();
         transaction.hash = hash;
         Tangle.instance().update(transaction, "analyzed", analyzed);
-        Tangle.instance().update(transaction, "nonAnalyzed", !analyzed);
     }
 
     private TransactionViewModel getTransaction(byte[] hash) throws ExecutionException, InterruptedException {
@@ -481,7 +458,7 @@ public class TransactionViewModel {
 
 
     public Hash[] getApprovers() throws ExecutionException, InterruptedException {
-        Approvee self = ((Approvee) Tangle.instance().load(Approvee.class, Arrays.copyOfRange(transaction.hash, 0, HASH_SIZE)).get());
+        Approvee self = ((Approvee) Tangle.instance().load(Approvee.class, transaction.hash).get());
         return self.transactions != null? Arrays.stream(self.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new): new Hash[0];
     }
 

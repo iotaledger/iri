@@ -317,7 +317,7 @@ public class API {
                             return ErrorResponse.create("The subtangle is not solid");
                         } else {
 
-                            final Hash transactionHash = new Hash(transactionViewModel.getHash(), 0, TransactionViewModel.HASH_SIZE);
+                            final Hash transactionHash = new Hash(transactionViewModel.getHash());
                             for (int i = 0; i < inclusionStates.length; i++) {
 
                                 if (!inclusionStates[i] && transactionHash.equals(transactions.get(i))) {

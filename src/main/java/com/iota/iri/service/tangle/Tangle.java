@@ -151,8 +151,7 @@ public class Tangle {
         return executor.submit(() -> {
             boolean exists = false;
             for(IPersistenceProvider provider: persistenceProviders) {
-                if(!provider.save(model)) {
-                    exists = true;
+                if(exists = provider.save(model)) {
                     break;
                 }
             }

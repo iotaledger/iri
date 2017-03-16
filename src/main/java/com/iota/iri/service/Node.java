@@ -182,7 +182,7 @@ public class Node {
 
             final Curl curl = new Curl();
             final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
-            final byte[] requestedTransaction = new byte[TransactionViewModel.HASH_SIZE];
+            final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
 
             log.info("Spawning Receiver Thread");
 
@@ -212,7 +212,7 @@ public class Node {
                                         }
 
                                         byte[] transactionPointer = Hash.NULL_HASH.bytes();
-                                        System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
+                                        System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, Hash.SIZE_IN_BYTES);
 
                                         TransactionViewModel transactionViewModel;
 
@@ -336,6 +336,7 @@ public class Node {
                     System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
                     System.arraycopy(transactionViewModel.getHash(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
                             TransactionViewModel.HASH_SIZE);
+                            //Hash.SIZE_IN_BYTES);
 
                     neighbors.forEach(n -> n.send(tipRequestingPacket));
 
@@ -351,7 +352,7 @@ public class Node {
     private static ConcurrentSkipListSet<TransactionViewModel> weightQueue() {
         return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
             if (transaction1.weightMagnitude == transaction2.weightMagnitude) {
-                for (int i = 0; i < TransactionViewModel.HASH_SIZE; i++) {
+                for (int i = 0; i < Hash.SIZE_IN_BYTES; i++) {
                     if (transaction1.getHash()[i] != transaction2.getHash()[i]) {
                         return transaction2.getHash()[i] - transaction1.getHash()[i];
                     }

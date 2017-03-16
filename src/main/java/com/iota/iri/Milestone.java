@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -65,7 +66,7 @@ public class Milestone {
                         else {
                             for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 
-                                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+                                if (new BigInteger(bundleTransactionViewModels.get(0).getHash()).equals(new BigInteger(transactionViewModel.getHash()))) {
 
                                     //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
                                     final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction();

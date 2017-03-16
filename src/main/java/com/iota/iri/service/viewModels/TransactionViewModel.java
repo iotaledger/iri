@@ -532,4 +532,7 @@ public class TransactionViewModel {
         return transaction.lastIndex;
     }
 
+    public static boolean exists(byte[] hash) throws ExecutionException, InterruptedException {
+        return Tangle.instance().exists(Transaction.class, hash).get();
+    }
 }

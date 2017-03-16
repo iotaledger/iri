@@ -132,13 +132,9 @@ public class ReplicatorSourceProcessor implements Runnable {
                                 ScratchpadViewModel.instance().clearReceivedTransaction(requestedTransaction);
                                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(requestedTransaction);
                                 if (!Arrays.equals(transactionViewModel.getBranchTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
-                                    if (!TransactionViewModel.mightExist(transactionViewModel.getBranchTransactionHash())) {
-                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
-                                    }
+                                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
                                 if (!Arrays.equals(transactionViewModel.getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
-                                    if (!TransactionViewModel.mightExist(transactionViewModel.getTrunkTransactionHash())) {
-                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
-                                    }
+                                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
                                 if(!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                                     synchronized (sendingPacket) {
                                         System.arraycopy( transactionViewModel.getBytes(),

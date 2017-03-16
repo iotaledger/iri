@@ -1,5 +1,6 @@
 package com.iota.iri.service.tangle;
 
+import com.iota.iri.model.Transaction;
 import com.iota.iri.service.tangle.annotations.*;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
@@ -274,6 +275,15 @@ public class Tangle {
                 }
             }
             return output;
+        });
+    }
+
+    public Future<Boolean> exists(Class<?> modelClass, byte[] hash) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.exists(modelClass, hash)) return true;
+            }
+            return false;
         });
     }
 }

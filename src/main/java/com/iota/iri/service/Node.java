@@ -257,12 +257,8 @@ public class Node {
                                         }
                                         ScratchpadViewModel.instance().clearReceivedTransaction(requestedTransaction);
                                         transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                                        if(!TransactionViewModel.mightExist(transactionViewModel.getBranchTransactionHash())) {
-                                            ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
-                                        }
-                                        if(!TransactionViewModel.mightExist(transactionViewModel.getTrunkTransactionHash())) {
-                                            ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
-                                        }
+                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
+                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
                                         if (!Arrays.equals(transactionPointer, Hash.NULL_HASH.bytes())
                                                 && transactionPointer != Hash.NULL_HASH.bytes()) {
                                             synchronized (sendingPacket) {

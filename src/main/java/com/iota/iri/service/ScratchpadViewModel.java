@@ -30,11 +30,13 @@ public class ScratchpadViewModel {
     }
 
     public void requestTransaction(byte[] hash) throws ExecutionException, InterruptedException {
-        Scratchpad scratchpad = new Scratchpad();
-        scratchpad.hash = hash;
-        scratchpad.value = 1;
-        Tangle.instance().save(scratchpad).get();
-        numberOfTransactionsToRequest++;
+        if(!TransactionViewModel.mightExist(hash) && !TransactionViewModel.exists(hash)) {
+            Scratchpad scratchpad = new Scratchpad();
+            scratchpad.hash = hash;
+            scratchpad.value = 1;
+            Tangle.instance().save(scratchpad).get();
+            numberOfTransactionsToRequest++;
+        }
     }
 
     public boolean setAnalyzedTransactionFlag(byte[] hash) throws ExecutionException, InterruptedException {
@@ -64,17 +66,17 @@ public class ScratchpadViewModel {
     }
 
     public void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
-        final long beginningTime = System.currentTimeMillis();
+        final long beginningTime = System.nanoTime();//System.currentTimeMillis();
         Scratchpad scratchpad = ((Scratchpad) Tangle.instance().getLatest(Scratchpad.class).get());
 
         if(scratchpad != null && !Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
             System.arraycopy(scratchpad.hash, 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
-        long now = System.currentTimeMillis();
-        if ((now - lastTime) > 10000L) {
+        long now = System.nanoTime();
+        if ((now - lastTime) > 10000000000L) {
             lastTime = now;
             //log.info("Transactions to request = {}", numberOfTransactionsToRequest + ".  (" + (System.currentTimeMillis() - beginningTime) + " ms )");
-            log.info("Transactions to request = {}", numberOfTransactionsToRequest + " / " + TransactionViewModel.receivedTransactionCount.get() + " (" + (System.currentTimeMillis() - beginningTime) + " ms )");
+            log.info("Transactions to request = {}", numberOfTransactionsToRequest + " / " + TransactionViewModel.receivedTransactionCount.get() + " (" + (now - beginningTime) + " ns )");
         }
     }
 

@@ -32,6 +32,7 @@ public class ReplicatorSinkProcessor implements Runnable {
     	}
 
         String remoteAddress = neighbor.getAddress().getAddress().getHostAddress();
+        
         try {
             Socket socket = null;
             synchronized (neighbor) {             
@@ -40,12 +41,19 @@ public class ReplicatorSinkProcessor implements Runnable {
                     socket.setSoTimeout(30000);
                     neighbor.setSink(socket);
                 }
-            }            
+                else {
+                    // Sink already created
+                    log.info("Sink {} already created",remoteAddress);
+                    return;
+                }
+            }
+            
             if (socket != null) {
                 socket.connect(new InetSocketAddress(remoteAddress, Replicator.REPLICATOR_PORT), 30000);
                 if (!socket.isClosed()) {
                     OutputStream out = socket.getOutputStream();
-                    log.info("----- NETWORK INFO ----- Sink {} is connected, configured = {}", remoteAddress, neighbor.isFlagged());
+                    log.info("----- NETWORK INFO ----- Sink {} is connected, configured = {}", remoteAddress,
+                            neighbor.isFlagged());
                     while (!ReplicatorSinkPool.instance().shutdown) {
                         try {
                             ByteBuffer message = neighbor.getNextMessage();
@@ -53,14 +61,23 @@ public class ReplicatorSinkProcessor implements Runnable {
                                     && (neighbor.getSource() != null && neighbor.getSource().isConnected())) {
                                 byte[] bytes = message.array();
                                 if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
-                                    try {
-                                        out.write(message.array());
-                                        out.flush();
-                                    } catch (IOException e2) {                                        
-                                        // Caution: another sink process might already be active now.
-                                        // Don't close the source here!
-                                        return;
-                                    }
+                                    boolean resend;
+                                    do {
+                                        resend = false;
+                                        try {
+                                            out.write(message.array());
+                                            out.flush();
+                                        } catch (IOException e2) {
+                                            if (!neighbor.getSink().isClosed() && neighbor.getSink().isConnected()) {
+                                                out.close();
+                                                out = neighbor.getSink().getOutputStream();
+                                                resend = true;
+                                            } else {
+                                                log.info("----- NETWORK INFO ----- Sink {} thread terminating", remoteAddress);
+                                                return;
+                                            }
+                                        }
+                                    } while (resend);
                                 }
                             }
                         } catch (InterruptedException e) {
@@ -70,7 +87,7 @@ public class ReplicatorSinkProcessor implements Runnable {
                 }
             }
         } catch (Exception e) {
-            log.error("***** NETWORK ALERT ***** Could not create outbound connection to host {} port {}", remoteAddress, Replicator.REPLICATOR_PORT);
+            log.error("***** NETWORK ALERT ***** Could not create outbound connection to host {} port {} {}", remoteAddress, Replicator.REPLICATOR_PORT,e);
             synchronized (neighbor) {
                 neighbor.setSource(null);
                 neighbor.setSink(null);

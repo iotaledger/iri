@@ -18,6 +18,8 @@ import com.iota.iri.service.API;
 import com.iota.iri.service.Node;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.service.storage.Replicator;
+import com.iota.iri.service.storage.ReplicatorSinkPool;
+import com.iota.iri.service.storage.ReplicatorSourcePool;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
 
@@ -64,7 +66,7 @@ public class IRI {
     private static void validateParams(final String[] args) {
 
         if (args == null || args.length < 2) {
-            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
+            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14700').");
             printUsage();
         }
 
@@ -176,8 +178,8 @@ public class IRI {
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " +
-                "[{-p,--port} 14265] " +
-                "[{-r,--receiver-port} 14265] " +
+                "[{-p,--port} 14700] " +
+                "[{-r,--receiver-port} 14700] " +
                 "[{-c,--enabled-cors} *] " +
                 "[{-h}] [{--headless}] " +
                 "[{-d,--debug}] " +
@@ -201,7 +203,8 @@ public class IRI {
                 TipsManager.instance().shutDown();
                 Node.instance().shutdown();
                 Tangle.instance().shutdown();
-                //Storage.instance().shutdown();
+                ReplicatorSourcePool.instance().shutdown();
+                ReplicatorSinkPool.instance().shutdown();
 
             } catch (final Exception e) {
                 log.error("Exception occurred shutting down IOTA node: ", e);

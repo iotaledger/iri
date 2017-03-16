@@ -1,7 +1,10 @@
 package com.iota.iri.service.storage;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -11,6 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Neighbor;
 import com.iota.iri.service.Node;
+import com.iota.iri.utils.Converter;
 
 public class ReplicatorSinkProcessor implements Runnable {
 
@@ -36,14 +40,15 @@ public class ReplicatorSinkProcessor implements Runnable {
         try {
             Socket socket = null;
             synchronized (neighbor) {             
-                if (neighbor.getSink() == null) {
+                Socket sink = neighbor.getSink();
+                if ( (sink == null) || sink.isClosed() || ! sink.isConnected() ) {
                     socket = new Socket();
                     socket.setSoTimeout(30000);
                     neighbor.setSink(socket);
                 }
                 else {
-                    // Sink already created
-                    log.info("Sink {} already created",remoteAddress);
+                    // Sink already open
+                    log.info("Sink {} connected",remoteAddress);
                     return;
                 }
             }
@@ -52,7 +57,7 @@ public class ReplicatorSinkProcessor implements Runnable {
                 socket.connect(new InetSocketAddress(remoteAddress, Replicator.REPLICATOR_PORT), 30000);
                 if (!socket.isClosed()) {
                     OutputStream out = socket.getOutputStream();
-                    log.info("----- NETWORK INFO ----- Sink {} is connected, configured = {}", remoteAddress,
+                    log.info("----- NETWORK INFO ----- Sink {} is connecting, configured = {}", remoteAddress,
                             neighbor.isFlagged());
                     while (!ReplicatorSinkPool.instance().shutdown) {
                         try {
@@ -60,6 +65,7 @@ public class ReplicatorSinkProcessor implements Runnable {
                             if ((neighbor.getSink() != null && neighbor.getSink().isConnected())
                                     && (neighbor.getSource() != null && neighbor.getSource().isConnected())) {
                                 byte[] bytes = message.array();
+                                                                                               
                                 if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
                                     boolean resend;
                                     do {

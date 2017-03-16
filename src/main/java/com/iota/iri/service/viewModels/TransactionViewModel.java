@@ -278,18 +278,11 @@ public class TransactionViewModel {
         transaction.lastIndex = Converter.longValue(trits, LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
         transaction.value = Converter.longValue(trits, VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
         transaction.signature = Converter.bytes(trits, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
-        transaction.address = new Address();
         transaction.address.bytes = Converter.bytes(trits, ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
-        transaction.tag = new Tag();
         System.arraycopy(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, transaction.tag.bytes = new byte[TAG_SIZE], 0, TAG_SIZE);
-        transaction.bundle = new Bundle();
-        System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, transaction.bundle.hash = new byte[BUNDLE_SIZE], 0, BUNDLE_SIZE);
-        transaction.trunk = new Approvee();
+        transaction.bundle.hash = Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE);
         transaction.trunk.hash = Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
-        //System.arraycopy(Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE), 0, transaction.trunk.hash = new byte[Hash.SIZE_IN_BYTES], 0, TRUNK_TRANSACTION_SIZE);
-        transaction.branch = new Approvee();
         transaction.branch.hash = Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE);
-        //System.arraycopy(Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE), 0, transaction.branch.hash = new byte[Hash.SIZE_IN_BYTES], 0, BRANCH_TRANSACTION_SIZE);
         transaction.timestamp.value = Converter.longValue(trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
         transaction.nonce = Converter.bytes(trits, NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
     }

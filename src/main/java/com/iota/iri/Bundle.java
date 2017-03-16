@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import java.math.BigInteger;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,7 +34,7 @@ public class Bundle {
         }
         final Map<byte[], TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(bundleTransactionViewModel);
         */
-        final Map<ByteBuffer, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(bundleViewModel);
+        final Map<BigInteger, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(bundleViewModel);
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
@@ -114,7 +115,7 @@ public class Bundle {
                         break;
 
                     } else {
-                        transactionViewModel = bundleTransactions.get(ByteBuffer.wrap(transactionViewModel.getTrunkTransactionHash()));
+                        transactionViewModel = bundleTransactions.get(new BigInteger(transactionViewModel.getTrunkTransactionHash()));
                         if (transactionViewModel == null) {
                             break;
                         }
@@ -125,11 +126,11 @@ public class Bundle {
     }
 
 
-    private Map<ByteBuffer, TransactionViewModel> loadTransactionsFromTangle(final BundleViewModel bundleViewModel) {
-        final Map<ByteBuffer, TransactionViewModel> bundleTransactions = new HashMap<>();
+    private Map<BigInteger, TransactionViewModel> loadTransactionsFromTangle(final BundleViewModel bundleViewModel) {
+        final Map<BigInteger, TransactionViewModel> bundleTransactions = new HashMap<>();
         try {
             for (final TransactionViewModel transactionViewModel : bundleViewModel.getTransactions()) {
-                bundleTransactions.put(ByteBuffer.wrap(transactionViewModel.getHash()), transactionViewModel);
+                bundleTransactions.put(new BigInteger(transactionViewModel.getHash()), transactionViewModel);
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -87,7 +87,7 @@ public class ReplicatorSinkProcessor implements Runnable {
                 }
             }
         } catch (Exception e) {
-            log.error("***** NETWORK ALERT ***** Could not create outbound connection to host {} port {} {}", remoteAddress, Replicator.REPLICATOR_PORT,e);
+            log.error("***** NETWORK ALERT ***** Could not create outbound connection to host {} port {} reason: {}", remoteAddress, Replicator.REPLICATOR_PORT,e.getMessage());
             synchronized (neighbor) {
                 neighbor.setSource(null);
                 neighbor.setSink(null);

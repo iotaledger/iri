@@ -320,4 +320,37 @@ public class Tangle {
             return null;
         });
     }
+
+    public Future<Void> flushAnalyzedFlags() {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                provider.flushAnalyzedFlags();
+            }
+            return null;
+        });
+    }
+
+    public Future<Long> getNumberOfStoredTransactions() {
+        return executor.submit(() -> {
+            long value = 0;
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if((value = provider.getNumberOfTransactions()) != 0) {
+                    break;
+                }
+            }
+            return value;
+        });
+    }
+
+    public Future<Long> getNumberOfRequestedTransactions() {
+        return executor.submit(() -> {
+            long value = 0;
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if((value = provider.getNumberOfRequestedTransactions()) != 0) {
+                    break;
+                }
+            }
+            return value;
+        });
+    }
 }

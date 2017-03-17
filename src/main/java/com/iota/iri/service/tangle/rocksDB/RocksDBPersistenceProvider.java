@@ -43,6 +43,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "flag",
             "tip",
             "scratchpad",
+            "analyzedFlag",
     };
 
     private ColumnFamilyHandle transactionHandle;
@@ -56,6 +57,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle flagHandle;
     private ColumnFamilyHandle tipHandle;
     private ColumnFamilyHandle scratchpadHandle;
+    private ColumnFamilyHandle analyzedFlagHandle;
 
 
     List<ColumnFamilyHandle> transactionGetList;
@@ -181,10 +183,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public void dropTransientHandle(Object uuid) throws Exception {
         ColumnFamilyHandle handle = transientHandles.get(uuid);
-        db.dropColumnFamily(handle);
+        if(handle != null) {
+            db.flush(new FlushOptions().setWaitForFlush(true), handle);
+            db.dropColumnFamily(handle);
+        }
         transientHandles.remove(uuid);
     }
-
 
     @Override
     public boolean save(Object uuid, Object model) throws Exception {
@@ -206,6 +210,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public boolean exists(Class<?> model, Object key) throws Exception {
         if(model == Transaction.class) {
             return db.get(transactionHandle, (byte[])key) != null;
+        } else if (model == AnalyzedFlag.class) {
+            return db.get(analyzedFlagHandle, (byte[])key) != null;
         }
         throw new NotImplementedException("Mada mada exists shinai");
     }
@@ -373,6 +379,21 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public void flushAnalyzedFlags() throws Exception {
+        db.flush(new FlushOptions().setWaitForFlush(true), analyzedFlagHandle);
+    }
+
+    @Override
+    public long getNumberOfTransactions() throws Exception {
+        return db.getLongProperty(transactionHandle, "rocksdb.estimate-num-keys");
+    }
+
+    @Override
+    public long getNumberOfRequestedTransactions() throws Exception {
+        return db.getLongProperty(scratchpadHandle, "rocksdb.estimate-num-keys");
+    }
+
+    @Override
     public boolean update(Object thing, String item) throws Exception {
         if(thing instanceof Transaction) {
             Transaction transaction = (Transaction) thing;
@@ -462,6 +483,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         flagHandle = familyHandles.get(i++);
         tipHandle = familyHandles.get(i++);
         scratchpadHandle = familyHandles.get(i++);
+        analyzedFlagHandle = familyHandles.get(i++);
 
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {

@@ -74,8 +74,6 @@ public class TransactionViewModel {
 
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
-    public static final AtomicLong receivedTransactionCount = new AtomicLong(0);
-
     private int[] trits;
     public int weightMagnitude;
 
@@ -156,6 +154,10 @@ public class TransactionViewModel {
         transaction.arrivalTime = AbstractStorage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
     }
 
+    public static int getNumberOfStoredTransactions() throws ExecutionException, InterruptedException {
+        return Tangle.instance().getNumberOfStoredTransactions().get().intValue();
+    }
+
 
     public void update(String item) throws Exception {
         Tangle.instance().update(transaction, item, Transaction.class.getDeclaredField(item).get(transaction));
@@ -220,7 +222,6 @@ public class TransactionViewModel {
         } else {
             futures.add(TipsViewModel.removeTipHash(transaction.hash));
         }
-        receivedTransactionCount.getAndIncrement();//.incrementAndGet();
         return futures;
     }
 

@@ -51,4 +51,10 @@ public interface IPersistenceProvider {
     void updateType(Transaction transaction) throws Exception;
 
     boolean transientObjectExists(Object uuid, byte[] hash) throws Exception;
+
+    void flushAnalyzedFlags() throws Exception;
+
+    long getNumberOfTransactions() throws Exception;
+
+    long getNumberOfRequestedTransactions() throws Exception;
 }

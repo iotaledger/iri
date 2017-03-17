@@ -19,46 +19,33 @@ public class ScratchpadViewModel {
     private static final Logger log = LoggerFactory.getLogger(ScratchpadViewModel.class);
 
     protected static final byte[] ZEROED_BUFFER = new byte[CELL_SIZE];
-    public volatile int numberOfTransactionsToRequest;
 
     static long lastTime = 0L;
 
     public static ScratchpadViewModel instance = new ScratchpadViewModel();
-    private Object analyzedTransactionHandle;
-
-    public ScratchpadViewModel() {
-        try {
-            analyzedTransactionHandle = Tangle.instance().createTransientList(AnalyzedFlag.class);
-        } catch (Exception e) {
-            log.error(e.toString());
-        }
-    }
 
     public boolean setAnalyzedTransactionFlag(byte[] hash) throws ExecutionException, InterruptedException {
         AnalyzedFlag flag = new AnalyzedFlag();
         flag.hash = hash;
-        if(!Tangle.instance().transientExists(analyzedTransactionHandle, flag.hash).get()) {
-            Tangle.instance().save(analyzedTransactionHandle, flag).get();
+        if(!Tangle.instance().exists(AnalyzedFlag.class, flag.hash).get()) {
+            Tangle.instance().save(flag).get();
             return true;
         }
         return false;
     }
 
     public void clearAnalyzedTransactionsFlags() throws Exception {
-        Tangle.instance().dropList(analyzedTransactionHandle);
-        analyzedTransactionHandle = Tangle.instance().createTransientList(AnalyzedFlag.class);
+        Tangle.instance().flushAnalyzedFlags().get();
     }
 
-    public int getNumberOfTransactionsToRequest() {
-        return numberOfTransactionsToRequest;
+    public int getNumberOfTransactionsToRequest() throws ExecutionException, InterruptedException {
+        return Tangle.instance().getNumberOfRequestedTransactions().get().intValue();
     }
 
     public Future<Void> clearReceivedTransaction(byte[] hash) throws ExecutionException, InterruptedException {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
         if(Tangle.instance().maybeHas(scratchpad).get()) {
-            if(numberOfTransactionsToRequest != 0)
-                numberOfTransactionsToRequest--;
             return Tangle.instance().delete(scratchpad);
         }
         return null;
@@ -69,7 +56,6 @@ public class ScratchpadViewModel {
         if(!TransactionViewModel.mightExist(hash)) {
             Scratchpad scratchpad = new Scratchpad();
             scratchpad.hash = hash;
-            numberOfTransactionsToRequest++;
             return Tangle.instance().save(scratchpad);
         }
         return null;
@@ -85,8 +71,7 @@ public class ScratchpadViewModel {
         long now = System.nanoTime();
         if ((now - lastTime) > 10000000000L) {
             lastTime = now;
-            //log.info("Transactions to request = {}", numberOfTransactionsToRequest + ".  (" + (System.currentTimeMillis() - beginningTime) + " ms )");
-            log.info("Transactions to request = {}", getNumberOfTransactionsToRequest() + " / " + TransactionViewModel.receivedTransactionCount.get() + " (" + (now - beginningTime)/1000 + " us )");
+            log.info("Transactions to request = {}", getNumberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime)/1000 + " us )");
         }
     }
 

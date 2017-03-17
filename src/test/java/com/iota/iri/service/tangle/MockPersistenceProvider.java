@@ -149,5 +149,20 @@ public class MockPersistenceProvider implements IPersistenceProvider {
         return false;
     }
 
+    @Override
+    public void flushAnalyzedFlags() throws Exception {
+
+    }
+
+    @Override
+    public long getNumberOfTransactions() throws Exception {
+        return 0;
+    }
+
+    @Override
+    public long getNumberOfRequestedTransactions() throws Exception {
+        return 0;
+    }
+
 }
 

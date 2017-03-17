@@ -37,7 +37,11 @@ public class ScratchpadViewModel {
     public boolean setAnalyzedTransactionFlag(byte[] hash) throws ExecutionException, InterruptedException {
         AnalyzedFlag flag = new AnalyzedFlag();
         flag.hash = hash;
-        return Tangle.instance().save(analyzedTransactionHandle, flag).get();
+        if(!Tangle.instance().maybeHas(analyzedTransactionHandle, flag.hash).get()) {
+            Tangle.instance().save(analyzedTransactionHandle, flag).get();
+            return true;
+        }
+        return false;
     }
 
     public void clearAnalyzedTransactionsFlags() throws Exception {

@@ -2,6 +2,7 @@ package com.iota.iri.service.tangle.rocksDB;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.*;
+import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.IPersistenceProvider;
 import com.iota.iri.service.tangle.Serializer;
 import org.apache.commons.lang3.NotImplementedException;
@@ -294,6 +295,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, transaction.hash));
             transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, transaction.hash));
             return true;
+        } else {
+            transaction.type = AbstractStorage.PREFILLED_SLOT;
         }
         return false;
     }

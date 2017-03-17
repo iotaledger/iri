@@ -213,7 +213,7 @@ public class TransactionViewModel {
         if (!Arrays.equals(getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
             futures.add(ScratchpadViewModel.instance().requestTransaction(getTrunkTransactionHash()));
         Hash[] approvers = getApprovers();
-        Arrays.stream(approvers).map(TransactionViewModel::updateType).forEach(futures::add);
+        //Arrays.stream(approvers).map(TransactionViewModel::updateType).forEach(futures::add);
         if(approvers.length == 0) {
             futures.add(TipsViewModel.addTipHash(transaction.hash));
         } else {

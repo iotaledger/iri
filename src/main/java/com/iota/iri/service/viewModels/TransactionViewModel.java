@@ -132,6 +132,7 @@ public class TransactionViewModel {
         getHashTrits(curl);
         getHash();
         if (this.transaction.hash[Hash.SIZE_IN_BYTES - 3] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 1] != 0) {
+            log.error("Invalid transaction hash. Hash found: " + new Hash(trits).toString());
             throw new RuntimeException("Invalid transaction hash");
         }
 

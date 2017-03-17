@@ -5,6 +5,7 @@ import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.UUID;
 
 /**
  * Created by paul on 3/2/17 for iri.
@@ -48,4 +49,6 @@ public interface IPersistenceProvider {
     boolean mayExist(Tip tip) throws Exception;
 
     void updateType(Transaction transaction) throws Exception;
+
+    boolean transientObjectExists(Object uuid, byte[] hash) throws Exception;
 }

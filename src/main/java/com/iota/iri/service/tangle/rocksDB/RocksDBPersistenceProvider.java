@@ -368,6 +368,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public boolean transientObjectExists(Object uuid, byte[] hash) throws Exception {
+        return db.get(transientHandles.get(uuid), hash) != null;
+    }
+
+    @Override
     public boolean update(Object thing, String item) throws Exception {
         if(thing instanceof Transaction) {
             Transaction transaction = (Transaction) thing;

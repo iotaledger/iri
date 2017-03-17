@@ -267,6 +267,15 @@ public class Tangle {
         });
     }
 
+    public Future<Boolean> transientExists(Object uuid, byte[] hash) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.transientObjectExists(uuid, hash)) return true;
+            }
+            return false;
+        });
+    }
+
     public Future<Boolean> exists(Class<?> modelClass, byte[] hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {

@@ -144,5 +144,10 @@ public class MockPersistenceProvider implements IPersistenceProvider {
 
     }
 
+    @Override
+    public boolean transientObjectExists(Object uuid, byte[] hash) throws Exception {
+        return false;
+    }
+
 }
 

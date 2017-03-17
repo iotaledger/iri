@@ -114,16 +114,16 @@ public class ReplicatorSourceProcessor implements Runnable {
                 if (!readError) {
                     try {
                         neighbor.incAllTransactions();
-                        beginning = System.nanoTime();
+                        //beginning = System.nanoTime();
                         final TransactionViewModel receivedTransactionViewModel = new TransactionViewModel(data, receivedTransactionTrits, curl);
-                        log.info("TransactionVM creation time: " + ((now = System.nanoTime()) - beginning)/1000+ " us");
+                        //log.info("TransactionVM creation time: " + ((now = System.nanoTime()) - beginning)/1000+ " us");
                         long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                         if (timestamp == 0 || timestamp > Node.TIMESTAMP_THRESHOLD) {
-                            beginning = System.nanoTime();
+                            //beginning = System.nanoTime();
                             isNew = !receivedTransactionViewModel.store().get();
                             if(isNew) {
-                                now = System.nanoTime();
-                                log.info("TransactionVM save time: " + ((now) - beginning)/1000 + " us");
+                                //now = System.nanoTime();
+                                //log.info("TransactionVM save time: " + ((now) - beginning)/1000 + " us");
                                 receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                 receivedTransactionViewModel.update("arrivalTime");
                                 neighbor.incNewTransactions();

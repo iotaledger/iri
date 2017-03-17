@@ -21,7 +21,9 @@ public class ReplicatorSourcePool implements Runnable {
 
     @Override
     public void run() {
+        ExecutorService pool;
         pool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
+        this.pool = pool;
         try {
             server = new ServerSocket(Replicator.REPLICATOR_PORT); 
             log.info("Replicator is accepting connections on port " + server.getLocalPort());

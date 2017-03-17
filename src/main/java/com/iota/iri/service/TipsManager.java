@@ -507,20 +507,10 @@ public class TipsManager {
         return null;
     }
 
-    private static boolean setAnalyzedTransactionFlag(Object handle, byte[] hash) {
-
-        try {
-            if(Tangle.instance().maybeHas(handle, hash).get()) {
-                if(Tangle.instance().load(handle, Flag.class, hash).get() != null) {
-                    return false;
-                }
-            }
-            Tangle.instance().save(new Flag(hash)).get();
+    private static boolean setAnalyzedTransactionFlag(Object handle, byte[] hash) throws ExecutionException, InterruptedException {
+        if(!Tangle.instance().maybeHas(handle, hash).get()) {
+            Tangle.instance().save(handle, new Flag(hash)).get();
             return true;
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } catch (ExecutionException e) {
-            e.printStackTrace();
         }
         return false;
     }

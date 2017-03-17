@@ -56,6 +56,7 @@ public class Tangle {
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
         shutdown = true;
+        executor.awaitTermination(6, TimeUnit.SECONDS);
         this.persistenceProviders.forEach(IPersistenceProvider::shutdown);
         for(UUID uuid: transientDBList) {
             dropList(uuid);

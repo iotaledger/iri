@@ -26,8 +26,7 @@ public class TagViewModel {
     }
 
     public Hash[] getTransactionHashes() throws ExecutionException, InterruptedException {
-        Tag txTag = (Tag) Tangle.instance().load(Tag.class, tag.bytes).get();
-        tag.transactions = txTag.transactions.clone();
-        return Arrays.stream(tag.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
+        Tangle.instance().load(tag).get();
+        return tag.transactions;
     }
 }

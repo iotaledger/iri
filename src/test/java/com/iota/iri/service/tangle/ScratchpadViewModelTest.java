@@ -80,7 +80,6 @@ public class ScratchpadViewModelTest {
 
         newRequest = Arrays.copyOf(Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray()), Hash.SIZE_IN_BYTES);
         ScratchpadViewModel.instance().requestTransaction(newRequest);
-        Object o = Tangle.instance().load(Scratchpad.class, newRequest).get();
 
         ScratchpadViewModel.instance().transactionToRequest(hashRequest, 0);
         assertArrayEquals("Hash should be null hash", hashRequest, newRequest);

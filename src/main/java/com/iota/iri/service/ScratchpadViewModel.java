@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import static com.iota.iri.service.storage.AbstractStorage.*;
 
@@ -26,23 +27,16 @@ public class ScratchpadViewModel {
     private Object analyzedTransactionHandle;
 
     public ScratchpadViewModel() {
-        analyzedTransactionHandle = Tangle.instance().createTransientList(AnalyzedFlag.class);
-    }
-
-    public void requestTransaction(byte[] hash) throws ExecutionException, InterruptedException {
-        if(!TransactionViewModel.mightExist(hash) && !TransactionViewModel.exists(hash)) {
-            Scratchpad scratchpad = new Scratchpad();
-            scratchpad.hash = hash;
-            scratchpad.value = 1;
-            Tangle.instance().save(scratchpad).get();
-            numberOfTransactionsToRequest++;
+        try {
+            analyzedTransactionHandle = Tangle.instance().createTransientList(AnalyzedFlag.class);
+        } catch (Exception e) {
+            log.error(e.toString());
         }
     }
 
     public boolean setAnalyzedTransactionFlag(byte[] hash) throws ExecutionException, InterruptedException {
         AnalyzedFlag flag = new AnalyzedFlag();
         flag.hash = hash;
-        flag.bytes = new byte[]{0};
         return Tangle.instance().save(analyzedTransactionHandle, flag).get();
     }
 
@@ -55,14 +49,26 @@ public class ScratchpadViewModel {
         return numberOfTransactionsToRequest;
     }
 
-    public void clearReceivedTransaction(byte[] hash) throws ExecutionException, InterruptedException {
+    public Future<Void> clearReceivedTransaction(byte[] hash) throws ExecutionException, InterruptedException {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
-        if(Tangle.instance().maybeHas(Scratchpad.class, hash).get()) {
-            Tangle.instance().delete(scratchpad);
+        if(Tangle.instance().maybeHas(scratchpad).get()) {
             if(numberOfTransactionsToRequest != 0)
                 numberOfTransactionsToRequest--;
+            return Tangle.instance().delete(scratchpad);
         }
+        return null;
+    }
+
+    public Future<Boolean> requestTransaction(byte[] hash) throws ExecutionException, InterruptedException {
+        //if(!TransactionViewModel.mightExist(hash) || !TransactionViewModel.exists(hash)) {
+        if(!TransactionViewModel.mightExist(hash)) {
+            Scratchpad scratchpad = new Scratchpad();
+            scratchpad.hash = hash;
+            numberOfTransactionsToRequest++;
+            return Tangle.instance().save(scratchpad);
+        }
+        return null;
     }
 
     public void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
@@ -76,7 +82,7 @@ public class ScratchpadViewModel {
         if ((now - lastTime) > 10000000000L) {
             lastTime = now;
             //log.info("Transactions to request = {}", numberOfTransactionsToRequest + ".  (" + (System.currentTimeMillis() - beginningTime) + " ms )");
-            log.info("Transactions to request = {}", numberOfTransactionsToRequest + " / " + TransactionViewModel.receivedTransactionCount.get() + " (" + (now - beginningTime) + " ns )");
+            log.info("Transactions to request = {}", getNumberOfTransactionsToRequest() + " / " + TransactionViewModel.receivedTransactionCount.get() + " (" + (now - beginningTime)/1000 + " us )");
         }
     }
 

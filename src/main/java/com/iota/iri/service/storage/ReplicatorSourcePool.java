@@ -5,6 +5,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,10 +17,11 @@ public class ReplicatorSourcePool implements Runnable {
     private volatile boolean shutdown = false;
 
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSourcePool.class);
+    private ExecutorService pool;
 
     @Override
     public void run() {
-        ExecutorService pool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
+        pool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
         try {
             server = new ServerSocket(Replicator.REPLICATOR_PORT); 
             log.info("Replicator is accepting connections on port " + server.getLocalPort());
@@ -38,9 +40,10 @@ public class ReplicatorSourcePool implements Runnable {
         }
     }
 
-    public void shutdown() {
-        ReplicatorSourcePool.instance().shutdown = true;
-        ReplicatorSourcePool.instance().notify();
+    public void shutdown() throws InterruptedException {
+        shutdown = true;
+        //notify();
+        pool.awaitTermination(6, TimeUnit.SECONDS);
     }
 
     private static ReplicatorSourcePool instance = new ReplicatorSourcePool();

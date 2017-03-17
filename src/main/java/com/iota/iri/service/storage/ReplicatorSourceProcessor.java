@@ -11,7 +11,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.service.ScratchpadViewModel;
+import com.iota.iri.service.tangle.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +49,9 @@ public class ReplicatorSourceProcessor implements Runnable {
     public void run() {
         int count;
         byte[] data = new byte[2000];
-        int offset = 0;        
+        int offset = 0;
+        long beginning, now;
+        boolean isNew;
 
         try {
             final Curl curl = new Curl();
@@ -55,8 +59,7 @@ public class ReplicatorSourceProcessor implements Runnable {
             SocketAddress address = connection.getRemoteSocketAddress();
             InetSocketAddress inet_socket_address = (InetSocketAddress) address;
             InetSocketAddress inet_socket_address_normalized = new InetSocketAddress(inet_socket_address.getAddress(),Replicator.REPLICATOR_PORT);
-            long pointer;
-            
+
             existingNeighbor = false;
             List<Neighbor> neighbors = Node.instance().getNeighbors();            
             neighbors.forEach(n -> {
@@ -111,10 +114,16 @@ public class ReplicatorSourceProcessor implements Runnable {
                 if (!readError) {
                     try {
                         neighbor.incAllTransactions();
+                        beginning = System.nanoTime();
                         final TransactionViewModel receivedTransactionViewModel = new TransactionViewModel(data, receivedTransactionTrits, curl);
+                        log.info("TransactionVM creation time: " + ((now = System.nanoTime()) - beginning)/1000+ " us");
                         long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                         if (timestamp == 0 || timestamp > Node.TIMESTAMP_THRESHOLD) {
-                            if(!receivedTransactionViewModel.store()) {
+                            beginning = System.nanoTime();
+                            isNew = !receivedTransactionViewModel.store().get();
+                            if(isNew) {
+                                now = System.nanoTime();
+                                log.info("TransactionVM save time: " + ((now) - beginning)/1000 + " us");
                                 receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                 receivedTransactionViewModel.update("arrivalTime");
                                 neighbor.incNewTransactions();
@@ -129,12 +138,9 @@ public class ReplicatorSourceProcessor implements Runnable {
                             System.arraycopy(data, TransactionViewModel.SIZE, requestedTransaction, 0, Hash.SIZE_IN_BYTES);
 
                             if (!Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
-                                ScratchpadViewModel.instance().clearReceivedTransaction(requestedTransaction);
+                                //beginning = System.nanoTime();
                                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(requestedTransaction);
-                                if (!Arrays.equals(transactionViewModel.getBranchTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
-                                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
-                                if (!Arrays.equals(transactionViewModel.getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
-                                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
+                                //log.info("DB Retrieve time: " + ((now = System.nanoTime()) - beginning)/1000 + " us");
                                 if(!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                                     synchronized (sendingPacket) {
                                         System.arraycopy( transactionViewModel.getBytes(),

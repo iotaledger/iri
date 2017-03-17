@@ -50,7 +50,7 @@ public class TransactionViewModelTest {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bundle = new Bundle();
             transaction.bundle.hash = bundleHash.clone();
-            transaction.signature = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
             return new TransactionViewModel(transaction);
         }).toArray(TransactionViewModel[]::new);
@@ -58,7 +58,7 @@ public class TransactionViewModelTest {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bundle = new Bundle();
             transaction.bundle.hash = bundleHash.clone();
-            transaction.signature = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = bundleHash.clone();
             transactionViewModels = ArrayUtils.addAll(transactionViewModels, new TransactionViewModel(transaction));
         }
@@ -108,30 +108,31 @@ public class TransactionViewModelTest {
 
     @Test
     public void getApprovers() throws Exception {
-        TransactionViewModel transactionViewModel, trunkTxApprover, branchTxApprover;
+        TransactionViewModel transactionViewModel, otherTxVM, trunkTx, branchTx;
 
 
-        trunkTxApprover = new TransactionViewModel(getRandomTransactionTrits(seed));
+        trunkTx = new TransactionViewModel(getRandomTransactionTrits(seed));
 
-        branchTxApprover = new TransactionViewModel(getRandomTransactionTrits(seed));
+        branchTx = new TransactionViewModel(getRandomTransactionTrits(seed));
 
-        Transaction transaction = getRandomTransaction(seed);
+        int[] childTx = getRandomTransactionTrits(seed);
+        Curl curl = new Curl();
+        System.arraycopy(trunkTx.getHashTrits(curl), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
+        System.arraycopy(branchTx.getHashTrits(curl), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
+        transactionViewModel = new TransactionViewModel(childTx);
 
-        transaction.trunk= new Approvee();
-        transaction.trunk.hash = trunkTxApprover.getHash();
-        transaction.branch = new Approvee();
-        transaction.branch.hash = branchTxApprover.getHash();
-        transactionViewModel = new TransactionViewModel(transaction);
+        childTx = getRandomTransactionTrits(seed);
+        System.arraycopy(trunkTx.getHashTrits(curl), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
+        System.arraycopy(branchTx.getHashTrits(curl), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
+        otherTxVM = new TransactionViewModel(childTx);
 
+        otherTxVM.store();
         transactionViewModel.store();
-        trunkTxApprover.store();
-        branchTxApprover.store();
+        trunkTx.store();
+        branchTx.store();
 
-        Hash[] approvers = transactionViewModel.getApprovers();
-        /*
-        assertNotEquals(Arrays.stream(approvers).filter(hash -> Arrays.equals(hash.bytes(), trunkTxApprover.getHash())).toArray().length, 0);
-        assertNotEquals(Arrays.stream(approvers).filter(hash -> Arrays.equals(hash.bytes(), branchTxApprover.getHash())).toArray().length, 0);
-        */
+        Hash[] approvers = trunkTx.getApprovers();
+        assertNotEquals(approvers.length, 0);
     }
 
     @Test
@@ -325,7 +326,7 @@ public class TransactionViewModelTest {
 
     private Transaction getRandomTransaction(Random seed) {
         Transaction transaction = new Transaction();
-        transaction.signature = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> seed.nextInt(3)-1).toArray());
+        transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> seed.nextInt(3)-1).toArray());
         transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray());
         return transaction;
     }

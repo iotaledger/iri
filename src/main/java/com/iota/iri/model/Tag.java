@@ -10,5 +10,5 @@ import com.iota.iri.service.tangle.annotations.ModelIndex;
 @Model
 public class Tag {
     @ModelIndex public byte[] bytes;
-    @HasMany public Transaction[] transactions;
+    @HasMany public Hash[] transactions;
 }

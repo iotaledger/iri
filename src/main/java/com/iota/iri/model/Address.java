@@ -9,6 +9,6 @@ import com.iota.iri.service.tangle.annotations.ModelIndex;
  */
 @Model
 public class Address {
-    @ModelIndex public byte[] bytes;
-    @HasMany public Transaction[] transactions;
+    @ModelIndex public byte[] hash;
+    @HasMany public Hash[] transactions;
 }

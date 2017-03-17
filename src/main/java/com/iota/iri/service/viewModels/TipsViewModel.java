@@ -6,26 +6,27 @@ import com.iota.iri.service.tangle.Tangle;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 /**
  * Created by paul on 3/14/17 for iri-testnet.
  */
 public class TipsViewModel {
 
-    public static void addTipHash (byte[] hash) throws ExecutionException, InterruptedException {
-        if(!Tangle.instance().maybeHas(Tip.class, hash).get()) {
-            Tip tip = new Tip();
-            tip.hash = hash;
-            Tangle.instance().save(tip).get();
+    public static Future<Boolean> addTipHash (byte[] hash) throws ExecutionException, InterruptedException {
+        Tip tip = new Tip(hash);
+        if(!Tangle.instance().maybeHas(tip).get()) {
+            return Tangle.instance().save(tip);
         }
+        return null;
     }
 
-    public static void removeTipHash (byte[] hash) throws ExecutionException, InterruptedException {
-        if(Tangle.instance().maybeHas(Tip.class, hash).get()) {
-            Tip tip = new Tip();
-            tip.hash = hash;
-            Tangle.instance().delete(tip).get();
+    public static Future<Void> removeTipHash (byte[] hash) throws ExecutionException, InterruptedException {
+        Tip tip = new Tip(hash);
+        if(Tangle.instance().maybeHas(tip).get()) {
+            return Tangle.instance().delete(tip);
         }
+        return null;
     }
 
     public static Hash[] getTipHashes() throws ExecutionException, InterruptedException {

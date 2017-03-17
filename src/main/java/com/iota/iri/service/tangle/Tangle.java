@@ -1,11 +1,13 @@
 package com.iota.iri.service.tangle;
 
-import com.iota.iri.model.Transaction;
+import com.iota.iri.model.*;
 import com.iota.iri.service.tangle.annotations.*;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
 import org.reflections.scanners.SubTypesScanner;
 import org.reflections.scanners.TypeAnnotationsScanner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
  */
 public class Tangle {
     private static final char COLUMN_DELIMETER = '.';
+    private static final Logger log = LoggerFactory.getLogger(Tangle.class);
 
     private static Tangle instance = new Tangle();
     List<IPersistenceProvider> persistenceProviders = new ArrayList<>();
@@ -24,54 +27,8 @@ public class Tangle {
     private final Map<Class<?>, Field> modelPrimaryKeys = new HashMap<>();
     private final Map<Class<?>, Map<String, ModelFieldInfo>> modelFieldInfo = new HashMap<>();
     private final List<UUID> transientDBList = new ArrayList<>();
+    private boolean shutdown;
 
-    {
-        FieldAnnotationsScanner scanner = new FieldAnnotationsScanner();
-        TypeAnnotationsScanner typeAnnotationsScanner = new TypeAnnotationsScanner();
-        SubTypesScanner subTypesScanner = new SubTypesScanner();
-        Reflections reflections = new Reflections("com.iota.iri", scanner, typeAnnotationsScanner, subTypesScanner);
-
-        Set<Class<?>> modelClasses = reflections.getTypesAnnotatedWith(Model.class);
-        Set<Field> primaryIndex = reflections.getFieldsAnnotatedWith(ModelIndex.class);
-        Set<Field> hasOneFields = reflections.getFieldsAnnotatedWith(HasOne.class);
-        Set<Field> hasManyFields = reflections.getFieldsAnnotatedWith(HasMany.class);
-        Set<Field> belongsToFields = reflections.getFieldsAnnotatedWith(BelongsTo.class);
-        for(Class<?> model: modelClasses) {
-            modelPrimaryKeys.put(model,
-                    primaryIndex
-                            .stream()
-                            .filter(field -> field.getDeclaringClass().equals(model))
-                            .findFirst()
-                            .get());
-            Map<String, ModelFieldInfo> map = new HashMap<>(
-                    hasOneFields
-                            .stream()
-                            .filter(field -> field.getDeclaringClass().equals(model))
-                            .map(field -> new HashMap.SimpleEntry<>(field.getName(),
-                                    new ModelFieldInfo(referenceFieldName(model, field), field.getDeclaringClass(), false, null, modelClasses.contains(field.getType()) ? field.getType(): null)
-                            ))
-                            .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-            );
-            map.putAll(hasManyFields
-                    .stream()
-                    .filter(field -> field.getDeclaringClass().equals(model) && modelClasses.contains(field.getType().getComponentType()))
-                    .map(field -> new HashMap.SimpleEntry<>(field.getName(),
-                            new ModelFieldInfo(referenceFieldName(model, field), field.getDeclaringClass(), true, null, modelClasses.contains(field.getType().getComponentType()) ? field.getType().getComponentType(): null)
-                    ))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-            );
-            map.putAll(belongsToFields
-                    .stream()
-                    .filter(field -> field.getDeclaringClass().equals(model) && modelClasses.contains(field.getType()))
-                    .map(field -> new HashMap.SimpleEntry<>(field.getName(),
-                            //new ModelFieldInfo(referenceFieldName(model, field), modelClasses.contains(field.getType()) ? field.getType().getComponentType(): null, null)
-                            new ModelFieldInfo(referenceFieldName(model, field), field.getDeclaringClass(), false, field.getType(), null)
-                    ))
-                    .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue))
-            );
-            modelFieldInfo.put(model, map);
-        }
-    }
 
     public void addPersistenceProvider(IPersistenceProvider provider) {
         this.persistenceProviders.add(provider);
@@ -80,29 +37,37 @@ public class Tangle {
     public void init(String path) throws Exception {
         executor = Executors.newCachedThreadPool();
         for(IPersistenceProvider provider: this.persistenceProviders) {
-            provider.setColumns(modelPrimaryKeys, modelFieldInfo);
+            //provider.setColumns(modelPrimaryKeys, modelFieldInfo);
             provider.init(path);
         }
     }
     public void init() throws Exception {
         executor = Executors.newCachedThreadPool();
         for(IPersistenceProvider provider: this.persistenceProviders) {
-            provider.setColumns(modelPrimaryKeys, modelFieldInfo);
+            //provider.setColumns(modelPrimaryKeys, modelFieldInfo);
             provider.init();
         }
     }
 
+    public boolean availalbe() {
+        return !shutdown;
+    }
+
     public void shutdown() throws Exception {
+        log.info("Shutting down Tangle Persistence Providers... ");
+        shutdown = true;
+        this.persistenceProviders.forEach(IPersistenceProvider::shutdown);
         for(UUID uuid: transientDBList) {
             dropList(uuid);
         }
-        this.persistenceProviders.forEach(provider -> provider.shutdown());
         this.persistenceProviders.clear();
     }
 
-    public Object createTransientList(Class<?> model) {
+    public Object createTransientList(Class<?> model) throws Exception {
         UUID uuid = UUID.randomUUID();
-        this.persistenceProviders.forEach(provider -> provider.setTransientHandle(model,(Object) uuid));
+        for(IPersistenceProvider provider: this.persistenceProviders) {
+            provider.setTransientHandle(model,(Object) uuid);
+        }
         return uuid;
     }
     public void dropList(Object uuid) throws Exception {
@@ -135,16 +100,58 @@ public class Tangle {
     }
     */
 
-    public Future<Object> load(Class<?> modelClass, Object value) {
+    public Future<Boolean> load(Transaction transaction) {
         return executor.submit(() -> {
-            Object loadableObject = null;
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                loadableObject = provider.get(modelClass, value);
-                if(loadableObject != null) {
-                    break;
+                if(provider.get(transaction)) {
+                    return true;
                 }
             }
-            return loadableObject;
+            return false;
+        });
+    }
+
+    public Future<Boolean> load(Address address) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.get(address)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    public Future<Boolean> load(Tag tag) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.get(tag)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    public Future<Boolean> load(Bundle bundle) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.get(bundle)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
+
+    public Future<Boolean> load(Approvee approvee) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.get(approvee)) {
+                    return true;
+                }
+            }
+            return false;
         });
     }
 
@@ -183,7 +190,7 @@ public class Tangle {
         return executor.submit(() -> {
             boolean success = true;
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(!provider.update(model, item, value)) {
+                if(!provider.update(model, item)) {
                     success = false;
                     break;
                 }
@@ -196,25 +203,6 @@ public class Tangle {
         return instance;
     }
 
-    public Future<Object[]> query(Class<?> modelClass, String index, Object key, int length) {
-        return executor.submit(() -> {
-            Object[] output = new Object[0];
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                output = provider.queryMany(modelClass, index, key, length);
-                if(output != null) break;
-            }
-            return output;
-        });
-    }
-
-    public Future<Boolean> maybeHas(Class<?> model, Object key) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.mayExist(model, key)) return true;
-            }
-            return false;
-        });
-    }
 
     public Future<Boolean> maybeHas(Object handle, Object key) {
         return executor.submit(() -> {
@@ -284,6 +272,42 @@ public class Tangle {
                 if(provider.exists(modelClass, hash)) return true;
             }
             return false;
+        });
+    }
+
+    public Future<Boolean> maybeHas(Transaction transaction) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.mayExist(transaction)) return true;
+            }
+            return false;
+        });
+    }
+
+    public Future<Boolean> maybeHas(Scratchpad scratchpad) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.mayExist(scratchpad)) return true;
+            }
+            return false;
+        });
+    }
+
+    public Future<Boolean> maybeHas(Tip tip) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if(provider.mayExist(tip)) return true;
+            }
+            return false;
+        });
+    }
+
+    public Future<Void> updateType(Transaction transaction) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                provider.updateType(transaction);
+            }
+            return null;
         });
     }
 }

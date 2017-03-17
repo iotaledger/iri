@@ -47,7 +47,7 @@ public class TipsManager {
         ARTIFICAL_LATENCY = value;
     }
     
-    public void init() {
+    public void init() throws Exception {
 
         analyzedTransactionFlagPersistentHandle = Tangle.instance().createTransientList(Flag.class);
         (new Thread(() -> {
@@ -91,7 +91,7 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    static Hash transactionToApprove(final Hash extraTip, int depth) {
+    static Hash transactionToApprove(final Hash extraTip, int depth) throws Exception {
 
         long startTime = System.nanoTime();
                 

@@ -6,6 +6,7 @@ import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import com.iota.iri.service.ScratchpadViewModel;
 import org.slf4j.Logger;
@@ -109,8 +110,9 @@ public class ReplicatorSinkPool  implements Runnable {
         }
     }
     
-    public void shutdown() {
+    public void shutdown() throws InterruptedException {
         shutdown = true;
+        sinkPool.awaitTermination(6, TimeUnit.SECONDS);
     }
 
     private static ReplicatorSinkPool instance = new ReplicatorSinkPool();

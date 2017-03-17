@@ -1,13 +1,18 @@
 package com.iota.iri.service.viewModels;
 
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.iota.iri.Milestone;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
+import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
@@ -15,6 +20,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TransactionViewModel {
+    private static ExecutorService executorService = Executors.newCachedThreadPool();
+
     private final com.iota.iri.model.Transaction transaction;
     private static final Logger log = LoggerFactory.getLogger(TransactionViewModel.class);
 
@@ -55,22 +62,30 @@ public class TransactionViewModel {
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
     public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Hash.SIZE_IN_BYTES];
-    public static final byte[] NULL_TRANSACTION_BYTES = new byte[TransactionViewModel.SIZE];
-    public static final byte[] NULL_ADDRESS_HASH_BYTES = new byte[ADDRESS_SIZE];
-    public static final byte[] NULL_TAG_HASH_BYTES = new byte[TAG_SIZE];
+    public static final byte[] NULL_TRANSACTION_BYTES = new byte[SIZE];
+
+    public AddressViewModel address;
+    public BundleViewModel bundle;
+    public TagViewModel tag;
+    public TransactionViewModel trunk;
+    public TransactionViewModel branch;
+
+    public int[] hashTrits;
 
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
     public static final AtomicLong receivedTransactionCount = new AtomicLong(0);
-    public final byte[] bytes = new byte[TransactionViewModel.SIZE];
 
     private int[] trits;
     public int weightMagnitude;
 
     public static TransactionViewModel fromHash(final byte[] hash) throws Exception {
-        Transaction transaction = ((Transaction) Tangle.instance().load(Transaction.class, hash).get());
+        Transaction transaction = new Transaction();
+        transaction.hash = Arrays.copyOf(hash, hash.length);
+        Tangle.instance().load(transaction).get();
         return new TransactionViewModel(transaction);
     }
+
     public static TransactionViewModel fromHash(final int[] hash) throws Exception{
         return fromHash(Converter.bytes(hash));
     }
@@ -80,27 +95,291 @@ public class TransactionViewModel {
     }
 
     public static boolean mightExist(byte[] hash) throws ExecutionException, InterruptedException {
-        return Tangle.instance().maybeHas(Transaction.class, hash).get();
+        Transaction transaction = new Transaction();
+        transaction.hash = hash;
+        return Tangle.instance().maybeHas(transaction).get();
     }
 
     public TransactionViewModel(final Transaction transaction) {
-        if(transaction == null) {
-            this.transaction = new Transaction();
-            this.transaction.hash = new byte[Hash.SIZE_IN_BYTES];
-        } else {
-            this.transaction = transaction;
-        }
-        populateTrits();
-        System.arraycopy(Converter.bytes(trits), 0, bytes, 0, BYTES_SIZE);
+        this.transaction = transaction == null ? new Transaction(): transaction;
     }
 
+    public TransactionViewModel(final int[] trits) {
+        transaction = new com.iota.iri.model.Transaction();
+
+        this.trits = trits;
+        this.transaction.bytes = Converter.bytes(trits);
+
+        transaction.type = AbstractStorage.FILLED_SLOT;
+
+        transaction.validity = 0;
+        transaction.arrivalTime = 0;
+    }
+
+
+    public TransactionViewModel(final byte[] bytes, final int[] trits, final Curl curl) {
+        transaction = new Transaction();
+        transaction.bytes = new byte[SIZE];
+        System.arraycopy(bytes, 0, transaction.bytes, 0, BYTES_SIZE);
+
+        for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
+
+            if (trits[i] != 0) {
+                throw new RuntimeException("Invalid transaction value");
+            }
+        }
+
+        getHashTrits(curl);
+        getHash();
+        if (this.transaction.hash[Hash.SIZE_IN_BYTES - 3] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 1] != 0) {
+            throw new RuntimeException("Invalid transaction hash");
+        }
+
+        weightMagnitude = MIN_WEIGHT_MAGNITUDE;
+        while (weightMagnitude < Curl.HASH_LENGTH && hashTrits[Curl.HASH_LENGTH - weightMagnitude - 1] == 0) {
+            weightMagnitude++;
+        }
+
+
+        transaction.type = AbstractStorage.FILLED_SLOT;
+        transaction.validity = 0;
+        transaction.arrivalTime = 0;
+    }
+
+    public TransactionViewModel(final byte[] mainBuffer, final long pointer) {
+        transaction = new Transaction();
+        transaction.type = mainBuffer[TYPE_OFFSET];
+        System.arraycopy(mainBuffer, HASH_OFFSET, this.transaction.hash = new byte[HASH_SIZE], 0, HASH_SIZE);
+        System.arraycopy(mainBuffer, BYTES_OFFSET, transaction.bytes, 0, BYTES_SIZE);
+        transaction.validity = mainBuffer[VALIDITY_OFFSET];
+        transaction.arrivalTime = AbstractStorage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
+    }
+
+
+    public void update(String item) throws Exception {
+        Tangle.instance().update(transaction, item, Transaction.class.getDeclaredField(item).get(transaction));
+    }
+
+    public TransactionViewModel getBranchTransaction() throws Exception {
+        if(branch == null) {
+            branch = TransactionViewModel.fromHash(getBranchTransactionHash());
+        }
+        return branch;
+    }
+
+    public TransactionViewModel getTrunkTransaction() throws Exception {
+        if(trunk == null) {
+            trunk = TransactionViewModel.fromHash(getTrunkTransactionHash());
+        }
+        return trunk;
+    }
+
+    public synchronized int[] trits() {
+        if (trits == null) {
+            trits = new int[TRINARY_SIZE];
+            if(transaction.bytes != null) {
+                Converter.getTrits(getBytes(), trits);
+            }
+        }
+        return trits;
+    }
+
+    public Future<Boolean> store() throws Exception {
+        getHash();
+        Future<Boolean> future;
+        if(!Tangle.instance().maybeHas(transaction).get()) {
+            getBytes();
+            getAddressHash();
+            getBundleHash();
+            getBranchTransactionHash();
+            getTrunkTransactionHash();
+            getTagBytes();
+            future = Tangle.instance().save(transaction);
+            for(Future<?> updateFuture: update()) {
+                if(updateFuture != null)
+                    updateFuture.get();
+            }
+        } else {
+            future = executorService.submit(() -> false);
+        }
+        return future;
+    }
+
+    private Set<Future> update () throws Exception {
+        Set<Future> futures = new HashSet<>();
+        futures.add(ScratchpadViewModel.instance().clearReceivedTransaction(transaction.hash));
+        if (!Arrays.equals(getBranchTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+            futures.add(ScratchpadViewModel.instance().requestTransaction(getBranchTransactionHash()));
+        if (!Arrays.equals(getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+            futures.add(ScratchpadViewModel.instance().requestTransaction(getTrunkTransactionHash()));
+        Hash[] approvers = getApprovers();
+        Arrays.stream(approvers).map(TransactionViewModel::updateType).forEach(futures::add);
+        if(approvers.length == 0) {
+            futures.add(TipsViewModel.addTipHash(transaction.hash));
+        } else {
+            futures.add(TipsViewModel.removeTipHash(transaction.hash));
+        }
+        receivedTransactionCount.getAndIncrement();//.incrementAndGet();
+        return futures;
+    }
+
+    private static Future<Void> updateType(Hash hash) {
+        Transaction transaction = new Transaction();
+        transaction.hash = hash.bytes();
+        transaction.type = AbstractStorage.FILLED_SLOT;
+        return Tangle.instance().updateType(transaction);
+    }
+
+    public static Hash[] approversFromHash(Hash hash) throws Exception {
+        return TransactionViewModel.fromHash(hash).getApprovers();
+    }
+
+    public Hash[] getApprovers() throws ExecutionException, InterruptedException {
+        Approvee self = new Approvee();
+        self.hash = transaction.hash;
+        Tangle.instance().load(self).get();
+        return self.transactions != null? Arrays.stream(self.transactions).map(transaction -> new Hash(transaction.bytes())).toArray(Hash[]::new): new Hash[0];
+    }
+
+    public final int getType() {
+        return transaction.type;
+    }
+
+    public void setArrivalTime(long time) {
+        transaction.arrivalTime = time;
+    }
+
+    public long getArrivalTime() {
+        return transaction.arrivalTime;
+    }
+
+    public byte[] getBytes() {
+        if(transaction.bytes == null) {
+            transaction.bytes = trits == null? new byte[SIZE]: Converter.bytes(trits());
+        }
+        return transaction.bytes;
+    }
+
+    public byte[] getHash() {
+        if(transaction.hash == null) {
+            transaction.hash = Converter.bytes(getHashTrits(null));
+        }
+        return transaction.hash;
+    }
+
+    public AddressViewModel getAddress() {
+        if(address == null)
+            address = new AddressViewModel(getAddressHash());
+        return address;
+    }
+
+    public TagViewModel getTag() {
+        return new TagViewModel(getTagBytes());
+    }
+
+    public BundleViewModel getBundle() throws ExecutionException, InterruptedException {
+        if(bundle == null) {
+            bundle = BundleViewModel.fromHash(getBundleHash());
+        }
+        return bundle;
+    }
+
+    public byte[] getAddressHash() {
+        if(transaction.address.hash == null) {
+            transaction.address.hash = Converter.bytes(trits(), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
+        }
+        return transaction.address.hash;
+    }
+
+    public byte[] getTagBytes() {
+        if(transaction.tag.bytes == null) {
+            transaction.tag.bytes= Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE);
+        }
+        return transaction.tag.bytes;
+    }
+
+    public byte[] getBundleHash() {
+        if(transaction.bundle.hash == null) {
+            transaction.bundle.hash = Converter.bytes(trits(), BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE);
+        }
+        return transaction.bundle.hash;
+    }
+
+    public byte[] getTrunkTransactionHash() {
+        if(transaction.trunk.hash == null) {
+            transaction.trunk.hash = Converter.bytes(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
+        }
+        return transaction.trunk.hash;
+    }
+
+    public byte[] getBranchTransactionHash() {
+        if(transaction.branch.hash == null) {
+            transaction.branch.hash = Converter.bytes(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE);
+        }
+        return transaction.branch.hash;
+    }
+
+    public long value() {
+        return Converter.longValue(trits, VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
+    }
+
+    public void setValidity(int validity, boolean update) throws Exception {
+        transaction.validity = validity;
+        if(update) {
+            update("validity");
+        }
+    }
+
+    public int getValidity() {
+        return transaction.validity;
+    }
+
+    public long getCurrentIndex() {
+        return Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
+    }
+
+    public byte[] getSignature() {
+        return Converter.bytes(trits(), SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
+    }
+
+    public long getTimestamp() {
+        return Converter.longValue(trits(), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+    }
+
+    public byte[] getNonce() {
+        return Converter.bytes(trits(), NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
+    }
+
+    public long getLastIndex() {
+        return Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
+    }
+
+    public static boolean exists(byte[] hash) throws ExecutionException, InterruptedException {
+        return Tangle.instance().exists(Transaction.class, hash).get();
+    }
+
+    public int[] getHashTrits(Curl curl) {
+        if(hashTrits == null) {
+            if(curl == null) {
+                curl = new Curl();
+            } else {
+                curl.reset();
+            }
+            curl.absorb(trits(), 0, TRINARY_SIZE);
+            hashTrits = new int[Curl.HASH_LENGTH];
+            curl.squeeze(hashTrits, 0, hashTrits.length);
+        }
+        return hashTrits;
+    }
+
+    /*
     private void populateTrits() {
         int[] partialTrits = null;
         this.trits = new int[TRINARY_SIZE];
         Converter.copyTrits(transaction.currentIndex, trits, CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
         Converter.copyTrits(transaction.lastIndex, trits, LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
         Converter.copyTrits(transaction.value, trits, VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
-        Converter.copyTrits(transaction.timestamp.value, trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+        Converter.copyTrits(transaction.timestamp, trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
 
         populateSignatureTrits(partialTrits);
         populateAddressTrits(partialTrits);
@@ -149,10 +428,10 @@ public class TransactionViewModel {
 
     private void populateAddressTrits(int[] partialTrits) {
         partialTrits = new int[ADDRESS_TRINARY_SIZE];
-        if(transaction.address.bytes == null) {
-            transaction.address.bytes = new byte[Hash.SIZE_IN_BYTES];
+        if(transaction.address.hash == null) {
+            transaction.address.hash = new byte[Hash.SIZE_IN_BYTES];
         }
-        Converter.getTrits(transaction.address.bytes, partialTrits);
+        Converter.getTrits(transaction.address.hash, partialTrits);
         System.arraycopy(partialTrits, 0, trits, ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
 
     }
@@ -176,152 +455,7 @@ public class TransactionViewModel {
         Converter.getTrits(transaction.nonce, partialTrits);
         System.arraycopy(partialTrits, 0, trits, NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
     }
-
-    public TransactionViewModel(final int[] trits) {
-        transaction = new com.iota.iri.model.Transaction();
-
-        this.trits = trits;
-        System.arraycopy(Converter.bytes(trits), 0, this.bytes, 0, BYTES_SIZE);
-        //transaction.value = Converter.value(trits);
-
-        final Curl curl = new Curl();
-        curl.absorb(trits, 0, TRINARY_SIZE);
-        final int[] hashTrits = new int[Curl.HASH_LENGTH];
-        curl.squeeze(hashTrits, 0, hashTrits.length);
-        transaction.hash = Converter.bytes(hashTrits);//Arrays.copyOf(, HASH_SIZE);
-
-        populateTransaction(trits);
-
-        transaction.type = AbstractStorage.FILLED_SLOT;
-
-        transaction.validity = 0;
-        transaction.arrivalTime = 0;
-    }
-
-
-    public TransactionViewModel(final byte[] bytes, final int[] trits, final Curl curl) {
-        transaction = new com.iota.iri.model.Transaction();
-        //this.transaction.value = Arrays.copyOf(value, BYTES_SIZE);
-        System.arraycopy(bytes, 0, this.bytes, 0, BYTES_SIZE);
-        Converter.getTrits(this.getBytes(), this.trits = trits);
-
-        for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
-
-            if (trits[i] != 0) {
-                throw new RuntimeException("Invalid transaction value");
-            }
-        }
-
-        curl.reset();
-        curl.absorb(trits, 0, TRINARY_SIZE);
-        final int[] hashTrits = new int[Curl.HASH_LENGTH];
-        curl.squeeze(hashTrits, 0, hashTrits.length);
-
-        this.transaction.hash = Converter.bytes(hashTrits);
-        if (this.transaction.hash[Hash.SIZE_IN_BYTES - 3] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 1] != 0) {
-            throw new RuntimeException("Invalid transaction hash");
-        }
-
-        weightMagnitude = MIN_WEIGHT_MAGNITUDE;
-        while (weightMagnitude < Curl.HASH_LENGTH && hashTrits[Curl.HASH_LENGTH - weightMagnitude - 1] == 0) {
-            weightMagnitude++;
-        }
-
-        populateTransaction(trits);
-
-        transaction.type = AbstractStorage.FILLED_SLOT;
-
-        /*
-        trunkTransactionPointer = 0;
-        branchTransactionPointer = 0;
-        */
-        transaction.validity = 0;
-        transaction.arrivalTime = 0;
-
-    }
-
-    public TransactionViewModel(final byte[] mainBuffer, final long pointer) {
-        transaction = new com.iota.iri.model.Transaction();
-        transaction.type = mainBuffer[TYPE_OFFSET];
-        System.arraycopy(mainBuffer, HASH_OFFSET, this.transaction.hash = new byte[HASH_SIZE], 0, HASH_SIZE);
-
-        //System.arraycopy(mainBuffer, BYTES_OFFSET, this.transaction.value, 0, BYTES_SIZE);
-        System.arraycopy(mainBuffer, BYTES_OFFSET, this.bytes, 0, BYTES_SIZE);
-
-        System.arraycopy(mainBuffer, ADDRESS_OFFSET, transaction.address.bytes = new byte[ADDRESS_SIZE], 0, ADDRESS_SIZE);
-        transaction.value = AbstractStorage.value(mainBuffer, VALUE_OFFSET);
-        System.arraycopy(mainBuffer, TAG_OFFSET, transaction.tag.bytes = new byte[TAG_SIZE], 0, TAG_SIZE);
-        transaction.currentIndex = AbstractStorage.value(mainBuffer, CURRENT_INDEX_OFFSET);
-        transaction.lastIndex = AbstractStorage.value(mainBuffer, LAST_INDEX_OFFSET);
-        System.arraycopy(mainBuffer, TRUNK_TRANSACTION_OFFSET, transaction.trunk.hash = new byte[TRUNK_TRANSACTION_SIZE], 0, TRUNK_TRANSACTION_SIZE);
-        System.arraycopy(mainBuffer, BRANCH_TRANSACTION_OFFSET, transaction.branch.hash = new byte[BRANCH_TRANSACTION_SIZE], 0, BRANCH_TRANSACTION_SIZE);
-
-        /* Don't need this anymore. just get it from the db.
-        trunkTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.trunk);
-        if (trunkTransactionPointer < 0) {
-            trunkTransactionPointer = -trunkTransactionPointer;
-        }
-        branchTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.branch);
-        if (branchTransactionPointer < 0) {
-            branchTransactionPointer = -branchTransactionPointer;
-        }
-        */
-
-        transaction.validity = mainBuffer[VALIDITY_OFFSET];
-
-        transaction.arrivalTime = AbstractStorage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
-
-    }
-
-    private final void populateTransaction(int[] trits) {
-        transaction.currentIndex = Converter.longValue(trits, CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
-        transaction.lastIndex = Converter.longValue(trits, LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
-        transaction.value = Converter.longValue(trits, VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
-        transaction.signature = Converter.bytes(trits, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
-        transaction.address.bytes = Converter.bytes(trits, ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
-        System.arraycopy(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, transaction.tag.bytes = new byte[TAG_SIZE], 0, TAG_SIZE);
-        transaction.bundle.hash = Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE);
-        transaction.trunk.hash = Converter.bytes(trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
-        transaction.branch.hash = Converter.bytes(trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE);
-        transaction.timestamp.value = Converter.longValue(trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
-        transaction.nonce = Converter.bytes(trits, NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
-    }
-
-    public void update(String item) throws Exception {
-        Tangle.instance().update(transaction, item, Transaction.class.getDeclaredField(item).get(transaction));
-    }
-
-    public static void setAnalyzed(byte[] hash, boolean analyzed) {
-        Transaction transaction = new Transaction();
-        transaction.hash = hash;
-        Tangle.instance().update(transaction, "analyzed", analyzed);
-    }
-
-    private TransactionViewModel getTransaction(byte[] hash) throws ExecutionException, InterruptedException {
-        Transaction transactionToLoad = new Transaction();
-        transactionToLoad = ((Transaction) Tangle.instance().load(Transaction.class, hash).get());
-        //Transaction trunk = ((Transaction) Arrays.stream(Tangle.instance().query(Transaction.class, "", transaction.trunk, BUNDLE_SIZE).get()).findAny().orElse(null));
-        return new TransactionViewModel(transactionToLoad);
-    }
-
-    public TransactionViewModel getBranchTransaction() throws ExecutionException, InterruptedException {
-        return getTransaction(transaction.branch.hash);
-    }
-
-    public TransactionViewModel getTrunkTransaction() throws ExecutionException, InterruptedException {
-        return getTransaction(transaction.trunk.hash);
-    }
-
-    public synchronized int[] trits() {
-
-        if (trits == null) {
-            trits = new int[TRINARY_SIZE];
-            //Converter.getTrits(this.transaction.bytes, trits);
-            Converter.getTrits(this.bytes, trits);
-        }
-        return trits;
-    }
-
+    */
     public static void dump(final byte[] mainBuffer, final byte[] hash, final TransactionViewModel transactionViewModel) {
 
         /*
@@ -376,163 +510,5 @@ public class TransactionViewModel {
         */
     }
 
-    public boolean store() throws Exception {
-        boolean exists = Tangle.instance().save(transaction).get();
-        update(exists);
-        return exists;
-    }
 
-    private void update (boolean exists) throws Exception {
-        Hash[] approvers = getApprovers();
-        updateApprovers(approvers);
-        updateTips(approvers);
-        updateReceivedTransactionCount(exists);
-    }
-
-    public void updateApprovers(Hash[] approvers) throws Exception {
-        for(Hash approver: approvers) {
-            Transaction approvingTransaction = (Transaction) Tangle.instance().load(Transaction.class, approver.bytes()).get();
-            approvingTransaction.type = AbstractStorage.FILLED_SLOT;
-            new TransactionViewModel(approvingTransaction).store();
-        }
-    }
-
-    public void updateTips(Hash[] approvers) throws ExecutionException, InterruptedException {
-        if(approvers.length == 0) {
-            TipsViewModel.addTipHash(transaction.hash);
-        } else {
-            TipsViewModel.removeTipHash(transaction.hash);
-        }
-    }
-
-    public void updateReceivedTransactionCount(boolean exists) {
-        if(!exists) {
-            receivedTransactionCount.incrementAndGet();
-        }
-    }
-
-
-    /*
-    public TransactionViewModel[] getBundleTransactions() throws ExecutionException, InterruptedException {
-        Transaction[] transactionModels = Arrays.stream(Tangle.instance().query(Transaction.class, "bundle", transaction.bundle, BUNDLE_SIZE).get())
-                .toArray(com.iota.iri.model.Transaction[]::new);
-        TransactionViewModel[] transactionViewModels = Arrays.stream(transactionModels).map(bundleTransaction -> new TransactionViewModel((com.iota.iri.model.Transaction) bundleTransaction)).toArray(TransactionViewModel[]::new);
-                //.get(45, TimeUnit.MILLISECONDS))
-        return transactionViewModels;
-    }
-    */
-
-    public static Hash[] hashesFromQuery(String index, Object value) throws ExecutionException, InterruptedException {
-        Hash[] transactionHashes;
-        Object[] transactions = Tangle.instance().query(com.iota.iri.model.Transaction.class, index, value, BUNDLE_SIZE).get();
-        Transaction[] transactionModels = Arrays.stream(transactions).toArray(com.iota.iri.model.Transaction[]::new);
-        transactionHashes = Arrays.stream(transactionModels).map(transaction -> transaction.hash).toArray(Hash[]::new);
-        return transactionHashes;
-    }
-
-    public static Hash[] approversFromHash(Hash hash) throws Exception {
-        return TransactionViewModel.fromHash(hash).getApprovers();
-    }
-
-    public static Hash[] fromTag(Hash tag) throws ExecutionException, InterruptedException {
-        return hashesFromQuery("tag", tag.bytes());
-    }
-    public static Hash[] fromBundle(Hash bundle) throws ExecutionException, InterruptedException {
-        return hashesFromQuery("bundle", bundle.bytes());
-    }
-    public static Hash[] fromAddress(Hash address) throws ExecutionException, InterruptedException {
-        return hashesFromQuery("address", address.bytes());
-    }
-
-    public static int getTransactionAnalyzedFlag(byte[] hash) {
-        int analyzedTransactionFlag = 0;
-        return analyzedTransactionFlag;
-    }
-
-
-    public Hash[] getApprovers() throws ExecutionException, InterruptedException {
-        Approvee self = ((Approvee) Tangle.instance().load(Approvee.class, transaction.hash).get());
-        return self.transactions != null? Arrays.stream(self.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new): new Hash[0];
-    }
-
-    public final int getType() {
-        return transaction.type;
-    }
-
-    public void setArrivalTime(long time) {
-        transaction.arrivalTime = time;
-    }
-
-    public long getArrivalTime() {
-        return transaction.arrivalTime;
-    }
-    public byte[] getBytes() {
-        return this.bytes;
-    }
-
-    public byte[] getHash() {
-        return transaction.hash;
-    }
-
-    public AddressViewModel getAddress() {
-        return new AddressViewModel(transaction.address.bytes);
-    }
-
-    public TagViewModel getTag() {
-        return new TagViewModel(transaction.tag);
-    }
-
-    public byte[] getBundleHash() {
-        if(this.transaction.bundle == null) {
-            this.transaction.bundle = new Bundle();
-            this.transaction.bundle.hash = NULL_TRANSACTION_HASH_BYTES;
-        }
-        return transaction.bundle.hash;
-    }
-
-    public byte[] getTrunkTransactionHash() {
-        if(this.transaction.trunk == null) {
-            this.transaction.trunk = new Approvee();
-            this.transaction.trunk.hash = NULL_TRANSACTION_HASH_BYTES;
-        }
-        return transaction.trunk.hash;
-    }
-
-    public byte[] getBranchTransactionHash() {
-        if(this.transaction.branch == null) {
-            this.transaction.branch = new Approvee();
-            this.transaction.branch.hash = NULL_TRANSACTION_HASH_BYTES;
-        }
-        return transaction.branch.hash;
-    }
-
-    public final long getValue() {
-        return transaction.value;
-    }
-
-    public long value() {
-        return transaction.value;
-    }
-
-    public void setValidity(int validity, boolean update) throws Exception {
-        transaction.validity = validity;
-        if(update) {
-            update("validity");
-        }
-    }
-
-    public int getValidity() {
-        return transaction.validity;
-    }
-    public long getCurrentIndex() {
-        return transaction.currentIndex;
-    }
-
-    public long getLastIndex() {
-        return transaction.lastIndex;
-    }
-
-    public static boolean exists(byte[] hash) throws ExecutionException, InterruptedException {
-        return Tangle.instance().exists(Transaction.class, hash).get();
-    }
 }

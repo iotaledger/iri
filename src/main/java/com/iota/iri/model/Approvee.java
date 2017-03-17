@@ -14,5 +14,5 @@ public class Approvee {
     @ModelIndex
     public byte[] hash;
     @HasMany
-    public Transaction[] transactions;
+    public Hash[] transactions;
 }

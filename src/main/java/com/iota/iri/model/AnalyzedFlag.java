@@ -8,7 +8,6 @@ import com.iota.iri.service.tangle.annotations.ModelIndex;
  * Created by paul on 3/8/17 for iri.
  */
 @Model
-public class AnalyzedFlag {
-    @ModelIndex public byte[] hash;
-    @HasOne public byte[] bytes;
+public class AnalyzedFlag extends Flag{
+
 }

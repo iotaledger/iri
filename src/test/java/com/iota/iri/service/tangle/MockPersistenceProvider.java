@@ -1,6 +1,8 @@
 package com.iota.iri.service.tangle;
 
 
+import com.iota.iri.model.*;
+
 import java.lang.reflect.Field;
 import java.util.Map;
 import java.util.Set;
@@ -39,38 +41,12 @@ public class MockPersistenceProvider implements IPersistenceProvider {
 
     }
 
-    @Override
-    public Object get(Class<?> modelClass, java.lang.Object key) throws Exception {
-        Object c = modelClass.newInstance();
-        modelPrimaryKey.get(modelClass).set(c, key);
-        return c;
-    }
 
     @Override
-    public void setColumns(Map<Class<?>, Field> modelPrimaryKey, Map<Class<?>, Map<String, ModelFieldInfo>> modelItems) {
-        this.modelPrimaryKey = modelPrimaryKey;
-        this.modelIndices = modelItems;
+    public boolean update(Object model, String item) throws Exception {
+        return false;
     }
 
-    @Override
-    public Object query(Class<?> model, String index, Object value, int keyLength) throws Exception {
-        assert modelIndices.get(model.getClass()).get(index) != null;
-        Object out = model.newInstance();
-        modelPrimaryKey.get(model).set(out, "SomeBadVal".getBytes());
-        return out;
-    }
-
-    @Override
-    public boolean update(Object model, String item, Object value) {
-        return true;
-    }
-
-    @Override
-    public Object[] queryMany(Class<?> modelClass, String index, Object key, int hashLength) throws Exception {
-        Object o = modelClass.newInstance();
-        modelPrimaryKey.get(modelClass).set(o, key);
-        return new Object[]{o};
-    }
 
     @Override
     public boolean setTransientHandle(Class<?> model, Object uuid) {
@@ -92,18 +68,9 @@ public class MockPersistenceProvider implements IPersistenceProvider {
         return false;
     }
 
-    @Override
-    public boolean exists(Object handle, Object key) throws Exception {
-        return false;
-    }
 
     @Override
     public boolean exists(Class<?> model, Object key) throws Exception {
-        return false;
-    }
-
-    @Override
-    public boolean mayExist(Class<?> model, Object key) throws Exception {
         return false;
     }
 
@@ -130,6 +97,51 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     @Override
     public Object[] getKeys(Class<?> modelClass) throws Exception {
         return new Object[0];
+    }
+
+    @Override
+    public boolean get(Transaction transaction) throws Exception {
+        return false;
+    }
+
+    @Override
+    public boolean get(Address address) throws Exception {
+        return false;
+    }
+
+    @Override
+    public boolean get(Tag tag) throws Exception {
+        return false;
+    }
+
+    @Override
+    public boolean get(Bundle bundle) throws Exception {
+        return false;
+    }
+
+    @Override
+    public boolean get(Approvee approvee) throws Exception {
+        return false;
+    }
+
+    @Override
+    public boolean mayExist(Scratchpad scratchpad) throws Exception {
+        return false;
+    }
+
+    @Override
+    public boolean mayExist(Transaction transaction) throws Exception {
+        return false;
+    }
+
+    @Override
+    public boolean mayExist(Tip tip) throws Exception {
+        return false;
+    }
+
+    @Override
+    public void updateType(Transaction transaction) throws Exception {
+
     }
 
 }

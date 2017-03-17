@@ -2,7 +2,6 @@ package com.iota.iri.service.viewModels;
 
 import com.iota.iri.model.Address;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.service.tangle.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -16,24 +15,17 @@ public class AddressViewModel {
     public final Address address;
     public AddressViewModel (byte[] hash) {
         address = new Address();
-        address.bytes = hash;
+        address.hash = hash;
     }
 
     public void addTransaction(TransactionViewModel transactionViewModel) {
-        Transaction transaction = new Transaction();
-        transaction.hash = transactionViewModel.getHash();
-        address.transactions = ArrayUtils.addAll(address.transactions, transaction);
+        address.transactions = ArrayUtils.addAll(address.transactions, new Hash(transactionViewModel.getHash()));
     }
 
     public Hash[] getTransactionHashes() throws ExecutionException, InterruptedException {
-        Address txAddress = (Address) Tangle.instance().load(Address.class, address.bytes).get();
-        if(txAddress != null && txAddress.transactions != null) {
-            address.transactions = txAddress.transactions.clone();
-        } else {
-            address.transactions = new Transaction[0];
-        }
-        return Arrays.stream(address.transactions).map(transaction -> new Hash(transaction.hash)).toArray(Hash[]::new);
+        Tangle.instance().load(address).get();
+        return Arrays.stream(address.transactions).toArray(Hash[]::new);
     }
 
-    public Hash getHash() { return new Hash(address.bytes);}
+    public Hash getHash() { return new Hash(address.hash);}
 }

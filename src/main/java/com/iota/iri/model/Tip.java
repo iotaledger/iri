@@ -7,7 +7,8 @@ import com.iota.iri.service.tangle.annotations.*;
  */
 @ArrayModel
 @Model
-public class Tip {
-    @ModelIndex public byte[] hash;
-    @HasOne public byte value = 1;
+public class Tip extends Flag {
+    public Tip(byte[] hashBytes) {
+        this.hash = hashBytes;
+    }
 }

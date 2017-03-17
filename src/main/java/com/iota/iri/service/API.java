@@ -18,8 +18,7 @@ import com.iota.iri.*;
 
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.storage.AbstractStorage;
-import com.iota.iri.service.viewModels.TipsViewModel;
-import com.iota.iri.service.viewModels.TransactionViewModel;
+import com.iota.iri.service.viewModels.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -243,7 +242,7 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
    
-    private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) {
+    private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth);
         if (trunkTransactionToApprove == null) {
             return ErrorResponse.create("The subtangle is not solid");
@@ -274,7 +273,7 @@ public class API {
         for (final String trytes : trys) {
             final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
-            transactionViewModel.store();
+            transactionViewModel.store().get();
         }
         return AbstractResponse.createEmptyResponse();
     }
@@ -342,7 +341,7 @@ public class API {
         final Set<byte[]> bundlesTransactions = new HashSet<>();
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
-                bundlesTransactions.addAll(Arrays.stream(TransactionViewModel.fromBundle(new Hash(bundle))).map(t -> t.bytes()).collect(Collectors.toSet()));
+                bundlesTransactions.addAll(Arrays.stream(BundleViewModel.fromHash(new Hash(bundle).bytes()).getTransactions()).map(t -> t.getHash()).collect(Collectors.toSet()));
             }
         }
 
@@ -355,7 +354,7 @@ public class API {
                 if (address.length() != 81) {
                     log.error("Address {} doesn't look a valid address", address);
                 }
-                addressesTransactions.addAll(Arrays.stream(TransactionViewModel.fromAddress(new Hash(address))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
+                addressesTransactions.addAll(Arrays.stream(new AddressViewModel(new Hash(address).bytes()).getTransactionHashes()).map(hash -> hash.bytes()).collect(Collectors.toSet()));
             }
         }
 
@@ -365,7 +364,7 @@ public class API {
                 while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
                     tag += Converter.TRYTE_ALPHABET.charAt(0);
                 }
-                tagsTransactions.addAll(Arrays.stream(TransactionViewModel.fromTag(new Hash(tag))).map(hash -> hash.bytes()).collect(Collectors.toSet()));
+                tagsTransactions.addAll(Arrays.stream(new TagViewModel(new Hash(tag).bytes()).getTransactionHashes()).map(hash -> hash.bytes()).collect(Collectors.toSet()));
             }
         }
 

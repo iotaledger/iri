@@ -13,5 +13,5 @@ public class Bundle {
     @SizedArray(length = Hash.SIZE_IN_BYTES)
     @ModelIndex
     public byte[] hash;
-    @HasMany public Transaction[] transactions;
+    @HasMany public Hash[] transactions;
 }

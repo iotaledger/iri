@@ -1,5 +1,6 @@
 package com.iota.iri.service;
 
+import java.lang.reflect.Array;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -167,7 +168,7 @@ public class TipsManager {
                                 final Bundle bundle = new Bundle(transactionViewModel.getBundleHash());
                                 for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 
-                                    if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+                                    if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(), transactionViewModel.getHash())) {
 
                                         validBundle = true;
 
@@ -384,7 +385,7 @@ public class TipsManager {
                             final Bundle bundle = new Bundle(transactionViewModel.getBundleHash());
                             for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 
-                                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+                                if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(), transactionViewModel.getHash())) {
 
                                     for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
 

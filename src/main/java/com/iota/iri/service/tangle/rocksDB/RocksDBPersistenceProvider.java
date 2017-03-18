@@ -5,6 +5,7 @@ import com.iota.iri.model.*;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.IPersistenceProvider;
 import com.iota.iri.service.tangle.Serializer;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.NotImplementedException;
 import org.rocksdb.*;
 
@@ -59,8 +60,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle scratchpadHandle;
     private ColumnFamilyHandle analyzedFlagHandle;
 
-
     List<ColumnFamilyHandle> transactionGetList;
+
+    final byte[] zeroPosition = new byte[Hash.SIZE_IN_BYTES];
+    byte[] scratchpadPosition = new byte[Hash.SIZE_IN_BYTES];
 
     RocksDB db;
     DBOptions options;
@@ -106,6 +109,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             saveTip((Tip) thing);
         } else if(thing instanceof Scratchpad) {
             saveScratchpad((Scratchpad) thing);
+        } else if(thing instanceof AnalyzedFlag) {
+            return saveAnalyzedTransactionFlag(((AnalyzedFlag) thing));
         } else if(thing instanceof Flag) {
             saveFlag((Flag) thing);
         } else {
@@ -114,12 +119,23 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return false;
     }
 
+    public boolean saveAnalyzedTransactionFlag(AnalyzedFlag flag) throws RocksDBException {
+        if(db.get(analyzedFlagHandle, flag.hash) == null) {
+            db.put(analyzedFlagHandle, flag.hash, flag.status);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
     private void saveScratchpad(Scratchpad thing) throws RocksDBException {
-        db.put(scratchpadHandle, thing.hash, thing.status);
+        if(db.get(transactionHandle, thing.hash) == null)
+            db.put(scratchpadHandle, thing.hash, thing.status);
     }
 
     private void saveFlag(Flag thing) throws RocksDBException {
-        db.put(flagHandle, thing.hash, thing.status);
+        if(db.get(flagHandle, thing.hash) == null)
+            db.put(flagHandle, thing.hash, thing.status);
     }
 
     private void saveTip(Tip tip) throws RocksDBException {
@@ -129,26 +145,16 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public void delete(Object thing) throws Exception {
         if(thing instanceof Tip) {
-            delteTip((Tip) thing);
-        } else if(thing instanceof Flag) {
-            deleteFlag((Flag) thing);
+            db.delete(tipHandle, ((Tip) thing).hash);
         } else if(thing instanceof Scratchpad) {
-            deleteScratchpad((Scratchpad) thing);
+            db.delete(scratchpadHandle, ((Scratchpad) thing).hash);
         } else if(thing instanceof Transaction) {
             deleteTransaction((Transaction) thing);
+        } else if(thing instanceof AnalyzedFlag) {
+            db.delete(analyzedFlagHandle, ((AnalyzedFlag) thing).hash);
+        } else if(thing instanceof Flag) {
+            db.delete(flagHandle, ((Flag) thing).hash);
         }
-    }
-
-    private void deleteScratchpad(Scratchpad scratchpad) throws RocksDBException {
-        db.delete(scratchpadHandle, scratchpad.hash);
-    }
-
-    private void deleteFlag(Flag flag) throws RocksDBException {
-        db.delete(flagHandle, flag.hash);
-    }
-
-    private void delteTip(Tip tip) throws RocksDBException {
-        db.delete(tipHandle, tip.hash);
     }
 
     private void deleteTransaction(Transaction transaction) throws RocksDBException {
@@ -262,26 +268,46 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public Object latest(Class<?> model) throws Exception{
         RocksIterator iterator;
         Object out = null;
-        byte[] primaryKey, randomBytes;
         if(model == Scratchpad.class) {
-            random.nextBytes(randomBytes = new byte[Hash.SIZE_IN_BYTES]);
             Scratchpad scratchpad = new Scratchpad();
             iterator = db.newIterator(scratchpadHandle);
-            for(iterator.seek(randomBytes); iterator.isValid(); iterator.next()) {
-            //for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                scratchpad.hash = iterator.key();
-                scratchpad.status = iterator.value();
-                out = scratchpad;
-                break;
+            iterator.seek(scratchpadPosition);
+            iterator.next();
+            if(!iterator.isValid()) {
+                iterator.seekToFirst();
             }
-            if(scratchpad.hash == null) {
-                for(iterator.status(); iterator.isValid(); iterator.prev()) {
-                    scratchpad.hash = iterator.key();
-                    scratchpad.status = iterator.value();
-                    out = scratchpad;
-                    break;
+            scratchpad.hash = iterator.isValid() ? iterator.key() : TransactionViewModel.NULL_TRANSACTION_HASH_BYTES;
+            out = scratchpad;
+            synchronized (this) {
+                System.arraycopy(scratchpad.hash, 0, scratchpadPosition, 0, Hash.SIZE_IN_BYTES);
+            }
+            /*
+            byte[] randomPosition = new byte[Hash.SIZE_IN_BYTES];
+            random.nextBytes(randomPosition);
+            iterator = db.newIterator(scratchpadHandle);
+            iterator.seek(randomPosition);
+            iterator.next();
+            if(!iterator.isValid()) {
+                if(random.nextBoolean()) {
+                    iterator.seekToFirst();
+                } else {
+                    iterator.seekToLast();
                 }
             }
+            synchronized (this) {
+                Scratchpad scratchpad = new Scratchpad();
+                scratchpad.hash = Arrays.copyOf(scratchpadPosition, Hash.SIZE_IN_BYTES);
+                out = scratchpad;
+                iterator.seek(scratchpadPosition);
+                iterator.next();
+                if(iterator.isValid()) {
+                    scratchpadPosition = iterator.key();
+                } else {
+                    iterator.seekToFirst();
+                    scratchpadPosition = iterator.key();
+                }
+            }
+            */
             iterator.close();
         }
         return out;
@@ -390,6 +416,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public void flushAnalyzedFlags() throws Exception {
         db.flush(new FlushOptions().setWaitForFlush(true), analyzedFlagHandle);
+        RocksIterator iterator = db.newIterator(analyzedFlagHandle);
+        for(iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
+            db.delete(analyzedFlagHandle, iterator.key());
+        }
     }
 
     @Override

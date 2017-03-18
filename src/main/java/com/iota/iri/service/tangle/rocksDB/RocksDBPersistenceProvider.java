@@ -109,9 +109,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         } else if(thing instanceof Flag) {
             saveFlag((Flag) thing);
         } else {
-            return false;
+            return true;
         }
-        return true;
+        return false;
     }
 
     private void saveScratchpad(Scratchpad thing) throws RocksDBException {
@@ -264,16 +264,25 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Object out = null;
         byte[] primaryKey, randomBytes;
         if(model == Scratchpad.class) {
-            //random.nextBytes(randomBytes = new byte[Hash.SIZE_IN_BYTES]);
+            random.nextBytes(randomBytes = new byte[Hash.SIZE_IN_BYTES]);
             Scratchpad scratchpad = new Scratchpad();
             iterator = db.newIterator(scratchpadHandle);
-            //for(iterator.seek(randomBytes); iterator.isValid(); iterator.next()) {
-            for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            for(iterator.seek(randomBytes); iterator.isValid(); iterator.next()) {
+            //for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                 scratchpad.hash = iterator.key();
                 scratchpad.status = iterator.value();
                 out = scratchpad;
                 break;
             }
+            if(scratchpad.hash == null) {
+                for(iterator.status(); iterator.isValid(); iterator.prev()) {
+                    scratchpad.hash = iterator.key();
+                    scratchpad.status = iterator.value();
+                    out = scratchpad;
+                    break;
+                }
+            }
+            iterator.close();
         }
         return out;
     }

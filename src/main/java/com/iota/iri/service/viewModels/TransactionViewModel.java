@@ -190,7 +190,7 @@ public class TransactionViewModel {
     public Future<Boolean> store() throws Exception {
         getHash();
         Future<Boolean> future;
-        if(!Tangle.instance().maybeHas(transaction).get()) {
+        if(!Tangle.instance().exists(Transaction.class, transaction.hash).get()) {
             getBytes();
             getAddressHash();
             getBundleHash();
@@ -203,7 +203,7 @@ public class TransactionViewModel {
                     updateFuture.get();
             }
         } else {
-            future = executorService.submit(() -> false);
+            future = executorService.submit(() -> true);
         }
         return future;
     }

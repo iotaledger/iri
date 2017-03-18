@@ -121,6 +121,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                             if(isNew) {
                                 //now = System.nanoTime();
                                 //log.info("TransactionVM save time: " + ((now) - beginning)/1000 + " us");
+                                //log.info("TransactionVM saved. Hash: " + new Hash(receivedTransactionViewModel.getHashTrits(null)).toString());
                                 receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                 receivedTransactionViewModel.update("arrivalTime");
                                 neighbor.incNewTransactions();

@@ -422,6 +422,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         executor = Executors.newCachedThreadPool();
         StringAppendOperator stringAppendOperator = new StringAppendOperator();
         RocksDB.loadLibrary();
+        Thread.yield();
         BloomFilter bloomFilter = new BloomFilter(BLOOM_FILTER_RANGE);
         BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
         options = new DBOptions().setCreateIfMissing(true);

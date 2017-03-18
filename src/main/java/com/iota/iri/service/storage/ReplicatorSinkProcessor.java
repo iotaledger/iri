@@ -39,26 +39,26 @@ public class ReplicatorSinkProcessor implements Runnable {
         
         try {
             Socket socket = null;
-            synchronized (neighbor) {             
+            synchronized (neighbor) { 
                 Socket sink = neighbor.getSink();
-                if ( (sink == null) || sink.isClosed() || ! sink.isConnected() ) {
+                if ( sink == null ) {
                     socket = new Socket();
                     socket.setSoTimeout(30000);
                     neighbor.setSink(socket);
                 }
                 else {
-                    // Sink already open
-                    log.info("Sink {} connected",remoteAddress);
+                    // Sink already created
+                    log.info("Sink {} already created", remoteAddress);
                     return;
                 }
             }
             
             if (socket != null) {
+                log.info("Connecting sink {}",remoteAddress);
                 socket.connect(new InetSocketAddress(remoteAddress, Replicator.REPLICATOR_PORT), 30000);
                 if (!socket.isClosed()) {
                     OutputStream out = socket.getOutputStream();
-                    log.info("----- NETWORK INFO ----- Sink {} is connecting, configured = {}", remoteAddress,
-                            neighbor.isFlagged());
+                    log.info("----- NETWORK INFO ----- Sink {} is connected", remoteAddress);
                     while (!ReplicatorSinkPool.instance().shutdown) {
                         try {
                             ByteBuffer message = neighbor.getNextMessage();

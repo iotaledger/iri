@@ -10,16 +10,14 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
-import com.iota.iri.service.ScratchpadViewModel;
-import com.iota.iri.service.tangle.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Neighbor;
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Hash;
 import com.iota.iri.service.Node;
+import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
@@ -50,7 +48,6 @@ public class ReplicatorSourceProcessor implements Runnable {
         int count;
         byte[] data = new byte[2000];
         int offset = 0;
-        long beginning, now;
         boolean isNew;
 
         try {
@@ -69,7 +66,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                 }
             });
             
-            Neighbor fresh_neighbor = new Neighbor(inet_socket_address_normalized, true, false);
+            //Neighbor fresh_neighbor = new Neighbor(inet_socket_address_normalized, true, false);
             if (!existingNeighbor) {
                 StringBuffer sb = new StringBuffer(80);
                 sb.append("***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://")
@@ -93,7 +90,7 @@ public class ReplicatorSourceProcessor implements Runnable {
             ReplicatorSinkPool.instance().createSink(neighbor);
 
             InputStream stream = connection.getInputStream();
-            log.info("----- NETWORK INFO ----- Source {} is connected, configured = {}", inet_socket_address.getAddress().getHostAddress(), neighbor.isFlagged());
+            log.info("----- NETWORK INFO ----- Source {} is connected", inet_socket_address.getAddress().getHostAddress());
             
             connection.setSoTimeout(0);
             
@@ -134,7 +131,6 @@ public class ReplicatorSourceProcessor implements Runnable {
                                 ReplicatorSinkPool.instance().broadcast(receivedTransactionViewModel, neighbor);                        
                             }
 
-                            long transactionPointer = 0L;
                             System.arraycopy(data, TransactionViewModel.SIZE, requestedTransaction, 0, Hash.SIZE_IN_BYTES);
 
                             if (!Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
@@ -151,6 +147,9 @@ public class ReplicatorSourceProcessor implements Runnable {
                                 }
                             }
                         }
+                    }
+                      catch (IllegalStateException e) {
+                        log.error("Queue is full for neighbor IP {}",inet_socket_address.getAddress().getHostAddress());
                     } catch (final RuntimeException e) {
                         log.error("Transdaction processing runtime exception ",e);
                         neighbor.incInvalidTransactions();

@@ -103,7 +103,10 @@ public class Neighbor {
                 sendQueue.add(ByteBuffer.wrap(packet.getData()));
             }
             else {
-                log.info("Send queue is full for neighbor {}",this.getHostAddress());
+                Socket sinkSocket = this.getSink();
+                if ((sinkSocket != null) && !sinkSocket.isClosed() && sinkSocket.isConnected()) {
+                    log.info("Send queue is full for neighbor {}",this.getHostAddress());
+                }
             }
         }
         else {

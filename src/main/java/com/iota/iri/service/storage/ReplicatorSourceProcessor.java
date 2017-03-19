@@ -131,18 +131,16 @@ public class ReplicatorSourceProcessor implements Runnable {
                         long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                         if (timestamp == 0 || timestamp > Node.TIMESTAMP_THRESHOLD) {
                             //long beginning = System.nanoTime();
-                            isNew = !receivedTransactionViewModel.store().get();
-                            if(isNew) {
+                            if(receivedTransactionViewModel.store().get()) {
                                 //log.info("TransactionVM save time: " + ((System.nanoTime()) - beginning)/1000 + " us");
                                 //log.info("TransactionVM saved. Hash: " + new Hash(receivedTransactionViewModel.getHashTrits(null)).toString());
-                                //receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
-                                //receivedTransactionViewModel.update("arrivalTime");
+                                receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
+                                receivedTransactionViewModel.update("arrivalTime");
                                 neighbor.incNewTransactions();
                                 // The UDP transport route
-                                //assert(Arrays.equals(receivedTransactionViewModel.getHash(), new TransactionViewModel(TransactionViewModel.fromHash(receivedTransactionViewModel.getHash()).trits()).getHash()));
                                 Node.instance().broadcast(receivedTransactionViewModel);
                                 // The TCP transport route
-                                ReplicatorSinkPool.instance().broadcast(receivedTransactionViewModel, neighbor);                        
+                                ReplicatorSinkPool.instance().broadcast(receivedTransactionViewModel, neighbor);
                             }
 
                             System.arraycopy(data, TransactionViewModel.SIZE, requestedTransaction, 0, Hash.SIZE_IN_BYTES);
@@ -172,6 +170,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                     } catch (ExecutionException e) {
                         log.error("Transdaction propagation exception ",e);
                     } catch (Exception e) {
+                        log.info("Transdaction processing exception " + e.getMessage());
                         log.error("Transdaction processing exception ",e);
                     }
                 }

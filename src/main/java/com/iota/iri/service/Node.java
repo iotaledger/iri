@@ -204,7 +204,7 @@ public class Node {
                                     long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                                     if (timestamp > TIMESTAMP_THRESHOLD) {
                                         //if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransactionViewModel.getHash(), receivedTransactionViewModel, false)) != 0L) {
-                                        if(!receivedTransactionViewModel.store().get()) {
+                                        if(receivedTransactionViewModel.store().get()) {
                                             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                             receivedTransactionViewModel.update("arrivalTime");
                                             neighbor.incNewTransactions();
@@ -212,7 +212,7 @@ public class Node {
                                         }
 
                                         byte[] transactionPointer = Hash.NULL_HASH.bytes();
-                                        System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, Hash.SIZE_IN_BYTES);
+                                        System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
                                         TransactionViewModel transactionViewModel;
 

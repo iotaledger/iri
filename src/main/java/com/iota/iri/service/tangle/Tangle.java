@@ -2,6 +2,7 @@ package com.iota.iri.service.tangle;
 
 import com.iota.iri.model.*;
 import com.iota.iri.service.tangle.annotations.*;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.reflections.Reflections;
 import org.reflections.scanners.FieldAnnotationsScanner;
 import org.reflections.scanners.SubTypesScanner;
@@ -56,7 +57,7 @@ public class Tangle {
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
         shutdown = true;
-        executor.awaitTermination(6, TimeUnit.SECONDS);
+        //executor.awaitTermination(6, TimeUnit.SECONDS);
         for(UUID uuid: transientDBList) {
             dropList(uuid);
         }
@@ -153,6 +154,18 @@ public class Tangle {
                 }
             }
             return false;
+        });
+    }
+
+    public Future<Boolean> save(Transaction transaction) {
+        return executor.submit(() -> {
+            boolean saved = false;
+            for(IPersistenceProvider provider: persistenceProviders) {
+                if(saved = provider.saveTransaction(transaction)) {
+                    break;
+                }
+            }
+            return saved;
         });
     }
 
@@ -276,6 +289,12 @@ public class Tangle {
         });
     }
 
+    public boolean transactionExists(byte[] hash) throws Exception {
+        for(IPersistenceProvider provider: this.persistenceProviders) {
+            if(provider.transactionExists(hash)) return true;
+        }
+        return false;
+    }
     public Future<Boolean> exists(Class<?> modelClass, byte[] hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -351,6 +370,15 @@ public class Tangle {
                 }
             }
             return value;
+        });
+    }
+
+    public Future<Void> flushScratchpad() {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                provider.flushScratchpad();
+            }
+            return null;
         });
     }
 }

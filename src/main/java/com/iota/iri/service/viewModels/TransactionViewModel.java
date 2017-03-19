@@ -188,9 +188,8 @@ public class TransactionViewModel {
     }
 
     public Future<Boolean> store() throws Exception {
-        getHash();
         Future<Boolean> future;
-        if(!Tangle.instance().exists(Transaction.class, transaction.hash).get()) {
+        if(!Tangle.instance().transactionExists(getHash())) {
             getBytes();
             getAddressHash();
             getBundleHash();
@@ -203,24 +202,24 @@ public class TransactionViewModel {
                     updateFuture.get();
             }
         } else {
-            future = executorService.submit(() -> true);
+            future = executorService.submit(() -> false);
         }
         return future;
     }
 
     private Set<Future> update () throws Exception {
         Set<Future> futures = new HashSet<>();
-        futures.add(ScratchpadViewModel.instance().clearReceivedTransaction(transaction.hash));
+        ScratchpadViewModel.instance().clearReceivedTransaction(transaction.hash);
+        if (!Arrays.equals(getBundleHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+            futures.add(ScratchpadViewModel.instance().requestTransaction(getBundleHash()));
         if (!Arrays.equals(getBranchTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
             futures.add(ScratchpadViewModel.instance().requestTransaction(getBranchTransactionHash()));
         if (!Arrays.equals(getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
             futures.add(ScratchpadViewModel.instance().requestTransaction(getTrunkTransactionHash()));
-        Hash[] approvers = getApprovers();
-        //Arrays.stream(approvers).map(TransactionViewModel::updateType).forEach(futures::add);
-        if(approvers.length == 0) {
-            futures.add(TipsViewModel.addTipHash(transaction.hash));
+        if(getApprovers().length == 0) {
+            TipsViewModel.addTipHash(transaction.hash);
         } else {
-            futures.add(TipsViewModel.removeTipHash(transaction.hash));
+            TipsViewModel.removeTipHash(transaction.hash);
         }
         return futures;
     }

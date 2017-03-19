@@ -76,7 +76,7 @@ public class TipsManager {
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
 
-                    long latency = 5000;
+                    long latency = 30000;
                     if (Milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX &&
                             Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
                         latency = (long)((long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L)+5000L;

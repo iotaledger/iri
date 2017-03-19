@@ -14,6 +14,7 @@ public interface IPersistenceProvider {
     void init() throws Exception;
     void init(String path) throws Exception;
     void shutdown();
+    boolean saveTransaction(Transaction transaction) throws Exception;
     boolean save(Object o) throws Exception;
     void delete(Object o) throws Exception;
 
@@ -54,7 +55,11 @@ public interface IPersistenceProvider {
 
     void flushAnalyzedFlags() throws Exception;
 
+    void flushScratchpad() throws Exception;
+
     long getNumberOfTransactions() throws Exception;
 
     long getNumberOfRequestedTransactions() throws Exception;
+
+    boolean transactionExists(byte[] hash) throws Exception;
 }

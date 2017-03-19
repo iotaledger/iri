@@ -1,6 +1,8 @@
 package com.iota.iri.service;
 
+import com.iota.iri.Milestone;
 import com.iota.iri.model.*;
+import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
@@ -46,6 +48,29 @@ public class ScratchpadViewModel {
         return Tangle.instance().delete(scratchpad);
     }
 
+    public void rescanTransactionsToRequest() throws Exception {
+        LinkedHashSet<String> nonAnalyzedTransactions = new LinkedHashSet<>(Collections.singleton(Milestone.latestMilestone.toString()));
+        LinkedHashSet<String> analyzedTransactions = new LinkedHashSet<>(Collections.singleton(Milestone.latestMilestone.toString()));
+        Hash hash;
+        Tangle.instance().flushScratchpad().get();
+        while(nonAnalyzedTransactions.size() != 0) {
+            hash = new Hash((String) nonAnalyzedTransactions.toArray()[0]);
+            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
+            nonAnalyzedTransactions.remove(hash.toString());
+            if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
+                ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
+            } else {
+                if(analyzedTransactions.add((new Hash(transactionViewModel.getBundleHash()).toString())))
+                    nonAnalyzedTransactions.add(new Hash(transactionViewModel.getBundleHash()).toString());
+                if(analyzedTransactions.add((new Hash(transactionViewModel.getTrunkTransactionHash()).toString())))
+                    nonAnalyzedTransactions.add(new Hash(transactionViewModel.getTrunkTransactionHash()).toString());
+                if(analyzedTransactions.add(new Hash(transactionViewModel.getBranchTransactionHash()).toString()))
+                    nonAnalyzedTransactions.add(new Hash(transactionViewModel.getBranchTransactionHash()).toString());
+            }
+        }
+        log.info("number of analyzed tx: " + analyzedTransactions.size());
+    }
+
     public Future<Boolean> requestTransaction(byte[] hash) throws ExecutionException, InterruptedException {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
@@ -58,6 +83,7 @@ public class ScratchpadViewModel {
 
         if(scratchpad != null && !Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
             requestSet.add(new BigInteger(scratchpad.hash));
+            //log.info("Tx to Request: " + new Hash(scratchpad.hash));
             System.arraycopy(scratchpad.hash, 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
         long now = System.nanoTime();

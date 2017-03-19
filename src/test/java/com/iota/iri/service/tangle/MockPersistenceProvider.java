@@ -32,6 +32,11 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public boolean saveTransaction(Transaction transaction) throws Exception {
+        return false;
+    }
+
+    @Override
     public boolean save(java.lang.Object o) throws Exception {
         return true;
     }
@@ -155,6 +160,11 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public void flushScratchpad() throws Exception {
+
+    }
+
+    @Override
     public long getNumberOfTransactions() throws Exception {
         return 0;
     }
@@ -162,6 +172,11 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     @Override
     public long getNumberOfRequestedTransactions() throws Exception {
         return 0;
+    }
+
+    @Override
+    public boolean transactionExists(byte[] hash) throws Exception {
+        return false;
     }
 
 }

@@ -11,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.service.Node;
-import com.iota.iri.service.storage.ReplicatorSourceProcessor;
 
 public class Neighbor {
     
@@ -51,14 +50,20 @@ public class Neighbor {
         return source;
     }
 
+    private String hostAddress;
+    
+    public String getHostAddress() {
+        return hostAddress;
+    }
+    
     public void setSource(Socket source) {
         if (source == null) {
             if (this.source != null && !this.source.isClosed()) {
                 try {
                     this.source.close();
-                    log.info("Source {} closed", getAddress().getAddress().getHostAddress());
+                    log.info("Source {} closed", this.getHostAddress());
                 } catch (IOException e) {
-                    log.info("Source {} close failure {}", getAddress().getAddress().getHostAddress(), e.getMessage());
+                    log.info("Source {} close failure {}", this.getHostAddress());
                 }
             }
         }
@@ -76,9 +81,9 @@ public class Neighbor {
             if (this.sink != null && !this.sink.isClosed()) {
                 try {
                     this.sink.close();
-                    log.info("Sink {} closed", getAddress().getAddress().getHostAddress());
+                    log.info("Sink {} closed", this.getHostAddress());
                 } catch (IOException e) {
-                    log.info("Source {} close failure {}", getAddress().getAddress().getHostAddress(), e.getMessage());
+                    log.info("Source {} close failure {}", this.getHostAddress());
                 }
             }
         }
@@ -87,6 +92,7 @@ public class Neighbor {
 
     public Neighbor(final InetSocketAddress address, boolean isTcp, boolean isConfigured) {
         this.address = address;
+        this.hostAddress = address.getAddress().getHostAddress();
         this.tcpip = isTcp;
         this.flagged = isConfigured;
     }
@@ -96,13 +102,16 @@ public class Neighbor {
             if ( sendQueue.remainingCapacity() > 0 ) {
                 sendQueue.add(ByteBuffer.wrap(packet.getData()));
             }
+            else {
+                log.info("Send queue is full for neighbor {}",this.getHostAddress());
+            }
         }
         else {
             try {
                 packet.setSocketAddress(address);
                 Node.instance().send(packet);
             } catch (final Exception e) {
-                // ignore
+                log.error("UDP send error: {}",e.getMessage());
             }
         }
     }

@@ -30,6 +30,7 @@ public class ReplicatorSourcePool implements Runnable {
             while (!shutdown) {
                 try {
                     Socket request = server.accept();
+                    request.setSoLinger(true, 0);
                     Runnable proc = new ReplicatorSourceProcessor( request );
                     pool.submit(proc);
                 } catch (IOException ex) {

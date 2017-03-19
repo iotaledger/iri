@@ -75,7 +75,7 @@ public class ReplicatorSinkPool  implements Runnable {
             if (!socket.isClosed()) {
                 try {
                     socket.close();
-                    log.info("Sink {} closed", neighbor.getAddress().getAddress().getHostAddress());
+                    log.info("Sink {} closed", neighbor.getHostAddress());
                 } catch (IOException e) {
                     // TODO
                 }

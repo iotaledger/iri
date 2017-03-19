@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import com.iota.iri.Neighbor;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.service.Node;
 import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
@@ -33,6 +34,8 @@ public class ReplicatorSourceProcessor implements Runnable {
     private boolean existingNeighbor;
     
     private Neighbor neighbor;
+    
+
 
     public ReplicatorSourceProcessor(Socket connection) {
         this.connection = connection;
@@ -49,6 +52,7 @@ public class ReplicatorSourceProcessor implements Runnable {
         byte[] data = new byte[2000];
         int offset = 0;
         boolean isNew;
+        boolean finallyClose = true;
 
         try {
             final Curl curl = new Curl();
@@ -84,15 +88,27 @@ public class ReplicatorSourceProcessor implements Runnable {
                 neighbor = fresh_neighbor;
                 */
             }
+            
+            if ( neighbor.getSource() != null ) {
+                log.info("Source {} already connected", inet_socket_address.getAddress().getHostAddress());
+                finallyClose = false;
+                return;
+            }
             neighbor.setTcpip(true);
             neighbor.setSource(connection);
             
-            ReplicatorSinkPool.instance().createSink(neighbor);
+            if (neighbor.getSink() == null) {
+                log.info("Creating sink for {}", neighbor.getHostAddress());
+                ReplicatorSinkPool.instance().createSink(neighbor);
+            }
 
             InputStream stream = connection.getInputStream();
-            log.info("----- NETWORK INFO ----- Source {} is connected", inet_socket_address.getAddress().getHostAddress());
             
-            connection.setSoTimeout(0);
+            if (connection.isConnected()) {
+                log.info("----- NETWORK INFO ----- Source {} is connected", inet_socket_address.getAddress().getHostAddress());
+            }
+            
+            connection.setSoTimeout(0);  // infinite timeout - blocking read
             
             while (!shutdown) {
                 boolean readError = false;
@@ -160,18 +176,20 @@ public class ReplicatorSourceProcessor implements Runnable {
                     }
                 }
                 else {
-                    log.error("***** NETWORK ALERT ***** TCP connection reset by network {}, source closed", neighbor.getAddress().getAddress().getHostAddress());
+                    log.error("***** NETWORK ALERT ***** TCP connection reset by network {}, source closed", neighbor.getHostAddress());
                     break;
                 }
             }
         } catch (IOException e) {
-            log.error("***** NETWORK ALERT ***** TCP connection reset by neighbor {}, source closed, {}", neighbor.getAddress().getAddress().getHostAddress(), e.getMessage());
+            log.error("***** NETWORK ALERT ***** TCP connection reset by neighbor {}, source closed, {}", neighbor.getHostAddress(), e.getMessage());
             ReplicatorSinkPool.instance().shutdownSink(neighbor);
         } finally {
             if (neighbor != null) {
-                ReplicatorSinkPool.instance().shutdownSink(neighbor);
-                neighbor.setSource(null);
-                neighbor.setSink(null);                
+                if (finallyClose) {
+                    ReplicatorSinkPool.instance().shutdownSink(neighbor);
+                    neighbor.setSource(null);
+                    neighbor.setSink(null);
+                }                   
             }
         }
     }

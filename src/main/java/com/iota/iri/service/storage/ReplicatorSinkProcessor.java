@@ -35,14 +35,16 @@ public class ReplicatorSinkProcessor implements Runnable {
     		log.info("Interrupted");
     	}
 
-        String remoteAddress = neighbor.getAddress().getAddress().getHostAddress();
+        String remoteAddress = neighbor.getHostAddress();
         
         try {
             Socket socket = null;
             synchronized (neighbor) { 
                 Socket sink = neighbor.getSink();
                 if ( sink == null ) {
+                    log.info("Opening sink {}", remoteAddress);
                     socket = new Socket();
+                    socket.setSoLinger(true, 0);
                     socket.setSoTimeout(30000);
                     neighbor.setSink(socket);
                 }
@@ -56,7 +58,7 @@ public class ReplicatorSinkProcessor implements Runnable {
             if (socket != null) {
                 log.info("Connecting sink {}",remoteAddress);
                 socket.connect(new InetSocketAddress(remoteAddress, Replicator.REPLICATOR_PORT), 30000);
-                if (!socket.isClosed()) {
+                if (!socket.isClosed() && socket.isConnected()) {
                     OutputStream out = socket.getOutputStream();
                     log.info("----- NETWORK INFO ----- Sink {} is connected", remoteAddress);
                     while (!ReplicatorSinkPool.instance().shutdown) {
@@ -93,9 +95,12 @@ public class ReplicatorSinkProcessor implements Runnable {
                 }
             }
         } catch (Exception e) {
-            log.error("***** NETWORK ALERT ***** Could not create outbound connection to host {} port {} reason: {}", remoteAddress, Replicator.REPLICATOR_PORT,e.getMessage());
+            log.error("***** NETWORK ALERT ***** No sink to host {} port {}, reason: {}", remoteAddress, Replicator.REPLICATOR_PORT,e.getMessage());
             synchronized (neighbor) {
-                neighbor.setSource(null);
+                Socket sourceSocket = neighbor.getSource();
+                if (sourceSocket != null && (sourceSocket.isClosed() || !sourceSocket.isConnected())) {
+                    neighbor.setSource(null);
+                }
                 neighbor.setSink(null);
             }
             return;

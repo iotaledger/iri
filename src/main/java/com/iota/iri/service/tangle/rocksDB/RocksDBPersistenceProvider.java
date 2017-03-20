@@ -429,6 +429,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public boolean setTransientFlagHandle(Object uuid) throws RocksDBException {
+        final ColumnFamilyHandle columnFamilyHandle;
+        columnFamilyHandle = db.createColumnFamily(new ColumnFamilyDescriptor(uuid.toString().getBytes()));
+        transientHandles.put(uuid, columnFamilyHandle);
+        return true;
+    }
+
+    @Override
     public boolean update(Object thing, String item) throws Exception {
         if(thing instanceof Transaction) {
             Transaction transaction = (Transaction) thing;

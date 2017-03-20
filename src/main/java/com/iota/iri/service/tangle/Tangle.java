@@ -65,6 +65,14 @@ public class Tangle {
         this.persistenceProviders.clear();
     }
 
+    public Object createTransientFlagList() throws Exception {
+        UUID uuid = UUID.randomUUID();
+        for(IPersistenceProvider provider: this.persistenceProviders) {
+            provider.setTransientFlagHandle(uuid);
+        }
+        return uuid;
+    }
+
     public Object createTransientList(Class<?> model) throws Exception {
         UUID uuid = UUID.randomUUID();
         for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -72,6 +80,7 @@ public class Tangle {
         }
         return uuid;
     }
+
     public void dropList(Object uuid) throws Exception {
         for(IPersistenceProvider provider : persistenceProviders) {
             provider.dropTransientHandle(uuid);

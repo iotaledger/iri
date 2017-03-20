@@ -179,5 +179,10 @@ public class MockPersistenceProvider implements IPersistenceProvider {
         return false;
     }
 
+    @Override
+    public boolean setTransientFlagHandle(Object uuid) throws Exception {
+        return false;
+    }
+
 }
 

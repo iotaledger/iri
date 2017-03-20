@@ -62,4 +62,6 @@ public interface IPersistenceProvider {
     long getNumberOfRequestedTransactions() throws Exception;
 
     boolean transactionExists(byte[] hash) throws Exception;
+
+    boolean setTransientFlagHandle(Object uuid) throws Exception;
 }

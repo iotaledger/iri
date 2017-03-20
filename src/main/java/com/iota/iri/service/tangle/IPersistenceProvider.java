@@ -20,7 +20,6 @@ public interface IPersistenceProvider {
 
     boolean update(Object model, String item) throws Exception;
 
-    boolean setTransientHandle(Class<?> model, Object uuid) throws Exception;
     void dropTransientHandle(Object handle) throws Exception;
     boolean save(Object handle, Object model) throws Exception;
     boolean mayExist(Object handle, Object key) throws Exception;

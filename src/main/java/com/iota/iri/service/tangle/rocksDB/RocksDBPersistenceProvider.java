@@ -37,6 +37,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "tip",
             "scratchpad",
             "analyzedFlag",
+            "analyzedTipFlag",
     };
 
     private ColumnFamilyHandle transactionHandle;
@@ -51,6 +52,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle tipHandle;
     private ColumnFamilyHandle scratchpadHandle;
     private ColumnFamilyHandle analyzedFlagHandle;
+    private ColumnFamilyHandle analyzedTipHandle;
 
     List<ColumnFamilyHandle> transactionGetList;
 
@@ -177,13 +179,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return hashes.stream().map(ByteBuffer::array).map(Hash::new).toArray(Hash[]::new);
     }
 
-    @Override
-    public boolean setTransientHandle(Class<?> model, Object uuid) throws ExceptionInInitializerError, RocksDBException {
-        final ColumnFamilyHandle columnFamilyHandle;
-        columnFamilyHandle = db.createColumnFamily(new ColumnFamilyDescriptor(uuid.toString().getBytes(), new ColumnFamilyOptions()));
-        transientHandles.put(uuid, columnFamilyHandle);
-        return true;
-    }
 
     @Override
     public void dropTransientHandle(Object uuid) throws Exception {
@@ -534,6 +529,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         tipHandle = familyHandles.get(++i);
         scratchpadHandle = familyHandles.get(++i);
         analyzedFlagHandle = familyHandles.get(++i);
+        analyzedTipHandle = familyHandles.get(++i);
 
         for(i++; i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.remove(i));

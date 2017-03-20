@@ -52,12 +52,6 @@ public class MockPersistenceProvider implements IPersistenceProvider {
         return false;
     }
 
-
-    @Override
-    public boolean setTransientHandle(Class<?> model, Object uuid) {
-        return false;
-    }
-
     @Override
     public void dropTransientHandle(Object handle) {
 

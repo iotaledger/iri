@@ -540,7 +540,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         scratchpadHandle = familyHandles.get(++i);
         analyzedFlagHandle = familyHandles.get(++i);
 
-        for(; i < familyHandles.size();) {
+        for(i++; i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.remove(i));
         }
 

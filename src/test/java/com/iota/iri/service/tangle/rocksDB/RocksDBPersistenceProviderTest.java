@@ -1,18 +1,10 @@
 package com.iota.iri.service.tangle.rocksDB;
 
-import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Address;
-import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Flag;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.service.tangle.Tangle;
-import com.iota.iri.utils.Converter;
-import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
-import java.util.Arrays;
-import java.util.Random;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -46,9 +38,9 @@ public class RocksDBPersistenceProviderTest {
     @Test
     public void dropTransientHandle() throws Exception {
         Object uuid = Tangle.instance().createTransientList(Flag.class);
-        Tangle.instance().dropList(uuid);
+        Tangle.instance().releaseTransientTable(uuid);
         try {
-            Tangle.instance().dropList(uuid);
+            Tangle.instance().releaseTransientTable(uuid);
             assertFalse("Oh no You Dinnit", true);
         } catch (Exception e) {
             assertTrue("Did not exist", true);

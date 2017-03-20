@@ -1,6 +1,5 @@
 package com.iota.iri.service;
 
-import java.lang.reflect.Array;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -85,7 +84,7 @@ public class TipsManager {
                 }
             }
             try {
-                Tangle.instance().dropList(analyzedTransactionFlagPersistentHandle);
+                Tangle.instance().releaseTransientTable(analyzedTransactionFlagPersistentHandle);
             } catch (Exception e) {
                 log.error("Error dropping analyzed transaction flag persistent handle: ", e);
             }
@@ -151,7 +150,7 @@ public class TipsManager {
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
                         if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
 
-                            Tangle.instance().dropList(transientHandle);
+                            Tangle.instance().releaseTransientTable(transientHandle);
                             return null;
 
                         } else {
@@ -184,7 +183,7 @@ public class TipsManager {
 
                                 if (!validBundle) {
 
-                                    Tangle.instance().dropList(transientHandle);
+                                    Tangle.instance().releaseTransientTable(transientHandle);
                                     return null;
                                 }
                             }
@@ -209,7 +208,7 @@ public class TipsManager {
 
                     if (entry.getValue() < 0) {
                         log.info("Ledger inconsistency detected");
-                        Tangle.instance().dropList(transientHandle);
+                        Tangle.instance().releaseTransientTable(transientHandle);
                         return null;
                     }
 
@@ -435,7 +434,7 @@ public class TipsManager {
                     }
                 }
             }
-            Tangle.instance().dropList(transientHandle);
+            Tangle.instance().releaseTransientTable(transientHandle);
             // System.out.ln(bestRating + " extra transactions approved");
 
             /**/if (tailsRaitings.isEmpty()) {

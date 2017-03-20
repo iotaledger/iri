@@ -1,19 +1,12 @@
 package com.iota.iri.service.tangle;
 
 import com.iota.iri.model.*;
-import com.iota.iri.service.tangle.annotations.*;
-import com.iota.iri.service.viewModels.TransactionViewModel;
-import org.reflections.Reflections;
-import org.reflections.scanners.FieldAnnotationsScanner;
-import org.reflections.scanners.SubTypesScanner;
-import org.reflections.scanners.TypeAnnotationsScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.*;
-import java.util.stream.Collectors;
 
 /**
  * Created by paul on 3/3/17 for iri.
@@ -27,7 +20,10 @@ public class Tangle {
     private ExecutorService executor;
     private final Map<Class<?>, Field> modelPrimaryKeys = new HashMap<>();
     private final Map<Class<?>, Map<String, ModelFieldInfo>> modelFieldInfo = new HashMap<>();
-    private final List<UUID> transientDBList = new ArrayList<>();
+    private final List<Integer> transientHandles = new ArrayList<>();
+    private final List<Integer> availableTansientTables = new ArrayList<>();
+    private final List<Integer> transientTablesInUse = new ArrayList<>();
+    private volatile int nextTableId = 1;
     private boolean shutdown;
 
 
@@ -58,34 +54,59 @@ public class Tangle {
         log.info("Shutting down Tangle Persistence Providers... ");
         shutdown = true;
         //executor.awaitTermination(6, TimeUnit.SECONDS);
-        for(UUID uuid: transientDBList) {
-            dropList(uuid);
+        for(int id: transientHandles) {
+            releaseTransientTable(id);
+            for(IPersistenceProvider provider : persistenceProviders) {
+                provider.dropTransientHandle(id);
+            }
+            this.transientHandles.remove(id);
         }
         this.persistenceProviders.forEach(IPersistenceProvider::shutdown);
         this.persistenceProviders.clear();
     }
 
     public Object createTransientFlagList() throws Exception {
-        UUID uuid = UUID.randomUUID();
-        for(IPersistenceProvider provider: this.persistenceProviders) {
-            provider.setTransientFlagHandle(uuid);
+        int id;
+        synchronized (this) {
+            if(availableTansientTables.size() > 0) {
+                id = availableTansientTables.remove(0);
+                transientTablesInUse.add(id);
+            } else {
+                id = nextTableId++;
+                for(IPersistenceProvider provider: this.persistenceProviders) {
+                    provider.setTransientFlagHandle(id);
+                }
+                transientHandles.add(id);
+            }
         }
-        return uuid;
+        return id;
     }
 
     public Object createTransientList(Class<?> model) throws Exception {
-        UUID uuid = UUID.randomUUID();
-        for(IPersistenceProvider provider: this.persistenceProviders) {
-            provider.setTransientHandle(model,(Object) uuid);
+        int id;
+        synchronized (this) {
+            if(availableTansientTables.size() > 0) {
+                id = availableTansientTables.remove(0);
+                transientTablesInUse.add(id);
+            } else {
+                id = nextTableId++;
+                for(IPersistenceProvider provider: this.persistenceProviders) {
+                    provider.setTransientHandle(model,(Object) id);
+                }
+                transientHandles.add(id);
+            }
         }
-        return uuid;
+        return id;
     }
 
-    public void dropList(Object uuid) throws Exception {
+    public void releaseTransientTable(Object id) throws Exception {
         for(IPersistenceProvider provider : persistenceProviders) {
-            provider.dropTransientHandle(uuid);
+            provider.flushTransientFlags(id);
         }
-        this.transientDBList.remove(uuid);
+        synchronized (this) {
+            availableTansientTables.add((int)id);
+            transientTablesInUse.remove(id);
+        }
     }
 
     public List<IPersistenceProvider> getPersistenceProviders() {

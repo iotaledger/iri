@@ -22,7 +22,6 @@ public class ScratchpadViewModel {
     private static final Logger log = LoggerFactory.getLogger(ScratchpadViewModel.class);
 
     protected static final byte[] ZEROED_BUFFER = new byte[CELL_SIZE];
-    Set<BigInteger> requestSet = new TreeSet<>();
 
     static long lastTime = 0L;
 
@@ -57,7 +56,8 @@ public class ScratchpadViewModel {
             hash = new Hash((String) nonAnalyzedTransactions.toArray()[0]);
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
             nonAnalyzedTransactions.remove(hash.toString());
-            if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
+            if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT && !Arrays.equals(transactionViewModel.getHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
+                log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));
                 ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
             } else {
                 if(analyzedTransactions.add((new Hash(transactionViewModel.getTrunkTransactionHash()).toString())))
@@ -76,19 +76,16 @@ public class ScratchpadViewModel {
     }
 
     public void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
-        final long beginningTime = System.nanoTime();//System.currentTimeMillis();
+        final long beginningTime = System.currentTimeMillis();
         Scratchpad scratchpad = ((Scratchpad) Tangle.instance().getLatest(Scratchpad.class).get());
 
-        if(scratchpad != null && !Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
-            requestSet.add(new BigInteger(scratchpad.hash));
-            //log.info("Tx to Request: " + new Hash(scratchpad.hash));
+        if(scratchpad != null && scratchpad.hash != null && !Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
             System.arraycopy(scratchpad.hash, 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
-        long now = System.nanoTime();
-        if ((now - lastTime) > 10000000000L) {
+        long now = System.currentTimeMillis();
+        if ((now - lastTime) > 10000L) {
             lastTime = now;
-            log.info("Transactions to request = {}", getNumberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime)/1000 + " us ). Request count: " + requestSet.size());
-            requestSet.clear();
+            log.info("Transactions to request = {}", getNumberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
         }
     }
 

@@ -467,11 +467,7 @@ public class TipsManager {
             e.printStackTrace();
         } finally {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
-            try {
-                Tangle.instance().dropList(transientHandle);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
+            Tangle.instance().dropList(transientHandle);
         }
         return null;
     }

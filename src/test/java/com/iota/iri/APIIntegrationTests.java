@@ -15,7 +15,7 @@ public class APIIntegrationTests {
     private static Gson gson = new GsonBuilder().create();
 
     static {
-        RestAssured.port = 14265;
+        RestAssured.port = 14700;
     }
 
     /**

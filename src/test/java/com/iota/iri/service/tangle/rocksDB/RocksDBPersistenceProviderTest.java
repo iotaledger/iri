@@ -37,14 +37,6 @@ public class RocksDBPersistenceProviderTest {
 
     @Test
     public void dropTransientHandle() throws Exception {
-        Object uuid = Tangle.instance().createTransientList(Flag.class);
-        Tangle.instance().releaseTransientTable(uuid);
-        try {
-            Tangle.instance().releaseTransientTable(uuid);
-            assertFalse("Oh no You Dinnit", true);
-        } catch (Exception e) {
-            assertTrue("Did not exist", true);
-        }
     }
 
     @Test

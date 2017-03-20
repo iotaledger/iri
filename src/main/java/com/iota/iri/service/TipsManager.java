@@ -146,6 +146,7 @@ public class TipsManager {
                 final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions
                         .instance().transactionPointer((extraTip == null ? preferableMilestone : extraTip).value())));
                         */
+                setAnalyzedTransactionFlag(transientHandle, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
                 final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
                 byte[] transactionHash;
                 while ((transactionHash = nonAnalyzedTransactions.poll()) != null) {

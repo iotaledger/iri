@@ -60,8 +60,6 @@ public class ScratchpadViewModel {
             if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
                 ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
             } else {
-                if(analyzedTransactions.add((new Hash(transactionViewModel.getBundleHash()).toString())))
-                    nonAnalyzedTransactions.add(new Hash(transactionViewModel.getBundleHash()).toString());
                 if(analyzedTransactions.add((new Hash(transactionViewModel.getTrunkTransactionHash()).toString())))
                     nonAnalyzedTransactions.add(new Hash(transactionViewModel.getTrunkTransactionHash()).toString());
                 if(analyzedTransactions.add(new Hash(transactionViewModel.getBranchTransactionHash()).toString()))

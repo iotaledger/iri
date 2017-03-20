@@ -210,8 +210,6 @@ public class TransactionViewModel {
     private Set<Future> update () throws Exception {
         Set<Future> futures = new HashSet<>();
         ScratchpadViewModel.instance().clearReceivedTransaction(transaction.hash);
-        if (!Arrays.equals(getBundleHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
-            futures.add(ScratchpadViewModel.instance().requestTransaction(getBundleHash()));
         if (!Arrays.equals(getBranchTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
             futures.add(ScratchpadViewModel.instance().requestTransaction(getBranchTransactionHash()));
         if (!Arrays.equals(getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))

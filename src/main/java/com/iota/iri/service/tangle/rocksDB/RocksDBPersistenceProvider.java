@@ -479,9 +479,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Thread.yield();
         BloomFilter bloomFilter = new BloomFilter(BLOOM_FILTER_RANGE);
         BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
-        options = new DBOptions()
-                .setCreateIfMissing(true)
-                .setCreateMissingColumnFamilies(true);
+        options = new DBOptions().setCreateIfMissing(true);
 
         List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
         List<ColumnFamilyDescriptor> familyDescriptors = Arrays.stream(columnFamilyNames)
@@ -491,44 +489,56 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
         familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
 
-        fillMissingColumns(familyDescriptors, path);
+        fillMissingColumns(familyDescriptors, familyHandles, path);
 
         db = RocksDB.open(options, path, familyDescriptors, familyHandles);
 
-        fillModelColumnHandles(familyDescriptors, familyHandles);
+        fillmodelColumnHandles(familyDescriptors, familyHandles);
     }
 
-    private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, String path) throws Exception {
+    private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles, String path) throws Exception {
         List<ColumnFamilyDescriptor> columnFamilies = RocksDB.listColumnFamilies(new Options().setCreateIfMissing(true), path)
                 .stream()
                 .map(b -> new ColumnFamilyDescriptor(b, new ColumnFamilyOptions()))
                 .collect(Collectors.toList());
         columnFamilies.add(0, familyDescriptors.get(0));
+        List<ColumnFamilyDescriptor> missingFromDatabase = familyDescriptors.stream().filter(d -> columnFamilies.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
         List<ColumnFamilyDescriptor> missingFromDescription = columnFamilies.stream().filter(d -> familyDescriptors.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
+        if (missingFromDatabase.size() != 0) {
+            missingFromDatabase.remove(familyDescriptors.get(0));
+            db = RocksDB.open(options, path, columnFamilies, familyHandles);
+            for (ColumnFamilyDescriptor description : missingFromDatabase) {
+                addColumnFamily(description.columnFamilyName(), db);
+            }
+            db.close();
+        }
         if (missingFromDescription.size() != 0) {
             missingFromDescription.stream().forEach(familyDescriptors::add);
         }
 
     }
 
-    private void fillModelColumnHandles(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles) throws RocksDBException {
-        int i = 0;
-        transactionHandle = familyHandles.get(++i);
-        transactionValidityHandle = familyHandles.get(++i);
-        transactionTypeHandle = familyHandles.get(++i);
-        transactionArrivalTimeHandle = familyHandles.get(++i);
-        addressHandle = familyHandles.get(++i);
-        bundleHandle = familyHandles.get(++i);
-        approoveeHandle = familyHandles.get(++i);
-        tagHandle = familyHandles.get(++i);
-        flagHandle = familyHandles.get(++i);
-        tipHandle = familyHandles.get(++i);
-        scratchpadHandle = familyHandles.get(++i);
-        analyzedFlagHandle = familyHandles.get(++i);
+    private void addColumnFamily(byte[] familyName, RocksDB db) throws RocksDBException {
+        final ColumnFamilyHandle columnFamilyHandle = db.createColumnFamily(
+                new ColumnFamilyDescriptor(familyName,
+                        new ColumnFamilyOptions()));
+        assert (columnFamilyHandle != null);
+    }
 
-        for(; i < familyHandles.size(); i++) {
-            db.dropColumnFamily(familyHandles.get(i));
-        }
+    private void fillmodelColumnHandles(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles) {
+        int i = 1;
+        transactionHandle = familyHandles.get(i++);
+        transactionValidityHandle = familyHandles.get(i++);
+        transactionTypeHandle = familyHandles.get(i++);
+        transactionArrivalTimeHandle = familyHandles.get(i++);
+        addressHandle = familyHandles.get(i++);
+        bundleHandle = familyHandles.get(i++);
+        approoveeHandle = familyHandles.get(i++);
+        tagHandle = familyHandles.get(i++);
+        flagHandle = familyHandles.get(i++);
+        tipHandle = familyHandles.get(i++);
+        scratchpadHandle = familyHandles.get(i++);
+        analyzedFlagHandle = familyHandles.get(i++);
 
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {

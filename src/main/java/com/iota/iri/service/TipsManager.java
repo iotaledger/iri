@@ -31,13 +31,8 @@ public class TipsManager {
 
     static int numberOfConfirmedTransactions;
 
-    //static final Set<byte[]> analyzedTransactionFlagSet = new TreeSet<>();
-    //static final Set<byte[]> analyzedTransactionFlagSetCopy = new TreeSet<>();
     private static Object analyzedTransactionFlagPersistentHandle;
-    static final byte[] analyzedTransactionsFlags = new byte[134217728];
-    static final byte[] analyzedTransactionsFlagsCopy = new byte[134217728];
-    static final byte[] zeroedAnalyzedTransactionsFlags = new byte[134217728];
-    
+
     public static void setRATING_THRESHOLD(int value) {
         if (value < 0) value = 0;
         if (value > 100) value = 100;

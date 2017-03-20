@@ -491,13 +491,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
         familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
 
+        fillMissingColumns(familyDescriptors, path);
 
         db = RocksDB.open(options, path, familyDescriptors, familyHandles);
 
         fillModelColumnHandles(familyDescriptors, familyHandles);
     }
 
-    private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles, String path) throws Exception {
+    private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, String path) throws Exception {
         List<ColumnFamilyDescriptor> columnFamilies = RocksDB.listColumnFamilies(new Options().setCreateIfMissing(true), path)
                 .stream()
                 .map(b -> new ColumnFamilyDescriptor(b, new ColumnFamilyOptions()))

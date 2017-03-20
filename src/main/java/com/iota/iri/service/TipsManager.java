@@ -105,7 +105,6 @@ public class TipsManager {
         Object transientHandle = Tangle.instance().createTransientFlagList();
         try {
             AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR.bytes());
-            //StorageAddresses.instance().addressesOf(Milestone.COORDINATOR)
             for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
                 if (transactionViewModel.getCurrentIndex() == 0) {
@@ -135,17 +134,11 @@ public class TipsManager {
             // "+formatter.format(calendar.getTime()));
 
             
-            //System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
-
             Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
             {
                 int numberOfAnalyzedTransactions = 0;
 
-                /*
-                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions
-                        .instance().transactionPointer((extraTip == null ? preferableMilestone : extraTip).value())));
-                        */
                 setAnalyzedTransactionFlag(transientHandle, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
                 final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
                 byte[] transactionHash;
@@ -229,11 +222,8 @@ public class TipsManager {
                 ////////////
             }
 
-            //System.arraycopy(analyzedTransactionsFlags, 0, analyzedTransactionsFlagsCopy, 0, 134217728);
-
             Tangle.instance().flushTransientFlags(analyzedTransactionFlagPersistentHandle).get();
             Tangle.instance().copyTransientList(transientHandle, analyzedTransactionFlagPersistentHandle).get();
-            //System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
             Tangle.instance().flushTransientFlags(transientHandle).get();
 
             final List<byte[]> tailsToAnalyze = new LinkedList<>();
@@ -242,7 +232,6 @@ public class TipsManager {
             if (extraTip != null) {
 
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);//StorageTransactions.instance().loadTransaction(tip);
-                //while (depth-- > 0 && tip != Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET) {
                 while (depth-- > 0 && tip != Hash.NULL_HASH.bytes()) {
 
                     tip = transactionViewModel.getHash();
@@ -307,17 +296,6 @@ public class TipsManager {
                     } catch (ExecutionException e) {
                         e.printStackTrace();
                     }
-
-                    /*
-                    long tailPointer = StorageTransactions.instance().transactionPointer(tailHash);
-                    if ((analyzedTransactionsFlags[(int) ((tailPointer
-                            - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> (11 + 3))]
-                            & (1 << (((tailPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11)
-                                    & 7))) != 0) {
-
-                        tailsToAnalyzeIterator.remove();
-                    }
-                    */
                 }
             }
 
@@ -338,7 +316,6 @@ public class TipsManager {
                  * continue; }
                  */
 
-                //System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
                 Tangle.instance().flushTransientFlags(transientHandle).get();
                 Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle).get();
 

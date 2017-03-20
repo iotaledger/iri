@@ -21,15 +21,8 @@ import java.util.stream.Collectors;
  */
 public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
-    private ExecutorService executor;
-    /*
-    private Map<Class<?>, Field> modelPrimaryKey;
-    private Map<Class<?>, Map<String, RocksField>> modelColumns;
-    private Map<Object, Map<String, RocksField>> transientColumns = new HashMap<>();
-    */
     private static int BLOOM_FILTER_RANGE = 1<<1;
     private Map<Object, ColumnFamilyHandle> transientHandles = new HashMap<>();
-    private Map<Object, Field> transientPrimaryKey = new HashMap<>();
 
     private String[] columnFamilyNames = new String[]{
             "transaction",
@@ -476,7 +469,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     void initDB(String path, String logPath) throws Exception {
         random = new Random();
-        executor = Executors.newCachedThreadPool();
         StringAppendOperator stringAppendOperator = new StringAppendOperator();
         RocksDB.loadLibrary();
         Thread.yield();

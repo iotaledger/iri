@@ -59,7 +59,6 @@ public class Tangle {
             for(IPersistenceProvider provider : persistenceProviders) {
                 provider.dropTransientHandle(id);
             }
-            this.transientHandles.remove(id);
         }
         this.persistenceProviders.forEach(IPersistenceProvider::shutdown);
         this.persistenceProviders.clear();

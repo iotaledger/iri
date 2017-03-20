@@ -349,6 +349,15 @@ public class Tangle {
         });
     }
 
+    public Future<Void> flushTransientFlags(Object id) {
+        return executor.submit(() -> {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                provider.flushTransientFlags(id);
+            }
+            return null;
+        });
+    }
+
     public Future<Void> flushAnalyzedFlags() {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {

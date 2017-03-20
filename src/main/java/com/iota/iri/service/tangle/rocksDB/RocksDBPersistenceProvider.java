@@ -437,6 +437,18 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
+    public void flushTransientFlags(Object id) throws Exception {
+        ColumnFamilyHandle handle = transientHandles.get(id);
+        if(handle != null) {
+            db.flush(new FlushOptions().setWaitForFlush(true), handle);
+            RocksIterator iterator = db.newIterator(handle);
+            for(iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
+                db.delete(handle, iterator.key());
+            }
+        }
+    }
+
+    @Override
     public boolean update(Object thing, String item) throws Exception {
         if(thing instanceof Transaction) {
             Transaction transaction = (Transaction) thing;

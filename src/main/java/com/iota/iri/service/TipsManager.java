@@ -231,12 +231,10 @@ public class TipsManager {
 
             //System.arraycopy(analyzedTransactionsFlags, 0, analyzedTransactionsFlagsCopy, 0, 134217728);
 
-            Tangle.instance().dropList(analyzedTransactionFlagPersistentHandle);
-            analyzedTransactionFlagPersistentHandle = Tangle.instance().createTransientFlagList();
+            Tangle.instance().flushTransientFlags(analyzedTransactionFlagPersistentHandle).get();
             Tangle.instance().copyTransientList(transientHandle, analyzedTransactionFlagPersistentHandle);
             //System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
-            Tangle.instance().dropList(transientHandle);
-            transientHandle = Tangle.instance().createTransientFlagList();
+            Tangle.instance().flushTransientFlags(transientHandle).get();
 
             final List<byte[]> tailsToAnalyze = new LinkedList<>();
 
@@ -291,8 +289,7 @@ public class TipsManager {
 
             if (extraTip != null) {
 
-                Tangle.instance().dropList(transientHandle);
-                transientHandle = Tangle.instance().createTransientFlagList();
+                Tangle.instance().flushTransientFlags(transientHandle).get();
                 Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle);
 
                 final Iterator<byte[]> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
@@ -342,8 +339,7 @@ public class TipsManager {
                  */
 
                 //System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
-                Tangle.instance().dropList(transientHandle);
-                transientHandle = Tangle.instance().createTransientFlagList();
+                Tangle.instance().flushTransientFlags(transientHandle).get();
                 Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle).get();
 
                 final Set<byte[]> extraTransactions = new HashSet<>();

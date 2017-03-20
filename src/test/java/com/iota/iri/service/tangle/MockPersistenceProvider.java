@@ -184,5 +184,10 @@ public class MockPersistenceProvider implements IPersistenceProvider {
         return false;
     }
 
+    @Override
+    public void flushTransientFlags(Object id) throws Exception {
+
+    }
+
 }
 

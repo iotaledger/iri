@@ -64,4 +64,6 @@ public interface IPersistenceProvider {
     boolean transactionExists(byte[] hash) throws Exception;
 
     boolean setTransientFlagHandle(Object uuid) throws Exception;
+
+    void flushTransientFlags(Object id) throws Exception;
 }

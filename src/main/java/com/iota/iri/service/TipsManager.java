@@ -344,7 +344,7 @@ public class TipsManager {
                 //System.arraycopy(analyzedTransactionsFlagsCopy, 0, analyzedTransactionsFlags, 0, 134217728);
                 Tangle.instance().dropList(transientHandle);
                 transientHandle = Tangle.instance().createTransientList(Flag.class);
-                Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle);
+                Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle).get();
 
                 final Set<byte[]> extraTransactions = new HashSet<>();
 

@@ -84,6 +84,11 @@ public class TipsManager {
                     log.error("Error during TipsManager Milestone updating", e);
                 }
             }
+            try {
+                Tangle.instance().dropList(analyzedTransactionFlagPersistentHandle);
+            } catch (Exception e) {
+                log.error("Error dropping analyzed transaction flag persistent handle: ", e);
+            }
         }, "Latest Milestone Tracker")).start();
     }
 

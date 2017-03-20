@@ -146,6 +146,7 @@ public class TipsManager {
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
                         if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
 
+                            Tangle.instance().dropList(transientHandle);
                             return null;
 
                         } else {
@@ -178,6 +179,7 @@ public class TipsManager {
 
                                 if (!validBundle) {
 
+                                    Tangle.instance().dropList(transientHandle);
                                     return null;
                                 }
                             }
@@ -202,6 +204,7 @@ public class TipsManager {
 
                     if (entry.getValue() < 0) {
                         log.info("Ledger inconsistency detected");
+                        Tangle.instance().dropList(transientHandle);
                         return null;
                     }
 
@@ -427,6 +430,7 @@ public class TipsManager {
                     }
                 }
             }
+            Tangle.instance().dropList(transientHandle);
             // System.out.ln(bestRating + " extra transactions approved");
 
             /**/if (tailsRaitings.isEmpty()) {
@@ -467,7 +471,6 @@ public class TipsManager {
             e.printStackTrace();
         } finally {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
-            Tangle.instance().dropList(transientHandle);
         }
         return null;
     }

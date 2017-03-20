@@ -270,7 +270,7 @@ public class TipsManager {
                         tailsToAnalyze.add(transactionViewModel.getHash());
                     }
 
-                    final byte[] approveePointer = transactionViewModel.getApprovers()[0].bytes();// StorageApprovers.instance().approveePointer(transactionViewModel.getHash());
+                    final byte[] approveePointer = Arrays.stream(transactionViewModel.getApprovers()).findFirst().map(Hash::bytes).orElse(null);
                     if (approveePointer == null) {
 
                         if (transactionViewModel.getCurrentIndex() == 0) {

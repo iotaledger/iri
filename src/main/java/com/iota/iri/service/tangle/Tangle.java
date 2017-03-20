@@ -100,21 +100,6 @@ public class Tangle {
         return model.getName() + COLUMN_DELIMETER + field.getName();
     }
 
-    /*
-    public Future<Object> query(Object model, String index, Object value) {
-        return executor.submit(() -> {
-            boolean success = false;
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.query(model, index, value)) {
-                    success = true;
-                    break;
-                }
-            }
-            return success;
-        });
-    }
-    */
-
     public Future<Boolean> load(Transaction transaction) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {

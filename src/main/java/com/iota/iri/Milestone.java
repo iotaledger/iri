@@ -125,6 +125,7 @@ public class Milestone {
 
                 	ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
 
+                	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
                     final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>();
                     nonAnalyzedTransactions.offer(milestone.bytes());
                     byte[] hashBytes;

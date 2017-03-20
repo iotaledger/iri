@@ -5,6 +5,8 @@ import com.iota.iri.model.*;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.IPersistenceProvider;
 import com.iota.iri.service.tangle.Serializer;
+import com.iota.iri.service.viewModels.TransactionViewModel;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.rocksdb.*;
 
@@ -22,7 +24,6 @@ import java.util.stream.Collectors;
 public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     private static int BLOOM_FILTER_RANGE = 1<<1;
-    private Map<Object, ColumnFamilyHandle> transientHandles = new HashMap<>();
 
     private String[] columnFamilyNames = new String[]{
             "transaction",
@@ -179,31 +180,20 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return hashes.stream().map(ByteBuffer::array).map(Hash::new).toArray(Hash[]::new);
     }
 
-
-    @Override
-    public void dropTransientHandle(Object uuid) throws Exception {
-        ColumnFamilyHandle handle = transientHandles.get(uuid);
-        if(handle != null) {
-            db.flush(new FlushOptions().setWaitForFlush(true), handle);
-            db.dropColumnFamily(handle);
-        }
-        transientHandles.remove(uuid);
-    }
-
     @Override
     public boolean save(Object uuid, Object model) throws Exception {
-        boolean exists = db.keyMayExist(transientHandles.get(uuid), Serializer.serialize(((Flag) model).hash), new StringBuffer());
+        boolean exists = db.keyMayExist(analyzedTipHandle, Serializer.serialize(((Flag) model).hash), new StringBuffer());
         if(model instanceof Flag) {
-            db.put(transientHandles.get(uuid), ((Flag) model).hash, Serializer.serialize(((Flag) model).status));
+            db.put(analyzedTipHandle, ((Flag) model).hash, Serializer.serialize(((Flag) model).status));
         } else if (model instanceof AnalyzedFlag) {
-            db.put(transientHandles.get(uuid), ((AnalyzedFlag) model).hash, Serializer.serialize(((AnalyzedFlag) model).status));
+            db.put(analyzedTipHandle, ((AnalyzedFlag) model).hash, Serializer.serialize(((AnalyzedFlag) model).status));
         }
         return exists;
     }
 
     @Override
     public boolean mayExist(Object handle, Object key) throws Exception {
-        return db.keyMayExist(transientHandles.get(handle), ((byte[]) key), new StringBuffer());
+        return db.keyMayExist(analyzedTipHandle, ((byte[]) key), new StringBuffer());
     }
 
     @Override
@@ -221,13 +211,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Object out = null;
         byte[] result;
         if(model == Flag.class) {
-            result = db.get(transientHandles.get(uuid), ((byte[]) key));
+            result = db.get(analyzedTipHandle, ((byte[]) key));
             if(result != null) {
                 Flag flag = new Flag();
                 flag.hash = ((byte[]) key);
             }
         } else if (model == AnalyzedFlag.class) {
-            result = db.get(transientHandles.get(uuid), ((byte[]) key));
+            result = db.get(analyzedTipHandle, ((byte[]) key));
             if(result != null) {
                 AnalyzedFlag flag = new AnalyzedFlag();
                 flag.hash = ((byte[]) key);
@@ -239,9 +229,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public void deleteTransientObject(Object uuid, Object key) throws Exception {
-        ColumnFamilyHandle handle = transientHandles.get(uuid);
-        if(db.get(handle, ((byte[]) key)) != null) {
-            db.delete(handle, ((byte[]) key));
+        if(db.get(analyzedTipHandle, ((byte[]) key)) != null) {
+            db.delete(analyzedTipHandle, ((byte[]) key));
         }
     }
 
@@ -249,11 +238,20 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public void copyTransientList(Object sourceId, Object destId) throws Exception {
         RocksIterator iterator;
         WriteBatch batch = new WriteBatch();
+        /*
         ColumnFamilyHandle sourceHandle = transientHandles.get(sourceId);
         ColumnFamilyHandle destHandle = transientHandles.get(destId);
-        iterator = db.newIterator(sourceHandle);
-        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            batch.put(destHandle, iterator.key(), iterator.value());
+        */
+        iterator = db.newIterator(analyzedTipHandle);
+        byte[] sourcePre = Serializer.serialize((int)sourceId);
+        byte[] sourceStart = ArrayUtils.addAll(sourcePre, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
+        byte[] destPre = Serializer.serialize((int)destId);
+        byte[] destKey;
+        for(iterator.seek(sourceStart); iterator.isValid(); iterator.next()) {
+            if(!Arrays.equals(sourcePre, Arrays.copyOfRange(iterator.key(), 0, sourcePre.length)))
+                break;
+            destKey = ArrayUtils.addAll(destPre, Arrays.copyOfRange(iterator.key(), sourcePre.length, iterator.key().length));
+            batch.put(analyzedTipHandle, destKey, iterator.value());
         }
         db.write(new WriteOptions(), batch);
     }
@@ -382,7 +380,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean transientObjectExists(Object uuid, byte[] hash) throws Exception {
-        return db.get(transientHandles.get(uuid), hash) != null;
+        return db.get(analyzedTipHandle, ArrayUtils.addAll(Serializer.serialize((int) uuid), hash)) != null;
     }
 
     @Override
@@ -420,22 +418,15 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean setTransientFlagHandle(Object uuid) throws RocksDBException {
-        final ColumnFamilyHandle columnFamilyHandle;
-        columnFamilyHandle = db.createColumnFamily(new ColumnFamilyDescriptor(uuid.toString().getBytes()));
-        transientHandles.put(uuid, columnFamilyHandle);
         return true;
     }
 
     @Override
-    public void flushTransientFlags(Object id) throws Exception {
-        ColumnFamilyHandle handle = transientHandles.get(id);
-        if(handle != null) {
-            db.flush(new FlushOptions().setWaitForFlush(true), handle);
-            RocksIterator iterator = db.newIterator(handle);
-            for(iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
-                db.delete(handle, iterator.key());
-            }
-        }
+    public void flushTagRange(Object id) throws Exception {
+        int i = (int) id;
+        byte[] start = ArrayUtils.addAll(Serializer.serialize(i++), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
+        byte[] end = ArrayUtils.addAll(Serializer.serialize(i), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
+        db.deleteRange(analyzedTipHandle, start, end);
     }
 
     @Override
@@ -469,7 +460,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Thread.yield();
         BloomFilter bloomFilter = new BloomFilter(BLOOM_FILTER_RANGE);
         BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
-        options = new DBOptions().setCreateIfMissing(true).setDbLogDir(logPath);
+        options = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true).setDbLogDir(logPath);
 
         List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
         List<ColumnFamilyDescriptor> familyDescriptors = Arrays.stream(columnFamilyNames)

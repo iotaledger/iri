@@ -45,9 +45,6 @@ public class Tangle {
         log.info("Shutting down Tangle Persistence Providers... ");
         for(int id: transientHandles) {
             releaseTransientTable(id);
-            for(IPersistenceProvider provider : persistenceProviders) {
-                provider.dropTransientHandle(id);
-            }
         }
         this.persistenceProviders.forEach(IPersistenceProvider::shutdown);
         this.persistenceProviders.clear();
@@ -72,7 +69,7 @@ public class Tangle {
 
     public void releaseTransientTable(Object id) throws Exception {
         for(IPersistenceProvider provider : persistenceProviders) {
-            provider.flushTransientFlags(id);
+            provider.flushTagRange(id);
         }
         synchronized (this) {
             log.info("Released transient table with id: " + id);
@@ -214,14 +211,6 @@ public class Tangle {
         });
     }
 
-    public Future<Void> delete(Object handle, Object model) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                provider.deleteTransientObject(handle, model);
-            }
-            return null;
-        });
-    }
     public Future<Boolean> save(Object handle, Object model) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -330,7 +319,7 @@ public class Tangle {
     public Future<Void> flushTransientFlags(Object id) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                provider.flushTransientFlags(id);
+                provider.flushTagRange(id);
             }
             return null;
         });

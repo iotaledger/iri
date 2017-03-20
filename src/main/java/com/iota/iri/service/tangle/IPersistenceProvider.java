@@ -20,7 +20,6 @@ public interface IPersistenceProvider {
 
     boolean update(Object model, String item) throws Exception;
 
-    void dropTransientHandle(Object handle) throws Exception;
     boolean save(Object handle, Object model) throws Exception;
     boolean mayExist(Object handle, Object key) throws Exception;
     boolean exists(Class<?> model, Object key) throws Exception;
@@ -64,5 +63,5 @@ public interface IPersistenceProvider {
 
     boolean setTransientFlagHandle(Object uuid) throws Exception;
 
-    void flushTransientFlags(Object id) throws Exception;
+    void flushTagRange(Object id) throws Exception;
 }

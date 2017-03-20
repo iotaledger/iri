@@ -179,7 +179,7 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public void flushTransientFlags(Object id) throws Exception {
+    public void flushTagRange(Object id) throws Exception {
 
     }
 

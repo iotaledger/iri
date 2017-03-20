@@ -18,14 +18,10 @@ public class Tangle {
     private static Tangle instance = new Tangle();
     List<IPersistenceProvider> persistenceProviders = new ArrayList<>();
     private ExecutorService executor;
-    private final Map<Class<?>, Field> modelPrimaryKeys = new HashMap<>();
-    private final Map<Class<?>, Map<String, ModelFieldInfo>> modelFieldInfo = new HashMap<>();
     private final List<Integer> transientHandles = new ArrayList<>();
     private final List<Integer> availableTansientTables = new ArrayList<>();
     private final List<Integer> transientTablesInUse = new ArrayList<>();
     private volatile int nextTableId = 1;
-    private boolean shutdown;
-
 
     public void addPersistenceProvider(IPersistenceProvider provider) {
         this.persistenceProviders.add(provider);
@@ -34,26 +30,19 @@ public class Tangle {
     public void init(String path) throws Exception {
         executor = Executors.newCachedThreadPool();
         for(IPersistenceProvider provider: this.persistenceProviders) {
-            //provider.setColumns(modelPrimaryKeys, modelFieldInfo);
             provider.init(path);
         }
     }
     public void init() throws Exception {
         executor = Executors.newCachedThreadPool();
         for(IPersistenceProvider provider: this.persistenceProviders) {
-            //provider.setColumns(modelPrimaryKeys, modelFieldInfo);
             provider.init();
         }
     }
 
-    public boolean availalbe() {
-        return !shutdown;
-    }
 
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
-        shutdown = true;
-        //executor.awaitTermination(6, TimeUnit.SECONDS);
         for(int id: transientHandles) {
             releaseTransientTable(id);
             for(IPersistenceProvider provider : persistenceProviders) {

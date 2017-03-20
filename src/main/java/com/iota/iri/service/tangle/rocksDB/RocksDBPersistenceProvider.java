@@ -187,7 +187,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public boolean setTransientHandle(Class<?> model, Object uuid) throws ExceptionInInitializerError, RocksDBException {
         final ColumnFamilyHandle columnFamilyHandle;
-        columnFamilyHandle = db.createColumnFamily(new ColumnFamilyDescriptor(uuid.toString().getBytes()));
+        columnFamilyHandle = db.createColumnFamily(new ColumnFamilyDescriptor(uuid.toString().getBytes(), new ColumnFamilyOptions()));
         transientHandles.put(uuid, columnFamilyHandle);
         return true;
     }

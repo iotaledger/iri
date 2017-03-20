@@ -232,7 +232,7 @@ public class TipsManager {
             //System.arraycopy(analyzedTransactionsFlags, 0, analyzedTransactionsFlagsCopy, 0, 134217728);
 
             Tangle.instance().flushTransientFlags(analyzedTransactionFlagPersistentHandle).get();
-            Tangle.instance().copyTransientList(transientHandle, analyzedTransactionFlagPersistentHandle);
+            Tangle.instance().copyTransientList(transientHandle, analyzedTransactionFlagPersistentHandle).get();
             //System.arraycopy(zeroedAnalyzedTransactionsFlags, 0, analyzedTransactionsFlags, 0, 134217728);
             Tangle.instance().flushTransientFlags(transientHandle).get();
 
@@ -290,7 +290,7 @@ public class TipsManager {
             if (extraTip != null) {
 
                 Tangle.instance().flushTransientFlags(transientHandle).get();
-                Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle);
+                Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle).get();
 
                 final Iterator<byte[]> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {

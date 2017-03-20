@@ -28,6 +28,7 @@ public class Configuration {
         DEBUG,
         IXI_DIR,
         DB_PATH,
+        DB_LOG_PATH,
         EXPERIMENTAL // experimental features.
     }
 
@@ -43,6 +44,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.REMOTEAPILIMIT.name(), "");
         conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
         conf.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
+        conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
         conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
     }
 

@@ -70,12 +70,15 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public void init(String path) throws Exception{
-        initDB(path);
+        initDB(path, path+".log");
     }
 
     @Override
     public void init() throws Exception {
-        initDB(Configuration.string(Configuration.DefaultConfSettings.DB_PATH));
+        initDB(
+                Configuration.string(Configuration.DefaultConfSettings.DB_PATH),
+                Configuration.string(Configuration.DefaultConfSettings.DB_LOG_PATH)
+        );
     }
 
     @Override
@@ -471,7 +474,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
 
-    void initDB(String path) throws Exception {
+    void initDB(String path, String logPath) throws Exception {
         random = new Random();
         executor = Executors.newCachedThreadPool();
         StringAppendOperator stringAppendOperator = new StringAppendOperator();
@@ -479,7 +482,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Thread.yield();
         BloomFilter bloomFilter = new BloomFilter(BLOOM_FILTER_RANGE);
         BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
-        options = new DBOptions().setCreateIfMissing(true);
+        options = new DBOptions().setCreateIfMissing(true).setDbLogDir(logPath);
 
         List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
         List<ColumnFamilyDescriptor> familyDescriptors = Arrays.stream(columnFamilyNames)

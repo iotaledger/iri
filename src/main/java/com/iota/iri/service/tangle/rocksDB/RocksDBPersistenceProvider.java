@@ -525,20 +525,26 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         assert (columnFamilyHandle != null);
     }
 
-    private void fillmodelColumnHandles(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles) {
-        int i = 1;
-        transactionHandle = familyHandles.get(i++);
-        transactionValidityHandle = familyHandles.get(i++);
-        transactionTypeHandle = familyHandles.get(i++);
-        transactionArrivalTimeHandle = familyHandles.get(i++);
-        addressHandle = familyHandles.get(i++);
-        bundleHandle = familyHandles.get(i++);
-        approoveeHandle = familyHandles.get(i++);
-        tagHandle = familyHandles.get(i++);
-        flagHandle = familyHandles.get(i++);
-        tipHandle = familyHandles.get(i++);
-        scratchpadHandle = familyHandles.get(i++);
-        analyzedFlagHandle = familyHandles.get(i++);
+    private void fillmodelColumnHandles(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles) throws RocksDBException {
+        int i = 0;
+        transactionHandle = familyHandles.get(++i);
+        transactionValidityHandle = familyHandles.get(++i);
+        transactionTypeHandle = familyHandles.get(++i);
+        transactionArrivalTimeHandle = familyHandles.get(++i);
+        addressHandle = familyHandles.get(++i);
+        bundleHandle = familyHandles.get(++i);
+        approoveeHandle = familyHandles.get(++i);
+        tagHandle = familyHandles.get(++i);
+        flagHandle = familyHandles.get(++i);
+        tipHandle = familyHandles.get(++i);
+        scratchpadHandle = familyHandles.get(++i);
+        analyzedFlagHandle = familyHandles.get(++i);
+
+        for(; i < familyHandles.size();) {
+            db.dropColumnFamily(familyHandles.remove(i));
+        }
+
+
 
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {

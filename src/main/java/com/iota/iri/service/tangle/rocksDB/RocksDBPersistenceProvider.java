@@ -431,10 +431,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         int i = (int) id;
         byte[] idbytes = Serializer.serialize(i++);
         byte[] start = ArrayUtils.addAll(idbytes, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
+        byte[] keyStart;
         //byte[] end = ArrayUtils.addAll(Serializer.serialize(i), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
         RocksIterator iterator = db.newIterator(analyzedTipHandle);
         for(iterator.seek(start); iterator.isValid(); iterator.next()) {
-            if(!Arrays.equals(idbytes, Arrays.copyOfRange(iterator.key(), 0, idbytes.length))) break;
+            keyStart = Arrays.copyOfRange(iterator.key(), 0, idbytes.length);
+            if(!Arrays.equals(idbytes, keyStart)) break;
             db.delete(iterator.key());
         }
         //db.deleteRange(analyzedTipHandle, start, end);

@@ -19,7 +19,7 @@ public class PearlDiverTest {
 				myTrits = new int[Curl.HASH_LENGTH];
 		int i = 0,
 		testCount = 20,
-		minWeightMagnitude = 13,
+		minWeightMagnitude = 9,
 		numCores = -1; // use n-1 cores
 		
 		do {

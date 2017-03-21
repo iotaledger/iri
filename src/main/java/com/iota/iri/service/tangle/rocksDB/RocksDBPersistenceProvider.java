@@ -201,7 +201,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean mayExist(Object handle, Object key) throws Exception {
-        return db.keyMayExist(analyzedTipHandle, ((byte[]) key), new StringBuffer());
+        return db.keyMayExist(analyzedTipHandle,
+                ArrayUtils.addAll(Serializer.serialize((int)handle),(byte[]) key)
+                , new StringBuffer());
     }
 
     @Override

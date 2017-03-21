@@ -30,7 +30,6 @@ public class TipsManager {
 
     static int numberOfConfirmedTransactions;
 
-    private static Object analyzedTransactionFlagPersistentHandle;
 
     public static void setRATING_THRESHOLD(int value) {
         if (value < 0) value = 0;
@@ -44,7 +43,6 @@ public class TipsManager {
     
     public void init() throws Exception {
 
-        analyzedTransactionFlagPersistentHandle = Tangle.instance().createTransientFlagList();
         (new Thread(() -> {
             
             final SecureRandom rnd = new SecureRandom();
@@ -83,11 +81,6 @@ public class TipsManager {
                     log.error("Error during TipsManager Milestone updating", e);
                 }
             }
-            try {
-                Tangle.instance().releaseTransientTable(analyzedTransactionFlagPersistentHandle);
-            } catch (Exception e) {
-                log.error("Error dropping analyzed transaction flag persistent handle: ", e);
-            }
         }, "Latest Milestone Tracker")).start();
     }
 
@@ -102,6 +95,7 @@ public class TipsManager {
         long criticalArrivalTime = Long.MAX_VALUE;
 
         Object transientHandle = Tangle.instance().createTransientFlagList();
+        Object transientHandleCopy = Tangle.instance().createTransientFlagList();
         try {
             AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR.bytes());
             for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
@@ -224,8 +218,8 @@ public class TipsManager {
                 ////////////
             }
 
-            Tangle.instance().flushTransientFlags(analyzedTransactionFlagPersistentHandle).get();
-            Tangle.instance().copyTransientList(transientHandle, analyzedTransactionFlagPersistentHandle).get();
+            Tangle.instance().flushTransientFlags(transientHandleCopy).get();
+            Tangle.instance().copyTransientList(transientHandle, transientHandleCopy).get();
             Tangle.instance().flushTransientFlags(transientHandle).get();
 
             final List<byte[]> tailsToAnalyze = new LinkedList<>();
@@ -281,7 +275,7 @@ public class TipsManager {
             if (extraTip != null) {
 
                 Tangle.instance().flushTransientFlags(transientHandle).get();
-                Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle).get();
+                Tangle.instance().copyTransientList(transientHandleCopy, transientHandle).get();
 
                 final Iterator<byte[]> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
@@ -319,7 +313,7 @@ public class TipsManager {
                  */
 
                 Tangle.instance().flushTransientFlags(transientHandle).get();
-                Tangle.instance().copyTransientList(analyzedTransactionFlagPersistentHandle, transientHandle).get();
+                Tangle.instance().copyTransientList(transientHandleCopy, transientHandle).get();
 
                 final Set<byte[]> extraTransactions = new HashSet<>();
 
@@ -435,6 +429,7 @@ public class TipsManager {
                 }
             }
             Tangle.instance().releaseTransientTable(transientHandle);
+            Tangle.instance().releaseTransientTable(transientHandleCopy);
             // System.out.ln(bestRating + " extra transactions approved");
 
             /**/if (tailsRaitings.isEmpty()) {

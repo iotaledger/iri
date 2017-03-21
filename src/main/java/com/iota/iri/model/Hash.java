@@ -23,7 +23,7 @@ public class Hash {
     }
 
     public Hash(final byte[] bytes) {
-        this(bytes, 0, SIZE_IN_BYTES);
+        this(bytes, 0, bytes.length);
     }
 
     public Hash(final int[] trits, final int offset) {

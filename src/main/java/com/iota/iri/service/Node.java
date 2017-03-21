@@ -23,6 +23,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.storage.ReplicatorSinkPool;
 import com.iota.iri.service.viewModels.TipsViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
@@ -357,6 +358,7 @@ public class Node {
     }
 
     public void broadcast(final TransactionViewModel transactionViewModel) {
+        ReplicatorSinkPool.instance().broadcast(transactionViewModel);
         queuedTransactionViewModels.add(transactionViewModel);
         if (queuedTransactionViewModels.size() > QUEUE_SIZE) {
             queuedTransactionViewModels.pollLast();

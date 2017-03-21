@@ -420,7 +420,6 @@ public class API {
             final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(tryte));
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             Node.instance().broadcast(transactionViewModel);
-            ReplicatorSinkPool.instance().broadcast(transactionViewModel);
         }
         return AbstractResponse.createEmptyResponse();
     }

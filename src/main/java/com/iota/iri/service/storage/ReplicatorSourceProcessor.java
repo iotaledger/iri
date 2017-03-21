@@ -136,6 +136,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                                 //log.info("TransactionVM saved. Hash: " + new Hash(receivedTransactionViewModel.getHashTrits(null)).toString());
                                 receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                 receivedTransactionViewModel.update("arrivalTime");
+                                //log.info("received transaction tag:" + receivedTransactionViewModel.getTag().getHash());
                                 neighbor.incNewTransactions();
                                 // The UDP transport route
                                 Node.instance().broadcast(receivedTransactionViewModel);

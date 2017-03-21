@@ -218,16 +218,17 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public Object get(Object uuid, Class<?> model, Object key) throws Exception {
         Object out = null;
         byte[] result;
-        if(model == Flag.class) {
-            result = db.get(analyzedTipHandle, ((byte[]) key));
-            if(result != null) {
-                Flag flag = new Flag();
-                flag.hash = ((byte[]) key);
-            }
-        } else if (model == AnalyzedFlag.class) {
-            result = db.get(analyzedTipHandle, ((byte[]) key));
+        byte[] theKey = ArrayUtils.addAll(Serializer.serialize(((int) uuid)), ((Flag) key).hash);
+        if (model == AnalyzedFlag.class) {
+            result = db.get(analyzedTipHandle, theKey);
             if(result != null) {
                 AnalyzedFlag flag = new AnalyzedFlag();
+                flag.hash = ((byte[]) key);
+            }
+        } else if(model == Flag.class) {
+            result = db.get(analyzedTipHandle, theKey);
+            if(result != null) {
+                Flag flag = new Flag();
                 flag.hash = ((byte[]) key);
             }
         }

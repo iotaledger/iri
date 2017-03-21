@@ -19,6 +19,7 @@ import com.iota.iri.*;
 import com.iota.iri.model.Scratchpad;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.storage.AbstractStorage;
+import com.iota.iri.service.storage.ReplicatorSinkPool;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.viewModels.*;
 import org.apache.commons.io.IOUtils;
@@ -419,6 +420,7 @@ public class API {
             final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(tryte));
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             Node.instance().broadcast(transactionViewModel);
+            ReplicatorSinkPool.instance().broadcast(transactionViewModel);
         }
         return AbstractResponse.createEmptyResponse();
     }

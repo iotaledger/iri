@@ -140,7 +140,7 @@ public class ReplicatorSourceProcessor implements Runnable {
                                 // The UDP transport route
                                 Node.instance().broadcast(receivedTransactionViewModel);
                                 // The TCP transport route
-                                ReplicatorSinkPool.instance().broadcast(receivedTransactionViewModel, neighbor);
+                                ReplicatorSinkPool.instance().broadcast(receivedTransactionViewModel);
                             }
 
                             System.arraycopy(data, TransactionViewModel.SIZE, requestedTransaction, 0, Hash.SIZE_IN_BYTES);

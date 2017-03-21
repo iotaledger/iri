@@ -84,14 +84,14 @@ public class ReplicatorSinkPool  implements Runnable {
         neighbor.setSink(null);
     }
     
-    public void broadcast(TransactionViewModel transaction, Neighbor neighbor) {
+    public void broadcast(TransactionViewModel transaction) {
         if (transaction != null) {
             List<Neighbor> neighbors = Node.instance().getNeighbors();
             if (neighbors != null) {          
-                neighbors.forEach(n -> {
+                neighbors.forEach(neighbor -> {
                     //if ( (neighbor == null) || (neighbor.getSink() != n.getSink()) ) {
                     {
-                        if (n.isTcpip() && (n.getSink() != null) && !n.getSink().isClosed()) {
+                        if (neighbor.isTcpip() && (neighbor.getSink() != null) && !neighbor.getSink().isClosed()) {
                             try {
                                 synchronized (sendingPacket) {
                                     System.arraycopy(transaction.getBytes(), 0, sendingPacket.getData(), 0,

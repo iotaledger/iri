@@ -187,11 +187,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean save(int uuid, Object model) throws Exception {
-        boolean exists = db.keyMayExist(analyzedTipHandle, getTransientKey(uuid, ((Flag) model).hash), new StringBuffer());
+        byte[] key = getTransientKey(uuid, ((Flag) model).hash);
+        boolean exists = db.keyMayExist(analyzedTipHandle, key, new StringBuffer());
         if (model instanceof AnalyzedFlag) {
-            db.put(analyzedTipHandle, getTransientKey(uuid, ((AnalyzedFlag) model).hash), Serializer.serialize(((AnalyzedFlag) model).status));
+            db.put(analyzedTipHandle, key, Serializer.serialize(((AnalyzedFlag) model).status));
         } else if(model instanceof Flag) {
-            db.put(analyzedFlagHandle, getTransientKey(uuid, ((Flag) model).hash), Serializer.serialize(((Flag) model).status));
+            db.put(analyzedFlagHandle, key, Serializer.serialize(((Flag) model).status));
         }
         return exists;
     }

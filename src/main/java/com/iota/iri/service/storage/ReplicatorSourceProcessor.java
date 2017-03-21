@@ -130,13 +130,10 @@ public class ReplicatorSourceProcessor implements Runnable {
                         final TransactionViewModel receivedTransactionViewModel = new TransactionViewModel(data, receivedTransactionTrits, curl);
                         long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                         if (timestamp == 0 || timestamp > Node.TIMESTAMP_THRESHOLD) {
-                            //long beginning = System.nanoTime();
                             if(receivedTransactionViewModel.store().get()) {
-                                //log.info("TransactionVM save time: " + ((System.nanoTime()) - beginning)/1000 + " us");
-                                //log.info("TransactionVM saved. Hash: " + new Hash(receivedTransactionViewModel.getHashTrits(null)).toString());
+                                //log.info("received transaction tag:" + receivedTransactionViewModel.getTag().getHash());
                                 receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                 receivedTransactionViewModel.update("arrivalTime");
-                                //log.info("received transaction tag:" + receivedTransactionViewModel.getTag().getHash());
                                 neighbor.incNewTransactions();
                                 // The UDP transport route
                                 Node.instance().broadcast(receivedTransactionViewModel);

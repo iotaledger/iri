@@ -568,11 +568,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             db.delete(analyzedFlagHandle, iterator.key());
         }
-        /*
-        for(i++; i < familyHandles.size();) {
-            db.dropColumnFamily(familyHandles.remove(i));
-        }
-        */
+        updateTagDB();
 
         db.compactRange();
 
@@ -580,5 +576,20 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(i = 1; i < 5; i ++) {
             transactionGetList.add(familyHandles.get(i));
         }
+    }
+
+    private void updateTagDB() throws RocksDBException {
+
+        RocksIterator iterator = db.newIterator(tagHandle);
+        byte[] res, key;
+        WriteBatch batch = new WriteBatch();
+        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            if(iterator.key().length < Hash.SIZE_IN_BYTES) {
+                key = ArrayUtils.addAll(iterator.key(), Arrays.copyOf(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES, Hash.SIZE_IN_BYTES - iterator.key().length));
+                batch.put(key, iterator.value());
+                db.delete(iterator.key());
+            }
+        }
+        db.write(new WriteOptions(), batch);
     }
 }

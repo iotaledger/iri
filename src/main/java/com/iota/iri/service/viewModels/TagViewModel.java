@@ -3,6 +3,7 @@ package com.iota.iri.service.viewModels;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tag;
 import com.iota.iri.service.tangle.Tangle;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;

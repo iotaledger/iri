@@ -16,6 +16,7 @@ import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -293,6 +294,9 @@ public class TransactionViewModel {
     public byte[] getTagBytes() {
         if(transaction.tag.bytes == null) {
             transaction.tag.bytes= Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE);
+            if(transaction.tag.bytes.length < Hash.SIZE_IN_BYTES) {
+                transaction.tag.bytes = ArrayUtils.addAll(transaction.tag.bytes, Arrays.copyOf(NULL_TRANSACTION_HASH_BYTES, Hash.SIZE_IN_BYTES - transaction.tag.bytes.length));
+            }
         }
         return transaction.tag.bytes;
     }

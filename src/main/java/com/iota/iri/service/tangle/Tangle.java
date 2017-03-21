@@ -50,7 +50,7 @@ public class Tangle {
         this.persistenceProviders.clear();
     }
 
-    public Object createTransientFlagList() throws Exception {
+    public int createTransientFlagList() throws Exception {
         int id;
         synchronized (this) {
             if(availableTansientTables.size() > 0) {
@@ -67,9 +67,9 @@ public class Tangle {
         return id;
     }
 
-    public void releaseTransientTable(Object id) throws Exception {
+    public void releaseTransientTable(int id) throws Exception {
         for(IPersistenceProvider provider : persistenceProviders) {
-            provider.flushTagRange(id);
+            provider.flushTagRange( id);
         }
         synchronized (this) {
             log.info("Released transient table with id: " + id);
@@ -202,7 +202,7 @@ public class Tangle {
     }
 
 
-    public Future<Boolean> maybeHas(Object handle, Object key) {
+    public Future<Boolean> maybeHas(int handle, Object key) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(provider.mayExist(handle, key)) return true;
@@ -211,7 +211,7 @@ public class Tangle {
         });
     }
 
-    public Future<Boolean> save(Object handle, Object model) {
+    public Future<Boolean> save(int handle, Object model) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(!provider.save(handle, model)) {
@@ -221,7 +221,7 @@ public class Tangle {
             return true;
         });
     }
-    public Future<Object> load(Object handle, Class<?> model, byte[] key) {
+    public Future<Object> load(int handle, Class<?> model, byte[] key) {
         return executor.submit(() -> {
             Object loadableObject = null;
             for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -256,7 +256,7 @@ public class Tangle {
         });
     }
 
-    public Future<Boolean> transientExists(Object uuid, byte[] hash) {
+    public Future<Boolean> transientExists(int uuid, byte[] hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(provider.transientObjectExists(uuid, hash)) return true;
@@ -316,7 +316,7 @@ public class Tangle {
         });
     }
 
-    public Future<Void> flushTransientFlags(Object id) {
+    public Future<Void> flushTransientFlags(int id) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 provider.flushTagRange(id);

@@ -20,11 +20,11 @@ public interface IPersistenceProvider {
 
     boolean update(Object model, String item) throws Exception;
 
-    boolean save(Object handle, Object model) throws Exception;
-    boolean mayExist(Object handle, Object key) throws Exception;
+    boolean save(int handle, Object model) throws Exception;
+    boolean mayExist(int handle, Object key) throws Exception;
     boolean exists(Class<?> model, Object key) throws Exception;
-    Object get(Object handle, Class<?> model, Object key) throws Exception;
-    void deleteTransientObject(Object uuid, Object key) throws Exception;
+    Object get(int handle, Class<?> model, Object key) throws Exception;
+    void deleteTransientObject(int uuid, Object key) throws Exception;
     void copyTransientList(Object sourceId, Object destId) throws Exception;
 
     Object latest(Class<?> model) throws  Exception;
@@ -49,7 +49,7 @@ public interface IPersistenceProvider {
 
     void updateType(Transaction transaction) throws Exception;
 
-    boolean transientObjectExists(Object uuid, byte[] hash) throws Exception;
+    boolean transientObjectExists(int uuid, byte[] hash) throws Exception;
 
     void flushAnalyzedFlags() throws Exception;
 
@@ -61,7 +61,7 @@ public interface IPersistenceProvider {
 
     boolean transactionExists(byte[] hash) throws Exception;
 
-    boolean setTransientFlagHandle(Object uuid) throws Exception;
+    boolean setTransientFlagHandle(int uuid) throws Exception;
 
-    void flushTagRange(Object id) throws Exception;
+    void flushTagRange(int id) throws Exception;
 }

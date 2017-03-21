@@ -94,8 +94,8 @@ public class TipsManager {
         
         long criticalArrivalTime = Long.MAX_VALUE;
 
-        Object transientHandle = Tangle.instance().createTransientFlagList();
-        Object transientHandleCopy = Tangle.instance().createTransientFlagList();
+        int transientHandle = Tangle.instance().createTransientFlagList();
+        int transientHandleCopy = Tangle.instance().createTransientFlagList();
         try {
             AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR.bytes());
             for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
@@ -474,7 +474,7 @@ public class TipsManager {
         return null;
     }
 
-    private static boolean setAnalyzedTransactionFlag(Object handle, byte[] hash) throws ExecutionException, InterruptedException {
+    private static boolean setAnalyzedTransactionFlag(int handle, byte[] hash) throws ExecutionException, InterruptedException {
         if(!Tangle.instance().maybeHas(handle, hash).get()) {
             Tangle.instance().save(handle, new Flag(hash)).get();
             return true;

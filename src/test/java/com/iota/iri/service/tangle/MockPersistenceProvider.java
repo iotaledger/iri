@@ -53,12 +53,12 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean save(Object handle, Object model) throws Exception {
+    public boolean save(int handle, Object model) throws Exception {
         return false;
     }
 
     @Override
-    public boolean mayExist(Object handle, Object key) {
+    public boolean mayExist(int handle, Object key) throws Exception {
         return false;
     }
 
@@ -69,14 +69,15 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public Object get(Object handle, Class<?> model, Object key) throws Exception {
+    public Object get(int handle, Class<?> model, Object key) throws Exception {
         return null;
     }
 
     @Override
-    public void deleteTransientObject(Object uuid, Object key) throws Exception {
+    public void deleteTransientObject(int uuid, Object key) throws Exception {
 
     }
+
 
     @Override
     public void copyTransientList(Object sourceId, Object destId) throws Exception {
@@ -139,9 +140,10 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean transientObjectExists(Object uuid, byte[] hash) throws Exception {
+    public boolean transientObjectExists(int uuid, byte[] hash) throws Exception {
         return false;
     }
+
 
     @Override
     public void flushAnalyzedFlags() throws Exception {
@@ -169,14 +171,15 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean setTransientFlagHandle(Object uuid) throws Exception {
+    public boolean setTransientFlagHandle(int uuid) throws Exception {
         return false;
     }
 
     @Override
-    public void flushTagRange(Object id) throws Exception {
+    public void flushTagRange(int id) throws Exception {
 
     }
+
 
 }
 

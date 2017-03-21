@@ -186,7 +186,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean save(Object uuid, Object model) throws Exception {
+    public boolean save(int uuid, Object model) throws Exception {
         byte[] key= ArrayUtils.addAll(Serializer.serialize((int)uuid), ((Flag) model).hash);
         boolean exists = db.keyMayExist(analyzedTipHandle, key, new StringBuffer());
         if (model instanceof AnalyzedFlag) {
@@ -198,7 +198,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean mayExist(Object handle, Object key) throws Exception {
+    public boolean mayExist(int handle, Object key) throws Exception {
         return db.keyMayExist(analyzedTipHandle,
                 ArrayUtils.addAll(Serializer.serialize((int)handle),(byte[]) key)
                 , new StringBuffer());
@@ -215,7 +215,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public Object get(Object uuid, Class<?> model, Object key) throws Exception {
+    public Object get(int uuid, Class<?> model, Object key) throws Exception {
         Object out = null;
         byte[] result;
         byte[] theKey = ArrayUtils.addAll(Serializer.serialize(((int) uuid)), ((Flag) key).hash);
@@ -237,7 +237,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
 
     @Override
-    public void deleteTransientObject(Object uuid, Object key) throws Exception {
+    public void deleteTransientObject(int uuid, Object key) throws Exception {
         byte[] tableKey = ArrayUtils.addAll(Serializer.serialize((int)uuid), ((byte[]) key));
         if(db.get(analyzedTipHandle, (tableKey)) != null) {
             db.delete(analyzedTipHandle, tableKey);
@@ -385,7 +385,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean transientObjectExists(Object uuid, byte[] hash) throws Exception {
+    public boolean transientObjectExists(int uuid, byte[] hash) throws Exception {
         return db.get(analyzedTipHandle, ArrayUtils.addAll(Serializer.serialize((int) uuid), hash)) != null;
     }
 
@@ -423,13 +423,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean setTransientFlagHandle(Object uuid) throws RocksDBException {
+    public boolean setTransientFlagHandle(int uuid) throws RocksDBException {
         return true;
     }
 
     @Override
-    public void flushTagRange(Object id) throws Exception {
-        int i = (int) id;
+    public void flushTagRange(int id) throws Exception {
+        int i = id;
         byte[] idbytes = Serializer.serialize(i++);
         byte[] start = ArrayUtils.addAll(idbytes, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
         byte[] keyStart;

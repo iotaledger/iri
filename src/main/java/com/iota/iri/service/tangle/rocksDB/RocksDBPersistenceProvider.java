@@ -11,11 +11,8 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.rocksdb.*;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +38,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "analyzedTipFlag",
     };
 
+    boolean running;
     private ColumnFamilyHandle transactionHandle;
     private ColumnFamilyHandle transactionValidityHandle;
     private ColumnFamilyHandle transactionTypeHandle;
@@ -63,6 +61,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     RocksDB db;
     DBOptions options;
     private Random random;
+    private Thread compactionThreadHandle;
 
     @Override
     public void init(String path) throws Exception{
@@ -79,6 +78,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public void shutdown() {
+        running = false;
+        try {
+            compactionThreadHandle.join();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
         if (db != null) db.close();
         options.close();
     }
@@ -501,7 +506,22 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         if (missingFromDescription.size() != 0) {
             missingFromDescription.stream().forEach(familyDescriptors::add);
         }
-
+        running = true;
+        this.compactionThreadHandle = new Thread(() -> {
+            long compationWaitTime = 5 * 60 * 1000;
+            while(running) {
+                try {
+                    for(ColumnFamilyHandle handle: familyHandles) {
+                            db.compactRange(handle);
+                    }
+                    Thread.sleep(compationWaitTime);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                } catch (RocksDBException e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
     private void addColumnFamily(byte[] familyName, RocksDB db) throws RocksDBException {
@@ -527,9 +547,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         analyzedFlagHandle = familyHandles.get(++i);
         analyzedTipHandle = familyHandles.get(++i);
 
+        /*
         for(i++; i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.remove(i));
         }
+        */
+
+        db.compactRange();
 
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {

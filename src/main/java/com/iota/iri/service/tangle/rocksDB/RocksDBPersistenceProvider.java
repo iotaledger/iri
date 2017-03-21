@@ -432,8 +432,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public void flushTagRange(int id) throws Exception {
         int i = id;
-        byte[] idbytes = Serializer.serialize(i++);
-        byte[] start = getTransientKey(i++, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
+        byte[] idbytes = Serializer.serialize(i);
+        byte[] start = getTransientKey(i, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
         byte[] keyStart;
         RocksIterator iterator = db.newIterator(analyzedTipHandle);
         iterator.seek(start);

@@ -55,7 +55,6 @@ public class Tangle {
         synchronized (this) {
             if(availableTansientTables.size() > 0) {
                 id = availableTansientTables.remove(0);
-                transientTablesInUse.add(id);
             } else {
                 id = nextTableId++;
                 for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -64,6 +63,7 @@ public class Tangle {
                 transientHandles.add(id);
             }
         }
+        transientTablesInUse.add(id);
         return id;
     }
 
@@ -73,7 +73,7 @@ public class Tangle {
         }
         synchronized (this) {
             log.info("Released transient table with id: " + id);
-            availableTansientTables.add((int)id);
+            availableTansientTables.add(id);
             transientTablesInUse.remove(id);
         }
     }

@@ -249,9 +249,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         RocksIterator iterator;
         WriteBatch batch = new WriteBatch();
         iterator = db.newIterator(analyzedTipHandle);
-        byte[] sourcePre = Serializer.serialize((int)sourceId);
+        byte[] sourcePre = Serializer.serialize(sourceId);
         byte[] sourceStart = ArrayUtils.addAll(sourcePre, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
-        byte[] destPre = Serializer.serialize((int)destId);
+        byte[] destPre = Serializer.serialize(destId);
         byte[] destKey;
         for(iterator.seek(sourceStart); iterator.isValid(); iterator.next()) {
             if(!Arrays.equals(sourcePre, Arrays.copyOfRange(iterator.key(), 0, sourcePre.length)))
@@ -386,7 +386,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean transientObjectExists(int uuid, byte[] hash) throws Exception {
-        return db.get(analyzedTipHandle, ArrayUtils.addAll(Serializer.serialize((int) uuid), hash)) != null;
+        return db.get(analyzedTipHandle, ArrayUtils.addAll(Serializer.serialize(uuid), hash)) != null;
     }
 
     @Override
@@ -433,7 +433,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         byte[] idbytes = Serializer.serialize(i++);
         byte[] start = ArrayUtils.addAll(idbytes, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
         byte[] keyStart;
-        //byte[] end = ArrayUtils.addAll(Serializer.serialize(i), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
         RocksIterator iterator = db.newIterator(analyzedTipHandle);
         iterator.seek(start);
         iterator.next();

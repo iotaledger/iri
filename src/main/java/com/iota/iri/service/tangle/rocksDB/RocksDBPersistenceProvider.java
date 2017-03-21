@@ -441,7 +441,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(; iterator.isValid(); iterator.next()) {
             keyStart = Arrays.copyOfRange(iterator.key(), 0, idbytes.length);
             if(!Arrays.equals(idbytes, keyStart)) break;
-            db.delete(iterator.key());
+            db.delete(analyzedTipHandle, iterator.key());
         }
         //db.deleteRange(analyzedTipHandle, start, end);
     }
@@ -561,12 +561,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         db.flush(new FlushOptions().setWaitForFlush(true), analyzedTipHandle);
         RocksIterator iterator = db.newIterator(analyzedTipHandle);
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            db.delete(iterator.key());
+            db.delete(analyzedTipHandle, iterator.key());
         }
         db.flush(new FlushOptions().setWaitForFlush(true), analyzedFlagHandle);
         iterator = db.newIterator(analyzedFlagHandle);
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            db.delete(iterator.key());
+            db.delete(analyzedFlagHandle, iterator.key());
         }
         /*
         for(i++; i < familyHandles.size();) {

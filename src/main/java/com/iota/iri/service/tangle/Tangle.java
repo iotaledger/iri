@@ -74,7 +74,7 @@ public class Tangle {
         synchronized (this) {
             log.info("Released transient table with id: " + id);
             availableTansientTables.add(id);
-            transientTablesInUse.remove(id);
+            transientTablesInUse.remove((Object)id);
         }
     }
 

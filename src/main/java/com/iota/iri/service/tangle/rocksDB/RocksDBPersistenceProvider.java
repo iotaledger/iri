@@ -192,7 +192,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         if (model instanceof AnalyzedFlag) {
             db.put(analyzedTipHandle, key, Serializer.serialize(((AnalyzedFlag) model).status));
         } else if(model instanceof Flag) {
-            db.put(analyzedFlagHandle, key, Serializer.serialize(((Flag) model).status));
+            db.put(analyzedTipHandle, key, Serializer.serialize(((Flag) model).status));
         }
         return exists;
     }
@@ -560,6 +560,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
         db.flush(new FlushOptions().setWaitForFlush(true), analyzedTipHandle);
         RocksIterator iterator = db.newIterator(analyzedTipHandle);
+        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            db.delete(iterator.key());
+        }
+        db.flush(new FlushOptions().setWaitForFlush(true), analyzedFlagHandle);
+        iterator = db.newIterator(analyzedFlagHandle);
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             db.delete(iterator.key());
         }

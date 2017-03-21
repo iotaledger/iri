@@ -237,8 +237,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public void deleteTransientObject(Object uuid, Object key) throws Exception {
-        if(db.get(analyzedTipHandle, ((byte[]) key)) != null) {
-            db.delete(analyzedTipHandle, ((byte[]) key));
+        byte[] tableKey = ArrayUtils.addAll(Serializer.serialize((int)uuid), ((byte[]) key));
+        if(db.get(analyzedTipHandle, (tableKey)) != null) {
+            db.delete(analyzedTipHandle, tableKey);
         }
     }
 

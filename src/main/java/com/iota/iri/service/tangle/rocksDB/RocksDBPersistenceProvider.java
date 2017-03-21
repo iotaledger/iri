@@ -187,7 +187,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean save(Object uuid, Object model) throws Exception {
-        byte[] key= ArrayUtils.addAll(Serializer.serialize((int)uuid), ((AnalyzedFlag) model).hash);
+        byte[] key= ArrayUtils.addAll(Serializer.serialize((int)uuid), ((Flag) model).hash);
         boolean exists = db.keyMayExist(analyzedTipHandle, key, new StringBuffer());
         if (model instanceof AnalyzedFlag) {
             db.put(analyzedTipHandle, key, Serializer.serialize(((AnalyzedFlag) model).status));
@@ -248,10 +248,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public void copyTransientList(Object sourceId, Object destId) throws Exception {
         RocksIterator iterator;
         WriteBatch batch = new WriteBatch();
-        /*
-        ColumnFamilyHandle sourceHandle = transientHandles.get(sourceId);
-        ColumnFamilyHandle destHandle = transientHandles.get(destId);
-        */
         iterator = db.newIterator(analyzedTipHandle);
         byte[] sourcePre = Serializer.serialize((int)sourceId);
         byte[] sourceStart = ArrayUtils.addAll(sourcePre, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);

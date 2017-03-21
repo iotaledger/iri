@@ -429,11 +429,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public void flushTagRange(Object id) throws Exception {
         int i = (int) id;
-        byte[] start = ArrayUtils.addAll(Serializer.serialize(i++), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
-        byte[] end = ArrayUtils.addAll(Serializer.serialize(i), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
+        byte[] idbytes = Serializer.serialize(i++);
+        byte[] start = ArrayUtils.addAll(idbytes, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
+        //byte[] end = ArrayUtils.addAll(Serializer.serialize(i), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
         RocksIterator iterator = db.newIterator(analyzedTipHandle);
         for(iterator.seek(start); iterator.isValid(); iterator.next()) {
-            if(!Arrays.equals(start, Arrays.copyOfRange(iterator.key(), 0, start.length))) break;
+            if(!Arrays.equals(idbytes, Arrays.copyOfRange(iterator.key(), 0, idbytes.length))) break;
             db.delete(iterator.key());
         }
         //db.deleteRange(analyzedTipHandle, start, end);

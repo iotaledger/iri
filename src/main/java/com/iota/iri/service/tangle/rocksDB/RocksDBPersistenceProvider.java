@@ -187,7 +187,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean save(int uuid, Object model) throws Exception {
-        byte[] key= ArrayUtils.addAll(Serializer.serialize((int)uuid), ((Flag) model).hash);
+        byte[] key= ArrayUtils.addAll(Serializer.serialize(uuid), ((Flag) model).hash);
         boolean exists = db.keyMayExist(analyzedTipHandle, key, new StringBuffer());
         if (model instanceof AnalyzedFlag) {
             db.put(analyzedTipHandle, key, Serializer.serialize(((AnalyzedFlag) model).status));
@@ -200,7 +200,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public boolean mayExist(int handle, Object key) throws Exception {
         return db.keyMayExist(analyzedTipHandle,
-                ArrayUtils.addAll(Serializer.serialize((int)handle),(byte[]) key)
+                ArrayUtils.addAll(Serializer.serialize(handle),(byte[]) key)
                 , new StringBuffer());
     }
 
@@ -218,7 +218,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public Object get(int uuid, Class<?> model, Object key) throws Exception {
         Object out = null;
         byte[] result;
-        byte[] theKey = ArrayUtils.addAll(Serializer.serialize(((int) uuid)), ((Flag) key).hash);
+        byte[] theKey = ArrayUtils.addAll(Serializer.serialize(uuid), ((Flag) key).hash);
         if (model == AnalyzedFlag.class) {
             result = db.get(analyzedTipHandle, theKey);
             if(result != null) {
@@ -238,14 +238,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public void deleteTransientObject(int uuid, Object key) throws Exception {
-        byte[] tableKey = ArrayUtils.addAll(Serializer.serialize((int)uuid), ((byte[]) key));
+        byte[] tableKey = ArrayUtils.addAll(Serializer.serialize(uuid), ((byte[]) key));
         if(db.get(analyzedTipHandle, (tableKey)) != null) {
             db.delete(analyzedTipHandle, tableKey);
         }
     }
 
     @Override
-    public void copyTransientList(Object sourceId, Object destId) throws Exception {
+    public void copyTransientList(int sourceId, int destId) throws Exception {
         RocksIterator iterator;
         WriteBatch batch = new WriteBatch();
         iterator = db.newIterator(analyzedTipHandle);

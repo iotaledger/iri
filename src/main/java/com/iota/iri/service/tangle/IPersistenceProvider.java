@@ -25,7 +25,7 @@ public interface IPersistenceProvider {
     boolean exists(Class<?> model, Object key) throws Exception;
     Object get(int handle, Class<?> model, Object key) throws Exception;
     void deleteTransientObject(int uuid, Object key) throws Exception;
-    void copyTransientList(Object sourceId, Object destId) throws Exception;
+    void copyTransientList(int sourceId, int destId) throws Exception;
 
     Object latest(Class<?> model) throws  Exception;
 

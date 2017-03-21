@@ -234,7 +234,7 @@ public class Tangle {
         });
     }
 
-    public Future<Void> copyTransientList(Object sourceHandle, Object destHandle) {
+    public Future<Void> copyTransientList(int sourceHandle, int destHandle) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 provider.copyTransientList(sourceHandle, destHandle);

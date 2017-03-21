@@ -78,9 +78,8 @@ public class MockPersistenceProvider implements IPersistenceProvider {
 
     }
 
-
     @Override
-    public void copyTransientList(Object sourceId, Object destId) throws Exception {
+    public void copyTransientList(int sourceId, int destId) throws Exception {
 
     }
 

@@ -547,6 +547,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         analyzedFlagHandle = familyHandles.get(++i);
         analyzedTipHandle = familyHandles.get(++i);
 
+        db.flush(new FlushOptions().setWaitForFlush(true), analyzedTipHandle);
+        RocksIterator iterator = db.newIterator(analyzedTipHandle);
+        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            db.delete(iterator.key());
+        }
         /*
         for(i++; i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.remove(i));

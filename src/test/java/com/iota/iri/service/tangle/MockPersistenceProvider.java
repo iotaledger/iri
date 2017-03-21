@@ -53,11 +53,6 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public void dropTransientHandle(Object handle) {
-
-    }
-
-    @Override
     public boolean save(Object handle, Object model) throws Exception {
         return false;
     }

@@ -426,7 +426,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         int i = (int) id;
         byte[] start = ArrayUtils.addAll(Serializer.serialize(i++), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
         byte[] end = ArrayUtils.addAll(Serializer.serialize(i), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
-        db.deleteRange(analyzedTipHandle, start, end);
+        RocksIterator iterator = db.newIterator(analyzedTipHandle);
+        for(iterator.seek(start); iterator.isValid(); iterator.next()) {
+            if(!Arrays.equals(start, Arrays.copyOfRange(iterator.key(), 0, start.length))) break;
+            db.delete(iterator.key());
+        }
+        //db.deleteRange(analyzedTipHandle, start, end);
     }
 
     @Override
@@ -525,8 +530,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(i++; i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.remove(i));
         }
-
-
 
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {

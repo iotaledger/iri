@@ -13,6 +13,7 @@ import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.utils.Converter;
+import org.apache.commons.lang3.ArrayUtils;
 
 public class Milestone {
 
@@ -124,6 +125,9 @@ public class Milestone {
                     byte[] hashBytes;
                     while ((hashBytes = nonAnalyzedTransactions.poll().toByteArray()) != null) {
 
+                        if(hashBytes.length < Hash.SIZE_IN_BYTES) {
+                            hashBytes = ArrayUtils.addAll(hashBytes, Arrays.copyOf(Hash.NULL_HASH.bytes(), Hash.SIZE_IN_BYTES - hashBytes.length));
+                        }
                         if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashBytes)) {
 
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashBytes);

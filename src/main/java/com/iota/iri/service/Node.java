@@ -203,6 +203,7 @@ public class Node {
                                         receivedSet.add(receivedTransactionViewModel.getHash());
                                         count++;
                                         if(now-lastTime > 10000L) {
+                                            lastTime = now;
                                             log.info("New Tx #: " + newSet.size() + ". Original Received Tx #: " + receivedSet.size() + ". Total Transmitted Tx #: " + count);
                                             newSet.clear();
                                             receivedSet.clear();

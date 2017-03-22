@@ -9,12 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.UnknownHostException;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
@@ -27,6 +22,7 @@ import com.iota.iri.service.storage.ReplicatorSinkPool;
 import com.iota.iri.service.viewModels.TipsViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -178,6 +174,9 @@ public class Node {
 
             final SecureRandom rnd = new SecureRandom();
             long randomTipBroadcastCounter = 1;
+            long lastTime = System.currentTimeMillis(), now, count = 0;
+            Set<byte[]> receivedSet = new HashSet<>();
+            Set<byte[]> newSet = new HashSet<>();
 
             while (!shuttingDown.get()) {
 
@@ -194,12 +193,21 @@ public class Node {
                                     long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                                     if (timestamp > TIMESTAMP_THRESHOLD) {
                                         if(receivedTransactionViewModel.store().get()) {
+                                            newSet.add(receivedTransactionViewModel.getHash());
                                             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                             receivedTransactionViewModel.update("arrivalTime");
                                             neighbor.incNewTransactions();
                                             broadcast(receivedTransactionViewModel);
                                         }
-                                        log.info("Received Hash: " + new Hash(receivedTransactionViewModel.getHash()));
+                                        now = System.currentTimeMillis();
+                                        receivedSet.add(receivedTransactionViewModel.getHash());
+                                        count++;
+                                        if(now-lastTime > 10000L) {
+                                            log.info("New Tx #: " + newSet.size() + ". Original Received Tx #: " + receivedSet.size() + ". Total Transmitted Tx #: " + count);
+                                            newSet.clear();
+                                            receivedSet.clear();
+                                            count = 0;
+                                        }
 
                                         byte[] transactionPointer = Hash.NULL_HASH.bytes();
                                         System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);

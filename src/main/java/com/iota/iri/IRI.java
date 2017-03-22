@@ -50,9 +50,11 @@ public class IRI {
         try {
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
             Tangle.instance().init();
+            /*
             Milestone.updateLatestMilestone();
             Milestone.updateLatestSolidSubtangleMilestone();
             ScratchpadViewModel.instance().rescanTransactionsToRequest();
+            */
             Node.instance().init();
             TipsManager.instance().init();
             API.instance().init();

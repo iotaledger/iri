@@ -1,13 +1,7 @@
 package com.iota.iri;
 
 import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
@@ -126,21 +120,21 @@ public class Milestone {
                 	ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
 
                 	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
-                    final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>();
-                    nonAnalyzedTransactions.offer(milestone.bytes());
+                    final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(new BigInteger(milestone.bytes())));
                     byte[] hashBytes;
-                    while ((hashBytes = nonAnalyzedTransactions.poll()) != null) {
+                    while ((hashBytes = nonAnalyzedTransactions.poll().toByteArray()) != null) {
 
                         if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashBytes)) {
 
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashBytes);
                             if (transactionViewModel2.getType() == AbstractStorage.PREFILLED_SLOT) {
+                                ScratchpadViewModel.instance().requestTransaction(hashBytes);
                                 solid = false;
                                 break;
 
                             } else {
-                                nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
-                                nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
+                                nonAnalyzedTransactions.offer(new BigInteger(transactionViewModel2.getTrunkTransactionHash()));
+                                nonAnalyzedTransactions.offer(new BigInteger(transactionViewModel2.getBranchTransactionHash()));
                             }
                         }
                     }

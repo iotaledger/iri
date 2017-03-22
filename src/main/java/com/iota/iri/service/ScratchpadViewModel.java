@@ -72,6 +72,7 @@ public class ScratchpadViewModel {
     public Future<Boolean> requestTransaction(byte[] hash) throws ExecutionException, InterruptedException {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
+        assert hash.length == Hash.SIZE_IN_BYTES;
         return Tangle.instance().save(scratchpad);
     }
 

@@ -57,7 +57,7 @@ public class ScratchpadViewModel {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
             nonAnalyzedTransactions.remove(hash.toString());
             if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT && !Arrays.equals(transactionViewModel.getHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
-                log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));
+                //log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));
                 ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
             } else {
                 if(analyzedTransactions.add((new Hash(transactionViewModel.getTrunkTransactionHash()).toString())))

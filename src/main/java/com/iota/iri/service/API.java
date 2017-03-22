@@ -194,9 +194,6 @@ public class API {
                     log.debug("Invoking 'storeTransactions' with {}", trytes);
                     return storeTransactionStatement(trytes);
                 }
-                case "rescanTxToRequest": {
-                    return rescanTxToRequest();
-                }
                 default:
                     return ErrorResponse.create("Command [" + command + "] is unknown");
             }
@@ -205,11 +202,6 @@ public class API {
             log.error("API Exception: ", e);
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
-    }
-
-    private AbstractResponse rescanTxToRequest() throws Exception {
-        ScratchpadViewModel.instance().rescanTransactionsToRequest();
-        return AbstractResponse.createEmptyResponse();
     }
 
     public static boolean invalidSubtangleStatus() {

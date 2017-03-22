@@ -2,6 +2,7 @@ package com.iota.iri.model;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.utils.Converter;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;
 
@@ -64,5 +65,11 @@ public class Hash {
     public byte[] bytes() {
 		return bytes;
 	}
+
+	public static byte[] padHash(byte[] bytes) {
+        if(bytes.length < SIZE_IN_BYTES)
+            return ArrayUtils.addAll(bytes, Arrays.copyOf(NULL_HASH.bytes(), SIZE_IN_BYTES - bytes.length));
+        return bytes;
+    }
 }
 

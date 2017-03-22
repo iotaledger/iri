@@ -48,22 +48,25 @@ public class ScratchpadViewModel {
     }
 
     public void rescanTransactionsToRequest() throws Exception {
-        LinkedHashSet<String> nonAnalyzedTransactions = new LinkedHashSet<>(Collections.singleton(Milestone.latestMilestone.toString()));
-        LinkedHashSet<String> analyzedTransactions = new LinkedHashSet<>(Collections.singleton(Milestone.latestMilestone.toString()));
+        Set<BigInteger> nonAnalyzedTransactions;
+        Set<BigInteger> analyzedTransactions;
+        nonAnalyzedTransactions = new HashSet<>(Collections.singleton(new BigInteger(Milestone.latestMilestone.bytes())));
+        analyzedTransactions = new HashSet<>(Collections.singleton(new BigInteger(Milestone.latestMilestone.bytes())));
         Hash hash;
         Tangle.instance().flushScratchpad().get();
         while(nonAnalyzedTransactions.size() != 0) {
-            hash = new Hash((String) nonAnalyzedTransactions.toArray()[0]);
+            BigInteger nextHashInteger = (BigInteger) nonAnalyzedTransactions.toArray()[0];
+            hash = new Hash(nextHashInteger.toByteArray());
+            nonAnalyzedTransactions.remove(nonAnalyzedTransactions.toArray()[0]);
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
-            nonAnalyzedTransactions.remove(hash.toString());
             if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT && !Arrays.equals(transactionViewModel.getHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
                 //log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));
                 ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
             } else {
-                if(analyzedTransactions.add((new Hash(transactionViewModel.getTrunkTransactionHash()).toString())))
-                    nonAnalyzedTransactions.add(new Hash(transactionViewModel.getTrunkTransactionHash()).toString());
-                if(analyzedTransactions.add(new Hash(transactionViewModel.getBranchTransactionHash()).toString()))
-                    nonAnalyzedTransactions.add(new Hash(transactionViewModel.getBranchTransactionHash()).toString());
+                if(analyzedTransactions.add((new BigInteger(transactionViewModel.getTrunkTransactionHash()))))
+                    nonAnalyzedTransactions.add(new BigInteger(transactionViewModel.getTrunkTransactionHash()));
+                if(analyzedTransactions.add(new BigInteger(transactionViewModel.getBranchTransactionHash())))
+                    nonAnalyzedTransactions.add(new BigInteger(transactionViewModel.getBranchTransactionHash()));
             }
         }
         log.info("number of analyzed tx: " + analyzedTransactions.size());

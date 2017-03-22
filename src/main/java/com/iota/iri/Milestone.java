@@ -127,7 +127,7 @@ public class Milestone {
                         if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashBytes)) {
 
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashBytes);
-                            if (transactionViewModel2.getType() == AbstractStorage.PREFILLED_SLOT) {
+                            if (transactionViewModel2.getType() == AbstractStorage.PREFILLED_SLOT && !Arrays.equals(hashBytes, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
                                 ScratchpadViewModel.instance().requestTransaction(hashBytes);
                                 solid = false;
                                 break;

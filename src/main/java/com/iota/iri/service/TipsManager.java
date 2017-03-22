@@ -177,7 +177,7 @@ public class TipsManager {
                                 }
 
                                 if (!validBundle) {
-                                    Tangle.instance().delete(transactionViewModel).get();
+                                    transactionViewModel.delete();
                                     ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
                                     Tangle.instance().releaseTransientTable(transientHandle);
                                     return null;

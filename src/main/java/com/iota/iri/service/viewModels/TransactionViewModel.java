@@ -188,6 +188,9 @@ public class TransactionViewModel {
         return trits;
     }
 
+    public void delete() throws Exception {
+        Tangle.instance().delete(transaction).get();
+    }
     public Future<Boolean> store() throws Exception {
         Future<Boolean> future;
         if(!Tangle.instance().transactionExists(getHash())) {

@@ -56,8 +56,8 @@ public class ScratchpadViewModel {
         Tangle.instance().flushScratchpad().get();
         while(nonAnalyzedTransactions.size() != 0) {
             BigInteger nextHashInteger = (BigInteger) nonAnalyzedTransactions.toArray()[0];
-            hash = new Hash(nextHashInteger.toByteArray());
-            nonAnalyzedTransactions.remove(nonAnalyzedTransactions.toArray()[0]);
+            hash = new Hash(Hash.padHash(nextHashInteger.toByteArray()));
+            nonAnalyzedTransactions.remove(nextHashInteger);
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
             if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT && !Arrays.equals(transactionViewModel.getHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
                 //log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));

@@ -79,27 +79,16 @@ public class Node {
 
         Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
         .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
-            if (!"udp".equals(u.getScheme())) {
-                log.warn("WARNING: '{}' is not a valid udp:// uri schema.", u);
+            if (!"udp".equals(u.getScheme()) && !"tcp".equals(u.getScheme())) {
+                log.warn("WARNING: '{}' is not a valid uri schema.", u);
             }
-        }).filter(u -> "udp".equals(u.getScheme()))
-        .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()),false,true)).peek(u -> {
-            if (Configuration.booling(DefaultConfSettings.DEBUG)) {
-                log.debug("-> Adding neighbor : {} ", u.getAddress());
-            }
+        }).filter(u -> "udp".equals(u.getScheme()) || "tcp".equals(u.getScheme()))
+        .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()),"tcp".equals(u.getScheme()),true)).peek(u -> {
+            //if (Configuration.booling(DefaultConfSettings.DEBUG)) {
+                log.info("-> Adding neighbor : {} ", u.getAddress());
+            //}
         }).forEach(neighbors::add);
-
-        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
-        .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
-            if (!"tcp".equals(u.getScheme())) {
-                log.warn("WARNING: '{}' is not a valid tcp:// uri schema.", u);
-            }
-        }).filter(u -> "tcp".equals(u.getScheme()))
-        .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()),true,true)).peek(u -> {
-            if (Configuration.booling(DefaultConfSettings.DEBUG)) {
-                log.debug("-> Adding neighbor : {} ", u.getAddress());
-            }
-        }).forEach(neighbors::add);
+        
         
         executor.submit(spawnReceiverThread());
         executor.submit(spawnBroadcasterThread());

@@ -1,5 +1,6 @@
 package com.iota.iri.service;
 
+import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -133,9 +134,9 @@ public class TipsManager {
                 int numberOfAnalyzedTransactions = 0;
 
                 setAnalyzedTransactionFlag(transientHandle, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
-                final Queue<byte[]> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
+                final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(new BigInteger(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash())));
                 byte[] transactionHash;
-                while ((transactionHash = nonAnalyzedTransactions.poll()) != null) {
+                while ((transactionHash = nonAnalyzedTransactions.poll().toByteArray()) != null) {
 
                     if (setAnalyzedTransactionFlag(transientHandle, transactionHash)) {
 
@@ -182,8 +183,8 @@ public class TipsManager {
                                 }
                             }
 
-                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
+                            nonAnalyzedTransactions.offer(new BigInteger(transactionViewModel.getTrunkTransactionHash()));
+                            nonAnalyzedTransactions.offer(new BigInteger(transactionViewModel.getBranchTransactionHash()));
                         }
                     }
                 }

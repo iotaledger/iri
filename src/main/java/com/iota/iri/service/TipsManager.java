@@ -9,6 +9,7 @@ import com.iota.iri.model.Flag;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.viewModels.AddressViewModel;
+import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -177,9 +178,12 @@ public class TipsManager {
                                 }
 
                                 if (!validBundle) {
-                                    transactionViewModel.delete();
-                                    TransactionViewModel testTx = TransactionViewModel.fromHash(transactionViewModel.getHash());
-                                    //ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
+                                    BundleViewModel bundleViewModel = BundleViewModel.fromHash(transactionViewModel.getBundleHash());
+                                    TransactionViewModel[] transactionViewModels = bundleViewModel.getTransactions();
+                                    if(!TransactionViewModel.exists(transactionViewModel.getTrunkTransactionHash()))
+                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
+                                    if(!TransactionViewModel.exists(transactionViewModel.getBranchTransactionHash()))
+                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
                                     Tangle.instance().releaseTransientTable(transientHandle);
                                     return null;
                                 }

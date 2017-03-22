@@ -122,9 +122,10 @@ public class Milestone {
 
                 	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
                     final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(new BigInteger(milestone.bytes())));
+                    BigInteger hashPointer;
                     byte[] hashBytes;
-                    while ((hashBytes = Hash.padHash(nonAnalyzedTransactions.poll().toByteArray())) != null) {
-
+                    while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
+                        hashBytes = Hash.padHash(hashPointer.toByteArray());
                         if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashBytes)) {
 
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashBytes);

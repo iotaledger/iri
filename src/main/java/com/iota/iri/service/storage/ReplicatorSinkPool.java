@@ -112,7 +112,8 @@ public class ReplicatorSinkPool  implements Runnable {
     
     public void shutdown() throws InterruptedException {
         shutdown = true;
-        sinkPool.awaitTermination(6, TimeUnit.SECONDS);
+        sinkPool.shutdown();
+        //sinkPool.awaitTermination(6, TimeUnit.SECONDS);
     }
 
     private static ReplicatorSinkPool instance = new ReplicatorSinkPool();

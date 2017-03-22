@@ -47,7 +47,7 @@ public class ReplicatorSourcePool implements Runnable {
         shutdown = true;
         //notify();
         pool.shutdown();
-        //pool.awaitTermination(6, TimeUnit.SECONDS);
+        pool.awaitTermination(6, TimeUnit.SECONDS);
     }
 
     private static ReplicatorSourcePool instance = new ReplicatorSourcePool();

@@ -366,7 +366,7 @@ public class Node {
     public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
         executor.shutdown();
-        //executor.awaitTermination(6, TimeUnit.SECONDS);
+        executor.awaitTermination(6, TimeUnit.SECONDS);
     }
 
     public void send(final DatagramPacket packet) {

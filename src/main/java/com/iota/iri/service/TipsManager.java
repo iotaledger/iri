@@ -178,8 +178,7 @@ public class TipsManager {
                                 }
 
                                 if (!validBundle) {
-                                    BundleViewModel bundleViewModel = BundleViewModel.fromHash(transactionViewModel.getBundleHash());
-                                    TransactionViewModel[] transactionViewModels = bundleViewModel.getTransactions();
+                                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBundleHash());
                                     if(!TransactionViewModel.exists(transactionViewModel.getTrunkTransactionHash()))
                                         ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
                                     if(!TransactionViewModel.exists(transactionViewModel.getBranchTransactionHash()))

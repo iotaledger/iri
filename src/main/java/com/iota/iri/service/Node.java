@@ -175,8 +175,8 @@ public class Node {
             final SecureRandom rnd = new SecureRandom();
             long randomTipBroadcastCounter = 1;
             long lastTime = System.currentTimeMillis(), now, count = 0;
-            Set<byte[]> receivedSet = new HashSet<>();
-            Set<byte[]> newSet = new HashSet<>();
+            Set<String> receivedSet = new HashSet<>();
+            Set<String> newSet = new HashSet<>();
 
             while (!shuttingDown.get()) {
 
@@ -193,14 +193,14 @@ public class Node {
                                     long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                                     if (timestamp > TIMESTAMP_THRESHOLD) {
                                         if(receivedTransactionViewModel.store().get()) {
-                                            newSet.add(receivedTransactionViewModel.getHash());
+                                            newSet.add(new Hash(receivedTransactionViewModel.getHash()).toString());
                                             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                             receivedTransactionViewModel.update("arrivalTime");
                                             neighbor.incNewTransactions();
                                             broadcast(receivedTransactionViewModel);
                                         }
                                         now = System.currentTimeMillis();
-                                        receivedSet.add(receivedTransactionViewModel.getHash());
+                                        receivedSet.add(new Hash(receivedTransactionViewModel.getHash()).toString());
                                         count++;
                                         if(now-lastTime > 10000L) {
                                             lastTime = now;

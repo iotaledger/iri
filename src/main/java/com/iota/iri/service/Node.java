@@ -199,6 +199,7 @@ public class Node {
                                             neighbor.incNewTransactions();
                                             broadcast(receivedTransactionViewModel);
                                         }
+                                        log.info("Received Hash: " + new Hash(receivedTransactionViewModel.getHash()));
 
                                         byte[] transactionPointer = Hash.NULL_HASH.bytes();
                                         System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);

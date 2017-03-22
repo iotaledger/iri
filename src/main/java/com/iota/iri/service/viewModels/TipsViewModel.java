@@ -30,6 +30,9 @@ public class TipsViewModel {
     }
 
     public static Hash[] getTipHashes() throws ExecutionException, InterruptedException {
-        return Arrays.stream(Tangle.instance().loadAll(Tip.class).get()).map(tip -> new Hash(((Tip) tip).hash)).toArray(Hash[]::new);
+        return Arrays.stream(Tangle.instance()
+                .loadAll(Tip.class).get())
+                .map(tip -> new Hash(((Tip) tip).hash))
+                .toArray(Hash[]::new);
     }
 }

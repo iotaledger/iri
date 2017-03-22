@@ -144,7 +144,7 @@ public class TipsManager {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(transactionPointer.toByteArray()));
                         if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
-
+                            ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
                             Tangle.instance().releaseTransientTable(transientHandle);
                             return null;
 
@@ -178,7 +178,7 @@ public class TipsManager {
 
                                 if (!validBundle) {
                                     Tangle.instance().delete(transactionViewModel).get();
-                                    ScratchpadViewModel.instance().requestTransaction(Hash.padHash(transactionPointer.toByteArray()));
+                                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
                                     Tangle.instance().releaseTransientTable(transientHandle);
                                     return null;
                                 }

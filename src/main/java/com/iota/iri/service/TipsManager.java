@@ -133,7 +133,6 @@ public class TipsManager {
             {
                 int numberOfAnalyzedTransactions = 0;
 
-                //setAnalyzedTransactionFlag(transientHandle, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
                 setAnalyzedTransactionFlag(transientHandle, new BigInteger(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES));
                 final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(new BigInteger(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash())));
                 BigInteger transactionPointer;
@@ -178,7 +177,8 @@ public class TipsManager {
                                 }
 
                                 if (!validBundle) {
-
+                                    Tangle.instance().delete(transactionViewModel).get();
+                                    ScratchpadViewModel.instance().requestTransaction(Hash.padHash(transactionPointer.toByteArray()));
                                     Tangle.instance().releaseTransientTable(transientHandle);
                                     return null;
                                 }

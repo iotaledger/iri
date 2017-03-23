@@ -79,8 +79,8 @@ public class StorageScratchpad extends AbstractStorage {
                             if (transactionViewModel.getType() == Storage.PREFILLED_SLOT) {
                                 ((ByteBuffer) transactionsToRequest.position(numberOfTransactionsToRequest++ * TransactionViewModel.HASH_SIZE)).put(Hash.padHash(transactionViewModel.getHash())); // Only 2'917'776 hashes can be stored this way without overflowing the buffer, we assume that nodes will never need to store that many hashes, so we don't need to cap "numberOfTransactionsToRequest"
                             } else {
-                                nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                                nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
+                                nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionPointer());
+                                nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionPointer());
                             }
                         }
                     }

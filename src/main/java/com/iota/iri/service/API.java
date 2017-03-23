@@ -303,7 +303,7 @@ public class API {
             for (final Hash tip : tips) {
 
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-                if (transactionViewModel.getHash().equals(BigInteger.ZERO)){
+                if (transactionViewModel.getHash().equals(TransactionViewModel.PADDED_NULL_HASH)){
                     return ErrorResponse.create("One of the tips absents");
                 }
                 nonAnalyzedTransactions.offer(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, tip.bytes())));
@@ -334,8 +334,8 @@ public class API {
                                     }
                                 }
                             }
-                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionPointer());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionPointer());
                         }
                     }
                 }
@@ -457,8 +457,8 @@ public class API {
                             balances.put(address, balance + transactionViewModel.value());
                         }
                     }
-                    nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                    nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
+                    nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionPointer());
+                    nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionPointer());
                 }
             }
 

@@ -3,7 +3,6 @@ package com.iota.iri;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
@@ -14,14 +13,13 @@ import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.utils.Converter;
-import org.apache.commons.lang3.ArrayUtils;
 
 public class Milestone {
 
     public static final Hash COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
 
-    public static BigInteger latestMilestone = BigInteger.ZERO;
-    public static BigInteger latestSolidSubtangleMilestone = BigInteger.ZERO;
+    public static BigInteger latestMilestone = TransactionViewModel.PADDED_NULL_HASH;
+    public static BigInteger latestSolidSubtangleMilestone = latestMilestone;
     
     public static final int MILESTONE_START_INDEX = 10005;
 
@@ -68,10 +66,10 @@ public class Milestone {
                                     //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
                                     final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction();
                                     if (transactionViewModel2.getType() == AbstractStorage.FILLED_SLOT
-                                            && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
+                                            && transactionViewModel.getBranchTransactionPointer().equals(transactionViewModel2.getTrunkTransactionPointer())) {
 
                                         final int[] trunkTransactionTrits = new int[TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE];
-                                        Converter.getTrits(Hash.padHash(transactionViewModel.getTrunkTransactionHash()), trunkTransactionTrits);
+                                        Converter.getTrits(Hash.padHash(transactionViewModel.getTrunkTransactionPointer()), trunkTransactionTrits);
                                         final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
                                         final int[] hashTrits = ISS.address(ISS.digest(Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits), ISS.NUMBER_OF_FRAGMENT_CHUNKS), signatureFragmentTrits));
@@ -122,20 +120,20 @@ public class Milestone {
 
                 	ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
 
-                	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(BigInteger.ZERO);
+                	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(TransactionViewModel.PADDED_NULL_HASH);
                     final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
                     BigInteger hashPointer, trunkInteger, branchInteger;
                     while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
                         if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashPointer)) {
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                            if (transactionViewModel2.getType() == AbstractStorage.PREFILLED_SLOT && !hashPointer.equals(BigInteger.ZERO)) {
+                            if (transactionViewModel2.getType() == AbstractStorage.PREFILLED_SLOT && !hashPointer.equals(TransactionViewModel.PADDED_NULL_HASH)) {
                                 ScratchpadViewModel.instance().requestTransaction(hashPointer);
                                 solid = false;
                                 break;
 
                             } else {
-                                trunkInteger = transactionViewModel2.getTrunkTransactionHash();
-                                branchInteger = transactionViewModel2.getBranchTransactionHash();
+                                trunkInteger = transactionViewModel2.getTrunkTransactionPointer();
+                                branchInteger = transactionViewModel2.getBranchTransactionPointer();
                                 nonAnalyzedTransactions.offer(trunkInteger);
                                 nonAnalyzedTransactions.offer(branchInteger);
                             }

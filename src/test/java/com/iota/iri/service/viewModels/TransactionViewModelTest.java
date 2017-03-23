@@ -205,7 +205,11 @@ public class TransactionViewModelTest {
 
     @Test
     public void getTrunkTransactionHash() throws Exception {
-
+        int[] randomTxBytes = getRandomTransactionTrits(seed);
+        TransactionViewModel tx = new TransactionViewModel(randomTxBytes);
+        byte[] hash = tx.getTrunkTransactionHash();
+        byte[] bHash = Hash.padHash(tx.getTrunkTransactionPointer());
+        assertArrayEquals(hash, bHash);
     }
 
     @Test

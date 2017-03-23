@@ -59,14 +59,14 @@ public class ScratchpadViewModel {
             hash = new Hash(nextHashInteger);
             nonAnalyzedTransactions.remove(nextHashInteger);
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
-            if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT && !transactionViewModel.getHash().equals(BigInteger.ZERO)) {
+            if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT && !transactionViewModel.getHash().equals(TransactionViewModel.PADDED_NULL_HASH)) {
                 //log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));
                 ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
             } else {
-                if(analyzedTransactions.add(transactionViewModel.getTrunkTransactionHash()))
-                    nonAnalyzedTransactions.add(transactionViewModel.getTrunkTransactionHash());
-                if(analyzedTransactions.add(transactionViewModel.getBranchTransactionHash()))
-                    nonAnalyzedTransactions.add(transactionViewModel.getBranchTransactionHash());
+                if(analyzedTransactions.add(transactionViewModel.getTrunkTransactionPointer()))
+                    nonAnalyzedTransactions.add(transactionViewModel.getTrunkTransactionPointer());
+                if(analyzedTransactions.add(transactionViewModel.getBranchTransactionPointer()))
+                    nonAnalyzedTransactions.add(transactionViewModel.getBranchTransactionPointer());
             }
         }
         log.info("number of analyzed tx: " + analyzedTransactions.size());
@@ -82,7 +82,7 @@ public class ScratchpadViewModel {
         final long beginningTime = System.currentTimeMillis();
         Scratchpad scratchpad = ((Scratchpad) Tangle.instance().getLatest(Scratchpad.class).get());
 
-        if(scratchpad != null && scratchpad.hash != null && !scratchpad.hash.equals(BigInteger.ZERO)) {
+        if(scratchpad != null && scratchpad.hash != null && !scratchpad.hash.equals(TransactionViewModel.PADDED_NULL_HASH)) {
             System.arraycopy(Hash.padHash(scratchpad.hash), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
         long now = System.currentTimeMillis();

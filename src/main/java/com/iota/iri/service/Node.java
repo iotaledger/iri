@@ -196,10 +196,10 @@ public class Node {
                                     long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                                     long start, end;
                                     if (timestamp == 0 || timestamp > TIMESTAMP_THRESHOLD) {
-                                        start = System.nanoTime();
+                                        //start = System.nanoTime();
                                         if(receivedTransactionViewModel.store().get()) {
-                                            end = System.nanoTime();
-                                            log.info("Save time: "+ (end-start)/1000 + "us");
+                                            //end = System.nanoTime();
+                                            //log.info("Save time: "+ (end-start)/1000 + "us");
                                             newSet.add(receivedTransactionViewModel.getHash());
                                             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                             receivedTransactionViewModel.update("arrivalTime");
@@ -217,7 +217,7 @@ public class Node {
                                             count = 0;
                                         }
 
-                                        BigInteger transactionPointer = BigInteger.ZERO;
+                                        BigInteger transactionPointer = TransactionViewModel.PADDED_NULL_HASH;
                                         System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
                                         TransactionViewModel transactionViewModel;
@@ -225,16 +225,17 @@ public class Node {
                                         if (Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)
                                                 && (Milestone.latestMilestoneIndex > 0)
                                                 && (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) {
+                                            log.info("Bad request. " + neighbor.getHostAddress());
                                             //
                                             BigInteger mBytes;
                                             if (randomTipBroadcastCounter % 60 == 0) {
                                                 mBytes = Milestone.latestMilestone;
-                                                if (!mBytes.equals(BigInteger.ZERO)) {
+                                                if (!mBytes.equals(TransactionViewModel.PADDED_NULL_HASH)) {
                                                     transactionPointer = mBytes;
                                                 }
                                             } else if (randomTipBroadcastCounter % 48 == 0) {
                                                  mBytes = Milestone.latestMilestone;
-                                                if (!mBytes.equals(BigInteger.ZERO)) {
+                                                if (!mBytes.equals(TransactionViewModel.PADDED_NULL_HASH)) {
                                                     transactionPointer = mBytes;
 
                                                     final TransactionViewModel milestoneTx = TransactionViewModel.fromHash(transactionPointer);

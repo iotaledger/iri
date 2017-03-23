@@ -10,7 +10,6 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.math.BigInteger;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 3/15/17 for iri-testnet.
@@ -134,7 +133,7 @@ public class BundleViewModel {
                         break;
 
                     } else {
-                        transactionViewModel = bundleTransactions.get(transactionViewModel.getTrunkTransactionHash());
+                        transactionViewModel = bundleTransactions.get(transactionViewModel.getTrunkTransactionPointer());
                         if (transactionViewModel == null) {
                             break;
                         }

@@ -70,6 +70,7 @@ public class TransactionViewModel {
     public TransactionViewModel trunk;
     public TransactionViewModel branch;
     private BigInteger minWeightInteger = new BigInteger(new byte[]{3});
+    public static final BigInteger PADDED_NULL_HASH = new BigInteger("10086913586276986678343434265636765134100413253239154346994763111486904773503285916522052161250538404046496765518544896");
 
     public int[] hashTrits;
 
@@ -169,14 +170,14 @@ public class TransactionViewModel {
 
     public TransactionViewModel getBranchTransaction() throws Exception {
         if(branch == null) {
-            branch = TransactionViewModel.fromHash(getBranchTransactionHash());
+            branch = TransactionViewModel.fromHash(getBranchTransactionPointer());
         }
         return branch;
     }
 
     public TransactionViewModel getTrunkTransaction() throws Exception {
         if(trunk == null) {
-            trunk = TransactionViewModel.fromHash(getTrunkTransactionHash());
+            trunk = TransactionViewModel.fromHash(getTrunkTransactionPointer());
         }
         return trunk;
     }
@@ -200,8 +201,8 @@ public class TransactionViewModel {
             getBytes();
             getAddressHash();
             getBundleHash();
-            getBranchTransactionHash();
-            getTrunkTransactionHash();
+            getBranchTransactionPointer();
+            getTrunkTransactionPointer();
             getTagValue();
             future = Tangle.instance().save(transaction);
             for(Future<?> updateFuture: update()) {
@@ -217,12 +218,12 @@ public class TransactionViewModel {
     private Set<Future> update () throws Exception {
         Set<Future> futures = new HashSet<>();
         ScratchpadViewModel.instance().clearReceivedTransaction(transaction.hash);
-        //if (!Arrays.equals(getBranchTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
-        if (!getBranchTransaction().equals(BigInteger.ZERO))
-            futures.add(ScratchpadViewModel.instance().requestTransaction(getBranchTransactionHash()));
-        //if (!Arrays.equals(getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
-        if (!getTrunkTransactionHash().equals(BigInteger.ZERO))
-            futures.add(ScratchpadViewModel.instance().requestTransaction(getTrunkTransactionHash()));
+        //if (!Arrays.equals(getBranchTransactionPointer(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+        if (!getBranchTransaction().equals(PADDED_NULL_HASH))
+            futures.add(ScratchpadViewModel.instance().requestTransaction(getBranchTransactionPointer()));
+        //if (!Arrays.equals(getTrunkTransactionPointer(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+        if (!getTrunkTransactionPointer().equals(PADDED_NULL_HASH))
+            futures.add(ScratchpadViewModel.instance().requestTransaction(getTrunkTransactionPointer()));
         if(getApprovers().length == 0) {
             TipsViewModel.addTipHash(transaction.hash);
         } else {
@@ -306,14 +307,17 @@ public class TransactionViewModel {
         return transaction.bundle.hash;
     }
 
-    public BigInteger getTrunkTransactionHash() {
+    public byte[] getTrunkTransactionHash() {
+        return Converter.bytes(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
+    }
+    public BigInteger getTrunkTransactionPointer() {
         if(transaction.trunk.hash == null) {
             transaction.trunk.hash = Converter.bigIntegerValue(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
         }
         return transaction.trunk.hash;
     }
 
-    public BigInteger getBranchTransactionHash() {
+    public BigInteger getBranchTransactionPointer() {
         if(transaction.branch.hash == null) {
             transaction.branch.hash = Converter.bigIntegerValue(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE);
         }
@@ -475,12 +479,12 @@ public class TransactionViewModel {
             AbstractStorage.setValue(mainBuffer, CURRENT_INDEX_OFFSET, transactionViewModel.getCurrentIndex());
             AbstractStorage.setValue(mainBuffer, LAST_INDEX_OFFSET, transactionViewModel.getLastIndex());
             System.arraycopy(Converter.value(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, mainBuffer, BUNDLE_OFFSET, BUNDLE_SIZE);
-            System.arraycopy(transactionViewModel.getTrunkTransactionHash(), 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
-            System.arraycopy(transactionViewModel.getBranchTransactionHash(), 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
+            System.arraycopy(transactionViewModel.getTrunkTransactionPointer(), 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
+            System.arraycopy(transactionViewModel.getBranchTransactionPointer(), 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
 
-            long approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transactionViewModel.getTrunkTransactionHash());
+            long approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transactionViewModel.getTrunkTransactionPointer());
             if (approvedTransactionPointer == 0) {
-                Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transactionViewModel.getTrunkTransactionHash();
+                Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transactionViewModel.getTrunkTransactionPointer();
             } else {
 
                 if (approvedTransactionPointer < 0) {
@@ -491,11 +495,11 @@ public class TransactionViewModel {
                         (int)(index >> 3),
                         (byte)(StorageTransactions.instance().transactionsTipsFlags().get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
             }
-            if (!Arrays.equals(transactionViewModel.getBranchTransactionHash(), transactionViewModel.getTrunkTransactionHash())) {
+            if (!Arrays.equals(transactionViewModel.getBranchTransactionPointer(), transactionViewModel.getTrunkTransactionPointer())) {
 
-                approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transactionViewModel.getBranchTransactionHash());
+                approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transactionViewModel.getBranchTransactionPointer());
                 if (approvedTransactionPointer == 0) {
-                    Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transactionViewModel.getBranchTransactionHash();
+                    Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transactionViewModel.getBranchTransactionPointer();
                 } else {
 
                     if (approvedTransactionPointer < 0) {

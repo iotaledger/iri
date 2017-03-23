@@ -1,6 +1,5 @@
 package com.iota.iri;
 import com.iota.iri.service.viewModels.TransactionViewModel;
-import com.iota.iri.model.Hash;
 
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -11,6 +10,6 @@ public class Snapshot {
     public static final Map<BigInteger, Long> initialState = new HashMap<>();
 
     static {
-        initialState.put(BigInteger.ZERO, TransactionViewModel.SUPPLY);
+        initialState.put(TransactionViewModel.PADDED_NULL_HASH, TransactionViewModel.SUPPLY);
     }
 }

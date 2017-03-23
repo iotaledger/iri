@@ -14,7 +14,6 @@ import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Bundle;
 import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
 import com.iota.iri.model.Hash;
@@ -186,8 +185,8 @@ public class TipsManager {
                                 }
                             }
 
-                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionPointer());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionPointer());
                         }
                     }
                 }
@@ -232,7 +231,7 @@ public class TipsManager {
             if (extraTip != null) {
 
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);//StorageTransactions.instance().loadTransaction(tip);
-                while (depth-- > 0 && !tip.equals(BigInteger.ZERO)) {
+                while (depth-- > 0 && !tip.equals(TransactionViewModel.PADDED_NULL_HASH)) {
 
                     tip = transactionViewModel.getHash();
                     do {
@@ -341,8 +340,8 @@ public class TipsManager {
 
                             extraTransactions.add(transactionPointer);
 
-                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionPointer());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionPointer());
                         }
                     }
                 }

@@ -192,7 +192,7 @@ public class Node {
                                     neighbor.incAllTransactions();
                                     final TransactionViewModel receivedTransactionViewModel = new TransactionViewModel(receivingPacket.getData(), receivedTransactionTrits, curl);
                                     long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
-                                    if (timestamp > TIMESTAMP_THRESHOLD) {
+                                    if (timestamp == 0 || timestamp > TIMESTAMP_THRESHOLD) {
                                         //if ((pointer = StorageTransactions.instance().storeTransaction(receivedTransactionViewModel.getHash(), receivedTransactionViewModel, false)) != 0L) {
                                         if(receivedTransactionViewModel.store().get()) {
                                             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);

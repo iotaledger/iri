@@ -195,7 +195,7 @@ public class Node {
                                     final TransactionViewModel receivedTransactionViewModel = new TransactionViewModel(receivingPacket.getData(), receivedTransactionTrits, curl);
                                     long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
                                     long start, end;
-                                    if (timestamp > TIMESTAMP_THRESHOLD) {
+                                    if (timestamp == 0 || timestamp > TIMESTAMP_THRESHOLD) {
                                         start = System.nanoTime();
                                         if(receivedTransactionViewModel.store().get()) {
                                             end = System.nanoTime();

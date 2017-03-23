@@ -91,16 +91,16 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public boolean saveTransaction(Transaction transaction) throws RocksDBException, IOException {
         WriteBatch batch = new WriteBatch();
-        byte[] key = Hash.padHash(transaction.hash);
+        byte[] key = Hash.padHashFast(transaction.hash);
         batch.put(transactionHandle, key, transaction.bytes);
         batch.put(transactionValidityHandle, key, Serializer.serialize(transaction.validity));
         batch.put(transactionTypeHandle, key, Serializer.serialize(transaction.type));
         batch.put(transactionArrivalTimeHandle, key, Serializer.serialize(transaction.arrivalTime));
-        batch.merge(addressHandle, Hash.padHash(transaction.address.hash), key);
-        batch.merge(bundleHandle, Hash.padHash(transaction.bundle.hash), key);
-        batch.merge(approoveeHandle, Hash.padHash(transaction.trunk.hash), key);
-        batch.merge(approoveeHandle, Hash.padHash(transaction.branch.hash), key);
-        batch.merge(tagHandle, Hash.padHash(transaction.tag.value), key);
+        batch.merge(addressHandle, Hash.padHashFast(transaction.address.hash), key);
+        batch.merge(bundleHandle, Hash.padHashFast(transaction.bundle.hash), key);
+        batch.merge(approoveeHandle, Hash.padHashFast(transaction.trunk.hash), key);
+        batch.merge(approoveeHandle, Hash.padHashFast(transaction.branch.hash), key);
+        batch.merge(tagHandle, Hash.padHashFast(transaction.tag.value), key);
         db.write(new WriteOptions(), batch);
         return true;
     }
@@ -125,7 +125,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     public boolean saveAnalyzedTransactionFlag(AnalyzedFlag flag) throws RocksDBException {
-        byte[] key = Hash.padHash(flag.hash);
+        byte[] key = Hash.padHashFast(flag.hash);
         if(db.get(analyzedFlagHandle, key) == null) {
             db.put(analyzedFlagHandle, key, flag.status);
             return false;
@@ -135,19 +135,19 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     private void saveScratchpad(Scratchpad scratchpad) throws RocksDBException {
-        byte[] key = Hash.padHash(scratchpad.hash);
+        byte[] key = Hash.padHashFast(scratchpad.hash);
         if(db.get(transactionHandle, key) == null && !db.keyMayExist(scratchpadHandle, key, stringBuffer))
             db.put(scratchpadHandle, key, scratchpad.status);
     }
 
     private void saveFlag(Flag flag) throws RocksDBException {
-        byte[] key = Hash.padHash(flag.hash);
+        byte[] key = Hash.padHashFast(flag.hash);
         if(db.get(flagHandle, key) == null)
             db.put(flagHandle, key, flag.status);
     }
 
     private void saveTip(Tip tip) throws RocksDBException {
-        byte[] key = Hash.padHash(tip.hash);
+        byte[] key = Hash.padHashFast(tip.hash);
         db.put(tipHandle, key, tip.status);
     }
 
@@ -156,25 +156,25 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public void delete(Object thing) throws Exception {
         byte[] key;
         if(thing instanceof Tip) {
-            key = Hash.padHash(((Tip) thing).hash);
+            key = Hash.padHashFast(((Tip) thing).hash);
             db.delete(tipHandle, key);
         } else if(thing instanceof Scratchpad) {
-            key = Hash.padHash(((Scratchpad) thing).hash);
+            key = Hash.padHashFast(((Scratchpad) thing).hash);
             if(db.keyMayExist(scratchpadHandle, key, stringBuffer))
                 db.delete(scratchpadHandle, key);
         } else if(thing instanceof Transaction) {
             deleteTransaction((Transaction) thing);
         } else if(thing instanceof AnalyzedFlag) {
-            key = Hash.padHash(((AnalyzedFlag) thing).hash);
+            key = Hash.padHashFast(((AnalyzedFlag) thing).hash);
             db.delete(analyzedFlagHandle, key);
         } else if(thing instanceof Flag) {
-            key = Hash.padHash(((Flag) thing).hash);
+            key = Hash.padHashFast(((Flag) thing).hash);
             db.delete(flagHandle, key);
         }
     }
 
     private void deleteTransaction(Transaction transaction) throws RocksDBException {
-        byte[] key = Hash.padHash(transaction.hash);
+        byte[] key = Hash.padHashFast(transaction.hash);
         db.delete(transactionHandle, key);
         db.delete(transactionArrivalTimeHandle, key);
         db.delete(transactionTypeHandle, key);
@@ -190,14 +190,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         int i;
         Set<BigInteger> hashes = new TreeSet<>();
         for(i = size; i <= bytes.length; i += size + 1) {
-            hashes.add(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, Arrays.copyOfRange(bytes, i - size, i))));
+            hashes.add(new BigInteger(Arrays.copyOfRange(bytes, i - size, i)));
         }
         return hashes.stream().toArray(BigInteger[]::new);
     }
 
     @Override
     public boolean save(int uuid, Object model) throws Exception {
-        byte[] key = getTransientKey(uuid, Hash.padHash(((Flag) model).hash));
+        byte[] key = getTransientKey(uuid, Hash.padHashFast(((Flag) model).hash));
         boolean exists = db.keyMayExist(analyzedTipHandle, key, new StringBuffer());
         if (model instanceof AnalyzedFlag) {
             db.put(analyzedTipHandle, key, Serializer.serialize(((AnalyzedFlag) model).status));
@@ -292,7 +292,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 iterator.seekToFirst();
             }
             if(iterator.isValid()) {
-                scratchpad.hash = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, iterator.key()));
+                scratchpad.hash = new BigInteger(iterator.key());
             }
             out = scratchpad;
             iterator.close();
@@ -308,7 +308,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             List<Tip> tips = new ArrayList<>();
             iterator = db.newIterator(tipHandle);
             for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                tips.add(new Tip(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, iterator.key()))));
+                tips.add(new Tip(new BigInteger(iterator.key())));
             }
             out = tips.toArray();
         }
@@ -317,7 +317,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean get(Transaction transaction) throws Exception {
-        byte[] key = Hash.padHash(transaction.hash);
+        byte[] key = Hash.padHashFast(transaction.hash);
         transaction.bytes = db.get(transactionHandle, key);
         if(transaction.bytes == null) {
             transaction.type = AbstractStorage.PREFILLED_SLOT;
@@ -335,7 +335,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean get(Address address) throws Exception {
-        byte[] result = db.get(addressHandle, Hash.padHash(address.hash));
+        byte[] result = db.get(addressHandle, Hash.padHashFast(address.hash));
         if(result != null) {
             address.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
             return  true;
@@ -347,7 +347,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean get(Tag tag) throws Exception {
-        byte[] result = db.get(tagHandle, Hash.padHash(tag.value));
+        byte[] result = db.get(tagHandle, Hash.padHashFast(tag.value));
         if(result != null) {
             tag.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
             return  true;
@@ -359,7 +359,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean get(Bundle bundle) throws Exception {
-        byte[] result = db.get(bundleHandle, Hash.padHash(bundle.hash));
+        byte[] result = db.get(bundleHandle, Hash.padHashFast(bundle.hash));
         if(result != null) {
             bundle.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
             return true;
@@ -369,7 +369,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean get(Approvee approvee) throws Exception {
-        byte[] result = db.get(approoveeHandle, Hash.padHash(approvee.hash));
+        byte[] result = db.get(approoveeHandle, Hash.padHashFast(approvee.hash));
         if(result != null) {
             approvee.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
             return true;
@@ -381,23 +381,23 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean mayExist(Scratchpad scratchpad) throws Exception {
-        return db.keyMayExist(scratchpadHandle, Hash.padHash(scratchpad.hash), new StringBuffer());
+        return db.keyMayExist(scratchpadHandle, Hash.padHashFast(scratchpad.hash), new StringBuffer());
     }
 
     @Override
     public boolean mayExist(Transaction transaction) throws Exception {
-        byte[] key = Hash.padHash(transaction.hash);
+        byte[] key = Hash.padHashFast(transaction.hash);
         return db.keyMayExist(transactionHandle, key, new StringBuffer());
     }
 
     @Override
     public boolean mayExist(Tip tip) throws Exception {
-        return db.keyMayExist(tipHandle, Hash.padHash(tip.hash), new StringBuffer());
+        return db.keyMayExist(tipHandle, Hash.padHashFast(tip.hash), new StringBuffer());
     }
 
     @Override
     public void updateType(Transaction transaction) throws Exception {
-        byte[] key = Hash.padHash(transaction.hash);
+        byte[] key = Hash.padHashFast(transaction.hash);
         db.put(transactionTypeHandle, key, Serializer.serialize(transaction.type));
     }
 
@@ -437,7 +437,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean transactionExists(BigInteger hash) throws Exception {
-        return db.get(transactionHandle, Hash.padHash(hash)) != null;
+        return db.get(transactionHandle, Hash.padHashFast(hash)) != null;
     }
 
     @Override
@@ -466,7 +466,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public boolean update(Object thing, String item) throws Exception {
         if(thing instanceof Transaction) {
             Transaction transaction = (Transaction) thing;
-            byte[] key = Hash.padHash(transaction.hash);
+            byte[] key = Hash.padHashFast(transaction.hash);
             switch (item) {
                 case "validity":
                     db.put(transactionValidityHandle, key, Serializer.serialize(transaction.validity));

@@ -46,10 +46,21 @@ public class Converter {
     }
 
     public static BigInteger bigIntegerValue(final int[] trits) {
-        return new BigInteger(ArrayUtils.addAll(CHECK_BYTE, bytes(trits)));
+        return bigIntegerValue(trits, 0, trits.length);
     }
     public static BigInteger bigIntegerValue(final int[] trits, final int offset, final int size) {
-        return new BigInteger(ArrayUtils.addAll(CHECK_BYTE, bytes(trits, offset, size)));
+        final byte[] bytes = new byte[1 + (size + NUMBER_OF_TRITS_IN_A_BYTE - 1) / NUMBER_OF_TRITS_IN_A_BYTE];
+        bytes[0] = 1;
+        for (int i = 1; i < bytes.length; i++) {
+
+            int value = 0;
+            for (int j = (size - i * NUMBER_OF_TRITS_IN_A_BYTE) < 5 ? (size - i * NUMBER_OF_TRITS_IN_A_BYTE) : NUMBER_OF_TRITS_IN_A_BYTE; j-- > 0; ) {
+                value = value * RADIX + trits[offset + i * NUMBER_OF_TRITS_IN_A_BYTE + j];
+            }
+            bytes[i] = (byte)value;
+        }
+
+        return new BigInteger(bytes);
     }
 
     public static byte[] bytes(final int[] trits, final int offset, final int size) {

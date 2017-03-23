@@ -79,18 +79,14 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     public static TransactionViewModel fromHash(final byte[] hash) throws Exception {
-        Transaction transaction = new Transaction();
-        transaction.hash = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash));
-        Tangle.instance().load(transaction).get();
-        return new TransactionViewModel(transaction);
-    }
-
-    public static TransactionViewModel fromHash(final int[] hash) throws Exception{
-        return fromHash(Converter.bytes(hash));
+        return fromHash(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash)));
     }
 
     public static TransactionViewModel fromHash(BigInteger intHash) throws Exception {
-        return TransactionViewModel.fromHash(Hash.padHash(intHash));
+        Transaction transaction = new Transaction();
+        transaction.hash = intHash;
+        Tangle.instance().load(transaction).get();
+        return new TransactionViewModel(transaction);
     }
 
     public static TransactionViewModel fromHash(final Hash hash) throws Exception {

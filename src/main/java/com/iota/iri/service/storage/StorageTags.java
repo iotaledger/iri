@@ -8,6 +8,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.iota.iri.model.Hash;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -149,9 +150,9 @@ public class StorageTags extends AbstractStorage {
 	public void updateTags(final long transactionPointer, final TransactionViewModel transactionViewModel) {
 		for (int i = 0; i < TransactionViewModel.TAG_SIZE; i++) {
 
-            if (transactionViewModel.getTag().getHash().bytes()[i] != 0) {
+            if (Hash.padHash(transactionViewModel.getTag().getHash())[i] != 0) {
 
-                byte[] tagBytes  = transactionViewModel.getTag().getHash().bytes();
+                byte[] tagBytes  = Hash.padHash(transactionViewModel.getTag().getHash());
                 long pointer = ((tagBytes[0] + 128) + ((tagBytes[1] + 128) << 8)) << 11, prevPointer = 0;
                 for (int depth = 2; depth < TransactionViewModel.TAG_SIZE; depth++) {
 
@@ -160,7 +161,7 @@ public class StorageTags extends AbstractStorage {
                     if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
 
                         prevPointer = pointer;
-                        if ((pointer = value(mainBuffer, (transactionViewModel.getTag().getHash().bytes()[depth] + 128) << 3)) == 0) {
+                        if ((pointer = value(mainBuffer, (tagBytes[depth] + 128) << 3)) == 0) {
 
                             setValue(mainBuffer, (tagBytes[depth] + 128) << 3, tagsNextPointer);
                             ((ByteBuffer) tagsChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);

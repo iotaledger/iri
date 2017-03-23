@@ -27,7 +27,7 @@ public class ScratchpadViewModel {
 
     public static ScratchpadViewModel instance = new ScratchpadViewModel();
 
-    public boolean setAnalyzedTransactionFlag(byte[] hash) throws ExecutionException, InterruptedException {
+    public boolean setAnalyzedTransactionFlag(BigInteger hash) throws ExecutionException, InterruptedException {
         AnalyzedFlag flag = new AnalyzedFlag();
         flag.hash = hash;
         return !Tangle.instance().save(flag).get();
@@ -41,7 +41,7 @@ public class ScratchpadViewModel {
         return Tangle.instance().getNumberOfRequestedTransactions().get().intValue();
     }
 
-    public Future<Void> clearReceivedTransaction(byte[] hash) throws ExecutionException, InterruptedException {
+    public Future<Void> clearReceivedTransaction(BigInteger hash) throws ExecutionException, InterruptedException {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
         return Tangle.instance().delete(scratchpad);
@@ -50,8 +50,8 @@ public class ScratchpadViewModel {
     public void rescanTransactionsToRequest() throws Exception {
         Set<BigInteger> nonAnalyzedTransactions;
         Set<BigInteger> analyzedTransactions;
-        nonAnalyzedTransactions = new HashSet<>(Collections.singleton(new BigInteger(Milestone.latestMilestone.bytes())));
-        analyzedTransactions = new HashSet<>(Collections.singleton(new BigInteger(Milestone.latestMilestone.bytes())));
+        nonAnalyzedTransactions = new HashSet<>(Collections.singleton(Milestone.latestMilestone));
+        analyzedTransactions = new HashSet<>(Collections.singleton(Milestone.latestMilestone));
         Hash hash;
         Tangle.instance().flushScratchpad().get();
         while(nonAnalyzedTransactions.size() != 0) {
@@ -59,23 +59,22 @@ public class ScratchpadViewModel {
             hash = new Hash(Hash.padHash(nextHashInteger));
             nonAnalyzedTransactions.remove(nextHashInteger);
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
-            if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT && !Arrays.equals(transactionViewModel.getHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
+            if(transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT && !transactionViewModel.getHash().equals(BigInteger.ZERO)) {
                 //log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));
                 ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
             } else {
-                if(analyzedTransactions.add((new BigInteger(transactionViewModel.getTrunkTransactionHash()))))
-                    nonAnalyzedTransactions.add(new BigInteger(transactionViewModel.getTrunkTransactionHash()));
-                if(analyzedTransactions.add(new BigInteger(transactionViewModel.getBranchTransactionHash())))
-                    nonAnalyzedTransactions.add(new BigInteger(transactionViewModel.getBranchTransactionHash()));
+                if(analyzedTransactions.add(transactionViewModel.getTrunkTransactionHash()))
+                    nonAnalyzedTransactions.add(transactionViewModel.getTrunkTransactionHash());
+                if(analyzedTransactions.add(transactionViewModel.getBranchTransactionHash()))
+                    nonAnalyzedTransactions.add(transactionViewModel.getBranchTransactionHash());
             }
         }
         log.info("number of analyzed tx: " + analyzedTransactions.size());
     }
 
-    public Future<Boolean> requestTransaction(byte[] hash) throws ExecutionException, InterruptedException {
+    public Future<Boolean> requestTransaction(BigInteger hash) throws ExecutionException, InterruptedException {
         Scratchpad scratchpad = new Scratchpad();
         scratchpad.hash = hash;
-        assert hash.length == Hash.SIZE_IN_BYTES;
         return Tangle.instance().save(scratchpad);
     }
 
@@ -83,8 +82,8 @@ public class ScratchpadViewModel {
         final long beginningTime = System.currentTimeMillis();
         Scratchpad scratchpad = ((Scratchpad) Tangle.instance().getLatest(Scratchpad.class).get());
 
-        if(scratchpad != null && scratchpad.hash != null && !Arrays.equals(scratchpad.hash, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
-            System.arraycopy(scratchpad.hash, 0, buffer, offset, TransactionViewModel.HASH_SIZE);
+        if(scratchpad != null && scratchpad.hash != null && !scratchpad.hash.equals(BigInteger.ZERO)) {
+            System.arraycopy(Hash.padHash(scratchpad.hash), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
         long now = System.currentTimeMillis();
         if ((now - lastTime) > 10000L) {

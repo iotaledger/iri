@@ -5,6 +5,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
+import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -268,7 +269,7 @@ public class Tangle {
         });
     }
 
-    public boolean transactionExists(byte[] hash) throws Exception {
+    public boolean transactionExists(BigInteger hash) throws Exception {
         for(IPersistenceProvider provider: this.persistenceProviders) {
             if(provider.transactionExists(hash)) return true;
         }

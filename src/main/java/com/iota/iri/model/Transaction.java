@@ -3,6 +3,8 @@ package com.iota.iri.model;
 import com.iota.iri.service.tangle.annotations.*;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 
+import java.math.BigInteger;
+
 /**
  * Created by paul on 3/2/17 for iri.
  */
@@ -11,7 +13,7 @@ public class Transaction {
     private static final int SIZE = 1604;
     @SizedArray(length = Hash.SIZE_IN_BYTES)
     @ModelIndex
-    public byte[] hash;
+    public BigInteger hash;
 
     @HasOne public byte[] bytes;
     @HasOne public int validity;

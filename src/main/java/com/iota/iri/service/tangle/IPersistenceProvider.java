@@ -4,6 +4,7 @@ import com.iota.iri.model.*;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.UUID;
 
@@ -59,7 +60,7 @@ public interface IPersistenceProvider {
 
     long getNumberOfRequestedTransactions() throws Exception;
 
-    boolean transactionExists(byte[] hash) throws Exception;
+    boolean transactionExists(BigInteger hash) throws Exception;
 
     boolean setTransientFlagHandle(int uuid) throws Exception;
 

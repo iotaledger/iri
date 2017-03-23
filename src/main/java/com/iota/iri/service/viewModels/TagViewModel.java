@@ -3,9 +3,8 @@ package com.iota.iri.service.viewModels;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tag;
 import com.iota.iri.service.tangle.Tangle;
-import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.Arrays;
+import java.math.BigInteger;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -14,19 +13,22 @@ import java.util.concurrent.ExecutionException;
 public class TagViewModel {
     private final Tag tag;
 
-    public TagViewModel(byte[] bytes) {
+    public TagViewModel(Hash hash) {
+        this(new BigInteger(hash.bytes()));
+    }
+    public TagViewModel(BigInteger bytes) {
         tag = new Tag();
-        tag.bytes = bytes;
+        tag.value = bytes;
     }
     public TagViewModel(Tag tag) {
         this.tag = tag;
     }
 
-    public Hash getHash() {
-        return new Hash(tag.bytes);
+    public BigInteger getHash() {
+        return tag.value;
     }
 
-    public Hash[] getTransactionHashes() throws ExecutionException, InterruptedException {
+    public BigInteger[] getTransactionHashes() throws ExecutionException, InterruptedException {
         Tangle.instance().load(tag).get();
         return tag.transactions;
     }

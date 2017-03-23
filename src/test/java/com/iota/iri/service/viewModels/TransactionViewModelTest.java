@@ -14,6 +14,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -49,17 +50,17 @@ public class TransactionViewModelTest {
         transactionViewModels = Arrays.stream(new com.iota.iri.model.Transaction[4]).map(t -> {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bundle = new Bundle();
-            transaction.bundle.hash = bundleHash.clone();
+            transaction.bundle.hash = new BigInteger(bundleHash);
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-            transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.hash = Converter.bigIntegerValue(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
             return new TransactionViewModel(transaction);
         }).toArray(TransactionViewModel[]::new);
         {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bundle = new Bundle();
-            transaction.bundle.hash = bundleHash.clone();
+            transaction.bundle.hash = new BigInteger(bundleHash);
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-            transaction.hash = bundleHash.clone();
+            transaction.hash = new BigInteger(bundleHash.clone());
             transactionViewModels = ArrayUtils.addAll(transactionViewModels, new TransactionViewModel(transaction));
         }
         for(TransactionViewModel transactionViewModel : transactionViewModels) {
@@ -103,7 +104,7 @@ public class TransactionViewModelTest {
         trunkTransactionViewModel.store();
 
         TransactionViewModel trunkTransactionQuery = transactionViewModel.getTrunkTransaction();
-        assertArrayEquals(trunkTransactionQuery.getHash(), trunkTransactionViewModel.getHash());
+        assertTrue(trunkTransactionQuery.getHash().equals(trunkTransactionViewModel.getHash()));
     }
 
     @Test
@@ -131,7 +132,7 @@ public class TransactionViewModelTest {
         trunkTx.store();
         branchTx.store();
 
-        Hash[] approvers = trunkTx.getApprovers();
+        BigInteger[] approvers = trunkTx.getApprovers();
         assertNotEquals(approvers.length, 0);
     }
 
@@ -331,7 +332,7 @@ public class TransactionViewModelTest {
     private Transaction getRandomTransaction(Random seed) {
         Transaction transaction = new Transaction();
         transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> seed.nextInt(3)-1).toArray());
-        transaction.hash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray());
+        transaction.hash = Converter.bigIntegerValue(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray());
         return transaction;
     }
     private int[] getRandomTransactionTrits(Random seed) {

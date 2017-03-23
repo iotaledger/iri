@@ -42,7 +42,7 @@ public class TangleTest {
         curl.absorb(trits, 0, trits.length);
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
         transaction.bytes = Converter.bytes(trits);
-        transaction.hash = Converter.bytes(hash);
+        transaction.hash = Converter.bigIntegerValue(hash);
 
         assertTrue("Should be a new, unique transaction", !Tangle.instance().save(transaction).get());
     }
@@ -58,8 +58,8 @@ public class TangleTest {
         Curl curl = new Curl();
         curl.absorb(trits, 0, trits.length);
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
-        transaction.bytes = Converter.bytes(trits);
-        byte[] byteHash = Converter.bytes(hash);
+        transaction.value = Converter.value(trits);
+        byte[] byteHash = Converter.value(hash);
 
         transaction = (Transaction) Tangle.instance().load(Transaction.class, byteHash).get();
         assertNotNull(transaction);

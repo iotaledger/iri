@@ -1,5 +1,6 @@
 package com.iota.iri.utils;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Converter {
@@ -39,6 +40,13 @@ public class Converter {
             value = value * RADIX + trits[offset + i];
         }
         return value;
+    }
+
+    public static BigInteger bigIntegerValue(final int[] trits) {
+        return new BigInteger(bytes(trits));
+    }
+    public static BigInteger bigIntegerValue(final int[] trits, final int offset, final int size) {
+        return new BigInteger(bytes(trits, offset, size));
     }
 
     public static byte[] bytes(final int[] trits, final int offset, final int size) {

@@ -137,7 +137,7 @@ public class StorageAddresses extends AbstractStorage {
 	
 	public void updateAddresses(final long transactionPointer, final TransactionViewModel transactionViewModel) {
 		{
-            long pointer = ((transactionViewModel.getAddress().getHash().bytes()[0] + 128) + ((transactionViewModel.getAddress().getHash().bytes()[1] + 128) << 8)) << 11, prevPointer = 0;
+            long pointer = ((transactionViewModel.getAddress().bytes()[0] + 128) + ((transactionViewModel.getAddress().bytes()[1] + 128) << 8)) << 11, prevPointer = 0;
             for (int depth = 2; depth < TransactionViewModel.ADDRESS_SIZE; depth++) {
 
                 ((ByteBuffer)addressesChunks[(int)(pointer >> 27)].position((int)(pointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
@@ -145,9 +145,9 @@ public class StorageAddresses extends AbstractStorage {
                 if (mainBuffer[TransactionViewModel.TYPE_OFFSET] == GROUP) {
 
                     prevPointer = pointer;
-                    if ((pointer = value(mainBuffer, (transactionViewModel.getAddress().getHash().bytes()[depth] + 128) << 3)) == 0) {
+                    if ((pointer = value(mainBuffer, (transactionViewModel.getAddress().bytes()[depth] + 128) << 3)) == 0) {
 
-                        setValue(mainBuffer, (transactionViewModel.getAddress().getHash().bytes()[depth] + 128) << 3, addressesNextPointer);
+                        setValue(mainBuffer, (transactionViewModel.getAddress().bytes()[depth] + 128) << 3, addressesNextPointer);
                         ((ByteBuffer)addressesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                         System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
@@ -165,24 +165,24 @@ public class StorageAddresses extends AbstractStorage {
 
                     for (int i = depth; i < TransactionViewModel.ADDRESS_SIZE; i++) {
 
-                        if (mainBuffer[TransactionViewModel.HASH_OFFSET + i] != transactionViewModel.getAddress().getHash().bytes()[i]) {
+                        if (mainBuffer[TransactionViewModel.HASH_OFFSET + i] != transactionViewModel.getAddress().bytes()[i]) {
 
                             final int differentHashByte = mainBuffer[TransactionViewModel.HASH_OFFSET + i];
 
                             ((ByteBuffer)addressesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).get(mainBuffer);
-                            setValue(mainBuffer, (transactionViewModel.getAddress().getHash().bytes()[depth - 1] + 128) << 3, addressesNextPointer);
+                            setValue(mainBuffer, (transactionViewModel.getAddress().bytes()[depth - 1] + 128) << 3, addressesNextPointer);
                             ((ByteBuffer)addressesChunks[(int)(prevPointer >> 27)].position((int)(prevPointer & (CHUNK_SIZE - 1)))).put(mainBuffer);
 
                             for (int j = depth; j < i; j++) {
 
                                 System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
-                                setValue(mainBuffer, (transactionViewModel.getAddress().getHash().bytes()[j] + 128) << 3, addressesNextPointer + CELL_SIZE);
+                                setValue(mainBuffer, (transactionViewModel.getAddress().bytes()[j] + 128) << 3, addressesNextPointer + CELL_SIZE);
                                 appendToAddresses();
                             }
 
                             System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);
                             setValue(mainBuffer, (differentHashByte + 128) << 3, pointer);
-                            setValue(mainBuffer, (transactionViewModel.getAddress().getHash().bytes()[i] + 128) << 3, addressesNextPointer + CELL_SIZE);
+                            setValue(mainBuffer, (transactionViewModel.getAddress().bytes()[i] + 128) << 3, addressesNextPointer + CELL_SIZE);
                             appendToAddresses();
 
                             System.arraycopy(ZEROED_BUFFER, 0, mainBuffer, 0, CELL_SIZE);

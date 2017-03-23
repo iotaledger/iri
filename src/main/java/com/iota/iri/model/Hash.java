@@ -28,6 +28,10 @@ public class Hash {
         this(bytes, 0, SIZE_IN_BYTES);
     }
 
+    public Hash(final BigInteger intValue) {
+        this(Hash.padHash(intValue), 0, SIZE_IN_BYTES);
+    }
+
     public Hash(final int[] trits, final int offset) {
         this(Converter.bytes(trits, offset, Curl.HASH_LENGTH));
     }
@@ -71,14 +75,11 @@ public class Hash {
         byte[] bytes = bigInteger.toByteArray();
         if(bytes.length < SIZE_IN_BYTES)
             bytes = ArrayUtils.addAll(bytes, Arrays.copyOf(NULL_HASH.bytes(), SIZE_IN_BYTES - bytes.length));
-        BigInteger integer = new BigInteger(bytes);
-        while (integer.compareTo(bigInteger) == -1) {
+        while (bigInteger.compareTo(new BigInteger(bytes)) == -1) {
             bytes = ArrayUtils.addAll(new byte[]{-1}, Arrays.copyOf(bytes, bytes.length-1));
-            integer = new BigInteger(bytes);
         }
-        while(integer.compareTo(bigInteger) != 0) {
+        while(bigInteger.compareTo(new BigInteger(bytes)) != 0) {
             bytes = ArrayUtils.addAll(new byte[]{0}, Arrays.copyOf(bytes, bytes.length-1));
-            integer = new BigInteger(bytes);
         }
         return bytes;
     }

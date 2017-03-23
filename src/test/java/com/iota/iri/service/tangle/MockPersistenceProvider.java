@@ -4,6 +4,7 @@ package com.iota.iri.service.tangle;
 import com.iota.iri.model.*;
 
 import java.lang.reflect.Field;
+import java.math.BigInteger;
 import java.util.Map;
 import java.util.Set;
 
@@ -165,7 +166,7 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean transactionExists(byte[] hash) throws Exception {
+    public boolean transactionExists(BigInteger hash) throws Exception {
         return false;
     }
 

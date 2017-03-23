@@ -4,6 +4,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tip;
 import com.iota.iri.service.tangle.Tangle;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
@@ -13,7 +14,7 @@ import java.util.concurrent.Future;
  */
 public class TipsViewModel {
 
-    public static Future<Boolean> addTipHash (byte[] hash) throws ExecutionException, InterruptedException {
+    public static Future<Boolean> addTipHash (BigInteger hash) throws ExecutionException, InterruptedException {
         Tip tip = new Tip(hash);
         if(!Tangle.instance().maybeHas(tip).get()) {
             return Tangle.instance().save(tip);
@@ -21,7 +22,7 @@ public class TipsViewModel {
         return null;
     }
 
-    public static Future<Void> removeTipHash (byte[] hash) throws ExecutionException, InterruptedException {
+    public static Future<Void> removeTipHash (BigInteger hash) throws ExecutionException, InterruptedException {
         Tip tip = new Tip(hash);
         if(Tangle.instance().maybeHas(tip).get()) {
             return Tangle.instance().delete(tip);
@@ -29,10 +30,10 @@ public class TipsViewModel {
         return null;
     }
 
-    public static Hash[] getTipHashes() throws ExecutionException, InterruptedException {
+    public static BigInteger[] getTipHashes() throws ExecutionException, InterruptedException {
         return Arrays.stream(Tangle.instance()
                 .loadAll(Tip.class).get())
-                .map(tip -> new Hash(((Tip) tip).hash))
-                .toArray(Hash[]::new);
+                .map(tip -> ((Tip) tip).hash)
+                .toArray(BigInteger[]::new);
     }
 }

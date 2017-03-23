@@ -1,6 +1,7 @@
 package com.iota.iri.service;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -19,6 +20,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.storage.ReplicatorSinkPool;
+import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TipsViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
@@ -175,8 +177,8 @@ public class Node {
             final SecureRandom rnd = new SecureRandom();
             long randomTipBroadcastCounter = 1;
             long lastTime = System.currentTimeMillis(), now, count = 0;
-            Set<String> receivedSet = new HashSet<>();
-            Set<String> newSet = new HashSet<>();
+            Set<BigInteger> receivedSet = new HashSet<>();
+            Set<BigInteger> newSet = new HashSet<>();
 
             while (!shuttingDown.get()) {
 
@@ -191,16 +193,20 @@ public class Node {
                                     neighbor.incAllTransactions();
                                     final TransactionViewModel receivedTransactionViewModel = new TransactionViewModel(receivingPacket.getData(), receivedTransactionTrits, curl);
                                     long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
+                                    long start, end;
                                     if (timestamp > TIMESTAMP_THRESHOLD) {
+                                        start = System.nanoTime();
                                         if(receivedTransactionViewModel.store().get()) {
-                                            newSet.add(new Hash(receivedTransactionViewModel.getHash()).toString());
+                                            end = System.nanoTime();
+                                            log.info("Save time: "+ (end-start)/1000 + "us");
+                                            newSet.add(receivedTransactionViewModel.getHash());
                                             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                                             receivedTransactionViewModel.update("arrivalTime");
                                             neighbor.incNewTransactions();
                                             broadcast(receivedTransactionViewModel);
                                         }
                                         now = System.currentTimeMillis();
-                                        receivedSet.add(new Hash(receivedTransactionViewModel.getHash()).toString());
+                                        receivedSet.add(receivedTransactionViewModel.getHash());
                                         count++;
                                         if(now-lastTime > 10000L) {
                                             lastTime = now;
@@ -210,7 +216,7 @@ public class Node {
                                             count = 0;
                                         }
 
-                                        byte[] transactionPointer = Hash.NULL_HASH.bytes();
+                                        BigInteger transactionPointer = BigInteger.ZERO;
                                         System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
                                         TransactionViewModel transactionViewModel;
@@ -219,18 +225,19 @@ public class Node {
                                                 && (Milestone.latestMilestoneIndex > 0)
                                                 && (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) {
                                             //
+                                            BigInteger mBytes;
                                             if (randomTipBroadcastCounter % 60 == 0) {
-                                                byte[] mBytes = Milestone.latestMilestone.bytes();
-                                                if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
+                                                mBytes = Milestone.latestMilestone;
+                                                if (!mBytes.equals(BigInteger.ZERO)) {
                                                     transactionPointer = mBytes;
                                                 }
                                             } else if (randomTipBroadcastCounter % 48 == 0) {
-                                                byte[] mBytes = Milestone.latestMilestone.bytes();
-                                                if (!Arrays.equals(mBytes, Hash.NULL_HASH.bytes())) {
+                                                 mBytes = Milestone.latestMilestone;
+                                                if (!mBytes.equals(BigInteger.ZERO)) {
                                                     transactionPointer = mBytes;
 
                                                     final TransactionViewModel milestoneTx = TransactionViewModel.fromHash(transactionPointer);
-                                                    final Bundle bundle = new Bundle(milestoneTx.getBundleHash());
+                                                    final BundleViewModel bundle = BundleViewModel.fromHash(milestoneTx.getBundleHash());
                                                     if (bundle != null) {
                                                         Collection<List<TransactionViewModel>> tList = bundle.getTransactions();
                                                         if (tList != null && tList.size() != 0) {
@@ -243,20 +250,19 @@ public class Node {
                                                     }
                                                 }
                                             } else if (randomTipBroadcastCounter % 24 == 0) {
-                                                final Hash[] tips = TipsViewModel.getTipHashes();
+                                                final BigInteger[] tips = TipsViewModel.getTipHashes();
                                                 //final String[] tips = StorageTransactions.instance().tips().stream().map(Hash::toString).toArray(size -> new String[size]);
-                                                final Hash rndTipHash = tips[rnd.nextInt(tips.length)];
+                                                final BigInteger rndTipHash = tips[rnd.nextInt(tips.length)];
 
-                                                transactionPointer = rndTipHash.bytes();
+                                                transactionPointer = rndTipHash;
                                             }
                                             randomTipBroadcastCounter++;
 
                                         } else {
-                                            transactionPointer = requestedTransaction;
+                                            transactionPointer = new BigInteger(requestedTransaction);
                                         }
                                         transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                                        if (!Arrays.equals(transactionPointer, Hash.NULL_HASH.bytes())
-                                                && transactionPointer != Hash.NULL_HASH.bytes()) {
+                                        if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                                             synchronized (sendingPacket) {
                                                 System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
                                                 ScratchpadViewModel.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
@@ -326,7 +332,7 @@ public class Node {
                 try {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Milestone.latestMilestone);
                     System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
-                    System.arraycopy(transactionViewModel.getHash(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
+                    System.arraycopy(Hash.padHash(transactionViewModel.getHash()), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
                             TransactionViewModel.HASH_SIZE);
                             //Hash.SIZE_IN_BYTES);
 
@@ -344,9 +350,13 @@ public class Node {
     private static ConcurrentSkipListSet<TransactionViewModel> weightQueue() {
         return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
             if (transaction1.weightMagnitude == transaction2.weightMagnitude) {
+                byte[][] hashes = new byte[][] {
+                        Hash.padHash(transaction1.getHash()),
+                        Hash.padHash(transaction2.getHash())
+                };
                 for (int i = 0; i < Hash.SIZE_IN_BYTES; i++) {
-                    if (transaction1.getHash()[i] != transaction2.getHash()[i]) {
-                        return transaction2.getHash()[i] - transaction1.getHash()[i];
+                    if (hashes[0][i] != hashes[1][i]) {
+                        return hashes[1][i] - hashes[0][i];
                     }
                 }
                 return 0;

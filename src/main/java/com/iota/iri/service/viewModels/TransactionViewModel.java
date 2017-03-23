@@ -1,14 +1,13 @@
 package com.iota.iri.service.viewModels;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
@@ -16,7 +15,6 @@ import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,6 +68,7 @@ public class TransactionViewModel {
     public TagViewModel tag;
     public TransactionViewModel trunk;
     public TransactionViewModel branch;
+    private BigInteger minWeightInteger = new BigInteger(new byte[]{3});
 
     public int[] hashTrits;
 
@@ -80,7 +79,7 @@ public class TransactionViewModel {
 
     public static TransactionViewModel fromHash(final byte[] hash) throws Exception {
         Transaction transaction = new Transaction();
-        transaction.hash = Arrays.copyOf(hash, hash.length);
+        transaction.hash = new BigInteger(hash);
         Tangle.instance().load(transaction).get();
         return new TransactionViewModel(transaction);
     }
@@ -89,13 +88,17 @@ public class TransactionViewModel {
         return fromHash(Converter.bytes(hash));
     }
 
+    public static TransactionViewModel fromHash(BigInteger intHash) throws Exception {
+        return TransactionViewModel.fromHash(Hash.padHash(intHash));
+    }
+
     public static TransactionViewModel fromHash(final Hash hash) throws Exception {
         return TransactionViewModel.fromHash(hash.bytes());
     }
 
     public static boolean mightExist(byte[] hash) throws ExecutionException, InterruptedException {
         Transaction transaction = new Transaction();
-        transaction.hash = hash;
+        transaction.hash = new BigInteger(hash);
         return Tangle.instance().maybeHas(transaction).get();
     }
 
@@ -132,7 +135,8 @@ public class TransactionViewModel {
         getHash();
         // For testnet, reduced minWeight from 13 to 9
         // if (this.transaction.hash[Hash.SIZE_IN_BYTES - 3] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 1] != 0) {
-        if (this.transaction.hash[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 1] != 0) {    
+        //if (this.transaction.hash[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash[Hash.SIZE_IN_BYTES - 1] != 0) {
+        if (!this.transaction.hash.and(minWeightInteger).equals(BigInteger.ZERO)) {
             log.error("Invalid transaction hash. Hash found: " + new Hash(trits).toString());
             throw new RuntimeException("Invalid transaction hash");
         }
@@ -151,7 +155,7 @@ public class TransactionViewModel {
     public TransactionViewModel(final byte[] mainBuffer, final long pointer) {
         transaction = new Transaction();
         transaction.type = mainBuffer[TYPE_OFFSET];
-        System.arraycopy(mainBuffer, HASH_OFFSET, this.transaction.hash = new byte[HASH_SIZE], 0, HASH_SIZE);
+        this.transaction.hash = new BigInteger(Arrays.copyOfRange(mainBuffer, HASH_OFFSET, HASH_SIZE));
         System.arraycopy(mainBuffer, BYTES_OFFSET, transaction.bytes, 0, BYTES_SIZE);
         transaction.validity = mainBuffer[VALIDITY_OFFSET];
         transaction.arrivalTime = AbstractStorage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
@@ -201,7 +205,7 @@ public class TransactionViewModel {
             getBundleHash();
             getBranchTransactionHash();
             getTrunkTransactionHash();
-            getTagBytes();
+            getTagValue();
             future = Tangle.instance().save(transaction);
             for(Future<?> updateFuture: update()) {
                 if(updateFuture != null)
@@ -216,9 +220,11 @@ public class TransactionViewModel {
     private Set<Future> update () throws Exception {
         Set<Future> futures = new HashSet<>();
         ScratchpadViewModel.instance().clearReceivedTransaction(transaction.hash);
-        if (!Arrays.equals(getBranchTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+        //if (!Arrays.equals(getBranchTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+        if (!getBranchTransaction().equals(BigInteger.ZERO))
             futures.add(ScratchpadViewModel.instance().requestTransaction(getBranchTransactionHash()));
-        if (!Arrays.equals(getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+        //if (!Arrays.equals(getTrunkTransactionHash(), TransactionViewModel.NULL_TRANSACTION_HASH_BYTES))
+        if (!getTrunkTransactionHash().equals(BigInteger.ZERO))
             futures.add(ScratchpadViewModel.instance().requestTransaction(getTrunkTransactionHash()));
         if(getApprovers().length == 0) {
             TipsViewModel.addTipHash(transaction.hash);
@@ -228,22 +234,15 @@ public class TransactionViewModel {
         return futures;
     }
 
-    private static Future<Void> updateType(Hash hash) {
-        Transaction transaction = new Transaction();
-        transaction.hash = hash.bytes();
-        transaction.type = AbstractStorage.FILLED_SLOT;
-        return Tangle.instance().updateType(transaction);
-    }
-
-    public static Hash[] approversFromHash(Hash hash) throws Exception {
+    public static BigInteger[] approversFromHash(Hash hash) throws Exception {
         return TransactionViewModel.fromHash(hash).getApprovers();
     }
 
-    public Hash[] getApprovers() throws ExecutionException, InterruptedException {
+    public BigInteger[] getApprovers() throws ExecutionException, InterruptedException {
         Approvee self = new Approvee();
         self.hash = transaction.hash;
         Tangle.instance().load(self).get();
-        return self.transactions != null? Arrays.stream(self.transactions).map(transaction -> new Hash(transaction.bytes())).toArray(Hash[]::new): new Hash[0];
+        return self.transactions != null? self.transactions : new BigInteger[0];
     }
 
     public final int getType() {
@@ -265,9 +264,9 @@ public class TransactionViewModel {
         return transaction.bytes;
     }
 
-    public byte[] getHash() {
+    public BigInteger getHash() {
         if(transaction.hash == null) {
-            transaction.hash = Converter.bytes(getHashTrits(null));
+            transaction.hash = new BigInteger(Converter.bytes(getHashTrits(null)));
         }
         return transaction.hash;
     }
@@ -279,50 +278,52 @@ public class TransactionViewModel {
     }
 
     public TagViewModel getTag() {
-        return new TagViewModel(getTagBytes());
+        return new TagViewModel(getTagValue());
     }
 
-    public BundleViewModel getBundle() throws ExecutionException, InterruptedException {
+    public BundleViewModel getBundle() throws Exception {
         if(bundle == null) {
             bundle = BundleViewModel.fromHash(getBundleHash());
         }
         return bundle;
     }
 
-    public byte[] getAddressHash() {
+    public BigInteger getAddressHash() {
         if(transaction.address.hash == null) {
-            transaction.address.hash = Converter.bytes(trits(), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
+            transaction.address.hash = Converter.bigIntegerValue(trits(), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         }
         return transaction.address.hash;
     }
 
-    public byte[] getTagBytes() {
-        if(transaction.tag.bytes == null) {
-            transaction.tag.bytes= Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE);
-            if(transaction.tag.bytes.length < Hash.SIZE_IN_BYTES) {
-                transaction.tag.bytes = ArrayUtils.addAll(transaction.tag.bytes, Arrays.copyOf(NULL_TRANSACTION_HASH_BYTES, Hash.SIZE_IN_BYTES - transaction.tag.bytes.length));
+    public BigInteger getTagValue() {
+        if(transaction.tag.value == null) {
+            transaction.tag.value = new BigInteger(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE));
+            /*
+            if(transaction.tag.value.length < Hash.SIZE_IN_BYTES) {
+                transaction.tag.value = ArrayUtils.addAll(transaction.tag.value, Arrays.copyOf(NULL_TRANSACTION_HASH_BYTES, Hash.SIZE_IN_BYTES - transaction.tag.value.length));
             }
+            */
         }
-        return transaction.tag.bytes;
+        return transaction.tag.value;
     }
 
-    public byte[] getBundleHash() {
+    public BigInteger getBundleHash() {
         if(transaction.bundle.hash == null) {
-            transaction.bundle.hash = Converter.bytes(trits(), BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE);
+            transaction.bundle.hash = Converter.bigIntegerValue(trits(), BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE);
         }
         return transaction.bundle.hash;
     }
 
-    public byte[] getTrunkTransactionHash() {
+    public BigInteger getTrunkTransactionHash() {
         if(transaction.trunk.hash == null) {
-            transaction.trunk.hash = Converter.bytes(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
+            transaction.trunk.hash = new BigInteger(Converter.bytes(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE));
         }
         return transaction.trunk.hash;
     }
 
-    public byte[] getBranchTransactionHash() {
+    public BigInteger getBranchTransactionHash() {
         if(transaction.branch.hash == null) {
-            transaction.branch.hash = Converter.bytes(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE);
+            transaction.branch.hash = new BigInteger(Converter.bytes(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE));
         }
         return transaction.branch.hash;
     }
@@ -446,11 +447,11 @@ public class TransactionViewModel {
 
 
     private void populateTagTrits(int[] partialTrits) {
-        if(transaction.tag.bytes == null) {
-            transaction.tag.bytes = new byte[TAG_SIZE];
+        if(transaction.tag.value == null) {
+            transaction.tag.value = new byte[TAG_SIZE];
         }
         partialTrits = new int[TAG_TRINARY_SIZE];
-        Converter.getTrits(transaction.tag.bytes, partialTrits);
+        Converter.getTrits(transaction.tag.value, partialTrits);
         System.arraycopy(partialTrits, 0, trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE);
 
     }

@@ -312,7 +312,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             transaction.type = AbstractStorage.PREFILLED_SLOT;
             return false;
         } else if (transaction.bytes.length != TransactionViewModel.SIZE) {
-            db.delete(transactionHandle, transaction.hash);
+            deleteTransaction(transaction);
             transaction.type = AbstractStorage.PREFILLED_SLOT;
             return false;
         }

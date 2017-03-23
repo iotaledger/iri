@@ -122,8 +122,7 @@ public class Milestone {
 
                 	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
                     final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(new BigInteger(milestone.bytes())));
-                    BigInteger hashPointer, hashChecker, trunkInteger, branchInteger;
-                    String s = "-52868114721667897100385409975985209892459272744142014585050859598728493767040067631725358579897397631604198735872";
+                    BigInteger hashPointer, trunkInteger, branchInteger;
                     byte[] hashBytes;
                     while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
                         hashBytes = Hash.padHash(hashPointer);
@@ -137,9 +136,6 @@ public class Milestone {
                             } else {
                                 trunkInteger = new BigInteger(transactionViewModel2.getTrunkTransactionHash());
                                 branchInteger = new BigInteger(transactionViewModel2.getBranchTransactionHash());
-                                if(trunkInteger.toString().equals(s) || branchInteger.toString().equals(s)) {
-                                    System.out.print("hi");
-                                }
                                 nonAnalyzedTransactions.offer(trunkInteger);
                                 nonAnalyzedTransactions.offer(branchInteger);
                             }

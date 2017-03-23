@@ -86,14 +86,17 @@ public class Tangle {
         return model.getName() + COLUMN_DELIMETER + field.getName();
     }
 
+    public boolean loadNow(Transaction transaction) throws Exception {
+        for(IPersistenceProvider provider: this.persistenceProviders) {
+            if(provider.get(transaction)) {
+                return true;
+            }
+        }
+        return false;
+    }
     public Future<Boolean> load(Transaction transaction) {
         return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.get(transaction)) {
-                    return true;
-                }
-            }
-            return false;
+            return loadNow(transaction);
         });
     }
 

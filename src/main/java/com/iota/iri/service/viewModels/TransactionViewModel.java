@@ -81,7 +81,7 @@ public class TransactionViewModel {
     public static TransactionViewModel fromHash(final byte[] hash) throws Exception {
         Transaction transaction = new Transaction();
         transaction.hash = Arrays.copyOf(hash, hash.length);
-        Tangle.instance().load(transaction);
+        Tangle.instance().load(transaction).get();
         return new TransactionViewModel(transaction);
     }
 

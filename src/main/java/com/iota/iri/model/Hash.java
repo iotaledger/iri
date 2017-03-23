@@ -72,7 +72,11 @@ public class Hash {
         if(bytes.length < SIZE_IN_BYTES)
             bytes = ArrayUtils.addAll(bytes, Arrays.copyOf(NULL_HASH.bytes(), SIZE_IN_BYTES - bytes.length));
         BigInteger integer = new BigInteger(bytes);
-        while(integer.compareTo(bigInteger) > 0) {
+        while (integer.compareTo(bigInteger) == -1) {
+            bytes = ArrayUtils.addAll(new byte[]{-1}, Arrays.copyOf(bytes, bytes.length-1));
+            integer = new BigInteger(bytes);
+        }
+        while(integer.compareTo(bigInteger) != 0) {
             bytes = ArrayUtils.addAll(new byte[]{0}, Arrays.copyOf(bytes, bytes.length-1));
             integer = new BigInteger(bytes);
         }

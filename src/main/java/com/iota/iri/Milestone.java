@@ -122,12 +122,12 @@ public class Milestone {
 
                 	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
                     final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(new BigInteger(milestone.bytes())));
-                    BigInteger hashPointer;
+                    BigInteger hashPointer, hashChecker, trunkInteger, branchInteger;
+                    String s = "-52868114721667897100385409975985209892459272744142014585050859598728493767040067631725358579897397631604198735872";
                     byte[] hashBytes;
                     while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
                         hashBytes = Hash.padHash(hashPointer);
                         if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashBytes)) {
-
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashBytes);
                             if (transactionViewModel2.getType() == AbstractStorage.PREFILLED_SLOT && !Arrays.equals(hashBytes, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
                                 ScratchpadViewModel.instance().requestTransaction(hashBytes);
@@ -135,8 +135,13 @@ public class Milestone {
                                 break;
 
                             } else {
-                                nonAnalyzedTransactions.offer(new BigInteger(transactionViewModel2.getTrunkTransactionHash()));
-                                nonAnalyzedTransactions.offer(new BigInteger(transactionViewModel2.getBranchTransactionHash()));
+                                trunkInteger = new BigInteger(transactionViewModel2.getTrunkTransactionHash());
+                                branchInteger = new BigInteger(transactionViewModel2.getBranchTransactionHash());
+                                if(trunkInteger.toString().equals(s) || branchInteger.toString().equals(s)) {
+                                    System.out.print("hi");
+                                }
+                                nonAnalyzedTransactions.offer(trunkInteger);
+                                nonAnalyzedTransactions.offer(branchInteger);
                             }
                         }
                     }

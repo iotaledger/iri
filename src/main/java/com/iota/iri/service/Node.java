@@ -225,7 +225,6 @@ public class Node {
                                         if (Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)
                                                 && (Milestone.latestMilestoneIndex > 0)
                                                 && (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) {
-                                            log.info("Bad request. " + neighbor.getHostAddress());
                                             //
                                             BigInteger mBytes;
                                             if (randomTipBroadcastCounter % 60 == 0) {

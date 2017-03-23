@@ -312,7 +312,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             transaction.type = AbstractStorage.PREFILLED_SLOT;
             return false;
         } else if (transaction.bytes.length != TransactionViewModel.SIZE) {
-            db.delete(transaction.hash);
+            db.delete(transactionHandle, transaction.hash);
             transaction.type = AbstractStorage.PREFILLED_SLOT;
             return false;
         }
@@ -563,7 +563,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
         initFlushFlags();
         updateTagDB();
-        //scanTxDeleteBaddies();
+        scanTxDeleteBaddies();
 
         db.compactRange();
 
@@ -582,7 +582,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             }
         }
         for(byte[] baddie : baddies) {
-            db.delete(baddie);
+            db.delete(transactionHandle, baddie);
         }
     }
 

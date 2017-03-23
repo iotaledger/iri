@@ -23,6 +23,7 @@ import com.iota.iri.service.storage.ReplicatorSinkPool;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TipsViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
@@ -259,7 +260,7 @@ public class Node {
                                             randomTipBroadcastCounter++;
 
                                         } else {
-                                            transactionPointer = new BigInteger(requestedTransaction);
+                                            transactionPointer = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, requestedTransaction));
                                         }
                                         transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                                         if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {

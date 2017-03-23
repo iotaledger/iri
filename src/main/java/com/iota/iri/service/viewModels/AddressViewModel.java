@@ -3,6 +3,7 @@ package com.iota.iri.service.viewModels;
 import com.iota.iri.model.Address;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
+import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.math.BigInteger;
@@ -19,7 +20,7 @@ public class AddressViewModel {
         address.hash = hash;
     }
     public AddressViewModel (byte[] hash) {
-        this(new BigInteger(hash));
+        this(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash)));
     }
 
     public void addTransaction(TransactionViewModel transactionViewModel) {

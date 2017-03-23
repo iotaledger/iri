@@ -5,7 +5,9 @@ import com.iota.iri.model.*;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.IPersistenceProvider;
 import com.iota.iri.service.tangle.Serializer;
+import com.iota.iri.service.viewModels.TagViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
+import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.rocksdb.*;
@@ -54,9 +56,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle analyzedTipHandle;
 
     List<ColumnFamilyHandle> transactionGetList;
-
-    final byte[] zeroPosition = new byte[Hash.SIZE_IN_BYTES];
-    byte[] scratchpadPosition = new byte[Hash.SIZE_IN_BYTES];
 
     RocksDB db;
     DBOptions options;
@@ -191,7 +190,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         int i;
         Set<BigInteger> hashes = new TreeSet<>();
         for(i = size; i <= bytes.length; i += size + 1) {
-            hashes.add(new BigInteger(Arrays.copyOfRange(bytes, i - size, i)));
+            hashes.add(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, Arrays.copyOfRange(bytes, i - size, i))));
         }
         return hashes.stream().toArray(BigInteger[]::new);
     }
@@ -293,7 +292,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 iterator.seekToFirst();
             }
             if(iterator.isValid()) {
-                scratchpad.hash = new BigInteger(iterator.key());
+                scratchpad.hash = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, iterator.key()));
             }
             out = scratchpad;
             iterator.close();
@@ -309,7 +308,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             List<Tip> tips = new ArrayList<>();
             iterator = db.newIterator(tipHandle);
             for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                tips.add(new Tip(new BigInteger(iterator.key())));
+                tips.add(new Tip(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, iterator.key()))));
             }
             out = tips.toArray();
         }

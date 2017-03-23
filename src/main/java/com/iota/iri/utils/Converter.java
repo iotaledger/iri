@@ -1,5 +1,7 @@
 package com.iota.iri.utils;
 
+import org.apache.commons.lang3.ArrayUtils;
+
 import java.math.BigInteger;
 import java.util.Arrays;
 
@@ -10,10 +12,11 @@ public class Converter {
 
     public static final int NUMBER_OF_TRITS_IN_A_BYTE = 5;
     public static final int NUMBER_OF_TRITS_IN_A_TRYTE = 3;
-    
+    public static final byte[] CHECK_BYTE = new byte[]{1};
+
     static final int[][] BYTE_TO_TRITS_MAPPINGS = new int[243][];
     static final int[][] TRYTE_TO_TRITS_MAPPINGS = new int[27][];
-    
+
     public static final String TRYTE_ALPHABET = "9ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
     public static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
@@ -43,10 +46,10 @@ public class Converter {
     }
 
     public static BigInteger bigIntegerValue(final int[] trits) {
-        return new BigInteger(bytes(trits));
+        return new BigInteger(ArrayUtils.addAll(CHECK_BYTE, bytes(trits)));
     }
     public static BigInteger bigIntegerValue(final int[] trits, final int offset, final int size) {
-        return new BigInteger(bytes(trits, offset, size));
+        return new BigInteger(ArrayUtils.addAll(CHECK_BYTE, bytes(trits, offset, size)));
     }
 
     public static byte[] bytes(final int[] trits, final int offset, final int size) {

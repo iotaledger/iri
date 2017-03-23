@@ -10,6 +10,7 @@ import java.util.Arrays;
 public class Hash {
 
     public static final int SIZE_IN_BYTES = 49;
+    public static final int PADDED_SIZE_IN_BYTES = SIZE_IN_BYTES + 1;
 
     public static final Hash NULL_HASH = new Hash(new int[Curl.HASH_LENGTH]);
 
@@ -73,15 +74,9 @@ public class Hash {
 
 	public static byte[] padHash(BigInteger bigInteger) {
         byte[] bytes = bigInteger.toByteArray();
-        if(bytes.length < SIZE_IN_BYTES)
-            bytes = ArrayUtils.addAll(bytes, Arrays.copyOf(NULL_HASH.bytes(), SIZE_IN_BYTES - bytes.length));
-        while (bigInteger.compareTo(new BigInteger(bytes)) == -1) {
-            bytes = ArrayUtils.addAll(new byte[]{-1}, Arrays.copyOf(bytes, bytes.length-1));
-        }
-        while(bigInteger.compareTo(new BigInteger(bytes)) != 0) {
-            bytes = ArrayUtils.addAll(new byte[]{0}, Arrays.copyOf(bytes, bytes.length-1));
-        }
-        return bytes;
+        if(bytes.length < PADDED_SIZE_IN_BYTES)
+            bytes = ArrayUtils.addAll(bytes, Arrays.copyOf(NULL_HASH.bytes(), PADDED_SIZE_IN_BYTES - bytes.length));
+        return Arrays.copyOfRange(bytes, 1, PADDED_SIZE_IN_BYTES);
     }
 }
 

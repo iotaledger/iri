@@ -15,6 +15,7 @@ import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,7 +80,7 @@ public class TransactionViewModel {
 
     public static TransactionViewModel fromHash(final byte[] hash) throws Exception {
         Transaction transaction = new Transaction();
-        transaction.hash = new BigInteger(hash);
+        transaction.hash = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash));
         Tangle.instance().load(transaction).get();
         return new TransactionViewModel(transaction);
     }
@@ -98,7 +99,7 @@ public class TransactionViewModel {
 
     public static boolean mightExist(byte[] hash) throws ExecutionException, InterruptedException {
         Transaction transaction = new Transaction();
-        transaction.hash = new BigInteger(hash);
+        transaction.hash = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash));
         return Tangle.instance().maybeHas(transaction).get();
     }
 
@@ -155,7 +156,7 @@ public class TransactionViewModel {
     public TransactionViewModel(final byte[] mainBuffer, final long pointer) {
         transaction = new Transaction();
         transaction.type = mainBuffer[TYPE_OFFSET];
-        this.transaction.hash = new BigInteger(Arrays.copyOfRange(mainBuffer, HASH_OFFSET, HASH_SIZE));
+        this.transaction.hash = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, Arrays.copyOfRange(mainBuffer, HASH_OFFSET, HASH_SIZE)));
         System.arraycopy(mainBuffer, BYTES_OFFSET, transaction.bytes, 0, BYTES_SIZE);
         transaction.validity = mainBuffer[VALIDITY_OFFSET];
         transaction.arrivalTime = AbstractStorage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
@@ -266,7 +267,7 @@ public class TransactionViewModel {
 
     public BigInteger getHash() {
         if(transaction.hash == null) {
-            transaction.hash = new BigInteger(Converter.bytes(getHashTrits(null)));
+            transaction.hash = Converter.bigIntegerValue(getHashTrits(null));
         }
         return transaction.hash;
     }
@@ -297,12 +298,7 @@ public class TransactionViewModel {
 
     public BigInteger getTagValue() {
         if(transaction.tag.value == null) {
-            transaction.tag.value = new BigInteger(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE));
-            /*
-            if(transaction.tag.value.length < Hash.SIZE_IN_BYTES) {
-                transaction.tag.value = ArrayUtils.addAll(transaction.tag.value, Arrays.copyOf(NULL_TRANSACTION_HASH_BYTES, Hash.SIZE_IN_BYTES - transaction.tag.value.length));
-            }
-            */
+            transaction.tag.value = Converter.bigIntegerValue(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE);
         }
         return transaction.tag.value;
     }
@@ -316,14 +312,14 @@ public class TransactionViewModel {
 
     public BigInteger getTrunkTransactionHash() {
         if(transaction.trunk.hash == null) {
-            transaction.trunk.hash = new BigInteger(Converter.bytes(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE));
+            transaction.trunk.hash = Converter.bigIntegerValue(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
         }
         return transaction.trunk.hash;
     }
 
     public BigInteger getBranchTransactionHash() {
         if(transaction.branch.hash == null) {
-            transaction.branch.hash = new BigInteger(Converter.bytes(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE));
+            transaction.branch.hash = Converter.bigIntegerValue(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE);
         }
         return transaction.branch.hash;
     }

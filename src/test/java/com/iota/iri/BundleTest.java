@@ -37,22 +37,22 @@ public class BundleTest {
     @Test
     public void getTransactions() throws Exception {
         Random r = new Random();
-        byte[] bundleHash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        BigInteger bundleHash = Converter.bigIntegerValue(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
         TransactionViewModel[] transactionViewModels;
         transactionViewModels = Arrays.stream(new com.iota.iri.model.Transaction[4]).map(t -> {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = Converter.bigIntegerValue(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
             transaction.bundle = new com.iota.iri.model.Bundle();
-            transaction.bundle.hash = new BigInteger(bundleHash.clone());
+            transaction.bundle.hash = bundleHash;
             return new TransactionViewModel(transaction);
         }).toArray(TransactionViewModel[]::new);
         {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-            transaction.hash = new BigInteger(bundleHash.clone());
+            transaction.hash = bundleHash;
             transaction.bundle = new com.iota.iri.model.Bundle();
-            transaction.bundle.hash = new BigInteger(bundleHash.clone());
+            transaction.bundle.hash = bundleHash;
             transactionViewModels = ArrayUtils.addAll(transactionViewModels, new TransactionViewModel(transaction));
         }
         for(TransactionViewModel transactionViewModel : transactionViewModels) {

@@ -45,12 +45,12 @@ public class TransactionViewModelTest {
     @Test
     public void getBundleTransactions() throws Exception {
         Random r = new Random();
-        byte[] bundleHash = Converter.bytes(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        BigInteger bundleHash = Converter.bigIntegerValue(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
         TransactionViewModel[] bundle, transactionViewModels;
         transactionViewModels = Arrays.stream(new com.iota.iri.model.Transaction[4]).map(t -> {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bundle = new Bundle();
-            transaction.bundle.hash = new BigInteger(bundleHash);
+            transaction.bundle.hash = bundleHash;
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
             transaction.hash = Converter.bigIntegerValue(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
             return new TransactionViewModel(transaction);
@@ -58,9 +58,9 @@ public class TransactionViewModelTest {
         {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bundle = new Bundle();
-            transaction.bundle.hash = new BigInteger(bundleHash);
+            transaction.bundle.hash = bundleHash;
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-            transaction.hash = new BigInteger(bundleHash.clone());
+            transaction.hash = bundleHash;
             transactionViewModels = ArrayUtils.addAll(transactionViewModels, new TransactionViewModel(transaction));
         }
         for(TransactionViewModel transactionViewModel : transactionViewModels) {

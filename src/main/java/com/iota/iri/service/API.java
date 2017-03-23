@@ -21,6 +21,7 @@ import com.iota.iri.service.dto.*;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.viewModels.*;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.channels.StreamSinkChannel;
@@ -305,7 +306,7 @@ public class API {
                 if (transactionViewModel.getHash().equals(BigInteger.ZERO)){
                     return ErrorResponse.create("One of the tips absents");
                 }
-                nonAnalyzedTransactions.offer(new BigInteger(tip.bytes()));
+                nonAnalyzedTransactions.offer(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, tip.bytes())));
             }
 
             {

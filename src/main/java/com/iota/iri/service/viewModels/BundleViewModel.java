@@ -6,6 +6,7 @@ import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -19,7 +20,7 @@ public class BundleViewModel {
     private TransactionViewModel[] transactionViewModels;
 
     public static BundleViewModel fromHash(Hash hash) throws Exception {
-        return fromHash(new BigInteger(hash.bytes()));
+        return fromHash(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash.bytes())));
     }
     public static BundleViewModel fromHash(BigInteger hash) throws Exception {
         Bundle bundle = new Bundle();

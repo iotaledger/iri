@@ -73,7 +73,7 @@ public class TransactionViewModel {
 
     public int[] hashTrits;
 
-    private static final int MIN_WEIGHT_MAGNITUDE = 13;
+    private static final int MIN_WEIGHT_MAGNITUDE = 9;
 
     private int[] trits;
     public int weightMagnitude;

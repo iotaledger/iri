@@ -178,11 +178,6 @@ public class TipsManager {
                                 }
 
                                 if (!validBundle) {
-                                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBundleHash());
-                                    if(!TransactionViewModel.exists(transactionViewModel.getTrunkTransactionHash()))
-                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash());
-                                    if(!TransactionViewModel.exists(transactionViewModel.getBranchTransactionHash()))
-                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getBranchTransactionHash());
                                     Tangle.instance().releaseTransientTable(transientHandle);
                                     return null;
                                 }

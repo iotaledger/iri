@@ -558,6 +558,28 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         analyzedFlagHandle = familyHandles.get(++i);
         analyzedTipHandle = familyHandles.get(++i);
 
+        initFlushFlags();
+        updateTagDB();
+        scanTxDeleteBaddies();
+
+        db.compactRange();
+
+        transactionGetList = new ArrayList<>();
+        for(i = 1; i < 5; i ++) {
+            transactionGetList.add(familyHandles.get(i));
+        }
+    }
+
+    private void scanTxDeleteBaddies() throws RocksDBException {
+        RocksIterator iterator = db.newIterator(transactionHandle);
+        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            if(iterator.value().length != TransactionViewModel.SIZE) {
+                db.delete(iterator.key());
+            }
+        }
+    }
+
+    private void initFlushFlags() throws RocksDBException {
         db.flush(new FlushOptions().setWaitForFlush(true), analyzedTipHandle);
         RocksIterator iterator = db.newIterator(analyzedTipHandle);
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
@@ -568,14 +590,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             db.delete(analyzedFlagHandle, iterator.key());
         }
-        updateTagDB();
 
-        db.compactRange();
-
-        transactionGetList = new ArrayList<>();
-        for(i = 1; i < 5; i ++) {
-            transactionGetList.add(familyHandles.get(i));
-        }
     }
 
     private void updateTagDB() throws RocksDBException {

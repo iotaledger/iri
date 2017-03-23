@@ -308,15 +308,18 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public boolean get(Transaction transaction) throws Exception {
         transaction.bytes = db.get(transactionHandle, transaction.hash);
-        if(transaction.bytes != null) {
-            transaction.validity = Serializer.getInteger(db.get(transactionValidityHandle, transaction.hash));
-            transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, transaction.hash));
-            transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, transaction.hash));
-            return true;
-        } else {
+        if(transaction.bytes == null) {
             transaction.type = AbstractStorage.PREFILLED_SLOT;
+            return false;
+        } else if (transaction.bytes.length != TransactionViewModel.SIZE) {
+            db.delete(transaction.hash);
+            transaction.type = AbstractStorage.PREFILLED_SLOT;
+            return false;
         }
-        return false;
+        transaction.validity = Serializer.getInteger(db.get(transactionValidityHandle, transaction.hash));
+        transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, transaction.hash));
+        transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, transaction.hash));
+        return true;
     }
 
     @Override
@@ -560,7 +563,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
         initFlushFlags();
         updateTagDB();
-        scanTxDeleteBaddies();
+        //scanTxDeleteBaddies();
 
         db.compactRange();
 
@@ -572,10 +575,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     private void scanTxDeleteBaddies() throws RocksDBException {
         RocksIterator iterator = db.newIterator(transactionHandle);
+        List<byte[]> baddies = new ArrayList<>();
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             if(iterator.value().length != TransactionViewModel.SIZE || Arrays.equals(iterator.value(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
-                db.delete(iterator.key());
+                baddies.add(iterator.key());
             }
+        }
+        for(byte[] baddie : baddies) {
+            db.delete(baddie);
         }
     }
 

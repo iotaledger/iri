@@ -141,6 +141,7 @@ public class TipsManager {
 
                     if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
 
+
                         numberOfAnalyzedTransactions++;
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(transactionPointer));

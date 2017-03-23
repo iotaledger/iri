@@ -194,6 +194,10 @@ public class API {
                     log.debug("Invoking 'storeTransactions' with {}", trytes);
                     return storeTransactionStatement(trytes);
                 }
+                case "rescanTransactions": {
+                    ScratchpadViewModel.instance().rescanTransactionsToRequest();
+                    return AbstractResponse.createEmptyResponse();
+                }
                 default:
                     return ErrorResponse.create("Command [" + command + "] is unknown");
             }

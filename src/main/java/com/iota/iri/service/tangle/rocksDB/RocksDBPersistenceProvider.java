@@ -573,7 +573,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private void scanTxDeleteBaddies() throws RocksDBException {
         RocksIterator iterator = db.newIterator(transactionHandle);
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            if(iterator.value().length != TransactionViewModel.SIZE) {
+            if(iterator.value().length != TransactionViewModel.SIZE || Arrays.equals(iterator.value(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                 db.delete(iterator.key());
             }
         }

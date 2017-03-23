@@ -125,7 +125,7 @@ public class Milestone {
                     BigInteger hashPointer;
                     byte[] hashBytes;
                     while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-                        hashBytes = Hash.padHash(hashPointer.toByteArray());
+                        hashBytes = Hash.padHash(hashPointer);
                         if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashBytes)) {
 
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashBytes);

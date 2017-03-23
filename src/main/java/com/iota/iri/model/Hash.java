@@ -4,6 +4,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Hash {
@@ -66,9 +67,15 @@ public class Hash {
 		return bytes;
 	}
 
-	public static byte[] padHash(byte[] bytes) {
+	public static byte[] padHash(BigInteger bigInteger) {
+        byte[] bytes = bigInteger.toByteArray();
         if(bytes.length < SIZE_IN_BYTES)
-            return ArrayUtils.addAll(bytes, Arrays.copyOf(NULL_HASH.bytes(), SIZE_IN_BYTES - bytes.length));
+            bytes = ArrayUtils.addAll(bytes, Arrays.copyOf(NULL_HASH.bytes(), SIZE_IN_BYTES - bytes.length));
+        BigInteger integer = new BigInteger(bytes);
+        while(integer.compareTo(bigInteger) > 0) {
+            bytes = ArrayUtils.addAll(new byte[]{0}, Arrays.copyOf(bytes, bytes.length-1));
+            integer = new BigInteger(bytes);
+        }
         return bytes;
     }
 }

@@ -143,7 +143,7 @@ public class TipsManager {
 
                         numberOfAnalyzedTransactions++;
 
-                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(transactionPointer.toByteArray()));
+                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(transactionPointer));
                         if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
                             ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
                             Tangle.instance().releaseTransientTable(transientHandle);
@@ -247,7 +247,7 @@ public class TipsManager {
 
                 if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
 
-                    final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(transactionPointer.toByteArray()));
+                    final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(transactionPointer));
 
                     if (transactionViewModel.getCurrentIndex() == 0 && !tailsToAnalyze.contains(transactionViewModel.getHash())) {
 
@@ -281,7 +281,7 @@ public class TipsManager {
                 final Iterator<BigInteger> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
 
-                    final byte[] tailHash = Hash.padHash(tailsToAnalyzeIterator.next().toByteArray());
+                    final byte[] tailHash = Hash.padHash(tailsToAnalyzeIterator.next());
                     try {
                         if (Tangle.instance().maybeHas(transientHandle, tailHash).get()) {
                             if (Tangle.instance().load(transientHandle, Flag.class, tailHash).get() != null) {
@@ -306,7 +306,7 @@ public class TipsManager {
 
             for (int i = tailsToAnalyze.size(); i-- > 0;) {
 
-                final byte[] tailHash = Hash.padHash(tailsToAnalyze.get(i).toByteArray());
+                final byte[] tailHash = Hash.padHash(tailsToAnalyze.get(i));
                 /*
                  * -- Coo only-- if (seenTails.contains(tailPointer)) {
                  * 
@@ -324,7 +324,7 @@ public class TipsManager {
 
                     if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
 
-                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(transactionPointer.toByteArray()));
+                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(transactionPointer));
                         if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
 
                             // -- Coo only--
@@ -350,7 +350,7 @@ public class TipsManager {
 
                     for (final BigInteger extraTransactionPointer : extraTransactions) {
 
-                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(extraTransactionPointer.toByteArray()));
+                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(extraTransactionPointer));
                         if (transactionViewModel.getCurrentIndex() == 0) {
 
                             final Bundle bundle = new Bundle(transactionViewModel.getBundleHash());
@@ -393,7 +393,7 @@ public class TipsManager {
 
                         for (final BigInteger extraTransactionPointer : extraTransactions) {
 
-                            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(extraTransactionPointer.toByteArray()));
+                            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Hash.padHash(extraTransactionPointer));
                             if (transactionViewModel.value() != 0) {
 
                                 final Hash address = transactionViewModel.getAddress().getHash();
@@ -476,7 +476,7 @@ public class TipsManager {
     }
 
     private static boolean setAnalyzedTransactionFlag(int handle, BigInteger hashPointer) throws ExecutionException, InterruptedException {
-        byte[] hash = Hash.padHash(hashPointer.toByteArray());
+        byte[] hash = Hash.padHash(hashPointer);
         if(!Tangle.instance().maybeHas(handle, hash).get()) {
             Tangle.instance().save(handle, new Flag(hash)).get();
             return true;

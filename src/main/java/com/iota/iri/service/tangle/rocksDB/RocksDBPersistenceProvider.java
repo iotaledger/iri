@@ -480,7 +480,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
         iterator.close();
         if(itemsToDelete.size() > 0) {
-            log.info("Flushing corrupted transactions. Amount to delete: " + itemsToDelete.size());
+            log.info("Flushing flags. Amount to delete: " + itemsToDelete.size());
         }
         for(byte[] itemToDelete: itemsToDelete) {
             db.delete(handle, itemToDelete);

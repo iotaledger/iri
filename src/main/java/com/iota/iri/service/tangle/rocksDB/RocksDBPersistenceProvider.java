@@ -210,7 +210,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean mayExist(int handle, Object key) throws Exception {
-        byte[] transientKey = getTransientKey(handle, ((byte[]) key));
+        byte[] transientKey = getTransientKey(handle, Hash.padHashFast((BigInteger) key));
         boolean mayExist = db.keyMayExist(analyzedTipHandle, transientKey, new StringBuffer());
         return mayExist;
     }
@@ -218,9 +218,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public boolean exists(Class<?> model, Object key) throws Exception {
         if(model == Transaction.class) {
-            return db.get(transactionHandle, (byte[])key) != null;
+            return db.get(transactionHandle, Hash.padHashFast((BigInteger)key)) != null;
         } else if (model == AnalyzedFlag.class) {
-            return db.get(analyzedFlagHandle, (byte[])key) != null;
+            return db.get(analyzedFlagHandle, Hash.padHashFast((BigInteger)key)) != null;
         }
         throw new NotImplementedException("Mada mada exists shinai");
     }
@@ -230,13 +230,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Object out = null;
         byte[] result;
         if (model == AnalyzedFlag.class) {
-            result = db.get(analyzedTipHandle, getTransientKey(uuid, ((byte[]) key)));
+            result = db.get(analyzedTipHandle, getTransientKey(uuid, Hash.padHashFast((BigInteger)key)));
             if(result != null) {
                 AnalyzedFlag flag = new AnalyzedFlag();
                 flag.hash = ((BigInteger) key);
             }
         } else if(model == Flag.class) {
-            result = db.get(analyzedTipHandle, getTransientKey(uuid, ((byte[]) key)));
+            result = db.get(analyzedTipHandle, getTransientKey(uuid, Hash.padHashFast((BigInteger)key)));
             if(result != null) {
                 Flag flag = new Flag();
                 flag.hash = ((BigInteger) key);
@@ -248,7 +248,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public void deleteTransientObject(int uuid, Object key) throws Exception {
-        byte[] tableKey = getTransientKey(uuid, ((byte[]) key));
+        byte[] tableKey = getTransientKey(uuid, Hash.padHashFast((BigInteger)key));
         if(db.get(analyzedTipHandle, (tableKey)) != null) {
             db.delete(analyzedTipHandle, tableKey);
         }

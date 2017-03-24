@@ -347,6 +347,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             destKey = ArrayUtils.addAll(destPre, Arrays.copyOfRange(iterator.key(), sourcePre.length, iterator.key().length));
             batch.put(analyzedTipHandle, destKey, iterator.value());
         }
+        iterator.close();
         db.write(new WriteOptions(), batch);
     }
 
@@ -388,6 +389,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 tips.add(new Tip(new Hash(iterator.key())));
             }
             out = tips.toArray();
+            iterator.close();
         }
         return out;
     }
@@ -482,9 +484,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
         db.flush(new FlushOptions().setWaitForFlush(true), handle);
+        List<byte[]> itemsToDelete = new ArrayList<>();
         RocksIterator iterator = db.newIterator(handle);
         for(iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
-            db.delete(handle, iterator.key());
+            itemsToDelete.add(iterator.key());
+        }
+        iterator.close();
+        for(byte[] itemToDelete: itemsToDelete) {
+            db.delete(handle, itemToDelete);
         }
     }
 
@@ -498,6 +505,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public void flushTagRange(int id) throws Exception {
         byte[] idBytes, start, keyStart;
         RocksIterator iterator;
+        List<byte[]> itemsToDelete = new ArrayList<>();
         idBytes = Serializer.serialize(id);
         start = getTransientKey(id, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES);
         iterator = db.newIterator(analyzedTipHandle);
@@ -506,7 +514,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(; iterator.isValid(); iterator.next()) {
             keyStart = Arrays.copyOfRange(iterator.key(), 0, idBytes.length);
             if(!Arrays.equals(idBytes, keyStart)) break;
-            db.delete(analyzedTipHandle, iterator.key());
+            itemsToDelete.add(iterator.key());
+        }
+        iterator.close();
+        for(byte[] item: itemsToDelete) {
+            db.delete(analyzedTipHandle, item);
         }
     }
 
@@ -646,6 +658,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 log.info("Deleting Bad Tx: " + new Hash(iterator.key()));
             }
         }
+        iterator.close();
         for(byte[] baddie : baddies) {
             db.delete(transactionHandle, baddie);
         }
@@ -654,16 +667,21 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private void updateTagDB() throws RocksDBException {
 
         RocksIterator iterator = db.newIterator(tagHandle);
-        byte[] res, key;
+        byte[] key;
+        List<byte[]> delList = new ArrayList<>();
         WriteBatch batch = new WriteBatch();
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             if(iterator.key().length < Hash.SIZE_IN_BYTES) {
                 key = ArrayUtils.addAll(iterator.key(), Arrays.copyOf(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES, Hash.SIZE_IN_BYTES - iterator.key().length));
-                batch.put(key, iterator.value());
-                db.delete(iterator.key());
+                batch.put(tagHandle, key, iterator.value());
+                delList.add(iterator.key());
             }
         }
+        iterator.close();
         db.write(new WriteOptions(), batch);
+        for(byte[] bytes: delList) {
+            db.delete(tagHandle, bytes);
+        }
     }
 
     @FunctionalInterface

@@ -84,7 +84,7 @@ public class Tangle {
         }
     }
 
-    public boolean loadNow(Object object) throws Exception {
+    private boolean loadNow(Object object) throws Exception {
         for(IPersistenceProvider provider: this.persistenceProviders) {
             if(provider.get(object)) {
                 return true;

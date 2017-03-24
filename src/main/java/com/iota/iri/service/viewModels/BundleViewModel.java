@@ -36,8 +36,12 @@ public class BundleViewModel {
     public TransactionViewModel[] getTransactionViewModels() throws Exception {
         if (this.bundle.transactions == null) {
             Tangle.instance().load(bundle).get();
+            if(bundle.transactions == null) {
+                bundle.transactions = new BigInteger[0];
+            }
         }
         if(transactionViewModels == null) {
+
             transactionViewModels = new TransactionViewModel[this.bundle.transactions.length];// + 1];
             for (int i = 0; i < bundle.transactions.length; i++) {
                 transactionViewModels[i] = TransactionViewModel.fromHash(this.bundle.transactions[i]);

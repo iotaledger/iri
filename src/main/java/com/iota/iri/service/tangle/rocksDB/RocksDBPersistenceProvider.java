@@ -180,6 +180,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         db.delete(transactionArrivalTimeHandle, key);
         db.delete(transactionTypeHandle, key);
         db.delete(transactionValidityHandle, key);
+        if(db.get(tipHandle, key) != null)
+            db.delete(tipHandle, key);
     }
 
 
@@ -582,7 +584,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         //mergeInnerValues();
         initFlushFlags();
         //updateTagDB();
-        //scanTxDeleteBaddies();
+        scanTxDeleteBaddies();
 
         db.compactRange();
 
@@ -651,8 +653,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 baddies.add(iterator.key());
             }
         }
+        Transaction transaction;
         for(byte[] baddie : baddies) {
-            db.delete(transactionHandle, baddie);
+            transaction = new Transaction();
+            transaction.hash = new BigInteger(baddie);
+            deleteTransaction(transaction);
+            //db.delete(transactionHandle, baddie);
         }
     }
 

@@ -260,7 +260,7 @@ public class Tangle {
         });
     }
 
-    public Future<Boolean> transientExists(int uuid, byte[] hash) {
+    public Future<Boolean> transientExists(int uuid, BigInteger hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(provider.transientObjectExists(uuid, hash)) return true;

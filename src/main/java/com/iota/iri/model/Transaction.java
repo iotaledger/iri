@@ -13,7 +13,7 @@ public class Transaction {
     private static final int SIZE = 1604;
     @SizedArray(length = Hash.SIZE_IN_BYTES)
     @ModelIndex
-    public BigInteger hash;
+    public Hash hash;
 
     @HasOne public byte[] bytes;
     @HasOne public int validity;

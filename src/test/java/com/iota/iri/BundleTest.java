@@ -1,6 +1,7 @@
 package com.iota.iri;
 
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.service.viewModels.BundleViewModel;
@@ -12,7 +13,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -37,12 +37,12 @@ public class BundleTest {
     @Test
     public void getTransactions() throws Exception {
         Random r = new Random();
-        BigInteger bundleHash = Converter.bigIntegerValue(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+        Hash bundleHash = new Hash(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
         TransactionViewModel[] transactionViewModels;
         transactionViewModels = Arrays.stream(new com.iota.iri.model.Transaction[4]).map(t -> {
             com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
             transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-            transaction.hash = Converter.bigIntegerValue(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
+            transaction.hash = new Hash(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
             transaction.bundle = new com.iota.iri.model.Bundle();
             transaction.bundle.hash = bundleHash;
             return new TransactionViewModel(transaction);

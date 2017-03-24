@@ -54,22 +54,22 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean mayExist(int handle, BigInteger key) throws Exception {
+    public boolean mayExist(int handle, Hash key) throws Exception {
         return false;
     }
 
     @Override
-    public boolean exists(Class<?> model, BigInteger key) throws Exception {
+    public boolean exists(Class<?> model, Hash key) throws Exception {
         return false;
     }
 
     @Override
-    public Object get(int handle, Class<?> model, BigInteger key) throws Exception {
+    public Object get(int handle, Class<?> model, Hash key) throws Exception {
         return null;
     }
 
     @Override
-    public void deleteTransientObject(int uuid, BigInteger key) throws Exception {
+    public void deleteTransientObject(int uuid, Hash key) throws Exception {
 
     }
 
@@ -134,7 +134,7 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean transientObjectExists(int uuid, BigInteger hash) throws Exception {
+    public boolean transientObjectExists(int uuid, Hash hash) throws Exception {
         return false;
     }
 
@@ -159,7 +159,7 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean transactionExists(BigInteger hash) throws Exception {
+    public boolean transactionExists(Hash hash) throws Exception {
         return false;
     }
 

@@ -140,7 +140,7 @@ public class StorageBundle extends AbstractStorage {
     
     public void updateBundle(final long transactionPointer, final TransactionViewModel transactionViewModel) {
 		{
-		    byte[] bundleHash = Hash.padHash(transactionViewModel.getBundleHash());
+		    byte[] bundleHash = transactionViewModel.getBundleHash().bytes();
             long pointer = ((bundleHash[0] + 128) + ((bundleHash[1] + 128) << 8)) << 11, prevPointer = 0;
             for (int depth = 2; depth < TransactionViewModel.BUNDLE_SIZE; depth++) {
 

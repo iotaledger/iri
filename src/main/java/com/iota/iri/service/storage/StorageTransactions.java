@@ -186,7 +186,7 @@ public class StorageTransactions extends AbstractStorage {
             while (pointer < transactionsNextPointer) {
     
                 if (tipFlag(pointer)) {
-                    tips.add(new Hash(Hash.padHash(loadTransaction(pointer).getHash()), 0, TransactionViewModel.HASH_SIZE));
+                    tips.add(loadTransaction(pointer).getHash());
                 }
                 pointer += CELL_SIZE;
             }

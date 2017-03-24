@@ -6,8 +6,6 @@ import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.math.BigInteger;
-import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -15,24 +13,21 @@ import java.util.concurrent.ExecutionException;
  */
 public class AddressViewModel {
     public final Address address;
-    public AddressViewModel (BigInteger hash) {
+    public AddressViewModel (Hash hash) {
         address = new Address();
         address.hash = hash;
-    }
-    public AddressViewModel (Hash hash) {
-        this(Converter.bigIntegerValue(hash.trits()));
     }
 
     public void addTransaction(TransactionViewModel transactionViewModel) {
         address.transactions = ArrayUtils.addAll(address.transactions, transactionViewModel.getHash());
     }
 
-    public BigInteger[] getTransactionHashes() throws ExecutionException, InterruptedException {
+    public Hash[] getTransactionHashes() throws ExecutionException, InterruptedException {
         if(address.transactions == null)
             Tangle.instance().load(address).get();
         return address.transactions;
     }
 
-    public byte[] bytes() { return Hash.padHash(address.hash);}
-    public BigInteger getHash() { return address.hash;}
+    public byte[] bytes() { return address.hash.bytes();}
+    public Hash getHash() { return address.hash;}
 }

@@ -4,7 +4,6 @@ import com.iota.iri.model.*;
 import org.rocksdb.RocksDBException;
 
 import java.lang.reflect.Field;
-import java.math.BigInteger;
 import java.util.Map;
 import java.util.UUID;
 
@@ -22,10 +21,10 @@ public interface IPersistenceProvider {
     boolean update(Object model, String item) throws Exception;
 
     boolean save(int handle, Object model) throws Exception;
-    boolean mayExist(int handle, BigInteger key) throws Exception;
-    boolean exists(Class<?> model, BigInteger key) throws Exception;
-    Object get(int handle, Class<?> model, BigInteger key) throws Exception;
-    void deleteTransientObject(int uuid, BigInteger key) throws Exception;
+    boolean mayExist(int handle, Hash key) throws Exception;
+    boolean exists(Class<?> model, Hash key) throws Exception;
+    Object get(int handle, Class<?> model, Hash key) throws Exception;
+    void deleteTransientObject(int uuid, Hash key) throws Exception;
     void copyTransientList(int sourceId, int destId) throws Exception;
 
     Object latest(Class<?> model) throws  Exception;
@@ -50,7 +49,7 @@ public interface IPersistenceProvider {
 
     void updateType(Transaction transaction) throws Exception;
 
-    boolean transientObjectExists(int uuid, BigInteger hash) throws Exception;
+    boolean transientObjectExists(int uuid, Hash hash) throws Exception;
 
     void flushAnalyzedFlags() throws Exception;
 
@@ -60,7 +59,7 @@ public interface IPersistenceProvider {
 
     long getNumberOfRequestedTransactions() throws Exception;
 
-    boolean transactionExists(BigInteger hash) throws Exception;
+    boolean transactionExists(Hash hash) throws Exception;
 
     boolean setTransientFlagHandle(int uuid) throws Exception;
 

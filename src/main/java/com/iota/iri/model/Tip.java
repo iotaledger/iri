@@ -10,7 +10,7 @@ import java.math.BigInteger;
 @ArrayModel
 @Model
 public class Tip extends Flag {
-    public Tip(BigInteger hashBytes) {
+    public Tip(Hash hashBytes) {
         this.hash = hashBytes;
     }
 }

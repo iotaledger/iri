@@ -1,11 +1,11 @@
 package com.iota.iri.service;
 
-import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.model.Flag;
+import com.iota.iri.model.Hash;
 import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.viewModels.AddressViewModel;
@@ -16,7 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
-import com.iota.iri.model.Hash;
 import com.iota.iri.utils.Converter;
 
 public class TipsManager {
@@ -85,11 +84,11 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    static BigInteger transactionToApprove(final BigInteger extraTip, int depth) throws Exception {
+    static Hash transactionToApprove(final Hash extraTip, int depth) throws Exception {
 
         long startTime = System.nanoTime();
                 
-        final BigInteger preferableMilestone = Milestone.latestSolidSubtangleMilestone;
+        final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
         
         final int oldestAcceptableMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex - depth;
         
@@ -99,7 +98,7 @@ public class TipsManager {
         int transientHandleCopy = Tangle.instance().createTransientFlagList();
         try {
             AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR);
-            for (final BigInteger hash : coordinatorAddress.getTransactionHashes()) {
+            for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
                 if (transactionViewModel.getCurrentIndex() == 0) {
                     int milestoneIndex = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET,
@@ -128,15 +127,15 @@ public class TipsManager {
             // "+formatter.format(calendar.getTime()));
 
             
-            Map<BigInteger, Long> state = new HashMap<>(Snapshot.initialState);
+            Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
 
             {
                 int numberOfAnalyzedTransactions = 0;
 
-                //setAnalyzedTransactionFlag(transientHandle, new BigInteger(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES));
-                setAnalyzedTransactionFlag(transientHandle, TransactionViewModel.PADDED_NULL_HASH);
-                final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
-                BigInteger transactionPointer;
+                //setAnalyzedTransactionFlag(transientHandle, new Hash(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES));
+                setAnalyzedTransactionFlag(transientHandle, Hash.NULL_HASH);
+                final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
+                Hash transactionPointer;
                 while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
                     if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
@@ -166,7 +165,7 @@ public class TipsManager {
 
                                             if (bundleTransactionViewModel.value() != 0) {
 
-                                                final BigInteger address = bundleTransactionViewModel.getAddress().getHash();
+                                                final Hash address = bundleTransactionViewModel.getAddress().getHash();
                                                 final Long value = state.get(address);
                                                 state.put(address, value == null ? bundleTransactionViewModel.value()
                                                         : (value + bundleTransactionViewModel.value()));
@@ -187,8 +186,8 @@ public class TipsManager {
                                 }
                             }
 
-                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionPointer());
-                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionPointer());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                         }
                     }
                 }
@@ -199,10 +198,10 @@ public class TipsManager {
                 }
             }
 
-            final Iterator<Map.Entry<BigInteger, Long>> stateIterator = state.entrySet().iterator();
+            final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
             while (stateIterator.hasNext()) {
 
-                final Map.Entry<BigInteger, Long> entry = stateIterator.next();
+                final Map.Entry<Hash, Long> entry = stateIterator.next();
                 if (entry.getValue() <= 0) {
 
                     if (entry.getValue() < 0) {
@@ -227,13 +226,13 @@ public class TipsManager {
             Tangle.instance().copyTransientList(transientHandle, transientHandleCopy).get();
             Tangle.instance().flushTransientFlags(transientHandle).get();
 
-            final List<BigInteger> tailsToAnalyze = new LinkedList<>();
+            final List<Hash> tailsToAnalyze = new LinkedList<>();
 
-            BigInteger tip = preferableMilestone; //StorageTransactions.instance().transactionPointer(preferableMilestone.value());
+            Hash tip = preferableMilestone; //StorageTransactions.instance().transactionPointer(preferableMilestone.value());
             if (extraTip != null) {
 
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);//StorageTransactions.instance().loadTransaction(tip);
-                while (depth-- > 0 && !tip.equals(TransactionViewModel.PADDED_NULL_HASH)) {
+                while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 
                     tip = transactionViewModel.getHash();
                     do {
@@ -244,9 +243,9 @@ public class TipsManager {
                 }
             }
             
-            final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
-            BigInteger transactionPointer;
-            final Set<BigInteger> tailsWithoutApprovers = new HashSet<>();
+            final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
+            Hash transactionPointer;
+            final Set<Hash> tailsWithoutApprovers = new HashSet<>();
             while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
                 if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
@@ -258,7 +257,7 @@ public class TipsManager {
                         tailsToAnalyze.add(transactionViewModel.getHash());
                     }
 
-                    final BigInteger approveePointer = Arrays.stream(transactionViewModel.getApprovers()).findFirst().orElse(null);
+                    final Hash approveePointer = Arrays.stream(transactionViewModel.getApprovers()).findFirst().orElse(null);
                     if (approveePointer == null) {
 
                         if (transactionViewModel.getCurrentIndex() == 0) {
@@ -268,7 +267,7 @@ public class TipsManager {
 
                     } else {
 
-                        for (final BigInteger approverPointer : TransactionViewModel.fromHash(approveePointer).getApprovers()) {
+                        for (final Hash approverPointer : TransactionViewModel.fromHash(approveePointer).getApprovers()) {
                             nonAnalyzedTransactions.offer(approverPointer);
                         }
                     }
@@ -282,10 +281,10 @@ public class TipsManager {
                 Tangle.instance().flushTransientFlags(transientHandle).get();
                 Tangle.instance().copyTransientList(transientHandleCopy, transientHandle).get();
 
-                final Iterator<BigInteger> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
+                final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
 
-                    final BigInteger tailHash = tailsToAnalyzeIterator.next();
+                    final Hash tailHash = tailsToAnalyzeIterator.next();
                         if (Tangle.instance().maybeHas(transientHandle, tailHash).get()) {
                             if (Tangle.instance().load(transientHandle, Flag.class, tailHash).get() != null) {
                                 tailsToAnalyzeIterator.remove();
@@ -300,11 +299,11 @@ public class TipsManager {
             int bestRating = 0;
             // final Set<Long> seenTails = new HashSet<>();
 
-            /**/final Map<BigInteger, Integer> tailsRaitings = new HashMap<>();
+            /**/final Map<Hash, Integer> tailsRaitings = new HashMap<>();
 
             for (int i = tailsToAnalyze.size(); i-- > 0;) {
 
-                final BigInteger tailHash = tailsToAnalyze.get(i);
+                final Hash tailHash = tailsToAnalyze.get(i);
                 /*
                  * -- Coo only-- if (seenTails.contains(tailPointer)) {
                  * 
@@ -314,7 +313,7 @@ public class TipsManager {
                 Tangle.instance().flushTransientFlags(transientHandle).get();
                 Tangle.instance().copyTransientList(transientHandleCopy, transientHandle).get();
 
-                final Set<BigInteger> extraTransactions = new HashSet<>();
+                final Set<Hash> extraTransactions = new HashSet<>();
 
                 nonAnalyzedTransactions.clear();
                 nonAnalyzedTransactions.offer(tailHash);
@@ -336,17 +335,17 @@ public class TipsManager {
 
                             extraTransactions.add(transactionPointer);
 
-                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionPointer());
-                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionPointer());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                         }
                     }
                 }
 
                 if (extraTransactions.size() > /* bestRating */0) {
 
-                    Set<BigInteger> extraTransactionsCopy = new HashSet<>(extraTransactions);
+                    Set<Hash> extraTransactionsCopy = new HashSet<>(extraTransactions);
 
-                    for (final BigInteger extraTransactionPointer : extraTransactions) {
+                    for (final Hash extraTransactionPointer : extraTransactions) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(extraTransactionPointer);
                         if (transactionViewModel.getCurrentIndex() == 0) {
@@ -388,14 +387,14 @@ public class TipsManager {
 
                     if (extraTransactionsCopy != null && extraTransactionsCopy.isEmpty()) {
 
-                        final Map<BigInteger, Long> stateCopy = new HashMap<>(state);
+                        final Map<Hash, Long> stateCopy = new HashMap<>(state);
 
-                        for (final BigInteger extraTransactionPointer : extraTransactions) {
+                        for (final Hash extraTransactionPointer : extraTransactions) {
 
                             final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(extraTransactionPointer);
                             if (transactionViewModel.value() != 0) {
 
-                                final BigInteger address = transactionViewModel.getAddress().getHash();
+                                final Hash address = transactionViewModel.getAddress().getHash();
                                 final Long value = stateCopy.get(address);
                                 stateCopy.put(address, value == null ? transactionViewModel.value() : (value + transactionViewModel.value()));
                             }
@@ -438,9 +437,9 @@ public class TipsManager {
                     /**/}
                 /**/}
 
-            /**/final Map<BigInteger, Integer> filteredTailsRatings = new HashMap<>();
+            /**/final Map<Hash, Integer> filteredTailsRatings = new HashMap<>();
             /**/long totalSquaredRating = 0;
-            /**/for (final Map.Entry<BigInteger, Integer> entry : tailsRaitings.entrySet()) {
+            /**/for (final Map.Entry<Hash, Integer> entry : tailsRaitings.entrySet()) {
                 /**/
                 /**/if (entry.getValue() >= bestRating * RATING_THRESHOLD / 100) {
                     /**/
@@ -450,7 +449,7 @@ public class TipsManager {
                 /**/}
             /**/if (totalSquaredRating > 0L) {
                 /**/long hit = java.util.concurrent.ThreadLocalRandom.current().nextLong(totalSquaredRating);
-                /**/for (final Map.Entry<BigInteger, Integer> entry : filteredTailsRatings.entrySet()) {
+                /**/for (final Map.Entry<Hash, Integer> entry : filteredTailsRatings.entrySet()) {
                     /**/
                     /**/if ((hit -= ((long) entry.getValue()) * entry.getValue()) < 0) {
                         /**/
@@ -474,8 +473,8 @@ public class TipsManager {
         return null;
     }
 
-    private static boolean setAnalyzedTransactionFlag(int handle, BigInteger hashPointer) throws ExecutionException, InterruptedException {
-        BigInteger hash = hashPointer;
+    private static boolean setAnalyzedTransactionFlag(int handle, Hash hashPointer) throws ExecutionException, InterruptedException {
+        Hash hash = hashPointer;
         if(!Tangle.instance().maybeHas(handle, hash).get()) {
             Tangle.instance().save(handle, new Flag(hash)).get();
             return true;

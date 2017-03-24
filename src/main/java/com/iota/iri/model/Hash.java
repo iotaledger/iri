@@ -2,15 +2,11 @@ package com.iota.iri.model;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.utils.Converter;
-import org.apache.commons.lang3.ArrayUtils;
-
-import java.math.BigInteger;
 import java.util.Arrays;
 
-public class Hash {
+public class Hash implements Comparable<Hash>{
 
     public static final int SIZE_IN_BYTES = 49;
-    public static final int PADDED_SIZE_IN_BYTES = SIZE_IN_BYTES + 1;
 
     public static final Hash NULL_HASH = new Hash(new int[Curl.HASH_LENGTH]);
 
@@ -29,12 +25,8 @@ public class Hash {
         this(bytes, 0, SIZE_IN_BYTES);
     }
 
-    public Hash(final BigInteger intValue) {
-        this(Hash.padHash(intValue), 0, SIZE_IN_BYTES);
-    }
-
     public Hash(final int[] trits, final int offset) {
-        this(Converter.bigIntegerValue(trits, offset, Curl.HASH_LENGTH));
+        this(Converter.bytes(trits, offset, Curl.HASH_LENGTH));
     }
 
     public Hash(final int[] trits) {
@@ -72,18 +64,9 @@ public class Hash {
 		return bytes;
 	}
 
-    public static byte[] padHashFast(BigInteger bigInteger) {
-        byte[] bytes = bigInteger.toByteArray();
-        if(bytes.length < PADDED_SIZE_IN_BYTES)
-            bytes = ArrayUtils.addAll(bytes, Arrays.copyOf(NULL_HASH.bytes(),PADDED_SIZE_IN_BYTES - bytes.length));
-        return bytes;
-    }
-	public static byte[] padHash(BigInteger bigInteger) {
-        byte[] bytes = bigInteger.toByteArray();
-        bytes = Arrays.copyOfRange(bytes, 1, bytes.length);
-        if(bytes.length < SIZE_IN_BYTES)
-            bytes = ArrayUtils.addAll(bytes, Arrays.copyOf(NULL_HASH.bytes(), SIZE_IN_BYTES - bytes.length));
-        return bytes;
+    @Override
+    public int compareTo(Hash hash) {
+        return this.equals(hash) ? 0 : 1;
     }
 }
 

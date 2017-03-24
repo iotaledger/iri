@@ -70,10 +70,10 @@ public class Storage extends AbstractStorage {
         StorageBundle.instance().updateBundle(transactionPointer, transactionViewModel);
         StorageAddresses.instance().updateAddresses(transactionPointer, transactionViewModel);
         StorageTags.instance().updateTags(transactionPointer, transactionViewModel);
-        StorageApprovers.instance().updateApprover(Hash.padHash(transactionViewModel.getTrunkTransactionPointer()), transactionPointer);
+        StorageApprovers.instance().updateApprover(transactionViewModel.getTrunkTransactionHash().bytes(), transactionPointer);
 
-        if (transactionViewModel.getBranchTransactionPointer().equals(transactionViewModel.getTrunkTransactionPointer())) {
-        	StorageApprovers.instance().updateApprover(Hash.padHash(transactionViewModel.getBranchTransactionPointer()), transactionPointer);
+        if (transactionViewModel.getBranchTransactionHash().equals(transactionViewModel.getTrunkTransactionHash())) {
+        	StorageApprovers.instance().updateApprover(transactionViewModel.getBranchTransactionHash().bytes(), transactionPointer);
         }
     }
     

@@ -1,6 +1,7 @@
 package com.iota.iri.service.tangle;
 
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.service.viewModels.TransactionViewModel;
@@ -42,7 +43,7 @@ public class TangleTest {
         curl.absorb(trits, 0, trits.length);
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
         transaction.bytes = Converter.bytes(trits);
-        transaction.hash = Converter.bigIntegerValue(hash);
+        transaction.hash = new Hash(Converter.bytes(hash));
 
         assertTrue("Should be a new, unique transaction", !Tangle.instance().save(transaction).get());
     }

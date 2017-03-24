@@ -6,9 +6,7 @@ import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
-import org.apache.commons.lang3.ArrayUtils;
 
-import java.math.BigInteger;
 import java.util.*;
 
 /**
@@ -19,9 +17,6 @@ public class BundleViewModel {
     private TransactionViewModel[] transactionViewModels;
 
     public static BundleViewModel fromHash(Hash hash) throws Exception {
-        return fromHash(Converter.bigIntegerValue(hash.trits()));
-    }
-    public static BundleViewModel fromHash(BigInteger hash) throws Exception {
         Bundle bundle = new Bundle();
         bundle.hash = hash;
         Tangle.instance().load(bundle).get();
@@ -37,7 +32,7 @@ public class BundleViewModel {
         if (this.bundle.transactions == null) {
             Tangle.instance().load(bundle).get();
             if(bundle.transactions == null) {
-                bundle.transactions = new BigInteger[0];
+                bundle.transactions = new Hash[0];
             }
         }
         if(transactionViewModels == null) {
@@ -55,7 +50,7 @@ public class BundleViewModel {
 
     public void init() throws Exception {
 
-        final Map<BigInteger, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle();
+        final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle();
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
@@ -89,7 +84,7 @@ public class BundleViewModel {
                                 }
                                 final int[] bundleHashTrits = new int[TransactionViewModel.BUNDLE_TRINARY_SIZE];
                                 bundleHash.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
-                                if (Converter.bigIntegerValue(bundleHashTrits, 0, TransactionViewModel.BUNDLE_TRINARY_SIZE).equals(instanceTransactionViewModels.get(0).getBundleHash())) {
+                                if (instanceTransactionViewModels.get(0).getBundleHash().equals(new Hash(Converter.bytes(bundleHashTrits, 0, TransactionViewModel.BUNDLE_TRINARY_SIZE)))) {
 
                                     final int[] normalizedBundle = ISS.normalizedBundle(bundleHashTrits);
 
@@ -114,7 +109,7 @@ public class BundleViewModel {
                                             final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
                                             address.squeeze(addressTrits, 0, addressTrits.length);
                                             //if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
-                                            if (! transactionViewModel.getAddress().getHash().equals(Converter.bigIntegerValue(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE))) {
+                                            if (! transactionViewModel.getAddress().getHash().equals(new Hash(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE)))) {
                                                 instanceTransactionViewModels.get(0).setValidity(-1, true);
                                                 break MAIN_LOOP;
                                             }
@@ -137,7 +132,7 @@ public class BundleViewModel {
                         break;
 
                     } else {
-                        transactionViewModel = bundleTransactions.get(transactionViewModel.getTrunkTransactionPointer());
+                        transactionViewModel = bundleTransactions.get(transactionViewModel.getTrunkTransactionHash());
                         if (transactionViewModel == null) {
                             break;
                         }
@@ -148,8 +143,8 @@ public class BundleViewModel {
     }
 
 
-    private Map<BigInteger, TransactionViewModel> loadTransactionsFromTangle() {
-        final Map<BigInteger, TransactionViewModel> bundleTransactions = new HashMap<>();
+    private Map<Hash, TransactionViewModel> loadTransactionsFromTangle() {
+        final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();
         try {
             for (final TransactionViewModel transactionViewModel : getTransactionViewModels()) {
                 bundleTransactions.put(transactionViewModel.getHash(), transactionViewModel);

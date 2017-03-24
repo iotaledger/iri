@@ -1,7 +1,6 @@
 package com.iota.iri.service;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
@@ -23,9 +22,7 @@ import com.iota.iri.service.storage.ReplicatorSinkPool;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TipsViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
-import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -177,8 +174,8 @@ public class Node {
             final SecureRandom rnd = new SecureRandom();
             long randomTipBroadcastCounter = 1;
             long lastTime = System.currentTimeMillis(), now, count = 0;
-            Set<BigInteger> receivedSet = new HashSet<>();
-            Set<BigInteger> newSet = new HashSet<>();
+            Set<Hash> receivedSet = new HashSet<>();
+            Set<Hash> newSet = new HashSet<>();
 
             while (!shuttingDown.get()) {
 
@@ -216,7 +213,7 @@ public class Node {
                                             count = 0;
                                         }
 
-                                        BigInteger transactionPointer = TransactionViewModel.PADDED_NULL_HASH;
+                                        Hash transactionPointer = Hash.NULL_HASH;
                                         System.arraycopy(receivingPacket.getData(), TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
                                         TransactionViewModel transactionViewModel;
@@ -225,15 +222,15 @@ public class Node {
                                                 && (Milestone.latestMilestoneIndex > 0)
                                                 && (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) {
                                             //
-                                            BigInteger mBytes;
+                                            Hash mBytes;
                                             if (randomTipBroadcastCounter % 60 == 0) {
                                                 mBytes = Milestone.latestMilestone;
-                                                if (!mBytes.equals(TransactionViewModel.PADDED_NULL_HASH)) {
+                                                if (!mBytes.equals(Hash.NULL_HASH)) {
                                                     transactionPointer = mBytes;
                                                 }
                                             } else if (randomTipBroadcastCounter % 48 == 0) {
                                                  mBytes = Milestone.latestMilestone;
-                                                if (!mBytes.equals(TransactionViewModel.PADDED_NULL_HASH)) {
+                                                if (!mBytes.equals(Hash.NULL_HASH)) {
                                                     transactionPointer = mBytes;
 
                                                     final TransactionViewModel milestoneTx = TransactionViewModel.fromHash(transactionPointer);
@@ -250,9 +247,9 @@ public class Node {
                                                     }
                                                 }
                                             } else if (randomTipBroadcastCounter % 24 == 0) {
-                                                final BigInteger[] tips = TipsViewModel.getTipHashes();
+                                                final Hash[] tips = TipsViewModel.getTipHashes();
                                                 //final String[] tips = StorageTransactions.instance().tips().stream().map(Hash::toString).toArray(size -> new String[size]);
-                                                final BigInteger rndTipHash = tips[rnd.nextInt(tips.length)];
+                                                final Hash rndTipHash = tips[rnd.nextInt(tips.length)];
 
                                                 transactionPointer = rndTipHash;
                                             }
@@ -260,7 +257,7 @@ public class Node {
 
                                         } else {
 
-                                            transactionPointer = Converter.bigIntegerValue(new Hash(requestedTransaction).trits());
+                                            transactionPointer = new Hash(Converter.bytes(new Hash(requestedTransaction).trits()));
                                         }
                                         transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                                         if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
@@ -333,7 +330,7 @@ public class Node {
                 try {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Milestone.latestMilestone);
                     System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
-                    System.arraycopy(Hash.padHash(transactionViewModel.getHash()), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
+                    System.arraycopy(transactionViewModel.getHash().bytes(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
                             TransactionViewModel.HASH_SIZE);
                             //Hash.SIZE_IN_BYTES);
 
@@ -351,13 +348,9 @@ public class Node {
     private static ConcurrentSkipListSet<TransactionViewModel> weightQueue() {
         return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
             if (transaction1.weightMagnitude == transaction2.weightMagnitude) {
-                byte[][] hashes = new byte[][] {
-                        Hash.padHash(transaction1.getHash()),
-                        Hash.padHash(transaction2.getHash())
-                };
                 for (int i = 0; i < Hash.SIZE_IN_BYTES; i++) {
-                    if (hashes[0][i] != hashes[1][i]) {
-                        return hashes[1][i] - hashes[0][i];
+                    if (transaction1.getHash().bytes()[i] != transaction2.getHash().bytes()[i]) {
+                        return transaction2.getHash().bytes()[i] - transaction1.getHash().bytes()[i];
                     }
                 }
                 return 0;

@@ -150,9 +150,9 @@ public class StorageTags extends AbstractStorage {
 	public void updateTags(final long transactionPointer, final TransactionViewModel transactionViewModel) {
 		for (int i = 0; i < TransactionViewModel.TAG_SIZE; i++) {
 
-            if (Hash.padHash(transactionViewModel.getTag().getHash())[i] != 0) {
+            if (transactionViewModel.getTag().getHash().bytes()[i] != 0) {
 
-                byte[] tagBytes  = Hash.padHash(transactionViewModel.getTag().getHash());
+                byte[] tagBytes  = transactionViewModel.getTag().getHash().bytes();
                 long pointer = ((tagBytes[0] + 128) + ((tagBytes[1] + 128) << 8)) << 11, prevPointer = 0;
                 for (int depth = 2; depth < TransactionViewModel.TAG_SIZE; depth++) {
 

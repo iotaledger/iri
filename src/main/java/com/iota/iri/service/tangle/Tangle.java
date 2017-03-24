@@ -5,7 +5,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.Field;
-import java.math.BigInteger;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -206,7 +205,7 @@ public class Tangle {
     }
 
 
-    public Future<Boolean> maybeHas(int handle, BigInteger key) {
+    public Future<Boolean> maybeHas(int handle, Hash key) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(provider.mayExist(handle, key)) return true;
@@ -225,7 +224,7 @@ public class Tangle {
             return true;
         });
     }
-    public Future<Object> load(int handle, Class<?> model, BigInteger key) {
+    public Future<Object> load(int handle, Class<?> model, Hash key) {
         return executor.submit(() -> {
             Object loadableObject = null;
             for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -260,7 +259,7 @@ public class Tangle {
         });
     }
 
-    public Future<Boolean> transientExists(int uuid, BigInteger hash) {
+    public Future<Boolean> transientExists(int uuid, Hash hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(provider.transientObjectExists(uuid, hash)) return true;
@@ -269,13 +268,13 @@ public class Tangle {
         });
     }
 
-    public boolean transactionExists(BigInteger hash) throws Exception {
+    public boolean transactionExists(Hash hash) throws Exception {
         for(IPersistenceProvider provider: this.persistenceProviders) {
             if(provider.transactionExists(hash)) return true;
         }
         return false;
     }
-    public Future<Boolean> exists(Class<?> modelClass, BigInteger hash) {
+    public Future<Boolean> exists(Class<?> modelClass, Hash hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(provider.exists(modelClass, hash)) return true;

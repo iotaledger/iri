@@ -576,8 +576,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         analyzedFlagHandle = familyHandles.get(++i);
         analyzedTipHandle = familyHandles.get(++i);
 
-        mergeDB(familyHandles);
-        mergeInnerValues();
+        //mergeDB(familyHandles);
+        //mergeInnerValues();
         initFlushFlags();
         //updateTagDB();
         //scanTxDeleteBaddies();

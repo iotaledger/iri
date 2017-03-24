@@ -622,11 +622,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 baddies.add(iterator.key());
             }
         }
-        Transaction transaction;
         for(byte[] baddie : baddies) {
-            transaction = new Transaction();
-            transaction.hash = new Hash(baddie);
-            delete(transaction);
+            db.delete(transactionHandle, baddie);
         }
     }
 

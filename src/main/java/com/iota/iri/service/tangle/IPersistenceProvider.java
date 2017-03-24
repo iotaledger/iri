@@ -50,7 +50,7 @@ public interface IPersistenceProvider {
 
     void updateType(Transaction transaction) throws Exception;
 
-    boolean transientObjectExists(int uuid, byte[] hash) throws Exception;
+    boolean transientObjectExists(int uuid, BigInteger hash) throws Exception;
 
     void flushAnalyzedFlags() throws Exception;
 

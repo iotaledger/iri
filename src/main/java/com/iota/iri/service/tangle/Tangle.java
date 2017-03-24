@@ -70,7 +70,7 @@ public class Tangle {
 
     public void releaseTransientTable(int id) throws Exception {
         for(IPersistenceProvider provider : persistenceProviders) {
-            provider.flushTagRange( id);
+            provider.flushTagRange(id);
         }
         synchronized (this) {
             log.info("Released transient table with id: " + id);

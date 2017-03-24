@@ -37,6 +37,8 @@ public class Tangle {
 
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
+        executor.shutdown();
+        executor.awaitTermination(6, TimeUnit.SECONDS);
         for(int id: transientHandles) {
             releaseTransientTable(id);
         }

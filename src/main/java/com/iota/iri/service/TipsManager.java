@@ -98,7 +98,7 @@ public class TipsManager {
         int transientHandle = Tangle.instance().createTransientFlagList();
         int transientHandleCopy = Tangle.instance().createTransientFlagList();
         try {
-            AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR.bytes());
+            AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR);
             for (final BigInteger hash : coordinatorAddress.getTransactionHashes()) {
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
                 if (transactionViewModel.getCurrentIndex() == 0) {

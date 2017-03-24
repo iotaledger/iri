@@ -19,8 +19,8 @@ public class AddressViewModel {
         address = new Address();
         address.hash = hash;
     }
-    public AddressViewModel (byte[] hash) {
-        this(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash)));
+    public AddressViewModel (Hash hash) {
+        this(Converter.bigIntegerValue(hash.trits()));
     }
 
     public void addTransaction(TransactionViewModel transactionViewModel) {

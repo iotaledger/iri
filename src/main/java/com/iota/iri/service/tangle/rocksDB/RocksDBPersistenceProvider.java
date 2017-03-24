@@ -14,6 +14,7 @@ import org.rocksdb.*;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -279,7 +280,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         Object out = null;
         if(model == Scratchpad.class) {
             Scratchpad scratchpad = new Scratchpad();
-            byte[] randomPosition = new byte[Hash.SIZE_IN_BYTES];
+            byte[] randomPosition = new byte[Hash.PADDED_SIZE_IN_BYTES];
             random.nextBytes(randomPosition);
             iterator = db.newIterator(scratchpadHandle);
             iterator.seek(randomPosition);
@@ -337,7 +338,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public boolean get(Address address) throws Exception {
         byte[] result = db.get(addressHandle, Hash.padHashFast(address.hash));
         if(result != null) {
-            address.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
+            address.transactions = byteToHash(result, Hash.PADDED_SIZE_IN_BYTES);
             return  true;
         } else {
             address.transactions = new BigInteger[0];
@@ -349,7 +350,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public boolean get(Tag tag) throws Exception {
         byte[] result = db.get(tagHandle, Hash.padHashFast(tag.value));
         if(result != null) {
-            tag.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
+            tag.transactions = byteToHash(result, Hash.PADDED_SIZE_IN_BYTES);
             return  true;
         } else {
             tag.transactions = new BigInteger[0];
@@ -361,7 +362,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public boolean get(Bundle bundle) throws Exception {
         byte[] result = db.get(bundleHandle, Hash.padHashFast(bundle.hash));
         if(result != null) {
-            bundle.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
+            bundle.transactions = byteToHash(result, Hash.PADDED_SIZE_IN_BYTES);
             return true;
         }
         return false;
@@ -371,7 +372,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public boolean get(Approvee approvee) throws Exception {
         byte[] result = db.get(approoveeHandle, Hash.padHashFast(approvee.hash));
         if(result != null) {
-            approvee.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
+            approvee.transactions = byteToHash(result, Hash.PADDED_SIZE_IN_BYTES);
             return true;
         } else {
             approvee.transactions = new BigInteger[0];
@@ -575,15 +576,67 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         analyzedFlagHandle = familyHandles.get(++i);
         analyzedTipHandle = familyHandles.get(++i);
 
+        mergeDB(familyHandles);
+        mergeInnerValues();
         initFlushFlags();
-        updateTagDB();
-        scanTxDeleteBaddies();
+        //updateTagDB();
+        //scanTxDeleteBaddies();
 
         db.compactRange();
 
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {
             transactionGetList.add(familyHandles.get(i));
+        }
+    }
+
+    private void mergeInnerValues() throws RocksDBException {
+        Queue<ColumnFamilyHandle> handles = new LinkedList<>(Arrays.stream(new ColumnFamilyHandle[]{addressHandle, bundleHandle, approoveeHandle, tagHandle}).collect(Collectors.toList()));
+        RocksIterator iterator;
+        ColumnFamilyHandle handle;
+        while((handle = handles.poll())!= null) {
+            WriteBatch batch = new WriteBatch();
+            iterator = db.newIterator(handle);
+            for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                batch.put(handle, iterator.key(), mergeByteToHash(iterator.value(), Hash.SIZE_IN_BYTES));
+            }
+            db.write(new WriteOptions(), batch);
+        }
+    }
+    private byte[] mergeByteToHash(byte[] bytes, int size) {
+        int i;
+        ByteBuffer buffer = ByteBuffer.allocate(bytes.length + bytes.length/size);
+        byte delimiter = bytes.length > size? bytes[size] : 0;
+        byte[] mbytes;
+        for(i = size; i <= bytes.length; i += size + 1) {
+            mbytes = Hash.padHashFast(Converter.bigIntegerValue(new Hash(Arrays.copyOfRange(bytes, i - size, i)).trits()));
+            buffer.put(mbytes);
+            if(i < bytes.length)
+                buffer.put(delimiter);
+        }
+        return buffer.array();
+    }
+
+    private void mergeDB(List<ColumnFamilyHandle> familyHandles) throws RocksDBException {
+        RocksIterator iterator;
+        WriteBatch batch = new WriteBatch();
+        Map<ColumnFamilyHandle, List<byte[]>> baddies = new HashMap<>();
+        for(ColumnFamilyHandle handle: familyHandles) {
+            iterator = db.newIterator(handle);
+            List<byte[]> keys = new ArrayList<>();
+            for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                keys.add(Arrays.copyOf(iterator.key(), iterator.key().length));
+                byte[] bytes = Arrays.copyOf(iterator.value(), iterator.value().length);
+                byte[] key = Arrays.copyOf(iterator.key(), iterator.key().length);
+                batch.put(handle, ArrayUtils.addAll(Converter.CHECK_BYTE, iterator.key()), iterator.value());
+            }
+            baddies.put(handle, keys);
+        }
+        db.write(new WriteOptions(), batch);
+        for(Map.Entry<ColumnFamilyHandle, List<byte[]>> baddie: baddies.entrySet()) {
+            for(byte[] key: baddie.getValue()) {
+                db.delete(baddie.getKey(), key);
+            }
         }
     }
 
@@ -620,8 +673,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         byte[] res, key;
         WriteBatch batch = new WriteBatch();
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            if(iterator.key().length < Hash.SIZE_IN_BYTES) {
-                key = ArrayUtils.addAll(iterator.key(), Arrays.copyOf(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES, Hash.SIZE_IN_BYTES - iterator.key().length));
+            if(iterator.key().length < Hash.PADDED_SIZE_IN_BYTES) {
+                key = ArrayUtils.addAll(iterator.key(), Arrays.copyOf(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES, Hash.PADDED_SIZE_IN_BYTES - iterator.key().length));
                 batch.put(key, iterator.value());
                 db.delete(iterator.key());
             }
@@ -629,3 +682,16 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         db.write(new WriteOptions(), batch);
     }
 }
+/*
+
+        RocksIterator iterator = db.newIterator(addressHandle);
+        byte[] key;
+        byte[] res;
+        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            key = iterator.key();
+            res = iterator.value();
+            if(res == null) {
+
+            }
+        }
+ */

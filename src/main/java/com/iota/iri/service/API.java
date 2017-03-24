@@ -360,7 +360,7 @@ public class API {
                 if (address.length() != 81) {
                     log.error("Address {} doesn't look a valid address", address);
                 }
-                addressesTransactions.addAll(Arrays.stream(new AddressViewModel(new Hash(address).bytes()).getTransactionHashes()).collect(Collectors.toSet()));
+                addressesTransactions.addAll(Arrays.stream(new AddressViewModel(new Hash(address)).getTransactionHashes()).collect(Collectors.toSet()));
             }
         }
 

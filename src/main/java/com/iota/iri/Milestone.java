@@ -18,7 +18,7 @@ public class Milestone {
 
     public static final Hash COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
 
-    public static BigInteger latestMilestone = TransactionViewModel.PADDED_NULL_HASH;
+    public static BigInteger latestMilestone = BigInteger.ZERO;//TransactionViewModel.PADDED_NULL_HASH;
     public static BigInteger latestSolidSubtangleMilestone = latestMilestone;
     
     public static final int MILESTONE_START_INDEX = 10005;
@@ -38,9 +38,8 @@ public class Milestone {
 
         final long now = System.currentTimeMillis() / 1000L;
 
-        AddressViewModel coordinator = new AddressViewModel(COORDINATOR.bytes());
+        AddressViewModel coordinator = new AddressViewModel(COORDINATOR);
         for (final BigInteger hash : coordinator.getTransactionHashes()) {
-
             if (analyzedMilestoneCandidates.add(hash) || analyzedMilestoneRetryCandidates.remove(hash)) {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);

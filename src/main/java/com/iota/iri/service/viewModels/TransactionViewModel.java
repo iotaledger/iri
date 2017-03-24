@@ -78,9 +78,11 @@ public class TransactionViewModel {
 
     private static final int MIN_WEIGHT_MAGNITUDE = 9;
     private static BigInteger minWeightInteger;
-    {
+    static {
         int i = 0;
-        for(int j = 0; j < Math.ceil(MIN_WEIGHT_MAGNITUDE / Converter.NUMBER_OF_TRITS_IN_A_BYTE); j++) {
+        int to = MIN_WEIGHT_MAGNITUDE / Converter.NUMBER_OF_TRITS_IN_A_BYTE;
+        to += MIN_WEIGHT_MAGNITUDE % Converter.NUMBER_OF_TRITS_IN_A_BYTE == 0 ? 0: 1;
+        for(int j = 0; j < to; j++) {
             i |= 1<<j;
         }
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);

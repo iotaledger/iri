@@ -1,6 +1,8 @@
 package com.iota.iri.service.viewModels;
 
+import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
@@ -13,6 +15,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
 import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.storage.AbstractStorage;
+import com.iota.iri.service.tangle.Serializer;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
@@ -69,12 +72,22 @@ public class TransactionViewModel {
     public TagViewModel tag;
     public TransactionViewModel trunk;
     public TransactionViewModel branch;
-    private BigInteger minWeightInteger = new BigInteger(new byte[]{3});
     public static final BigInteger PADDED_NULL_HASH = new BigInteger("10086913586276986678343434265636765134100413253239154346994763111486904773503285916522052161250538404046496765518544896");
 
     public int[] hashTrits;
 
     private static final int MIN_WEIGHT_MAGNITUDE = 9;
+    private static BigInteger minWeightInteger;
+    {
+        int i = 0;
+        for(int j = 0; j < Math.ceil(MIN_WEIGHT_MAGNITUDE / Converter.NUMBER_OF_TRITS_IN_A_BYTE); j++) {
+            i |= 1<<j;
+        }
+        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
+        buffer.putInt(i);
+        byte[] bytes = buffer.array();
+        minWeightInteger = new BigInteger(bytes);
+    }
 
     private int[] trits;
     public int weightMagnitude;

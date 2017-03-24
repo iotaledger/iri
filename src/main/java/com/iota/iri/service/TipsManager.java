@@ -133,7 +133,7 @@ public class TipsManager {
             {
                 int numberOfAnalyzedTransactions = 0;
 
-                setAnalyzedTransactionFlag(transientHandle, new BigInteger(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES));
+                //setAnalyzedTransactionFlag(transientHandle, new BigInteger(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES));
                 setAnalyzedTransactionFlag(transientHandle, TransactionViewModel.PADDED_NULL_HASH);
                 final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
                 BigInteger transactionPointer;

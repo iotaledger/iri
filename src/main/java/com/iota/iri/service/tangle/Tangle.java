@@ -27,12 +27,6 @@ public class Tangle {
         this.persistenceProviders.add(provider);
     }
 
-    public void init(String path) throws Exception {
-        executor = Executors.newCachedThreadPool();
-        for(IPersistenceProvider provider: this.persistenceProviders) {
-            provider.init(path);
-        }
-    }
     public void init() throws Exception {
         executor = Executors.newCachedThreadPool();
         for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -78,82 +72,17 @@ public class Tangle {
         }
     }
 
-    public List<IPersistenceProvider> getPersistenceProviders() {
-        return this.persistenceProviders;
-    }
-
-    private String referenceFieldName(Class<?> model, Field field) {
-        return model.getName() + COLUMN_DELIMETER + field.getName();
-    }
-
-    public boolean loadNow(Transaction transaction) throws Exception {
+    public boolean loadNow(Object object) throws Exception {
         for(IPersistenceProvider provider: this.persistenceProviders) {
-            if(provider.get(transaction)) {
+            if(provider.get(object)) {
                 return true;
             }
         }
         return false;
     }
-    public Future<Boolean> load(Transaction transaction) {
-        return executor.submit(() -> {
-            return loadNow(transaction);
-        });
-    }
 
-    public Future<Boolean> load(Address address) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.get(address)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-    }
-
-    public Future<Boolean> load(Tag tag) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.get(tag)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-    }
-
-    public Future<Boolean> load(Bundle bundle) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.get(bundle)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-    }
-
-    public Future<Boolean> load(Approvee approvee) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.get(approvee)) {
-                    return true;
-                }
-            }
-            return false;
-        });
-    }
-
-    public Future<Boolean> save(Transaction transaction) {
-        return executor.submit(() -> {
-            boolean saved = false;
-            for(IPersistenceProvider provider: persistenceProviders) {
-                if(saved = provider.saveTransaction(transaction)) {
-                    break;
-                }
-            }
-            return saved;
-        });
+    public Future<Boolean> load(Object object) {
+        return executor.submit(() -> loadNow(object));
     }
 
     public Future<Boolean> save(Object model) {
@@ -187,7 +116,7 @@ public class Tangle {
         });
     }
 
-    public Future<Boolean> update(Object model, String item, Object value) {
+    public Future<Boolean> update(Object model, String item) {
         return executor.submit(() -> {
             boolean success = true;
             for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -259,21 +188,6 @@ public class Tangle {
         });
     }
 
-    public Future<Boolean> transientExists(int uuid, Hash hash) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.transientObjectExists(uuid, hash)) return true;
-            }
-            return false;
-        });
-    }
-
-    public boolean transactionExists(Hash hash) throws Exception {
-        for(IPersistenceProvider provider: this.persistenceProviders) {
-            if(provider.transactionExists(hash)) return true;
-        }
-        return false;
-    }
     public Future<Boolean> exists(Class<?> modelClass, Hash hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -283,39 +197,12 @@ public class Tangle {
         });
     }
 
-    public Future<Boolean> maybeHas(Transaction transaction) {
+    public Future<Boolean> maybeHas(Object object) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.mayExist(transaction)) return true;
+                if(provider.mayExist(object)) return true;
             }
             return false;
-        });
-    }
-
-    public Future<Boolean> maybeHas(Scratchpad scratchpad) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.mayExist(scratchpad)) return true;
-            }
-            return false;
-        });
-    }
-
-    public Future<Boolean> maybeHas(Tip tip) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(provider.mayExist(tip)) return true;
-            }
-            return false;
-        });
-    }
-
-    public Future<Void> updateType(Transaction transaction) {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                provider.updateType(transaction);
-            }
-            return null;
         });
     }
 
@@ -328,45 +215,24 @@ public class Tangle {
         });
     }
 
-    public Future<Void> flushAnalyzedFlags() {
+    public Future<Void> flush(Class<?> modelClass) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                provider.flushAnalyzedFlags();
+                provider.flush(modelClass);
             }
             return null;
         });
     }
 
-    public Future<Long> getNumberOfStoredTransactions() {
+    public Future<Long> getCount(Class<?> modelClass) {
         return executor.submit(() -> {
             long value = 0;
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                if((value = provider.getNumberOfTransactions()) != 0) {
+                if((value = provider.count(modelClass)) != 0) {
                     break;
                 }
             }
             return value;
-        });
-    }
-
-    public Future<Long> getNumberOfRequestedTransactions() {
-        return executor.submit(() -> {
-            long value = 0;
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                if((value = provider.getNumberOfRequestedTransactions()) != 0) {
-                    break;
-                }
-            }
-            return value;
-        });
-    }
-
-    public Future<Void> flushScratchpad() {
-        return executor.submit(() -> {
-            for(IPersistenceProvider provider: this.persistenceProviders) {
-                provider.flushScratchpad();
-            }
-            return null;
         });
     }
 }

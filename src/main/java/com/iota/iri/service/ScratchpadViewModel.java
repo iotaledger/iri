@@ -30,11 +30,11 @@ public class ScratchpadViewModel {
     }
 
     public void clearAnalyzedTransactionsFlags() throws Exception {
-        Tangle.instance().flushAnalyzedFlags().get();
+        Tangle.instance().flush(AnalyzedFlag.class).get();
     }
 
     public int getNumberOfTransactionsToRequest() throws ExecutionException, InterruptedException {
-        return Tangle.instance().getNumberOfRequestedTransactions().get().intValue();
+        return Tangle.instance().getCount(Scratchpad.class).get().intValue();
     }
 
     public Future<Void> clearReceivedTransaction(Hash hash) throws ExecutionException, InterruptedException {
@@ -49,7 +49,7 @@ public class ScratchpadViewModel {
         nonAnalyzedTransactions = new HashSet<>(Collections.singleton(Milestone.latestMilestone));
         analyzedTransactions = new HashSet<>(Collections.singleton(Milestone.latestMilestone));
         Hash hash;
-        Tangle.instance().flushScratchpad().get();
+        Tangle.instance().flush(Scratchpad.class).get();
         while(nonAnalyzedTransactions.size() != 0) {
             hash = (Hash) nonAnalyzedTransactions.toArray()[0];
             nonAnalyzedTransactions.remove(hash);

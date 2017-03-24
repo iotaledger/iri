@@ -3,6 +3,7 @@ package com.iota.iri.service.tangle;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.junit.After;
@@ -23,7 +24,7 @@ public class TangleTest {
     public void setUp() throws Exception {
         Tangle instance;
         instance = Tangle.instance();
-        instance.addPersistenceProvider(new MockPersistenceProvider());
+        instance.addPersistenceProvider(new RocksDBPersistenceProvider());
         instance.init();
     }
 

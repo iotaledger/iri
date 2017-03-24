@@ -7,12 +7,12 @@ import java.nio.ByteBuffer;
  * Created by paul on 3/13/17 for iri-testnet.
  */
 public class Serializer {
-    public static byte[] serialize(Long value) throws IOException {
+    public static byte[] serialize(Long value) {
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         buffer.putLong(value);
         return buffer.array();
     }
-    public static byte[] serialize(int integer) throws IOException {
+    public static byte[] serialize(int integer) {
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
         buffer.putInt(integer);
         return buffer.array();

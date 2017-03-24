@@ -1,6 +1,5 @@
 package com.iota.iri.service.viewModels;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -145,12 +144,11 @@ public class TransactionViewModel {
     }
 
     public static int getNumberOfStoredTransactions() throws ExecutionException, InterruptedException {
-        return Tangle.instance().getNumberOfStoredTransactions().get().intValue();
+        return Tangle.instance().getCount(Transaction.class).get().intValue();
     }
 
-
     public void update(String item) throws Exception {
-        Tangle.instance().update(transaction, item, Transaction.class.getDeclaredField(item).get(transaction));
+        Tangle.instance().update(transaction, item);
     }
 
     public TransactionViewModel getBranchTransaction() throws Exception {
@@ -182,7 +180,7 @@ public class TransactionViewModel {
     }
     public Future<Boolean> store() throws Exception {
         Future<Boolean> future;
-        if(!Tangle.instance().transactionExists(getHash())) {
+        if(!Tangle.instance().exists(Transaction.class, getHash()).get()) {
             getBytes();
             getAddressHash();
             getBundleHash();

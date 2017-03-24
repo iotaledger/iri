@@ -1,5 +1,6 @@
 package com.iota.iri.service.viewModels;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Bundle;
@@ -23,14 +24,18 @@ import static org.junit.Assert.*;
 public class TransactionViewModelTest {
 
     static TemporaryFolder dbFolder = new TemporaryFolder();
+    static TemporaryFolder logFolder = new TemporaryFolder();
 
     public static Random seed = new Random();
 
     @BeforeClass
     public static void setUp() throws Exception {
         dbFolder.create();
+        logFolder.create();
+        Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
+        Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, logFolder.getRoot().getAbsolutePath());
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
+        Tangle.instance().init();
     }
 
     @AfterClass

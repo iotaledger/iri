@@ -7,10 +7,12 @@ import com.iota.iri.service.tangle.Serializer;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
+import org.bouncycastle.crypto.agreement.srp.SRP6Client;
 import org.rocksdb.*;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -53,15 +55,17 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     List<ColumnFamilyHandle> transactionGetList;
 
+    private Map<Class<?>, ColumnFamilyHandle[]> classTreeMap = new HashMap<>();
+    private Map<Class<?>, MyFunction<Object, Boolean>> saveMap = new HashMap<>();
+    private Map<Class<?>, MyFunction<Object, Void>> deleteMap = new HashMap<>();
+    private Map<Class<?>, MyFunction<Object, Boolean>> loadMap = new HashMap<>();
+    private Map<Class<?>, MyFunction<Object, Boolean>> mayExistMap = new HashMap<>();
+    private Map<Class<?>, ColumnFamilyHandle> countMap = new HashMap<>();
+
     RocksDB db;
     DBOptions options;
     private Random random;
     private Thread compactionThreadHandle;
-
-    @Override
-    public void init(String path) throws Exception{
-        initDB(path, path+".log");
-    }
 
     @Override
     public void init() throws Exception {
@@ -69,6 +73,95 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 Configuration.string(Configuration.DefaultConfSettings.DB_PATH),
                 Configuration.string(Configuration.DefaultConfSettings.DB_LOG_PATH)
         );
+        initClassTreeMap();
+        initSaveMap();
+        initLoadMap();
+        initMayExistMap();
+        initDeleteMap();
+        initCountMap();
+    }
+
+    private void initCountMap() {
+        countMap.put(Transaction.class, transactionHandle);
+        countMap.put(Scratchpad.class, scratchpadHandle);
+        countMap.put(Address.class, addressHandle);
+        countMap.put(Bundle.class, bundleHandle);
+        countMap.put(Approvee.class, approoveeHandle);
+        countMap.put(Tag.class, tagHandle);
+        countMap.put(Flag.class, flagHandle);
+        countMap.put(Tip.class, tipHandle);
+        countMap.put(AnalyzedFlag.class, analyzedFlagHandle);
+    }
+
+    private void initDeleteMap() {
+        deleteMap.put(Tip.class, tip -> {
+            db.delete(tipHandle, ((Tip) tip).hash.bytes());
+            return null;
+        });
+        deleteMap.put(Scratchpad.class, scratchpad -> {
+            byte[] key = ((Scratchpad) scratchpad).hash.bytes();
+            if(db.keyMayExist(scratchpadHandle, key, stringBuffer))
+                db.delete(scratchpadHandle, key);
+            return null;
+        });
+        deleteMap.put(Transaction.class, txObj -> {
+            Transaction transaction = ((Transaction) txObj);
+            byte[] key = transaction.hash.bytes();
+            db.delete(transactionHandle, key);
+            db.delete(transactionArrivalTimeHandle, key);
+            db.delete(transactionTypeHandle, key);
+            db.delete(transactionValidityHandle, key);
+            if(db.get(tipHandle, key) != null)
+                db.delete(tipHandle, key);
+            return null;
+        });
+        deleteMap.put(AnalyzedFlag.class, flag -> {
+            db.delete(analyzedFlagHandle, ((AnalyzedFlag) flag).hash.bytes());
+            return null;
+        });
+        deleteMap.put(Flag.class, flag -> {
+            db.delete(flagHandle, ((AnalyzedFlag) flag).hash.bytes());
+            return null;
+        });
+    }
+
+    private void initMayExistMap() {
+        mayExistMap.put(Scratchpad.class, scratchpadObj -> db.keyMayExist(scratchpadHandle, ((Scratchpad) scratchpadObj).hash.bytes(), new StringBuffer()));
+        mayExistMap.put(Transaction.class, txObj -> db.keyMayExist(transactionHandle, ((Transaction) txObj).hash.bytes(), new StringBuffer()));
+        mayExistMap.put(Tip.class, tipObj -> db.keyMayExist(tipHandle, ((Tip) tipObj).hash.bytes(), new StringBuffer()));
+    }
+
+    private void initLoadMap() {
+        loadMap.put(Transaction.class, getTransaction);
+        loadMap.put(Address.class, getAddress);
+        loadMap.put(Tag.class, getTag);
+        loadMap.put(Bundle.class, getBundle);
+        loadMap.put(Approvee.class, getApprovee);
+    }
+
+    private void initSaveMap() {
+        saveMap.put(Transaction.class, saveTransaction);
+        saveMap.put(AnalyzedFlag.class, saveAnalyzedTransactionFlag);
+        saveMap.put(Scratchpad.class, saveScratchpad);
+        saveMap.put(Flag.class, saveFlag);
+        saveMap.put(Tip.class, saveTip);
+    }
+
+    private void initClassTreeMap() {
+        classTreeMap.put(Address.class, new ColumnFamilyHandle[]{addressHandle});
+        classTreeMap.put(AnalyzedFlag.class, new ColumnFamilyHandle[]{analyzedFlagHandle});
+        classTreeMap.put(Approvee.class, new ColumnFamilyHandle[]{approoveeHandle});
+        classTreeMap.put(Bundle.class, new ColumnFamilyHandle[]{bundleHandle});
+        classTreeMap.put(Flag.class, new ColumnFamilyHandle[]{flagHandle});
+        classTreeMap.put(Scratchpad.class, new ColumnFamilyHandle[]{scratchpadHandle});
+        classTreeMap.put(Tag.class, new ColumnFamilyHandle[]{tagHandle});
+        classTreeMap.put(Tip.class, new ColumnFamilyHandle[]{tipHandle});
+        classTreeMap.put(Transaction.class, new ColumnFamilyHandle[]{
+                transactionHandle,
+                transactionArrivalTimeHandle,
+                transactionTypeHandle,
+                transactionValidityHandle,
+        });
     }
 
     @Override
@@ -83,9 +176,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         options.close();
     }
 
-
-    @Override
-    public boolean saveTransaction(Transaction transaction) throws RocksDBException, IOException {
+    private MyFunction<Object, Boolean> saveTransaction = (txObject -> {
+        Transaction transaction = (Transaction) txObject;
         WriteBatch batch = new WriteBatch();
         byte[] key = transaction.hash.bytes();
         batch.put(transactionHandle, key, transaction.bytes);
@@ -97,30 +189,16 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
         batch.merge(approoveeHandle, transaction.branch.hash.bytes(), key);
         batch.merge(tagHandle, transaction.tag.value.bytes(), key);
-        db.write(new WriteOptions(), batch);
-        return true;
-    }
-
-
-    @Override
-    public boolean save(Object thing) throws Exception {
-        if(thing instanceof Transaction) {
-            saveTransaction((Transaction) thing);
-        } else if(thing instanceof Tip) {
-            saveTip((Tip) thing);
-        } else if(thing instanceof Scratchpad) {
-            saveScratchpad((Scratchpad) thing);
-        } else if(thing instanceof AnalyzedFlag) {
-            return saveAnalyzedTransactionFlag(((AnalyzedFlag) thing));
-        } else if(thing instanceof Flag) {
-            saveFlag((Flag) thing);
-        } else {
-            return false;
+        try {
+            db.write(new WriteOptions(), batch);
+        } catch (RocksDBException e) {
+            e.printStackTrace();
         }
         return true;
-    }
+    });
 
-    public boolean saveAnalyzedTransactionFlag(AnalyzedFlag flag) throws RocksDBException {
+    public MyFunction<Object, Boolean> saveAnalyzedTransactionFlag = (flagObj) -> {
+        AnalyzedFlag flag = (AnalyzedFlag) flagObj;
         byte[] key = flag.hash.bytes();
         if(db.get(analyzedFlagHandle, key) == null) {
             db.put(analyzedFlagHandle, key, flag.status);
@@ -128,55 +206,41 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         } else {
             return true;
         }
-    }
+    };
 
-    private void saveScratchpad(Scratchpad scratchpad) throws RocksDBException {
+    private MyFunction<Object, Boolean> saveScratchpad = (scratchpadObj) -> {
+        Scratchpad scratchpad = ((Scratchpad) scratchpadObj);
         byte[] key = scratchpad.hash.bytes();
-        if(db.get(transactionHandle, key) == null && !db.keyMayExist(scratchpadHandle, key, stringBuffer))
+        if(db.get(transactionHandle, key) == null && !db.keyMayExist(scratchpadHandle, key, new StringBuffer()))
             db.put(scratchpadHandle, key, scratchpad.status);
-    }
+        return true;
+    };
 
-    private void saveFlag(Flag flag) throws RocksDBException {
+    private MyFunction<Object, Boolean> saveFlag = (flagObj) -> {
+        Flag flag = ((Flag) flagObj);
         byte[] key = flag.hash.bytes();
         if(db.get(flagHandle, key) == null)
             db.put(flagHandle, key, flag.status);
-    }
+        return true;
+    };
 
-    private void saveTip(Tip tip) throws RocksDBException {
+    private MyFunction<Object, Boolean> saveTip = (tipObj) -> {
+        Tip tip = ((Tip) tipObj);
         byte[] key = tip.hash.bytes();
         db.put(tipHandle, key, tip.status);
+        return true;
+    };
+
+    @Override
+    public boolean save(Object thing) throws Exception {
+        return saveMap.get(thing.getClass()).apply(thing);
     }
 
     StringBuffer stringBuffer = new StringBuffer();
+
     @Override
     public void delete(Object thing) throws Exception {
-        byte[] key;
-        if(thing instanceof Tip) {
-            key = ((Tip) thing).hash.bytes();
-            db.delete(tipHandle, key);
-        } else if(thing instanceof Scratchpad) {
-            key = ((Scratchpad) thing).hash.bytes();
-            if(db.keyMayExist(scratchpadHandle, key, stringBuffer))
-                db.delete(scratchpadHandle, key);
-        } else if(thing instanceof Transaction) {
-            deleteTransaction((Transaction) thing);
-        } else if(thing instanceof AnalyzedFlag) {
-            key = ((AnalyzedFlag) thing).hash.bytes();
-            db.delete(analyzedFlagHandle, key);
-        } else if(thing instanceof Flag) {
-            key = ((Flag) thing).hash.bytes();
-            db.delete(flagHandle, key);
-        }
-    }
-
-    private void deleteTransaction(Transaction transaction) throws RocksDBException {
-        byte[] key = transaction.hash.bytes();
-        db.delete(transactionHandle, key);
-        db.delete(transactionArrivalTimeHandle, key);
-        db.delete(transactionTypeHandle, key);
-        db.delete(transactionValidityHandle, key);
-        if(db.get(tipHandle, key) != null)
-            db.delete(tipHandle, key);
+        deleteMap.get(thing.getClass()).apply(thing);
     }
 
 
@@ -245,15 +309,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return out;
     }
 
-
-    @Override
-    public void deleteTransientObject(int uuid, Hash key) throws Exception {
-        byte[] tableKey = getTransientKey(uuid, key.bytes());
-        if(db.get(analyzedTipHandle, (tableKey)) != null) {
-            db.delete(analyzedTipHandle, tableKey);
-        }
-    }
-
     @Override
     public void copyTransientList(int sourceId, int destId) throws Exception {
         RocksIterator iterator;
@@ -317,14 +372,19 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean get(Transaction transaction) throws Exception {
+    public boolean get(Object model) throws Exception {
+        return loadMap.get(model.getClass()).apply(model);
+    }
+
+    private MyFunction<Object, Boolean> getTransaction = (txObject) -> {
+        Transaction transaction = ((Transaction) txObject);
         byte[] key = transaction.hash.bytes();
         transaction.bytes = db.get(transactionHandle, key);
         if(transaction.bytes == null) {
             transaction.type = TransactionViewModel.PREFILLED_SLOT;
             return false;
         } else if (transaction.bytes.length != TransactionViewModel.SIZE) {
-            deleteTransaction(transaction);
+            delete(transaction);
             transaction.type = TransactionViewModel.PREFILLED_SLOT;
             return false;
         }
@@ -332,10 +392,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, key));
         transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, key));
         return true;
-    }
+    };
 
-    @Override
-    public boolean get(Address address) throws Exception {
+    private MyFunction<Object, Boolean> getAddress = (addrObject) -> {
+        Address address = ((Address) addrObject);
         byte[] result = db.get(addressHandle, address.hash.bytes());
         if(result != null) {
             address.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
@@ -344,10 +404,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             address.transactions = new Hash[0];
             return false;
         }
-    }
+    };
 
-    @Override
-    public boolean get(Tag tag) throws Exception {
+    private MyFunction<Object, Boolean> getTag = tagObj -> {
+        Tag tag = ((Tag) tagObj);
         byte[] result = db.get(tagHandle, tag.value.bytes());
         if(result != null) {
             tag.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
@@ -356,20 +416,20 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             tag.transactions = new Hash[0];
             return false;
         }
-    }
+    };
 
-    @Override
-    public boolean get(Bundle bundle) throws Exception {
+    private MyFunction<Object, Boolean> getBundle = bundleObj -> {
+        Bundle bundle = ((Bundle) bundleObj);
         byte[] result = db.get(bundleHandle, bundle.hash.bytes());
         if(result != null) {
             bundle.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
             return true;
         }
         return false;
-    }
+    };
 
-    @Override
-    public boolean get(Approvee approvee) throws Exception {
+    private MyFunction<Object, Boolean> getApprovee = approveeObj -> {
+        Approvee approvee = ((Approvee) approveeObj);
         byte[] result = db.get(approoveeHandle, approvee.hash.bytes());
         if(result != null) {
             approvee.transactions = byteToHash(result, Hash.SIZE_IN_BYTES);
@@ -378,67 +438,35 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             approvee.transactions = new Hash[0];
         return false;
         }
+    };
+
+    @Override
+    public boolean mayExist(Object model) throws Exception {
+        return mayExistMap.get(model.getClass()).apply(model);
     }
 
     @Override
-    public boolean mayExist(Scratchpad scratchpad) throws Exception {
-        return db.keyMayExist(scratchpadHandle, scratchpad.hash.bytes(), new StringBuffer());
-    }
-
-    @Override
-    public boolean mayExist(Transaction transaction) throws Exception {
-        byte[] key = transaction.hash.bytes();
-        return db.keyMayExist(transactionHandle, key, new StringBuffer());
-    }
-
-    @Override
-    public boolean mayExist(Tip tip) throws Exception {
-        return db.keyMayExist(tipHandle, tip.hash.bytes(), new StringBuffer());
-    }
-
-    @Override
-    public void updateType(Transaction transaction) throws Exception {
-        byte[] key = transaction.hash.bytes();
-        db.put(transactionTypeHandle, key, Serializer.serialize(transaction.type));
-    }
-
-    @Override
-    public boolean transientObjectExists(int uuid, Hash hash) throws Exception {
-        return db.get(analyzedTipHandle, getTransientKey(uuid, hash.bytes())) != null;
-    }
-
-    @Override
-    public void flushAnalyzedFlags() throws Exception {
-        db.flush(new FlushOptions().setWaitForFlush(true), analyzedFlagHandle);
-        RocksIterator iterator = db.newIterator(analyzedFlagHandle);
-        for(iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
-            db.delete(analyzedFlagHandle, iterator.key());
+    public void flush(Class<?> modelClass) throws Exception {
+        ColumnFamilyHandle[] handles = classTreeMap.get(modelClass);
+        for(ColumnFamilyHandle handle: handles) {
+            flushHandle(handle);
         }
     }
 
     @Override
-    public void flushScratchpad() throws Exception {
-        db.flush(new FlushOptions().setWaitForFlush(true), scratchpadHandle);
-        RocksIterator iterator = db.newIterator(scratchpadHandle);
+    public long count(Class<?> model) throws Exception {
+        ColumnFamilyHandle handle = countMap.get(model);
+        return db.getLongProperty(handle, "rocksdb.estimate-num-keys");
+    }
+
+    private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
+        db.flush(new FlushOptions().setWaitForFlush(true), handle);
+        RocksIterator iterator = db.newIterator(handle);
         for(iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
-            db.delete(scratchpadHandle, iterator.key());
+            db.delete(handle, iterator.key());
         }
     }
 
-    @Override
-    public long getNumberOfTransactions() throws Exception {
-        return db.getLongProperty(transactionHandle, "rocksdb.estimate-num-keys");
-    }
-
-    @Override
-    public long getNumberOfRequestedTransactions() throws Exception {
-        return db.getLongProperty(scratchpadHandle, "rocksdb.estimate-num-keys");
-    }
-
-    @Override
-    public boolean transactionExists(Hash hash) throws Exception {
-        return db.get(transactionHandle, hash.bytes()) != null;
-    }
 
     @Override
     public boolean setTransientFlagHandle(int uuid) throws RocksDBException {
@@ -559,7 +587,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         assert (columnFamilyHandle != null);
     }
 
-    private void fillmodelColumnHandles(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles) throws RocksDBException {
+    private void fillmodelColumnHandles(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles) throws Exception {
         int i = 0;
         transactionHandle = familyHandles.get(++i);
         transactionValidityHandle = familyHandles.get(++i);
@@ -575,7 +603,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         analyzedFlagHandle = familyHandles.get(++i);
         analyzedTipHandle = familyHandles.get(++i);
 
-        initFlushFlags();
+        flushHandle(analyzedTipHandle);
+        flushHandle(analyzedFlagHandle);
+        flushHandle(scratchpadHandle);
         updateTagDB();
         scanTxDeleteBaddies();
 
@@ -587,7 +617,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
     }
 
-    private void scanTxDeleteBaddies() throws RocksDBException {
+    private void scanTxDeleteBaddies() throws Exception {
         RocksIterator iterator = db.newIterator(transactionHandle);
         List<byte[]> baddies = new ArrayList<>();
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
@@ -599,22 +629,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(byte[] baddie : baddies) {
             transaction = new Transaction();
             transaction.hash = new Hash(baddie);
-            deleteTransaction(transaction);
+            delete(transaction);
         }
-    }
-
-    private void initFlushFlags() throws RocksDBException {
-        db.flush(new FlushOptions().setWaitForFlush(true), analyzedTipHandle);
-        RocksIterator iterator = db.newIterator(analyzedTipHandle);
-        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            db.delete(analyzedTipHandle, iterator.key());
-        }
-        db.flush(new FlushOptions().setWaitForFlush(true), analyzedFlagHandle);
-        iterator = db.newIterator(analyzedFlagHandle);
-        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            db.delete(analyzedFlagHandle, iterator.key());
-        }
-
     }
 
     private void updateTagDB() throws RocksDBException {
@@ -630,5 +646,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             }
         }
         db.write(new WriteOptions(), batch);
+    }
+
+    @FunctionalInterface
+    private interface MyFunction<T, R> {
+       R apply(T t) throws Exception;
     }
 }

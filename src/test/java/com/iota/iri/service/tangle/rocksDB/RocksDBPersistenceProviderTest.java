@@ -1,5 +1,6 @@
 package com.iota.iri.service.tangle.rocksDB;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Flag;
 import com.iota.iri.service.tangle.Tangle;
 import org.junit.*;
@@ -16,10 +17,13 @@ public class RocksDBPersistenceProviderTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
-        TemporaryFolder dbFolder = new TemporaryFolder();
+        TemporaryFolder dbFolder = new TemporaryFolder(), logFolder = new TemporaryFolder();
         dbFolder.create();
+        logFolder.create();
+        Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
+        Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, logFolder.getRoot().getAbsolutePath());
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
+        Tangle.instance().init();
     }
 
     @AfterClass

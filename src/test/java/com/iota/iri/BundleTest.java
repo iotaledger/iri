@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
@@ -24,9 +25,13 @@ public class BundleTest {
     @BeforeClass
     public static void setUp() throws Exception {
         TemporaryFolder dbFolder = new TemporaryFolder();
+        TemporaryFolder logFolder = new TemporaryFolder();
         dbFolder.create();
+        logFolder.create();
+        Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
+        Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, logFolder.getRoot().getAbsolutePath());
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
+        Tangle.instance().init();
     }
 
     @AfterClass

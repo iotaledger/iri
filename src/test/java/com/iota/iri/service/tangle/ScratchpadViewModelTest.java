@@ -1,5 +1,6 @@
 package com.iota.iri.service.tangle;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Scratchpad;
@@ -21,14 +22,18 @@ import static org.junit.Assert.*;
  */
 public class ScratchpadViewModelTest {
     static TemporaryFolder dbFolder = new TemporaryFolder();
+    static TemporaryFolder logFolder = new TemporaryFolder();
     static Random seed;
 
     @BeforeClass
     public static void setUpClass() throws Exception {
         seed = new Random();
         dbFolder.create();
+        logFolder.create();
+        Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
+        Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, logFolder.getRoot().getAbsolutePath());
         Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init(dbFolder.getRoot().getAbsolutePath());
+        Tangle.instance().init();
     }
 
     @AfterClass

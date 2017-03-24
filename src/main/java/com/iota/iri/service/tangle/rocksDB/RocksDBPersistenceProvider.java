@@ -2,6 +2,7 @@ package com.iota.iri.service.tangle.rocksDB;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.*;
+import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.tangle.IPersistenceProvider;
 import com.iota.iri.service.tangle.Serializer;
 import com.iota.iri.service.viewModels.TransactionViewModel;
@@ -189,13 +190,33 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
         batch.merge(approoveeHandle, transaction.branch.hash.bytes(), key);
         batch.merge(tagHandle, transaction.tag.value.bytes(), key);
-        try {
-            db.write(new WriteOptions(), batch);
-        } catch (RocksDBException e) {
-            e.printStackTrace();
-        }
+        updateTransactionRelatedFields(transaction, batch);
+        db.write(new WriteOptions(), batch);
         return true;
     });
+
+    private void updateTransactionRelatedFields(Transaction transaction, WriteBatch batch) throws RocksDBException {
+        StringBuffer buffer;
+        Hash[] approvers;
+        buffer = new StringBuffer();
+        if(db.get(scratchpadHandle, transaction.hash.bytes()) != null) {
+            db.delete(scratchpadHandle, transaction.hash.bytes());
+        }
+        if(!db.keyMayExist(transactionHandle, transaction.branch.hash.bytes(), buffer)) {
+            batch.put(scratchpadHandle, transaction.branch.hash.bytes(), new byte[]{0});
+        }
+        if(!db.keyMayExist(transactionHandle, transaction.trunk.hash.bytes(), buffer)) {
+            batch.put(scratchpadHandle, transaction.trunk.hash.bytes(), new byte[]{0});
+        }
+        approvers = byteToHash(db.get(approoveeHandle, transaction.hash.bytes()), Hash.SIZE_IN_BYTES);
+        if(approvers.length == 0 && !db.keyMayExist(tipHandle, transaction.hash.bytes(), buffer)) {
+            batch.put(tipHandle, transaction.hash.bytes(), new byte[]{0});
+        } else {
+            if (db.keyMayExist(tipHandle, transaction.hash.bytes(), buffer)) {
+                db.delete(tipHandle, transaction.hash.bytes());
+            }
+        }
+    }
 
     public MyFunction<Object, Boolean> saveAnalyzedTransactionFlag = (flagObj) -> {
         AnalyzedFlag flag = (AnalyzedFlag) flagObj;

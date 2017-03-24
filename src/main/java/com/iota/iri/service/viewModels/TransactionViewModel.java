@@ -188,10 +188,12 @@ public class TransactionViewModel {
             getTrunkTransactionHash();
             getTagValue();
             future = Tangle.instance().save(transaction);
+            /*
             for(Future<?> updateFuture: update()) {
                 if(updateFuture != null)
                     updateFuture.get();
             }
+            */
         } else {
             future = executorService.submit(() -> false);
         }

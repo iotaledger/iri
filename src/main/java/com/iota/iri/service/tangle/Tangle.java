@@ -12,7 +12,6 @@ import java.util.concurrent.*;
  * Created by paul on 3/3/17 for iri.
  */
 public class Tangle {
-    private static final char COLUMN_DELIMETER = '.';
     private static final Logger log = LoggerFactory.getLogger(Tangle.class);
 
     private static Tangle instance = new Tangle();

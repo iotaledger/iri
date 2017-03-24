@@ -8,6 +8,7 @@ import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.rocksdb.*;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
  */
 public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
+    private static final org.slf4j.Logger log = LoggerFactory.getLogger(RocksDBPersistenceProvider.class);
     private static int BLOOM_FILTER_RANGE = 1<<1;
 
     private String[] columnFamilyNames = new String[]{
@@ -620,6 +622,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             if(iterator.value().length != TransactionViewModel.SIZE || Arrays.equals(iterator.value(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                 baddies.add(iterator.key());
+                log.info("Deleting Bad Tx: " + new Hash(iterator.key()));
             }
         }
         for(byte[] baddie : baddies) {

@@ -41,9 +41,6 @@ public class ReplicatorSourceProcessor implements Runnable {
         this.connection = connection;
     }
     
-    final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
-    final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
-    
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
 
     @Override
@@ -56,7 +53,9 @@ public class ReplicatorSourceProcessor implements Runnable {
 
         try {
             final Curl curl = new Curl();
-            
+            final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
+            final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
+
             SocketAddress address = connection.getRemoteSocketAddress();
             InetSocketAddress inet_socket_address = (InetSocketAddress) address;
             InetSocketAddress inet_socket_address_normalized = new InetSocketAddress(inet_socket_address.getAddress(),Replicator.REPLICATOR_PORT);
@@ -109,7 +108,8 @@ public class ReplicatorSourceProcessor implements Runnable {
             }
             
             connection.setSoTimeout(0);  // infinite timeout - blocking read
-            
+
+
             while (!shutdown) {
                 boolean readError = false;
 
@@ -126,37 +126,7 @@ public class ReplicatorSourceProcessor implements Runnable {
 
                 if (!readError) {
                     try {
-                        neighbor.incAllTransactions();
-                        final TransactionViewModel receivedTransactionViewModel = new TransactionViewModel(data, receivedTransactionTrits, curl);
-                        long timestamp = (int) Converter.longValue(receivedTransactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
-                        if (timestamp == 0 || timestamp > Node.TIMESTAMP_THRESHOLD) {
-                            if(receivedTransactionViewModel.store().get()) {
-                                //log.info("received transaction tag:" + receivedTransactionViewModel.getTag().getHash());
-                                receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
-                                receivedTransactionViewModel.update("arrivalTime");
-                                neighbor.incNewTransactions();
-                                // The UDP transport route
-                                Node.instance().broadcast(receivedTransactionViewModel);
-                                // The TCP transport route
-                                ReplicatorSinkPool.instance().broadcast(receivedTransactionViewModel);
-                            }
-
-                            System.arraycopy(data, TransactionViewModel.SIZE, requestedTransaction, 0, Hash.SIZE_IN_BYTES);
-
-                            if (!Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
-                                //beginning = System.nanoTime();
-                                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(requestedTransaction);
-                                //log.info("DB Retrieve time: " + ((now = System.nanoTime()) - beginning)/1000 + " us");
-                                if(!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
-                                    synchronized (sendingPacket) {
-                                        System.arraycopy( transactionViewModel.getBytes(),
-                                                0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-                                        ScratchpadViewModel.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
-                                        neighbor.send(sendingPacket);
-                                    }
-                                }
-                            }
-                        }
+                        Node.instance().processReceivedData(data, address, curl, receivedTransactionTrits, requestedTransaction);
                     }
                       catch (IllegalStateException e) {
                         log.error("Queue is full for neighbor IP {}",inet_socket_address.getAddress().getHostAddress());

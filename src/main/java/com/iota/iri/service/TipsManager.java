@@ -154,9 +154,6 @@ public class TipsManager {
 
                                 boolean validBundle = false;
 
-                                if(numberOfAnalyzedTransactions == 1897) {
-                                    log.info("hi");
-                                }
                                 final BundleViewModel bundle = BundleViewModel.fromHash(transactionViewModel.getBundleHash());
                                 for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 

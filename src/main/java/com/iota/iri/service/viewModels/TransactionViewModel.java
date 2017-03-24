@@ -80,7 +80,11 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     public static TransactionViewModel fromHash(final byte[] hash) throws Exception {
-        return fromHash(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash)));
+        return fromHash(new Hash(hash));
+    }
+
+    public static TransactionViewModel fromHash(final Hash hash) throws Exception {
+        return fromHash(Converter.bigIntegerValue(hash.trits()));
     }
 
     public static TransactionViewModel fromHash(BigInteger intHash) throws Exception {
@@ -90,13 +94,9 @@ public class TransactionViewModel {
         return new TransactionViewModel(transaction);
     }
 
-    public static TransactionViewModel fromHash(final Hash hash) throws Exception {
-        return TransactionViewModel.fromHash(hash.bytes());
-    }
-
     public static boolean mightExist(byte[] hash) throws ExecutionException, InterruptedException {
         Transaction transaction = new Transaction();
-        transaction.hash = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash));
+        transaction.hash = Converter.bigIntegerValue(new Hash(hash).trits());
         return Tangle.instance().maybeHas(transaction).get();
     }
 
@@ -153,7 +153,7 @@ public class TransactionViewModel {
     public TransactionViewModel(final byte[] mainBuffer, final long pointer) {
         transaction = new Transaction();
         transaction.type = mainBuffer[TYPE_OFFSET];
-        this.transaction.hash = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, Arrays.copyOfRange(mainBuffer, HASH_OFFSET, HASH_SIZE)));
+        this.transaction.hash = Converter.bigIntegerValue(new Hash(Arrays.copyOfRange(mainBuffer, HASH_OFFSET, HASH_SIZE)).trits());
         System.arraycopy(mainBuffer, BYTES_OFFSET, transaction.bytes, 0, BYTES_SIZE);
         transaction.validity = mainBuffer[VALIDITY_OFFSET];
         transaction.arrivalTime = AbstractStorage.value(mainBuffer, ARRIVAL_TIME_OFFSET);

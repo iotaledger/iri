@@ -18,8 +18,9 @@ public class TagViewModel {
     public static final int TAG_BINARY_SIZE = 17;
 
     public TagViewModel(Hash hash) {
-        this(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash.bytes())));
+        this(Converter.bigIntegerValue(hash.trits()));
     }
+
     public TagViewModel(BigInteger bytes) {
         tag = new Tag();
         tag.value = bytes;

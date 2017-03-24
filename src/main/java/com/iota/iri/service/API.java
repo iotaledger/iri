@@ -306,7 +306,8 @@ public class API {
                 if (transactionViewModel.getHash().equals(TransactionViewModel.PADDED_NULL_HASH)){
                     return ErrorResponse.create("One of the tips absents");
                 }
-                nonAnalyzedTransactions.offer(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, tip.bytes())));
+
+                nonAnalyzedTransactions.offer(Converter.bigIntegerValue(tip.trits()));
             }
 
             {

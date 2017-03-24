@@ -12,7 +12,6 @@ public class Converter {
 
     public static final int NUMBER_OF_TRITS_IN_A_BYTE = 5;
     public static final int NUMBER_OF_TRITS_IN_A_TRYTE = 3;
-    public static final byte[] CHECK_BYTE = new byte[]{1};
 
     static final int[][] BYTE_TO_TRITS_MAPPINGS = new int[243][];
     static final int[][] TRYTE_TO_TRITS_MAPPINGS = new int[27][];

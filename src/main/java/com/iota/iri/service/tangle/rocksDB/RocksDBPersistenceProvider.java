@@ -621,6 +621,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     private void mergeDB(List<ColumnFamilyHandle> familyHandles) throws RocksDBException {
+        final byte[] CHECK_BYTE = new byte[]{1};
         RocksIterator iterator;
         WriteBatch batch = new WriteBatch();
         Map<ColumnFamilyHandle, List<byte[]>> baddies = new HashMap<>();
@@ -631,7 +632,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 keys.add(Arrays.copyOf(iterator.key(), iterator.key().length));
                 byte[] bytes = Arrays.copyOf(iterator.value(), iterator.value().length);
                 byte[] key = Arrays.copyOf(iterator.key(), iterator.key().length);
-                batch.put(handle, ArrayUtils.addAll(Converter.CHECK_BYTE, iterator.key()), iterator.value());
+                batch.put(handle, ArrayUtils.addAll(CHECK_BYTE, iterator.key()), iterator.value());
             }
             baddies.put(handle, keys);
         }

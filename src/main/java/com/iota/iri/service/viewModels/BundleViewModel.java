@@ -19,7 +19,7 @@ public class BundleViewModel {
     private TransactionViewModel[] transactionViewModels;
 
     public static BundleViewModel fromHash(Hash hash) throws Exception {
-        return fromHash(new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, hash.bytes())));
+        return fromHash(Converter.bigIntegerValue(hash.trits()));
     }
     public static BundleViewModel fromHash(BigInteger hash) throws Exception {
         Bundle bundle = new Bundle();

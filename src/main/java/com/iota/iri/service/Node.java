@@ -259,7 +259,8 @@ public class Node {
                                             randomTipBroadcastCounter++;
 
                                         } else {
-                                            transactionPointer = new BigInteger(ArrayUtils.addAll(Converter.CHECK_BYTE, requestedTransaction));
+
+                                            transactionPointer = Converter.bigIntegerValue(new Hash(requestedTransaction).trits());
                                         }
                                         transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                                         if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {

@@ -29,7 +29,6 @@ import org.apache.commons.lang3.SystemUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Bundle;
 import com.iota.iri.Milestone;
 import com.iota.iri.Neighbor;
 import com.iota.iri.conf.Configuration;

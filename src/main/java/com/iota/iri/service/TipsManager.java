@@ -136,14 +136,12 @@ public class TipsManager {
                 setAnalyzedTransactionFlag(transientHandle, new BigInteger(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES));
                 final Queue<BigInteger> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
                 BigInteger transactionPointer;
-                Hash transactionHash, bundleHash;
                 while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
                     if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
 
                         numberOfAnalyzedTransactions++;
 
-                        transactionHash = new Hash(Hash.padHash(transactionPointer));
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
                             ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
@@ -156,7 +154,9 @@ public class TipsManager {
 
                                 boolean validBundle = false;
 
-                                bundleHash = new Hash(transactionViewModel.getBundleHash());
+                                if(numberOfAnalyzedTransactions == 1897) {
+                                    log.info("hi");
+                                }
                                 final BundleViewModel bundle = BundleViewModel.fromHash(transactionViewModel.getBundleHash());
                                 for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 
@@ -180,6 +180,10 @@ public class TipsManager {
                                 }
 
                                 if (!validBundle) {
+                                    for(TransactionViewModel transactionViewModel1: bundle.getTransactionViewModels()) {
+                                        transactionViewModel1.delete();
+                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel1.getHash());
+                                    }
                                     Tangle.instance().releaseTransientTable(transientHandle);
                                     return null;
                                 }
@@ -283,18 +287,12 @@ public class TipsManager {
                 final Iterator<BigInteger> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
 
-                    final byte[] tailHash = Hash.padHash(tailsToAnalyzeIterator.next());
-                    try {
+                    final BigInteger tailHash = tailsToAnalyzeIterator.next();
                         if (Tangle.instance().maybeHas(transientHandle, tailHash).get()) {
                             if (Tangle.instance().load(transientHandle, Flag.class, tailHash).get() != null) {
                                 tailsToAnalyzeIterator.remove();
                             }
                         }
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    } catch (ExecutionException e) {
-                        e.printStackTrace();
-                    }
                 }
             }
 

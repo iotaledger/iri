@@ -22,10 +22,10 @@ public interface IPersistenceProvider {
     boolean update(Object model, String item) throws Exception;
 
     boolean save(int handle, Object model) throws Exception;
-    boolean mayExist(int handle, Object key) throws Exception;
-    boolean exists(Class<?> model, Object key) throws Exception;
-    Object get(int handle, Class<?> model, Object key) throws Exception;
-    void deleteTransientObject(int uuid, Object key) throws Exception;
+    boolean mayExist(int handle, BigInteger key) throws Exception;
+    boolean exists(Class<?> model, BigInteger key) throws Exception;
+    Object get(int handle, Class<?> model, BigInteger key) throws Exception;
+    void deleteTransientObject(int uuid, BigInteger key) throws Exception;
     void copyTransientList(int sourceId, int destId) throws Exception;
 
     Object latest(Class<?> model) throws  Exception;

@@ -325,7 +325,7 @@ public class TransactionViewModel {
     }
 
     public long value() {
-        return Converter.longValue(trits, VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
+        return Converter.longValue(trits(), VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
     }
 
     public void setValidity(int validity, boolean update) throws Exception {
@@ -359,7 +359,7 @@ public class TransactionViewModel {
         return Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
     }
 
-    public static boolean exists(byte[] hash) throws ExecutionException, InterruptedException {
+    public static boolean exists(BigInteger hash) throws ExecutionException, InterruptedException {
         return Tangle.instance().exists(Transaction.class, hash).get();
     }
 

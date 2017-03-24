@@ -206,7 +206,7 @@ public class Tangle {
     }
 
 
-    public Future<Boolean> maybeHas(int handle, Object key) {
+    public Future<Boolean> maybeHas(int handle, BigInteger key) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(provider.mayExist(handle, key)) return true;
@@ -225,7 +225,7 @@ public class Tangle {
             return true;
         });
     }
-    public Future<Object> load(int handle, Class<?> model, byte[] key) {
+    public Future<Object> load(int handle, Class<?> model, BigInteger key) {
         return executor.submit(() -> {
             Object loadableObject = null;
             for(IPersistenceProvider provider: this.persistenceProviders) {
@@ -275,7 +275,7 @@ public class Tangle {
         }
         return false;
     }
-    public Future<Boolean> exists(Class<?> modelClass, byte[] hash) {
+    public Future<Boolean> exists(Class<?> modelClass, BigInteger hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 if(provider.exists(modelClass, hash)) return true;

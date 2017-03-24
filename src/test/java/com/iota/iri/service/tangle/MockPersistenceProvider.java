@@ -13,10 +13,6 @@ import java.util.Set;
  */
 public class MockPersistenceProvider implements IPersistenceProvider {
 
-    private Map<Class<?>, Field> modelPrimaryKey;
-    private Map<Class<?>, Map<String, ModelFieldInfo>> modelIndices;
-    private Map<Class<?>, Set<String>> modelStoredItems;
-
     @Override
     public void init() throws Exception {
 
@@ -38,15 +34,14 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean save(java.lang.Object o) throws Exception {
-        return true;
+    public boolean save(Object o) throws Exception {
+        return false;
     }
 
     @Override
     public void delete(Object o) throws Exception {
 
     }
-
 
     @Override
     public boolean update(Object model, String item) throws Exception {
@@ -59,23 +54,22 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public boolean mayExist(int handle, Object key) throws Exception {
-        return false;
-    }
-
-
-    @Override
-    public boolean exists(Class<?> model, Object key) throws Exception {
+    public boolean mayExist(int handle, BigInteger key) throws Exception {
         return false;
     }
 
     @Override
-    public Object get(int handle, Class<?> model, Object key) throws Exception {
+    public boolean exists(Class<?> model, BigInteger key) throws Exception {
+        return false;
+    }
+
+    @Override
+    public Object get(int handle, Class<?> model, BigInteger key) throws Exception {
         return null;
     }
 
     @Override
-    public void deleteTransientObject(int uuid, Object key) throws Exception {
+    public void deleteTransientObject(int uuid, BigInteger key) throws Exception {
 
     }
 
@@ -144,7 +138,6 @@ public class MockPersistenceProvider implements IPersistenceProvider {
         return false;
     }
 
-
     @Override
     public void flushAnalyzedFlags() throws Exception {
 
@@ -179,7 +172,5 @@ public class MockPersistenceProvider implements IPersistenceProvider {
     public void flushTagRange(int id) throws Exception {
 
     }
-
-
 }
 

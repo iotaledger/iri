@@ -209,7 +209,8 @@ public class APIIntegrationTests {
 
         final Map<String, Object> request = new HashMap<>();
         request.put("command", "getInclusionStates");
-        request.put("hashes", new String [] {"QHBYXQWRAHQJZEIARWSQGZJTAIITOZRMBFICIPAVD9YRJMXFXBDPFDTRAHHHP9YPDUVTNOFWZGFGWMYHEKNAGNJHMW"});
+        request.put("transactions", new String [] {"999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"});
+        request.put("tips", new String [] {"999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"});
         given().
                 contentType("application/json").
                 body(gson.toJson(request)).

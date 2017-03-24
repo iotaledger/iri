@@ -6,11 +6,11 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
-import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.utils.Converter;
 
 public class Milestone {
@@ -63,7 +63,7 @@ public class Milestone {
 
                                     //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
                                     final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction();
-                                    if (transactionViewModel2.getType() == AbstractStorage.FILLED_SLOT
+                                    if (transactionViewModel2.getType() == TransactionViewModel.FILLED_SLOT
                                             && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
 
                                         final int[] trunkTransactionTrits = new int[TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE];
@@ -124,7 +124,7 @@ public class Milestone {
                     while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
                         if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashPointer)) {
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                            if (transactionViewModel2.getType() == AbstractStorage.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
+                            if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
                                 ScratchpadViewModel.instance().requestTransaction(hashPointer);
                                 solid = false;
                                 break;

@@ -6,7 +6,6 @@ import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.model.Flag;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
@@ -143,7 +142,7 @@ public class TipsManager {
                         numberOfAnalyzedTransactions++;
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                        if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
+                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
                             Tangle.instance().releaseTransientTable(transientHandle);
                             return null;
@@ -322,7 +321,7 @@ public class TipsManager {
                     if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                        if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
+                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
 
                             // -- Coo only--
                             // seenTails.addAll(extraTransactions);

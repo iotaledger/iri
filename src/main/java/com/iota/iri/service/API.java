@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 import com.iota.iri.*;
 
 import com.iota.iri.service.dto.*;
-import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.viewModels.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
@@ -317,7 +316,7 @@ public class API {
                     if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(pointer)) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(pointer);
-                        if (transactionViewModel.getType() == AbstractStorage.PREFILLED_SLOT) {
+                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return ErrorResponse.create("The subtangle is not solid");
                         } else {
 

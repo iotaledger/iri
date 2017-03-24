@@ -2,17 +2,14 @@ package com.iota.iri.service.tangle.rocksDB;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.*;
-import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.IPersistenceProvider;
 import com.iota.iri.service.tangle.Serializer;
 import com.iota.iri.service.viewModels.TransactionViewModel;
-import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.rocksdb.*;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -324,11 +321,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         byte[] key = transaction.hash.bytes();
         transaction.bytes = db.get(transactionHandle, key);
         if(transaction.bytes == null) {
-            transaction.type = AbstractStorage.PREFILLED_SLOT;
+            transaction.type = TransactionViewModel.PREFILLED_SLOT;
             return false;
         } else if (transaction.bytes.length != TransactionViewModel.SIZE) {
             deleteTransaction(transaction);
-            transaction.type = AbstractStorage.PREFILLED_SLOT;
+            transaction.type = TransactionViewModel.PREFILLED_SLOT;
             return false;
         }
         transaction.validity = Serializer.getInteger(db.get(transactionValidityHandle, key));

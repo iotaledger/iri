@@ -11,7 +11,6 @@ import java.util.concurrent.Future;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
 import com.iota.iri.service.ScratchpadViewModel;
-import com.iota.iri.service.storage.AbstractStorage;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
@@ -62,6 +61,10 @@ public class TransactionViewModel {
     public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Hash.SIZE_IN_BYTES];
     public static final byte[] NULL_TRANSACTION_BYTES = new byte[SIZE];
 
+    public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction value)
+    public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only another tx references that hash
+    public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
+
     public AddressViewModel address;
     public BundleViewModel bundle;
     public TagViewModel tag;
@@ -102,7 +105,7 @@ public class TransactionViewModel {
         this.trits = trits;
         this.transaction.bytes = Converter.bytes(trits);
 
-        transaction.type = AbstractStorage.FILLED_SLOT;
+        transaction.type = TransactionViewModel.FILLED_SLOT;
 
         transaction.validity = 0;
         transaction.arrivalTime = 0;
@@ -136,18 +139,9 @@ public class TransactionViewModel {
         }
 
 
-        transaction.type = AbstractStorage.FILLED_SLOT;
+        transaction.type = FILLED_SLOT;
         transaction.validity = 0;
         transaction.arrivalTime = 0;
-    }
-
-    public TransactionViewModel(final byte[] mainBuffer, final long pointer) {
-        transaction = new Transaction();
-        transaction.type = mainBuffer[TYPE_OFFSET];
-        this.transaction.hash = new Hash(Arrays.copyOfRange(mainBuffer, HASH_OFFSET, HASH_SIZE));
-        System.arraycopy(mainBuffer, BYTES_OFFSET, transaction.bytes, 0, BYTES_SIZE);
-        transaction.validity = mainBuffer[VALIDITY_OFFSET];
-        transaction.arrivalTime = AbstractStorage.value(mainBuffer, ARRIVAL_TIME_OFFSET);
     }
 
     public static int getNumberOfStoredTransactions() throws ExecutionException, InterruptedException {
@@ -450,20 +444,20 @@ public class TransactionViewModel {
     public static void dump(final byte[] mainBuffer, final byte[] hash, final TransactionViewModel transactionViewModel) {
 
         /*
-        System.arraycopy(new byte[AbstractStorage.CELL_SIZE], 0, mainBuffer, 0, AbstractStorage.CELL_SIZE);
+        System.arraycopy(new byte[.CELL_SIZE], 0, mainBuffer, 0, .CELL_SIZE);
         System.arraycopy(hash, 0, mainBuffer, HASH_OFFSET, HASH_SIZE);
 
         if (transactionViewModel == null) {
-            mainBuffer[TYPE_OFFSET] = AbstractStorage.PREFILLED_SLOT;
+            mainBuffer[TYPE_OFFSET] = .PREFILLED_SLOT;
         } else {
             mainBuffer[TYPE_OFFSET] = (byte) transactionViewModel.type;
             System.arraycopy(transactionViewModel.getBytes(), 0, mainBuffer, BYTES_OFFSET, BYTES_SIZE);
             System.arraycopy(transactionViewModel.getAddress(), 0, mainBuffer, ADDRESS_OFFSET, ADDRESS_SIZE);
-            AbstractStorage.setValue(mainBuffer, VALUE_OFFSET, transactionViewModel.value());
+            .setValue(mainBuffer, VALUE_OFFSET, transactionViewModel.value());
             final int[] trits = transactionViewModel.trits();
             System.arraycopy(Converter.value(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, mainBuffer, TAG_OFFSET, TAG_SIZE);
-            AbstractStorage.setValue(mainBuffer, CURRENT_INDEX_OFFSET, transactionViewModel.getCurrentIndex());
-            AbstractStorage.setValue(mainBuffer, LAST_INDEX_OFFSET, transactionViewModel.getLastIndex());
+            .setValue(mainBuffer, CURRENT_INDEX_OFFSET, transactionViewModel.getCurrentIndex());
+            .setValue(mainBuffer, LAST_INDEX_OFFSET, transactionViewModel.getLastIndex());
             System.arraycopy(Converter.value(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, mainBuffer, BUNDLE_OFFSET, BUNDLE_SIZE);
             System.arraycopy(transactionViewModel.getTrunkTransactionHash(), 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
             System.arraycopy(transactionViewModel.getBranchTransactionHash(), 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
@@ -476,7 +470,7 @@ public class TransactionViewModel {
                 if (approvedTransactionPointer < 0) {
                     approvedTransactionPointer = -approvedTransactionPointer;
                 }
-                final long index = (approvedTransactionPointer - (AbstractStorage.CELLS_OFFSET - AbstractStorage.SUPER_GROUPS_OFFSET)) >> 11;
+                final long index = (approvedTransactionPointer - (.CELLS_OFFSET - .SUPER_GROUPS_OFFSET)) >> 11;
                 StorageTransactions.instance().transactionsTipsFlags().put(
                         (int)(index >> 3),
                         (byte)(StorageTransactions.instance().transactionsTipsFlags().get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));

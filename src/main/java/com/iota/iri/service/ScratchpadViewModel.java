@@ -26,6 +26,9 @@ public class ScratchpadViewModel {
         return Tangle.instance().save(id, new Flag(hash)).get();
     }
 
+    public void copyAnalyzedFlagsList(int id, int otherId) throws Exception {
+        Tangle.instance().copyTransientList(id, otherId).get();
+    }
     public void clearAnalyzedTransactionsFlags(int id) throws Exception {
         Tangle.instance().flushTransientFlags(id).get();
     }

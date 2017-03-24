@@ -225,7 +225,7 @@ public class TipsManager {
             }
 
             ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandleCopy);
-            Tangle.instance().copyTransientList(transientHandle, transientHandleCopy).get();
+            ScratchpadViewModel.instance().copyAnalyzedFlagsList(transientHandle, transientHandleCopy);
             ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandle);
 
             final List<Hash> tailsToAnalyze = new LinkedList<>();
@@ -280,8 +280,8 @@ public class TipsManager {
 
             if (extraTip != null) {
 
-                Tangle.instance().flushTransientFlags(transientHandle).get();
-                Tangle.instance().copyTransientList(transientHandleCopy, transientHandle).get();
+                ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandle);
+                ScratchpadViewModel.instance().copyAnalyzedFlagsList(transientHandleCopy, transientHandle);
 
                 final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
@@ -313,7 +313,7 @@ public class TipsManager {
                  */
 
                 ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandle);
-                Tangle.instance().copyTransientList(transientHandleCopy, transientHandle).get();
+                ScratchpadViewModel.instance().copyAnalyzedFlagsList(transientHandleCopy, transientHandle);
 
                 final Set<Hash> extraTransactions = new HashSet<>();
 

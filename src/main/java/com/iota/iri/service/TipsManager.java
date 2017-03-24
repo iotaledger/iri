@@ -93,8 +93,8 @@ public class TipsManager {
         
         long criticalArrivalTime = Long.MAX_VALUE;
 
-        int transientHandle = Tangle.instance().createTransientFlagList();
-        int transientHandleCopy = Tangle.instance().createTransientFlagList();
+        int transientHandle = ScratchpadViewModel.instance().getAnalyzedTransactionTable();
+        int transientHandleCopy = ScratchpadViewModel.instance().getAnalyzedTransactionTable();
         try {
             AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR);
             for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
@@ -132,19 +132,20 @@ public class TipsManager {
                 int numberOfAnalyzedTransactions = 0;
 
                 //setAnalyzedTransactionFlag(transientHandle, new Hash(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES));
-                setAnalyzedTransactionFlag(transientHandle, Hash.NULL_HASH);
+                ScratchpadViewModel.instance().setAnalyzedTransactionFlag(transientHandle, Hash.NULL_HASH);
                 final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
                 Hash transactionPointer;
                 while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
+                    if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
 
                         numberOfAnalyzedTransactions++;
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
-                            Tangle.instance().releaseTransientTable(transientHandle);
+                            ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandle);
+                            ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandleCopy);
                             return null;
 
                         } else {
@@ -180,7 +181,8 @@ public class TipsManager {
                                         transactionViewModel1.delete();
                                         ScratchpadViewModel.instance().requestTransaction(transactionViewModel1.getHash());
                                     }
-                                    Tangle.instance().releaseTransientTable(transientHandle);
+                                    ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandle);
+                                    ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandleCopy);
                                     return null;
                                 }
                             }
@@ -205,7 +207,8 @@ public class TipsManager {
 
                     if (entry.getValue() < 0) {
                         log.info("Ledger inconsistency detected");
-                        Tangle.instance().releaseTransientTable(transientHandle);
+                        ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandle);
+                        ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandleCopy);
                         return null;
                     }
 
@@ -221,9 +224,9 @@ public class TipsManager {
                 ////////////
             }
 
-            Tangle.instance().flushTransientFlags(transientHandleCopy).get();
+            ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandleCopy);
             Tangle.instance().copyTransientList(transientHandle, transientHandleCopy).get();
-            Tangle.instance().flushTransientFlags(transientHandle).get();
+            ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandle);
 
             final List<Hash> tailsToAnalyze = new LinkedList<>();
 
@@ -247,7 +250,7 @@ public class TipsManager {
             final Set<Hash> tailsWithoutApprovers = new HashSet<>();
             while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
-                if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
+                if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
 
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
 
@@ -309,7 +312,7 @@ public class TipsManager {
                  * continue; }
                  */
 
-                Tangle.instance().flushTransientFlags(transientHandle).get();
+                ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandle);
                 Tangle.instance().copyTransientList(transientHandleCopy, transientHandle).get();
 
                 final Set<Hash> extraTransactions = new HashSet<>();
@@ -318,7 +321,7 @@ public class TipsManager {
                 nonAnalyzedTransactions.offer(tailHash);
                 while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
+                    if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
@@ -426,8 +429,8 @@ public class TipsManager {
                     }
                 }
             }
-            Tangle.instance().releaseTransientTable(transientHandle);
-            Tangle.instance().releaseTransientTable(transientHandleCopy);
+            ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandle);
+            ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandleCopy);
             // System.out.ln(bestRating + " extra transactions approved");
 
             /**/if (tailsRaitings.isEmpty()) {
@@ -472,10 +475,6 @@ public class TipsManager {
         return null;
     }
 
-    private static boolean setAnalyzedTransactionFlag(int handle, Hash hash) throws ExecutionException, InterruptedException {
-        return Tangle.instance().save(handle, new Flag(hash)).get();
-    }
-    
     public void shutDown() {
         shuttingDown = true;
     }

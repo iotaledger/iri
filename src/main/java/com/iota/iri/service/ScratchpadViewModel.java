@@ -23,16 +23,13 @@ public class ScratchpadViewModel {
     public static ScratchpadViewModel instance = new ScratchpadViewModel();
 
     public boolean setAnalyzedTransactionFlag(int id, Hash hash) throws ExecutionException, InterruptedException {
-        Flag flag = new Flag();
-        flag.hash = hash;
-        return Tangle.instance().save(id, flag).get();
+        return Tangle.instance().save(id, new Flag(hash)).get();
     }
 
     public void clearAnalyzedTransactionsFlags(int id) throws Exception {
         Tangle.instance().flushTransientFlags(id).get();
     }
     public void releaseAnalyzedTransactionsFlags(int id) throws Exception {
-        clearAnalyzedTransactionsFlags(id);
         Tangle.instance().releaseTransientTable(id);
     }
 

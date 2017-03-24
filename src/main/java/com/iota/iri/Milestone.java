@@ -6,7 +6,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
@@ -115,14 +114,13 @@ public class Milestone {
 
                 boolean solid = true;
 
+                    int id = ScratchpadViewModel.instance().getAnalyzedTransactionTable();
 
-                	ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags();
-
-                	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(Hash.NULL_HASH);
+                	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(id, Hash.NULL_HASH);
                     final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
                     Hash hashPointer, trunkInteger, branchInteger;
                     while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-                        if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(hashPointer)) {
+                        if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(id, hashPointer)) {
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
                             if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
                                 ScratchpadViewModel.instance().requestTransaction(hashPointer);
@@ -137,6 +135,7 @@ public class Milestone {
                             }
                         }
                     }
+                    ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(id);
 
                 if (solid) {
                     latestSolidSubtangleMilestone = milestone;

@@ -472,13 +472,8 @@ public class TipsManager {
         return null;
     }
 
-    private static boolean setAnalyzedTransactionFlag(int handle, Hash hashPointer) throws ExecutionException, InterruptedException {
-        Hash hash = hashPointer;
-        if(!Tangle.instance().maybeHas(handle, hash).get()) {
-            Tangle.instance().save(handle, new Flag(hash)).get();
-            return true;
-        }
-        return false;
+    private static boolean setAnalyzedTransactionFlag(int handle, Hash hash) throws ExecutionException, InterruptedException {
+        return Tangle.instance().save(handle, new Flag(hash)).get();
     }
     
     public void shutDown() {

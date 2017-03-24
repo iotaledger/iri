@@ -34,4 +34,6 @@ public interface IPersistenceProvider {
     boolean setTransientFlagHandle(int uuid) throws Exception;
 
     void flushTagRange(int id) throws Exception;
+
+    long count(int transientId) throws Exception;
 }

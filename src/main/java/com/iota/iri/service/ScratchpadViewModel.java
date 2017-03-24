@@ -3,13 +3,12 @@ package com.iota.iri.service;
 import com.iota.iri.Milestone;
 import com.iota.iri.model.*;
 import com.iota.iri.service.tangle.Tangle;
+import com.iota.iri.service.viewModels.TipsViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
@@ -23,14 +22,22 @@ public class ScratchpadViewModel {
 
     public static ScratchpadViewModel instance = new ScratchpadViewModel();
 
-    public boolean setAnalyzedTransactionFlag(Hash hash) throws ExecutionException, InterruptedException {
-        AnalyzedFlag flag = new AnalyzedFlag();
+    public boolean setAnalyzedTransactionFlag(int id, Hash hash) throws ExecutionException, InterruptedException {
+        Flag flag = new Flag();
         flag.hash = hash;
-        return !Tangle.instance().save(flag).get();
+        return Tangle.instance().save(id, flag).get();
     }
 
-    public void clearAnalyzedTransactionsFlags() throws Exception {
-        Tangle.instance().flush(AnalyzedFlag.class).get();
+    public void clearAnalyzedTransactionsFlags(int id) throws Exception {
+        Tangle.instance().flushTransientFlags(id).get();
+    }
+    public void releaseAnalyzedTransactionsFlags(int id) throws Exception {
+        clearAnalyzedTransactionsFlags(id);
+        Tangle.instance().releaseTransientTable(id);
+    }
+
+    public int getAnalyzedTransactionTable() throws Exception {
+        return Tangle.instance().createTransientFlagList();
     }
 
     public int getNumberOfTransactionsToRequest() throws ExecutionException, InterruptedException {
@@ -44,27 +51,26 @@ public class ScratchpadViewModel {
     }
 
     public void rescanTransactionsToRequest() throws Exception {
-        Set<Hash> nonAnalyzedTransactions;
-        Set<Hash> analyzedTransactions;
-        nonAnalyzedTransactions = new HashSet<>(Collections.singleton(Milestone.latestMilestone));
-        analyzedTransactions = new HashSet<>(Collections.singleton(Milestone.latestMilestone));
+        int id = getAnalyzedTransactionTable();
+        Queue<Hash> nonAnalyzedTransactions;
+        nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Milestone.latestMilestone));
+        nonAnalyzedTransactions.addAll(Arrays.asList(TipsViewModel.getTipHashes()));
         Hash hash;
         Tangle.instance().flush(Scratchpad.class).get();
-        while(nonAnalyzedTransactions.size() != 0) {
-            hash = (Hash) nonAnalyzedTransactions.toArray()[0];
-            nonAnalyzedTransactions.remove(hash);
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
-            if(transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT && !transactionViewModel.getHash().equals(Hash.NULL_HASH)) {
-                //log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));
-                ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
-            } else {
-                if(analyzedTransactions.add(transactionViewModel.getTrunkTransactionHash()))
+        while((hash = nonAnalyzedTransactions.poll()) != null) {
+            if(setAnalyzedTransactionFlag(id, hash)) {
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
+                if(transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT && !transactionViewModel.getHash().equals(Hash.NULL_HASH)) {
+                    //log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));
+                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
+                } else {
                     nonAnalyzedTransactions.add(transactionViewModel.getTrunkTransactionHash());
-                if(analyzedTransactions.add(transactionViewModel.getBranchTransactionHash()))
                     nonAnalyzedTransactions.add(transactionViewModel.getBranchTransactionHash());
+                }
             }
         }
-        log.info("number of analyzed tx: " + analyzedTransactions.size());
+        log.info("number of analyzed tx: " + Tangle.instance().getCount(id).get());
+        releaseAnalyzedTransactionsFlags(id);
     }
 
     public Future<Boolean> requestTransaction(Hash hash) throws ExecutionException, InterruptedException {

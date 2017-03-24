@@ -21,6 +21,7 @@ public class Tangle {
     private final List<Integer> availableTansientTables = new ArrayList<>();
     private final List<Integer> transientTablesInUse = new ArrayList<>();
     private volatile int nextTableId = 1;
+    private boolean available = true;
 
     public void addPersistenceProvider(IPersistenceProvider provider) {
         this.persistenceProviders.add(provider);
@@ -36,10 +37,13 @@ public class Tangle {
 
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
+        this.available = false;
         executor.shutdown();
         executor.awaitTermination(6, TimeUnit.SECONDS);
         for(int id: transientHandles) {
-            releaseTransientTable(id);
+            for (IPersistenceProvider provider : persistenceProviders) {
+                provider.flushTagRange(id);
+            }
         }
         this.persistenceProviders.forEach(IPersistenceProvider::shutdown);
         this.persistenceProviders.clear();
@@ -47,24 +51,31 @@ public class Tangle {
 
     public int createTransientFlagList() throws Exception {
         int id;
+        boolean create = false;
         synchronized (this) {
             if(availableTansientTables.size() > 0) {
                 id = availableTansientTables.remove(0);
             } else {
                 id = nextTableId++;
-                for(IPersistenceProvider provider: this.persistenceProviders) {
-                    provider.setTransientFlagHandle(id);
-                }
+                create = true;
                 transientHandles.add(id);
             }
         }
         transientTablesInUse.add(id);
+        if(create && available) {
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                provider.setTransientFlagHandle(id);
+            }
+            return id;
+        }
         return id;
     }
 
     public void releaseTransientTable(int id) throws Exception {
-        for(IPersistenceProvider provider : persistenceProviders) {
-            provider.flushTagRange(id);
+        if(available) {
+            for (IPersistenceProvider provider : persistenceProviders) {
+                provider.flushTagRange(id);
+            }
         }
         synchronized (this) {
             log.info("Released transient table with id: " + id);
@@ -147,11 +158,11 @@ public class Tangle {
     public Future<Boolean> save(int handle, Object model) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                if(!provider.save(handle, model)) {
-                    return false;
+                if(provider.save(handle, model)) {
+                    return true;
                 }
             }
-            return true;
+            return false;
         });
     }
     public Future<Object> load(int handle, Class<?> model, Hash key) {
@@ -225,6 +236,17 @@ public class Tangle {
         });
     }
 
+    public Future<Long> getCount(int transientId) {
+        return executor.submit(() -> {
+            long value = 0;
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                if((value = provider.count(transientId)) != 0) {
+                    break;
+                }
+            }
+            return value;
+        });
+    }
     public Future<Long> getCount(Class<?> modelClass) {
         return executor.submit(() -> {
             long value = 0;

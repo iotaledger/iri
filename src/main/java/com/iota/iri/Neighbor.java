@@ -99,14 +99,11 @@ public class Neighbor {
 
     public void send(final DatagramPacket packet) {
         if (isTcpip()) {
-            if ( sendQueue.remainingCapacity() > 0 ) {
-                sendQueue.add(ByteBuffer.wrap(packet.getData()));
-            }
-            else {
-                Socket sinkSocket = this.getSink();
-                if ((sinkSocket != null) && !sinkSocket.isClosed() && sinkSocket.isConnected()) {
-                    log.info("Send queue is full for neighbor {}",this.getHostAddress());
+            if (isTcpip()) {
+                if ( sendQueue.remainingCapacity() == 0 ) {
+                    sendQueue.poll();
                 }
+                sendQueue.add(ByteBuffer.wrap(packet.getData()));
             }
         }
         else {

@@ -71,7 +71,7 @@ public class Tangle {
 
     public void releaseTransientTable(int id) throws Exception {
         if(available) {
-            flushTransientFlags(id);
+            flushTransientFlags(id).get();
         }
         synchronized (this) {
             log.info("Released transient table with id: " + id);

@@ -47,6 +47,7 @@ public class Hash implements Comparable<Hash>{
 
     @Override
     public boolean equals(final Object obj) {
+        if(obj == null) return false;
         return Arrays.equals(bytes, ((Hash)obj).bytes);
     }
 

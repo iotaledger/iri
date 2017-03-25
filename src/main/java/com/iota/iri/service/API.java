@@ -375,11 +375,7 @@ public class API {
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
-                approveeTransactions.addAll(Arrays.stream(TransactionViewModel.approversFromHash(new Hash(approvee))).collect(Collectors.toSet()));
-                /*
-                approveeTransactions.addAll(StorageApprovers.instance().approveeTransactions(
-                        StorageApprovers.instance().approveePointer((new Hash(approvee)).value())));
-                        */
+                approveeTransactions.addAll(Arrays.stream(TransactionViewModel.fromHash(new Hash(approvee)).getApprovers()).collect(Collectors.toSet()));
             }
         }
 

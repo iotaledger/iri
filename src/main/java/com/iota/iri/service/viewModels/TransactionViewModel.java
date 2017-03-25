@@ -1,9 +1,6 @@
 package com.iota.iri.service.viewModels;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -191,23 +188,21 @@ public class TransactionViewModel {
             getBranchTransactionHash();
             getTrunkTransactionHash();
             getTagValue();
+
             future = Tangle.instance().save(transaction);
-            update();
+
+            clearTransactionRequest(getHash());
+            requestTransaction(getBranchTransactionHash());
+            requestTransaction(getTrunkTransactionHash());
+            if(getApprovers().length == 0) {
+                TipsViewModel.addTipHash(transaction.hash);
+            } else {
+                TipsViewModel.removeTipHash(transaction.hash);
+            }
         } else {
             future = executorService.submit(() -> false);
         }
         return future;
-    }
-
-    private void update () throws Exception {
-        clearTransactionRequest(getHash());
-        requestTransaction(getBranchTransactionHash());
-        requestTransaction(getTrunkTransactionHash());
-        if(getApprovers().length == 0) {
-            TipsViewModel.addTipHash(transaction.hash);
-        } else {
-            TipsViewModel.removeTipHash(transaction.hash);
-        }
     }
 
     public static void clearTransactionRequest(Hash hash) {
@@ -224,15 +219,26 @@ public class TransactionViewModel {
         }
     }
 
-    public static Hash[] approversFromHash(Hash hash) throws Exception {
-        return TransactionViewModel.fromHash(hash).getApprovers();
-    }
-
     public Hash[] getApprovers() throws ExecutionException, InterruptedException {
         Approvee self = new Approvee();
         self.hash = transaction.hash;
         Tangle.instance().load(self).get();
         return self.transactions != null? self.transactions : new Hash[0];
+    }
+
+    public void updateRating() throws Exception {
+        transaction.rating = 1;
+        TransactionViewModel approverTransaction;
+        for(Hash approver : getApprovers()) {
+            approverTransaction = TransactionViewModel.fromHash(approver);
+            approverTransaction.updateRating();
+            transaction.rating += approverTransaction.getRating();
+        }
+        update("rating");
+    }
+
+    public long getRating() {
+        return transaction.rating;
     }
 
     public final int getType() {
@@ -388,16 +394,18 @@ public class TransactionViewModel {
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
-            transactionViewModel.setSolid(true);
-            transactionViewModel.update("solid");
+            transactionViewModel.setSolid(true, true);
         }
     }
 
-    public void setSolid(boolean solid) {
+    public void setSolid(boolean solid, boolean update) throws Exception {
         if(solid) {
             transaction.solid = new byte[]{1};
         } else {
             transaction.solid = new byte[]{0};
+        }
+        if(update) {
+            update("solid");
         }
     }
 

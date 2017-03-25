@@ -1,7 +1,6 @@
 package com.iota.iri.service.tangle.rocksDB;
 
 import com.iota.iri.conf.Configuration;
-import com.iota.iri.model.Flag;
 import com.iota.iri.service.tangle.Tangle;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;

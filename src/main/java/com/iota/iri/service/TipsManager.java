@@ -101,50 +101,52 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    static Hash transactionToApprove(final Hash extraTip, int depth) throws Exception {
+    static Hash transactionToApprove(final Hash extraTip, int depth) {
 
         long startTime = System.nanoTime();
 
-        final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
-
-        long criticalArrivalTime = Long.MAX_VALUE;
+        final Hash preferableMilestone = extraTip == null? Milestone.latestSolidSubtangleMilestone: Milestone.getMilestone(Milestone.latestSolidSubtangleMilestoneIndex-depth);
 
         Set<Hash> analyzedTips = new HashSet<>();
-        Set<Hash> analyzedTipsCopy = new HashSet<>();
+        SecureRandom random = new SecureRandom();
         try {
-            final int oldestAcceptableMilestoneIndex = findOldestAcceptableMilestoneIndex(criticalArrivalTime, depth);
+            TransactionViewModel.fromHash(preferableMilestone).updateRating();
 
-            Map<Hash, Long> state = getNonzeroBundleAddresses(extraTip, preferableMilestone, analyzedTips);
-            if (state == null) {
-                return null;
+            Queue<Hash[]> randomWalkScratchpad = new LinkedList<>(Collections.singleton(new Hash[]{preferableMilestone}));
+            Hash[] tips;
+            Hash tip = null;
+            BundleViewModel bundle;
+            List<Integer> ratingWeightedApproverIndices = new ArrayList<>();
+            int i, j;
+            TransactionViewModel tipTransaction;
+            while((tips = randomWalkScratchpad.poll()) != null) {
+                if(!analyzedTips.containsAll(Arrays.asList(tips))) {
+                    randomWalkScratchpad.offer(tips);
+                }
+                if(tips.length != 0) {
+                    for(i = 0; i < tips.length; i++) {
+                        tipTransaction = TransactionViewModel.fromHash(tips[i]);
+                        for(j = 0; j < tipTransaction.getRating(); j++) {
+                            ratingWeightedApproverIndices.add(i);
+                        }
+                    }
+                    tip = tips[ratingWeightedApproverIndices.get(random.nextInt(ratingWeightedApproverIndices.size()))];
+                    if(analyzedTips.add(tip)) {
+                        bundle = TransactionViewModel.fromHash(tip).getBundle();
+                        if(bundle.isConsistent()) {
+                            tips = bundle.getTransactions().get(0).get(0).getApprovers();
+                            if(tips.length == 0 && !tip.equals(extraTip)) {
+                                tip = bundle.getTransactions().get(0).get(0).getHash();
+                                break;
+                            }
+                            randomWalkScratchpad.offer(tips);
+                        }
+                    }
+                }
             }
-            if (!ledgerIsConsistent(state)) {
-                return null;
-            }
-
-            analyzedTipsCopy.addAll(analyzedTips);
-            analyzedTips.clear();
-
-            Hash tip = getLowestMilestone(extraTip, preferableMilestone, depth);
-
-            final List<Hash> tailsToAnalyze = new LinkedList<>();
-            analyzeTips(analyzedTips, tailsToAnalyze, tip);
-
-            removeAnalyzedTips(extraTip, tailsToAnalyze, analyzedTips, analyzedTipsCopy);
-
-            log.info(tailsToAnalyze.size() + " tails need to be analyzed");
-
-            final Map<Hash, Integer> tailsRatings = new HashMap<>();
-            int bestRating = getBestRating(state, tailsRatings, analyzedTips, analyzedTipsCopy, tailsToAnalyze, criticalArrivalTime);
-
-            analyzedTips.clear();
-            analyzedTipsCopy.clear();
-            // System.out.ln(bestRating + " extra transactions approved");
-
-            return findBestTip(extraTip, preferableMilestone, bestRating, tailsRatings);
-
+            return tip;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("Encountered error: " + e.getLocalizedMessage());
         } finally {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
         }

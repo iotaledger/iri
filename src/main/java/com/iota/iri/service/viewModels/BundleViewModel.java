@@ -6,6 +6,7 @@ import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
+import org.rocksdb.Logger;
 
 import java.util.*;
 
@@ -142,6 +143,36 @@ public class BundleViewModel {
         }
     }
 
+    public boolean isConsistent() throws Exception {
+        boolean validBundle = true;
+        Map<Hash, Long> state = new HashMap<>();
+        for (final List<TransactionViewModel> bundleTransactionViewModels : getTransactions()) {
+            for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
+
+                if (bundleTransactionViewModel.value() != 0) {
+                    final Hash address = bundleTransactionViewModel.getAddress().getHash();
+                    final Long value = state.get(address);
+                    state.put(address, value == null ? bundleTransactionViewModel.value()
+                            : (value + bundleTransactionViewModel.value()));
+                }
+            }
+        }
+
+        if (!validBundle) {
+            for(TransactionViewModel transactionViewModel1: transactionViewModels) {
+                transactionViewModel1.delete();
+                TransactionViewModel.requestTransaction(transactionViewModel1.getHash());
+            }
+            return false;
+        }
+        for(Long value: state.values()) {
+            if(value < 0) {
+                //log.info("Ledger inconsistency detected");
+                return false;
+            }
+        }
+        return true;
+    }
 
     private Map<Hash, TransactionViewModel> loadTransactionsFromTangle() {
         final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();

@@ -26,6 +26,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "transactionValidity",
             "transactionType",
             "transactionArrivalTime",
+            "transactionSolid",
+            "transactionRating",
             "address",
             "bundle",
             "approovee",
@@ -38,6 +40,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle transactionValidityHandle;
     private ColumnFamilyHandle transactionTypeHandle;
     private ColumnFamilyHandle transactionArrivalTimeHandle;
+    private ColumnFamilyHandle transactionSolidHandle;
+    private ColumnFamilyHandle transactionRatingHandle;
     private ColumnFamilyHandle addressHandle;
     private ColumnFamilyHandle bundleHandle;
     private ColumnFamilyHandle approoveeHandle;
@@ -92,6 +96,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             db.delete(transactionArrivalTimeHandle, key);
             db.delete(transactionTypeHandle, key);
             db.delete(transactionValidityHandle, key);
+            db.delete(transactionSolidHandle, key);
+            db.delete(transactionRatingHandle, key);
             return null;
         });
         deleteMap.put(Tip.class, txObj -> {
@@ -152,6 +158,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.put(transactionValidityHandle, key, Serializer.serialize(transaction.validity));
         batch.put(transactionTypeHandle, key, Serializer.serialize(transaction.type));
         batch.put(transactionArrivalTimeHandle, key, Serializer.serialize(transaction.arrivalTime));
+        batch.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
+        batch.put(transactionRatingHandle, key, Serializer.serialize(transaction.rating));
         batch.merge(addressHandle, transaction.address.hash.bytes(), key);
         batch.merge(bundleHandle, transaction.bundle.hash.bytes(), key);
         batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
@@ -246,6 +254,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transaction.validity = Serializer.getInteger(db.get(transactionValidityHandle, key));
         transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, key));
         transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, key));
+        transaction.solid =  db.get(transactionSolidHandle, key);
+        transaction.rating = Serializer.getLong(db.get(transactionRatingHandle, key));
         return true;
     };
 
@@ -339,6 +349,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 case "arrivalTime":
                     db.put(transactionValidityHandle, key, Serializer.serialize(transaction.arrivalTime));
                     break;
+                case "solid":
+                    db.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
+                    break;
+                case "rating":
+                    db.put(transactionRatingHandle, key, Serializer.serialize(transaction.rating));
+                    break;
                 default:
                     throw new NotImplementedException("Mada Sono Update ga dekinai yo");
             }
@@ -424,6 +440,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transactionValidityHandle = familyHandles.get(++i);
         transactionTypeHandle = familyHandles.get(++i);
         transactionArrivalTimeHandle = familyHandles.get(++i);
+        transactionSolidHandle = familyHandles.get(++i);
+        transactionRatingHandle = familyHandles.get(++i);
         addressHandle = familyHandles.get(++i);
         bundleHandle = familyHandles.get(++i);
         approoveeHandle = familyHandles.get(++i);
@@ -461,9 +479,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private void scanTxDeleteBaddies() throws Exception {
         RocksIterator iterator = db.newIterator(transactionHandle);
         List<byte[]> baddies = new ArrayList<>();
+        WriteBatch batch = new WriteBatch();
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             if(iterator.value().length != TransactionViewModel.SIZE || Arrays.equals(iterator.value(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                 baddies.add(iterator.key());
+            } else {
+                batch.put(transactionSolidHandle, iterator.key(), new byte[]{0});
+                batch.put(transactionRatingHandle, iterator.key(), Serializer.serialize((long)0));
             }
         }
         iterator.close();
@@ -473,6 +495,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(byte[] baddie : baddies) {
             db.delete(transactionHandle, baddie);
         }
+        db.write(new WriteOptions(), batch);
     }
 
     private void updateTagDB() throws RocksDBException {

@@ -18,7 +18,7 @@ public class Serializer {
         return buffer.array();
     }
     public static long getLong(byte[] bytes) {
-        if(bytes == null || bytes.length != Integer.BYTES) return 0;
+        if(bytes == null || bytes.length != Long.BYTES) return 0;
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
         buffer.put(bytes);
         buffer.flip();

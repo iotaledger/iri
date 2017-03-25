@@ -10,6 +10,7 @@ public class Transaction {
     public int validity;
     public int type;
     public long arrivalTime;
+    public long rating = 1;
 
     public Tag tag = new Tag();
     public Address address = new Address();

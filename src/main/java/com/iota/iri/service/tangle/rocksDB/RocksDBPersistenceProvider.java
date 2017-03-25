@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(RocksDBPersistenceProvider.class);
-    private int NUMBER_OF_EXTRA_TABLES;
+    private static final int NUMBER_OF_EXTRA_TABLES = 128;
     private static int BLOOM_FILTER_RANGE = 1<<1;
 
     private String[] columnFamilyNames = new String[]{
@@ -56,7 +56,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     */
 
     List<ColumnFamilyHandle> transactionGetList;
-    ColumnFamilyHandle[] transientHandles;
+    final ColumnFamilyHandle[] transientHandles = new ColumnFamilyHandle[NUMBER_OF_EXTRA_TABLES];
 
     private Map<Class<?>, ColumnFamilyHandle[]> classTreeMap = new HashMap<>();
     private Map<Class<?>, MyFunction<Object, Boolean>> saveMap = new HashMap<>();
@@ -72,8 +72,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public void init() throws Exception {
-        NUMBER_OF_EXTRA_TABLES = Configuration.integer(Configuration.DefaultConfSettings.MAX_TRANSIENT_TABLES);
-        transientHandles = new ColumnFamilyHandle[NUMBER_OF_EXTRA_TABLES];
         initDB(
                 Configuration.string(Configuration.DefaultConfSettings.DB_PATH),
                 Configuration.string(Configuration.DefaultConfSettings.DB_LOG_PATH)
@@ -625,11 +623,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         scratchpadHandle = familyHandles.get(++i);
 
         System.arraycopy(familyHandles.subList(++i, familyHandles.size()).toArray(), 0, transientHandles, 0, NUMBER_OF_EXTRA_TABLES);
-        /*
         for(ColumnFamilyHandle handle: transientHandles) {
             flushHandle(handle);
         }
-        */
 
         flushHandle(scratchpadHandle);
         updateTagDB();

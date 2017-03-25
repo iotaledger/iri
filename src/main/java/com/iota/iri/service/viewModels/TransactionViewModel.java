@@ -401,6 +401,10 @@ public class TransactionViewModel {
         }
     }
 
+    public boolean isSolid() {
+        return transaction.solid[0] == 1;
+    }
+
     public static int numberOfTransactionsToRequest() {
         return transactionsToRequest.size();
     }

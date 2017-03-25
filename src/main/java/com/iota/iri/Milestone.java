@@ -120,16 +120,18 @@ public class Milestone {
                     while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
                         if (analyzedHashes.add(hashPointer)) {
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                            if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                                TransactionViewModel.requestTransaction(hashPointer);
-                                solid = false;
-                                break;
+                            if(!transactionViewModel2.isSolid()) {
+                                if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
+                                    TransactionViewModel.requestTransaction(hashPointer);
+                                    solid = false;
+                                    break;
 
-                            } else {
-                                trunkInteger = transactionViewModel2.getTrunkTransactionHash();
-                                branchInteger = transactionViewModel2.getBranchTransactionHash();
-                                nonAnalyzedTransactions.offer(trunkInteger);
-                                nonAnalyzedTransactions.offer(branchInteger);
+                                } else {
+                                    trunkInteger = transactionViewModel2.getTrunkTransactionHash();
+                                    branchInteger = transactionViewModel2.getBranchTransactionHash();
+                                    nonAnalyzedTransactions.offer(trunkInteger);
+                                    nonAnalyzedTransactions.offer(branchInteger);
+                                }
                             }
                         }
                     }

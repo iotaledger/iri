@@ -39,24 +39,6 @@ public class TipsManager {
         ARTIFICAL_LATENCY = value;
     }
 
-    public static Hash getLowestMilestone(Hash extraTip, Hash preferableMilestone, int depth) throws Exception {
-        Hash tip = preferableMilestone;
-        if (extraTip != null) {
-
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-            while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
-
-                tip = transactionViewModel.getHash();
-                do {
-
-                    transactionViewModel = transactionViewModel.getTrunkTransaction();
-
-                } while (transactionViewModel.getCurrentIndex() != 0);
-            }
-        }
-        return tip;
-    }
-
     public void init() throws Exception {
 
         (new Thread(() -> {
@@ -105,16 +87,31 @@ public class TipsManager {
 
         long startTime = System.nanoTime();
 
-        final Hash preferableMilestone = extraTip == null? Milestone.latestSolidSubtangleMilestone: Milestone.getMilestone(Milestone.latestSolidSubtangleMilestoneIndex-depth);
+        final Hash preferableMilestone = extraTip == null? Milestone.latestSolidSubtangleMilestone;
+
+
 
         Set<Hash> analyzedTips = new HashSet<>();
         SecureRandom random = new SecureRandom();
         try {
-            TransactionViewModel.fromHash(preferableMilestone).updateRating();
+            Hash tip = preferableMilestone;
+            if (extraTip != null) {
+
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
+                while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
+
+                    tip = transactionViewModel.getHash();
+                    do {
+
+                        transactionViewModel = transactionViewModel.getTrunkTransaction();
+
+                    } while (transactionViewModel.getCurrentIndex() != 0);
+                }
+            }
+            TransactionViewModel.fromHash(tip).updateRating();
 
             Queue<Hash[]> randomWalkScratchpad = new LinkedList<>(Collections.singleton(new Hash[]{preferableMilestone}));
             Hash[] tips;
-            Hash tip = null;
             BundleViewModel bundle;
             List<Integer> ratingWeightedApproverIndices = new ArrayList<>();
             int i, j;
@@ -151,6 +148,10 @@ public class TipsManager {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
         }
         return null;
+    }
+
+    private Hash nMilestonesDeep(Hash latestMilestone, int depth) {
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(latestMilestone);
     }
 
     private static int findOldestAcceptableMilestoneIndex(long criticalArrivalTime, int depth) throws Exception {

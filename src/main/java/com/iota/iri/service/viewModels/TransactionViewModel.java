@@ -375,9 +375,13 @@ public class TransactionViewModel {
     private static volatile long lastTime = System.currentTimeMillis();
     public static void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
         final long beginningTime = System.currentTimeMillis();
-        if(++requestIndex >= numberOfTransactionsToRequest())
+        Hash hash = null;
+        if(++requestIndex >= numberOfTransactionsToRequest()) {
             requestIndex = 0;
-        Hash hash = ((Hash) transactionsToRequest.toArray()[requestIndex]);
+        }
+        if(transactionsToRequest.size() > 0) {
+            hash = ((Hash) transactionsToRequest.toArray()[requestIndex]);
+        }
 
         if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {
             System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);

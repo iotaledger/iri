@@ -484,8 +484,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             if(iterator.value().length != TransactionViewModel.SIZE || Arrays.equals(iterator.value(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                 baddies.add(iterator.key());
             } else {
-                batch.put(transactionSolidHandle, iterator.key(), new byte[]{0});
-                batch.put(transactionRatingHandle, iterator.key(), Serializer.serialize((long)0));
+                //batch.put(transactionSolidHandle, iterator.key(), new byte[]{0});
+                //batch.put(transactionRatingHandle, iterator.key(), Serializer.serialize((long)0));
             }
         }
         iterator.close();
@@ -495,7 +495,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(byte[] baddie : baddies) {
             db.delete(transactionHandle, baddie);
         }
-        db.write(new WriteOptions(), batch);
+        //db.write(new WriteOptions(), batch);
     }
 
     private void updateTagDB() throws RocksDBException {

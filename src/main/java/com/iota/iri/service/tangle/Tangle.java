@@ -17,7 +17,6 @@ public class Tangle {
     private static Tangle instance = new Tangle();
     List<IPersistenceProvider> persistenceProviders = new ArrayList<>();
     private ExecutorService executor;
-    private final List<Integer> transientHandles = new ArrayList<>();
     private final List<Integer> availableTansientTables = new ArrayList<>();
     private final List<Integer> transientTablesInUse = new ArrayList<>();
     private volatile int nextTableId = 1;
@@ -40,7 +39,7 @@ public class Tangle {
         this.available = false;
         executor.shutdown();
         executor.awaitTermination(6, TimeUnit.SECONDS);
-        for(int id: transientHandles) {
+        for(int id: transientTablesInUse) {
             for (IPersistenceProvider provider : persistenceProviders) {
                 provider.flushTagRange(id);
             }
@@ -58,10 +57,9 @@ public class Tangle {
             } else {
                 id = nextTableId++;
                 create = true;
-                transientHandles.add(id);
             }
+            transientTablesInUse.add(id);
         }
-        transientTablesInUse.add(id);
         if(create && available) {
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 provider.setTransientFlagHandle(id);
@@ -73,9 +71,7 @@ public class Tangle {
 
     public void releaseTransientTable(int id) throws Exception {
         if(available) {
-            for (IPersistenceProvider provider : persistenceProviders) {
-                provider.flushTagRange(id);
-            }
+            flushTransientFlags(id);
         }
         synchronized (this) {
             log.info("Released transient table with id: " + id);

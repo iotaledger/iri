@@ -83,7 +83,9 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    static Hash transactionToApprove(final Hash extraTip, int depth) {
+    static Hash transactionToApprove(final Hash extraTip, final int depth) {
+
+        int milestoneDepth = depth;
 
         long startTime = System.nanoTime();
 
@@ -96,7 +98,7 @@ public class TipsManager {
             if (extraTip != null) {
 
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-                while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
+                while (milestoneDepth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 
                     tip = transactionViewModel.getHash();
                     do {

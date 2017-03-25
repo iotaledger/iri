@@ -70,6 +70,7 @@ public class TransactionViewModel {
     public TransactionViewModel branch;
 
     private static Set<Hash> transactionsToRequest = new HashSet<>();
+    private static volatile int requestIndex = 0;
 
     public int[] hashTrits;
 
@@ -366,7 +367,9 @@ public class TransactionViewModel {
     private static volatile long lastTime = System.currentTimeMillis();
     public static void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
         final long beginningTime = System.currentTimeMillis();
-        Hash hash = ((Hash) transactionsToRequest.toArray()[0]);
+        if(++requestIndex >= numberOfTransactionsToRequest())
+            requestIndex = 0;
+        Hash hash = ((Hash) transactionsToRequest.toArray()[requestIndex]);
 
         if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {
             System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);

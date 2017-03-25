@@ -54,7 +54,6 @@ public class IRI {
             TipsManager.instance().init();
             API.instance().init();
             Replicator.instance().init();
-            ScratchpadViewModel.instance().rescanTransactionsToRequest();
             //IXI.init();
 
         } catch (final Exception e) {

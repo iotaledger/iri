@@ -54,6 +54,7 @@ public class TipsManager {
 
                     Milestone.updateLatestMilestone();
                     Milestone.updateLatestSolidSubtangleMilestone();
+                    ScratchpadViewModel.instance().rescanTransactionsToRequest();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
 

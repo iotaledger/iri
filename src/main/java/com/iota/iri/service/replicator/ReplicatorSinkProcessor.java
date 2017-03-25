@@ -1,10 +1,7 @@
-package com.iota.iri.service.storage;
+package com.iota.iri.service.replicator;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
@@ -14,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Neighbor;
 import com.iota.iri.service.Node;
-import com.iota.iri.utils.Converter;
 
 public class ReplicatorSinkProcessor implements Runnable {
 

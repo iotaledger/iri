@@ -1,4 +1,4 @@
-package com.iota.iri.service.storage;
+package com.iota.iri.service.replicator;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

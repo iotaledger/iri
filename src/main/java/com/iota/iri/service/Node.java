@@ -12,7 +12,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.storage.ReplicatorSinkPool;
+import com.iota.iri.service.replicator.ReplicatorSinkPool;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TipsViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;

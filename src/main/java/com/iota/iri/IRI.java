@@ -17,9 +17,9 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.API;
 import com.iota.iri.service.Node;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.service.storage.Replicator;
-import com.iota.iri.service.storage.ReplicatorSinkPool;
-import com.iota.iri.service.storage.ReplicatorSourcePool;
+import com.iota.iri.service.replicator.Replicator;
+import com.iota.iri.service.replicator.ReplicatorSinkPool;
+import com.iota.iri.service.replicator.ReplicatorSourcePool;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
 

@@ -495,23 +495,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public void flushTagRange(int id) throws Exception {
-        ColumnFamilyHandle handle = transientHandles[id];
-        if(handle != null) {
-            RocksIterator iterator;
-            List<byte[]> keysToDelete = new ArrayList<>();
-            db.flush(new FlushOptions().setWaitForFlush(true), handle);
-            iterator = db.newIterator(handle);
-            for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                keysToDelete.add(iterator.key());
-            }
-            iterator.close();
-            if(keysToDelete.size() > 0) {
-                log.info("Flushing Table with id: " + id + ". Number of items to delete: " + keysToDelete.size());
-            }
-            for(byte[] key: keysToDelete) {
-                db.delete(handle, key);
-            }
-        }
+        flushHandle(transientHandles[id]);
     }
 
     @Override

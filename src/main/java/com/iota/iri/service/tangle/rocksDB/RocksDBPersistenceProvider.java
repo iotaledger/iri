@@ -203,6 +203,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public Object[] getKeys(Class<?> modelClass) throws Exception {
+        if(modelClass == Transaction.class) {
+            return getMissingTransactions();
+        }
         List<byte[]> tips = new ArrayList<>();
         RocksIterator iterator = db.newIterator(tipHandle);
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
@@ -210,6 +213,17 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
         iterator.close();
         return tips.stream().map(Hash::new).toArray();
+    }
+
+    private Object[] getMissingTransactions() throws RocksDBException {
+        List<byte[]> txToRequest = new ArrayList<>();
+        RocksIterator iterator = db.newIterator(approoveeHandle);
+        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            if(db.get(transactionHandle, iterator.key()) == null)
+                txToRequest.add(iterator.key());
+        }
+        iterator.close();
+        return txToRequest.stream().map(Hash::new).toArray();
     }
 
     @Override

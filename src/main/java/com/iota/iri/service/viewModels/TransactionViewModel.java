@@ -1,5 +1,6 @@
 package com.iota.iri.service.viewModels;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -7,6 +8,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.stream.Collectors;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
@@ -403,7 +405,13 @@ public class TransactionViewModel {
         return transactionsToRequest.size();
     }
 
-    public static void rescanTransactionsToRequest() {
+    public static void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
+        synchronized (TransactionViewModel.class) {
+            transactionsToRequest.clear();
+            Hash[] missingTx = Arrays.stream(Tangle.instance()
+                    .scanForTips(Transaction.class).get()).toArray(Hash[]::new);
+            transactionsToRequest.addAll(Arrays.asList(missingTx));
+        }
 
     }
 }

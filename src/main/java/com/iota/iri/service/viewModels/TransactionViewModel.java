@@ -407,7 +407,6 @@ public class TransactionViewModel {
 
     public static void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
         synchronized (TransactionViewModel.class) {
-            transactionsToRequest.clear();
             Hash[] missingTx = Arrays.stream(Tangle.instance()
                     .scanForTips(Transaction.class).get()).toArray(Hash[]::new);
             transactionsToRequest.addAll(Arrays.asList(missingTx));

@@ -145,15 +145,12 @@ public class BundleViewModel {
 
     public boolean isConsistent() throws Exception {
         boolean validBundle = true;
+        long value = 0;
         Map<Hash, Long> state = new HashMap<>();
         for (final List<TransactionViewModel> bundleTransactionViewModels : getTransactions()) {
             for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
-
                 if (bundleTransactionViewModel.value() != 0) {
-                    final Hash address = bundleTransactionViewModel.getAddress().getHash();
-                    final Long value = state.get(address);
-                    state.put(address, value == null ? bundleTransactionViewModel.value()
-                            : (value + bundleTransactionViewModel.value()));
+                    value += bundleTransactionViewModel.value();
                 }
             }
         }
@@ -165,11 +162,9 @@ public class BundleViewModel {
             }
             return false;
         }
-        for(Long value: state.values()) {
-            if(value < 0) {
-                //log.info("Ledger inconsistency detected");
-                return false;
-            }
+        if(value != 0) {
+            //log.info("Ledger inconsistency detected");
+            return false;
         }
         return true;
     }

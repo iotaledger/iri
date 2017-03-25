@@ -631,7 +631,16 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         updateTagDB();
         scanTxDeleteBaddies();
 
-        db.compactRange();
+        this.compactionThreadHandle = new Thread(() -> {
+            while(running) {
+                try {
+                    db.compactRange();
+                    Thread.sleep(300 * 1000);
+                } catch (Exception e) {
+                    log.error("Compaction Error: " + e.getLocalizedMessage());
+                }
+            }
+        }, "Compaction Thread");
 
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {

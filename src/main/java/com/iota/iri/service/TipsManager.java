@@ -3,11 +3,13 @@ package com.iota.iri.service;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.stream.IntStream;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -114,7 +116,7 @@ public class TipsManager {
             Queue<Hash[]> randomWalkScratchpad = new LinkedList<>(Collections.singleton(new Hash[]{preferableMilestone}));
             Hash[] tips;
             BundleViewModel bundle;
-            List<Integer> ratingWeightedApproverIndices = new ArrayList<>();
+            int[] ratingWeightedApproverIndices;
             int i, j;
             TransactionViewModel tipTransaction;
             while((tips = randomWalkScratchpad.poll()) != null) {
@@ -122,14 +124,13 @@ public class TipsManager {
                     randomWalkScratchpad.offer(tips);
                 }
                 if(tips.length != 0) {
+                    ratingWeightedApproverIndices = new int[0];
                     for(i = 0; i < tips.length; i++) {
+                        j = i;
                         tipTransaction = TransactionViewModel.fromHash(tips[i]);
-                        for(j = 0; j < tipTransaction.getRating(); j++) {
-                            ratingWeightedApproverIndices.add(i);
-                        }
+                        ratingWeightedApproverIndices = ArrayUtils.addAll(ratingWeightedApproverIndices, IntStream.range(0, tipTransaction.getRating()).map(v -> j).toArray());
                     }
-                    tip = tips[ratingWeightedApproverIndices.get(random.nextInt(ratingWeightedApproverIndices.size()))];
-                    ratingWeightedApproverIndices.clear();
+                    tip = tips[ratingWeightedApproverIndices[random.nextInt(ratingWeightedApproverIndices.length)]];
                     if(analyzedTips.add(tip)) {
                         bundle = TransactionViewModel.fromHash(tip).getBundle();
                         if(bundle.isConsistent()) {

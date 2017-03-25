@@ -237,7 +237,7 @@ public class TransactionViewModel {
         update("rating");
     }
 
-    public long getRating() {
+    public int getRating() {
         return transaction.rating;
     }
 

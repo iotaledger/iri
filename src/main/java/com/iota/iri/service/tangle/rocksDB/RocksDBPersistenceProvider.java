@@ -255,7 +255,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, key));
         transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, key));
         transaction.solid =  db.get(transactionSolidHandle, key);
-        transaction.rating = Serializer.getLong(db.get(transactionRatingHandle, key));
+        transaction.rating = Serializer.getInteger(db.get(transactionRatingHandle, key));
         return true;
     };
 
@@ -485,7 +485,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 baddies.add(iterator.key());
             } else {
                 //batch.put(transactionSolidHandle, iterator.key(), new byte[]{0});
-                //batch.put(transactionRatingHandle, iterator.key(), Serializer.serialize((long)0));
+                batch.put(transactionRatingHandle, iterator.key(), new byte[4]);
             }
         }
         iterator.close();

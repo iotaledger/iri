@@ -162,7 +162,7 @@ public class BundleViewModel {
             }
             return false;
         }
-        if(value != 0) {
+        if(value != 0 || getTransactions().size() == 0) {
             //log.info("Ledger inconsistency detected");
             return false;
         }

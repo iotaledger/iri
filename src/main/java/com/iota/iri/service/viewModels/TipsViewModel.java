@@ -29,6 +29,9 @@ public class TipsViewModel {
         return null;
     }
 
+    public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
+        return ((Hash) Tangle.instance().getLatest(Tip.class).get());
+    }
     public static Hash[] getTipHashes() throws ExecutionException, InterruptedException {
         return Arrays.stream(Tangle.instance()
                 .scanForTips(Tip.class).get())

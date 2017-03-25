@@ -128,15 +128,14 @@ public class TipsManager {
             Hash tip = getLowestMilestone(extraTip, preferableMilestone, depth);
 
             final List<Hash> tailsToAnalyze = new LinkedList<>();
-            final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
-            analyzeTips(analyzedTips, tailsToAnalyze, nonAnalyzedTransactions);
+            analyzeTips(analyzedTips, tailsToAnalyze, tip);
 
             removeAnalyzedTips(extraTip, tailsToAnalyze, analyzedTips, analyzedTipsCopy);
 
             log.info(tailsToAnalyze.size() + " tails need to be analyzed");
 
             final Map<Hash, Integer> tailsRatings = new HashMap<>();
-            int bestRating = getBestRating(state, tailsRatings, analyzedTips, analyzedTipsCopy, tailsToAnalyze, nonAnalyzedTransactions, criticalArrivalTime);
+            int bestRating = getBestRating(state, tailsRatings, analyzedTips, analyzedTipsCopy, tailsToAnalyze, criticalArrivalTime);
 
             analyzedTips.clear();
             analyzedTipsCopy.clear();
@@ -250,7 +249,6 @@ public class TipsManager {
                                      Set<Hash> analyzedTips,
                                      Set<Hash> analyzedTipsCopy,
                                      List<Hash> tailsToAnalyze,
-                                     Queue<Hash> nonAnalyzedTransactions,
                                      final long criticalArrivalTime) throws Exception {
 
         /* --Coo only-- Hash bestTip = preferableMilestone; */
@@ -259,6 +257,7 @@ public class TipsManager {
 
             /**/
 
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>();
         Hash transactionPointer;
         for (int i = tailsToAnalyze.size(); i-- > 0; ) {
 
@@ -410,7 +409,8 @@ public class TipsManager {
         }
     }
 
-    private static void analyzeTips(Set<Hash> analyzedTips, List<Hash> tailsToAnalyze, Queue<Hash> nonAnalyzedTransactions) throws Exception {
+    private static void analyzeTips(Set<Hash> analyzedTips, List<Hash> tailsToAnalyze, Hash tip) throws Exception {
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         final Set<Hash> tailsWithoutApprovers = new HashSet<>();
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {

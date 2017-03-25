@@ -129,6 +129,7 @@ public class TipsManager {
                         }
                     }
                     tip = tips[ratingWeightedApproverIndices.get(random.nextInt(ratingWeightedApproverIndices.size()))];
+                    ratingWeightedApproverIndices.clear();
                     if(analyzedTips.add(tip)) {
                         bundle = TransactionViewModel.fromHash(tip).getBundle();
                         if(bundle.isConsistent()) {

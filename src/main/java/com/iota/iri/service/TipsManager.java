@@ -87,9 +87,7 @@ public class TipsManager {
 
         long startTime = System.nanoTime();
 
-        final Hash preferableMilestone = extraTip == null? Milestone.latestSolidSubtangleMilestone;
-
-
+        final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
         Set<Hash> analyzedTips = new HashSet<>();
         SecureRandom random = new SecureRandom();
@@ -108,6 +106,7 @@ public class TipsManager {
                     } while (transactionViewModel.getCurrentIndex() != 0);
                 }
             }
+
             TransactionViewModel.fromHash(tip).updateRating();
 
             Queue<Hash[]> randomWalkScratchpad = new LinkedList<>(Collections.singleton(new Hash[]{preferableMilestone}));
@@ -148,10 +147,6 @@ public class TipsManager {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
         }
         return null;
-    }
-
-    private Hash nMilestonesDeep(Hash latestMilestone, int depth) {
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(latestMilestone);
     }
 
     private static int findOldestAcceptableMilestoneIndex(long criticalArrivalTime, int depth) throws Exception {

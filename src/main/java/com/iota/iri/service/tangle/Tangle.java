@@ -1,5 +1,6 @@
 package com.iota.iri.service.tangle;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,8 +20,10 @@ public class Tangle {
     private ExecutorService executor;
     private final List<Integer> availableTansientTables = new ArrayList<>();
     private final List<Integer> transientTablesInUse = new ArrayList<>();
-    private volatile int nextTableId = 1;
+    private volatile int nextTableId = 0;
     private boolean available = true;
+    private Thread flusher;
+    private boolean flushing = true;
 
     public void addPersistenceProvider(IPersistenceProvider provider) {
         this.persistenceProviders.add(provider);
@@ -31,14 +34,17 @@ public class Tangle {
         for(IPersistenceProvider provider: this.persistenceProviders) {
             provider.init();
         }
-    }
 
+        this.flusher = new Thread(() -> flushTransientTables(), "Table Flush Thread");
+        flusher.start();
+    }
 
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
         this.available = false;
         executor.shutdown();
         executor.awaitTermination(6, TimeUnit.SECONDS);
+        flusher.join();
         for(int id: transientTablesInUse) {
             for (IPersistenceProvider provider : persistenceProviders) {
                 provider.flushTagRange(id);
@@ -51,6 +57,7 @@ public class Tangle {
     public int createTransientFlagList() throws Exception {
         int id;
         boolean create = false;
+        while(flushing) {}
         synchronized (this) {
             if(availableTansientTables.size() > 0) {
                 id = availableTansientTables.remove(0);
@@ -253,5 +260,35 @@ public class Tangle {
             }
             return value;
         });
+    }
+
+    private void flushTransientTables() {
+        int sleepDuration, count, maxTables, i, end;
+        sleepDuration = Configuration.integer(Configuration.DefaultConfSettings.FLUSH_PERIOD);
+        maxTables = Configuration.integer(Configuration.DefaultConfSettings.MAX_TRANSIENT_TABLES);
+        end = maxTables;
+        count = sleepDuration;
+        Set<Future> futures = new HashSet<>();
+        while(available) {
+            try {
+                if(count++ > sleepDuration) {
+                    count = 0;
+                    this.flushing = true;
+                    while(transientTablesInUse.size() != 0) {}
+                    for(i = 0; i < end; i++) {
+                        futures.add(flushTransientFlags(i));
+                    }
+                    for(Future f: futures) {
+                        f.get();
+                    }
+                    futures.clear();
+                    end = nextTableId;
+                    this.flushing = false;
+                }
+                Thread.sleep(1000);
+            } catch (Exception e) {
+                log.error("Flush Error: " + e.getMessage());
+            }
+        }
     }
 }

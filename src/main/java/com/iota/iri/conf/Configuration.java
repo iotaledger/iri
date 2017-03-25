@@ -29,6 +29,8 @@ public class Configuration {
         IXI_DIR,
         DB_PATH,
         DB_LOG_PATH,
+        FLUSH_PERIOD,
+        MAX_TRANSIENT_TABLES,
         EXPERIMENTAL // experimental features.
     }
 
@@ -45,6 +47,8 @@ public class Configuration {
         conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
         conf.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
         conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+        conf.put(DefaultConfSettings.FLUSH_PERIOD.name(), "300");
+        conf.put(DefaultConfSettings.MAX_TRANSIENT_TABLES.name(), "81");
         conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
     }
 

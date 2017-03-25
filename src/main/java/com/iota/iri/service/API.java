@@ -156,7 +156,7 @@ public class API {
                             Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                             Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
                             System.currentTimeMillis(), TipsViewModel.getTipHashes().length,
-                            ScratchpadViewModel.instance().getNumberOfTransactionsToRequest());
+                            TransactionViewModel.numberOfTransactionsToRequest());
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -191,7 +191,7 @@ public class API {
                     return storeTransactionStatement(trytes);
                 }
                 case "rescanTransactions": {
-                    ScratchpadViewModel.instance().rescanTransactionsToRequest();
+                    TransactionViewModel.rescanTransactionsToRequest();
                     return AbstractResponse.createEmptyResponse();
                 }
                 default:
@@ -293,14 +293,13 @@ public class API {
         int numberOfNonMetTransactions = transactions.size();
         final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];
 
-            int flagListId = ScratchpadViewModel.instance().getAnalyzedTransactionTable();
+            Set<Hash> analyzedTips = new HashSet<>();
 
             final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>();
             for (final Hash tip : tips) {
 
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
                 if (transactionViewModel.getHash().equals(Hash.NULL_HASH)){
-                    ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(flagListId);
                     return ErrorResponse.create("One of the tips absents");
                 }
 
@@ -313,7 +312,7 @@ public class API {
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
 
-                    if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(flagListId, pointer)) {
+                    if (analyzedTips.add(pointer)) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(pointer);
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
@@ -337,7 +336,6 @@ public class API {
                         }
                     }
                 }
-                ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(flagListId);
                 return GetInclusionStatesResponse.create(inclusionStates);
             }
     }
@@ -436,14 +434,14 @@ public class API {
         final int milestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
 
-            int flagListId = ScratchpadViewModel.instance().getAnalyzedTransactionTable();
+            Set<Hash> analyzedTips = new HashSet<>();
 
             final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
                     //Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.value())));
             Hash hash;
             while ((hash = nonAnalyzedTransactions.poll()) != null) {
 
-                if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(flagListId, hash)) {
+                if (analyzedTips.add(hash)) {
 
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
 
@@ -460,8 +458,6 @@ public class API {
                     nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                 }
             }
-
-            ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(flagListId);
         final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())
                 .collect(Collectors.toCollection(LinkedList::new));
 

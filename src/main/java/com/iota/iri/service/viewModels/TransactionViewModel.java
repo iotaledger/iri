@@ -1,6 +1,7 @@
 package com.iota.iri.service.viewModels;
 
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -9,7 +10,6 @@ import java.util.concurrent.Future;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
-import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
@@ -66,9 +66,10 @@ public class TransactionViewModel {
 
     public AddressViewModel address;
     public BundleViewModel bundle;
-    public TagViewModel tag;
     public TransactionViewModel trunk;
     public TransactionViewModel branch;
+
+    private static Set<Hash> transactionsToRequest = new HashSet<>();
 
     public int[] hashTrits;
 
@@ -188,31 +189,36 @@ public class TransactionViewModel {
             getTrunkTransactionHash();
             getTagValue();
             future = Tangle.instance().save(transaction);
-            /*
-            for(Future<?> updateFuture: update()) {
-                if(updateFuture != null)
-                    updateFuture.get();
-            }
-            */
+            update();
         } else {
             future = executorService.submit(() -> false);
         }
         return future;
     }
 
-    private Set<Future> update () throws Exception {
-        Set<Future> futures = new HashSet<>();
-        ScratchpadViewModel.instance().clearReceivedTransaction(transaction.hash);
-        if (!getBranchTransactionHash().equals(Hash.NULL_HASH))
-            futures.add(ScratchpadViewModel.instance().requestTransaction(getBranchTransactionHash()));
-        if (!getTrunkTransactionHash().equals(Hash.NULL_HASH))
-            futures.add(ScratchpadViewModel.instance().requestTransaction(getTrunkTransactionHash()));
+    private void update () throws Exception {
+        clearTransactionRequest(getHash());
+        requestTransaction(getBranchTransactionHash());
+        requestTransaction(getTrunkTransactionHash());
         if(getApprovers().length == 0) {
             TipsViewModel.addTipHash(transaction.hash);
         } else {
             TipsViewModel.removeTipHash(transaction.hash);
         }
-        return futures;
+    }
+
+    public static void clearTransactionRequest(Hash hash) {
+        synchronized (TransactionViewModel.class) {
+            transactionsToRequest.remove(hash);
+        }
+    }
+
+    public static void requestTransaction(Hash hash) throws ExecutionException, InterruptedException {
+        if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(hash)) {
+            synchronized (TransactionViewModel.class) {
+                transactionsToRequest.add(hash);
+            }
+        }
     }
 
     public static Hash[] approversFromHash(Hash hash) throws Exception {
@@ -357,143 +363,128 @@ public class TransactionViewModel {
         return hashTrits;
     }
 
-    /*
-    private void populateTrits() {
-        int[] partialTrits = null;
-        this.trits = new int[TRINARY_SIZE];
-        Converter.copyTrits(transaction.currentIndex, trits, CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
-        Converter.copyTrits(transaction.lastIndex, trits, LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
-        Converter.copyTrits(transaction.value, trits, VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
-        Converter.copyTrits(transaction.timestamp, trits, TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+    private static volatile long lastTime = System.currentTimeMillis();
+    public static void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
+        final long beginningTime = System.currentTimeMillis();
+        Hash hash = ((Hash) transactionsToRequest.toArray()[0]);
 
-        populateSignatureTrits(partialTrits);
-        populateAddressTrits(partialTrits);
-        populateTagTrits(partialTrits);
-        populateBundleTrits(partialTrits);
-        populateTrunkTrits(partialTrits);
-        populateBranchTrits(partialTrits);
-        populateNonceTrits(partialTrits);
-    }
-
-    private void populateSignatureTrits(int[] partialTrits) {
-        if(this.transaction.signature == null) {
-            this.transaction.signature = new byte[TransactionViewModel.SIZE];
+        if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {
+            System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
-        partialTrits = new int[SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
-        Converter.getTrits(transaction.signature, partialTrits);
-        System.arraycopy(partialTrits, 0, trits, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
-    }
-
-    private void populateBranchTrits(int[] partialTrits) {
-        if(transaction.branch.hash == null) {
-            transaction.branch.hash = new byte[Hash.SIZE_IN_BYTES];
+        long now = System.currentTimeMillis();
+        if ((now - lastTime) > 10000L) {
+            lastTime = now;
+            log.info("Transactions to request = {}", transactionsToRequest.size() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
         }
-        partialTrits = new int[BRANCH_TRANSACTION_TRINARY_SIZE];
-        Converter.getTrits(transaction.branch.hash, partialTrits);
-        System.arraycopy(partialTrits, 0, trits, BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE);
     }
 
-    private void populateTrunkTrits(int[] partialTrits) {
-        if(transaction.trunk.hash == null) {
-            transaction.trunk.hash = new byte[Hash.SIZE_IN_BYTES];
+    public static void updateSolidTransactions(Set<Hash> analyzedHashes) throws Exception {
+        Iterator<Hash> hashIterator = analyzedHashes.iterator();
+        TransactionViewModel transactionViewModel;
+        while(hashIterator.hasNext()) {
+            transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
+            transactionViewModel.setSolid(true);
+            transactionViewModel.update("solid");
         }
-        partialTrits = new int[TRUNK_TRANSACTION_TRINARY_SIZE];
-        Converter.getTrits(transaction.trunk.hash, partialTrits);
-        System.arraycopy(partialTrits, 0, trits, TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE);
     }
 
-    private void populateBundleTrits(int[] partialTrits) {
-        if(transaction.bundle.hash == null) {
-            transaction.bundle.hash = new byte[Hash.SIZE_IN_BYTES];
-        }
-        partialTrits = new int[BUNDLE_TRINARY_SIZE];
-        Converter.getTrits(transaction.bundle.hash, partialTrits);
-        System.arraycopy(partialTrits, 0, trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE);
-    }
-
-    private void populateAddressTrits(int[] partialTrits) {
-        partialTrits = new int[ADDRESS_TRINARY_SIZE];
-        if(transaction.address.hash == null) {
-            transaction.address.hash = new byte[Hash.SIZE_IN_BYTES];
-        }
-        Converter.getTrits(transaction.address.hash, partialTrits);
-        System.arraycopy(partialTrits, 0, trits, ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
-
-    }
-
-
-    private void populateTagTrits(int[] partialTrits) {
-        if(transaction.tag.value == null) {
-            transaction.tag.value = new byte[TAG_SIZE];
-        }
-        partialTrits = new int[TAG_TRINARY_SIZE];
-        Converter.getTrits(transaction.tag.value, partialTrits);
-        System.arraycopy(partialTrits, 0, trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE);
-
-    }
-
-    private void populateNonceTrits(int[] partialTrits) {
-        if(this.transaction.nonce == null) {
-            this.transaction.nonce = new byte[Hash.SIZE_IN_BYTES];
-        }
-        partialTrits = new int[NONCE_TRINARY_SIZE];
-        Converter.getTrits(transaction.nonce, partialTrits);
-        System.arraycopy(partialTrits, 0, trits, NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
-    }
-    */
-    public static void dump(final byte[] mainBuffer, final byte[] hash, final TransactionViewModel transactionViewModel) {
-
-        /*
-        System.arraycopy(new byte[.CELL_SIZE], 0, mainBuffer, 0, .CELL_SIZE);
-        System.arraycopy(hash, 0, mainBuffer, HASH_OFFSET, HASH_SIZE);
-
-        if (transactionViewModel == null) {
-            mainBuffer[TYPE_OFFSET] = .PREFILLED_SLOT;
+    public void setSolid(boolean solid) {
+        if(solid) {
+            transaction.solid = new byte[]{1};
         } else {
-            mainBuffer[TYPE_OFFSET] = (byte) transactionViewModel.type;
-            System.arraycopy(transactionViewModel.getBytes(), 0, mainBuffer, BYTES_OFFSET, BYTES_SIZE);
-            System.arraycopy(transactionViewModel.getAddress(), 0, mainBuffer, ADDRESS_OFFSET, ADDRESS_SIZE);
-            .setValue(mainBuffer, VALUE_OFFSET, transactionViewModel.value());
-            final int[] trits = transactionViewModel.trits();
-            System.arraycopy(Converter.value(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, mainBuffer, TAG_OFFSET, TAG_SIZE);
-            .setValue(mainBuffer, CURRENT_INDEX_OFFSET, transactionViewModel.getCurrentIndex());
-            .setValue(mainBuffer, LAST_INDEX_OFFSET, transactionViewModel.getLastIndex());
-            System.arraycopy(Converter.value(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, mainBuffer, BUNDLE_OFFSET, BUNDLE_SIZE);
-            System.arraycopy(transactionViewModel.getTrunkTransactionHash(), 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
-            System.arraycopy(transactionViewModel.getBranchTransactionHash(), 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
+            transaction.solid = new byte[]{0};
+        }
+    }
 
-            long approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transactionViewModel.getTrunkTransactionHash());
-            if (approvedTransactionPointer == 0) {
-                Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transactionViewModel.getTrunkTransactionHash();
-            } else {
+    public static int numberOfTransactionsToRequest() {
+        return transactionsToRequest.size();
+    }
 
-                if (approvedTransactionPointer < 0) {
-                    approvedTransactionPointer = -approvedTransactionPointer;
-                }
-                final long index = (approvedTransactionPointer - (.CELLS_OFFSET - .SUPER_GROUPS_OFFSET)) >> 11;
-                StorageTransactions.instance().transactionsTipsFlags().put(
-                        (int)(index >> 3),
-                        (byte)(StorageTransactions.instance().transactionsTipsFlags().get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
-            }
-            if (!Arrays.equals(transactionViewModel.getBranchTransactionHash(), transactionViewModel.getTrunkTransactionHash())) {
+    public static void rescanTransactionsToRequest() {
 
-                approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transactionViewModel.getBranchTransactionHash());
-                if (approvedTransactionPointer == 0) {
-                    Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transactionViewModel.getBranchTransactionHash();
+    }
+}
+/*
+
+    private static final Logger log = LoggerFactory.getLogger(ScratchpadViewModel.class);
+
+    static long lastTime = 0L;
+
+    public static ScratchpadViewModel instance = new ScratchpadViewModel();
+
+    public boolean setAnalyzedTransactionFlag(int id, Hash hash) throws ExecutionException, InterruptedException {
+        return Tangle.instance().save(id, new Flag(hash)).get();
+    }
+
+    public void copyAnalyzedFlagsList(int id, int otherId) throws Exception {
+        Tangle.instance().copyTransientList(id, otherId).get();
+    }
+    public void clearAnalyzedTransactionsFlags(int id) throws Exception {
+        Tangle.instance().flushTransientFlags(id).get();
+    }
+    public void releaseAnalyzedTransactionsFlags(int id) throws Exception {
+        Tangle.instance().releaseTransientTable(id);
+    }
+
+    public int getAnalyzedTransactionTable() throws Exception {
+        return Tangle.instance().createTransientFlagList();
+    }
+
+    public int getNumberOfTransactionsToRequest() throws ExecutionException, InterruptedException {
+        return Tangle.instance().getCount(Scratchpad.class).get().intValue();
+    }
+
+    public Future<Void> clearReceivedTransaction(Hash hash) throws ExecutionException, InterruptedException {
+        Scratchpad scratchpad = new Scratchpad();
+        scratchpad.hash = hash;
+        return Tangle.instance().delete(scratchpad);
+    }
+
+    public void rescanTransactionsToRequest() throws Exception {
+        int id = getAnalyzedTransactionTable();
+        Queue<Hash> nonAnalyzedTransactions;
+        nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(Milestone.latestMilestone));
+        nonAnalyzedTransactions.addAll(Arrays.asList(TipsViewModel.getTipHashes()));
+        Hash hash;
+        Tangle.instance().flush(Scratchpad.class).get();
+        while((hash = nonAnalyzedTransactions.poll()) != null) {
+            if(setAnalyzedTransactionFlag(id, hash)) {
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
+                if(transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT && !transactionViewModel.getHash().equals(Hash.NULL_HASH)) {
+                    //log.info("Trasaction Hash to Request: " + new Hash(transactionViewModel.getHash()));
+                    ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
                 } else {
-
-                    if (approvedTransactionPointer < 0) {
-                        approvedTransactionPointer = -approvedTransactionPointer;
-                    }
-                    final long index = (approvedTransactionPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11;
-                    StorageTransactions.instance().transactionsTipsFlags().put(
-                            (int) (index >> 3),
-                            (byte) (StorageTransactions.instance().transactionsTipsFlags().get((int) (index >> 3)) & (0xFF ^ (1 << (index & 7)))));
+                    nonAnalyzedTransactions.add(transactionViewModel.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.add(transactionViewModel.getBranchTransactionHash());
                 }
             }
         }
-        */
+        log.info("number of analyzed tx: " + Tangle.instance().getCount(id).get());
+        releaseAnalyzedTransactionsFlags(id);
     }
 
+    public Future<Boolean> requestTransaction(Hash hash) throws ExecutionException, InterruptedException {
+        Scratchpad scratchpad = new Scratchpad();
+        scratchpad.hash = hash;
+        return Tangle.instance().save(scratchpad);
+    }
 
+    public void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
+        final long beginningTime = System.currentTimeMillis();
+        Scratchpad scratchpad = ((Scratchpad) Tangle.instance().getLatest(Scratchpad.class).get());
+
+        if(scratchpad != null && scratchpad.hash != null && !scratchpad.hash.equals(Hash.NULL_HASH)) {
+            System.arraycopy(scratchpad.hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
+        }
+        long now = System.currentTimeMillis();
+        if ((now - lastTime) > 10000L) {
+            lastTime = now;
+            log.info("Transactions to request = {}", getNumberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
+        }
+    }
+
+    public static ScratchpadViewModel instance() {
+        return instance;
+    }
 }
+ */

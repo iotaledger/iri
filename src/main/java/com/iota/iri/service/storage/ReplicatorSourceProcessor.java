@@ -6,7 +6,6 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -16,11 +15,8 @@ import org.slf4j.LoggerFactory;
 import com.iota.iri.Neighbor;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.service.Node;
-import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
-import com.iota.iri.utils.Converter;
 
 public class ReplicatorSourceProcessor implements Runnable {
 

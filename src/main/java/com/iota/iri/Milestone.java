@@ -7,7 +7,6 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.viewModels.AddressViewModel;
-import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.utils.Converter;
@@ -106,6 +105,7 @@ public class Milestone {
     }
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
+        Set<Hash> analyzedHashes = new HashSet<>();
 
         for (int milestoneIndex = latestMilestoneIndex; milestoneIndex > latestSolidSubtangleMilestoneIndex; milestoneIndex--) {
 
@@ -114,16 +114,14 @@ public class Milestone {
 
                 boolean solid = true;
 
-                    int id = ScratchpadViewModel.instance().getAnalyzedTransactionTable();
-
-                	ScratchpadViewModel.instance().setAnalyzedTransactionFlag(id, Hash.NULL_HASH);
+                	analyzedHashes.add(Hash.NULL_HASH);
                     final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
                     Hash hashPointer, trunkInteger, branchInteger;
                     while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-                        if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(id, hashPointer)) {
+                        if (analyzedHashes.add(hashPointer)) {
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
                             if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                                ScratchpadViewModel.instance().requestTransaction(hashPointer);
+                                TransactionViewModel.requestTransaction(hashPointer);
                                 solid = false;
                                 break;
 
@@ -135,13 +133,13 @@ public class Milestone {
                             }
                         }
                     }
-                    ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(id);
-
                 if (solid) {
+                    TransactionViewModel.updateSolidTransactions(analyzedHashes);
                     latestSolidSubtangleMilestone = milestone;
                     latestSolidSubtangleMilestoneIndex = milestoneIndex;
                     return;
                 }
+                analyzedHashes.clear();
             }
         }
     }

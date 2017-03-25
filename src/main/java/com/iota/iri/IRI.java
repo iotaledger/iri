@@ -6,7 +6,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import com.iota.iri.service.ScratchpadViewModel;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
 import org.apache.commons.lang3.StringUtils;

@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.model.Flag;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
@@ -54,7 +55,7 @@ public class TipsManager {
 
                     Milestone.updateLatestMilestone();
                     Milestone.updateLatestSolidSubtangleMilestone();
-                    ScratchpadViewModel.instance().rescanTransactionsToRequest();
+                    TransactionViewModel.rescanTransactionsToRequest();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
 
@@ -94,8 +95,8 @@ public class TipsManager {
         
         long criticalArrivalTime = Long.MAX_VALUE;
 
-        int transientHandle = ScratchpadViewModel.instance().getAnalyzedTransactionTable();
-        int transientHandleCopy = ScratchpadViewModel.instance().getAnalyzedTransactionTable();
+        Set<Hash> analyzedTips = new HashSet<>();
+        Set<Hash> analyzedTipsCopy = new HashSet<>();
         try {
             AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR);
             for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
@@ -132,21 +133,18 @@ public class TipsManager {
             {
                 int numberOfAnalyzedTransactions = 0;
 
-                //setAnalyzedTransactionFlag(transientHandle, new Hash(TransactionViewModel.NULL_TRANSACTION_HASH_BYTES));
-                ScratchpadViewModel.instance().setAnalyzedTransactionFlag(transientHandle, Hash.NULL_HASH);
+                analyzedTips.add(Hash.NULL_HASH);
                 final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
                 Hash transactionPointer;
                 while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
+                    if (analyzedTips.add(transactionPointer)) {
 
                         numberOfAnalyzedTransactions++;
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                            ScratchpadViewModel.instance().requestTransaction(transactionViewModel.getHash());
-                            ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandle);
-                            ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandleCopy);
+                            TransactionViewModel.requestTransaction(transactionViewModel.getHash());
                             return null;
 
                         } else {
@@ -180,10 +178,8 @@ public class TipsManager {
                                 if (!validBundle) {
                                     for(TransactionViewModel transactionViewModel1: bundle.getTransactionViewModels()) {
                                         transactionViewModel1.delete();
-                                        ScratchpadViewModel.instance().requestTransaction(transactionViewModel1.getHash());
+                                        TransactionViewModel.requestTransaction(transactionViewModel1.getHash());
                                     }
-                                    ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandle);
-                                    ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandleCopy);
                                     return null;
                                 }
                             }
@@ -208,8 +204,6 @@ public class TipsManager {
 
                     if (entry.getValue() < 0) {
                         log.info("Ledger inconsistency detected");
-                        ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandle);
-                        ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandleCopy);
                         return null;
                     }
 
@@ -225,9 +219,8 @@ public class TipsManager {
                 ////////////
             }
 
-            ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandleCopy);
-            ScratchpadViewModel.instance().copyAnalyzedFlagsList(transientHandle, transientHandleCopy);
-            ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandle);
+            analyzedTipsCopy.addAll(analyzedTips);
+            analyzedTips.clear();
 
             final List<Hash> tailsToAnalyze = new LinkedList<>();
 
@@ -251,7 +244,7 @@ public class TipsManager {
             final Set<Hash> tailsWithoutApprovers = new HashSet<>();
             while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
-                if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
+                if (analyzedTips.add(transactionPointer)) {
 
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
 
@@ -281,18 +274,16 @@ public class TipsManager {
 
             if (extraTip != null) {
 
-                ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandle);
-                ScratchpadViewModel.instance().copyAnalyzedFlagsList(transientHandleCopy, transientHandle);
+                analyzedTips.clear();
+                analyzedTips.addAll(analyzedTipsCopy);
 
                 final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
                 while (tailsToAnalyzeIterator.hasNext()) {
 
                     final Hash tailHash = tailsToAnalyzeIterator.next();
-                        if (Tangle.instance().maybeHas(transientHandle, tailHash).get()) {
-                            if (Tangle.instance().load(transientHandle, Flag.class, tailHash).get() != null) {
-                                tailsToAnalyzeIterator.remove();
-                            }
-                        }
+                    if(analyzedTips.contains(tailHash)) {
+                        tailsToAnalyzeIterator.remove();
+                    }
                 }
             }
 
@@ -313,8 +304,8 @@ public class TipsManager {
                  * continue; }
                  */
 
-                ScratchpadViewModel.instance().clearAnalyzedTransactionsFlags(transientHandle);
-                ScratchpadViewModel.instance().copyAnalyzedFlagsList(transientHandleCopy, transientHandle);
+                analyzedTips.clear();
+                analyzedTips.addAll(analyzedTipsCopy);
 
                 final Set<Hash> extraTransactions = new HashSet<>();
 
@@ -322,7 +313,7 @@ public class TipsManager {
                 nonAnalyzedTransactions.offer(tailHash);
                 while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (ScratchpadViewModel.instance().setAnalyzedTransactionFlag(transientHandle, transactionPointer)) {
+                    if (analyzedTips.add(transactionPointer)) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
@@ -430,8 +421,8 @@ public class TipsManager {
                     }
                 }
             }
-            ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandle);
-            ScratchpadViewModel.instance().releaseAnalyzedTransactionsFlags(transientHandleCopy);
+            analyzedTips.clear();
+            analyzedTipsCopy.clear();
             // System.out.ln(bestRating + " extra transactions approved");
 
             /**/if (tailsRaitings.isEmpty()) {

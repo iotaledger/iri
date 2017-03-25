@@ -17,4 +17,5 @@ public class Transaction {
     public Approvee trunk = new Approvee();
     public Approvee branch = new Approvee();
 
+    public byte[] solid = new byte[]{0};
 }

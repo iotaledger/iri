@@ -8,7 +8,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.iota.iri.service.ScratchpadViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,7 +95,7 @@ public class ReplicatorSinkPool  implements Runnable {
                                 synchronized (sendingPacket) {
                                     System.arraycopy(transaction.getBytes(), 0, sendingPacket.getData(), 0,
                                             TransactionViewModel.SIZE);
-                                    ScratchpadViewModel.instance().transactionToRequest(sendingPacket.getData(),
+                                    TransactionViewModel.transactionToRequest(sendingPacket.getData(),
                                             TransactionViewModel.SIZE);
                                     neighbor.send(sendingPacket);
                                 }

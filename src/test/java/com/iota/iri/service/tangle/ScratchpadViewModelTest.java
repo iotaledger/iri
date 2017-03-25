@@ -1,21 +1,11 @@
 package com.iota.iri.service.tangle;
 
 import com.iota.iri.conf.Configuration;
-import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.Scratchpad;
-import com.iota.iri.service.ScratchpadViewModel;
-import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.service.viewModels.TransactionViewModel;
-import com.iota.iri.utils.Converter;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
-import java.util.Arrays;
 import java.util.Random;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by paul on 3/13/17 for iri-testnet.

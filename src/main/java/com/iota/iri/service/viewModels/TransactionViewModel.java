@@ -230,16 +230,16 @@ public class TransactionViewModel {
     }
 
     public static int updateRatings(Hash transactionHash, Set<Hash> ratedTransactions) throws Exception {
+        int rating = 1;
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
         if(ratedTransactions.add(transactionHash)) {
-            int rating = 1;
             for(Hash approver : transactionViewModel.getApprovers()) {
                 rating += updateRatings(approver, ratedTransactions);
             }
             transactionViewModel.setRating(rating);
             transactionViewModel.update("rating");
         }
-        return transactionViewModel.getRating();
+        return rating;
     }
 
     public int getRating() {

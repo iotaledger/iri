@@ -112,42 +112,35 @@ public class TipsManager {
 
             TransactionViewModel.updateRatings(tip, new HashSet<>());
 
-            Queue<Hash> randomWalkScratchpad = new LinkedList<>(Collections.singleton(preferableMilestone));
             Hash[] tips;
             BundleViewModel bundle;
-            int[] ratingWeightedApproverIndices;
-            int i;
-            while((tip = randomWalkScratchpad.poll()) != null) {
+            int i, rating, monte, carlo = 0;
+            while(tip != null) {
                 if(analyzedTips.add(tip)) {
                     tips = TransactionViewModel.fromHash(tip).getApprovers();
                     if(tips.length == 0) {
                         break;
                     }
-                    ratingWeightedApproverIndices = new int[0];
+                    rating = TransactionViewModel.fromHash(tip).getRating();
+                    monte = random.nextInt(rating);
                     for(i = 0; i < tips.length; i++) {
-                        int j = i;
-                        ratingWeightedApproverIndices = ArrayUtils.addAll(ratingWeightedApproverIndices,
-                                IntStream.range(0, TransactionViewModel.fromHash(tips[i]).getRating())
-                                    .map(v -> j)
-                                    .toArray());
+                        monte -= TransactionViewModel.fromHash(tips[i]).getRating();
+                        carlo = i;
+                        if(monte <= 0 ) {
+                            break;
+                        }
                     }
-                    bundle = TransactionViewModel.fromHash
-                            (tips[
-                                    ratingWeightedApproverIndices
-                                            [random.nextInt
-                                                    (ratingWeightedApproverIndices.length)
-                                            ]
-                                    ]
-                            ).getBundle();
+                    bundle = TransactionViewModel.fromHash(tips[carlo]).getBundle();
                     if(bundle.isConsistent()) {
-                        randomWalkScratchpad.offer(bundle.getTransactions().get(0).get(0).getHash());
+                        tip = bundle.getTransactions().get(0).get(0).getHash();
                     } else {
-                        tip = randomWalkScratchpad.poll();
+                        break;
                     }
                 }
             }
             return tip;
         } catch (Exception e) {
+            e.printStackTrace();
             log.error("Encountered error: " + e.getLocalizedMessage());
         } finally {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);

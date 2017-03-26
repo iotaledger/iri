@@ -106,22 +106,23 @@ public class TipsManager {
 
                         transactionViewModel = transactionViewModel.getTrunkTransaction();
 
-                    } while (transactionViewModel.getCurrentIndex() != 0);
+                    } while (transactionViewModel.getCurrentIndex() != 0 && !transactionViewModel.getAddressHash().equals(Milestone.COORDINATOR));
                 }
             }
 
             TransactionViewModel.updateRatings(tip, new HashSet<>());
 
-            Queue<Hash[]> randomWalkScratchpad = new LinkedList<>(Collections.singleton(new Hash[]{preferableMilestone}));
+            Queue<Hash> randomWalkScratchpad = new LinkedList<>(Collections.singleton(preferableMilestone));
             Hash[] tips;
             BundleViewModel bundle;
             int[] ratingWeightedApproverIndices;
             int i;
-            while((tips = randomWalkScratchpad.poll()) != null) {
-                if(!analyzedTips.containsAll(Arrays.asList(tips))) {
-                    randomWalkScratchpad.offer(tips);
-                }
-                if(tips.length != 0) {
+            while((tip = randomWalkScratchpad.poll()) != null) {
+                if(analyzedTips.add(tip)) {
+                    tips = TransactionViewModel.fromHash(tip).getApprovers();
+                    if(tips.length == 0) {
+                        break;
+                    }
                     ratingWeightedApproverIndices = new int[0];
                     for(i = 0; i < tips.length; i++) {
                         int j = i;
@@ -130,17 +131,18 @@ public class TipsManager {
                                     .map(v -> j)
                                     .toArray());
                     }
-                    tip = tips[ratingWeightedApproverIndices[random.nextInt(ratingWeightedApproverIndices.length)]];
-                    if(analyzedTips.add(tip)) {
-                        bundle = TransactionViewModel.fromHash(tip).getBundle();
-                        if(bundle.isConsistent()) {
-                            tips = bundle.getTransactions().get(0).get(0).getApprovers();
-                            if(tips.length == 0 && !tip.equals(extraTip)) {
-                                tip = bundle.getTransactions().get(0).get(0).getHash();
-                                break;
-                            }
-                            randomWalkScratchpad.offer(tips);
-                        }
+                    bundle = TransactionViewModel.fromHash
+                            (tips[
+                                    ratingWeightedApproverIndices
+                                            [random.nextInt
+                                                    (ratingWeightedApproverIndices.length)
+                                            ]
+                                    ]
+                            ).getBundle();
+                    if(bundle.isConsistent()) {
+                        randomWalkScratchpad.offer(bundle.getTransactions().get(0).get(0).getHash());
+                    } else {
+                        tip = randomWalkScratchpad.poll();
                     }
                 }
             }

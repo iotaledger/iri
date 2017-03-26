@@ -9,6 +9,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -246,11 +247,12 @@ public class API {
     }
    
     private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
-        final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth);
+        SecureRandom random = new SecureRandom();
+        final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth, random);
         if (trunkTransactionToApprove == null) {
             return ErrorResponse.create("The subtangle is not solid");
         }
-        final Hash branchTransactionToApprove = TipsManager.transactionToApprove(trunkTransactionToApprove, depth);
+        final Hash branchTransactionToApprove = TipsManager.transactionToApprove(trunkTransactionToApprove, depth, random);
         if (branchTransactionToApprove == null) {
             return ErrorResponse.create("The subtangle is not solid");
         }

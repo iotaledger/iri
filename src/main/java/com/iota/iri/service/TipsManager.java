@@ -86,7 +86,7 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    static Hash transactionToApprove(final Hash extraTip, final int depth) {
+    static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
 
         int milestoneDepth = depth;
 
@@ -96,7 +96,6 @@ public class TipsManager {
 
         Map<Hash, Long> ratings = new HashMap<>();
         Set<Hash> analyzedTips = new HashSet<>();
-        SecureRandom random = new SecureRandom();
         try {
             Hash tip = preferableMilestone;
             if (extraTip != null) {
@@ -121,25 +120,25 @@ public class TipsManager {
             int i, carlo = 0;
             double monte;
             while(tip != null) {
-                if(analyzedTips.add(tip)) {
-                    tips = TransactionViewModel.fromHash(tip).getApprovers();
-                    if(tips.length == 0) {
+                tips = TransactionViewModel.fromHash(tip).getApprovers();
+                if(tips.length == 0) {
+                    break;
+                }
+                monte = seed.nextDouble() * ratings.get(tip);
+                for(i = 0; i < tips.length; i++) {
+                    monte -= ratings.get(tips[i]);
+                    carlo = i;
+                    if(monte <= 0 ) {
                         break;
                     }
-                    monte = random.nextDouble() * ratings.get(tip);
-                    for(i = 0; i < tips.length; i++) {
-                        monte -= ratings.get(tips[i]);
-                        carlo = i;
-                        if(monte <= 0 ) {
-                            break;
-                        }
-                    }
-                    bundle = TransactionViewModel.fromHash(tips[carlo]).getBundle();
-                    if(bundle.isConsistent()) {
-                        tip = bundle.getTransactions().get(0).get(0).getHash();
-                    } else {
+                }
+                bundle = TransactionViewModel.fromHash(tips[carlo]).getBundle();
+                if(bundle.isConsistent()) {
+                    if(bundle.getTransactions().get(0).get(0).getHash().equals(extraTip))
                         break;
-                    }
+                    tip = bundle.getTransactions().get(0).get(0).getHash();
+                } else {
+                    break;
                 }
             }
             return tip;

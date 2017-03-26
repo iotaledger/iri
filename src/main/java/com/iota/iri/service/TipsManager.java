@@ -1,5 +1,6 @@
 package com.iota.iri.service;
 
+import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -93,7 +94,7 @@ public class TipsManager {
 
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
-        Map<Hash, Integer> ratings = new HashMap<>();
+        Map<Hash, Long> ratings = new HashMap<>();
         Set<Hash> analyzedTips = new HashSet<>();
         SecureRandom random = new SecureRandom();
         try {
@@ -117,14 +118,15 @@ public class TipsManager {
 
             Hash[] tips;
             BundleViewModel bundle;
-            int i, monte, carlo = 0;
+            int i, carlo = 0;
+            double monte;
             while(tip != null) {
                 if(analyzedTips.add(tip)) {
                     tips = TransactionViewModel.fromHash(tip).getApprovers();
                     if(tips.length == 0) {
                         break;
                     }
-                    monte = random.nextInt(ratings.get(tip));
+                    monte = random.nextDouble() * ratings.get(tip);
                     for(i = 0; i < tips.length; i++) {
                         monte -= ratings.get(tips[i]);
                         carlo = i;
@@ -150,8 +152,8 @@ public class TipsManager {
         return null;
     }
 
-    private static int updateRatings(Hash txHash, Map<Hash, Integer> ratings, Set<Hash> analyzedTips) throws Exception {
-        int rating = 1;
+    private static long updateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
+        long rating = 1;
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
         if(analyzedTips.add(txHash)) {
             for(Hash approver : transactionViewModel.getApprovers()) {

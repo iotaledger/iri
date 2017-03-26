@@ -117,7 +117,6 @@ public class TipsManager {
             BundleViewModel bundle;
             int[] ratingWeightedApproverIndices;
             int i;
-            TransactionViewModel tipTransaction;
             while((tips = randomWalkScratchpad.poll()) != null) {
                 if(!analyzedTips.containsAll(Arrays.asList(tips))) {
                     randomWalkScratchpad.offer(tips);
@@ -126,8 +125,11 @@ public class TipsManager {
                     ratingWeightedApproverIndices = new int[0];
                     for(i = 0; i < tips.length; i++) {
                         int j = i;
-                        tipTransaction = TransactionViewModel.fromHash(tips[i]);
-                        ratingWeightedApproverIndices = ArrayUtils.addAll(ratingWeightedApproverIndices, IntStream.range(0, tipTransaction.getRating()).map(v -> j).toArray());
+                        ratingWeightedApproverIndices = ArrayUtils.addAll(ratingWeightedApproverIndices,
+                                IntStream.range(0, TransactionViewModel.fromHash(tips[i])
+                                    .getRating())
+                                    .map(v -> j)
+                                    .toArray());
                     }
                     tip = tips[ratingWeightedApproverIndices[random.nextInt(ratingWeightedApproverIndices.length)]];
                     if(analyzedTips.add(tip)) {

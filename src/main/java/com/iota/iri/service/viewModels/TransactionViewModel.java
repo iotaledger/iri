@@ -5,7 +5,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.stream.Collectors;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
@@ -226,15 +225,21 @@ public class TransactionViewModel {
         return self.transactions != null? self.transactions : new Hash[0];
     }
 
-    public void updateRating() throws Exception {
-        transaction.rating = 1;
-        TransactionViewModel approverTransaction;
-        for(Hash approver : getApprovers()) {
-            approverTransaction = TransactionViewModel.fromHash(approver);
-            approverTransaction.updateRating();
-            transaction.rating += approverTransaction.getRating();
+    public void setRating(int i) {
+        transaction.rating = i;
+    }
+
+    public static int updateRatings(Hash transactionHash, Set<Hash> ratedTransactions) throws Exception {
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
+        if(ratedTransactions.add(transactionHash)) {
+            int rating = 1;
+            for(Hash approver : transactionViewModel.getApprovers()) {
+                rating += updateRatings(approver, ratedTransactions);
+            }
+            transactionViewModel.setRating(rating);
+            transactionViewModel.update("rating");
         }
-        update("rating");
+        return transactionViewModel.getRating();
     }
 
     public int getRating() {

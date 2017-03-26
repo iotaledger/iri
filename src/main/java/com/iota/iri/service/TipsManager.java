@@ -2,7 +2,6 @@ package com.iota.iri.service;
 
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import com.iota.iri.model.Hash;
@@ -111,7 +110,7 @@ public class TipsManager {
                 }
             }
 
-            TransactionViewModel.fromHash(tip).updateRating();
+            TransactionViewModel.updateRatings(tip, new HashSet<>());
 
             Queue<Hash[]> randomWalkScratchpad = new LinkedList<>(Collections.singleton(new Hash[]{preferableMilestone}));
             Hash[] tips;

@@ -188,8 +188,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         if(bytes == null) {
             return new Hash[0];
         }
-        int i;
-        Set<Hash> hashes = new TreeSet<>();
+        int i = 0;
+        Set<Hash> hashes = new HashSet<>();
         for(i = size; i <= bytes.length; i += size + 1) {
             hashes.add(new Hash(Arrays.copyOfRange(bytes, i - size, i)));
         }

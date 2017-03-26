@@ -126,8 +126,7 @@ public class TipsManager {
                     for(i = 0; i < tips.length; i++) {
                         int j = i;
                         ratingWeightedApproverIndices = ArrayUtils.addAll(ratingWeightedApproverIndices,
-                                IntStream.range(0, TransactionViewModel.fromHash(tips[i])
-                                    .getRating())
+                                IntStream.range(0, TransactionViewModel.fromHash(tips[i]).getRating())
                                     .map(v -> j)
                                     .toArray());
                     }

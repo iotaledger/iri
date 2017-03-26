@@ -198,12 +198,12 @@ public class IRI {
             log.info("Shutting down IOTA node, please hold tight...");
             try {
                 //IXI.shutdown();
-                Tangle.instance().shutdown();
                 API.instance().shutDown();
                 TipsManager.instance().shutDown();
                 Node.instance().shutdown();
                 ReplicatorSourcePool.instance().shutdown();
                 ReplicatorSinkPool.instance().shutdown();
+                Tangle.instance().shutdown();
             } catch (final Exception e) {
                 log.error("Exception occurred shutting down IOTA node: ", e);
             }

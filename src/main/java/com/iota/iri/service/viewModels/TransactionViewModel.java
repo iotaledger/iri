@@ -225,29 +225,6 @@ public class TransactionViewModel {
         return self.transactions != null? self.transactions : new Hash[0];
     }
 
-    public void setRating(int i) {
-        transaction.rating = i;
-    }
-
-    public static int updateRatings(Hash transactionHash, Set<Hash> ratedTransactions) throws Exception {
-        int rating = 1;
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionHash);
-        if(ratedTransactions.add(transactionHash)) {
-            for(Hash approver : transactionViewModel.getApprovers()) {
-                rating += updateRatings(approver, ratedTransactions);
-            }
-            transactionViewModel.setRating(rating);
-            transactionViewModel.update("rating");
-        } else {
-            rating = transactionViewModel.getRating();
-        }
-        return rating;
-    }
-
-    public int getRating() {
-        return transaction.rating;
-    }
-
     public final int getType() {
         return transaction.type;
     }

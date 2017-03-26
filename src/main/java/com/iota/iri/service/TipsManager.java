@@ -2,6 +2,7 @@ package com.iota.iri.service;
 
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.IntStream;
 
 import com.iota.iri.model.Hash;
@@ -92,6 +93,7 @@ public class TipsManager {
 
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
+        Map<Hash, Integer> ratings = new HashMap<>();
         Set<Hash> analyzedTips = new HashSet<>();
         SecureRandom random = new SecureRandom();
         try {
@@ -110,21 +112,21 @@ public class TipsManager {
                 }
             }
 
-            TransactionViewModel.updateRatings(tip, new HashSet<>());
+            updateRatings(tip, ratings, analyzedTips);
+            analyzedTips.clear();
 
             Hash[] tips;
             BundleViewModel bundle;
-            int i, rating, monte, carlo = 0;
+            int i, monte, carlo = 0;
             while(tip != null) {
                 if(analyzedTips.add(tip)) {
                     tips = TransactionViewModel.fromHash(tip).getApprovers();
                     if(tips.length == 0) {
                         break;
                     }
-                    rating = TransactionViewModel.fromHash(tip).getRating();
-                    monte = random.nextInt(rating);
+                    monte = random.nextInt(ratings.get(tip));
                     for(i = 0; i < tips.length; i++) {
-                        monte -= TransactionViewModel.fromHash(tips[i]).getRating();
+                        monte -= ratings.get(tips[i]);
                         carlo = i;
                         if(monte <= 0 ) {
                             break;
@@ -146,6 +148,20 @@ public class TipsManager {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
         }
         return null;
+    }
+
+    private static int updateRatings(Hash txHash, Map<Hash, Integer> ratings, Set<Hash> analyzedTips) throws Exception {
+        int rating = 1;
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
+        if(analyzedTips.add(txHash)) {
+            for(Hash approver : transactionViewModel.getApprovers()) {
+                rating += updateRatings(approver, ratings, analyzedTips);
+            }
+            ratings.put(txHash, rating);
+        } else {
+            rating = ratings.get(txHash);
+        }
+        return rating;
     }
 
     private static int findOldestAcceptableMilestoneIndex(long criticalArrivalTime, int depth) throws Exception {

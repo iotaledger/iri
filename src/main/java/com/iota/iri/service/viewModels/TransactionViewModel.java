@@ -238,6 +238,8 @@ public class TransactionViewModel {
             }
             transactionViewModel.setRating(rating);
             transactionViewModel.update("rating");
+        } else {
+            rating = transactionViewModel.getRating();
         }
         return rating;
     }

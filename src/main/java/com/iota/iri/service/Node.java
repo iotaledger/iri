@@ -206,7 +206,7 @@ public class Node {
                     receivedTransactionViewModel = new TransactionViewModel(receivedData, receivedTransactionTrits, curl);
                     timestamp = receivedTransactionViewModel.getTimestamp();
                     if (timestamp == 0 || timestamp > TIMESTAMP_THRESHOLD) {
-                        if(receivedTransactionViewModel.store().get()) {
+                        if(receivedTransactionViewModel.store()) {
                             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                             receivedTransactionViewModel.update("arrivalTime");
                             neighbor.incNewTransactions();

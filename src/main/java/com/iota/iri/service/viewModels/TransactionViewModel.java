@@ -183,8 +183,7 @@ public class TransactionViewModel {
     public void delete() throws Exception {
         Tangle.instance().delete(transaction).get();
     }
-    public Future<Boolean> store() throws Exception {
-        Future<Boolean> future;
+    public boolean store() throws Exception {
         TransactionRequester.clearTransactionRequest(getHash());
         if(!Tangle.instance().exists(Transaction.class, getHash()).get()) {
             getBytes();
@@ -193,13 +192,11 @@ public class TransactionViewModel {
             getBranchTransactionHash();
             getTrunkTransactionHash();
             getTagValue();
-            future = Tangle.instance().save(transaction);
             TransactionRequester.requestTransaction(getBranchTransactionHash());
             TransactionRequester.requestTransaction(getTrunkTransactionHash());
-        } else {
-            future = executorService.submit(() -> false);
+            return Tangle.instance().save(transaction).get();
         }
-        return future;
+        return false;
     }
 
 

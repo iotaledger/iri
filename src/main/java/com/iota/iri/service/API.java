@@ -287,7 +287,7 @@ public class API {
         for (final String trytes : trys) {
             final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
-            transactionViewModel.store().get();
+            transactionViewModel.store();
         }
         return AbstractResponse.createEmptyResponse();
     }

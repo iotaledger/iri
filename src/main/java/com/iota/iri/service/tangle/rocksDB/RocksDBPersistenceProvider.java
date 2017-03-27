@@ -226,8 +226,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         List<byte[]> txToRequest = new ArrayList<>();
         RocksIterator iterator = db.newIterator(approoveeHandle);
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            if(db.get(transactionHandle, iterator.key()) == null)
+            if(db.get(transactionHandle, iterator.key()) == null) {
                 txToRequest.add(iterator.key());
+            }
         }
         iterator.close();
         return txToRequest.stream().map(Hash::new).toArray();

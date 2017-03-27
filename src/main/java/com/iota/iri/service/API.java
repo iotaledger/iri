@@ -195,6 +195,12 @@ public class API {
                     TransactionViewModel.rescanTransactionsToRequest();
                     return AbstractResponse.createEmptyResponse();
                 }
+                case "getMissingTransactions": {
+                    return GetTipsResponse.create(
+                            Arrays.stream(
+                                    TransactionViewModel.getRequestedTransactions()
+                            ).map(Hash::toString).collect(Collectors.toList()));
+                }
                 default:
                     return ErrorResponse.create("Command [" + command + "] is unknown");
             }

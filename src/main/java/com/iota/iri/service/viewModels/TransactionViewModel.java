@@ -412,7 +412,9 @@ public class TransactionViewModel {
             transactionsToRequest.clear();
             transactionsToRequest.addAll(Arrays.asList(missingTx));
         }
-
+    }
+    public static Hash[] getRequestedTransactions() {
+        return transactionsToRequest.stream().toArray(Hash[]::new);
     }
 
     public static void dump(final byte[] mainBuffer, final byte[] hash, final TransactionViewModel transaction) {

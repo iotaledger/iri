@@ -486,7 +486,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         List<byte[]> baddies = new ArrayList<>();
         WriteBatch batch = new WriteBatch();
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            if(iterator.value().length != TransactionViewModel.SIZE || Arrays.equals(iterator.value(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
+            if(iterator.value().length != TransactionViewModel.SIZE ) {
                 baddies.add(iterator.key());
             } else {
                 //batch.put(transactionSolidHandle, iterator.key(), new byte[]{0});

@@ -96,7 +96,7 @@ public class TipsManager {
 
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
-        Map<Hash, Long> ratings = new HashMap<>();
+        Map<Hash, Integer> ratings = new HashMap<>();
         Set<Hash> analyzedTips = new HashSet<>();
         try {
             Hash tip = preferableMilestone;
@@ -155,12 +155,15 @@ public class TipsManager {
         return null;
     }
 
-    private static long updateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
-        long rating = 1;
+    private static int updateRatings(Hash txHash, Map<Hash, Integer> ratings, Set<Hash> analyzedTips) throws Exception {
+        int rating = 1;
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
         if(analyzedTips.add(txHash)) {
             for(Hash approver : transactionViewModel.getApprovers()) {
                 rating += updateRatings(approver, ratings, analyzedTips);
+            }
+            if(rating > Integer.MAX_VALUE/2) {
+                rating = Integer.MAX_VALUE/2;
             }
             ratings.put(txHash, rating);
         } else {

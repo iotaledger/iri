@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.TransactionRequester;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
@@ -122,7 +123,7 @@ public class Milestone {
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
                             if(!transactionViewModel2.isSolid()) {
                                 if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                                    TransactionViewModel.requestTransaction(hashPointer);
+                                    TransactionRequester.requestTransaction(hashPointer);
                                     solid = false;
                                     break;
 

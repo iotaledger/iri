@@ -56,7 +56,7 @@ public class TipsManager {
 
                     Milestone.updateLatestMilestone();
                     Milestone.updateLatestSolidSubtangleMilestone();
-                    TransactionViewModel.rescanTransactionsToRequest();
+                    TransactionRequester.rescanTransactionsToRequest();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
 
@@ -499,7 +499,7 @@ public class TipsManager {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                 if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                    TransactionViewModel.requestTransaction(transactionViewModel.getHash());
+                    TransactionRequester.requestTransaction(transactionViewModel.getHash());
                     return null;
 
                 } else {
@@ -533,7 +533,7 @@ public class TipsManager {
                         if (!validBundle) {
                             for(TransactionViewModel transactionViewModel1: bundle.getTransactionViewModels()) {
                                 transactionViewModel1.delete();
-                                TransactionViewModel.requestTransaction(transactionViewModel1.getHash());
+                                TransactionRequester.requestTransaction(transactionViewModel1.getHash());
                             }
                             return null;
                         }

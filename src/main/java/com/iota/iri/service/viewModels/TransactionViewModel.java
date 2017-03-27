@@ -9,13 +9,13 @@ import java.util.concurrent.Future;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
+import com.iota.iri.service.TransactionRequester;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TransactionViewModel {
-    private static final int P_REMOVE_REQUEST = 10;
     private static ExecutorService executorService = Executors.newCachedThreadPool();
 
     private final com.iota.iri.model.Transaction transaction;
@@ -69,9 +69,6 @@ public class TransactionViewModel {
     public TransactionViewModel trunk;
     public TransactionViewModel branch;
 
-    private static Set<Hash> transactionsToRequest = new HashSet<>();
-    private static SecureRandom random = new SecureRandom();
-    private static volatile int requestIndex = 0;
 
     public int[] hashTrits;
 
@@ -191,9 +188,9 @@ public class TransactionViewModel {
 
             future = Tangle.instance().save(transaction);
 
-            clearTransactionRequest(getHash());
-            requestTransaction(getBranchTransactionHash());
-            requestTransaction(getTrunkTransactionHash());
+            TransactionRequester.clearTransactionRequest(getHash());
+            TransactionRequester.requestTransaction(getBranchTransactionHash());
+            TransactionRequester.requestTransaction(getTrunkTransactionHash());
             if(getApprovers().length == 0) {
                 TipsViewModel.addTipHash(transaction.hash);
             } else {
@@ -205,19 +202,6 @@ public class TransactionViewModel {
         return future;
     }
 
-    public static void clearTransactionRequest(Hash hash) {
-        synchronized (TransactionViewModel.class) {
-            transactionsToRequest.remove(hash);
-        }
-    }
-
-    public static void requestTransaction(Hash hash) throws ExecutionException, InterruptedException {
-        if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(hash)) {
-            synchronized (TransactionViewModel.class) {
-                transactionsToRequest.add(hash);
-            }
-        }
-    }
 
     public Hash[] getApprovers() throws ExecutionException, InterruptedException {
         Approvee self = new Approvee();
@@ -357,30 +341,6 @@ public class TransactionViewModel {
         return hashTrits;
     }
 
-    private static volatile long lastTime = System.currentTimeMillis();
-    public static void transactionToRequest(byte[] buffer, int offset) throws Exception {
-        final long beginningTime = System.currentTimeMillis();
-        Hash hash = null;
-        if(++requestIndex >= numberOfTransactionsToRequest()) {
-            requestIndex = 0;
-        }
-        if(transactionsToRequest.size() > 0) {
-            hash = ((Hash) transactionsToRequest.toArray()[requestIndex]);
-        }
-
-        if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {
-            if(random.nextInt(P_REMOVE_REQUEST) == 0) {
-                transactionsToRequest.remove(hash);
-                new TransactionViewModel(new Transaction(hash)).store();
-            }
-            System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
-        }
-        long now = System.currentTimeMillis();
-        if ((now - lastTime) > 10000L) {
-            lastTime = now;
-            log.info("Transactions to request = {}", transactionsToRequest.size() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
-        }
-    }
 
     public static void updateSolidTransactions(Set<Hash> analyzedHashes) throws Exception {
         Iterator<Hash> hashIterator = analyzedHashes.iterator();
@@ -406,20 +366,9 @@ public class TransactionViewModel {
         return transaction.solid[0] == 1;
     }
 
-    public static int numberOfTransactionsToRequest() {
-        return transactionsToRequest.size();
-    }
-
-    public static void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
-        Hash[] missingTx = Arrays.stream(Tangle.instance()
+    public static Hash[] getMissingTransactions() throws ExecutionException, InterruptedException {
+        return Arrays.stream(Tangle.instance()
                 .scanForTips(Transaction.class).get()).toArray(Hash[]::new);
-        synchronized (TransactionViewModel.class) {
-            transactionsToRequest.clear();
-            transactionsToRequest.addAll(Arrays.asList(missingTx));
-        }
-    }
-    public static Hash[] getRequestedTransactions() {
-        return transactionsToRequest.stream().toArray(Hash[]::new);
     }
 
     public static void dump(final byte[] mainBuffer, final byte[] hash, final TransactionViewModel transaction) {

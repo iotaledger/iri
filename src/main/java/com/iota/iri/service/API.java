@@ -157,7 +157,7 @@ public class API {
                             Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                             Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
                             System.currentTimeMillis(), TipsViewModel.getTipHashes().length,
-                            TransactionViewModel.numberOfTransactionsToRequest());
+                            TransactionRequester.numberOfTransactionsToRequest());
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -192,13 +192,13 @@ public class API {
                     return storeTransactionStatement(trytes);
                 }
                 case "rescanTransactions": {
-                    TransactionViewModel.rescanTransactionsToRequest();
+                    TransactionRequester.rescanTransactionsToRequest();
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "getMissingTransactions": {
                     return GetTipsResponse.create(
                             Arrays.stream(
-                                    TransactionViewModel.getRequestedTransactions()
+                                    TransactionRequester.getRequestedTransactions()
                             ).map(Hash::toString).collect(Collectors.toList()));
                 }
                 default:

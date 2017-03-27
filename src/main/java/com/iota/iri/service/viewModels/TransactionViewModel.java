@@ -1,5 +1,6 @@
 package com.iota.iri.service.viewModels;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -68,6 +69,7 @@ public class TransactionViewModel {
     public TransactionViewModel branch;
 
     private static Set<Hash> transactionsToRequest = new HashSet<>();
+    private static SecureRandom random = new SecureRandom();
     private static volatile int requestIndex = 0;
 
     public int[] hashTrits;
@@ -82,15 +84,13 @@ public class TransactionViewModel {
     }
 
     public static TransactionViewModel fromHash(final Hash hash) throws Exception {
-        Transaction transaction = new Transaction();
-        transaction.hash = hash;
+        Transaction transaction = new Transaction(hash);
         Tangle.instance().load(transaction).get();
         return new TransactionViewModel(transaction);
     }
 
     public static boolean mightExist(byte[] hash) throws ExecutionException, InterruptedException {
-        Transaction transaction = new Transaction();
-        transaction.hash = new Hash(hash);
+        Transaction transaction = new Transaction(new Hash(hash));
         return Tangle.instance().maybeHas(transaction).get();
     }
 
@@ -357,7 +357,7 @@ public class TransactionViewModel {
     }
 
     private static volatile long lastTime = System.currentTimeMillis();
-    public static void transactionToRequest(byte[] buffer, int offset) throws ExecutionException, InterruptedException {
+    public static void transactionToRequest(byte[] buffer, int offset) throws Exception {
         final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
         if(++requestIndex >= numberOfTransactionsToRequest()) {
@@ -368,6 +368,10 @@ public class TransactionViewModel {
         }
 
         if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {
+            if(random.nextInt(10) == 0) {
+                transactionsToRequest.remove(hash);
+                new TransactionViewModel(new Transaction(hash)).store();
+            }
             System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
         long now = System.currentTimeMillis();

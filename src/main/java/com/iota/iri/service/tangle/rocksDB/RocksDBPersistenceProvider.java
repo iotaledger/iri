@@ -159,11 +159,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.put(transactionArrivalTimeHandle, key, Serializer.serialize(transaction.arrivalTime));
         batch.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
         batch.put(transactionRatingHandle, key, Serializer.serialize(transaction.rating));
-        batch.merge(addressHandle, transaction.address.hash.bytes(), key);
-        batch.merge(bundleHandle, transaction.bundle.hash.bytes(), key);
-        batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
-        batch.merge(approoveeHandle, transaction.branch.hash.bytes(), key);
-        batch.merge(tagHandle, transaction.tag.value.bytes(), key);
+        if (!Arrays.equals(TransactionViewModel.NULL_TRANSACTION_BYTES, transaction.bytes)) {
+            batch.merge(addressHandle, transaction.address.hash.bytes(), key);
+            batch.merge(bundleHandle, transaction.bundle.hash.bytes(), key);
+            batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
+            batch.merge(approoveeHandle, transaction.branch.hash.bytes(), key);
+            batch.merge(tagHandle, transaction.tag.value.bytes(), key);
+        }
         db.write(new WriteOptions(), batch);
         return true;
     });
@@ -198,7 +200,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public boolean exists(Class<?> model, Hash key) throws Exception {
         if(model == Transaction.class) {
-            return db.get(transactionHandle, key.bytes()) != null;
+            byte[] result = db.get(transactionHandle, key.bytes());
+            if(result == null) {
+                return false;
+            }
+            return !Arrays.equals(TransactionViewModel.NULL_TRANSACTION_BYTES, result);
         }
         throw new NotImplementedException("Mada mada exists shinai");
     }

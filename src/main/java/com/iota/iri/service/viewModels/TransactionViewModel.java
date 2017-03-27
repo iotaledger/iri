@@ -176,6 +176,7 @@ public class TransactionViewModel {
     }
     public Future<Boolean> store() throws Exception {
         Future<Boolean> future;
+        TransactionRequester.clearTransactionRequest(getHash());
         if(!Tangle.instance().exists(Transaction.class, getHash()).get()) {
             getBytes();
             getAddressHash();
@@ -183,10 +184,7 @@ public class TransactionViewModel {
             getBranchTransactionHash();
             getTrunkTransactionHash();
             getTagValue();
-
             future = Tangle.instance().save(transaction);
-
-            TransactionRequester.clearTransactionRequest(getHash());
             TransactionRequester.requestTransaction(getBranchTransactionHash());
             TransactionRequester.requestTransaction(getTrunkTransactionHash());
             if(getApprovers().length == 0) {

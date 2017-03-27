@@ -53,11 +53,8 @@ public class TransactionRequester {
     public static void transactionToRequest(byte[] buffer, int offset) throws Exception {
         final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
-        if(++requestIndex >= numberOfTransactionsToRequest()) {
-            requestIndex = 0;
-        }
         if(transactionsToRequest.size() > 0) {
-            hash = ((Hash) transactionsToRequest.toArray()[requestIndex]);
+            hash = ((Hash) transactionsToRequest.toArray()[random.nextInt(transactionsToRequest.size())]);
         }
 
         if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {

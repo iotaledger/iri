@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TransactionViewModel {
+    private static final int P_REMOVE_REQUEST = 10;
     private static ExecutorService executorService = Executors.newCachedThreadPool();
 
     private final com.iota.iri.model.Transaction transaction;
@@ -368,7 +369,7 @@ public class TransactionViewModel {
         }
 
         if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {
-            if(random.nextInt(10) == 0) {
+            if(random.nextInt(P_REMOVE_REQUEST) == 0) {
                 transactionsToRequest.remove(hash);
                 new TransactionViewModel(new Transaction(hash)).store();
             }

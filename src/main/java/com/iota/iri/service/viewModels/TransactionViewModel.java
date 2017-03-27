@@ -186,6 +186,7 @@ public class TransactionViewModel {
     public boolean store() throws Exception {
         TransactionRequester.clearTransactionRequest(getHash());
         if(!Tangle.instance().exists(Transaction.class, getHash()).get()) {
+            log.info("Tx To save Hash: " + getHash());
             getBytes();
             getAddressHash();
             getBundleHash();

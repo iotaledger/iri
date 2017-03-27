@@ -127,7 +127,7 @@ public class TipsManager {
                     break;
                 }
                 monte = seed.nextDouble() * ratings.get(tip);
-                for(carlo = tips.length; carlo-- >  0;) {
+                for(carlo = tips.length; carlo-- >  1;) {
                     if(ratings.containsKey(tips[carlo])) {
                         monte -= ratings.get(tips[carlo]);
                     }

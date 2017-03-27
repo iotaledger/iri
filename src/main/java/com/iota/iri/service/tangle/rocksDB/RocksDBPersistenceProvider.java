@@ -59,7 +59,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     RocksDB db;
     DBOptions options;
-    private Random random;
     private Thread compactionThreadHandle;
 
     @Override
@@ -366,7 +365,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
 
     void initDB(String path, String logPath) throws Exception {
-        random = new Random();
         StringAppendOperator stringAppendOperator = new StringAppendOperator();
         RocksDB.loadLibrary();
         Thread.yield();

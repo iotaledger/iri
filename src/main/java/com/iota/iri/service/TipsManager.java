@@ -45,7 +45,7 @@ public class TipsManager {
     public void init() throws Exception {
 
         (new Thread(() -> {
-            
+
             final SecureRandom rnd = new SecureRandom();
 
             while (!shuttingDown) {

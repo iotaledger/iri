@@ -166,9 +166,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             batch.merge(approoveeHandle, transaction.branch.hash.bytes(), key);
             batch.merge(tagHandle, transaction.tag.value.bytes(), key);
         }
-        synchronized (this) {
-            db.write(new WriteOptions(), batch);
-        }
+        db.write(new WriteOptions(), batch);
         return true;
     });
 
@@ -179,7 +177,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean save(Object thing) throws Exception {
-        return saveMap.get(thing.getClass()).apply(thing);
+        synchronized (this) {
+            return saveMap.get(thing.getClass()).apply(thing);
+        }
     }
 
     @Override

@@ -196,10 +196,13 @@ public class API {
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "getMissingTransactions": {
-                    return GetTipsResponse.create(
-                            Arrays.stream(
-                                    TransactionRequester.getRequestedTransactions()
-                            ).map(Hash::toString).collect(Collectors.toList()));
+                    TransactionRequester.rescanTransactionsToRequest();
+                    synchronized (TransactionRequester.class) {
+                        return GetTipsResponse.create(
+                                Arrays.stream(
+                                        TransactionRequester.getRequestedTransactions()
+                                ).map(Hash::toString).collect(Collectors.toList()));
+                    }
                 }
                 default:
                     return ErrorResponse.create("Command [" + command + "] is unknown");

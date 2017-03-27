@@ -196,11 +196,6 @@ public class TransactionViewModel {
             future = Tangle.instance().save(transaction);
             TransactionRequester.requestTransaction(getBranchTransactionHash());
             TransactionRequester.requestTransaction(getTrunkTransactionHash());
-            if(getApprovers().length == 0) {
-                TipsViewModel.addTipHash(transaction.hash);
-            } else {
-                TipsViewModel.removeTipHash(transaction.hash);
-            }
         } else {
             future = executorService.submit(() -> false);
         }

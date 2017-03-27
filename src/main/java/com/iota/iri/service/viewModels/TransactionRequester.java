@@ -64,7 +64,7 @@ public class TransactionRequester {
                 }
                 new TransactionViewModel(new Transaction(hash)).store();
             }
-            log.info("requesting tx: " + hash);
+            //log.info("requesting tx: " + hash);
             System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
         long now = System.currentTimeMillis();

@@ -8,7 +8,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.iota.iri.service.TransactionRequester;
+import com.iota.iri.service.viewModels.TransactionRequester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

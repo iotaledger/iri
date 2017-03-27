@@ -1,16 +1,13 @@
 package com.iota.iri.service;
 
-import java.math.BigInteger;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.IntStream;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
+import com.iota.iri.service.viewModels.TransactionRequester;
 import com.iota.iri.service.viewModels.TransactionViewModel;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

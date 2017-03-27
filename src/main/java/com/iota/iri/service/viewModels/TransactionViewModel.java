@@ -1,6 +1,5 @@
 package com.iota.iri.service.viewModels;
 
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -9,7 +8,6 @@ import java.util.concurrent.Future;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.*;
-import com.iota.iri.service.TransactionRequester;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;

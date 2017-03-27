@@ -1,8 +1,7 @@
-package com.iota.iri.service;
+package com.iota.iri.service.viewModels;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +37,7 @@ public class TransactionRequester {
         return transactionsToRequest.size();
     }
 
-    public static void clearTransactionRequest(Hash hash) {
+    protected static void clearTransactionRequest(Hash hash) {
         synchronized (TransactionViewModel.class) {
             transactionsToRequest.remove(hash);
         }
@@ -66,6 +65,7 @@ public class TransactionRequester {
                 transactionsToRequest.remove(hash);
                 new TransactionViewModel(new Transaction(hash)).store();
             }
+            //log.info("requesting tx: " + hash);
             System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
         long now = System.currentTimeMillis();

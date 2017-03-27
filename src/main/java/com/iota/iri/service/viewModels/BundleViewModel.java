@@ -4,10 +4,8 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.TransactionRequester;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
-import org.rocksdb.Logger;
 
 import java.util.*;
 

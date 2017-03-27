@@ -6,7 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.TransactionRequester;
+import com.iota.iri.service.viewModels.TransactionRequester;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;

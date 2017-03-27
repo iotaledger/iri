@@ -27,12 +27,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "transactionType",
             "transactionArrivalTime",
             "transactionSolid",
-            "transactionRating",
             "address",
             "bundle",
             "approovee",
             "tag",
             "tip",
+            "transactionRating",
     };
 
     boolean running;
@@ -41,12 +41,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle transactionTypeHandle;
     private ColumnFamilyHandle transactionArrivalTimeHandle;
     private ColumnFamilyHandle transactionSolidHandle;
-    private ColumnFamilyHandle transactionRatingHandle;
     private ColumnFamilyHandle addressHandle;
     private ColumnFamilyHandle bundleHandle;
     private ColumnFamilyHandle approoveeHandle;
     private ColumnFamilyHandle tagHandle;
     private ColumnFamilyHandle tipHandle;
+    private ColumnFamilyHandle transactionRatingHandle;
 
     List<ColumnFamilyHandle> transactionGetList;
 
@@ -446,12 +446,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transactionTypeHandle = familyHandles.get(++i);
         transactionArrivalTimeHandle = familyHandles.get(++i);
         transactionSolidHandle = familyHandles.get(++i);
-        transactionRatingHandle = familyHandles.get(++i);
         addressHandle = familyHandles.get(++i);
         bundleHandle = familyHandles.get(++i);
         approoveeHandle = familyHandles.get(++i);
         tagHandle = familyHandles.get(++i);
         tipHandle = familyHandles.get(++i);
+        transactionRatingHandle = familyHandles.get(++i);
 
         for(; ++i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.get(i));

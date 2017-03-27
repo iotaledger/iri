@@ -15,6 +15,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.replicator.ReplicatorSinkPool;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TipsViewModel;
+import com.iota.iri.service.viewModels.TransactionRequester;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;

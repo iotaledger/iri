@@ -166,7 +166,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             batch.merge(approoveeHandle, transaction.branch.hash.bytes(), key);
             batch.merge(tagHandle, transaction.tag.value.bytes(), key);
         }
-        db.write(new WriteOptions(), batch);
+        synchronized (this) {
+            db.write(new WriteOptions(), batch);
+        }
         return true;
     });
 

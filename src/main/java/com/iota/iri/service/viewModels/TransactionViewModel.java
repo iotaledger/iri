@@ -68,7 +68,7 @@ public class TransactionViewModel {
     public TransactionViewModel branch;
 
 
-    public int[] hashTrits;
+    private int[] hashTrits;
 
     private static final int MIN_WEIGHT_MAGNITUDE = 13;
 
@@ -123,9 +123,18 @@ public class TransactionViewModel {
         getHash();
         // For testnet, reduced minWeight from 13 to 9
         // if (this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 1] != 0) {
+        /*
         if (this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 3] != 0 || this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 1] != 0) {
             log.error("Invalid transaction hash. Hash found: " + new Hash(trits).toString());
             throw new RuntimeException("Invalid transaction hash");
+        }
+        */
+        weightMagnitude = 0;
+        while(weightMagnitude++ < MIN_WEIGHT_MAGNITUDE) {
+            if(hashTrits[Curl.HASH_LENGTH - weightMagnitude] != 0) {
+                log.error("Invalid transaction hash. Hash found: " + new Hash(trits).toString());
+                throw new RuntimeException("Invalid transaction hash");
+            }
         }
 
         weightMagnitude = MIN_WEIGHT_MAGNITUDE;

@@ -46,7 +46,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle approoveeHandle;
     private ColumnFamilyHandle tagHandle;
     private ColumnFamilyHandle tipHandle;
-    private ColumnFamilyHandle transactionRatingHandle;
 
     List<ColumnFamilyHandle> transactionGetList;
 
@@ -96,7 +95,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             db.delete(transactionTypeHandle, key);
             db.delete(transactionValidityHandle, key);
             db.delete(transactionSolidHandle, key);
-            db.delete(transactionRatingHandle, key);
             return null;
         });
         deleteMap.put(Tip.class, txObj -> {
@@ -158,7 +156,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.put(transactionTypeHandle, key, Serializer.serialize(transaction.type));
         batch.put(transactionArrivalTimeHandle, key, Serializer.serialize(transaction.arrivalTime));
         batch.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
-        batch.put(transactionRatingHandle, key, Serializer.serialize(transaction.rating));
         batch.merge(addressHandle, transaction.address.hash.bytes(), key);
         batch.merge(bundleHandle, transaction.bundle.hash.bytes(), key);
         batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
@@ -257,7 +254,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, key));
         transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, key));
         transaction.solid =  db.get(transactionSolidHandle, key);
-        transaction.rating = Serializer.getInteger(db.get(transactionRatingHandle, key));
         return true;
     };
 
@@ -354,9 +350,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 case "solid":
                     db.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
                     break;
-                case "rating":
-                    db.put(transactionRatingHandle, key, Serializer.serialize(transaction.rating));
-                    break;
                 default:
                     throw new NotImplementedException("Mada Sono Update ga dekinai yo");
             }
@@ -447,7 +440,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         approoveeHandle = familyHandles.get(++i);
         tagHandle = familyHandles.get(++i);
         tipHandle = familyHandles.get(++i);
-        transactionRatingHandle = familyHandles.get(++i);
 
         for(; ++i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.get(i));
@@ -486,7 +478,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 baddies.add(iterator.key());
             } else {
                 //batch.put(transactionSolidHandle, iterator.key(), new byte[]{0});
-                batch.put(transactionRatingHandle, iterator.key(), new byte[4]);
             }
         }
         iterator.close();

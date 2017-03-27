@@ -172,9 +172,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public boolean save(Object thing) throws Exception {
-        synchronized (this) {
-            return saveMap.get(thing.getClass()).apply(thing);
-        }
+        return saveMap.get(thing.getClass()).apply(thing);
     }
 
     @Override

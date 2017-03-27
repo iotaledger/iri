@@ -119,7 +119,7 @@ public class TipsManager {
 
             Hash[] tips;
             BundleViewModel bundle;
-            int i, carlo = 0;
+            int carlo;
             double monte;
             while(tip != null) {
                 tips = TransactionViewModel.fromHash(tip).getApprovers();
@@ -127,11 +127,10 @@ public class TipsManager {
                     break;
                 }
                 monte = seed.nextDouble() * ratings.get(tip);
-                for(i = 0; i < tips.length; i++) {
-                    if(ratings.containsKey(tips[i])) {
-                        monte -= ratings.get(tips[i]);
+                for(carlo = 0; carlo < tips.length; carlo++) {
+                    if(ratings.containsKey(tips[carlo])) {
+                        monte -= ratings.get(tips[carlo]);
                     }
-                    carlo = i;
                     if(monte <= 0 ) {
                         break;
                     }

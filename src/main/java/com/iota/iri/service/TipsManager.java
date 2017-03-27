@@ -45,6 +45,14 @@ public class TipsManager {
 
             final SecureRandom rnd = new SecureRandom();
 
+            try {
+                Milestone.updateLatestMilestone();
+                Milestone.updateLatestSolidSubtangleMilestone();
+                TransactionRequester.rescanTransactionsToRequest();
+            } catch (Exception e) {
+                log.error("Error during TipsManager Milestone updating", e);
+            }
+
             while (!shuttingDown) {
                 
                 try {
@@ -53,7 +61,6 @@ public class TipsManager {
 
                     Milestone.updateLatestMilestone();
                     Milestone.updateLatestSolidSubtangleMilestone();
-                    TransactionRequester.rescanTransactionsToRequest();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
 

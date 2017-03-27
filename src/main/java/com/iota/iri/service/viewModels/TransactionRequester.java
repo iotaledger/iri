@@ -62,7 +62,6 @@ public class TransactionRequester {
                 synchronized (TransactionRequester.class) {
                     transactionsToRequest.remove(hash);
                 }
-                new TransactionViewModel(new Transaction(hash)).store();
             }
             //log.info("requesting tx: " + hash);
             System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);

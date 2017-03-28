@@ -218,6 +218,7 @@ public class Node {
                         transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                             synchronized (sendingPacket) {
+                                log.info(neighbor.getAddress().getHostString() + "Requested TX Hash: " + transactionPointer);
                                 System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
                                 TransactionRequester.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
                                 neighbor.send(sendingPacket);

@@ -36,7 +36,7 @@ public class IRI {
     public static final String NAME = "IRI Testnet";
     public static final String VERSION = "1.1.3.2";
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
 
         log.info("Welcome to {} {}", NAME, VERSION);
         validateParams(args);
@@ -62,15 +62,17 @@ public class IRI {
         log.info("IOTA Node initialised correctly.");
     }
 
-    private static void validateParams(final String[] args) {
+    private static void validateParams(final String[] args) throws IOException {
 
-        if (args == null || args.length < 2) {
+
+        if (args == null || (args.length < 2 && !Configuration.init())) {
             log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14700').");
             printUsage();
         }
 
         final CmdLineParser parser = new CmdLineParser();
 
+        final Option<String> config = parser.addStringOption('c', "conf");
         final Option<String> port = parser.addStringOption('p', "port");
         final Option<String> rport = parser.addStringOption('r', "receiver-port");
         final Option<String> cors = parser.addStringOption('c', "enabled-cors");
@@ -93,8 +95,16 @@ public class IRI {
             System.exit(2);
         }
 
+        // optional config file path
+        String confFilePath = parser.getOptionValue(config);
+        if(confFilePath != null ) {
+            Configuration.put(DefaultConfSettings.CONF_PATH, confFilePath);
+            Configuration.init();
+        }
+
         // mandatory args
-        final String cport = parser.getOptionValue(port);
+        String inicport = Configuration.getIniValue(DefaultConfSettings.API_PORT.name());
+        final String cport = inicport == null ? parser.getOptionValue(port) : inicport;
         if (cport == null) {
             log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
             printUsage();

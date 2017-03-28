@@ -78,8 +78,9 @@ public class TransactionRequester {
                     transactionsToRequest.remove(hash);
                 }
             }
-            //log.info("requesting tx: " + hash);
             System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
+        } else {
+            System.arraycopy(Hash.NULL_HASH.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
         }
         long now = System.currentTimeMillis();
         if ((now - lastTime) > 10000L) {

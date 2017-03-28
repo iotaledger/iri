@@ -157,7 +157,7 @@ public class BundleViewModel {
         if (!validBundle) {
             for(TransactionViewModel transactionViewModel1: transactionViewModels) {
                 transactionViewModel1.delete();
-                TransactionRequester.requestTransaction(transactionViewModel1.getHash());
+                TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
             }
             return false;
         }

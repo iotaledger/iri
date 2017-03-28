@@ -123,7 +123,7 @@ public class Milestone {
                             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
                             if(!transactionViewModel2.isSolid()) {
                                 if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                                    TransactionRequester.requestTransaction(hashPointer);
+                                    TransactionRequester.instance().requestTransaction(hashPointer);
                                     solid = false;
                                     break;
 

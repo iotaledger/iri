@@ -15,42 +15,45 @@ import java.util.concurrent.ExecutionException;
  * Created by paul on 3/27/17.
  */
 public class TransactionRequester {
-    private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
-    private static final int P_REMOVE_REQUEST = 10;
-    private static Set<Hash> transactionsToRequest = new HashSet<>();
-    private static SecureRandom random = new SecureRandom();
-    private static volatile int requestIndex = 0;
-    private static volatile long lastTime = System.currentTimeMillis();
 
-    public static void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
+    private static final TransactionRequester instance = new TransactionRequester();
+
+    private final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
+    private static final int P_REMOVE_REQUEST = 10;
+    private Set<Hash> transactionsToRequest = new HashSet<>();
+    private SecureRandom random = new SecureRandom();
+    private volatile int requestIndex = 0;
+    private volatile long lastTime = System.currentTimeMillis();
+
+    public void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
         Hash[] missingTx = TransactionViewModel.getMissingTransactions();
-        synchronized (TransactionRequester.class) {
+        synchronized (this) {
             transactionsToRequest.clear();
             transactionsToRequest.addAll(Arrays.asList(missingTx));
         }
     }
-    public static Hash[] getRequestedTransactions() {
+    public Hash[] getRequestedTransactions() {
         return transactionsToRequest.stream().toArray(Hash[]::new);
     }
 
-    public static int numberOfTransactionsToRequest() {
+    public int numberOfTransactionsToRequest() {
         return transactionsToRequest.size();
     }
 
-    protected static void clearTransactionRequest(Hash hash) {
-        synchronized (TransactionRequester.class) {
+    protected void clearTransactionRequest(Hash hash) {
+        synchronized (this) {
             transactionsToRequest.remove(hash);
         }
     }
 
-    public static void requestTransaction(Hash hash) throws ExecutionException, InterruptedException {
+    public void requestTransaction(Hash hash) throws ExecutionException, InterruptedException {
         if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(hash)) {
-            synchronized (TransactionRequester.class) {
+            synchronized (this) {
                 transactionsToRequest.add(hash);
             }
         }
     }
-    public static void transactionToRequest(byte[] buffer, int offset) throws Exception {
+    public void transactionToRequest(byte[] buffer, int offset) throws Exception {
         final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
         if(transactionsToRequest.size() > 0) {
@@ -59,7 +62,7 @@ public class TransactionRequester {
 
         if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {
             if(random.nextInt(P_REMOVE_REQUEST) == 0) {
-                synchronized (TransactionRequester.class) {
+                synchronized (this) {
                     transactionsToRequest.remove(hash);
                 }
             }
@@ -71,5 +74,9 @@ public class TransactionRequester {
             lastTime = now;
             log.info("Transactions to request = {}", transactionsToRequest.size() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
         }
+    }
+
+    public static TransactionRequester instance() {
+        return instance;
     }
 }

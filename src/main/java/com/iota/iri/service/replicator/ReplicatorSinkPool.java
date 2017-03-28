@@ -96,7 +96,7 @@ public class ReplicatorSinkPool  implements Runnable {
                                 synchronized (sendingPacket) {
                                     System.arraycopy(transaction.getBytes(), 0, sendingPacket.getData(), 0,
                                             TransactionViewModel.SIZE);
-                                    TransactionRequester.transactionToRequest(sendingPacket.getData(),
+                                    TransactionRequester.instance().transactionToRequest(sendingPacket.getData(),
                                             TransactionViewModel.SIZE);
                                     neighbor.send(sendingPacket);
                                 }

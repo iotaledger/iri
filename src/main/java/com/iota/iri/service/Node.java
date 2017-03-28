@@ -219,7 +219,7 @@ public class Node {
                         if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                             synchronized (sendingPacket) {
                                 System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-                                TransactionRequester.transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
+                                TransactionRequester.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
                                 neighbor.send(sendingPacket);
                             }
                         }
@@ -293,7 +293,7 @@ public class Node {
                                 synchronized (sendingPacket) {
                                     System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0,
                                             TransactionViewModel.SIZE);
-                                    TransactionRequester.transactionToRequest(sendingPacket.getData(),
+                                    TransactionRequester.instance().transactionToRequest(sendingPacket.getData(),
                                             TransactionViewModel.SIZE);
                                     neighbor.send(sendingPacket);
                                 }

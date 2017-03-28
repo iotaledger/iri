@@ -46,7 +46,7 @@ public class TipsManager {
             final SecureRandom rnd = new SecureRandom();
 
             try {
-                TransactionRequester.rescanTransactionsToRequest();
+                TransactionRequester.instance().rescanTransactionsToRequest();
             } catch (Exception e) {
                 log.error("Error during TipsManager Milestone updating", e);
             }
@@ -506,7 +506,7 @@ public class TipsManager {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                 if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                    TransactionRequester.requestTransaction(transactionViewModel.getHash());
+                    TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
                     return null;
 
                 } else {
@@ -540,7 +540,7 @@ public class TipsManager {
                         if (!validBundle) {
                             for(TransactionViewModel transactionViewModel1: bundle.getTransactionViewModels()) {
                                 transactionViewModel1.delete();
-                                TransactionRequester.requestTransaction(transactionViewModel1.getHash());
+                                TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
                             }
                             return null;
                         }

@@ -157,8 +157,8 @@ public class TipsManager {
 
     private static int updateRatings(Hash txHash, Map<Hash, Integer> ratings, Set<Hash> analyzedTips) throws Exception {
         int rating = 1;
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
         if(analyzedTips.add(txHash)) {
+            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
             for(Hash approver : transactionViewModel.getApprovers()) {
                 rating += updateRatings(approver, ratings, analyzedTips);
             }

@@ -57,7 +57,19 @@ public class TransactionRequester {
         final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
         if(transactionsToRequest.size() > 0) {
-            hash = ((Hash) transactionsToRequest.toArray()[random.nextInt(transactionsToRequest.size())]);
+            while(hash == null) {
+                hash = ((Hash) transactionsToRequest.toArray()[random.nextInt(transactionsToRequest.size())]);
+                if(TransactionViewModel.exists(hash)) {
+                    synchronized (this) {
+                        log.info("Removing existing tx from request list: " + hash);
+                        transactionsToRequest.remove(hash);
+                    }
+                    hash = null;
+                }
+                if(transactionsToRequest.size() == 0) {
+                    break;
+                }
+            }
         }
 
         if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {

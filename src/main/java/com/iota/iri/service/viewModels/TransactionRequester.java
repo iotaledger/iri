@@ -24,7 +24,7 @@ public class TransactionRequester {
 
     public static void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
         Hash[] missingTx = TransactionViewModel.getMissingTransactions();
-        synchronized (transactionsToRequest) {
+        synchronized (TransactionRequester.class) {
             transactionsToRequest.clear();
             transactionsToRequest.addAll(Arrays.asList(missingTx));
         }
@@ -38,14 +38,14 @@ public class TransactionRequester {
     }
 
     protected static void clearTransactionRequest(Hash hash) {
-        synchronized (transactionsToRequest) {
+        synchronized (TransactionRequester.class) {
             transactionsToRequest.remove(hash);
         }
     }
 
     public static void requestTransaction(Hash hash) throws ExecutionException, InterruptedException {
         if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(hash)) {
-            synchronized (transactionsToRequest) {
+            synchronized (TransactionRequester.class) {
                 transactionsToRequest.add(hash);
             }
         }
@@ -59,7 +59,7 @@ public class TransactionRequester {
 
         if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {
             if(random.nextInt(P_REMOVE_REQUEST) == 0) {
-                synchronized (transactionsToRequest) {
+                synchronized (TransactionRequester.class) {
                     transactionsToRequest.remove(hash);
                 }
             }

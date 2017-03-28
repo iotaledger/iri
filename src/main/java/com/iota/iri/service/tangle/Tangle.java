@@ -1,6 +1,7 @@
 package com.iota.iri.service.tangle;
 
 import com.iota.iri.model.*;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +29,7 @@ public class Tangle {
         for(IPersistenceProvider provider: this.persistenceProviders) {
             provider.init();
         }
+        new TransactionViewModel(TransactionViewModel.NULL_TRANSACTION_BYTES, new int[TransactionViewModel.TRINARY_SIZE], null).store();
     }
 
 

@@ -137,8 +137,9 @@ public class TipsManager {
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                 if(!transactionViewModel.getBundle().isConsistent()
-                        || !transactionViewModel.checkSolidity()
-                        || !tips[carlo].equals(extraTip)) {
+                        || !transactionViewModel.checkSolidity()) {
+                    break;
+                } else if (tips[carlo].equals(extraTip)){
                     break;
                 } else {
                     tip = tips[carlo];

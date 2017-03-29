@@ -26,7 +26,7 @@ public class TransactionRequester {
     private volatile long lastTime = System.currentTimeMillis();
 
     public void init() {
-        P_REMOVE_REQUEST = Configuration.doubling(Configuration.string(Configuration.DefaultConfSettings.P_REMOVE_REQUEST));
+        P_REMOVE_REQUEST = Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name());
     }
 
     public void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {

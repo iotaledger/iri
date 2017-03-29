@@ -8,6 +8,7 @@ import java.nio.file.Paths;
 
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.service.viewModels.TransactionRequester;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,6 +50,7 @@ public class IRI {
         try {
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
             Tangle.instance().init();
+            TransactionRequester.instance().init();
             Node.instance().init();
             TipsManager.instance().init();
             API.instance().init();

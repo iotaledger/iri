@@ -1,5 +1,6 @@
 package com.iota.iri.service.viewModels;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import org.slf4j.Logger;
@@ -19,11 +20,14 @@ public class TransactionRequester {
     private static final TransactionRequester instance = new TransactionRequester();
 
     private final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
-    private static final double P_REMOVE_REQUEST = 0.5;
+    private static double P_REMOVE_REQUEST;
     private Set<Hash> transactionsToRequest = new HashSet<>();
     private SecureRandom random = new SecureRandom();
-    private volatile int requestIndex = 0;
     private volatile long lastTime = System.currentTimeMillis();
+
+    public void init() {
+        P_REMOVE_REQUEST = Configuration.doubling(Configuration.string(Configuration.DefaultConfSettings.P_REMOVE_REQUEST));
+    }
 
     public void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
         Hash[] missingTx = TransactionViewModel.getMissingTransactions();

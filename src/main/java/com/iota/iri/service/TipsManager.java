@@ -118,7 +118,6 @@ public class TipsManager {
             analyzedTips.clear();
 
             Hash[] tips;
-            BundleViewModel bundle;
             TransactionViewModel transactionViewModel;
             int carlo;
             double monte;

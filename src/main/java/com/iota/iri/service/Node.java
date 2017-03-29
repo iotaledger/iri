@@ -265,7 +265,7 @@ public class Node {
                 }
             } else if (randomTipBroadcastCounter % 24 == 0) {
                 final Hash[] tips = TipsViewModel.getTipHashes();
-                if(tips!=null && tips.length > 0) {
+                if(tips.length > 0) {
                     transactionPointer = tips[rnd.nextInt(tips.length)];
                 }
             }

@@ -322,7 +322,7 @@ public class Node {
                 try {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(Milestone.latestMilestone);
                     System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
-                    System.arraycopy(transactionViewModel.getHash().bytes(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
+                    System.arraycopy(Hash.NULL_HASH.bytes(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
                             TransactionViewModel.HASH_SIZE);
                             //Hash.SIZE_IN_BYTES);
 

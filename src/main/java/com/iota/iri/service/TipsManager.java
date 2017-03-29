@@ -137,10 +137,10 @@ public class TipsManager {
                 }
                 bundle = TransactionViewModel.fromHash(tips[carlo]).getBundle();
                 if(bundle.isConsistent()) {
-                    if(bundle.getTransactions().get(0).get(0).getHash().equals(extraTip)) {
+                    if(tips[carlo].equals(extraTip)) {
                         break;
                     }
-                    tip = bundle.getTransactions().get(0).get(0).getHash();
+                    tip = tips[carlo];
                 } else {
                     break;
                 }

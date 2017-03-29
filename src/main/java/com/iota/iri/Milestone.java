@@ -106,43 +106,16 @@ public class Milestone {
     }
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
-        Set<Hash> analyzedHashes = new HashSet<>();
-
         for (int milestoneIndex = latestMilestoneIndex; milestoneIndex > latestSolidSubtangleMilestoneIndex; milestoneIndex--) {
 
             final Hash milestone = milestones.get(milestoneIndex);
             if (milestone != null) {
 
-                boolean solid = true;
-
-                	analyzedHashes.add(Hash.NULL_HASH);
-                    final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
-                    Hash hashPointer, trunkInteger, branchInteger;
-                    while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-                        if (analyzedHashes.add(hashPointer)) {
-                            final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                            if(!transactionViewModel2.isSolid()) {
-                                if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                                    TransactionRequester.instance().requestTransaction(hashPointer);
-                                    solid = false;
-                                    break;
-
-                                } else {
-                                    trunkInteger = transactionViewModel2.getTrunkTransactionHash();
-                                    branchInteger = transactionViewModel2.getBranchTransactionHash();
-                                    nonAnalyzedTransactions.offer(trunkInteger);
-                                    nonAnalyzedTransactions.offer(branchInteger);
-                                }
-                            }
-                        }
-                    }
-                if (solid) {
-                    TransactionViewModel.updateSolidTransactions(analyzedHashes);
+                if(TransactionViewModel.fromHash(milestone).checkSolidity()) {
                     latestSolidSubtangleMilestone = milestone;
                     latestSolidSubtangleMilestoneIndex = milestoneIndex;
                     return;
                 }
-                analyzedHashes.clear();
             }
         }
     }

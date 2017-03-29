@@ -54,6 +54,7 @@ public class TipsManager {
                     Milestone.updateLatestMilestone();
                     Milestone.updateLatestSolidSubtangleMilestone();
                     TransactionRequester.instance().rescanTransactionsToRequest();
+                    checkConsistency();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
 
@@ -81,6 +82,10 @@ public class TipsManager {
                 }
             }
         }, "Latest Milestone Tracker")).start();
+    }
+
+    private void checkConsistency() {
+
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
@@ -114,6 +119,7 @@ public class TipsManager {
 
             Hash[] tips;
             BundleViewModel bundle;
+            TransactionViewModel transactionViewModel;
             int carlo;
             double monte;
             while(tip != null) {
@@ -130,14 +136,13 @@ public class TipsManager {
                         break;
                     }
                 }
-                bundle = TransactionViewModel.fromHash(tips[carlo]).getBundle();
-                if(bundle.isConsistent()) {
-                    if(tips[carlo].equals(extraTip)) {
-                        break;
-                    }
-                    tip = tips[carlo];
-                } else {
+                transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
+                if(!transactionViewModel.getBundle().isConsistent()
+                        || !transactionViewModel.checkSolidity()
+                        || !tips[carlo].equals(extraTip)) {
                     break;
+                } else {
+                    tip = tips[carlo];
                 }
             }
             return tip;

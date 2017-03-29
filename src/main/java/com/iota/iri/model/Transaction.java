@@ -19,6 +19,7 @@ public class Transaction {
     public Approvee branch = new Approvee();
 
     public byte[] solid = new byte[]{0};
+    public char consistent = 0;
 
     public Transaction() {}
     public Transaction(Hash hash) { this.hash = hash;}

@@ -32,6 +32,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "approovee",
             "tag",
             "tip",
+            "consistency",
             "transactionRating",
     };
 
@@ -46,6 +47,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle approoveeHandle;
     private ColumnFamilyHandle tagHandle;
     private ColumnFamilyHandle tipHandle;
+    private ColumnFamilyHandle consistencyHandle;
 
     List<ColumnFamilyHandle> transactionGetList;
 
@@ -348,6 +350,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 case "solid":
                     db.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
                     break;
+                case "consistent":
+                    db.put(transactionSolidHandle, key, Serializer.serialize(transaction.consistent));
+                    break;
                 default:
                     throw new NotImplementedException("Mada Sono Update ga dekinai yo");
             }
@@ -438,6 +443,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         approoveeHandle = familyHandles.get(++i);
         tagHandle = familyHandles.get(++i);
         tipHandle = familyHandles.get(++i);
+        consistencyHandle = familyHandles.get(++i);
 
         for(; ++i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.get(i));

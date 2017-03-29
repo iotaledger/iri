@@ -126,6 +126,10 @@ public class TipsManager {
                 if(tips.length == 0) {
                     break;
                 }
+                if(!ratings.containsKey(tip)) {
+                    updateRatings(tip, ratings, analyzedTips);
+                    analyzedTips.clear();
+                }
                 monte = seed.nextDouble() * ratings.get(tip);
                 for(carlo = tips.length; carlo-- >  1;) {
                     if(ratings.containsKey(tips[carlo])) {

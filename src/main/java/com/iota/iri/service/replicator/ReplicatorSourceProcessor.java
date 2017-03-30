@@ -129,10 +129,6 @@ public class ReplicatorSourceProcessor implements Runnable {
                     } catch (final RuntimeException e) {
                         log.error("Transdaction processing runtime exception ",e);
                         neighbor.incInvalidTransactions();
-                    } catch (InterruptedException e) {
-                        log.error("Interrupted");
-                    } catch (ExecutionException e) {
-                        log.error("Transdaction propagation exception ",e);
                     } catch (Exception e) {
                         log.info("Transdaction processing exception " + e.getMessage());
                         log.error("Transdaction processing exception ",e);

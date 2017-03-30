@@ -4,11 +4,7 @@ import java.io.IOException;
 import java.net.*;
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.model.Hash;
@@ -233,6 +229,10 @@ public class Node {
                 } catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();
+                } catch (InterruptedException e) {
+                    log.error("Interrupted");
+                } catch (ExecutionException e) {
+                    log.error("Transdaction propagation exception ",e);
                 } catch (Exception e) {
                     log.error("Error accessing persistence store.");
                     neighbor.incInvalidTransactions();

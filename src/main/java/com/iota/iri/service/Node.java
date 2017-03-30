@@ -64,11 +64,13 @@ public class Node {
     }
 
     private volatile long randomTipBroadcastCounter = 1;
+    private double P_DROP_TRANSACTION;
     private final SecureRandom rnd = new SecureRandom();
 
     public void init() throws Exception {
 
         socket = new DatagramSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT));
+        P_DROP_TRANSACTION = Configuration.doubling(Configuration.string(DefaultConfSettings.P_DROP_TRANSACTION));
 
         Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
         .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
@@ -187,7 +189,7 @@ public class Node {
         };
     }
 
-    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, Curl curl, int[] receivedTransactionTrits, byte[] requestedTransaction) throws Exception {
+    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, Curl curl, int[] receivedTransactionTrits, byte[] requestedTransaction) {
         long timestamp;
         TransactionViewModel receivedTransactionViewModel, transactionViewModel;
         Hash transactionPointer;
@@ -203,6 +205,9 @@ public class Node {
             if (addressMatch==true) {
                 try {
                     neighbor.incAllTransactions();
+                    if(rnd.nextInt() > P_DROP_TRANSACTION) {
+                        log.info("Randomly dropping transaction. Stand by... ");
+                    }
                     receivedTransactionViewModel = new TransactionViewModel(receivedData, receivedTransactionTrits, curl);
                     timestamp = receivedTransactionViewModel.getTimestamp();
                     if (timestamp == 0 || timestamp > TIMESTAMP_THRESHOLD) {
@@ -227,6 +232,9 @@ public class Node {
                     }
                 } catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
+                    neighbor.incInvalidTransactions();
+                } catch (Exception e) {
+                    log.error("Error accessing persistence store.");
                     neighbor.incInvalidTransactions();
                 }
                 break;

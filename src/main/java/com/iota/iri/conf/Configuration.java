@@ -39,6 +39,7 @@ public class Configuration {
         DB_LOG_PATH,
         CONF_PATH,
         P_REMOVE_REQUEST,
+        P_DROP_TRANSACTION,
         EXPERIMENTAL // experimental features.
     }
 
@@ -57,6 +58,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
         conf.put(DefaultConfSettings.CONF_PATH.name(), "iota.ini");
         conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.1");
+        conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.2");
         conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
     }
 

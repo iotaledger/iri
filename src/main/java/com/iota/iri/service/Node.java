@@ -66,7 +66,7 @@ public class Node {
     public void init() throws Exception {
 
         socket = new DatagramSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT));
-        P_DROP_TRANSACTION = Configuration.doubling(Configuration.string(DefaultConfSettings.P_DROP_TRANSACTION));
+        P_DROP_TRANSACTION = Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name());
 
         Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
         .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {

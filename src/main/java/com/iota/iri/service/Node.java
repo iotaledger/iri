@@ -203,6 +203,7 @@ public class Node {
                     neighbor.incAllTransactions();
                     if(rnd.nextDouble() < P_DROP_TRANSACTION) {
                         log.info("Randomly dropping transaction. Stand by... ");
+                        break;
                     }
                     receivedTransactionViewModel = new TransactionViewModel(receivedData, receivedTransactionTrits, curl);
                     timestamp = receivedTransactionViewModel.getTimestamp();

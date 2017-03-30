@@ -2,10 +2,9 @@ package com.iota.iri.model;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.utils.Converter;
-
 import java.util.Arrays;
 
-public class Hash {
+public class Hash implements Comparable<Hash>{
 
     public static final int SIZE_IN_BYTES = 49;
 
@@ -48,6 +47,7 @@ public class Hash {
 
     @Override
     public boolean equals(final Object obj) {
+        if(obj == null) return false;
         return Arrays.equals(bytes, ((Hash)obj).bytes);
     }
 
@@ -64,5 +64,10 @@ public class Hash {
     public byte[] bytes() {
 		return bytes;
 	}
+
+    @Override
+    public int compareTo(Hash hash) {
+        return this.equals(hash) ? 0 : 1;
+    }
 }
 

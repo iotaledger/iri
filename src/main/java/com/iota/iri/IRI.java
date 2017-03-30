@@ -6,6 +6,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.iota.iri.service.tangle.Tangle;
+import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.service.viewModels.TransactionRequester;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,7 +18,9 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.API;
 import com.iota.iri.service.Node;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.service.storage.Storage;
+import com.iota.iri.service.replicator.Replicator;
+import com.iota.iri.service.replicator.ReplicatorSinkPool;
+import com.iota.iri.service.replicator.ReplicatorSourcePool;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
 
@@ -30,9 +35,9 @@ public class IRI {
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
     public static final String NAME = "IRI Testnet";
-    public static final String VERSION = "1.1.2.10";
+    public static final String VERSION = "1.1.3.3";
 
-    public static void main(final String[] args) {
+    public static void main(final String[] args) throws IOException {
 
         log.info("Welcome to {} {}", NAME, VERSION);
         validateParams(args);
@@ -43,11 +48,13 @@ public class IRI {
         }
 
         try {
-
-            Storage.instance().init();
+            Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
+            Tangle.instance().init();
+            TransactionRequester.instance().init();
             Node.instance().init();
             TipsManager.instance().init();
             API.instance().init();
+            Replicator.instance().init();
             //IXI.init();
 
         } catch (final Exception e) {
@@ -57,15 +64,17 @@ public class IRI {
         log.info("IOTA Node initialised correctly.");
     }
 
-    private static void validateParams(final String[] args) {
+    private static void validateParams(final String[] args) throws IOException {
 
-        if (args == null || args.length < 2) {
-            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
+
+        if (args == null || (args.length < 2 && !Configuration.init())) {
+            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14700').");
             printUsage();
         }
 
         final CmdLineParser parser = new CmdLineParser();
 
+        final Option<String> config = parser.addStringOption('c', "conf");
         final Option<String> port = parser.addStringOption('p', "port");
         final Option<String> rport = parser.addStringOption('r', "receiver-port");
         final Option<String> cors = parser.addStringOption('c', "enabled-cors");
@@ -88,8 +97,16 @@ public class IRI {
             System.exit(2);
         }
 
+        // optional config file path
+        String confFilePath = parser.getOptionValue(config);
+        if(confFilePath != null ) {
+            Configuration.put(DefaultConfSettings.CONF_PATH, confFilePath);
+            Configuration.init();
+        }
+
         // mandatory args
-        final String cport = parser.getOptionValue(port);
+        String inicport = Configuration.getIniValue(DefaultConfSettings.API_PORT.name());
+        final String cport = inicport == null ? parser.getOptionValue(port) : inicport;
         if (cport == null) {
             log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
             printUsage();
@@ -172,8 +189,8 @@ public class IRI {
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " +
-                "[{-p,--port} 14265] " +
-                "[{-r,--receiver-port} 14265] " +
+                "[{-p,--port} 14700] " +
+                "[{-r,--receiver-port} 14700] " +
                 "[{-c,--enabled-cors} *] " +
                 "[{-h}] [{--headless}] " +
                 "[{-d,--debug}] " +
@@ -196,8 +213,9 @@ public class IRI {
                 API.instance().shutDown();
                 TipsManager.instance().shutDown();
                 Node.instance().shutdown();
-                Storage.instance().shutdown();
-
+                ReplicatorSourcePool.instance().shutdown();
+                ReplicatorSinkPool.instance().shutdown();
+                Tangle.instance().shutdown();
             } catch (final Exception e) {
                 log.error("Exception occurred shutting down IOTA node: ", e);
             }

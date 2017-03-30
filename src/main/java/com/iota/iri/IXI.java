@@ -45,7 +45,7 @@ public class IXI {
     private static Thread dirWatchThread;
 
     /*
-    TODO: get configuration variable for directory to watch
+    TODO: load configuration variable for directory to watch
     TODO: initialize directory listener
     TODO: create events for target added/changed/removed
      */

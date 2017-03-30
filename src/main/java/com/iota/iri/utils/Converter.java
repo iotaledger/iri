@@ -1,5 +1,8 @@
 package com.iota.iri.utils;
 
+import org.apache.commons.lang3.ArrayUtils;
+
+import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Converter {
@@ -9,10 +12,10 @@ public class Converter {
 
     public static final int NUMBER_OF_TRITS_IN_A_BYTE = 5;
     public static final int NUMBER_OF_TRITS_IN_A_TRYTE = 3;
-    
+
     static final int[][] BYTE_TO_TRITS_MAPPINGS = new int[243][];
     static final int[][] TRYTE_TO_TRITS_MAPPINGS = new int[27][];
-    
+
     public static final String TRYTE_ALPHABET = "9ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
     public static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;

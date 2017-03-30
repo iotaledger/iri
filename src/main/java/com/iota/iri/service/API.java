@@ -9,22 +9,16 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Queue;
-import java.util.Set;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import com.iota.iri.*;
 
 import com.iota.iri.service.dto.*;
+import com.iota.iri.service.viewModels.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,14 +32,6 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
-import com.iota.iri.service.storage.Storage;
-import com.iota.iri.service.storage.StorageAddresses;
-import com.iota.iri.service.storage.StorageApprovers;
-import com.iota.iri.service.storage.StorageBundle;
-import com.iota.iri.service.storage.StorageScratchpad;
-import com.iota.iri.service.storage.StorageTags;
-import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
 
 import io.undertow.Undertow;
@@ -170,8 +156,8 @@ public class API {
                             Runtime.getRuntime().totalMemory(), Milestone.latestMilestone, Milestone.latestMilestoneIndex,
                             Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                             Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
-                            System.currentTimeMillis(), StorageTransactions.instance().tips().size(),
-                            StorageScratchpad.instance().getNumberOfTransactionsToRequest());
+                            System.currentTimeMillis(), TipsViewModel.getTipHashes().length,
+                            TransactionRequester.instance().numberOfTransactionsToRequest());
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -205,6 +191,19 @@ public class API {
                     log.debug("Invoking 'storeTransactions' with {}", trytes);
                     return storeTransactionStatement(trytes);
                 }
+                case "rescanTransactions": {
+                    TransactionRequester.instance().rescanTransactionsToRequest();
+                    return AbstractResponse.createEmptyResponse();
+                }
+                case "getMissingTransactions": {
+                    TransactionRequester.instance().rescanTransactionsToRequest();
+                    synchronized (TransactionRequester.class) {
+                        return GetTipsResponse.create(
+                                Arrays.stream(
+                                        TransactionRequester.instance().getRequestedTransactions()
+                                ).map(Hash::toString).collect(Collectors.toList()));
+                    }
+                }
                 default:
                     return ErrorResponse.create("Command [" + command + "] is unknown");
             }
@@ -222,19 +221,19 @@ public class API {
     private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
         final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
         uris.stream().map(Node::uri).map(Optional::get).filter(u -> "udp".equals(u.getScheme())).forEach(u -> {
-            if (Node.instance().removeNeighbor(u)) {
+            if (Node.instance().removeNeighbor(u,true)) {
                 numberOfRemovedNeighbors.incrementAndGet();
             }
         });
         return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
     }
 
-    private AbstractResponse getTrytesStatement(List<String> hashes) {
+    private AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
-            final Transaction transaction = StorageTransactions.instance().loadTransaction((new Hash(hash)).bytes());
-            if (transaction != null) {
-                elements.add(Converter.trytes(transaction.trits()));
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(new Hash(hash));
+            if (transactionViewModel != null) {
+                elements.add(Converter.trytes(transactionViewModel.trits()));
             }
         }
         return GetTrytesResponse.create(elements);
@@ -256,12 +255,13 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
    
-    private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) {
-        final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth);
+    private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
+        SecureRandom random = new SecureRandom();
+        final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth, random);
         if (trunkTransactionToApprove == null) {
             return ErrorResponse.create("The subtangle is not solid");
         }
-        final Hash branchTransactionToApprove = TipsManager.transactionToApprove(trunkTransactionToApprove, depth);
+        final Hash branchTransactionToApprove = TipsManager.transactionToApprove(trunkTransactionToApprove, depth, random);
         if (branchTransactionToApprove == null) {
             return ErrorResponse.create("The subtangle is not solid");
         }
@@ -278,17 +278,16 @@ public class API {
         return GetTransactionsToApproveResponse.create(trunkTransactionToApprove, branchTransactionToApprove);
     }
 
-    private AbstractResponse getTipsStatement() {
+    private AbstractResponse getTipsStatement() throws ExecutionException, InterruptedException {
         return GetTipsResponse.create(
-                StorageTransactions.instance().tips().stream().map(Hash::toString).collect(Collectors.toList()));
+                Arrays.stream(TipsViewModel.getTipHashes()).map(Hash::toString).collect(Collectors.toList()));
     }
 
-    private AbstractResponse storeTransactionStatement(final List<String> trys) {
-        long pointer;
+    private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {
         for (final String trytes : trys) {
-            final Transaction transaction = new Transaction(Converter.trits(trytes));
-            pointer = StorageTransactions.instance().storeTransaction(transaction.hash, transaction, false);
-            StorageTransactions.instance().setArrivalTime(pointer, System.currentTimeMillis() / 1000L);
+            final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
+            transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
+            transactionViewModel.store();
         }
         return AbstractResponse.createEmptyResponse();
     }
@@ -297,7 +296,7 @@ public class API {
         return GetNeighborsResponse.create(Node.instance().getNeighbors());
     }
 
-    private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) {
+    private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) throws Exception {
 
         final List<Hash> transactions = trans.stream().map(s -> new Hash(s)).collect(Collectors.toList());
         final List<Hash> tips = tps.stream().map(s -> new Hash(s)).collect(Collectors.toList());
@@ -305,33 +304,33 @@ public class API {
         int numberOfNonMetTransactions = transactions.size();
         final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];
 
-        synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
+            Set<Hash> analyzedTips = new HashSet<>();
 
-            StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
-
-            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
+            final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>();
             for (final Hash tip : tips) {
 
-                final long pointer = StorageTransactions.instance().transactionPointer(tip.bytes());
-                if (pointer <= 0) {
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
+                if (transactionViewModel.getHash().equals(Hash.NULL_HASH)){
                     return ErrorResponse.create("One of the tips absents");
                 }
-                nonAnalyzedTransactions.offer(pointer);
+
+                nonAnalyzedTransactions.offer(tip);
             }
 
             {
-                Long pointer;
+                Hash pointer;
                 MAIN_LOOP:
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
-                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
 
-                        final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                        if (transaction.type == Storage.PREFILLED_SLOT) {
+                    if (analyzedTips.add(pointer)) {
+
+                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(pointer);
+                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return ErrorResponse.create("The subtangle is not solid");
                         } else {
 
-                            final Hash transactionHash = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
+                            final Hash transactionHash = transactionViewModel.getHash();
                             for (int i = 0; i < inclusionStates.length; i++) {
 
                                 if (!inclusionStates[i] && transactionHash.equals(transactions.get(i))) {
@@ -343,26 +342,24 @@ public class API {
                                     }
                                 }
                             }
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                         }
                     }
                 }
                 return GetInclusionStatesResponse.create(inclusionStates);
             }
-        }
     }
 
-    private AbstractResponse findTransactionStatement(final Map<String, Object> request) {
-        final Set<Long> bundlesTransactions = new HashSet<>();
+    private AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {
+        final Set<Hash> bundlesTransactions = new HashSet<>();
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
-                bundlesTransactions.addAll(StorageBundle.instance()
-                        .bundleTransactions(StorageBundle.instance().bundlePointer((new Hash(bundle)).bytes())));
+                bundlesTransactions.addAll(Arrays.stream(BundleViewModel.fromHash(new Hash(bundle)).getTransactionViewModels()).map(t -> t.getHash()).collect(Collectors.toSet()));
             }
         }
 
-        final Set<Long> addressesTransactions = new HashSet<>();
+        final Set<Hash> addressesTransactions = new HashSet<>();
         if (request.containsKey("addresses")) {
             final List<String> addresses = (List<String>) request.get("addresses");
             log.debug("Searching: {}", addresses.stream().reduce((a, b) -> a += ',' + b));
@@ -371,33 +368,30 @@ public class API {
                 if (address.length() != 81) {
                     log.error("Address {} doesn't look a valid address", address);
                 }
-                addressesTransactions.addAll(StorageAddresses.instance()
-                        .addressTransactions(StorageAddresses.instance().addressPointer((new Hash(address)).bytes())));
+                addressesTransactions.addAll(Arrays.stream(new AddressViewModel(new Hash(address)).getTransactionHashes()).collect(Collectors.toSet()));
             }
         }
 
-        final Set<Long> tagsTransactions = new HashSet<>();
+        final Set<Hash> tagsTransactions = new HashSet<>();
         if (request.containsKey("tags")) {
             for (String tag : (List<String>) request.get("tags")) {
                 while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
                     tag += Converter.TRYTE_ALPHABET.charAt(0);
                 }
-                tagsTransactions.addAll(StorageTags.instance()
-                        .tagTransactions(StorageTags.instance().tagPointer((new Hash(tag)).bytes())));
+                tagsTransactions.addAll(Arrays.stream(new TagViewModel(new Hash(tag)).getTransactionHashes()).collect(Collectors.toSet()));
             }
         }
 
-        final Set<Long> approveeTransactions = new HashSet<>();
+        final Set<Hash> approveeTransactions = new HashSet<>();
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
-                approveeTransactions.addAll(StorageApprovers.instance().approveeTransactions(
-                        StorageApprovers.instance().approveePointer((new Hash(approvee)).bytes())));
+                approveeTransactions.addAll(Arrays.stream(TransactionViewModel.fromHash(new Hash(approvee)).getApprovers()).collect(Collectors.toSet()));
             }
         }
 
         // need refactoring
-        final Set<Long> foundTransactions = bundlesTransactions.isEmpty() ? (addressesTransactions.isEmpty()
+        final Set<Hash> foundTransactions = bundlesTransactions.isEmpty() ? (addressesTransactions.isEmpty()
                 ? (tagsTransactions.isEmpty()
                 ? (approveeTransactions.isEmpty() ? new HashSet<>() : approveeTransactions) : tagsTransactions)
                 : addressesTransactions) : bundlesTransactions;
@@ -413,8 +407,7 @@ public class API {
         }
 
         final List<String> elements = foundTransactions.stream()
-                .map(pointer -> new Hash(StorageTransactions.instance().loadTransaction(pointer).hash, 0,
-                        Transaction.HASH_SIZE).toString())
+                .map(pointer -> pointer.toString())
                 .collect(Collectors.toCollection(LinkedList::new));
 
         return FindTransactionsResponse.create(elements);
@@ -422,14 +415,14 @@ public class API {
 
     private AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
         for (final String tryte : trytes2) {
-            final Transaction transaction = new Transaction(Converter.trits(tryte));
-            transaction.weightMagnitude = Curl.HASH_LENGTH;
-            Node.instance().broadcast(transaction);
+            final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(tryte));
+            transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
+            Node.instance().broadcast(transactionViewModel);
         }
         return AbstractResponse.createEmptyResponse();
     }
 
-    private AbstractResponse getBalancesStatement(final List<String> addrss, final int threshold) {
+    private AbstractResponse getBalancesStatement(final List<String> addrss, final int threshold) throws Exception {
 
         if (threshold <= 0 || threshold > 100) {
             return ErrorResponse.create("Illegal 'threshold'");
@@ -447,34 +440,31 @@ public class API {
         final Hash milestone = Milestone.latestSolidSubtangleMilestone;
         final int milestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
-        synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
 
-            StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
+            Set<Hash> analyzedTips = new HashSet<>();
 
-            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(
-                    Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.bytes())));
-            Long pointer;
-            while ((pointer = nonAnalyzedTransactions.poll()) != null) {
+            final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
+                    //Collections.singleton(StorageTransactions.instance().transactionPointer(milestone.value())));
+            Hash hash;
+            while ((hash = nonAnalyzedTransactions.poll()) != null) {
 
-                if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
+                if (analyzedTips.add(hash)) {
 
-                    final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
+                    final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
 
-                    if (transaction.value != 0) {
+                    if (transactionViewModel.value() != 0) {
 
-                        final Hash address = new Hash(transaction.address, 0, Transaction.ADDRESS_SIZE);
+                        final Hash address = transactionViewModel.getAddress().getHash();
                         final Long balance = balances.get(address);
                         if (balance != null) {
 
-                            balances.put(address, balance + transaction.value);
+                            balances.put(address, balance + transactionViewModel.value());
                         }
                     }
-                    nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                    nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
+                    nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                 }
             }
-        }
-
         final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())
                 .collect(Collectors.toCollection(LinkedList::new));
 
@@ -499,7 +489,7 @@ public class API {
     
     private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
-        final List<Transaction> transactions = new LinkedList<>();
+        final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
 
         Hash prevTransaction = null;
 
@@ -508,18 +498,18 @@ public class API {
             try {
                 final int[] transactionTrits = Converter.trits(tryte);
                 System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
-                        transactionTrits, Transaction.TRUNK_TRANSACTION_TRINARY_OFFSET,
-                        Transaction.TRUNK_TRANSACTION_TRINARY_SIZE);
+                        transactionTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
+                        TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
                 System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
-                        transactionTrits, Transaction.BRANCH_TRANSACTION_TRINARY_OFFSET,
-                        Transaction.BRANCH_TRANSACTION_TRINARY_SIZE);
+                        transactionTrits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
+                        TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
                 if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
-                    transactions.clear();
+                    transactionViewModels.clear();
                     break;
                 }
-                final Transaction transaction = new Transaction(transactionTrits);
-                transactions.add(transaction);
-                prevTransaction = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
+                final TransactionViewModel transactionViewModel = new TransactionViewModel(transactionTrits);
+                transactionViewModels.add(transactionViewModel);
+                prevTransaction = transactionViewModel.getHash();
             } finally {
                 API.incEllapsedTime_PoW(System.nanoTime() - startTime);
                 API.incCounter_PoW();
@@ -536,8 +526,8 @@ public class API {
         }
 
         final List<String> elements = new LinkedList<>();
-        for (int i = transactions.size(); i-- > 0; ) {
-            elements.add(Converter.trytes(transactions.get(i).trits()));
+        for (int i = transactionViewModels.size(); i-- > 0; ) {
+            elements.add(Converter.trytes(transactionViewModels.get(i).trits()));
         }
         return AttachToTangleResponse.create(elements);
     }
@@ -547,8 +537,10 @@ public class API {
         int numberOfAddedNeighbors = 0;
         for (final String uriString : uris) {
             final URI uri = new URI(uriString);
+            
             if ("udp".equals(uri.getScheme())) {
-                final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()));
+                // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
+                final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),false,true);
                 if (!Node.instance().getNeighbors().contains(neighbor)) {
                     Node.instance().getNeighbors().add(neighbor);
                     numberOfAddedNeighbors++;

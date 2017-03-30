@@ -44,14 +44,20 @@ public class TipsManager {
             final SecureRandom rnd = new SecureRandom();
 
             while (!shuttingDown) {
-                
+
+                try {
+                    TransactionRequester.instance().rescanTransactionsToRequest();
+                } catch (ExecutionException e) {
+                    log.error("Could not execute request rescan. ");
+                } catch (InterruptedException e) {
+                    log.error("Request rescan interrupted. ");
+                }
                 try {
                     final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
                     final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
                     Milestone.updateLatestMilestone();
                     Milestone.updateLatestSolidSubtangleMilestone();
-                    TransactionRequester.instance().rescanTransactionsToRequest();
                     checkConsistency();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {

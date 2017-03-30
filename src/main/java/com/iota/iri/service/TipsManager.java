@@ -2,12 +2,10 @@ package com.iota.iri.service;
 
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.viewModels.AddressViewModel;
-import com.iota.iri.service.viewModels.BundleViewModel;
-import com.iota.iri.service.viewModels.TransactionRequester;
-import com.iota.iri.service.viewModels.TransactionViewModel;
+import com.iota.iri.service.viewModels.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,8 +82,7 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    private void checkConsistency() {
-
+    private void checkConsistency() throws ExecutionException, InterruptedException {
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
@@ -495,7 +492,7 @@ public class TipsManager {
         return true;
     }
 
-    public static Map<Hash,Long> getNonzeroBundleAddresses(Hash extraTip, Hash preferableMilestone, Set<Hash> analyzedTips) throws Exception {
+    public static Map<Hash,Long> checkState(Hash extraTip, Hash preferableMilestone, Set<Hash> analyzedTips) throws Exception {
         Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
         int numberOfAnalyzedTransactions = 0;
 

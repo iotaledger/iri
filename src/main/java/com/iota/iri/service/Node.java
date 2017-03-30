@@ -205,7 +205,7 @@ public class Node {
             if (addressMatch==true) {
                 try {
                     neighbor.incAllTransactions();
-                    if(rnd.nextInt() < P_DROP_TRANSACTION) {
+                    if(rnd.nextDouble() < P_DROP_TRANSACTION) {
                         log.info("Randomly dropping transaction. Stand by... ");
                     }
                     receivedTransactionViewModel = new TransactionViewModel(receivedData, receivedTransactionTrits, curl);

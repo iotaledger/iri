@@ -60,6 +60,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     RocksDB db;
     DBOptions options;
+    BloomFilter bloomFilter;
     private Thread compactionThreadHandle;
 
     @Override
@@ -147,11 +148,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
         if (db != null) db.close();
         options.close();
+        bloomFilter.close();
     }
 
     private MyFunction<Object, Boolean> saveTransaction = (txObject -> {
         Transaction transaction = (Transaction) txObject;
         WriteBatch batch = new WriteBatch();
+        WriteOptions writeOptions = new WriteOptions();
         byte[] key = transaction.hash.bytes();
         batch.put(transactionHandle, key, transaction.bytes);
         batch.put(transactionValidityHandle, key, Serializer.serialize(transaction.validity));
@@ -163,7 +166,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
         batch.merge(approoveeHandle, transaction.branch.hash.bytes(), key);
         batch.merge(tagHandle, transaction.tag.value.bytes(), key);
-        db.write(new WriteOptions(), batch);
+        db.write(writeOptions, batch);
+        writeOptions.close();
+        batch.close();
         return true;
     });
 
@@ -367,7 +372,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         StringAppendOperator stringAppendOperator = new StringAppendOperator();
         RocksDB.loadLibrary();
         Thread.yield();
-        BloomFilter bloomFilter = new BloomFilter(BLOOM_FILTER_RANGE);
+        bloomFilter = new BloomFilter(BLOOM_FILTER_RANGE);
         BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
         options = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true).setDbLogDir(logPath);
 
@@ -476,7 +481,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private void scanTxDeleteBaddies() throws Exception {
         RocksIterator iterator = db.newIterator(transactionHandle);
         List<byte[]> baddies = new ArrayList<>();
-        WriteBatch batch = new WriteBatch();
+        //WriteBatch batch = new WriteBatch();
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             if(iterator.value().length != TransactionViewModel.SIZE || Arrays.equals(iterator.value(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                 baddies.add(iterator.key());
@@ -508,7 +513,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             }
         }
         iterator.close();
-        db.write(new WriteOptions(), batch);
+        WriteOptions writeOptions = new WriteOptions();
+        db.write(writeOptions, batch);
+        batch.close();
+        writeOptions.close();
         if(delList.size() > 0) {
             log.info("Flushing corrupted tag handles. Amount to delete: " + delList.size());
         }

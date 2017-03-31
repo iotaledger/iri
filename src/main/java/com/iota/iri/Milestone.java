@@ -107,15 +107,12 @@ public class Milestone {
     }
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
-        for (int milestoneIndex = latestSolidSubtangleMilestoneIndex; milestoneIndex < latestMilestoneIndex; milestoneIndex++) {
-            if(milestoneIndex != Milestone.MILESTONE_START_INDEX) {
-                final Hash milestone = milestones.get(milestoneIndex);
-                if (milestone == null || !TipsManager.checkSolidity(milestone)) {
-                    break;
-                } else {
-                    latestSolidSubtangleMilestone = milestone;
-                    latestSolidSubtangleMilestoneIndex = milestoneIndex;
-                }
+        for (int milestoneIndex = latestMilestoneIndex; milestoneIndex > latestSolidSubtangleMilestoneIndex; milestoneIndex--) {
+            final Hash milestone = milestones.get(milestoneIndex);
+            if (milestone != null && TipsManager.checkSolidity(milestone)) {
+                latestSolidSubtangleMilestone = milestone;
+                latestSolidSubtangleMilestoneIndex = milestoneIndex;
+                break;
             }
         }
     }

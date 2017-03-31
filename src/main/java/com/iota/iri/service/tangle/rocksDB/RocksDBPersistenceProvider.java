@@ -322,9 +322,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         if(handle != null) {
             iterator = db.newIterator(handle);
             try {
-                iterator.seek(ArrayUtils.addAll(value, new byte[Hash.SIZE_IN_BYTES - value.length]));
-                iterator.next();
-                for(; iterator.isValid() && Arrays.equals(Arrays.copyOf(iterator.key(), value.length), value) ;
+                for(iterator.seek(Arrays.copyOf(value, Hash.SIZE_IN_BYTES));
+                    iterator.isValid() && Arrays.equals(Arrays.copyOf(iterator.key(), value.length), value) ;
                     iterator.next()) {
                     keys.add(new Hash(iterator.key()));
                 }

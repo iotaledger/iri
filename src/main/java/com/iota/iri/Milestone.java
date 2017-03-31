@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.TipsManager;
 import com.iota.iri.service.viewModels.TransactionRequester;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
@@ -109,7 +110,7 @@ public class Milestone {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex; milestoneIndex < latestMilestoneIndex; milestoneIndex++) {
             if(milestoneIndex != Milestone.MILESTONE_START_INDEX) {
                 final Hash milestone = milestones.get(milestoneIndex);
-                if (milestone == null || !TransactionViewModel.fromHash(milestone).checkSolidity()) {
+                if (milestone == null || !TipsManager.checkSolidity(milestone)) {
                     break;
                 } else {
                     latestSolidSubtangleMilestone = milestone;

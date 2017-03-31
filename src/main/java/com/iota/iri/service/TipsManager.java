@@ -144,7 +144,7 @@ public class TipsManager {
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                 if(!transactionViewModel.getBundle().isConsistent()
-                        || !transactionViewModel.checkSolidity()) {
+                        || !checkSolidity(tips[carlo])) {
                     break;
                 } else if (tips[carlo].equals(extraTip)){
                     break;
@@ -160,6 +160,36 @@ public class TipsManager {
             API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
         }
         return null;
+    }
+
+
+    public static boolean checkSolidity(Hash hash) throws Exception {
+        Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
+        boolean solid = true;
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
+        Hash hashPointer, trunkInteger, branchInteger;
+        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
+            if (analyzedHashes.add(hashPointer)) {
+                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
+                if(!transactionViewModel2.isSolid()) {
+                    if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
+                        TransactionRequester.instance().requestTransaction(hashPointer);
+                        solid = false;
+                        break;
+
+                    } else {
+                        trunkInteger = transactionViewModel2.getTrunkTransactionHash();
+                        branchInteger = transactionViewModel2.getBranchTransactionHash();
+                        nonAnalyzedTransactions.offer(trunkInteger);
+                        nonAnalyzedTransactions.offer(branchInteger);
+                    }
+                }
+            }
+        }
+        if (solid) {
+            TransactionViewModel.updateSolidTransactions(analyzedHashes);
+        }
+        return solid;
     }
 
     private static int updateRatings(Hash txHash, Map<Hash, Integer> ratings, Set<Hash> analyzedTips) throws Exception {

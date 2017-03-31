@@ -360,35 +360,6 @@ public class TransactionViewModel {
         }
     }
 
-    public boolean checkSolidity() throws Exception {
-        Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
-        boolean solid = true;
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(getHash()));
-        Hash hashPointer, trunkInteger, branchInteger;
-        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (analyzedHashes.add(hashPointer)) {
-                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(!transactionViewModel2.isSolid()) {
-                    if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                        TransactionRequester.instance().requestTransaction(hashPointer);
-                        solid = false;
-                        break;
-
-                    } else {
-                        trunkInteger = transactionViewModel2.getTrunkTransactionHash();
-                        branchInteger = transactionViewModel2.getBranchTransactionHash();
-                        nonAnalyzedTransactions.offer(trunkInteger);
-                        nonAnalyzedTransactions.offer(branchInteger);
-                    }
-                }
-            }
-        }
-        if (solid) {
-            TransactionViewModel.updateSolidTransactions(analyzedHashes);
-        }
-        return solid;
-    }
-
     public boolean isSolid() {
         return transaction.solid[0] == 1;
     }

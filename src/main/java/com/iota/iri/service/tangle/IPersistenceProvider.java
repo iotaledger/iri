@@ -25,4 +25,6 @@ public interface IPersistenceProvider {
     boolean mayExist(Object model) throws Exception;
 
     long count(Class<?> model) throws Exception;
+
+    Object[] scanForKeys(Class<?> modelClass, byte[] value);
 }

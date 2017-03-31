@@ -116,6 +116,16 @@ public class Tangle {
         });
     }
 
+    public Future<Object[]> keyStartsWith(Class<?> modelClass, byte[] value) {
+        return executor.submit(() -> {
+            Object[] output = new Object[0];
+            for(IPersistenceProvider provider: this.persistenceProviders) {
+                output = provider.scanForKeys(modelClass, value);
+            }
+            return output;
+        });
+    }
+
     public Future<Boolean> exists(Class<?> modelClass, Hash hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {

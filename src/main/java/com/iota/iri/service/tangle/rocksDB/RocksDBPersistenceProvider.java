@@ -319,6 +319,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return db.getLongProperty(handle, "rocksdb.estimate-num-keys");
     }
 
+    @Override
+    public Object[] scanForKeys(Class<?> modelClass, byte[] value) {
+        return new Object[0];
+    }
+
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
         //db.flush(new FlushOptions().setWaitForFlush(true), handle);
         List<byte[]> itemsToDelete = new ArrayList<>();

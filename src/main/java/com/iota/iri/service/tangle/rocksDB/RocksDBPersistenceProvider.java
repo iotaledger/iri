@@ -61,7 +61,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     RocksDB db;
     DBOptions options;
     BloomFilter bloomFilter;
-    final WriteOptions writeOptions = new WriteOptions();
     private Thread compactionThreadHandle;
 
     @Override
@@ -149,13 +148,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
         if (db != null) db.close();
         options.close();
-        writeOptions.close();
         bloomFilter.close();
     }
 
     private MyFunction<Object, Boolean> saveTransaction = (txObject -> {
         Transaction transaction = (Transaction) txObject;
         WriteBatch batch = new WriteBatch();
+        WriteOptions writeOptions = new WriteOptions();
         byte[] key = transaction.hash.bytes();
         batch.put(transactionHandle, key, transaction.bytes);
         batch.put(transactionValidityHandle, key, Serializer.serialize(transaction.validity));
@@ -169,6 +168,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.merge(tagHandle, transaction.tag.value.bytes(), key);
         db.write(writeOptions, batch);
         batch.close();
+        writeOptions.close();
         return true;
     });
 
@@ -478,12 +478,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private void clearSolidTransactionTags() throws RocksDBException {
         RocksIterator iterator = db.newIterator(transactionSolidHandle);
         WriteBatch writeBatch = new WriteBatch();
+        WriteOptions writeOptions = new WriteOptions();
         byte[] zero = new byte[]{0};
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             writeBatch.put(iterator.key(), zero);
         }
         db.write(writeOptions, writeBatch);
         writeBatch.close();
+        writeOptions.close();
         iterator.close();
     }
 

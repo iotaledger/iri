@@ -61,6 +61,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     RocksDB db;
     DBOptions options;
     BloomFilter bloomFilter;
+    final WriteOptions writeOptions = new WriteOptions();
     private Thread compactionThreadHandle;
 
     @Override
@@ -148,13 +149,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
         if (db != null) db.close();
         options.close();
+        writeOptions.close();
         bloomFilter.close();
     }
 
     private MyFunction<Object, Boolean> saveTransaction = (txObject -> {
         Transaction transaction = (Transaction) txObject;
         WriteBatch batch = new WriteBatch();
-        WriteOptions writeOptions = new WriteOptions();
         byte[] key = transaction.hash.bytes();
         batch.put(transactionHandle, key, transaction.bytes);
         batch.put(transactionValidityHandle, key, Serializer.serialize(transaction.validity));
@@ -167,7 +168,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.merge(approoveeHandle, transaction.branch.hash.bytes(), key);
         batch.merge(tagHandle, transaction.tag.value.bytes(), key);
         db.write(writeOptions, batch);
-        writeOptions.close();
         batch.close();
         return true;
     });
@@ -456,7 +456,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
         updateTagDB();
         scanTxDeleteBaddies();
-        updateSolidTx();
+        clearSolidTransactionTags();
 
         this.compactionThreadHandle = new Thread(() -> {
             while(running) {
@@ -475,7 +475,16 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
     }
 
-    private void updateSolidTx() {
+    private void clearSolidTransactionTags() throws RocksDBException {
+        RocksIterator iterator = db.newIterator(transactionSolidHandle);
+        WriteBatch writeBatch = new WriteBatch();
+        byte[] zero = new byte[]{0};
+        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+            writeBatch.put(iterator.key(), zero);
+        }
+        db.write(writeOptions, writeBatch);
+        writeBatch.close();
+        iterator.close();
     }
 
     private void scanTxDeleteBaddies() throws Exception {

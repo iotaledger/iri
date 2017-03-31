@@ -5,17 +5,17 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.service.viewModels.TransactionViewModelTest;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.Arrays;
 import java.util.Random;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by paul on 3/3/17 for iri.
@@ -54,6 +54,14 @@ public class TangleTest {
         transaction.hash = new Hash(Converter.bytes(hash));
 
         //assertTrue("Should be a new, unique transaction", !Tangle.instance().save(transaction).get());
+    }
+
+    @Test
+    public void getKeysStartingWithValue() throws Exception {
+        TransactionViewModel transactionViewModel = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionTrits());
+        transactionViewModel.store();
+        Hash[] tag = Tangle.instance().keysStartingWith(Transaction.class, transactionViewModel.getTagValue().bytes()).get();
+        Assert.assertNotEquals(tag.length, 0);
     }
 
     @Test

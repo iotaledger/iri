@@ -26,5 +26,5 @@ public interface IPersistenceProvider {
 
     long count(Class<?> model) throws Exception;
 
-    Object[] scanForKeys(Class<?> modelClass, byte[] value);
+    Hash[] keysStartingWith(Class<?> modelClass, byte[] value);
 }

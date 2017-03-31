@@ -260,7 +260,7 @@ public class TransactionViewModel {
 
     public Hash getTagValue() {
         if(transaction.tag.value == null) {
-            transaction.tag.value = new Hash(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
+            transaction.tag.value = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
         }
         return transaction.tag.value;
     }

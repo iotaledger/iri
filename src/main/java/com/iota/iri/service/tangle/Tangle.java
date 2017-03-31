@@ -5,7 +5,6 @@ import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.*;
 
@@ -116,11 +115,12 @@ public class Tangle {
         });
     }
 
-    public Future<Object[]> keyStartsWith(Class<?> modelClass, byte[] value) {
+    public Future<Hash[]> keysStartingWith(Class<?> modelClass, byte[] value) {
         return executor.submit(() -> {
-            Object[] output = new Object[0];
+            Hash[] output = new Hash[0];
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                output = provider.scanForKeys(modelClass, value);
+                output = provider.keysStartingWith(modelClass, value);
+                if(output.length != 0);
             }
             return output;
         });

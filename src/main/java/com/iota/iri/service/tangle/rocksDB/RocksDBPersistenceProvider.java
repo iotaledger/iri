@@ -51,7 +51,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     List<ColumnFamilyHandle> transactionGetList;
 
-    private Map<Class<?>, ColumnFamilyHandle[]> classTreeMap = new HashMap<>();
+    private Map<Class<?>, ColumnFamilyHandle> classTreeMap = new HashMap<>();
     private Map<Class<?>, MyFunction<Object, Boolean>> saveMap = new HashMap<>();
     private Map<Class<?>, MyFunction<Object, Void>> deleteMap = new HashMap<>();
     private Map<Class<?>, MyFunction<Object, Boolean>> loadMap = new HashMap<>();
@@ -125,17 +125,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     private void initClassTreeMap() {
-        classTreeMap.put(Address.class, new ColumnFamilyHandle[]{addressHandle});
-        classTreeMap.put(Tip.class, new ColumnFamilyHandle[]{tipHandle});
-        classTreeMap.put(Approvee.class, new ColumnFamilyHandle[]{approoveeHandle});
-        classTreeMap.put(Bundle.class, new ColumnFamilyHandle[]{bundleHandle});
-        classTreeMap.put(Tag.class, new ColumnFamilyHandle[]{tagHandle});
-        classTreeMap.put(Transaction.class, new ColumnFamilyHandle[]{
-                transactionHandle,
-                transactionArrivalTimeHandle,
-                transactionTypeHandle,
-                transactionValidityHandle,
-        });
+        classTreeMap.put(Address.class, addressHandle);
+        classTreeMap.put(Tip.class, tipHandle);
+        classTreeMap.put(Approvee.class, approoveeHandle);
+        classTreeMap.put(Bundle.class, bundleHandle);
+        classTreeMap.put(Tag.class, tagHandle);
+        classTreeMap.put(Transaction.class, transactionHandle);
     }
 
     @Override
@@ -320,8 +315,24 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public Object[] scanForKeys(Class<?> modelClass, byte[] value) {
-        return new Object[0];
+    public Hash[] keysStartingWith(Class<?> modelClass, byte[] value) {
+        RocksIterator iterator;
+        ColumnFamilyHandle handle = classTreeMap.get(modelClass);
+        List<Hash> keys = new LinkedList<>();
+        if(handle != null) {
+            iterator = db.newIterator(handle);
+            try {
+                iterator.seek(ArrayUtils.addAll(value, new byte[Hash.SIZE_IN_BYTES - value.length]));
+                iterator.next();
+                for(; iterator.isValid() && Arrays.equals(Arrays.copyOf(iterator.key(), value.length), value) ;
+                    iterator.next()) {
+                    keys.add(new Hash(iterator.key()));
+                }
+            } finally {
+                iterator.close();
+            }
+        }
+        return keys.stream().toArray(Hash[]::new);
     }
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {

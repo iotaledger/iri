@@ -77,7 +77,7 @@ public class TransactionViewModelTest {
     public void getBranchTransaction() throws Exception {
         TransactionViewModel transactionViewModel, branchTransaction;
 
-        branchTransaction = new TransactionViewModel(getRandomTransactionTrits(seed));
+        branchTransaction = new TransactionViewModel(getRandomTransactionTrits());
 
         Transaction transaction = getRandomTransaction(seed);
         transaction.branch = new Approvee();
@@ -114,17 +114,17 @@ public class TransactionViewModelTest {
         TransactionViewModel transactionViewModel, otherTxVM, trunkTx, branchTx;
 
 
-        trunkTx = new TransactionViewModel(getRandomTransactionTrits(seed));
+        trunkTx = new TransactionViewModel(getRandomTransactionTrits());
 
-        branchTx = new TransactionViewModel(getRandomTransactionTrits(seed));
+        branchTx = new TransactionViewModel(getRandomTransactionTrits());
 
-        int[] childTx = getRandomTransactionTrits(seed);
+        int[] childTx = getRandomTransactionTrits();
         Curl curl = new Curl();
         System.arraycopy(trunkTx.getHashTrits(curl), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branchTx.getHashTrits(curl), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
         transactionViewModel = new TransactionViewModel(childTx);
 
-        childTx = getRandomTransactionTrits(seed);
+        childTx = getRandomTransactionTrits();
         System.arraycopy(trunkTx.getHashTrits(curl), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branchTx.getHashTrits(curl), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
         otherTxVM = new TransactionViewModel(childTx);
@@ -336,7 +336,7 @@ public class TransactionViewModelTest {
         transaction.hash = new Hash(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray());
         return transaction;
     }
-    private int[] getRandomTransactionTrits(Random seed) {
+    public static int[] getRandomTransactionTrits() {
         return Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> seed.nextInt(3)-1).toArray();
     }
 }

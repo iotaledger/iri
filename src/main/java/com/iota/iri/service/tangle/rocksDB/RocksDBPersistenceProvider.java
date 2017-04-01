@@ -7,6 +7,7 @@ import com.iota.iri.service.tangle.Serializer;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
 import org.slf4j.LoggerFactory;
 
@@ -385,7 +386,17 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     void initDB(String path, String logPath) throws Exception {
         StringAppendOperator stringAppendOperator = new StringAppendOperator();
-        RocksDB.loadLibrary();
+        try {
+            RocksDB.loadLibrary();
+        } catch(Exception e) {
+            if(SystemUtils.IS_OS_WINDOWS) {
+                log.error("Error loading RocksDB library. " +
+                        "Please ensure that " +
+                        "Microsoft Visual C++ 2015 Redistributable Update 3 " +
+                        "is installed and updated");
+            }
+            throw e;
+        }
         Thread.yield();
         bloomFilter = new BloomFilter(BLOOM_FILTER_RANGE);
         BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);

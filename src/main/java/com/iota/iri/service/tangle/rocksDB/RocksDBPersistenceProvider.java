@@ -66,6 +66,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     @Override
     public void init() throws Exception {
+        log.info("Initializing Database Backend... ");
         initDB(
                 Configuration.string(Configuration.DefaultConfSettings.DB_PATH),
                 Configuration.string(Configuration.DefaultConfSettings.DB_LOG_PATH)
@@ -76,6 +77,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         initMayExistMap();
         initDeleteMap();
         initCountMap();
+        log.info("RocksDB persistence provider initialized.");
     }
 
     private void initCountMap() {
@@ -416,6 +418,26 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         db.enableFileDeletions(true);
 
         fillmodelColumnHandles(familyHandles);
+
+        log.info("Checking Tags... ");
+        updateTagDB();
+        log.info("Scanning transactions... ");
+        scanTxDeleteBaddies();
+        log.info("Clearing solidity markers... ");
+        clearSolidTransactionTags();
+
+        this.compactionThreadHandle = new Thread(() -> {
+            while(running) {
+                try {
+                    db.compactRange();
+                    Thread.sleep(300 * 1000);
+                } catch (Exception e) {
+                    log.error("Compaction Error: " + e.getLocalizedMessage());
+                }
+            }
+        }, "Compaction Thread");
+        log.info("Starting DB compaction timer... ");
+        this.compactionThreadHandle.start();
     }
 
     private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles, String path) throws Exception {
@@ -479,21 +501,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(; ++i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.get(i));
         }
-
-        updateTagDB();
-        scanTxDeleteBaddies();
-        clearSolidTransactionTags();
-
-        this.compactionThreadHandle = new Thread(() -> {
-            while(running) {
-                try {
-                    db.compactRange();
-                    Thread.sleep(300 * 1000);
-                } catch (Exception e) {
-                    log.error("Compaction Error: " + e.getLocalizedMessage());
-                }
-            }
-        }, "Compaction Thread");
 
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {

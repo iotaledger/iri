@@ -1,4 +1,7 @@
 1.1.3.4
+    - Added RocksDB initialization logs
+
+1.1.3.4
     - RocksDB dispose fixes
 
 1.1.3.3

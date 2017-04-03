@@ -6,6 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import com.iota.iri.Bundle;
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
@@ -72,7 +73,16 @@ public class TransactionViewModel {
 
     private int[] hashTrits;
 
-    private static final int MIN_WEIGHT_MAGNITUDE = 13;
+    private static final int TESTNET_MIN_WEIGHT_MAGNITUDE = 13;
+    private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 18;
+    private static int MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
+    public static void init() {
+        if(Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
+            MIN_WEIGHT_MAGNITUDE = TESTNET_MIN_WEIGHT_MAGNITUDE;
+        } else {
+            MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
+        }
+    }
 
     private int[] trits;
     public int weightMagnitude;

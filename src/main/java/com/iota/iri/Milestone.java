@@ -50,7 +50,7 @@ public class Milestone {
                     //if ((now - timestamp) < 7200L && index > latestMilestoneIndex) {
                     if (index > latestMilestoneIndex) {
 
-                        final BundleViewModel bundle = BundleViewModel.fromHash(transactionViewModel.getBundleHash());
+                        final Bundle bundle = new Bundle(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
                         if (bundle.getTransactions().size() == 0) {
 							// Bundle not available, try again later.
                             analyzedMilestoneRetryCandidates.add(hash);

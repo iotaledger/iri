@@ -7,6 +7,7 @@ import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import com.iota.iri.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.replicator.ReplicatorSinkPool;
 import com.iota.iri.service.viewModels.BundleViewModel;
@@ -260,7 +261,7 @@ public class Node {
                     transactionPointer = mBytes;
 
                     final TransactionViewModel milestoneTx = TransactionViewModel.fromHash(transactionPointer);
-                    final BundleViewModel bundle = BundleViewModel.fromHash(milestoneTx.getBundleHash());
+                    final Bundle bundle = new Bundle(BundleViewModel.fromHash(milestoneTx.getBundleHash()));
                     if (bundle != null) {
                         Collection<List<TransactionViewModel>> tList = bundle.getTransactions();
                         if (tList != null && tList.size() != 0) {

@@ -63,7 +63,7 @@ public class BundleTest {
         for(TransactionViewModel transactionViewModel : transactionViewModels) {
             transactionViewModel.store();
         }
-        BundleViewModel bundle = BundleViewModel.fromHash(transactionViewModels[0].getBundleHash());
+        Bundle bundle = new Bundle(BundleViewModel.fromHash(transactionViewModels[0].getBundleHash()));
         List<List<TransactionViewModel>> transactionList = bundle.getTransactions();
     }
 

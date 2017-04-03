@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
+import com.iota.iri.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.viewModels.*;
 import org.slf4j.Logger;
@@ -366,7 +367,7 @@ public class TipsManager {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(extraTransactionPointer);
                     if (transactionViewModel.getCurrentIndex() == 0) {
 
-                        final BundleViewModel bundle = BundleViewModel.fromHash(transactionViewModel.getBundleHash());
+                        final Bundle bundle = new Bundle(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
                         for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 
                             //if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(), transactionViewModel.getHash())) {
@@ -552,7 +553,7 @@ public class TipsManager {
 
                         boolean validBundle = false;
 
-                        final BundleViewModel bundle = BundleViewModel.fromHash(transactionViewModel.getBundleHash());
+                        final Bundle bundle = new Bundle(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
                         for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
 
                             if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {

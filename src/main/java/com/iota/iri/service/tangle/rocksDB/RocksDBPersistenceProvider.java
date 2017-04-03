@@ -11,6 +11,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
 import org.slf4j.LoggerFactory;
 
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -385,6 +386,39 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return true;
     }
 
+    public void createBackup(String path) throws RocksDBException {
+        Env env;
+        BackupableDBOptions backupableDBOptions;
+        BackupEngine backupEngine;
+        env = Env.getDefault();
+        backupableDBOptions = new BackupableDBOptions(path);
+        try {
+            backupEngine = BackupEngine.open(env, backupableDBOptions);
+            backupEngine.createNewBackup(db, true);
+            backupEngine.close();
+        } finally {
+            env.close();
+            backupableDBOptions.close();
+        }
+    }
+
+    public void restoreBackup(String path, String logPath) throws Exception {
+        Env env;
+        BackupableDBOptions backupableDBOptions;
+        BackupEngine backupEngine;
+        env = Env.getDefault();
+        backupableDBOptions = new BackupableDBOptions(path);
+        backupEngine = BackupEngine.open(env, backupableDBOptions);
+        shutdown();
+        try(final RestoreOptions restoreOptions = new RestoreOptions(false)){
+            backupEngine.restoreDbFromLatestBackup(path, logPath, restoreOptions);
+        } finally {
+            backupEngine.close();
+        }
+        backupableDBOptions.close();
+        env.close();
+        initDB(path, logPath);
+    }
 
     void initDB(String path, String logPath) throws Exception {
         StringAppendOperator stringAppendOperator = new StringAppendOperator();

@@ -4,10 +4,12 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
+import com.iota.iri.Bundle;
 import com.iota.iri.hash.Curl;
-import com.iota.iri.model.*;
+import com.iota.iri.model.Approvee;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
@@ -63,7 +65,7 @@ public class TransactionViewModel {
     public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
 
     public AddressViewModel address;
-    public BundleViewModel bundle;
+    public Bundle bundle;
     public TransactionViewModel trunk;
     public TransactionViewModel branch;
 
@@ -244,9 +246,9 @@ public class TransactionViewModel {
         return new TagViewModel(getTagValue());
     }
 
-    public BundleViewModel getBundle() throws Exception {
+    public Bundle getBundle() throws Exception {
         if(bundle == null) {
-            bundle = BundleViewModel.fromHash(getBundleHash());
+            bundle = new Bundle(BundleViewModel.fromHash(getBundleHash()));
         }
         return bundle;
     }

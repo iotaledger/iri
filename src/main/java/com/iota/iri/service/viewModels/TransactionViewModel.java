@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.iota.iri.Bundle;
+import com.iota.iri.BundleValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Approvee;
@@ -66,7 +66,7 @@ public class TransactionViewModel {
     public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
 
     public AddressViewModel address;
-    public Bundle bundle;
+    public BundleValidator bundleValidator;
     public TransactionViewModel trunk;
     public TransactionViewModel branch;
 
@@ -256,11 +256,11 @@ public class TransactionViewModel {
         return new TagViewModel(getTagValue());
     }
 
-    public Bundle getBundle() throws Exception {
-        if(bundle == null) {
-            bundle = new Bundle(BundleViewModel.fromHash(getBundleHash()));
+    public BundleValidator getBundle() throws Exception {
+        if(bundleValidator == null) {
+            bundleValidator = new BundleValidator(BundleViewModel.fromHash(getBundleHash()));
         }
-        return bundle;
+        return bundleValidator;
     }
 
     public Hash getAddressHash() {

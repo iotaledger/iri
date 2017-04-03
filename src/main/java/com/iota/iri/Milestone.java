@@ -7,7 +7,6 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.service.viewModels.TransactionRequester;
 import com.iota.iri.service.viewModels.AddressViewModel;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
@@ -50,13 +49,13 @@ public class Milestone {
                     //if ((now - timestamp) < 7200L && index > latestMilestoneIndex) {
                     if (index > latestMilestoneIndex) {
 
-                        final Bundle bundle = new Bundle(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
-                        if (bundle.getTransactions().size() == 0) {
-							// Bundle not available, try again later.
+                        final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
+                        if (bundleValidator.getTransactions().size() == 0) {
+							// BundleValidator not available, try again later.
                             analyzedMilestoneRetryCandidates.add(hash);
                         }
                         else {
-                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundle.getTransactions()) {
+                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
 
                                 //if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(),transactionViewModel.getHash())) {
                                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {

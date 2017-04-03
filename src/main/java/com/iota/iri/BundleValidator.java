@@ -10,11 +10,11 @@ import com.iota.iri.utils.Converter;
 
 import java.util.*;
 
-public class Bundle {
+public class BundleValidator {
     private final List<List<TransactionViewModel>> transactions = new LinkedList<>();
     private final BundleViewModel bundleViewModel;
 
-    public Bundle(BundleViewModel bundleViewModel) throws Exception {
+    public BundleValidator(BundleViewModel bundleViewModel) throws Exception {
         this.bundleViewModel = bundleViewModel;
         this.init();
     }

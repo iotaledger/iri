@@ -21,7 +21,7 @@ import java.util.Random;
 /**
  * Created by paul on 3/5/17 for iri.
  */
-public class BundleTest {
+public class BundleValidatorTest {
     @BeforeClass
     public static void setUp() throws Exception {
         TemporaryFolder dbFolder = new TemporaryFolder();
@@ -63,8 +63,8 @@ public class BundleTest {
         for(TransactionViewModel transactionViewModel : transactionViewModels) {
             transactionViewModel.store();
         }
-        Bundle bundle = new Bundle(BundleViewModel.fromHash(transactionViewModels[0].getBundleHash()));
-        List<List<TransactionViewModel>> transactionList = bundle.getTransactions();
+        BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModels[0].getBundleHash()));
+        List<List<TransactionViewModel>> transactionList = bundleValidator.getTransactions();
     }
 
 }

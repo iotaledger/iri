@@ -259,8 +259,7 @@ public class API {
         SecureRandom random = new SecureRandom();
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth, random);
         if (trunkTransactionToApprove == null) {
-            //return ErrorResponse.create("The subtangle is not solid");
-            return GetTransactionsToApproveResponse.create(Hash.NULL_HASH, Hash.NULL_HASH);
+            return ErrorResponse.create("The subtangle is not solid");
         }
         final Hash branchTransactionToApprove = TipsManager.transactionToApprove(trunkTransactionToApprove, depth, random);
         if (branchTransactionToApprove == null) {

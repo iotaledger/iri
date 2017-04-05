@@ -19,7 +19,7 @@ public class Milestone {
     public static Hash latestMilestone = Hash.NULL_HASH;
     public static Hash latestSolidSubtangleMilestone = latestMilestone;
     
-    public static final int MILESTONE_START_INDEX = 1;
+    public static final int MILESTONE_START_INDEX = 0;
 
     public static int latestMilestoneIndex = MILESTONE_START_INDEX;
     public static int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;

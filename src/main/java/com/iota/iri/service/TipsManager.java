@@ -207,7 +207,7 @@ public class TipsManager {
         } else {
             rating = ratings.get(txHash);
         }
-        return rating;
+        return rating;       
     }
 
     private static int findOldestAcceptableMilestoneIndex(long criticalArrivalTime, int depth) throws Exception {

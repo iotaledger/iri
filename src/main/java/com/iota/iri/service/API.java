@@ -164,10 +164,10 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final int depth = ((Double) request.get("depth")).intValue();
-                    if (invalidSubtangleStatus()) {
-                        return ErrorResponse
-                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
-                    }
+                    //if (invalidSubtangleStatus()) {
+                    //    return ErrorResponse
+                    //            .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    //}
                     return getTransactionToApproveStatement(depth);
                 }
                 case "getTrytes": {
@@ -259,7 +259,8 @@ public class API {
         SecureRandom random = new SecureRandom();
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth, random);
         if (trunkTransactionToApprove == null) {
-            return ErrorResponse.create("The subtangle is not solid");
+            //return ErrorResponse.create("The subtangle is not solid");
+            return GetTransactionsToApproveResponse.create(Hash.NULL_HASH, Hash.NULL_HASH);
         }
         final Hash branchTransactionToApprove = TipsManager.transactionToApprove(trunkTransactionToApprove, depth, random);
         if (branchTransactionToApprove == null) {

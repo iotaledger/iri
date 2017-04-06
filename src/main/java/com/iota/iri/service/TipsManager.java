@@ -11,8 +11,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Milestone;
-import com.iota.iri.Snapshot;
 import com.iota.iri.utils.Converter;
+
+import static com.iota.iri.Snapshot.latestState;
 
 public class TipsManager {
 
@@ -45,7 +46,6 @@ public class TipsManager {
         ARTIFICAL_LATENCY = value;
     }
 
-    private static final Map<Hash, Long> latestSnapshot = new HashMap<>(Snapshot.initialState);
 
     public void init() throws Exception {
 
@@ -99,9 +99,9 @@ public class TipsManager {
     }
 
     private void updateSnapshot() throws Exception {
-        Map<Hash, Long> currentState = getCurrentState(Milestone.latestSolidSubtangleMilestone, latestSnapshot);
-        latestSnapshot.clear();
-        latestSnapshot.putAll(currentState);
+        Map<Hash, Long> currentState = getCurrentState(Milestone.latestSolidSubtangleMilestone, latestState);
+        latestState.clear();
+        latestState.putAll(currentState);
         TransactionViewModel.fromHash(Milestone.latestMilestone).updateConsistencies(Consistency.SNAPSHOT);
     }
 
@@ -119,7 +119,7 @@ public class TipsManager {
         try {
             Hash tip = preferableMilestone;
             if (extraTip != null) {
-                state = getCurrentState(extraTip, latestSnapshot);
+                state = getCurrentState(extraTip, latestState);
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
                 while (milestoneDepth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 

@@ -8,8 +8,10 @@ import java.util.Map;
 public class Snapshot {
 
     public static final Map<Hash, Long> initialState = new HashMap<>();
+    public static final Map<Hash, Long> latestState = new HashMap<>();
 
     static {
         initialState.put(Hash.NULL_HASH, TransactionViewModel.SUPPLY);
+        latestState.putAll(initialState);
     }
 }

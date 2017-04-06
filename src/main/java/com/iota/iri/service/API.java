@@ -435,7 +435,7 @@ public class API {
         final Map<Hash, Long> balances = new HashMap<>();
         for (final Hash address : addresses) {
             balances.put(address,
-                    Snapshot.initialState.containsKey(address) ? Snapshot.initialState.get(address) : Long.valueOf(0));
+                    Snapshot.latestState.containsKey(address) ? Snapshot.latestState.get(address) : Long.valueOf(0));
         }
 
         final Hash milestone = Milestone.latestSolidSubtangleMilestone;
@@ -453,17 +453,19 @@ public class API {
 
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
 
-                    if (transactionViewModel.value() != 0) {
+                    if(transactionViewModel.getConsistency() != TipsManager.Consistency.SNAPSHOT) {
+                        if (transactionViewModel.value() != 0) {
 
-                        final Hash address = transactionViewModel.getAddress().getHash();
-                        final Long balance = balances.get(address);
-                        if (balance != null) {
+                            final Hash address = transactionViewModel.getAddress().getHash();
+                            final Long balance = balances.get(address);
+                            if (balance != null) {
 
-                            balances.put(address, balance + transactionViewModel.value());
+                                balances.put(address, balance + transactionViewModel.value());
+                            }
                         }
+                        nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                        nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                     }
-                    nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                    nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                 }
             }
         final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())

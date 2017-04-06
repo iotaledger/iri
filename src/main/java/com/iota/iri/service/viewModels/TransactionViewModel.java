@@ -386,15 +386,17 @@ public class TransactionViewModel {
         update("consistent");
     }
 
-    public void updateConsistencies(TipsManager.Consistency c) throws Exception {
+    public void updateConsistencies(TipsManager.Consistency consistency) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>(Collections.singleton(getHash()));
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(getHash()));
         Hash hashPointer, trunkInteger, branchInteger;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(transactionViewModel2.getConsistency() != TipsManager.Consistency.SNAPSHOT) {
-                    setConsistency(c);
+                if(transactionViewModel2.getConsistency() != TipsManager.Consistency.SNAPSHOT
+                        && transactionViewModel2.getConsistency() != consistency
+                        ) {
+                    setConsistency(consistency);
                     trunkInteger = transactionViewModel2.getTrunkTransactionHash();
                     branchInteger = transactionViewModel2.getBranchTransactionHash();
                     nonAnalyzedTransactions.offer(trunkInteger);

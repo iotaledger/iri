@@ -96,7 +96,7 @@ public class Milestone {
 
                                             indexCopy >>= 1;
                                         }
-
+                                        if (Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) COORDINATOR = new Hash(hashTrits);
                                         if ((new Hash(hashTrits)).equals(COORDINATOR)) {
 
                                             latestMilestone = transactionViewModel.getHash();

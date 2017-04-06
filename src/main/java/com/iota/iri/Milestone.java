@@ -2,6 +2,7 @@ package com.iota.iri;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
@@ -114,5 +115,29 @@ public class Milestone {
                 break;
             }
         }
+    }
+
+    public static Hash findMilestone(int milestoneIndexToLoad) throws Exception {
+        AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR);
+        Hash hashToLoad = getMilestone(milestoneIndexToLoad);
+        if(hashToLoad == null) {
+            int closestGreaterMilestone = latestMilestoneIndex;
+            for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
+                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
+                if (transactionViewModel.getCurrentIndex() == 0) {
+                    int milestoneIndex = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET,
+                            15);
+                    milestones.put(milestoneIndex, transactionViewModel.getHash());
+                    if (milestoneIndex >= milestoneIndexToLoad && milestoneIndex < closestGreaterMilestone) {
+                        closestGreaterMilestone = milestoneIndex;
+                        hashToLoad = transactionViewModel.getHash();
+                    }
+                    if (milestoneIndex == milestoneIndexToLoad) {
+                        return transactionViewModel.getHash();
+                    }
+                }
+            }
+        }
+        return hashToLoad;
     }
 }

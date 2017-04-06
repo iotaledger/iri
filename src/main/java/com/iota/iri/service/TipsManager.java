@@ -213,7 +213,7 @@ public class TipsManager {
                 rating = 0;
             }
         }
-        return rating;
+        return rating;       
     }
 
     private static int findOldestAcceptableMilestoneIndex(long criticalArrivalTime, int depth) throws Exception {

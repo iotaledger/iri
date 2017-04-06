@@ -35,12 +35,13 @@ public class IRI {
 
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
-    public static final String NAME = "IRI Testnet";
+    public static final String MAINNET_NAME = "IRI";
+    public static final String TESTNET_NAME = "IRI Testnet";
     public static final String VERSION = "1.1.3.5";
 
     public static void main(final String[] args) throws IOException {
 
-        log.info("Welcome to {} {}", NAME, VERSION);
+        log.info("Welcome to {} {}", MAINNET_NAME, VERSION);
         validateParams(args);
         shutdownHook();
 
@@ -70,7 +71,7 @@ public class IRI {
 
 
         if (args == null || (args.length < 2 && !Configuration.init())) {
-            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14700').");
+            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
             printUsage();
         }
 
@@ -90,6 +91,7 @@ public class IRI {
         final Option<Integer> ratingThr = parser.addIntegerOption('x', "rating-threshold");
         final Option<Integer> artLatency = parser.addIntegerOption('a', "art-latency");
         final Option<Long> timestampThreshold = parser.addLongOption('t', "timestamp-threshold");
+        final Option<Boolean> testnet = parser.addBooleanOption('t', "testnet");
 
         try {
             parser.parse(args);
@@ -187,22 +189,29 @@ public class IRI {
             Node.setTIMESTAMP_THRESHOLD(ts);
         }
         
+        if (parser.getOptionValue(testnet) != null) {
+            Configuration.put(DefaultConfSettings.TESTNET, "true");
+            Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
+            Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+        }
+        
     }
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " +
-                "[{-p,--port} 14700] " +
-                "[{-r,--receiver-port} 14700] " +
+                "[{-p,--port} 14265] " +
+                "[{-r,--receiver-port} 14265] " +
                 "[{-c,--enabled-cors} *] " +
                 "[{-h}] [{--headless}] " +
                 "[{-d,--debug}] " +
                 "[{-e,--experimental}]" +
+                "[{-t,--testnet}]" +
                 "[{--remote}]" +
                 "[{--rating-threshold} 75]" +
                 "[{--art-latency} 120]" +
                 "[{--timestamp-threshold} 0]" +
                 // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
-                "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
+                "[{-n,--neighbors} '<list of neighbors>'] ", MAINNET_NAME, VERSION);
         System.exit(0);
     }
 

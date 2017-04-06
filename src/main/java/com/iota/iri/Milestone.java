@@ -1,9 +1,13 @@
 package com.iota.iri;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
@@ -15,7 +19,10 @@ import com.iota.iri.utils.Converter;
 
 public class Milestone {
 
-    public static final Hash COORDINATOR = new Hash("XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA");
+    public static final Hash MAINNET_COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
+    public static final Hash TESTNET_COORDINATOR = new Hash("XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA");
+
+    public static Hash COORDINATOR = null;
 
     public static Hash latestMilestone = Hash.NULL_HASH;
     public static Hash latestSolidSubtangleMilestone = latestMilestone;
@@ -35,8 +42,12 @@ public class Milestone {
     
     public static void updateLatestMilestone() throws Exception { // refactor
 
-        final long now = System.currentTimeMillis() / 1000L;
-
+        if(Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
+            COORDINATOR = TESTNET_COORDINATOR; 
+        }
+        else {
+            COORDINATOR = MAINNET_COORDINATOR; 
+        }
         AddressViewModel coordinator = new AddressViewModel(COORDINATOR);
         for (final Hash hash : coordinator.getTransactionHashes()) {
             if (analyzedMilestoneCandidates.add(hash) || analyzedMilestoneRetryCandidates.remove(hash)) {
@@ -45,9 +56,7 @@ public class Milestone {
                 if (transactionViewModel.getCurrentIndex() == 0) {
 
                     final int index = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
-                    final long timestamp = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TIMESTAMP_TRINARY_OFFSET, 27);
 
-                    //if ((now - timestamp) < 7200L && index > latestMilestoneIndex) {
                     if (index > latestMilestoneIndex) {
 
                         final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
@@ -87,7 +96,7 @@ public class Milestone {
 
                                             indexCopy >>= 1;
                                         }
-
+                                        if (Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) COORDINATOR = new Hash(hashTrits);
                                         if ((new Hash(hashTrits)).equals(COORDINATOR)) {
 
                                             latestMilestone = transactionViewModel.getHash();

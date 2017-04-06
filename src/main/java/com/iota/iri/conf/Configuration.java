@@ -54,8 +54,8 @@ public class Configuration {
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
         conf.put(DefaultConfSettings.REMOTEAPILIMIT.name(), "");
         conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
-        conf.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
-        conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+        conf.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
+        conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnet.log");
         conf.put(DefaultConfSettings.CONF_PATH.name(), "iota.ini");
         conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.1");
         conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.2");

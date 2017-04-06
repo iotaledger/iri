@@ -149,6 +149,8 @@ public class TipsManager {
                     break;
                 } else if (tips[carlo].equals(extraTip)){
                     break;
+                } else if (tips[carlo].equals(tip)){
+                    break;
                 } else {
                     tip = tips[carlo];
                 }
@@ -205,7 +207,11 @@ public class TipsManager {
             }
             ratings.put(txHash, rating);
         } else {
-            rating = ratings.get(txHash);
+            if(ratings.containsKey(txHash)) {
+                rating = ratings.get(txHash);
+            } else {
+                rating = 0;
+            }
         }
         return rating;
     }

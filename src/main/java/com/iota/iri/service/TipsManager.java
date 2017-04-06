@@ -113,11 +113,12 @@ public class TipsManager {
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
         Map<Hash, Integer> ratings = new HashMap<>();
+        Map<Hash, Long> state = new HashMap<>();
         Set<Hash> analyzedTips = new HashSet<>();
         try {
             Hash tip = preferableMilestone;
             if (extraTip != null) {
-
+                state = getCurrentState(extraTip, latestSnapshot);
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
                 while (milestoneDepth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 
@@ -156,8 +157,10 @@ public class TipsManager {
                     }
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
+                state = getCurrentState(tips[carlo], state);
                 if(!transactionViewModel.getBundle().isConsistent()
-                        || !checkSolidity(tips[carlo])) {
+                        || !checkSolidity(tips[carlo])
+                        || !ledgerIsConsistent(state)) {
                     break;
                 } else if (tips[carlo].equals(extraTip)){
                     break;

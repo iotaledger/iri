@@ -2,6 +2,7 @@ package com.iota.iri.service.tangle.rocksDB;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.*;
+import com.iota.iri.service.TipsManager;
 import com.iota.iri.service.tangle.IPersistenceProvider;
 import com.iota.iri.service.tangle.Serializer;
 import com.iota.iri.service.viewModels.TransactionViewModel;
@@ -161,7 +162,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.put(transactionTypeHandle, key, Serializer.serialize(transaction.type));
         batch.put(transactionArrivalTimeHandle, key, Serializer.serialize(transaction.arrivalTime));
         batch.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
-        batch.put(consistencyHandle, key, new String(new char[]{transaction.consistent}).getBytes());
+        batch.put(consistencyHandle, key, transaction.consistent.name().getBytes());
         batch.merge(addressHandle, transaction.address.hash.bytes(), key);
         batch.merge(bundleHandle, transaction.bundle.hash.bytes(), key);
         batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
@@ -260,19 +261,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, key));
         transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, key));
         transaction.solid =  db.get(transactionSolidHandle, key);
-        transaction.consistent = charFromBytes(db.get(consistencyHandle, key));
+        transaction.consistent = TipsManager.Consistency.valueOf(new String(db.get(consistencyHandle, key)));
         return true;
     };
-
-    private char charFromBytes(byte[] bytes) {
-        if(bytes != null) {
-            String s = new String(bytes);
-            if(s.length() > 0) {
-                return s.charAt(0);
-            }
-        }
-        return ((char) 0);
-    }
 
     private MyFunction<Object, Boolean> getAddress = (addrObject) -> {
         Address address = ((Address) addrObject);
@@ -388,7 +379,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                     db.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
                     break;
                 case "consistent":
-                    db.put(consistencyHandle, key, new String(new char[]{transaction.consistent}).getBytes());
+                    db.put(consistencyHandle, key, transaction.consistent.name().getBytes());
                     break;
                 default:
                     throw new NotImplementedException("Mada Sono Update ga dekinai yo");
@@ -572,14 +563,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private void scanTxDeleteBaddies() throws Exception {
         RocksIterator iterator = db.newIterator(transactionHandle);
         List<byte[]> baddies = new ArrayList<>();
-        //WriteBatch batch = new WriteBatch();
+        WriteBatch batch = new WriteBatch();
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
             //if(iterator.value().length != TransactionViewModel.SIZE || Arrays.equals(iterator.value(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
             if(iterator.value().length != TransactionViewModel.SIZE ) {
                 byte[] bytes = iterator.value();
                 baddies.add(iterator.key());
             } else {
-                //batch.put(transactionSolidHandle, iterator.key(), new byte[]{0});
+                batch.put(consistencyHandle, iterator.key(), TipsManager.Consistency.UNCHECKED.name().getBytes());
             }
         }
         iterator.close();
@@ -589,7 +580,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         for(byte[] baddie : baddies) {
             db.delete(transactionHandle, baddie);
         }
-        //db.write(new WriteOptions(), batch);
+        db.write(new WriteOptions(), batch);
+        batch.close();
     }
 
     private void updateTagDB() throws RocksDBException {

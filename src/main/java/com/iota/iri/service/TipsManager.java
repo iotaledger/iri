@@ -27,6 +27,12 @@ public class TipsManager {
     static int numberOfConfirmedTransactions;
     private static Hash lowestMilestone;
 
+    public static enum Consistency {
+        UNCHECKED,
+        SNAPSHOT,
+        INCONSISTENT,
+        INCONSISTENT_SNAPSHOT
+    };
 
     public static void setRATING_THRESHOLD(int value) {
         if (value < 0) value = 0;
@@ -37,6 +43,8 @@ public class TipsManager {
     public static void setARTIFICAL_LATENCY(int value) {
         ARTIFICAL_LATENCY = value;
     }
+
+    private static final Map<Hash, Long> latestSnapshot = new HashMap<>(Snapshot.initialState);
 
     public void init() throws Exception {
 
@@ -59,7 +67,6 @@ public class TipsManager {
 
                     Milestone.updateLatestMilestone();
                     Milestone.updateLatestSolidSubtangleMilestone();
-                    checkConsistency();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
 
@@ -67,6 +74,7 @@ public class TipsManager {
                                 + " to #" + Milestone.latestMilestoneIndex);
                     }
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
+                        updateSnapshot();
 
                         log.info("Latest SOLID SUBTANGLE milestone has changed from #"
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"
@@ -89,7 +97,11 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    private void checkConsistency() throws ExecutionException, InterruptedException {
+    private void updateSnapshot() throws Exception {
+        Map<Hash, Long> currentState = getCurrentState(Milestone.latestSolidSubtangleMilestone, latestSnapshot);
+        latestSnapshot.clear();
+        latestSnapshot.putAll(currentState);
+        TransactionViewModel.fromHash(Milestone.latestMilestone).updateConsistencies(Consistency.SNAPSHOT);
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
@@ -535,12 +547,12 @@ public class TipsManager {
         return true;
     }
 
-    public static Map<Hash,Long> checkState(Hash extraTip, Hash preferableMilestone, Set<Hash> analyzedTips) throws Exception {
-        Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
+    public static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot) throws Exception {
+        Map<Hash, Long> state = new HashMap<>(snapshot);
         int numberOfAnalyzedTransactions = 0;
+        Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
 
-        analyzedTips.add(Hash.NULL_HASH);
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(TransactionViewModel.fromHash(extraTip == null ? preferableMilestone : extraTip).getHash()));
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
@@ -549,55 +561,57 @@ public class TipsManager {
                 numberOfAnalyzedTransactions++;
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                    TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
-                    return null;
+                if(transactionViewModel.getConsistency() != Consistency.SNAPSHOT) {
+                    if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                        TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
+                        return null;
 
-                } else {
+                    } else {
 
-                    if (transactionViewModel.getCurrentIndex() == 0) {
+                        if (transactionViewModel.getCurrentIndex() == 0) {
 
-                        boolean validBundle = false;
+                            boolean validBundle = false;
 
-                        final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
-                        for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
+                            final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
+                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
 
-                            if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+                                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
-                                validBundle = true;
+                                    validBundle = true;
 
-                                for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
+                                    for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
 
-                                    if (bundleTransactionViewModel.value() != 0) {
+                                        if (bundleTransactionViewModel.value() != 0) {
 
-                                        final Hash address = bundleTransactionViewModel.getAddress().getHash();
-                                        final Long value = state.get(address);
-                                        state.put(address, value == null ? bundleTransactionViewModel.value()
-                                                : (value + bundleTransactionViewModel.value()));
+                                            final Hash address = bundleTransactionViewModel.getAddress().getHash();
+                                            final Long value = state.get(address);
+                                            state.put(address, value == null ? bundleTransactionViewModel.value()
+                                                    : (value + bundleTransactionViewModel.value()));
+                                        }
                                     }
+
+                                    break;
                                 }
+                            }
 
-                                break;
+                            if (!validBundle || !bundleValidator.isConsistent()) {
+                                for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
+                                    transactionViewModel1.delete();
+                                    TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
+                                }
+                                return null;
                             }
                         }
 
-                        if (!validBundle) {
-                            for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
-                                transactionViewModel1.delete();
-                                TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
-                            }
-                            return null;
-                        }
+                        nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                        nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                     }
-
-                    nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                    nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                 }
             }
         }
 
         log.info("Confirmed transactions = " + numberOfAnalyzedTransactions);
-        if (extraTip == null) {
+        if (tip == null) {
             numberOfConfirmedTransactions = numberOfAnalyzedTransactions;
         }
         return state;

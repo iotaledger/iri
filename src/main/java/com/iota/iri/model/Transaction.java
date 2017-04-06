@@ -1,5 +1,7 @@
 package com.iota.iri.model;
 
+import com.iota.iri.service.TipsManager;
+
 /**
  * Created by paul on 3/2/17 for iri.
  */
@@ -19,7 +21,7 @@ public class Transaction {
     public Approvee branch = new Approvee();
 
     public byte[] solid = new byte[]{0};
-    public char consistent = 0;
+    public TipsManager.Consistency consistent = TipsManager.Consistency.UNCHECKED;
 
     public Transaction() {}
     public Transaction(Hash hash) { this.hash = hash;}

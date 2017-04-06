@@ -11,6 +11,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.service.TipsManager;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
@@ -376,23 +377,23 @@ public class TransactionViewModel {
         return transaction.solid[0] == 1;
     }
 
-    public char getConsistency() {
+    public TipsManager.Consistency getConsistency() {
         return transaction.consistent;
     }
 
-    public void setConsistency(char c) throws Exception {
+    public void setConsistency(TipsManager.Consistency c) throws Exception {
         transaction.consistent = c;
         update("consistent");
     }
 
-    public void updateConsistencies(char c) throws Exception {
+    public void updateConsistencies(TipsManager.Consistency c) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>(Collections.singleton(getHash()));
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(getHash()));
         Hash hashPointer, trunkInteger, branchInteger;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(transactionViewModel2.getConsistency() == 0) {
+                if(transactionViewModel2.getConsistency() == TipsManager.Consistency.UNCHECKED) {
                     setConsistency(c);
                     trunkInteger = transactionViewModel2.getTrunkTransactionHash();
                     branchInteger = transactionViewModel2.getBranchTransactionHash();

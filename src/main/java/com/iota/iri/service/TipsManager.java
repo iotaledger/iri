@@ -29,6 +29,7 @@ public class TipsManager {
 
     public static enum Consistency {
         UNCHECKED,
+        CONSISTENT,
         SNAPSHOT,
         INCONSISTENT,
         INCONSISTENT_SNAPSHOT
@@ -158,6 +159,12 @@ public class TipsManager {
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                 state = getCurrentState(tips[carlo], state);
+                if(ledgerIsConsistent(state)) {
+                    transactionViewModel.updateConsistencies(Consistency.CONSISTENT);
+                } else {
+                    transactionViewModel.setConsistency(Consistency.INCONSISTENT);
+                    break;
+                }
                 if(!transactionViewModel.getBundle().isConsistent()
                         || !checkSolidity(tips[carlo])
                         || !ledgerIsConsistent(state)) {

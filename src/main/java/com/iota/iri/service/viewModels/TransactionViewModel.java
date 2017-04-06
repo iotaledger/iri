@@ -393,7 +393,7 @@ public class TransactionViewModel {
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(transactionViewModel2.getConsistency() == TipsManager.Consistency.UNCHECKED) {
+                if(transactionViewModel2.getConsistency() != TipsManager.Consistency.SNAPSHOT) {
                     setConsistency(c);
                     trunkInteger = transactionViewModel2.getTrunkTransactionHash();
                     branchInteger = transactionViewModel2.getBranchTransactionHash();

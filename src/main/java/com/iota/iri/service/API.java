@@ -151,7 +151,8 @@ public class API {
                     return getNeighborsStatement();
                 }
                 case "getNodeInfo": {
-                    return GetNodeInfoResponse.create(IRI.NAME, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
+                    String name = Configuration.booling(Configuration.DefaultConfSettings.TESTNET) ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
+                    return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                             Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
                             Runtime.getRuntime().totalMemory(), Milestone.latestMilestone, Milestone.latestMilestoneIndex,
                             Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,

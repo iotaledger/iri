@@ -28,7 +28,7 @@ public class Tangle {
         for(IPersistenceProvider provider: this.persistenceProviders) {
             provider.init();
         }
-        new TransactionViewModel(TransactionViewModel.NULL_TRANSACTION_BYTES, new int[TransactionViewModel.TRINARY_SIZE], null).store();
+        //new TransactionViewModel(TransactionViewModel.NULL_TRANSACTION_BYTES, new int[TransactionViewModel.TRINARY_SIZE], null).store();
     }
 
 

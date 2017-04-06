@@ -376,10 +376,38 @@ public class TransactionViewModel {
         return transaction.solid[0] == 1;
     }
 
+    public char getConsistency() {
+        return transaction.consistent;
+    }
+
+    public void setConsistency(char c) throws Exception {
+        transaction.consistent = c;
+        update("consistent");
+    }
+
+    public void updateConsistencies(char c) throws Exception {
+        Set<Hash> visitedHashes = new HashSet<>(Collections.singleton(getHash()));
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(getHash()));
+        Hash hashPointer, trunkInteger, branchInteger;
+        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
+            if (visitedHashes.add(hashPointer)) {
+                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
+                if(transactionViewModel2.getConsistency() == 0) {
+                    setConsistency(c);
+                    trunkInteger = transactionViewModel2.getTrunkTransactionHash();
+                    branchInteger = transactionViewModel2.getBranchTransactionHash();
+                    nonAnalyzedTransactions.offer(trunkInteger);
+                    nonAnalyzedTransactions.offer(branchInteger);
+                }
+            }
+        }
+    }
+
     public static Hash[] getMissingTransactions() throws ExecutionException, InterruptedException {
         return Arrays.stream(Tangle.instance()
                 .scanForTips(Transaction.class).get()).toArray(Hash[]::new);
     }
+
 
     public static void dump(final byte[] mainBuffer, final byte[] hash, final TransactionViewModel transaction) {
         /*

@@ -103,7 +103,7 @@ public class API {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 
-            log.info("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
+            log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
             switch (command) {
 

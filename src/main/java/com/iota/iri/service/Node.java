@@ -66,7 +66,9 @@ public class Node {
 
     public void init() throws Exception {
 
-        socket = new DatagramSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT));
+        int udpport = Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP);
+        socket = new DatagramSocket(udpport);
+        log.info("UDP replicator is accepting connections on udp port " + udpport);
         P_DROP_TRANSACTION = Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name());
 
         Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()

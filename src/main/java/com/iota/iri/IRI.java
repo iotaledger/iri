@@ -69,9 +69,10 @@ public class IRI {
 
     private static void validateParams(final String[] args) throws IOException {
 
-
-        if (args == null || (args.length < 2 && !Configuration.init())) {
-            log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
+        boolean configurationInit = Configuration.init();
+        
+        if (args == null || (args.length < 2 && !configurationInit)) {
+            log.error("Invalid arguments list. Provide ini-file 'iota.ini' or API port number (i.e. '-p 14265').");
             printUsage();
         }
 
@@ -79,7 +80,8 @@ public class IRI {
 
         final Option<String> config = parser.addStringOption('c', "conf");
         final Option<String> port = parser.addStringOption('p', "port");
-        final Option<String> rport = parser.addStringOption('r', "receiver-port");
+        final Option<String> rportudp = parser.addStringOption('r', "receiver-port-udp");
+        final Option<String> rporttcp = parser.addStringOption('r', "receiver-port-tcp");
         final Option<String> cors = parser.addStringOption('c', "enabled-cors");
         final Option<Boolean> headless = parser.addBooleanOption("headless");
         final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
@@ -112,10 +114,12 @@ public class IRI {
         String inicport = Configuration.getIniValue(DefaultConfSettings.API_PORT.name());
         final String cport = inicport == null ? parser.getOptionValue(port) : inicport;
         if (cport == null) {
-            log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
+            log.error("Invalid arguments list. Provide at least the API_PORT in iota.ini or with -p option");
             printUsage();
         }
-        Configuration.put(DefaultConfSettings.API_PORT, cport);
+        else {
+            Configuration.put(DefaultConfSettings.API_PORT, cport);
+        }
 
         // optional flags
         if (parser.getOptionValue(help) != null) {
@@ -142,9 +146,14 @@ public class IRI {
             Configuration.put(DefaultConfSettings.REMOTEAPILIMIT, vremoteapilimit);
         }
 
-        final String vrport = parser.getOptionValue(rport);
-        if (vrport != null) {
-            Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT, vrport);
+        final String vrportudp = parser.getOptionValue(rportudp);
+        if (vrportudp != null) {
+            Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP, vrportudp);
+        }
+        
+        final String vrporttcp = parser.getOptionValue(rporttcp);
+        if (vrporttcp != null) {
+            Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP, vrporttcp);
         }
 
         if (parser.getOptionValue(headless) != null) {
@@ -207,10 +216,7 @@ public class IRI {
                 "[{-e,--experimental}]" +
                 "[{-t,--testnet}]" +
                 "[{--remote}]" +
-                "[{--rating-threshold} 75]" +
-                "[{--art-latency} 120]" +
-                "[{--timestamp-threshold} 0]" +
-                // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
+                "[{-t,--testnet} false] " +
                 "[{-n,--neighbors} '<list of neighbors>'] ", MAINNET_NAME, VERSION);
         System.exit(0);
     }

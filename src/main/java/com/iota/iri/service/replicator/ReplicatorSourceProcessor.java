@@ -13,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Neighbor;
+import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.Node;
@@ -54,7 +56,8 @@ public class ReplicatorSourceProcessor implements Runnable {
 
             SocketAddress address = connection.getRemoteSocketAddress();
             InetSocketAddress inet_socket_address = (InetSocketAddress) address;
-            InetSocketAddress inet_socket_address_normalized = new InetSocketAddress(inet_socket_address.getAddress(),Replicator.REPLICATOR_PORT);
+            InetSocketAddress inet_socket_address_normalized = new InetSocketAddress(inet_socket_address.getAddress(),
+                    Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP));
 
             existingNeighbor = false;
             List<Neighbor> neighbors = Node.instance().getNeighbors();            

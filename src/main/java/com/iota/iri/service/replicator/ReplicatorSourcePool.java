@@ -10,6 +10,9 @@ import java.util.concurrent.TimeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.Configuration.DefaultConfSettings;
+
 public class ReplicatorSourcePool implements Runnable {
     
     private ServerSocket server;
@@ -25,8 +28,8 @@ public class ReplicatorSourcePool implements Runnable {
         pool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
         this.pool = pool;
         try {
-            server = new ServerSocket(Replicator.REPLICATOR_PORT); 
-            log.info("Replicator is accepting connections on port " + server.getLocalPort());
+            server = new ServerSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP)); 
+            log.info("TCP replicator is accepting connections on tcp port " + server.getLocalPort());
             while (!shutdown) {
                 try {
                     Socket request = server.accept();
@@ -39,7 +42,7 @@ public class ReplicatorSourcePool implements Runnable {
             }
             log.info("ReplicatorSinkPool shutting down");
         } catch (IOException e) {
-            log.error("***** NETWORK ALERT ***** Cannot create server socket on port {}, {}", Replicator.REPLICATOR_PORT, e.getMessage());
+            log.error("***** NETWORK ALERT ***** Cannot create server socket on port {}, {}", Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP), e.getMessage());
         }
     }
 

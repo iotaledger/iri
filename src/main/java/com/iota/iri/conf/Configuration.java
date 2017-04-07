@@ -27,7 +27,8 @@ public class Configuration {
     public enum DefaultConfSettings {
         API_PORT,
         API_HOST,
-        TANGLE_RECEIVER_PORT,
+        TANGLE_RECEIVER_PORT_UDP,
+        TANGLE_RECEIVER_PORT_TCP,
         CORS_ENABLED,
         TESTNET, // not used yet
         HEADLESS,
@@ -47,7 +48,8 @@ public class Configuration {
         // defaults
         conf.put(DefaultConfSettings.API_PORT.name(), "14700");
         conf.put(DefaultConfSettings.API_HOST.name(), "localhost");
-        conf.put(DefaultConfSettings.TANGLE_RECEIVER_PORT.name(), "14700");
+        conf.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP.name(), "14700");
+        conf.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP.name(), "15600");
         conf.put(DefaultConfSettings.CORS_ENABLED.name(), "*");
         conf.put(DefaultConfSettings.TESTNET.name(), "false");
         conf.put(DefaultConfSettings.HEADLESS.name(), "false");

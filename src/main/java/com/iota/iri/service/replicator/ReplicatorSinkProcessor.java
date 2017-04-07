@@ -10,6 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Neighbor;
+import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.Node;
 
 public class ReplicatorSinkProcessor implements Runnable {
@@ -53,7 +55,7 @@ public class ReplicatorSinkProcessor implements Runnable {
             
             if (socket != null) {
                 log.info("Connecting sink {}",remoteAddress);
-                socket.connect(new InetSocketAddress(remoteAddress, Replicator.REPLICATOR_PORT), 30000);
+                socket.connect(new InetSocketAddress(remoteAddress, Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP)), 30000);
                 if (!socket.isClosed() && socket.isConnected()) {
                     OutputStream out = socket.getOutputStream();
                     log.info("----- NETWORK INFO ----- Sink {} is connected", remoteAddress);
@@ -91,7 +93,8 @@ public class ReplicatorSinkProcessor implements Runnable {
                 }
             }
         } catch (Exception e) {
-            log.error("***** NETWORK ALERT ***** No sink to host {} port {}, reason: {}", remoteAddress, Replicator.REPLICATOR_PORT,e.getMessage());
+            log.error("***** NETWORK ALERT ***** No sink to host {} port {}, reason: {}", 
+                    remoteAddress, Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP), e.getMessage());
             synchronized (neighbor) {
                 Socket sourceSocket = neighbor.getSource();
                 if (sourceSocket != null && (sourceSocket.isClosed() || !sourceSocket.isConnected())) {

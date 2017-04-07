@@ -8,8 +8,6 @@ import org.slf4j.LoggerFactory;
 public class Replicator {
     
     public static final int NUM_THREADS = 32;
-
-    public static final int REPLICATOR_PORT = 15600;
     
     private static final Logger log = LoggerFactory.getLogger(Replicator.class);
     

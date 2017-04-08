@@ -105,7 +105,11 @@ public class TransactionViewModel {
     }
 
     public TransactionViewModel(final Transaction transaction) {
-        this.transaction = transaction == null ? new Transaction(): transaction;
+        if(transaction == null) {
+            this.transaction = new Transaction();
+        } else {
+            this.transaction = transaction;
+        }
     }
 
     public TransactionViewModel(final int[] trits) {

@@ -367,7 +367,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
-        //db.flush(new FlushOptions().setWaitForFlush(true), handle);
         List<byte[]> itemsToDelete = new ArrayList<>();
         RocksIterator iterator = db.newIterator(handle);
         for(iterator.seekToLast(); iterator.isValid(); iterator.prev()) {

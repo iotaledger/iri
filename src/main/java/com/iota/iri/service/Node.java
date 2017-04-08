@@ -35,8 +35,10 @@ public class Node {
     private static final Node instance = new Node();
 
     public  static final int TRANSACTION_PACKET_SIZE = 1650;
+    public  static final int REQUESTED_HASH_SIZE = 46;
     private static final int QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
+    private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUESTED_HASH_SIZE];
 
     private DatagramSocket socket;
 
@@ -219,7 +221,7 @@ public class Node {
                         }
                         System.arraycopy(receivedData, TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
-                        if (Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
+                        if (Arrays.equals(requestedTransaction, NULL_REQUEST_HASH_BYTES)) {
                             transactionPointer = getNextTransactionPointer(requestedTransaction);
                             transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         } else {

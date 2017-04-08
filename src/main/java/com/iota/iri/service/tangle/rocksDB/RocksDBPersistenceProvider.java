@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(RocksDBPersistenceProvider.class);
-    private static int BLOOM_FILTER_BITS_PER_KEY = 3;
+    private static int BLOOM_FILTER_BITS_PER_KEY = 10;
 
     private String[] columnFamilyNames = new String[]{
             "transaction",

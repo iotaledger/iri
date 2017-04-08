@@ -97,7 +97,7 @@ public class TipsManager {
     }
 
     private void updateSnapshot() throws Exception {
-        Map<Hash, Long> currentState = getCurrentState(Milestone.latestSolidSubtangleMilestone, latestState);
+        Map<Hash, Long> currentState = getCurrentState(Milestone.latestSolidSubtangleMilestone, latestState, true);
         latestState.clear();
         latestState.putAll(currentState);
         TransactionViewModel.fromHash(Milestone.latestMilestone).updateConsistencies(Consistency.SNAPSHOT);
@@ -117,7 +117,7 @@ public class TipsManager {
         try {
             Hash tip = preferableMilestone;
             if (extraTip != null) {
-                state = getCurrentState(extraTip, latestState);
+                state = getCurrentState(extraTip, latestState, false);
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
                 while (milestoneDepth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 
@@ -156,7 +156,7 @@ public class TipsManager {
                     }
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
-                state = getCurrentState(tips[carlo], state);
+                state = getCurrentState(tips[carlo], state, false);
                 if(ledgerIsConsistent(state)) {
                     transactionViewModel.updateConsistencies(Consistency.CONSISTENT);
                 } else {
@@ -164,8 +164,7 @@ public class TipsManager {
                     break;
                 }
                 if(!transactionViewModel.getBundle().isConsistent()
-                        || !checkSolidity(tips[carlo])
-                        || !ledgerIsConsistent(state)) {
+                        || !checkSolidity(tips[carlo])) {
                     break;
                 } else if (tips[carlo].equals(extraTip)){
                     break;
@@ -555,7 +554,7 @@ public class TipsManager {
         return true;
     }
 
-    public static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot) throws Exception {
+    public static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot, boolean onlyStopAtSnapshot) throws Exception {
         Map<Hash, Long> state = new HashMap<>(snapshot);
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -570,49 +569,51 @@ public class TipsManager {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                 if(transactionViewModel.getConsistency() != Consistency.SNAPSHOT) {
-                    if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                        TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
-                        return null;
+                    if(onlyStopAtSnapshot || transactionViewModel.getConsistency() != Consistency.CONSISTENT) {
+                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                            TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
+                            return null;
 
-                    } else {
+                        } else {
 
-                        if (transactionViewModel.getCurrentIndex() == 0) {
+                            if (transactionViewModel.getCurrentIndex() == 0) {
 
-                            boolean validBundle = false;
+                                boolean validBundle = false;
 
-                            final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
-                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
+                                final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
+                                for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
 
-                                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+                                    if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
-                                    validBundle = true;
+                                        validBundle = true;
 
-                                    for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
+                                        for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
 
-                                        if (bundleTransactionViewModel.value() != 0) {
+                                            if (bundleTransactionViewModel.value() != 0) {
 
-                                            final Hash address = bundleTransactionViewModel.getAddress().getHash();
-                                            final Long value = state.get(address);
-                                            state.put(address, value == null ? bundleTransactionViewModel.value()
-                                                    : (value + bundleTransactionViewModel.value()));
+                                                final Hash address = bundleTransactionViewModel.getAddress().getHash();
+                                                final Long value = state.get(address);
+                                                state.put(address, value == null ? bundleTransactionViewModel.value()
+                                                        : (value + bundleTransactionViewModel.value()));
+                                            }
                                         }
+
+                                        break;
                                     }
+                                }
 
-                                    break;
+                                if (!validBundle || !bundleValidator.isConsistent()) {
+                                    for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
+                                        transactionViewModel1.delete();
+                                        TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
+                                    }
+                                    return null;
                                 }
                             }
 
-                            if (!validBundle || !bundleValidator.isConsistent()) {
-                                for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
-                                    transactionViewModel1.delete();
-                                    TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
-                                }
-                                return null;
-                            }
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                         }
-
-                        nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                        nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                     }
                 }
             }

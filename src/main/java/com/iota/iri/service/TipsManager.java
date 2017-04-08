@@ -622,7 +622,7 @@ public class TipsManager {
             }
         }
 
-        log.info("Confirmed transactions = " + numberOfAnalyzedTransactions);
+        log.debug("Confirmed transactions = " + numberOfAnalyzedTransactions);
         if (tip == null) {
             numberOfConfirmedTransactions = numberOfAnalyzedTransactions;
         }

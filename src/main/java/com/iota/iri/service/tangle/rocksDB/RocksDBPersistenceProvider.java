@@ -11,6 +11,7 @@ import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
 import org.slf4j.LoggerFactory;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -55,9 +56,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private Map<Class<?>, ColumnFamilyHandle> classTreeMap = new HashMap<>();
     private Map<Class<?>, MyFunction<Object, Boolean>> saveMap = new HashMap<>();
     private Map<Class<?>, MyFunction<Object, Void>> deleteMap = new HashMap<>();
+    private Map<Class<?>, MyFunction<Object, Object>> setKeyMap = new HashMap<>();
     private Map<Class<?>, MyFunction<Object, Boolean>> loadMap = new HashMap<>();
     private Map<Class<?>, MyFunction<Object, Boolean>> mayExistMap = new HashMap<>();
     private Map<Class<?>, ColumnFamilyHandle> countMap = new HashMap<>();
+
+    private SecureRandom seed = new SecureRandom();
 
     RocksDB db;
     DBOptions options;
@@ -74,10 +78,15 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         initClassTreeMap();
         initSaveMap();
         initLoadMap();
+        initSetKeyMap();
         initMayExistMap();
         initDeleteMap();
         initCountMap();
         log.info("RocksDB persistence provider initialized.");
+    }
+
+    private void initSetKeyMap() {
+        setKeyMap.put(Transaction.class, hashObject -> new Transaction(((Hash) hashObject)));
     }
 
     private void initCountMap() {
@@ -329,30 +338,37 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     public Hash[] keysStartingWith(Class<?> modelClass, byte[] value) {
         RocksIterator iterator;
         ColumnFamilyHandle handle = classTreeMap.get(modelClass);
-        List<Hash> keys = new LinkedList<>();
+        List<byte[]> keys = new LinkedList<>();
         if(handle != null) {
             iterator = db.newIterator(handle);
             try {
-                for(iterator.seek(Arrays.copyOf(value, Hash.SIZE_IN_BYTES));
-                    iterator.isValid() && Arrays.equals(Arrays.copyOf(iterator.key(), value.length), value) ;
+                iterator.seek(new Hash(value, 0, value.length).bytes());
+                for(;
+                    iterator.isValid() && Arrays.equals(Arrays.copyOf(iterator.key(), value.length), value);
                     iterator.next()) {
-                    keys.add(new Hash(iterator.key()));
+                    keys.add(iterator.key());
                 }
             } finally {
                 iterator.close();
             }
         }
-        return keys.stream().toArray(Hash[]::new);
+        return keys.stream().map(Hash::new).toArray(Hash[]::new);
     }
 
     @Override
-    public boolean seek(Class<?> model, Object instance, Hash hash) throws Exception {
-        Hash[] hashes = keysStartingWith(model, hash.bytes());
-        if(hashes.length != 0) {
-            loadMap.get(model).apply(instance);
-            return true;
+    public Object seek(Class<?> model, byte[] key) throws Exception {
+        Hash[] hashes = keysStartingWith(model, key);
+        Object out = null;
+        if(hashes.length == 1) {
+            out = setKeyMap.get(model).apply(hashes[0]);
         }
-        return false;
+        if (hashes.length > 1) {
+            out = setKeyMap.get(model).apply(hashes[seed.nextInt(hashes.length)]);
+        }
+        if(loadMap.get(model).apply(out)) {
+            return out;
+        }
+        return null;
     }
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {

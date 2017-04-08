@@ -88,9 +88,8 @@ public class TransactionViewModel {
     private int[] trits;
     public int weightMagnitude;
 
-    public static TransactionViewModel find(Hash hash) throws Exception {
-        Transaction transaction = new Transaction();
-        Tangle.instance().find(Transaction.class, transaction, hash).get();
+    public static TransactionViewModel find(byte[] hash) throws Exception {
+        Transaction transaction = ((Transaction) Tangle.instance().find(Transaction.class, hash).get());
         return new TransactionViewModel(transaction);
     }
 

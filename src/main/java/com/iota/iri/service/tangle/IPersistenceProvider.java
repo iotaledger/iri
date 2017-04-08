@@ -28,5 +28,5 @@ public interface IPersistenceProvider {
 
     Hash[] keysStartingWith(Class<?> modelClass, byte[] value);
 
-    boolean seek(Class<?> model, Object instance, Hash hash) throws Exception;
+    Object seek(Class<?> model, byte[] key) throws Exception;
 }

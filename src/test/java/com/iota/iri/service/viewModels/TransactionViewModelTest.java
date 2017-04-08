@@ -330,6 +330,14 @@ public class TransactionViewModelTest {
 
     }
 
+    @Test
+    public void find() throws Exception {
+        TransactionViewModel transactionViewModel = new TransactionViewModel(getRandomTransactionTrits());
+        transactionViewModel.store();
+        Hash hash = transactionViewModel.getHash();
+        Assert.assertArrayEquals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionViewModel.HASH_SIZE)).getBytes(), transactionViewModel.getBytes());
+    }
+
     private Transaction getRandomTransaction(Random seed) {
         Transaction transaction = new Transaction();
         transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> seed.nextInt(3)-1).toArray());

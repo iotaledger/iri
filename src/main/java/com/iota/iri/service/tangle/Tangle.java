@@ -155,4 +155,15 @@ public class Tangle {
             return value;
         });
     }
+
+    public Future<Boolean> find(Class<?> model, Object instance, Hash hash) {
+        return executor.submit(() -> {
+            for (IPersistenceProvider provider : this.persistenceProviders) {
+                if (provider.seek(model, instance, hash)) {
+                    return true;
+                }
+            }
+            return false;
+        });
+    }
 }

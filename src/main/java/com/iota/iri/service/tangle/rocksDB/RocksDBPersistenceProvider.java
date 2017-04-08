@@ -2,7 +2,6 @@ package com.iota.iri.service.tangle.rocksDB;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.*;
-import com.iota.iri.service.TipsManager;
 import com.iota.iri.service.tangle.IPersistenceProvider;
 import com.iota.iri.service.tangle.Serializer;
 import com.iota.iri.service.viewModels.TransactionViewModel;
@@ -12,7 +11,6 @@ import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
 import org.slf4j.LoggerFactory;
 
-import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -22,7 +20,7 @@ import java.util.stream.Collectors;
 public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(RocksDBPersistenceProvider.class);
-    private static int BLOOM_FILTER_RANGE = 10;
+    private static int BLOOM_FILTER_BITS_PER_KEY = 46;
 
     private String[] columnFamilyNames = new String[]{
             "transaction",
@@ -347,6 +345,16 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return keys.stream().toArray(Hash[]::new);
     }
 
+    @Override
+    public boolean seek(Class<?> model, Object instance, Hash hash) throws Exception {
+        Hash[] hashes = keysStartingWith(model, hash.bytes());
+        if(hashes.length != 0) {
+            loadMap.get(model).apply(instance);
+            return true;
+        }
+        return false;
+    }
+
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
         //db.flush(new FlushOptions().setWaitForFlush(true), handle);
         List<byte[]> itemsToDelete = new ArrayList<>();
@@ -443,7 +451,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             throw e;
         }
         Thread.yield();
-        bloomFilter = new BloomFilter(BLOOM_FILTER_RANGE);
+        bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
         BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
         options = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true).setDbLogDir(logPath);
 

@@ -66,7 +66,7 @@ public class TipsManager {
                                 + " to #" + Milestone.latestMilestoneIndex);
                     }
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
-                        updateSnapshot();
+                        updateSnapshot(Milestone.latestSolidSubtangleMilestone);
 
                         log.info("Latest SOLID SUBTANGLE milestone has changed from #"
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"
@@ -88,11 +88,15 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    private void updateSnapshot() throws Exception {
-        Map<Hash, Long> currentState = getCurrentState(Milestone.latestSolidSubtangleMilestone, latestState);
+    private static boolean updateSnapshot(Hash tip) throws Exception {
+        Map<Hash, Long> currentState = getCurrentState(tip, latestState);
         latestState.clear();
         latestState.putAll(currentState);
-        updateConsistencies(Milestone.latestSolidSubtangleMilestone);
+        if(ledgerIsConsistent(currentState)) {
+            updateConsistentHashes(tip);
+            return true;
+        }
+        return false;
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
@@ -147,20 +151,11 @@ public class TipsManager {
                     }
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
-                state = getCurrentState(tips[carlo], state);
-                if(ledgerIsConsistent(state)) {
-                    updateConsistencies(tips[carlo]);
-                    latestState.clear();
-                    latestState.putAll(state);
-                } else {
-                    break;
-                }
                 if(!transactionViewModel.getBundle().isConsistent()
-                        || !checkSolidity(tips[carlo])) {
+                        || !checkSolidity(tips[carlo])
+                        || !updateSnapshot(tips[carlo])) {
                     break;
-                } else if (tips[carlo].equals(extraTip)){
-                    break;
-                } else if (tips[carlo].equals(tip)){
+                } else if (tips[carlo].equals(extraTip) || tips[carlo].equals(tip)){
                     break;
                 } else {
                     tip = tips[carlo];
@@ -227,7 +222,7 @@ public class TipsManager {
         return rating;       
     }
 
-    public static void updateConsistencies(Hash tip) throws Exception {
+    public static void updateConsistentHashes(Hash tip) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>(Collections.singleton(tip));
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash hashPointer, trunkInteger, branchInteger;

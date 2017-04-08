@@ -224,6 +224,8 @@ public class Node {
                             transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         } else {
                             transactionViewModel = TransactionViewModel.find(requestedTransaction);
+                            log.debug("Requested Hash: " + new Hash(requestedTransaction) + " \nFound: " +
+                                    transactionViewModel.getHash());
                         }
                         if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                             synchronized (sendingPacket) {

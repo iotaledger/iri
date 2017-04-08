@@ -31,8 +31,7 @@ public class TipsManager {
         UNCHECKED,
         CONSISTENT,
         SNAPSHOT,
-        INCONSISTENT,
-        INCONSISTENT_SNAPSHOT
+        INCONSISTENT
     };
 
     public static void setRATING_THRESHOLD(int value) {
@@ -97,10 +96,10 @@ public class TipsManager {
     }
 
     private void updateSnapshot() throws Exception {
-        Map<Hash, Long> currentState = getCurrentState(Milestone.latestSolidSubtangleMilestone, latestState, true);
+        Map<Hash, Long> currentState = getCurrentState(Milestone.latestSolidSubtangleMilestone, latestState);
         latestState.clear();
         latestState.putAll(currentState);
-        TransactionViewModel.fromHash(Milestone.latestMilestone).updateConsistencies(Consistency.SNAPSHOT);
+        TransactionViewModel.fromHash(Milestone.latestSolidSubtangleMilestone).updateConsistencies(Consistency.SNAPSHOT);
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
@@ -112,12 +111,11 @@ public class TipsManager {
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
         Map<Hash, Integer> ratings = new HashMap<>();
-        Map<Hash, Long> state = new HashMap<>();
+        Map<Hash, Long> state = new HashMap<>(latestState);
         Set<Hash> analyzedTips = new HashSet<>();
         try {
             Hash tip = preferableMilestone;
             if (extraTip != null) {
-                state = getCurrentState(extraTip, latestState, false);
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
                 while (milestoneDepth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 
@@ -156,9 +154,11 @@ public class TipsManager {
                     }
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
-                state = getCurrentState(tips[carlo], state, false);
+                state = getCurrentState(tips[carlo], state);
                 if(ledgerIsConsistent(state)) {
                     transactionViewModel.updateConsistencies(Consistency.CONSISTENT);
+                    latestState.clear();
+                    latestState.putAll(state);
                 } else {
                     transactionViewModel.setConsistency(Consistency.INCONSISTENT);
                     break;
@@ -554,7 +554,7 @@ public class TipsManager {
         return true;
     }
 
-    public static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot, boolean onlyStopAtSnapshot) throws Exception {
+    public static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot) throws Exception {
         Map<Hash, Long> state = new HashMap<>(snapshot);
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -569,51 +569,49 @@ public class TipsManager {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                 if(transactionViewModel.getConsistency() != Consistency.SNAPSHOT) {
-                    if(onlyStopAtSnapshot || transactionViewModel.getConsistency() != Consistency.CONSISTENT) {
-                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                            TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
-                            return null;
+                    if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                        TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
+                        return null;
 
-                        } else {
+                    } else {
 
-                            if (transactionViewModel.getCurrentIndex() == 0) {
+                        if (transactionViewModel.getCurrentIndex() == 0) {
 
-                                boolean validBundle = false;
+                            boolean validBundle = false;
 
-                                final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
-                                for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
+                            final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
+                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
 
-                                    if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+                                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
-                                        validBundle = true;
+                                    validBundle = true;
 
-                                        for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
+                                    for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
 
-                                            if (bundleTransactionViewModel.value() != 0) {
+                                        if (bundleTransactionViewModel.value() != 0) {
 
-                                                final Hash address = bundleTransactionViewModel.getAddress().getHash();
-                                                final Long value = state.get(address);
-                                                state.put(address, value == null ? bundleTransactionViewModel.value()
-                                                        : (value + bundleTransactionViewModel.value()));
-                                            }
+                                            final Hash address = bundleTransactionViewModel.getAddress().getHash();
+                                            final Long value = state.get(address);
+                                            state.put(address, value == null ? bundleTransactionViewModel.value()
+                                                    : (value + bundleTransactionViewModel.value()));
                                         }
-
-                                        break;
                                     }
-                                }
 
-                                if (!validBundle || !bundleValidator.isConsistent()) {
-                                    for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
-                                        transactionViewModel1.delete();
-                                        TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
-                                    }
-                                    return null;
+                                    break;
                                 }
                             }
 
-                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
+                            if (!validBundle || !bundleValidator.isConsistent()) {
+                                for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
+                                    transactionViewModel1.delete();
+                                    TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
+                                }
+                                return null;
+                            }
                         }
+
+                        nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                        nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                     }
                 }
             }

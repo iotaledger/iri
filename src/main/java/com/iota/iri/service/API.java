@@ -453,7 +453,7 @@ public class API {
 
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
 
-                    if(transactionViewModel.getConsistency() != TipsManager.Consistency.SNAPSHOT) {
+                    if(!transactionViewModel.isConsistent()) {
                         if (transactionViewModel.value() != 0) {
 
                             final Hash address = transactionViewModel.getAddress().getHash();

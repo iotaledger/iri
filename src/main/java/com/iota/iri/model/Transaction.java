@@ -21,7 +21,7 @@ public class Transaction {
     public Approvee branch = new Approvee();
 
     public byte[] solid = new byte[]{0};
-    public TipsManager.Consistency consistent = TipsManager.Consistency.UNCHECKED;
+    public boolean consistent = false;
 
     public Transaction() {}
     public Transaction(Hash hash) { this.hash = hash;}

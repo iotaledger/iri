@@ -162,7 +162,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.put(transactionTypeHandle, key, Serializer.serialize(transaction.type));
         batch.put(transactionArrivalTimeHandle, key, Serializer.serialize(transaction.arrivalTime));
         batch.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
-        batch.put(consistencyHandle, key, transaction.consistent.name().getBytes());
+        batch.put(consistencyHandle, key, transaction.consistent ? new byte[]{1}: new byte[]{0});
         batch.merge(addressHandle, transaction.address.hash.bytes(), key);
         batch.merge(bundleHandle, transaction.bundle.hash.bytes(), key);
         batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
@@ -261,9 +261,14 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, key));
         transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, key));
         transaction.solid =  db.get(transactionSolidHandle, key);
-        transaction.consistent = TipsManager.Consistency.valueOf(new String(db.get(consistencyHandle, key)));
+        transaction.consistent = byteToBoolean(db.get(consistencyHandle, key));
         return true;
     };
+
+    private boolean byteToBoolean(byte[] bytes){
+        if(bytes == null || bytes.length != 1) { return false; }
+        return bytes[0] != 0;
+    }
 
     private MyFunction<Object, Boolean> getAddress = (addrObject) -> {
         Address address = ((Address) addrObject);
@@ -379,7 +384,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                     db.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
                     break;
                 case "consistent":
-                    db.put(consistencyHandle, key, transaction.consistent.name().getBytes());
+                    db.put(consistencyHandle, key, transaction.consistent ? new byte[]{1} : new byte[]{0});
                     break;
                 default:
                     throw new NotImplementedException("Mada Sono Update ga dekinai yo");
@@ -570,7 +575,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 byte[] bytes = iterator.value();
                 baddies.add(iterator.key());
             } else {
-                batch.put(consistencyHandle, iterator.key(), TipsManager.Consistency.UNCHECKED.name().getBytes());
+                batch.put(consistencyHandle, iterator.key(), new byte[]{0});
             }
         }
         iterator.close();

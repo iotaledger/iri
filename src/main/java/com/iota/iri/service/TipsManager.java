@@ -27,13 +27,6 @@ public class TipsManager {
 
     static int numberOfConfirmedTransactions;
 
-    public static enum Consistency {
-        UNCHECKED,
-        CONSISTENT,
-        SNAPSHOT,
-        INCONSISTENT
-    };
-
     public static void setRATING_THRESHOLD(int value) {
         if (value < 0) value = 0;
         if (value > 100) value = 100;
@@ -99,7 +92,7 @@ public class TipsManager {
         Map<Hash, Long> currentState = getCurrentState(Milestone.latestSolidSubtangleMilestone, latestState);
         latestState.clear();
         latestState.putAll(currentState);
-        TransactionViewModel.fromHash(Milestone.latestSolidSubtangleMilestone).updateConsistencies(Consistency.SNAPSHOT);
+        updateConsistencies(Milestone.latestSolidSubtangleMilestone);
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
@@ -156,11 +149,10 @@ public class TipsManager {
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                 state = getCurrentState(tips[carlo], state);
                 if(ledgerIsConsistent(state)) {
-                    transactionViewModel.updateConsistencies(Consistency.CONSISTENT);
+                    updateConsistencies(tips[carlo]);
                     latestState.clear();
                     latestState.putAll(state);
                 } else {
-                    transactionViewModel.setConsistency(Consistency.INCONSISTENT);
                     break;
                 }
                 if(!transactionViewModel.getBundle().isConsistent()
@@ -233,6 +225,24 @@ public class TipsManager {
             }
         }
         return rating;       
+    }
+
+    public static void updateConsistencies(Hash tip) throws Exception {
+        Set<Hash> visitedHashes = new HashSet<>(Collections.singleton(tip));
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
+        Hash hashPointer, trunkInteger, branchInteger;
+        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
+            if (visitedHashes.add(hashPointer)) {
+                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
+                if(!transactionViewModel2.isConsistent()) {
+                    transactionViewModel2.setConsistency(true);
+                    trunkInteger = transactionViewModel2.getTrunkTransactionHash();
+                    branchInteger = transactionViewModel2.getBranchTransactionHash();
+                    nonAnalyzedTransactions.offer(trunkInteger);
+                    nonAnalyzedTransactions.offer(branchInteger);
+                }
+            }
+        }
     }
 
     private static int findOldestAcceptableMilestoneIndex(long criticalArrivalTime, int depth) throws Exception {
@@ -568,7 +578,7 @@ public class TipsManager {
                 numberOfAnalyzedTransactions++;
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                if(transactionViewModel.getConsistency() != Consistency.SNAPSHOT) {
+                if(!transactionViewModel.isConsistent()) {
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
                         return null;

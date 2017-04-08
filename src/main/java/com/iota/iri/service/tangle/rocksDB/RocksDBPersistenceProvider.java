@@ -358,13 +358,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public Object seek(Class<?> model, byte[] key) throws Exception {
         Hash[] hashes = keysStartingWith(model, key);
-        Object out = null;
-        if(hashes.length == 1) {
-            out = setKeyMap.get(model).apply(hashes[0]);
-        }
-        if (hashes.length > 1) {
-            out = setKeyMap.get(model).apply(hashes[seed.nextInt(hashes.length)]);
-        }
+        Object out = hashes.length == 1 ? setKeyMap.get(model).apply(hashes[0]) :
+                (hashes.length > 1 ? setKeyMap.get(model).apply(hashes[seed.nextInt(hashes.length)]): null);
         if(loadMap.get(model).apply(out)) {
             return out;
         }

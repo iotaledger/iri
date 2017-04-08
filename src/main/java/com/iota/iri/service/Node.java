@@ -219,8 +219,12 @@ public class Node {
                         }
                         System.arraycopy(receivedData, TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
-                        transactionPointer = getNextTransactionPointer(requestedTransaction);
-                        transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
+                        if (Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
+                            transactionPointer = getNextTransactionPointer(requestedTransaction);
+                            transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
+                        } else {
+                            transactionViewModel = TransactionViewModel.find(requestedTransaction);
+                        }
                         if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
                             synchronized (sendingPacket) {
                                 //log.info(neighbor.getAddress().getHostString() + "Requested TX Hash: " + transactionPointer);
@@ -248,10 +252,7 @@ public class Node {
 
     private Hash getNextTransactionPointer(byte[] requestedTransaction) throws Exception {
         Hash mBytes, transactionPointer = Hash.NULL_HASH;
-        if (Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)
-                && (Milestone.latestMilestoneIndex > 0)
-                && (Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex)) {
-            //
+        if (Milestone.latestMilestoneIndex > 0 && Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
             if (randomTipBroadcastCounter % 60 == 0) {
                 mBytes = Milestone.latestMilestone;
                 if (!mBytes.equals(Hash.NULL_HASH)) {

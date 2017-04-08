@@ -169,7 +169,7 @@ public class Node {
 
             final Curl curl = new Curl();
             final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
-            final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
+            final byte[] requestedTransaction = new byte[TransactionViewModel.HASH_SIZE];
             while (!shuttingDown.get()) {
 
                 try {

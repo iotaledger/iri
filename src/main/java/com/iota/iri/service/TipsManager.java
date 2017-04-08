@@ -223,7 +223,7 @@ public class TipsManager {
     }
 
     public static void updateConsistentHashes(Hash tip) throws Exception {
-        Set<Hash> visitedHashes = new HashSet<>(Collections.singleton(tip));
+        Set<Hash> visitedHashes = new HashSet<>();
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash hashPointer, trunkInteger, branchInteger;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {

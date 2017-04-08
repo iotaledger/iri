@@ -253,6 +253,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     private MyFunction<Object, Boolean> getTransaction = (txObject) -> {
+        if(txObject == null) {
+            return false;
+        }
         Transaction transaction = ((Transaction) txObject);
         byte[] key = transaction.hash.bytes();
         transaction.bytes = db.get(transactionHandle, key);
@@ -358,12 +361,16 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @Override
     public Object seek(Class<?> model, byte[] key) throws Exception {
         Hash[] hashes = keysStartingWith(model, key);
-        Object out = hashes.length == 1 ? setKeyMap.get(model).apply(hashes[0]) :
-                (hashes.length > 1 ? setKeyMap.get(model).apply(hashes[seed.nextInt(hashes.length)]): null);
-        if(loadMap.get(model).apply(out)) {
-            return out;
+        Object out;
+        if(hashes.length == 1) {
+            out = setKeyMap.get(model).apply(hashes[0]);
+        } else if (hashes.length > 1) {
+            out = setKeyMap.get(model).apply(hashes[seed.nextInt(hashes.length)]);
+        } else {
+            out = null;
         }
-        return null;
+        loadMap.get(model).apply(out);
+        return out;
     }
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {

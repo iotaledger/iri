@@ -331,11 +331,20 @@ public class TransactionViewModelTest {
     }
 
     @Test
-    public void find() throws Exception {
+    public void findShouldBeSuccessful() throws Exception {
         TransactionViewModel transactionViewModel = new TransactionViewModel(getRandomTransactionTrits());
         transactionViewModel.store();
         Hash hash = transactionViewModel.getHash();
         Assert.assertArrayEquals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionViewModel.HASH_SIZE)).getBytes(), transactionViewModel.getBytes());
+    }
+
+    @Test
+    public void findShoultReturnNull() throws Exception {
+        TransactionViewModel transactionViewModel = new TransactionViewModel(getRandomTransactionTrits());
+        TransactionViewModel transactionViewModelNoSave = new TransactionViewModel(getRandomTransactionTrits());
+        transactionViewModel.store();
+        Hash hash = transactionViewModelNoSave.getHash();
+        Assert.assertFalse(Arrays.equals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionViewModel.HASH_SIZE)).getBytes(), transactionViewModel.getBytes()));
     }
 
     private Transaction getRandomTransaction(Random seed) {

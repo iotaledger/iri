@@ -171,7 +171,7 @@ public class Node {
 
             final Curl curl = new Curl();
             final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
-            final byte[] requestedTransaction = new byte[TransactionViewModel.HASH_SIZE];
+            final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
             while (!shuttingDown.get()) {
 
                 try {
@@ -221,11 +221,11 @@ public class Node {
                         }
                         System.arraycopy(receivedData, TransactionViewModel.SIZE, requestedTransaction, 0, TransactionViewModel.HASH_SIZE);
 
-                        if (Arrays.equals(requestedTransaction, NULL_REQUEST_HASH_BYTES)) {
+                        if (Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
                             transactionPointer = getNextTransactionPointer(requestedTransaction);
                             transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         } else {
-                            transactionViewModel = TransactionViewModel.find(requestedTransaction);
+                            transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedTransaction, TransactionViewModel.HASH_SIZE));
                             log.debug("Requested Hash: " + new Hash(requestedTransaction) + " \nFound: " +
                                     transactionViewModel.getHash());
                         }

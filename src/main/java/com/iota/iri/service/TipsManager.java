@@ -95,7 +95,7 @@ public class TipsManager {
             Hash tail = transactionViewModel.getBundle().getTail().getHash();
             if(tail != null) {
                 Map<Hash, Long> currentState = getCurrentState(tail, latestState);
-                inconsistent = ledgerIsConsistent(currentState);
+                inconsistent = ledgerIsInconsistent(currentState);
                 if (!inconsistent) {
                     updateConsistentHashes(tip);
                     synchronized (latestState) {
@@ -536,7 +536,7 @@ public class TipsManager {
         tailsToAnalyze.addAll(tailsWithoutApprovers);    // ...and add to the very end
     }
 
-    private static boolean ledgerIsConsistent(Map<Hash, Long> state) {
+    private static boolean ledgerIsInconsistent(Map<Hash, Long> state) {
         final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
         while (stateIterator.hasNext()) {
 
@@ -545,7 +545,7 @@ public class TipsManager {
 
                 if (entry.getValue() < 0) {
                     log.info("Ledger inconsistency detected");
-                    return false;
+                    return true;
                 }
 
                 stateIterator.remove();
@@ -559,7 +559,7 @@ public class TipsManager {
                  */
             ////////////
         }
-        return true;
+        return false;
     }
 
     private static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot) throws Exception {

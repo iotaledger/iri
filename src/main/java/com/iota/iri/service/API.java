@@ -347,20 +347,10 @@ public class API {
                         }
                     }
                 }
-                analyzedTips.stream().map(h -> {
-                    try {
-                        return TransactionViewModel.fromHash(h);
-                    } catch (Exception e) {
-                        log.error("Could not load transaction. ");
-                    }
-                    return null;
-                }).forEach(t -> {
-                    try {
-                        t.setSolid();
-                    } catch (Exception e) {
-                        log.error("Could not update transaction solid state.");
-                    }
-                });
+                for(int i = 0; i < transactions.size(); i++) {
+                    TransactionViewModel.fromHash(transactions.get(i)).setSolid();
+                    inclusionStates[i] = true;
+                }
                 return GetInclusionStatesResponse.create(inclusionStates);
             }
     }

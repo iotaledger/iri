@@ -56,6 +56,17 @@ public class Neighbor {
         return hostAddress;
     }
     
+    private int tcpPort;
+    
+    
+    public int getTcpPort() {
+        return tcpPort;
+    }
+
+    public void setTcpPort(int tcpPort) {
+        this.tcpPort = tcpPort;
+    }
+
     public void setSource(Socket source) {
         if (source == null) {
             if (this.source != null && !this.source.isClosed()) {
@@ -93,6 +104,7 @@ public class Neighbor {
     public Neighbor(final InetSocketAddress address, boolean isTcp, boolean isConfigured) {
         this.address = address;
         this.hostAddress = address.getAddress().getHostAddress();
+        this.tcpPort = address.getPort();
         this.tcpip = isTcp;
         this.flagged = isConfigured;
     }

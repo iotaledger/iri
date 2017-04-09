@@ -55,7 +55,7 @@ class ReplicatorSinkProcessor implements Runnable {
             
             if (socket != null) {
                 log.info("Connecting sink {}",remoteAddress);
-                socket.connect(new InetSocketAddress(remoteAddress, Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP)), 30000);
+                socket.connect(new InetSocketAddress(remoteAddress, neighbor.getTcpPort()), 30000);
                 if (!socket.isClosed() && socket.isConnected()) {
                     OutputStream out = socket.getOutputStream();
                     log.info("----- NETWORK INFO ----- Sink {} is connected", remoteAddress);

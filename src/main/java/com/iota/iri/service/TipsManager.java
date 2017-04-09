@@ -89,15 +89,24 @@ public class TipsManager {
     }
 
     private static boolean updateSnapshot(Hash tip) throws Exception {
-        Map<Hash, Long> currentState = getCurrentState(tip, latestState);
-        latestState.clear();
-        assert currentState != null;
-        latestState.putAll(currentState);
-        if(ledgerIsConsistent(currentState) && TransactionViewModel.fromHash(tip).getCurrentIndex() == 0) {
-            updateConsistentHashes(tip);
-            return true;
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
+        boolean inconsistent = transactionViewModel.isInconsistent();
+        if(inconsistent) {
+            Hash tail = transactionViewModel.getBundle().getTail().getHash();
+            if(tail != null) {
+                Map<Hash, Long> currentState = getCurrentState(tail, latestState);
+                inconsistent = ledgerIsConsistent(currentState);
+                if (!inconsistent) {
+                    updateConsistentHashes(tip);
+                    synchronized (latestState) {
+                        latestState.clear();
+                        assert currentState != null;
+                        latestState.putAll(currentState);
+                    }
+                }
+            }
         }
-        return false;
+        return !inconsistent;
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {

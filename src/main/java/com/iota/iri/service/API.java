@@ -326,27 +326,41 @@ public class API {
                     if (analyzedTips.add(pointer)) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(pointer);
-                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                            return ErrorResponse.create("The subtangle is not solid");
-                        } else {
+                        if(!transactionViewModel.isSolid()) {
+                            if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                                return ErrorResponse.create("The subtangle is not solid");
+                            } else {
+                                for (int i = 0; i < inclusionStates.length; i++) {
 
-                            final Hash transactionHash = transactionViewModel.getHash();
-                            for (int i = 0; i < inclusionStates.length; i++) {
+                                    if (!inclusionStates[i] && pointer.equals(transactions.get(i))) {
 
-                                if (!inclusionStates[i] && transactionHash.equals(transactions.get(i))) {
+                                        inclusionStates[i] = true;
 
-                                    inclusionStates[i] = true;
-
-                                    if (--numberOfNonMetTransactions <= 0) {
-                                        break MAIN_LOOP;
+                                        if (--numberOfNonMetTransactions <= 0) {
+                                            break MAIN_LOOP;
+                                        }
                                     }
                                 }
+                                nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                                nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                             }
-                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                         }
                     }
                 }
+                analyzedTips.stream().map(h -> {
+                    try {
+                        return TransactionViewModel.fromHash(h);
+                    } catch (Exception e) {
+                        log.error("Could not load transaction. ");
+                    }
+                    return null;
+                }).forEach(t -> {
+                    try {
+                        t.setSolid();
+                    } catch (Exception e) {
+                        log.error("Could not update transaction solid state.");
+                    }
+                });
                 return GetInclusionStatesResponse.create(inclusionStates);
             }
     }

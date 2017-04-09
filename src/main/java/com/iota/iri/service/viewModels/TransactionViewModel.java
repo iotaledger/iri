@@ -366,17 +366,15 @@ public class TransactionViewModel {
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
-            transactionViewModel.setSolid(true);
+            transactionViewModel.setSolid();
         }
     }
 
-    public void setSolid(boolean solid) throws Exception {
-        if(solid) {
+    public void setSolid() throws Exception {
+        if(transaction.solid[0] != 1) {
             transaction.solid = new byte[]{1};
-        } else {
-            transaction.solid = new byte[]{0};
+            update("solid");
         }
-        update("solid");
     }
 
     public boolean isSolid() {

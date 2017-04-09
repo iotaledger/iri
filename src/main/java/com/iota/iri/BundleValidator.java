@@ -132,11 +132,7 @@ public class BundleValidator {
             }
             return false;
         }
-        if(value != 0 || getTransactions().size() == 0) {
-            //log.info("Ledger inconsistency detected");
-            return false;
-        }
-        return true;
+        return !(value != 0 || getTransactions().size() == 0);
     }
 
     private Map<Hash, TransactionViewModel> loadTransactionsFromTangle() {

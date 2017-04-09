@@ -24,7 +24,10 @@ public class TransactionViewModel {
     private static final Logger log = LoggerFactory.getLogger(TransactionViewModel.class);
 
     public static final int SIZE = 1604;
+    public static final int TAG_SIZE = 17;
+    //public static final int HASH_SIZE = 46;
 
+    /*
     public static final int TYPE_OFFSET = 0, TYPE_SIZE = Byte.BYTES;
     public static final int HASH_OFFSET = TYPE_OFFSET + TYPE_SIZE + ((Long.BYTES - (TYPE_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), HASH_SIZE = 46;
 
@@ -40,6 +43,7 @@ public class TransactionViewModel {
     private static final int BRANCH_TRANSACTION_OFFSET = TRUNK_TRANSACTION_OFFSET + TRUNK_TRANSACTION_SIZE + ((Long.BYTES - (TRUNK_TRANSACTION_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), BRANCH_TRANSACTION_SIZE = HASH_SIZE;
     public static final int VALIDITY_OFFSET = BRANCH_TRANSACTION_OFFSET + BRANCH_TRANSACTION_SIZE + ((Long.BYTES - (BRANCH_TRANSACTION_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), VALIDITY_SIZE = 1;
     public static final int ARRIVAL_TIME_OFFSET = VALIDITY_OFFSET + VALIDITY_SIZE + ((Long.BYTES - (VALIDITY_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), ARIVAL_TIME_SIZE = Long.BYTES;
+    */
 
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2
 
@@ -128,7 +132,7 @@ public class TransactionViewModel {
     public TransactionViewModel(final byte[] bytes, final int[] trits, final Curl curl) {
         transaction = new Transaction();
         transaction.bytes = new byte[SIZE];
-        System.arraycopy(bytes, 0, transaction.bytes, 0, BYTES_SIZE);
+        System.arraycopy(bytes, 0, transaction.bytes, 0, SIZE);
 
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
 

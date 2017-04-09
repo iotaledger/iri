@@ -479,7 +479,7 @@ public class API {
         return counter_PoW;
     }
     public static void incCounter_PoW() {
-        API.counter_PoW++;;
+        API.counter_PoW++;
     }
 
     private static long ellapsedTime_PoW = 0L;

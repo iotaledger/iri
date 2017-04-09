@@ -76,7 +76,7 @@ public class TipsManager {
                     long latency = 30000;
                     if (Milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX &&
                             Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
-                        latency = ARTIFICAL_LATENCY > 0 ? latency = (long)((long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L)+5000L : 5000L;
+                        latency = ARTIFICAL_LATENCY > 0 ? latency = (long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L +5000L : 5000L;
                     }
                     
                     Thread.sleep(latency);

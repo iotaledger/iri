@@ -4,6 +4,7 @@ import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.tangle.Tangle;
+import com.iota.iri.service.viewModels.TransactionRequester;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
@@ -39,7 +40,7 @@ public class RocksDBPersistenceProviderTest {
         TransactionViewModel transactionViewModel = new TransactionViewModel(getRandomTransactionTrits());
         transactionViewModel.store();
         Hash hash = transactionViewModel.getHash();
-        Transaction transaction = ((Transaction) rocksDBPersistenceProvider.seek(Transaction.class, Arrays.copyOf(hash.bytes(), TransactionViewModel.HASH_SIZE)));
+        Transaction transaction = ((Transaction) rocksDBPersistenceProvider.seek(Transaction.class, Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)));
         Assert.assertArrayEquals(transaction.bytes, transactionViewModel.getBytes());
     }
 }

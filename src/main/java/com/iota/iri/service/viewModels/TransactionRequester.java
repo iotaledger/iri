@@ -2,7 +2,6 @@ package com.iota.iri.service.viewModels;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,6 +23,8 @@ public class TransactionRequester {
     private Set<Hash> transactionsToRequest = new HashSet<>();
     private SecureRandom random = new SecureRandom();
     private volatile long lastTime = System.currentTimeMillis();
+    public  static final int REQUEST_HASH_SIZE = 46;
+    private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUEST_HASH_SIZE];
 
     public void init() {
         P_REMOVE_REQUEST = Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name());
@@ -82,9 +83,9 @@ public class TransactionRequester {
                     transactionsToRequest.remove(hash);
                 }
             }
-            System.arraycopy(hash.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
+            System.arraycopy(hash.bytes(), 0, buffer, offset, REQUEST_HASH_SIZE);
         } else {
-            System.arraycopy(Hash.NULL_HASH.bytes(), 0, buffer, offset, TransactionViewModel.HASH_SIZE);
+            System.arraycopy(Hash.NULL_HASH.bytes(), 0, buffer, offset, REQUEST_HASH_SIZE);
         }
         long now = System.currentTimeMillis();
         if ((now - lastTime) > 10000L) {

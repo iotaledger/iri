@@ -335,7 +335,7 @@ public class TransactionViewModelTest {
         TransactionViewModel transactionViewModel = new TransactionViewModel(getRandomTransactionTrits());
         transactionViewModel.store();
         Hash hash = transactionViewModel.getHash();
-        Assert.assertArrayEquals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionViewModel.HASH_SIZE)).getBytes(), transactionViewModel.getBytes());
+        Assert.assertArrayEquals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)).getBytes(), transactionViewModel.getBytes());
     }
 
     @Test
@@ -344,7 +344,7 @@ public class TransactionViewModelTest {
         TransactionViewModel transactionViewModelNoSave = new TransactionViewModel(getRandomTransactionTrits());
         transactionViewModel.store();
         Hash hash = transactionViewModelNoSave.getHash();
-        Assert.assertFalse(Arrays.equals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionViewModel.HASH_SIZE)).getBytes(), transactionViewModel.getBytes()));
+        Assert.assertFalse(Arrays.equals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)).getBytes(), transactionViewModel.getBytes()));
     }
 
     private Transaction getRandomTransaction(Random seed) {

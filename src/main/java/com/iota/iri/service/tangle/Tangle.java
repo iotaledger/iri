@@ -1,7 +1,6 @@
 package com.iota.iri.service.tangle;
 
 import com.iota.iri.model.*;
-import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,8 +13,8 @@ import java.util.concurrent.*;
 public class Tangle {
     private static final Logger log = LoggerFactory.getLogger(Tangle.class);
 
-    private static Tangle instance = new Tangle();
-    List<IPersistenceProvider> persistenceProviders = new ArrayList<>();
+    private static final Tangle instance = new Tangle();
+    private final List<IPersistenceProvider> persistenceProviders = new ArrayList<>();
     private ExecutorService executor;
     private boolean available = true;
 
@@ -120,7 +119,9 @@ public class Tangle {
             Hash[] output = new Hash[0];
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 output = provider.keysStartingWith(modelClass, value);
-                if(output.length != 0);
+                if(output.length != 0) {
+                    break;
+                }
             }
             return output;
         });

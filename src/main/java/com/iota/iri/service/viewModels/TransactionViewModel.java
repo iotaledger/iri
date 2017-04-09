@@ -11,7 +11,6 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.service.TipsManager;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
@@ -24,7 +23,7 @@ public class TransactionViewModel {
     private static final Logger log = LoggerFactory.getLogger(TransactionViewModel.class);
 
     public static final int SIZE = 1604;
-    public static final int TAG_SIZE = 17;
+    private static final int TAG_SIZE = 17;
     //public static final int HASH_SIZE = 46;
 
     /*
@@ -70,10 +69,10 @@ public class TransactionViewModel {
     public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only another tx references that hash
     public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
 
-    public AddressViewModel address;
-    public BundleValidator bundleValidator;
-    public TransactionViewModel trunk;
-    public TransactionViewModel branch;
+    private AddressViewModel address;
+    private BundleValidator bundleValidator;
+    private TransactionViewModel trunk;
+    private TransactionViewModel branch;
 
 
     private int[] hashTrits;
@@ -175,7 +174,7 @@ public class TransactionViewModel {
     }
 
     public void update(String item) throws Exception {
-        Tangle.instance().update(transaction, item);
+        Tangle.instance().update(transaction, item).get();
     }
 
     public TransactionViewModel getBranchTransaction() throws Exception {
@@ -367,27 +366,25 @@ public class TransactionViewModel {
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
-            transactionViewModel.setSolid(true, true);
+            transactionViewModel.setSolid(true);
         }
     }
 
-    public void setSolid(boolean solid, boolean update) throws Exception {
+    public void setSolid(boolean solid) throws Exception {
         if(solid) {
             transaction.solid = new byte[]{1};
         } else {
             transaction.solid = new byte[]{0};
         }
-        if(update) {
-            update("solid");
-        }
+        update("solid");
     }
 
     public boolean isSolid() {
         return transaction.solid[0] == 1;
     }
 
-    public boolean isConsistent() {
-        return transaction.consistent;
+    public boolean isInconsistent() {
+        return !transaction.consistent;
     }
 
     public void setConsistency(boolean consistent) throws Exception {

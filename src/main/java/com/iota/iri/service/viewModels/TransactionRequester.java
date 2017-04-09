@@ -20,8 +20,8 @@ public class TransactionRequester {
 
     private final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private static double P_REMOVE_REQUEST;
-    private Set<Hash> transactionsToRequest = new HashSet<>();
-    private SecureRandom random = new SecureRandom();
+    private final Set<Hash> transactionsToRequest = new HashSet<>();
+    private final SecureRandom random = new SecureRandom();
     private volatile long lastTime = System.currentTimeMillis();
     public  static final int REQUEST_HASH_SIZE = 46;
     private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUEST_HASH_SIZE];
@@ -45,7 +45,7 @@ public class TransactionRequester {
         return transactionsToRequest.size();
     }
 
-    protected void clearTransactionRequest(Hash hash) {
+    void clearTransactionRequest(Hash hash) {
         synchronized (this) {
             transactionsToRequest.remove(hash);
         }
@@ -77,7 +77,7 @@ public class TransactionRequester {
             }
         }
 
-        if(hash != null && hash != null && !hash.equals(Hash.NULL_HASH)) {
+        if(hash != null && !hash.equals(Hash.NULL_HASH)) {
             if(random.nextDouble() < P_REMOVE_REQUEST) {
                 synchronized (this) {
                     transactionsToRequest.remove(hash);

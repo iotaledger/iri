@@ -3,7 +3,6 @@ package com.iota.iri.service.viewModels;
 import com.iota.iri.model.Address;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
-import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.concurrent.ExecutionException;
@@ -12,7 +11,7 @@ import java.util.concurrent.ExecutionException;
  * Created by paul on 3/6/17 for iri.
  */
 public class AddressViewModel {
-    public final Address address;
+    private final Address address;
     public AddressViewModel (Hash hash) {
         address = new Address();
         address.hash = hash;

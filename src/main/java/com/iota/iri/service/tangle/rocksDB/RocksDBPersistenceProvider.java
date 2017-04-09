@@ -21,9 +21,9 @@ import java.util.stream.Collectors;
 public class RocksDBPersistenceProvider implements IPersistenceProvider {
 
     private static final org.slf4j.Logger log = LoggerFactory.getLogger(RocksDBPersistenceProvider.class);
-    private static int BLOOM_FILTER_BITS_PER_KEY = 10;
+    private static final int BLOOM_FILTER_BITS_PER_KEY = 10;
 
-    private String[] columnFamilyNames = new String[]{
+    private final String[] columnFamilyNames = new String[]{
             "transaction",
             "transactionValidity",
             "transactionType",
@@ -38,7 +38,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "transactionRating",
     };
 
-    boolean running;
+    private boolean running;
     private ColumnFamilyHandle transactionHandle;
     private ColumnFamilyHandle transactionValidityHandle;
     private ColumnFamilyHandle transactionTypeHandle;
@@ -51,21 +51,21 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle tipHandle;
     private ColumnFamilyHandle consistencyHandle;
 
-    List<ColumnFamilyHandle> transactionGetList;
+    private List<ColumnFamilyHandle> transactionGetList;
 
-    private Map<Class<?>, ColumnFamilyHandle> classTreeMap = new HashMap<>();
-    private Map<Class<?>, MyFunction<Object, Boolean>> saveMap = new HashMap<>();
-    private Map<Class<?>, MyFunction<Object, Void>> deleteMap = new HashMap<>();
-    private Map<Class<?>, MyFunction<Object, Object>> setKeyMap = new HashMap<>();
-    private Map<Class<?>, MyFunction<Object, Boolean>> loadMap = new HashMap<>();
-    private Map<Class<?>, MyFunction<Object, Boolean>> mayExistMap = new HashMap<>();
-    private Map<Class<?>, ColumnFamilyHandle> countMap = new HashMap<>();
+    private final Map<Class<?>, ColumnFamilyHandle> classTreeMap = new HashMap<>();
+    private final Map<Class<?>, MyFunction<Object, Boolean>> saveMap = new HashMap<>();
+    private final Map<Class<?>, MyFunction<Object, Void>> deleteMap = new HashMap<>();
+    private final Map<Class<?>, MyFunction<Object, Object>> setKeyMap = new HashMap<>();
+    private final Map<Class<?>, MyFunction<Object, Boolean>> loadMap = new HashMap<>();
+    private final Map<Class<?>, MyFunction<Object, Boolean>> mayExistMap = new HashMap<>();
+    private final Map<Class<?>, ColumnFamilyHandle> countMap = new HashMap<>();
 
-    private SecureRandom seed = new SecureRandom();
+    private final SecureRandom seed = new SecureRandom();
 
-    RocksDB db;
-    DBOptions options;
-    BloomFilter bloomFilter;
+    private RocksDB db;
+    private DBOptions options;
+    private BloomFilter bloomFilter;
     private Thread compactionThreadHandle;
 
     @Override
@@ -159,7 +159,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         bloomFilter.close();
     }
 
-    private MyFunction<Object, Boolean> saveTransaction = (txObject -> {
+    private final MyFunction<Object, Boolean> saveTransaction = (txObject -> {
         Transaction transaction = (Transaction) txObject;
         WriteBatch batch = new WriteBatch();
         WriteOptions writeOptions = new WriteOptions();
@@ -181,7 +181,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return true;
     });
 
-    private MyFunction<Object, Boolean> saveTip = tipObj -> {
+    private final MyFunction<Object, Boolean> saveTip = tipObj -> {
         db.put(tipHandle, ((Tip) tipObj).hash.bytes(), ((Tip) tipObj).status);
         return true;
     };
@@ -200,7 +200,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         if(bytes == null) {
             return new Hash[0];
         }
-        int i = 0;
+        int i;
         Set<Hash> hashes = new HashSet<>();
         for(i = size; i <= bytes.length; i += size + 1) {
             hashes.add(new Hash(Arrays.copyOfRange(bytes, i - size, i)));
@@ -217,7 +217,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public Object latest(Class<?> model) throws Exception {
+    public Object latest(Class<?> model) {
         return null;
     }
 
@@ -252,7 +252,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return loadMap.get(model.getClass()).apply(model);
     }
 
-    private MyFunction<Object, Boolean> getTransaction = (txObject) -> {
+    private final MyFunction<Object, Boolean> getTransaction = (txObject) -> {
         if(txObject == null) {
             return false;
         }
@@ -275,12 +275,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return true;
     };
 
-    private boolean byteToBoolean(byte[] bytes){
-        if(bytes == null || bytes.length != 1) { return false; }
-        return bytes[0] != 0;
+    private boolean byteToBoolean(byte[] bytes) {
+        return !(bytes == null || bytes.length != 1) && bytes[0] != 0;
     }
 
-    private MyFunction<Object, Boolean> getAddress = (addrObject) -> {
+    private final MyFunction<Object, Boolean> getAddress = (addrObject) -> {
         Address address = ((Address) addrObject);
         byte[] result = db.get(addressHandle, address.hash.bytes());
         if(result != null) {
@@ -292,7 +291,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
     };
 
-    private MyFunction<Object, Boolean> getTag = tagObj -> {
+    private final MyFunction<Object, Boolean> getTag = tagObj -> {
         Tag tag = ((Tag) tagObj);
         byte[] result = db.get(tagHandle, tag.value.bytes());
         if(result != null) {
@@ -304,7 +303,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
     };
 
-    private MyFunction<Object, Boolean> getBundle = bundleObj -> {
+    private final MyFunction<Object, Boolean> getBundle = bundleObj -> {
         Bundle bundle = ((Bundle) bundleObj);
         byte[] result = db.get(bundleHandle, bundle.hash.bytes());
         if(result != null) {
@@ -314,7 +313,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return false;
     };
 
-    private MyFunction<Object, Boolean> getApprovee = approveeObj -> {
+    private final MyFunction<Object, Boolean> getApprovee = approveeObj -> {
         Approvee approvee = ((Approvee) approveeObj);
         byte[] result = db.get(approoveeHandle, approvee.hash.bytes());
         if(result != null) {
@@ -454,7 +453,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         initDB(path, logPath);
     }
 
-    void initDB(String path, String logPath) throws Exception {
+    private void initDB(String path, String logPath) throws Exception {
         StringAppendOperator stringAppendOperator = new StringAppendOperator();
         try {
             RocksDB.loadLibrary();
@@ -525,7 +524,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             db.close();
         }
         if (missingFromDescription.size() != 0) {
-            missingFromDescription.stream().forEach(familyDescriptors::add);
+            missingFromDescription.forEach(familyDescriptors::add);
         }
         running = true;
         this.compactionThreadHandle = new Thread(() -> {
@@ -536,9 +535,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                         db.compactRange(handle);
                     }
                     Thread.sleep(compationWaitTime);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } catch (RocksDBException e) {
+                } catch (InterruptedException | RocksDBException e) {
                     e.printStackTrace();
                 }
             }

@@ -8,7 +8,7 @@ import org.junit.Test;
 
 public class PearlDiverTest {
 
-	final static int TRYTE_LENGTH = 2673;
+	private final static int TRYTE_LENGTH = 2673;
 
 	@Test
 	public void testRandomTryteHash() {
@@ -16,7 +16,7 @@ public class PearlDiverTest {
 		Curl curl = new Curl();
 		String hash;
 		int[] hashTrits = new int[Curl.HASH_LENGTH],
-				myTrits = new int[Curl.HASH_LENGTH];
+				myTrits;
 		int i = 0,
 		testCount = 20,
 		minWeightMagnitude = 9,
@@ -31,10 +31,6 @@ public class PearlDiverTest {
         hash = Converter.trytes(hashTrits);
         boolean success = isAllNines(hash.substring(Curl.HASH_LENGTH/3-minWeightMagnitude/3));
         assertTrue("The hash should have n nines", success);
-        if(!success) {
-            System.out.println("Failed on iteration " + i);
-            System.out.println("Hash: " + hash);
-        }
 
 	}
 	

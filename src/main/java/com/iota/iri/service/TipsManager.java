@@ -23,9 +23,9 @@ public class TipsManager {
     
     private static int ARTIFICAL_LATENCY = 120; // in seconds 
 
-    static boolean shuttingDown;
+    private static boolean shuttingDown;
 
-    static int numberOfConfirmedTransactions;
+    private static int numberOfConfirmedTransactions;
 
     public static void setRATING_THRESHOLD(int value) {
         if (value < 0) value = 0;
@@ -38,7 +38,7 @@ public class TipsManager {
     }
 
 
-    public void init() throws Exception {
+    public void init() {
 
         (new Thread(() -> {
 
@@ -91,6 +91,7 @@ public class TipsManager {
     private static boolean updateSnapshot(Hash tip) throws Exception {
         Map<Hash, Long> currentState = getCurrentState(tip, latestState);
         latestState.clear();
+        assert currentState != null;
         latestState.putAll(currentState);
         if(ledgerIsConsistent(currentState)) {
             updateConsistentHashes(tip);
@@ -151,7 +152,7 @@ public class TipsManager {
                     }
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
-                if(!transactionViewModel.getBundle().isConsistent()
+                if(transactionViewModel.getBundle().isInconsistent()
                         || !checkSolidity(tips[carlo])
                         || !updateSnapshot(tips[carlo])) {
                     break;
@@ -222,14 +223,14 @@ public class TipsManager {
         return rating;       
     }
 
-    public static void updateConsistentHashes(Hash tip) throws Exception {
+    private static void updateConsistentHashes(Hash tip) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>();
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash hashPointer, trunkInteger, branchInteger;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(!transactionViewModel2.isConsistent()) {
+                if(transactionViewModel2.isInconsistent()) {
                     transactionViewModel2.setConsistency(true);
                     trunkInteger = transactionViewModel2.getTrunkTransactionHash();
                     branchInteger = transactionViewModel2.getBranchTransactionHash();
@@ -487,14 +488,7 @@ public class TipsManager {
             analyzedTips.clear();
             analyzedTips.addAll(analyzedTipsCopy);
 
-            final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
-            while (tailsToAnalyzeIterator.hasNext()) {
-
-                final Hash tailHash = tailsToAnalyzeIterator.next();
-                if (analyzedTips.contains(tailHash)) {
-                    tailsToAnalyzeIterator.remove();
-                }
-            }
+            tailsToAnalyze.removeIf(analyzedTips::contains);
         }
     }
 
@@ -559,7 +553,7 @@ public class TipsManager {
         return true;
     }
 
-    public static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot) throws Exception {
+    private static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot) throws Exception {
         Map<Hash, Long> state = new HashMap<>(snapshot);
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -573,7 +567,7 @@ public class TipsManager {
                 numberOfAnalyzedTransactions++;
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                if(!transactionViewModel.isConsistent()) {
+                if(transactionViewModel.isInconsistent()) {
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
                         return null;
@@ -606,7 +600,7 @@ public class TipsManager {
                                 }
                             }
 
-                            if (!validBundle || !bundleValidator.isConsistent()) {
+                            if (!validBundle || bundleValidator.isInconsistent()) {
                                 for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
                                     transactionViewModel1.delete();
                                     TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
@@ -639,5 +633,5 @@ public class TipsManager {
     
     private TipsManager() {}
     
-    private static TipsManager instance = new TipsManager();
+    private static final TipsManager instance = new TipsManager();
 }

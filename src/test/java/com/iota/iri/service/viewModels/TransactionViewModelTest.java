@@ -23,10 +23,10 @@ import static org.junit.Assert.*;
  */
 public class TransactionViewModelTest {
 
-    static TemporaryFolder dbFolder = new TemporaryFolder();
-    static TemporaryFolder logFolder = new TemporaryFolder();
+    private static final TemporaryFolder dbFolder = new TemporaryFolder();
+    private static final TemporaryFolder logFolder = new TemporaryFolder();
 
-    public static Random seed = new Random();
+    private static final Random seed = new Random();
 
     @BeforeClass
     public static void setUp() throws Exception {

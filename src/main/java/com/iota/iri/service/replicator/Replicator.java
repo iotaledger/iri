@@ -11,7 +11,7 @@ public class Replicator {
     
     private static final Logger log = LoggerFactory.getLogger(Replicator.class);
     
-    public void init() throws IOException {
+    public void init() {
         
         new Thread(ReplicatorSinkPool.instance()).start();
         new Thread(ReplicatorSourcePool.instance()).start();
@@ -22,7 +22,7 @@ public class Replicator {
         // TODO
     }
     
-    private static Replicator instance = new Replicator();
+    private static final Replicator instance = new Replicator();
 
     private Replicator() {
     }

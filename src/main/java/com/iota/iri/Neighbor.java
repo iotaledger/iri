@@ -22,7 +22,7 @@ public class Neighbor {
     private int numberOfNewTransactions;
     private int numberOfInvalidTransactions;
     
-    public ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(50);
+    private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(50);
     
     private boolean flagged = false;
     
@@ -50,7 +50,7 @@ public class Neighbor {
         return source;
     }
 
-    private String hostAddress;
+    private final String hostAddress;
     
     public String getHostAddress() {
         return hostAddress;
@@ -118,13 +118,7 @@ public class Neighbor {
     
     @Override
     public boolean equals(final Object obj) {
-    	if (this == obj) {
-            return true;
-    	}
-        if ((obj == null) || (obj.getClass() != this.getClass())) {
-            return false;
-        }
-        return address.equals(((Neighbor)obj).address);
+        return this == obj || !((obj == null) || (obj.getClass() != this.getClass())) && address.equals(((Neighbor) obj).address);
     }
 
     @Override

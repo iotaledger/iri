@@ -54,7 +54,7 @@ public class Node {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
     
-    public static long TIMESTAMP_THRESHOLD = 0L;
+    private static long TIMESTAMP_THRESHOLD = 0L;
 
     public static void setTIMESTAMP_THRESHOLD(long tIMESTAMP_THRESHOLD) {
         TIMESTAMP_THRESHOLD = tIMESTAMP_THRESHOLD;
@@ -92,7 +92,7 @@ public class Node {
         executor.shutdown();
     }
 
-    private Map<String, String> neighborIpCache = new HashMap<>();
+    private final Map<String, String> neighborIpCache = new HashMap<>();
     
     private Runnable spawnNeighborDNSRefresherThread() {
         return () -> {
@@ -110,7 +110,7 @@ public class Node {
                             final String neighborAddress = neighborIpCache.get(hostname);
                             
                             if (neighborAddress == null) {
-                                neighborIpCache.put(neighborAddress, ip);
+                                neighborIpCache.put(hostname, ip);
                             } else {
                                 if (neighborAddress.equals(ip)) {
                                     log.info("{} seems fine.", hostname);
@@ -201,7 +201,7 @@ public class Node {
             else {
                 if (neighbor.getAddress().equals(senderAddress)) addressMatch = true;
             }
-            if (addressMatch==true) {
+            if (addressMatch) {
                 try {
                     neighbor.incAllTransactions();
                     if(rnd.nextDouble() < P_DROP_TRANSACTION) {
@@ -267,13 +267,11 @@ public class Node {
 
                     final TransactionViewModel milestoneTx = TransactionViewModel.fromHash(transactionPointer);
                     final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(milestoneTx.getBundleHash()));
-                    if (bundleValidator != null) {
-                        Collection<List<TransactionViewModel>> tList = bundleValidator.getTransactions();
-                        if (tList != null && tList.size() != 0) {
-                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
-                                if (bundleTransactionViewModels.size() > 1) {
-                                    transactionPointer = bundleTransactionViewModels.get(1).getHash();
-                                }
+                    Collection<List<TransactionViewModel>> tList = bundleValidator.getTransactions();
+                    if (tList != null && tList.size() != 0) {
+                        for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
+                            if (bundleTransactionViewModels.size() > 1) {
+                                transactionPointer = bundleTransactionViewModels.get(1).getHash();
                             }
                         }
                     }
@@ -404,10 +402,7 @@ public class Node {
             isTcp = true;
         }
         final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, isConfigured);
-        if (!Node.instance().getNeighbors().contains(neighbor)) {
-            return Node.instance().getNeighbors().add(neighbor);
-        }
-        return false;
+        return !Node.instance().getNeighbors().contains(neighbor) && Node.instance().getNeighbors().add(neighbor);
     }
     
     public static Optional<URI> uri(final String uri) {

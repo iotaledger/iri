@@ -268,11 +268,10 @@ public class API {
         }
         API.incCounter_getTxToApprove();
         if ( ( getCounter_getTxToApprove() % 100) == 0 ) {
-            StringBuffer sb = new StringBuffer(80);
-            sb.append("Last 100 getTxToApprove consumed ");
-            sb.append(API.getEllapsedTime_getTxToApprove()/1000000000L);
-            sb.append(" seconds processing time.");            
-            log.info(sb.toString());
+            String sb = "Last 100 getTxToApprove consumed " +
+                    API.getEllapsedTime_getTxToApprove() / 1000000000L +
+                    " seconds processing time.";
+            log.info(sb);
             counter_getTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
@@ -299,8 +298,8 @@ public class API {
 
     private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) throws Exception {
 
-        final List<Hash> transactions = trans.stream().map(s -> new Hash(s)).collect(Collectors.toList());
-        final List<Hash> tips = tps.stream().map(s -> new Hash(s)).collect(Collectors.toList());
+        final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
+        final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
 
         int numberOfNonMetTransactions = transactions.size();
         final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];
@@ -356,7 +355,7 @@ public class API {
         final Set<Hash> bundlesTransactions = new HashSet<>();
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
-                bundlesTransactions.addAll(Arrays.stream(BundleViewModel.fromHash(new Hash(bundle)).getTransactionViewModels()).map(t -> t.getHash()).collect(Collectors.toSet()));
+                bundlesTransactions.addAll(Arrays.stream(BundleViewModel.fromHash(new Hash(bundle)).getTransactionViewModels()).map(TransactionViewModel::getHash).collect(Collectors.toSet()));
             }
         }
 
@@ -408,7 +407,7 @@ public class API {
         }
 
         final List<String> elements = foundTransactions.stream()
-                .map(pointer -> pointer.toString())
+                .map(Hash::toString)
                 .collect(Collectors.toCollection(LinkedList::new));
 
         return FindTransactionsResponse.create(elements);
@@ -453,7 +452,7 @@ public class API {
 
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
 
-                    if(!transactionViewModel.isConsistent()) {
+                    if(transactionViewModel.isInconsistent()) {
                         if (transactionViewModel.value() != 0) {
 
                             final Hash address = transactionViewModel.getAddress().getHash();
@@ -517,11 +516,10 @@ public class API {
                 API.incEllapsedTime_PoW(System.nanoTime() - startTime);
                 API.incCounter_PoW();
                 if ( ( API.getCounter_PoW() % 100) == 0 ) {
-                    StringBuffer sb = new StringBuffer(80);
-                    sb.append("Last 100 PoW consumed ");
-                    sb.append(API.getEllapsedTime_PoW()/1000000000L);
-                    sb.append(" seconds processing time.");
-                    log.info(sb.toString());
+                    String sb = "Last 100 PoW consumed " +
+                            API.getEllapsedTime_PoW() / 1000000000L +
+                            " seconds processing time.";
+                    log.info(sb);
                     counter_PoW = 0;
                     ellapsedTime_PoW = 0L;
                 }
@@ -602,7 +600,7 @@ public class API {
         }
     }
 
-    private static API instance = new API();
+    private static final API instance = new API();
 
     public static API instance() {
         return instance;

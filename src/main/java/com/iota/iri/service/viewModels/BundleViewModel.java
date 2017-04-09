@@ -1,13 +1,8 @@
 package com.iota.iri.service.viewModels;
 
-import com.iota.iri.hash.Curl;
-import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
-import com.iota.iri.utils.Converter;
-
-import java.util.*;
 
 /**
  * Created by paul on 3/15/17 for iri-testnet.
@@ -23,7 +18,7 @@ public class BundleViewModel {
         return new BundleViewModel(bundle);
     }
 
-    public BundleViewModel(Bundle bundle) throws Exception {
+    private BundleViewModel(Bundle bundle) {
         this.bundle = bundle;
     }
 

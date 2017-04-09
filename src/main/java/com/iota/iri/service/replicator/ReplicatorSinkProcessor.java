@@ -14,11 +14,11 @@ import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.Node;
 
-public class ReplicatorSinkProcessor implements Runnable {
+class ReplicatorSinkProcessor implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSinkProcessor.class);
 
-    private Neighbor neighbor;
+    private final Neighbor neighbor;
 
     public ReplicatorSinkProcessor(Neighbor neighbor) {
         this.neighbor = neighbor;
@@ -36,7 +36,7 @@ public class ReplicatorSinkProcessor implements Runnable {
         String remoteAddress = neighbor.getHostAddress();
         
         try {
-            Socket socket = null;
+            Socket socket;
             synchronized (neighbor) { 
                 Socket sink = neighbor.getSink();
                 if ( sink == null ) {
@@ -102,7 +102,6 @@ public class ReplicatorSinkProcessor implements Runnable {
                 }
                 neighbor.setSink(null);
             }
-            return;
         }
 
     }

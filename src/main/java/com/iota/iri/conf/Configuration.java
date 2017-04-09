@@ -76,12 +76,12 @@ public class Configuration {
 
     public static String getIniValue(String k) {
         if(ini != null) {
-            return prefs.node("IRI").get(k.toString(), null);
+            return prefs.node("IRI").get(k, null);
         }
         return null;
     }
 
-    public static String getConfValue(String k) {
+    private static String getConfValue(String k) {
         String value = getIniValue(k);
         return value == null? conf.get(k): value;
     }
@@ -102,7 +102,7 @@ public class Configuration {
         conf.put(d.name(), v);
     }
 
-    public static String string(String k) {
+    private static String string(String k) {
         return getConfValue(k);
     }
 
@@ -114,11 +114,11 @@ public class Configuration {
         return Double.parseDouble(getConfValue(k));
     }
 
-    public static int integer(String k) {
+    private static int integer(String k) {
         return Integer.parseInt(getConfValue(k));
     }
 
-    public static boolean booling(String k) {
+    private static boolean booling(String k) {
         return Boolean.parseBoolean(getConfValue(k));
     }
 

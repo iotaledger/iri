@@ -9,7 +9,6 @@ import com.iota.iri.service.viewModels.TransactionViewModelTest;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;

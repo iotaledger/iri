@@ -7,7 +7,6 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,14 +19,14 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.Node;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 
-public class ReplicatorSourceProcessor implements Runnable {
+class ReplicatorSourceProcessor implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSourceProcessor.class);
 
-    private Socket connection;
+    private final Socket connection;
 
-    final static int TRANSACTION_PACKET_SIZE = Node.TRANSACTION_PACKET_SIZE;
-    private volatile boolean shutdown = false;
+    private final static int TRANSACTION_PACKET_SIZE = Node.TRANSACTION_PACKET_SIZE;
+    private final boolean shutdown = false;
     
     private boolean existingNeighbor;
     
@@ -70,15 +69,14 @@ public class ReplicatorSourceProcessor implements Runnable {
             
             //Neighbor fresh_neighbor = new Neighbor(inet_socket_address_normalized, true, false);
             if (!existingNeighbor) {
-                StringBuffer sb = new StringBuffer(80);
-                sb.append("***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://")
-                    .append(inet_socket_address.getHostName())
-                    .append(":")
-                    .append(String.valueOf(inet_socket_address.getPort()))
-                    .append(" (")
-                    .append(inet_socket_address.getAddress().getHostAddress())
-                    .append(") - closing connection");
-                log.info(sb.toString());
+                String sb = "***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://" +
+                        inet_socket_address.getHostName() +
+                        ":" +
+                        String.valueOf(inet_socket_address.getPort()) +
+                        " (" +
+                        inet_socket_address.getAddress().getHostAddress() +
+                        ") - closing connection";
+                log.info(sb);
                 connection.close();
                 return;
                 /* -- This is possible code if tethering is disabled 
@@ -117,29 +115,22 @@ public class ReplicatorSourceProcessor implements Runnable {
                 }
               
                 if ( count == -1 || connection.isClosed() ) {
-                    readError = true;
                     break;
                 }
                 
                 offset = 0;
 
-                if (!readError) {
-                    try {
-                        Node.instance().processReceivedData(data, address, curl, receivedTransactionTrits, requestedTransaction);
-                    }
-                      catch (IllegalStateException e) {
-                        log.error("Queue is full for neighbor IP {}",inet_socket_address.getAddress().getHostAddress());
-                    } catch (final RuntimeException e) {
-                        log.error("Transdaction processing runtime exception ",e);
-                        neighbor.incInvalidTransactions();
-                    } catch (Exception e) {
-                        log.info("Transdaction processing exception " + e.getMessage());
-                        log.error("Transdaction processing exception ",e);
-                    }
+                try {
+                    Node.instance().processReceivedData(data, address, curl, receivedTransactionTrits, requestedTransaction);
                 }
-                else {
-                    log.error("***** NETWORK ALERT ***** TCP connection reset by network {}, source closed", neighbor.getHostAddress());
-                    break;
+                  catch (IllegalStateException e) {
+                    log.error("Queue is full for neighbor IP {}",inet_socket_address.getAddress().getHostAddress());
+                } catch (final RuntimeException e) {
+                    log.error("Transdaction processing runtime exception ",e);
+                    neighbor.incInvalidTransactions();
+                } catch (Exception e) {
+                    log.info("Transdaction processing exception " + e.getMessage());
+                    log.error("Transdaction processing exception ",e);
                 }
             }
         } catch (IOException e) {

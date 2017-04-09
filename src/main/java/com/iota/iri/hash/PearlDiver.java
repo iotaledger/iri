@@ -154,9 +154,9 @@ public class PearlDiver {
             state = CANCELLED;
         }
 
-        for (int i = 0; i < workers.length; i++) {
+        for (Thread worker : workers) {
             try {
-                workers[i].join(200);
+                worker.join(200);
             } catch (final InterruptedException e) {
                 state = CANCELLED;
             }

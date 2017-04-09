@@ -12,7 +12,7 @@ import static com.jayway.restassured.RestAssured.*;
 
 public class APIIntegrationTests {
 
-    private static Gson gson = new GsonBuilder().create();
+    private static final Gson gson = new GsonBuilder().create();
 
     static {
         RestAssured.port = 14700;

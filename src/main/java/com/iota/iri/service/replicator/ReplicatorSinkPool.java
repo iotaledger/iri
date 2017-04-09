@@ -48,20 +48,20 @@ public class ReplicatorSinkPool  implements Runnable {
             });
         }
         
-        while (true) {
+        while (!Thread.interrupted()) {
             // Restart attempt for neighbors that are in the configuration.
-            try {                
+            try {
                 Thread.sleep(30000);
-                List<Neighbor> neighbors = Node.instance().getNeighbors();
-                neighbors.forEach(n -> {
-                    if (n.isTcpip() && n.isFlagged() && n.getSink() == null) {
-                        createSink(n);
-                    }
-                });
             } catch (InterruptedException e) {
-                log.error("Interrupted");
+                log.debug("Interrupted: ", e);
             }
-        }        
+            List<Neighbor> neighbors = Node.instance().getNeighbors();
+            neighbors.forEach(n -> {
+                if (n.isTcpip() && n.isFlagged() && n.getSink() == null) {
+                    createSink(n);
+                }
+            });
+        }
     }
     
     public void createSink(Neighbor neighbor) {        
@@ -116,7 +116,7 @@ public class ReplicatorSinkPool  implements Runnable {
         sinkPool.awaitTermination(6, TimeUnit.SECONDS);
     }
 
-    private static ReplicatorSinkPool instance = new ReplicatorSinkPool();
+    private static final ReplicatorSinkPool instance = new ReplicatorSinkPool();
 
     private ReplicatorSinkPool() {
     }

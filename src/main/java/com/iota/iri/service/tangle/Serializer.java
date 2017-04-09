@@ -1,6 +1,5 @@
 package com.iota.iri.service.tangle;
 
-import java.io.*;
 import java.nio.ByteBuffer;
 
 /**

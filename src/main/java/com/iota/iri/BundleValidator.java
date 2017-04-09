@@ -4,7 +4,6 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.viewModels.BundleViewModel;
-import com.iota.iri.service.viewModels.TransactionRequester;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
@@ -113,10 +112,8 @@ public class BundleValidator {
         }
     }
 
-    public boolean isConsistent() throws Exception {
-        boolean validBundle = true;
+    public boolean isInconsistent() {
         long value = 0;
-        Map<Hash, Long> state = new HashMap<>();
         for (final List<TransactionViewModel> bundleTransactionViewModels : getTransactions()) {
             for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
                 if (bundleTransactionViewModel.value() != 0) {
@@ -124,15 +121,7 @@ public class BundleValidator {
                 }
             }
         }
-
-        if (!validBundle) {
-            for(TransactionViewModel transactionViewModel1: this.bundleViewModel.getTransactionViewModels()) {
-                transactionViewModel1.delete();
-                TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
-            }
-            return false;
-        }
-        return !(value != 0 || getTransactions().size() == 0);
+        return (value != 0 || getTransactions().size() == 0);
     }
 
     private Map<Hash, TransactionViewModel> loadTransactionsFromTangle() {

@@ -96,6 +96,7 @@ public class IRI {
         final Option<Boolean> testnet = parser.addBooleanOption('t', "testnet");
 
         try {
+            assert args != null;
             parser.parse(args);
         } catch (CmdLineParser.OptionException e) {
             log.error("CLI error: ", e);

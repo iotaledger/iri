@@ -310,7 +310,7 @@ public class API {
             for (final Hash tip : tips) {
 
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-                if (transactionViewModel.getHash().equals(Hash.NULL_HASH)){
+                if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
                     return ErrorResponse.create("One of the tips absents");
                 }
 

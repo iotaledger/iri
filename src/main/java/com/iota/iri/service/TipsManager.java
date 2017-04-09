@@ -93,7 +93,7 @@ public class TipsManager {
         latestState.clear();
         assert currentState != null;
         latestState.putAll(currentState);
-        if(ledgerIsConsistent(currentState)) {
+        if(ledgerIsConsistent(currentState) && TransactionViewModel.fromHash(tip).getCurrentIndex() == 0) {
             updateConsistentHashes(tip);
             return true;
         }

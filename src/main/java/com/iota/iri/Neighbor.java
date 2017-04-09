@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,17 @@ public class Neighbor {
         return hostAddress;
     }
     
+    private int tcpPort;
+    
+    
+    public int getTcpPort() {
+        return tcpPort;
+    }
+
+    public void setTcpPort(int tcpPort) {
+        this.tcpPort = tcpPort;
+    }
+
     public void setSource(Socket source) {
         if (source == null) {
             if (this.source != null && !this.source.isClosed()) {
@@ -93,6 +105,7 @@ public class Neighbor {
     public Neighbor(final InetSocketAddress address, boolean isTcp, boolean isConfigured) {
         this.address = address;
         this.hostAddress = address.getAddress().getHostAddress();
+        this.tcpPort = address.getPort();
         this.tcpip = isTcp;
         this.flagged = isConfigured;
     }
@@ -155,6 +168,6 @@ public class Neighbor {
 	}
     
     public ByteBuffer getNextMessage() throws InterruptedException {
-        return (this.sendQueue.take());
+        return (this.sendQueue.poll(10000, TimeUnit.MILLISECONDS));
     }
 }

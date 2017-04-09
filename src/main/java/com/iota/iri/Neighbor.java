@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -167,6 +168,6 @@ public class Neighbor {
 	}
     
     public ByteBuffer getNextMessage() throws InterruptedException {
-        return (this.sendQueue.take());
+        return (this.sendQueue.poll(10000, TimeUnit.MILLISECONDS));
     }
 }

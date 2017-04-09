@@ -55,15 +55,16 @@ class ReplicatorSourceProcessor implements Runnable {
 
             SocketAddress address = connection.getRemoteSocketAddress();
             InetSocketAddress inet_socket_address = (InetSocketAddress) address;
-            InetSocketAddress inet_socket_address_normalized = new InetSocketAddress(inet_socket_address.getAddress(),
-                    Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP));
 
             existingNeighbor = false;
             List<Neighbor> neighbors = Node.instance().getNeighbors();            
             neighbors.forEach(n -> {
-                if (n.isTcpip() && n.getAddress().equals(inet_socket_address_normalized)) {
-                    existingNeighbor = true;
-                    neighbor = n;
+                if (n.isTcpip()) {
+                    String hisAddress = inet_socket_address.getAddress().getHostAddress();
+                    if (n.getHostAddress().equals(hisAddress)) {
+                        existingNeighbor = true;
+                        neighbor = n;
+                    }
                 }
             });
             
@@ -77,6 +78,9 @@ class ReplicatorSourceProcessor implements Runnable {
                         inet_socket_address.getAddress().getHostAddress() +
                         ") - closing connection";
                 log.info(sb);
+                connection.getInputStream().close();
+                connection.shutdownInput();
+                connection.shutdownOutput();
                 connection.close();
                 return;
                 /* -- This is possible code if tethering is disabled 

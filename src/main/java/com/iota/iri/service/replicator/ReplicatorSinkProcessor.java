@@ -54,7 +54,7 @@ class ReplicatorSinkProcessor implements Runnable {
             }
             
             if (socket != null) {
-                log.info("Connecting sink {}",remoteAddress);
+                log.info("Connecting sink {}", remoteAddress);
                 socket.connect(new InetSocketAddress(remoteAddress, neighbor.getTcpPort()), 30000);
                 if (!socket.isClosed() && socket.isConnected()) {
                     OutputStream out = socket.getOutputStream();
@@ -62,28 +62,36 @@ class ReplicatorSinkProcessor implements Runnable {
                     while (!ReplicatorSinkPool.instance().shutdown) {
                         try {
                             ByteBuffer message = neighbor.getNextMessage();
-                            if ((neighbor.getSink() != null && neighbor.getSink().isConnected())
-                                    && (neighbor.getSource() != null && neighbor.getSource().isConnected())) {
-                                byte[] bytes = message.array();
-                                                                                               
-                                if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
-                                    boolean resend;
-                                    do {
-                                        resend = false;
-                                        try {
-                                            out.write(message.array());
-                                            out.flush();
-                                        } catch (IOException e2) {
-                                            if (!neighbor.getSink().isClosed() && neighbor.getSink().isConnected()) {
-                                                out.close();
-                                                out = neighbor.getSink().getOutputStream();
-                                                resend = true;
-                                            } else {
-                                                log.info("----- NETWORK INFO ----- Sink {} thread terminating", remoteAddress);
-                                                return;
+                            Socket s = neighbor.getSink();
+                            if (message == null && (neighbor.getSink().isClosed() || !neighbor.getSink().isConnected())) {
+                                log.info("----- NETWORK INFO ----- Sink {} got disconnected", remoteAddress);
+                                return;
+                            } else {
+                                if ((neighbor.getSink() != null && neighbor.getSink().isConnected())
+                                        && (neighbor.getSource() != null && neighbor.getSource().isConnected())) {
+                                    byte[] bytes = message.array();
+
+                                    if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
+                                        boolean resend;
+                                        do {
+                                            resend = false;
+                                            try {
+                                                out.write(message.array());
+                                                out.flush();
+                                            } catch (IOException e2) {
+                                                if (!neighbor.getSink().isClosed()
+                                                        && neighbor.getSink().isConnected()) {
+                                                    out.close();
+                                                    out = neighbor.getSink().getOutputStream();
+                                                    resend = true;
+                                                } else {
+                                                    log.info("----- NETWORK INFO ----- Sink {} thread terminating",
+                                                            remoteAddress);
+                                                    return;
+                                                }
                                             }
-                                        }
-                                    } while (resend);
+                                        } while (resend);
+                                    }
                                 }
                             }
                         } catch (InterruptedException e) {
@@ -94,7 +102,7 @@ class ReplicatorSinkProcessor implements Runnable {
             }
         } catch (Exception e) {
             log.error("***** NETWORK ALERT ***** No sink to host {} port {}, reason: {}", 
-                    remoteAddress, Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP), e.getMessage());
+                    remoteAddress, neighbor.getTcpPort(), e.getMessage());
             synchronized (neighbor) {
                 Socket sourceSocket = neighbor.getSource();
                 if (sourceSocket != null && (sourceSocket.isClosed() || !sourceSocket.isConnected())) {

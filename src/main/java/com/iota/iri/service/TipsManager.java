@@ -103,11 +103,22 @@ public class TipsManager {
                 Map<Hash, Long> currentState = getCurrentState(tail, state, milestone);
                 isConsistent = ledgerIsConsistent(currentState);
                 if (isConsistent) {
-                    updateConsistentHashes(tip, milestone);
-                    synchronized (state) {
-                        state.clear();
-                        assert currentState != null;
-                        state.putAll(currentState);
+                    if(!milestone) {
+                        synchronized (consistentHashes) {
+                            updateConsistentHashes(tip, milestone);
+                            consistentHashes.clear();
+                            synchronized (stateSinceMilestone) {
+                                stateSinceMilestone.clear();
+                                stateSinceMilestone.putAll(currentState);
+                            }
+                        }
+                    } else {
+                        updateConsistentHashes(tip, milestone);
+                        synchronized (latestState) {
+                            latestState.clear();
+                            assert currentState != null;
+                            latestState.putAll(currentState);
+                        }
                     }
                 }
             }
@@ -256,11 +267,6 @@ public class TipsManager {
                         }
                     }
                 }
-            }
-        }
-        if(milestone) {
-            synchronized (consistentHashes) {
-                consistentHashes.clear();
             }
         }
     }

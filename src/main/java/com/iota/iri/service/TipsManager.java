@@ -26,6 +26,8 @@ public class TipsManager {
     private static boolean shuttingDown;
 
     private static int numberOfConfirmedTransactions;
+    private static final Map<Hash, Long> stateSinceMilestone = new HashMap<>();
+    private static final Set<Hash> consistentHashes = new HashSet<>();
 
     public static void setRATING_THRESHOLD(int value) {
         if (value < 0) value = 0;
@@ -66,7 +68,11 @@ public class TipsManager {
                                 + " to #" + Milestone.latestMilestoneIndex);
                     }
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
-                        updateSnapshot(Milestone.latestSolidSubtangleMilestone);
+                        updateSnapshot(Milestone.latestSolidSubtangleMilestone, latestState, true);
+                        synchronized (stateSinceMilestone) {
+                            stateSinceMilestone.clear();
+                            stateSinceMilestone.putAll(latestState);
+                        }
 
                         log.info("Latest SOLID SUBTANGLE milestone has changed from #"
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"
@@ -88,25 +94,25 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    private static boolean updateSnapshot(Hash tip) throws Exception {
+    private static boolean updateSnapshot(Hash tip, final Map<Hash, Long> state, boolean milestone) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-        boolean inconsistent = transactionViewModel.isInconsistent();
-        if(inconsistent) {
+        boolean isInconsistent = milestone ? transactionViewModel.hasSnapshot(): consistentHashes.contains(tip);
+        if(!isInconsistent) {
             Hash tail = transactionViewModel.getBundle().getTail().getHash();
             if(tail != null) {
-                Map<Hash, Long> currentState = getCurrentState(tail, latestState);
-                inconsistent = ledgerIsInconsistent(currentState);
-                if (!inconsistent) {
-                    updateConsistentHashes(tip);
-                    synchronized (latestState) {
-                        latestState.clear();
+                Map<Hash, Long> currentState = getCurrentState(tail, state, milestone);
+                isInconsistent = !ledgerIsConsistent(currentState);
+                if (!isInconsistent) {
+                    updateConsistentHashes(tip, milestone);
+                    synchronized (state) {
+                        state.clear();
                         assert currentState != null;
-                        latestState.putAll(currentState);
+                        state.putAll(currentState);
                     }
                 }
             }
         }
-        return !inconsistent;
+        return isInconsistent;
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
@@ -163,7 +169,7 @@ public class TipsManager {
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                 if(transactionViewModel.getBundle().isInconsistent()
                         || !checkSolidity(tips[carlo])
-                        || !updateSnapshot(tips[carlo])) {
+                        || !updateSnapshot(tips[carlo], stateSinceMilestone, false)) {
                     break;
                 } else if (tips[carlo].equals(extraTip) || tips[carlo].equals(tip)){
                     break;
@@ -232,20 +238,30 @@ public class TipsManager {
         return rating;       
     }
 
-    private static void updateConsistentHashes(Hash tip) throws Exception {
+    private static void updateConsistentHashes(Hash tip, boolean milestone) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>();
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
-        Hash hashPointer, trunkInteger, branchInteger;
+        Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(transactionViewModel2.isInconsistent()) {
-                    transactionViewModel2.setConsistency(true);
-                    trunkInteger = transactionViewModel2.getTrunkTransactionHash();
-                    branchInteger = transactionViewModel2.getBranchTransactionHash();
-                    nonAnalyzedTransactions.offer(trunkInteger);
-                    nonAnalyzedTransactions.offer(branchInteger);
+                if(transactionViewModel2.hasSnapshot()) {
+                    if(milestone) {
+                        transactionViewModel2.markSnapshot();
+                        nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
+                        nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
+                    } else {
+                        if(consistentHashes.add(hashPointer)) {
+                            nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
+                        }
+                    }
                 }
+            }
+        }
+        if(milestone) {
+            synchronized (consistentHashes) {
+                consistentHashes.clear();
             }
         }
     }
@@ -536,7 +552,7 @@ public class TipsManager {
         tailsToAnalyze.addAll(tailsWithoutApprovers);    // ...and add to the very end
     }
 
-    private static boolean ledgerIsInconsistent(Map<Hash, Long> state) {
+    private static boolean ledgerIsConsistent(Map<Hash, Long> state) {
         final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
         while (stateIterator.hasNext()) {
 
@@ -545,7 +561,7 @@ public class TipsManager {
 
                 if (entry.getValue() < 0) {
                     log.info("Ledger inconsistency detected");
-                    return true;
+                    return false;
                 }
 
                 stateIterator.remove();
@@ -559,10 +575,10 @@ public class TipsManager {
                  */
             ////////////
         }
-        return false;
+        return true;
     }
 
-    private static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot) throws Exception {
+    private static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>(snapshot);
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -576,7 +592,7 @@ public class TipsManager {
                 numberOfAnalyzedTransactions++;
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                if(transactionViewModel.isInconsistent()) {
+                if((milestone && !transactionViewModel.hasSnapshot()) || (!milestone && transactionViewModel.hasSnapshot())) {
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
                         return null;

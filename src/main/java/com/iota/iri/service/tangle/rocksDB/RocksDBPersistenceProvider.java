@@ -29,7 +29,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "transactionType",
             "transactionArrivalTime",
             "transactionSolid",
-            "consistency",
+            "markedSnapshot",
             "address",
             "bundle",
             "approovee",
@@ -44,12 +44,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle transactionTypeHandle;
     private ColumnFamilyHandle transactionArrivalTimeHandle;
     private ColumnFamilyHandle transactionSolidHandle;
+    private ColumnFamilyHandle markedSnapshotHandle;
     private ColumnFamilyHandle addressHandle;
     private ColumnFamilyHandle bundleHandle;
     private ColumnFamilyHandle approoveeHandle;
     private ColumnFamilyHandle tagHandle;
     private ColumnFamilyHandle tipHandle;
-    private ColumnFamilyHandle consistencyHandle;
 
     private List<ColumnFamilyHandle> transactionGetList;
 
@@ -110,7 +110,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             db.delete(transactionTypeHandle, key);
             db.delete(transactionValidityHandle, key);
             db.delete(transactionSolidHandle, key);
-            db.delete(consistencyHandle, key);
+            db.delete(markedSnapshotHandle, key);
             return null;
         });
         deleteMap.put(Tip.class, txObj -> {
@@ -169,7 +169,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.put(transactionTypeHandle, key, Serializer.serialize(transaction.type));
         batch.put(transactionArrivalTimeHandle, key, Serializer.serialize(transaction.arrivalTime));
         batch.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
-        batch.put(consistencyHandle, key, transaction.consistent ? new byte[]{1}: new byte[]{0});
+        batch.put(markedSnapshotHandle, key, transaction.snapshot ? new byte[]{1}: new byte[]{0});
         batch.merge(addressHandle, transaction.address.hash.bytes(), key);
         batch.merge(bundleHandle, transaction.bundle.hash.bytes(), key);
         batch.merge(approoveeHandle, transaction.trunk.hash.bytes(), key);
@@ -271,7 +271,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transaction.type = Serializer.getInteger(db.get(transactionTypeHandle, key));
         transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, key));
         transaction.solid =  db.get(transactionSolidHandle, key);
-        transaction.consistent = byteToBoolean(db.get(consistencyHandle, key));
+        transaction.snapshot = byteToBoolean(db.get(markedSnapshotHandle, key));
         return true;
     };
 
@@ -407,8 +407,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 case "solid":
                     db.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
                     break;
-                case "consistent":
-                    db.put(consistencyHandle, key, transaction.consistent ? new byte[]{1} : new byte[]{0});
+                case "markedSnapshot":
+                    db.put(markedSnapshotHandle, key, transaction.snapshot ? new byte[]{1} : new byte[]{0});
                     break;
                 default:
                     throw new NotImplementedException("Mada Sono Update ga dekinai yo");
@@ -556,7 +556,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transactionTypeHandle = familyHandles.get(++i);
         transactionArrivalTimeHandle = familyHandles.get(++i);
         transactionSolidHandle = familyHandles.get(++i);
-        consistencyHandle = familyHandles.get(++i);
+        markedSnapshotHandle = familyHandles.get(++i);
         addressHandle = familyHandles.get(++i);
         bundleHandle = familyHandles.get(++i);
         approoveeHandle = familyHandles.get(++i);
@@ -597,7 +597,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 byte[] bytes = iterator.value();
                 baddies.add(iterator.key());
             } else {
-                batch.put(consistencyHandle, iterator.key(), new byte[]{0});
+                batch.put(markedSnapshotHandle, iterator.key(), new byte[]{0});
             }
         }
         iterator.close();

@@ -381,13 +381,13 @@ public class TransactionViewModel {
         return transaction.solid[0] == 1;
     }
 
-    public boolean isInconsistent() {
-        return !transaction.consistent;
+    public boolean hasSnapshot() {
+        return transaction.snapshot;
     }
 
-    public void setConsistency(boolean consistent) throws Exception {
-        transaction.consistent = consistent;
-        update("consistent");
+    public void markSnapshot() throws Exception {
+        transaction.snapshot= true;
+        update("markedSnapshot");
     }
 
     public static Hash[] getMissingTransactions() throws ExecutionException, InterruptedException {

@@ -4,6 +4,8 @@ import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
 
+import java.util.Arrays;
+
 /**
  * Created by paul on 3/15/17 for iri-testnet.
  */
@@ -37,5 +39,9 @@ public class BundleViewModel {
             }
         }
         return transactionViewModels;
+    }
+    public TransactionViewModel getTail() throws Exception {
+        getTransactionViewModels();
+        return Arrays.stream(transactionViewModels).filter(t -> t.getCurrentIndex() == 0).findFirst().orElse(null);
     }
 }

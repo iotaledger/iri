@@ -139,9 +139,6 @@ public class BundleValidator {
     public List<List<TransactionViewModel>> getTransactions() {
         return transactions;
     }
-    public TransactionViewModel getTail() {
-        return transactions.stream().map(l -> l.stream().filter(t -> t.getCurrentIndex() == 0).findFirst().orElse(null)).findAny().orElse(null);
-    }
     public TransactionViewModel[] getTransactionViewModels() throws Exception {
         return bundleViewModel.getTransactionViewModels();
     }

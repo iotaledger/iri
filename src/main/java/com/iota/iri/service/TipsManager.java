@@ -166,7 +166,7 @@ public class TipsManager {
                     }
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
-                if(transactionViewModel.getBundle().isInconsistent()
+                if(new BundleValidator(transactionViewModel.getBundle()).isInconsistent()
                         || !checkSolidity(tips[carlo])
                         || !updateSnapshot(tips[carlo], stateSinceMilestone, false)) {
                     break;
@@ -422,10 +422,9 @@ public class TipsManager {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(extraTransactionPointer);
                     if (transactionViewModel.getCurrentIndex() == 0) {
 
-                        final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
+                        final BundleValidator bundleValidator = new BundleValidator(transactionViewModel.getBundle());
                         for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
 
-                            //if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(), transactionViewModel.getHash())) {
                             if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
                                 for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {

@@ -106,14 +106,16 @@ public class TipsManager {
                     if(!milestone) {
                         synchronized (consistentHashes) {
                             updateConsistentHashes(tip, milestone);
-                            consistentHashes.clear();
-                            synchronized (stateSinceMilestone) {
-                                stateSinceMilestone.clear();
-                                stateSinceMilestone.putAll(currentState);
-                            }
+                        }
+                        synchronized (stateSinceMilestone) {
+                            stateSinceMilestone.clear();
+                            stateSinceMilestone.putAll(currentState);
                         }
                     } else {
                         updateConsistentHashes(tip, milestone);
+                        synchronized (consistentHashes) {
+                            consistentHashes.clear();
+                        }
                         synchronized (latestState) {
                             latestState.clear();
                             assert currentState != null;

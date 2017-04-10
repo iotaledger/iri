@@ -101,7 +101,7 @@ public class TipsManager {
             Hash tail = transactionViewModel.getBundle().getTail().getHash();
             if(tail != null) {
                 Map<Hash, Long> currentState = getCurrentState(tail, state, milestone);
-                isConsistent = ledgerIsConsistent(currentState);
+                isConsistent = currentState != null && ledgerIsConsistent(currentState);
                 if (isConsistent) {
                     if(!milestone) {
                         synchronized (consistentHashes) {

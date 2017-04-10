@@ -173,7 +173,7 @@ public class TipsManager {
                 } else if (tips[carlo].equals(extraTip) || tips[carlo].equals(tip)){
                     break;
                 } else {
-                    tip = tips[carlo];
+                    tip = transactionViewModel.getBundle().getTail().getHash();
                 }
             }
             return tip;

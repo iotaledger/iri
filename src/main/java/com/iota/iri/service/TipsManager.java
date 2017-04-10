@@ -591,7 +591,7 @@ public class TipsManager {
                 numberOfAnalyzedTransactions++;
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                if((milestone && !transactionViewModel.hasSnapshot()) || (!milestone && transactionViewModel.hasSnapshot())) {
+                if((milestone && !transactionViewModel.hasSnapshot()) || (!milestone && consistentHashes.contains(transactionPointer))) {
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
                         return null;

@@ -597,50 +597,52 @@ public class TipsManager {
                 numberOfAnalyzedTransactions++;
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                if(!transactionViewModel.hasSnapshot() || (!milestone && consistentHashes.contains(transactionPointer))) {
-                    if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                        TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
-                        return null;
+                if(!transactionViewModel.hasSnapshot() ) {
+                    if(milestone || !consistentHashes.contains(transactionPointer)) {
+                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                            TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
+                            return null;
 
-                    } else {
+                        } else {
 
-                        if (transactionViewModel.getCurrentIndex() == 0) {
+                            if (transactionViewModel.getCurrentIndex() == 0) {
 
-                            boolean validBundle = false;
+                                boolean validBundle = false;
 
-                            final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
-                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
+                                final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
+                                for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
 
-                                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+                                    if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
-                                    validBundle = true;
+                                        validBundle = true;
 
-                                    for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
+                                        for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
 
-                                        if (bundleTransactionViewModel.value() != 0 && countedTx.add(bundleTransactionViewModel.getHash())) {
+                                            if (bundleTransactionViewModel.value() != 0 && countedTx.add(bundleTransactionViewModel.getHash())) {
 
-                                            final Hash address = bundleTransactionViewModel.getAddress().getHash();
-                                            final Long value = state.get(address);
-                                            state.put(address, value == null ? bundleTransactionViewModel.value()
-                                                    : (value + bundleTransactionViewModel.value()));
+                                                final Hash address = bundleTransactionViewModel.getAddress().getHash();
+                                                final Long value = state.get(address);
+                                                state.put(address, value == null ? bundleTransactionViewModel.value()
+                                                        : (value + bundleTransactionViewModel.value()));
+                                            }
                                         }
+
+                                        break;
                                     }
+                                }
 
-                                    break;
+                                if (!validBundle || bundleValidator.isInconsistent()) {
+                                    for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
+                                        transactionViewModel1.delete();
+                                        TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
+                                    }
+                                    return null;
                                 }
                             }
 
-                            if (!validBundle || bundleValidator.isInconsistent()) {
-                                for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
-                                    transactionViewModel1.delete();
-                                    TransactionRequester.instance().requestTransaction(transactionViewModel1.getHash());
-                                }
-                                return null;
-                            }
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                         }
-
-                        nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                        nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                     }
                 }
             }

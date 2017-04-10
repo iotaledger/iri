@@ -98,8 +98,9 @@ public class TipsManager {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
         boolean isConsistent = milestone ? transactionViewModel.hasSnapshot(): consistentHashes.contains(tip);
         if(!isConsistent) {
-            Hash tail = transactionViewModel.getBundle().getTail().getHash();
-            if(tail != null) {
+            transactionViewModel = transactionViewModel.getBundle().getTail();
+            if(transactionViewModel != null) {
+                Hash tail = transactionViewModel.getHash();
                 Map<Hash, Long> currentState = getCurrentState(tail, state, milestone);
                 isConsistent = currentState != null && ledgerIsConsistent(currentState);
                 if (isConsistent) {

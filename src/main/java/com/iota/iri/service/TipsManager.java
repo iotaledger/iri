@@ -179,9 +179,7 @@ public class TipsManager {
                     }
                 }
                 transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
-                if(new BundleValidator(transactionViewModel.getBundle()).isInconsistent()
-                        || !checkSolidity(tips[carlo])
-                        || !updateSnapshot(tips[carlo], stateSinceMilestone, false)) {
+                if(!(checkSolidity(tips[carlo]) && updateSnapshot(tips[carlo], stateSinceMilestone, false))) {
                     break;
                 } else if (tips[carlo].equals(extraTip) || tips[carlo].equals(tip)){
                     break;

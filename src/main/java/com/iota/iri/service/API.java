@@ -325,20 +325,14 @@ public class API {
                     if (analyzedTips.add(pointer)) {
 
                         final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(pointer);
-                        if(!transactionViewModel.isSolid()) {
-                            if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                                return ErrorResponse.create("The subtangle is not solid");
-                            } else {
-                                if(markTransactionAsIncluded(inclusionStates, transactions, pointer) && --numberOfNonMetTransactions <= 0) {
-                                    break;
-                                }
-                                nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                                nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
-                            }
+                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                            return ErrorResponse.create("The subtangle is not solid");
                         } else {
                             if(markTransactionAsIncluded(inclusionStates, transactions, pointer) && --numberOfNonMetTransactions <= 0) {
                                 break;
                             }
+                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                         }
                     }
                 }

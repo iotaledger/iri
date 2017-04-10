@@ -586,6 +586,7 @@ public class TipsManager {
         Map<Hash, Long> state = new HashMap<>(snapshot);
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
+        Set<Hash> countedTx = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
 
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash transactionPointer;
@@ -616,7 +617,7 @@ public class TipsManager {
 
                                     for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
 
-                                        if (bundleTransactionViewModel.value() != 0) {
+                                        if (bundleTransactionViewModel.value() != 0 && countedTx.add(bundleTransactionViewModel.getHash())) {
 
                                             final Hash address = bundleTransactionViewModel.getAddress().getHash();
                                             final Long value = state.get(address);

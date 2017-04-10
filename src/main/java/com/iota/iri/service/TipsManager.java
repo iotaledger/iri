@@ -102,7 +102,7 @@ public class TipsManager {
             if(tail != null) {
                 Map<Hash, Long> currentState = getCurrentState(tail, state, milestone);
                 isConsistent = ledgerIsConsistent(currentState);
-                if (!isConsistent) {
+                if (isConsistent) {
                     updateConsistentHashes(tip, milestone);
                     synchronized (state) {
                         state.clear();

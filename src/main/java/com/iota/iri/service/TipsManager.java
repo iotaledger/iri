@@ -255,7 +255,7 @@ public class TipsManager {
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(transactionViewModel2.hasSnapshot()) {
+                if(!transactionViewModel2.hasSnapshot()) {
                     if(milestone) {
                         transactionViewModel2.markSnapshot();
                         nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());

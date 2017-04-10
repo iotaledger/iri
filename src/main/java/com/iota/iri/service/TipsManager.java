@@ -96,13 +96,13 @@ public class TipsManager {
 
     private static boolean updateSnapshot(Hash tip, final Map<Hash, Long> state, boolean milestone) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-        boolean isInconsistent = milestone ? transactionViewModel.hasSnapshot(): consistentHashes.contains(tip);
-        if(!isInconsistent) {
+        boolean isConsistent = milestone ? transactionViewModel.hasSnapshot(): consistentHashes.contains(tip);
+        if(!isConsistent) {
             Hash tail = transactionViewModel.getBundle().getTail().getHash();
             if(tail != null) {
                 Map<Hash, Long> currentState = getCurrentState(tail, state, milestone);
-                isInconsistent = !ledgerIsConsistent(currentState);
-                if (!isInconsistent) {
+                isConsistent = ledgerIsConsistent(currentState);
+                if (!isConsistent) {
                     updateConsistentHashes(tip, milestone);
                     synchronized (state) {
                         state.clear();
@@ -112,7 +112,7 @@ public class TipsManager {
                 }
             }
         }
-        return isInconsistent;
+        return isConsistent;
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
@@ -124,7 +124,6 @@ public class TipsManager {
         final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
         Map<Hash, Integer> ratings = new HashMap<>();
-        Map<Hash, Long> state = new HashMap<>(latestState);
         Set<Hash> analyzedTips = new HashSet<>();
         try {
             Hash tip = preferableMilestone;

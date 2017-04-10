@@ -319,7 +319,6 @@ public class API {
 
             {
                 Hash pointer;
-                MAIN_LOOP:
                 while ((pointer = nonAnalyzedTransactions.poll()) != null) {
 
 
@@ -330,29 +329,34 @@ public class API {
                             if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                                 return ErrorResponse.create("The subtangle is not solid");
                             } else {
-                                for (int i = 0; i < inclusionStates.length; i++) {
-
-                                    if (!inclusionStates[i] && pointer.equals(transactions.get(i))) {
-
-                                        inclusionStates[i] = true;
-
-                                        if (--numberOfNonMetTransactions <= 0) {
-                                            break MAIN_LOOP;
-                                        }
-                                    }
+                                if(markTransactionAsIncluded(inclusionStates, transactions, pointer) && --numberOfNonMetTransactions <= 0) {
+                                    break;
                                 }
                                 nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
                                 nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                             }
+                        } else {
+                            if(markTransactionAsIncluded(inclusionStates, transactions, pointer) && --numberOfNonMetTransactions <= 0) {
+                                break;
+                            }
                         }
                     }
                 }
-                for(int i = 0; i < transactions.size(); i++) {
-                    TransactionViewModel.fromHash(transactions.get(i)).setSolid();
-                    inclusionStates[i] = true;
-                }
                 return GetInclusionStatesResponse.create(inclusionStates);
             }
+    }
+
+    private boolean markTransactionAsIncluded(boolean[] inclusionStates, List<Hash> transactions, Hash pointer) {
+        for (int i = 0; i < inclusionStates.length; i++) {
+
+            if (!inclusionStates[i] && pointer.equals(transactions.get(i))) {
+
+                inclusionStates[i] = true;
+                return true;
+
+            }
+        }
+        return false;
     }
 
     private AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {

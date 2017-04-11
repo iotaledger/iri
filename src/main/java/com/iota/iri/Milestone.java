@@ -146,8 +146,8 @@ public class Milestone {
         if(hashToLoad == null) {
             int closestGreaterMilestone = latestMilestoneIndex;
             for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
-                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
-                if (transactionViewModel.getCurrentIndex() == 0) {
+                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash).getBundle().getTail();
+                if(transactionViewModel != null) {
                     int milestoneIndex = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET,
                             15);
                     milestones.put(milestoneIndex, transactionViewModel.getHash());

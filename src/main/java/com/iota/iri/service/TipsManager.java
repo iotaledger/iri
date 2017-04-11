@@ -41,17 +41,20 @@ public class TipsManager {
 
 
     public void init() {
-        log.info("Scanning Milestones...");
         try {
+            log.info("Scanning Milestones...");
             Milestone.instance().updateLatestMilestone();
+            log.info("Latest Milestone index: " + Milestone.latestMilestoneIndex);
             Milestone.updateLatestSolidSubtangleMilestone();
-            updateSnapshot(Milestone.latestSolidSubtangleMilestone, latestState, true);
+            log.info("Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
+            log.info("Scanning tangle for snapshot...");
+            if(updateSnapshot(Milestone.latestSolidSubtangleMilestone, latestState, true)) {
+                log.info("Snapshot created at Milestone: " + Milestone.latestSolidSubtangleMilestoneIndex);
+            }
             stateSinceMilestone.putAll(latestState);
         } catch (Exception e) {
             log.error("Could not finish milestone scan");
         } finally {
-            log.info("Latest Milestone index: " + Milestone.latestMilestoneIndex + "\n" +
-                    "Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
         }
         (new Thread(() -> {
 

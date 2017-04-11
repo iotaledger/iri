@@ -118,7 +118,7 @@ class ReplicatorSourceProcessor implements Runnable {
             
             connection.setSoTimeout(0);  // infinite timeout - blocking read
 
-
+            offset = 0;
             while (!shutdown) {
 
                 while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1) && (offset < TRANSACTION_PACKET_SIZE)) {

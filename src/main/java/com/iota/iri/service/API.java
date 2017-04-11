@@ -535,7 +535,7 @@ public class API {
         for (final String uriString : uris) {
             final URI uri = new URI(uriString);
             
-            if ("udp".equals(uri.getScheme())) {
+            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
                 // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
                 final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),false,true);
                 if (!Node.instance().getNeighbors().contains(neighbor)) {

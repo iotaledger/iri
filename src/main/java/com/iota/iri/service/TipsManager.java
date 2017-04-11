@@ -42,6 +42,14 @@ public class TipsManager {
 
     public void init() {
 
+        try {
+            Milestone.instance().updateLatestMilestone();
+            Milestone.updateLatestSolidSubtangleMilestone();
+            updateSnapshot(Milestone.latestSolidSubtangleMilestone, latestState, true);
+            stateSinceMilestone.putAll(latestState);
+        } catch (Exception e) {
+            log.error("Could not finish milestone scan");
+        }
         (new Thread(() -> {
 
             final SecureRandom rnd = new SecureRandom();

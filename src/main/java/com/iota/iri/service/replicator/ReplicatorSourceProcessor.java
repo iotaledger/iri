@@ -68,25 +68,23 @@ class ReplicatorSourceProcessor implements Runnable {
                 }
             });
             
-            //Neighbor fresh_neighbor = new Neighbor(inet_socket_address_normalized, true, false);
             if (!existingNeighbor) {
-                String sb = "***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://" +
-                        inet_socket_address.getHostName() +
-                        ":" +
-                        String.valueOf(inet_socket_address.getPort()) +
-                        " (" +
-                        inet_socket_address.getAddress().getHostAddress() +
-                        ") - closing connection";
-                log.info(sb);
-                connection.getInputStream().close();
-                connection.shutdownInput();
-                connection.shutdownOutput();
-                connection.close();
-                return;
-                /* -- This is possible code if tethering is disabled 
-                Node.instance().getNeighbors().add(fresh_neighbor);
-                neighbor = fresh_neighbor;
-                */
+                if (!Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
+                    String sb = "***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://"
+                            + inet_socket_address.getHostName() + ":" + String.valueOf(inet_socket_address.getPort())
+                            + " (" + inet_socket_address.getAddress().getHostAddress() + ") - closing connection";
+                    log.info(sb);
+                    connection.getInputStream().close();
+                    connection.shutdownInput();
+                    connection.shutdownOutput();
+                    connection.close();
+                    return;
+                } else {
+                    // TODO This code is only for testnet/stresstest - remove for mainnet!
+                    Neighbor fresh_neighbor = new Neighbor(inet_socket_address, true, false);
+                    Node.instance().getNeighbors().add(fresh_neighbor);
+                    neighbor = fresh_neighbor;
+                }
             }
             
             if ( neighbor.getSource() != null ) {
@@ -125,7 +123,7 @@ class ReplicatorSourceProcessor implements Runnable {
                 offset = 0;
 
                 try {
-                    Node.instance().processReceivedData(data, address, curl, receivedTransactionTrits, requestedTransaction);
+                    Node.instance().processReceivedData(data, address, "tcp", curl, receivedTransactionTrits, requestedTransaction);
                 }
                   catch (IllegalStateException e) {
                     log.error("Queue is full for neighbor IP {}",inet_socket_address.getAddress().getHostAddress());

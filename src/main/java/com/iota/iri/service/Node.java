@@ -176,7 +176,7 @@ public class Node {
                     socket.receive(receivingPacket);
 
                     if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
-                        processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), curl, receivedTransactionTrits, requestedTransaction);
+                        processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp", curl, receivedTransactionTrits, requestedTransaction);
                     } else {
                         receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                     }
@@ -188,18 +188,18 @@ public class Node {
         };
     }
 
-    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, Curl curl, int[] receivedTransactionTrits, byte[] requestedTransaction) {
+    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme, Curl curl, int[] receivedTransactionTrits, byte[] requestedTransaction) {
         long timestamp;
         TransactionViewModel receivedTransactionViewModel, transactionViewModel;
         Hash transactionPointer;
 
+        boolean addressMatch = false;
         for (final Neighbor neighbor : neighbors) {
-            boolean addressMatch = false;
             if (neighbor.isTcpip()) {
                 if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
             }
             else {
-                if (neighbor.getAddress().equals(senderAddress)) addressMatch = true;
+                if (neighbor.getAddress().toString().contains(senderAddress.toString())) addressMatch = true;
             }
             if (addressMatch) {
                 try {
@@ -248,6 +248,23 @@ public class Node {
                     neighbor.incInvalidTransactions();
                 }
                 break;
+            }            
+        }
+        if (!addressMatch) {
+            // TODO This code is only for testnet/stresstest - remove for mainnet
+            String uriString = uriScheme + ":/" + senderAddress.toString();
+            log.info("Adding non-tethered neighbor: "+uriString);
+            try {
+                final URI uri = new URI(uriString);
+                // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
+                boolean isTcp = uriScheme.equals("tcp") ? true : false;
+                final Neighbor newneighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, false);
+                if (!Node.instance().getNeighbors().contains(newneighbor)) {
+                    Node.instance().getNeighbors().add(newneighbor);
+                }
+            }
+            catch (URISyntaxException e) {
+                log.error("Invalid URI string: "+uriString);
             }
         }
     }

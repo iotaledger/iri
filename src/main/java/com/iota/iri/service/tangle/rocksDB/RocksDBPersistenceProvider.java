@@ -11,6 +11,8 @@ import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,6 +38,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "tag",
             "tip",
             "transactionRating",
+            "milestone",
+            "snapshot"
     };
 
     private boolean running;
@@ -50,6 +54,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle approoveeHandle;
     private ColumnFamilyHandle tagHandle;
     private ColumnFamilyHandle tipHandle;
+    private ColumnFamilyHandle milestoneHandle;
+    private ColumnFamilyHandle snapshotHandle;
 
     private List<ColumnFamilyHandle> transactionGetList;
 
@@ -59,6 +65,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private final Map<Class<?>, MyFunction<Object, Object>> setKeyMap = new HashMap<>();
     private final Map<Class<?>, MyFunction<Object, Boolean>> loadMap = new HashMap<>();
     private final Map<Class<?>, MyFunction<Object, Boolean>> mayExistMap = new HashMap<>();
+    private final Map<Class<?>, MyRunnable<Object>> latestMap = new HashMap<>();
     private final Map<Class<?>, ColumnFamilyHandle> countMap = new HashMap<>();
 
     private final SecureRandom seed = new SecureRandom();
@@ -82,7 +89,12 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         initMayExistMap();
         initDeleteMap();
         initCountMap();
+        initLatestMap();
         log.info("RocksDB persistence provider initialized.");
+    }
+
+    private void initLatestMap() {
+        latestMap.put(Milestone.class, latestMilestone);
     }
 
     private void initSetKeyMap() {
@@ -130,11 +142,13 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         loadMap.put(Tag.class, getTag);
         loadMap.put(Bundle.class, getBundle);
         loadMap.put(Approvee.class, getApprovee);
+        loadMap.put(Milestone.class, getMilestone);
     }
 
     private void initSaveMap() {
         saveMap.put(Transaction.class, saveTransaction);
         saveMap.put(Tip.class, saveTip);
+        saveMap.put(Milestone.class, saveMilestone);
     }
 
     private void initClassTreeMap() {
@@ -186,6 +200,41 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return true;
     };
 
+    private final MyFunction<Object, Boolean> saveMilestone = msObj -> {
+        WriteBatch writeBatch = new WriteBatch();
+        WriteOptions writeOptions = new WriteOptions();
+        Milestone milestone = ((Milestone) msObj);
+        writeBatch.put(milestoneHandle, Serializer.serialize(milestone.index), milestone.hash.bytes());
+        if(milestone.snapshot != null) {
+            writeBatch.put(snapshotHandle, milestone.hash.bytes(), objectBytes(milestone.snapshot));
+        }
+        db.write(writeOptions, writeBatch);
+        writeBatch.close();
+        writeOptions.close();
+        return true;
+    };
+
+    private byte[] objectBytes(Object o) throws IOException {
+        byte[] output;
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(bos);
+        oos.writeObject(o);
+        oos.close();
+        output = bos.toByteArray();
+        bos.close();
+        return output;
+    }
+
+    private Object objectFromBytes(byte[] bytes) throws IOException, ClassNotFoundException {
+        Object out;
+        ByteArrayInputStream bis = new ByteArrayInputStream(bytes);
+        ObjectInputStream ois = new ObjectInputStream(bis);
+        out = ois.readObject();
+        ois.close();
+        bis.close();
+        return out;
+    }
+
     @Override
     public boolean save(Object thing) throws Exception {
         return saveMap.get(thing.getClass()).apply(thing);
@@ -217,9 +266,23 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
     @Override
-    public Object latest(Class<?> model) {
+    public Object latest(Class<?> model) throws Exception {
+        MyRunnable<Object> locator = latestMap.get(model);
+        if(locator != null) {
+            return locator.run();
+        }
         return null;
     }
+
+    private MyRunnable<Object> latestMilestone = () -> {
+        Milestone milestone = new Milestone();
+        RocksIterator iterator = db.newIterator(milestoneHandle);
+        iterator.seekToLast();
+        if(iterator.isValid()) {
+            milestone.index = Serializer.getLong(iterator.key());
+        }
+        return milestone;
+    };
 
     @Override
     public Object[] getKeys(Class<?> modelClass) throws Exception {
@@ -301,6 +364,25 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             tag.transactions = new Hash[0];
             return false;
         }
+    };
+
+    private final MyFunction<Object, Boolean> getMilestone = msObj -> {
+        if(msObj instanceof Milestone) {
+            Milestone milestone = ((Milestone) msObj);
+            byte[] hash = db.get(milestoneHandle, Serializer.serialize(milestone.index));
+            if(hash != null) {
+                milestone.hash = new Hash(hash);
+                byte[] snapshot = db.get(snapshotHandle, hash);
+                if(snapshot != null) {
+                    Object snapshotObject = objectFromBytes(snapshot);
+                    if(snapshotObject instanceof Map) {
+                        milestone.snapshot = ((Map<Hash, Long>) snapshotObject);
+                    }
+                }
+                return true;
+            }
+        }
+        return false;
     };
 
     private final MyFunction<Object, Boolean> getBundle = bundleObj -> {
@@ -388,11 +470,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     }
 
 
-
-    @Override
-    public boolean update(Object thing, String item) throws Exception {
-        if(thing instanceof Transaction) {
-            Transaction transaction = (Transaction) thing;
+    private MyFunction<Object, Boolean> updateTransaction(String item) {
+        return txObject -> {
+            Transaction transaction = (Transaction) txObject;
             byte[] key = transaction.hash.bytes();
             switch (item) {
                 case "validity":
@@ -410,13 +490,40 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 case "markedSnapshot":
                     db.put(markedSnapshotHandle, key, transaction.snapshot ? new byte[]{1} : new byte[]{0});
                     break;
-                default:
-                    throw new NotImplementedException("Mada Sono Update ga dekinai yo");
+                default: {
+                    log.error("That's not available yet.");
+                    return false;
+                }
             }
-        } else {
-            throw new NotImplementedException("Mada Sono Update ga dekinai yo");
+            return true;
+        };
+    }
+
+    private MyFunction<Object, Boolean> updateMilestone(String item) {
+        return msObj -> {
+            Milestone milestone = ((Milestone) msObj);
+            byte[] key = milestone.hash.bytes();
+            switch (item) {
+                case "snapshot":
+                    if(!db.keyMayExist(snapshotHandle, key, new StringBuffer())) {
+                        db.put(snapshotHandle, key, objectBytes(milestone.snapshot));
+                    }
+                    break;
+                default:
+                    return false;
+            }
+            return true;
+        };
+    }
+
+    @Override
+    public boolean update(Object thing, String item) throws Exception {
+        if(thing instanceof Transaction) {
+            return updateTransaction(item).apply(thing);
+        } else if (thing instanceof Milestone){
+            return updateMilestone(item).apply(thing);
         }
-        return true;
+        throw new NotImplementedException("Mada Sono Update ga dekinai yo");
     }
 
     public void createBackup(String path) throws RocksDBException {
@@ -562,6 +669,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         approoveeHandle = familyHandles.get(++i);
         tagHandle = familyHandles.get(++i);
         tipHandle = familyHandles.get(++i);
+        milestoneHandle = familyHandles.get(++i);
+        snapshotHandle = familyHandles.get(++i);
 
         for(; ++i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.get(i));
@@ -640,5 +749,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     @FunctionalInterface
     private interface MyFunction<T, R> {
         R apply(T t) throws Exception;
+    }
+
+    @FunctionalInterface
+    private interface MyRunnable<R> {
+        R run() throws Exception;
     }
 }

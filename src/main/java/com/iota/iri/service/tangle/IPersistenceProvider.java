@@ -16,7 +16,7 @@ public interface IPersistenceProvider {
 
     boolean exists(Class<?> model, Hash key) throws Exception;
 
-    Object latest(Class<?> model);
+    Object latest(Class<?> model) throws Exception;
 
     Object[] getKeys(Class<?> modelClass) throws Exception;
 

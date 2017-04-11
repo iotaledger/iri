@@ -48,9 +48,13 @@ public class TipsManager {
             Milestone.updateLatestSolidSubtangleMilestone();
             log.info("Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
             log.info("Scanning tangle for snapshot...");
-            int i = Milestone.MILESTONE_START_INDEX;
+            MilestoneViewModel latestWithSnapshot = MilestoneViewModel.latestWithSnapshot();
+            long i = latestWithSnapshot.index();
             while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
-                if(updateSnapshot(Milestone.findMilestone(i), latestState, true)) {
+                if(!MilestoneViewModel.load(i)) {
+                    new MilestoneViewModel(i, Milestone.findMilestone((int)i)).store();
+                }
+                if(updateSnapshot(MilestoneViewModel.get(i))) {
                     log.info("Snapshot created at Milestone: " + i);
                 } else {
                     break;
@@ -93,7 +97,11 @@ public class TipsManager {
                                 + " to #" + Milestone.latestMilestoneIndex);
                     }
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
-                        updateSnapshot(Milestone.latestSolidSubtangleMilestone, latestState, true);
+                        MilestoneViewModel milestoneViewModel = new MilestoneViewModel(
+                                Milestone.latestSolidSubtangleMilestoneIndex,
+                                Milestone.latestSolidSubtangleMilestone);
+                        milestoneViewModel.store();
+                        updateSnapshot(milestoneViewModel);
                         synchronized (stateSinceMilestone) {
                             stateSinceMilestone.clear();
                             stateSinceMilestone.putAll(latestState);
@@ -119,32 +127,43 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
-    private static boolean updateSnapshot(Hash tip, final Map<Hash, Long> state, boolean milestone) throws Exception {
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-        boolean isConsistent = milestone ? transactionViewModel.hasSnapshot(): consistentHashes.contains(tip);
+    private static boolean updateSnapshot(MilestoneViewModel milestone) throws Exception {
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(milestone.getHash());
+        boolean isConsistent = transactionViewModel.hasSnapshot();
         if(!isConsistent) {
             Hash tail = transactionViewModel.getHash();
-            Map<Hash, Long> currentState = getCurrentState(tail, state, milestone);
+            Map<Hash, Long> currentState = getCurrentState(tail, latestState, true);
             isConsistent = currentState != null && ledgerIsConsistent(currentState);
             if (isConsistent) {
-                if(!milestone) {
-                    synchronized (consistentHashes) {
-                        updateConsistentHashes(tip, milestone);
-                    }
-                    synchronized (stateSinceMilestone) {
-                        stateSinceMilestone.clear();
-                        stateSinceMilestone.putAll(currentState);
-                    }
-                } else {
-                    updateConsistentHashes(tip, milestone);
-                    synchronized (consistentHashes) {
-                        consistentHashes.clear();
-                    }
-                    synchronized (latestState) {
-                        latestState.clear();
-                        assert currentState != null;
-                        latestState.putAll(currentState);
-                    }
+                updateConsistentHashes(milestone.getHash(), true);
+                synchronized (consistentHashes) {
+                    consistentHashes.clear();
+                }
+                synchronized (latestState) {
+                    latestState.clear();
+                    latestState.putAll(currentState);
+                }
+                milestone.initSnapshot(latestState);
+                milestone.updateSnapshot();
+            }
+        }
+        return isConsistent;
+    }
+
+    private static boolean updateFromSnapshot(Hash tip) throws Exception {
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
+        boolean isConsistent = consistentHashes.contains(tip);
+        if(!isConsistent) {
+            Hash tail = transactionViewModel.getHash();
+            Map<Hash, Long> currentState = getCurrentState(tail, stateSinceMilestone, false);
+            isConsistent = currentState != null && ledgerIsConsistent(currentState);
+            if (isConsistent) {
+                synchronized (consistentHashes) {
+                    updateConsistentHashes(tip, false);
+                }
+                synchronized (stateSinceMilestone) {
+                    stateSinceMilestone.clear();
+                    stateSinceMilestone.putAll(currentState);
                 }
             }
         }
@@ -207,7 +226,7 @@ public class TipsManager {
                     transactionViewModel = TransactionViewModel.fromHash(tips[carlo]).getBundle().getTail();
                     if (transactionViewModel == null) {
                         break;
-                    } else if (!(checkSolidity(transactionViewModel.getHash()) && updateSnapshot(transactionViewModel.getHash(), stateSinceMilestone, false))) {
+                    } else if (!(checkSolidity(transactionViewModel.getHash()) && updateFromSnapshot(transactionViewModel.getHash()))) {
                         break;
                     } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)) {
                         break;

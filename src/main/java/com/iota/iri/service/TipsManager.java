@@ -59,6 +59,7 @@ public class TipsManager {
             stateSinceMilestone.putAll(latestState);
         } catch (Exception e) {
             log.error("Could not finish milestone scan");
+            e.printStackTrace();
         } finally {
         }
         (new Thread(() -> {

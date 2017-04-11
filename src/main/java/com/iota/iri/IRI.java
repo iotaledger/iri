@@ -62,9 +62,9 @@ public class IRI {
             TransactionViewModel.init();
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
             Tangle.instance().init();
+            TipsManager.instance().init();
             TransactionRequester.instance().init();
             Node.instance().init();
-            TipsManager.instance().init();
             API.instance().init();
             Replicator.instance().init();
             //IXI.init();

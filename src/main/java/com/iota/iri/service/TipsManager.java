@@ -55,6 +55,11 @@ public class TipsManager {
                 } else {
                     break;
                 }
+                if(i < Milestone.latestSolidSubtangleMilestoneIndex - 100) {
+                    i += 100;
+                } else if(i < Milestone.latestSolidSubtangleMilestoneIndex - 10) {
+                    i += 100;
+                }
             }
             stateSinceMilestone.putAll(latestState);
         } catch (Exception e) {

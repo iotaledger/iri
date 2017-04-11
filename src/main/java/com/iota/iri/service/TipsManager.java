@@ -49,7 +49,7 @@ public class TipsManager {
             log.info("Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
             log.info("Scanning tangle for snapshot...");
             MilestoneViewModel latestWithSnapshot = MilestoneViewModel.latestWithSnapshot();
-            long i = latestWithSnapshot.index();
+            long i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX: latestWithSnapshot.index();
             while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
                 if(!MilestoneViewModel.load(i)) {
                     new MilestoneViewModel(i, Milestone.findMilestone((int)i)).store();
@@ -135,7 +135,7 @@ public class TipsManager {
             Map<Hash, Long> currentState = getCurrentState(tail, latestState, true);
             isConsistent = currentState != null && ledgerIsConsistent(currentState);
             if (isConsistent) {
-                updateConsistentHashes(milestone.getHash(), true);
+                updateSnapshotMilestone(milestone.getHash());
                 synchronized (consistentHashes) {
                     consistentHashes.clear();
                 }
@@ -159,7 +159,7 @@ public class TipsManager {
             isConsistent = currentState != null && ledgerIsConsistent(currentState);
             if (isConsistent) {
                 synchronized (consistentHashes) {
-                    updateConsistentHashes(tip, false);
+                    updateConsistentHashes(tip);
                 }
                 synchronized (stateSinceMilestone) {
                     stateSinceMilestone.clear();
@@ -296,17 +296,29 @@ public class TipsManager {
         return rating;       
     }
 
-    private static void updateConsistentHashes(Hash tip, boolean milestone) throws Exception {
+    private static void updateSnapshotMilestone(Hash milestone) throws Exception {
+        Set<Hash> visitedHashes = new HashSet<>();
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
+        Hash hashPointer;
+        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
+            if (visitedHashes.add(hashPointer)) {
+                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
+                if(!transactionViewModel2.hasSnapshot()) {
+                    transactionViewModel2.markSnapshot();
+                    nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
+                }
+            }
+        }
+    }
+    private static void updateConsistentHashes(Hash tip) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>();
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(!transactionViewModel2.hasSnapshot() && (milestone || consistentHashes.add(hashPointer))) {
-                    if(milestone) {
-                        transactionViewModel2.markSnapshot();
-                    }
+                if(consistentHashes.add(hashPointer)) {
                     nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
                 }
@@ -685,6 +697,8 @@ public class TipsManager {
                         nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
                         nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                     }
+                } else {
+                    log.debug("It is solid here");
                 }
             }
         }

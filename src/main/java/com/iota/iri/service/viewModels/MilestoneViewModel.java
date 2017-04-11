@@ -60,16 +60,18 @@ public class MilestoneViewModel {
 
     public static MilestoneViewModel latestWithSnapshot() throws ExecutionException, InterruptedException {
         MilestoneViewModel milestoneViewModel = latest();
-        long index = milestoneViewModel.index();
-        if(milestoneViewModel.snapshot() == null) {
-            do {
-                if (--index < 0) {
-                    break;
-                }
-            } while (!MilestoneViewModel.load(index) || MilestoneViewModel.get(index).snapshot() == null);
-        }
-        if(index >= 0) {
-            milestoneViewModel = MilestoneViewModel.get(index);
+        if(milestoneViewModel != null) {
+            long index = milestoneViewModel.index();
+            if (milestoneViewModel.snapshot() == null) {
+                do {
+                    if (--index < 0) {
+                        break;
+                    }
+                } while (!MilestoneViewModel.load(index) || MilestoneViewModel.get(index).snapshot() == null);
+            }
+            if (index >= 0) {
+                milestoneViewModel = MilestoneViewModel.get(index);
+            }
         }
         return milestoneViewModel;
     }

@@ -281,6 +281,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         if(iterator.isValid()) {
             milestone.index = Serializer.getLong(iterator.key());
         }
+        if(milestone.index == null) {
+            return null;
+        }
         return milestone;
     };
 
@@ -706,7 +709,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 byte[] bytes = iterator.value();
                 baddies.add(iterator.key());
             } else {
-                batch.put(markedSnapshotHandle, iterator.key(), new byte[]{0});
+                //batch.put(markedSnapshotHandle, iterator.key(), new byte[]{0});
             }
         }
         iterator.close();

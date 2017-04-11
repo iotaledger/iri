@@ -132,67 +132,71 @@ public class TipsManager {
 
         long startTime = System.nanoTime();
 
-        final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
+        if(Milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX ||
+                Milestone.latestMilestoneIndex == Milestone.MILESTONE_START_INDEX) {
+            final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
-        Map<Hash, Integer> ratings = new HashMap<>();
-        Set<Hash> analyzedTips = new HashSet<>();
-        try {
-            Hash tip = preferableMilestone;
-            if (extraTip != null) {
-                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-                while (milestoneDepth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
+            Map<Hash, Integer> ratings = new HashMap<>();
+            Set<Hash> analyzedTips = new HashSet<>();
+            try {
+                Hash tip = preferableMilestone;
+                if (extraTip != null) {
+                    TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
+                    while (milestoneDepth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
 
-                    tip = transactionViewModel.getHash();
-                    do {
+                        tip = transactionViewModel.getHash();
+                        do {
 
-                        transactionViewModel = transactionViewModel.getTrunkTransaction();
+                            transactionViewModel = transactionViewModel.getTrunkTransaction();
 
-                    } while (transactionViewModel.getCurrentIndex() != 0 && !transactionViewModel.getAddressHash().equals(Milestone.instance().coordinator()));
-                }
-            }
-
-            updateRatings(tip, ratings, analyzedTips);
-            analyzedTips.clear();
-
-            Hash[] tips;
-            TransactionViewModel transactionViewModel;
-            int carlo;
-            double monte;
-            while(tip != null) {
-                tips = TransactionViewModel.fromHash(tip).getApprovers();
-                if(tips.length == 0) {
-                    break;
-                }
-                if(!ratings.containsKey(tip)) {
-                    updateRatings(tip, ratings, analyzedTips);
-                    analyzedTips.clear();
-                }
-                monte = seed.nextDouble() * ratings.get(tip);
-                for(carlo = tips.length; carlo-- >  1;) {
-                    if(ratings.containsKey(tips[carlo])) {
-                        monte -= ratings.get(tips[carlo]);
+                        }
+                        while (transactionViewModel.getCurrentIndex() != 0 && !transactionViewModel.getAddressHash().equals(Milestone.instance().coordinator()));
                     }
-                    if(monte <= 0 ) {
+                }
+
+                updateRatings(tip, ratings, analyzedTips);
+                analyzedTips.clear();
+
+                Hash[] tips;
+                TransactionViewModel transactionViewModel;
+                int carlo;
+                double monte;
+                while (tip != null) {
+                    tips = TransactionViewModel.fromHash(tip).getApprovers();
+                    if (tips.length == 0) {
                         break;
                     }
+                    if (!ratings.containsKey(tip)) {
+                        updateRatings(tip, ratings, analyzedTips);
+                        analyzedTips.clear();
+                    }
+                    monte = seed.nextDouble() * ratings.get(tip);
+                    for (carlo = tips.length; carlo-- > 1; ) {
+                        if (ratings.containsKey(tips[carlo])) {
+                            monte -= ratings.get(tips[carlo]);
+                        }
+                        if (monte <= 0) {
+                            break;
+                        }
+                    }
+                    transactionViewModel = TransactionViewModel.fromHash(tips[carlo]).getBundle().getTail();
+                    if (transactionViewModel == null) {
+                        break;
+                    } else if (!(checkSolidity(transactionViewModel.getHash()) && updateSnapshot(transactionViewModel.getHash(), stateSinceMilestone, false))) {
+                        break;
+                    } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)) {
+                        break;
+                    } else {
+                        tip = transactionViewModel.getHash();
+                    }
                 }
-                transactionViewModel = TransactionViewModel.fromHash(tips[carlo]).getBundle().getTail();
-                if(transactionViewModel == null) {
-                    break;
-                } else if(!(checkSolidity(transactionViewModel.getHash()) && updateSnapshot(transactionViewModel.getHash(), stateSinceMilestone, false))) {
-                    break;
-                } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)){
-                    break;
-                } else {
-                    tip = transactionViewModel.getHash();
-                }
+                return tip;
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.error("Encountered error: " + e.getLocalizedMessage());
+            } finally {
+                API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
             }
-            return tip;
-        } catch (Exception e) {
-            e.printStackTrace();
-            log.error("Encountered error: " + e.getLocalizedMessage());
-        } finally {
-            API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
         }
         return null;
     }

@@ -41,7 +41,7 @@ public class TipsManager {
 
 
     public void init() {
-
+        log.info("Scanning Milestones...");
         try {
             Milestone.instance().updateLatestMilestone();
             Milestone.updateLatestSolidSubtangleMilestone();
@@ -49,6 +49,9 @@ public class TipsManager {
             stateSinceMilestone.putAll(latestState);
         } catch (Exception e) {
             log.error("Could not finish milestone scan");
+        } finally {
+            log.info("Latest Milestone index: " + Milestone.latestMilestoneIndex + "\n" +
+                    "Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
         }
         (new Thread(() -> {
 

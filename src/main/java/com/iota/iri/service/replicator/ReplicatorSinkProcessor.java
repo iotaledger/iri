@@ -62,8 +62,11 @@ class ReplicatorSinkProcessor implements Runnable {
                     
                     // Let neighbor know our tcp listener port
                     String fmt = "%0"+String.valueOf(ReplicatorSinkPool.PORT_BYTES)+"d";
-                    byte [] portAsString = String.format(fmt, Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP)).getBytes();
-                    out.write(portAsString);
+                    byte [] portAsByteArray = new byte [10];
+                    System.arraycopy(String.format(fmt, 
+                            Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP)).getBytes(), 0, 
+                            portAsByteArray, 0, ReplicatorSinkPool.PORT_BYTES);
+                    out.write(portAsByteArray);
                     
                     while (!ReplicatorSinkPool.instance().shutdown) {
                         try {

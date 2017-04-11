@@ -105,13 +105,12 @@ class ReplicatorSourceProcessor implements Runnable {
             
             byte [] pbytes = new byte [10];
             System.arraycopy(data, 0, pbytes, 0, ReplicatorSinkPool.PORT_BYTES);
-            long hisPort = (int)Long.parseLong(new String(pbytes));
+            neighbor.setTcpPort((int)Long.parseLong(new String(pbytes)));
             
             if (neighbor.getSink() == null) {
                 log.info("Creating sink for {}", neighbor.getHostAddress());
                 ReplicatorSinkPool.instance().createSink(neighbor);
-            }
-            neighbor.setTcpPort((int)hisPort);
+            }           
             
             if (connection.isConnected()) {
                 log.info("----- NETWORK INFO ----- Source {} is connected", inet_socket_address.getAddress().getHostAddress());

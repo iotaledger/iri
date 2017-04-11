@@ -48,8 +48,13 @@ public class TipsManager {
             Milestone.updateLatestSolidSubtangleMilestone();
             log.info("Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
             log.info("Scanning tangle for snapshot...");
-            if(updateSnapshot(Milestone.latestSolidSubtangleMilestone, latestState, true)) {
-                log.info("Snapshot created at Milestone: " + Milestone.latestSolidSubtangleMilestoneIndex);
+            int i = Milestone.MILESTONE_START_INDEX;
+            while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
+                if(updateSnapshot(Milestone.findMilestone(i), latestState, true)) {
+                    log.info("Snapshot created at Milestone: " + i);
+                } else {
+                    break;
+                }
             }
             stateSinceMilestone.putAll(latestState);
         } catch (Exception e) {

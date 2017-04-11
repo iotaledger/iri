@@ -79,7 +79,8 @@ public class TipsManager {
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
 
-                    long latency = 30000;
+                    //long latency = 30000;
+                    long latency = 5000;
                     if (Milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX &&
                             Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
                         latency = ARTIFICAL_LATENCY > 0 ? latency = (long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L +5000L : 5000L;
@@ -98,30 +99,27 @@ public class TipsManager {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
         boolean isConsistent = milestone ? transactionViewModel.hasSnapshot(): consistentHashes.contains(tip);
         if(!isConsistent) {
-            transactionViewModel = transactionViewModel.getBundle().getTail();
-            if(transactionViewModel != null) {
-                Hash tail = transactionViewModel.getHash();
-                Map<Hash, Long> currentState = getCurrentState(tail, state, milestone);
-                isConsistent = currentState != null && ledgerIsConsistent(currentState);
-                if (isConsistent) {
-                    if(!milestone) {
-                        synchronized (consistentHashes) {
-                            updateConsistentHashes(tip, milestone);
-                        }
-                        synchronized (stateSinceMilestone) {
-                            stateSinceMilestone.clear();
-                            stateSinceMilestone.putAll(currentState);
-                        }
-                    } else {
+            Hash tail = transactionViewModel.getHash();
+            Map<Hash, Long> currentState = getCurrentState(tail, state, milestone);
+            isConsistent = currentState != null && ledgerIsConsistent(currentState);
+            if (isConsistent) {
+                if(!milestone) {
+                    synchronized (consistentHashes) {
                         updateConsistentHashes(tip, milestone);
-                        synchronized (consistentHashes) {
-                            consistentHashes.clear();
-                        }
-                        synchronized (latestState) {
-                            latestState.clear();
-                            assert currentState != null;
-                            latestState.putAll(currentState);
-                        }
+                    }
+                    synchronized (stateSinceMilestone) {
+                        stateSinceMilestone.clear();
+                        stateSinceMilestone.putAll(currentState);
+                    }
+                } else {
+                    updateConsistentHashes(tip, milestone);
+                    synchronized (consistentHashes) {
+                        consistentHashes.clear();
+                    }
+                    synchronized (latestState) {
+                        latestState.clear();
+                        assert currentState != null;
+                        latestState.putAll(currentState);
                     }
                 }
             }
@@ -179,13 +177,15 @@ public class TipsManager {
                         break;
                     }
                 }
-                transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
-                if(!(checkSolidity(tips[carlo]) && updateSnapshot(tips[carlo], stateSinceMilestone, false))) {
+                transactionViewModel = TransactionViewModel.fromHash(tips[carlo]).getBundle().getTail();
+                if(transactionViewModel == null) {
                     break;
-                } else if (tips[carlo].equals(extraTip) || tips[carlo].equals(tip)){
+                } else if(!(checkSolidity(transactionViewModel.getHash()) && updateSnapshot(transactionViewModel.getHash(), stateSinceMilestone, false))) {
+                    break;
+                } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)){
                     break;
                 } else {
-                    tip = transactionViewModel.getBundle().getTail().getHash();
+                    tip = transactionViewModel.getHash();
                 }
             }
             return tip;

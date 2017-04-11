@@ -19,10 +19,7 @@ import com.iota.iri.utils.Converter;
 
 public class Milestone {
 
-    public static final Hash MAINNET_COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
-    public static final Hash TESTNET_COORDINATOR = new Hash("XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA");
 
-    public static Hash COORDINATOR = null;
 
     public static Hash latestMilestone = Hash.NULL_HASH;
     public static Hash latestSolidSubtangleMilestone = latestMilestone;
@@ -36,19 +33,34 @@ public class Milestone {
     private static final Set<Hash> analyzedMilestoneRetryCandidates = new HashSet<>();
     private static final Map<Integer, Hash> milestones = new ConcurrentHashMap<>();
 
+    private final Hash coordinatorHash;
+    private final boolean testnet;
+
+    private Milestone(Hash coordinator, boolean isTestnet) {
+        coordinatorHash = coordinator;
+        testnet = isTestnet;
+    }
+    private static Milestone instance = null;
+
+    public static void init(final Hash coordinator, boolean testnet) {
+        if(instance == null) {
+            instance = new Milestone(coordinator, testnet);
+        }
+    }
+    public static Milestone instance() {
+        return instance;
+    }
+
     public static Hash getMilestone(int milestoneIndex) {
         return milestones.get(milestoneIndex);
     }
-    
-    public static void updateLatestMilestone() throws Exception { // refactor
 
-        if(Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
-            COORDINATOR = TESTNET_COORDINATOR; 
-        }
-        else {
-            COORDINATOR = MAINNET_COORDINATOR; 
-        }
-        AddressViewModel coordinator = new AddressViewModel(COORDINATOR);
+    public Hash coordinator() {
+        return coordinatorHash;
+    }
+    public void updateLatestMilestone() throws Exception { // refactor
+
+        AddressViewModel coordinator = new AddressViewModel(coordinatorHash);
         for (final Hash hash : coordinator.getTransactionHashes()) {
             if (analyzedMilestoneCandidates.add(hash) || analyzedMilestoneRetryCandidates.remove(hash)) {
 
@@ -96,8 +108,10 @@ public class Milestone {
 
                                             indexCopy >>= 1;
                                         }
-                                        if (Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) COORDINATOR = new Hash(hashTrits);
-                                        if ((new Hash(hashTrits)).equals(COORDINATOR)) {
+                                        if(testnet) {
+                                            System.arraycopy(new Hash(hashTrits).bytes(), 0, coordinatorHash.bytes(), 0, coordinatorHash.bytes().length);
+                                        }
+                                        if (testnet || (new Hash(hashTrits)).equals(coordinatorHash)) {
 
                                             latestMilestone = transactionViewModel.getHash();
                                             latestMilestoneIndex = index;
@@ -127,7 +141,7 @@ public class Milestone {
     }
 
     public static Hash findMilestone(int milestoneIndexToLoad) throws Exception {
-        AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR);
+        AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.instance.coordinatorHash);
         Hash hashToLoad = getMilestone(milestoneIndexToLoad);
         if(hashToLoad == null) {
             int closestGreaterMilestone = latestMilestoneIndex;

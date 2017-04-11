@@ -6,6 +6,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.iota.iri.model.Hash;
 import com.iota.iri.service.tangle.Tangle;
 import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.service.viewModels.TransactionRequester;
@@ -35,6 +36,9 @@ public class IRI {
 
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
+    public static final Hash MAINNET_COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
+    public static final Hash TESTNET_COORDINATOR = new Hash("XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA");
+
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
     public static final String VERSION = "1.1.3.5";
@@ -50,6 +54,11 @@ public class IRI {
         }
 
         try {
+            if (Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
+                Milestone.init(TESTNET_COORDINATOR, true);
+            } else {
+                Milestone.init(MAINNET_COORDINATOR, false);
+            }
             TransactionViewModel.init();
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
             Tangle.instance().init();

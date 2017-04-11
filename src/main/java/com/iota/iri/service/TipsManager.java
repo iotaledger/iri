@@ -59,7 +59,7 @@ public class TipsManager {
                     final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
                     final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
-                    Milestone.updateLatestMilestone();
+                    Milestone.instance().updateLatestMilestone();
                     Milestone.updateLatestSolidSubtangleMilestone();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
@@ -147,7 +147,7 @@ public class TipsManager {
 
                         transactionViewModel = transactionViewModel.getTrunkTransaction();
 
-                    } while (transactionViewModel.getCurrentIndex() != 0 && !transactionViewModel.getAddressHash().equals(Milestone.COORDINATOR));
+                    } while (transactionViewModel.getCurrentIndex() != 0 && !transactionViewModel.getAddressHash().equals(Milestone.instance().coordinator()));
                 }
             }
 
@@ -268,7 +268,7 @@ public class TipsManager {
 
     private static int findOldestAcceptableMilestoneIndex(long criticalArrivalTime, int depth) throws Exception {
         int oldestAcceptableMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex - depth;
-        AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.COORDINATOR);
+        AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.instance().coordinator());
         for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
             final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
             if (transactionViewModel.getCurrentIndex() == 0) {

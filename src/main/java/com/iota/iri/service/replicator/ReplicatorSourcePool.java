@@ -23,10 +23,11 @@ public class ReplicatorSourcePool implements Runnable {
     @Override
     public void run() {
         ExecutorService pool;
+        ServerSocket server = null;
         pool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
         this.pool = pool;
         try {
-            ServerSocket server = new ServerSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP));
+            server = new ServerSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP));
             log.info("TCP replicator is accepting connections on tcp port " + server.getLocalPort());
             while (!shutdown) {
                 try {
@@ -41,6 +42,15 @@ public class ReplicatorSourcePool implements Runnable {
             log.info("ReplicatorSinkPool shutting down");
         } catch (IOException e) {
             log.error("***** NETWORK ALERT ***** Cannot create server socket on port {}, {}", Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP), e.getMessage());
+        } finally {
+            if (server != null) {
+                try {
+                    server.close();
+                }
+                catch (Exception e) {
+                    // don't care.
+                }
+            }
         }
     }
 

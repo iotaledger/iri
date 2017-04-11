@@ -2,7 +2,6 @@ package com.iota.iri.service.replicator;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
@@ -13,7 +12,6 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Neighbor;
 import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.Node;
@@ -37,15 +35,13 @@ class ReplicatorSourceProcessor implements Runnable {
     public ReplicatorSourceProcessor(Socket connection) {
         this.connection = connection;
     }
-    
-    private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE], TRANSACTION_PACKET_SIZE);
 
     @Override
     public void run() {
         int count;
         byte[] data = new byte[2000];
         int offset = 0;
-        boolean isNew;
+        //boolean isNew;
         boolean finallyClose = true;
 
         try {
@@ -95,12 +91,25 @@ class ReplicatorSourceProcessor implements Runnable {
             neighbor.setTcpip(true);
             neighbor.setSource(connection);
             
+            // Read neighbors tcp listener port number.
+            InputStream stream = connection.getInputStream();
+            offset = 0;
+            while (((count = stream.read(data, offset, ReplicatorSinkPool.PORT_BYTES - offset)) != -1) && (offset < ReplicatorSinkPool.PORT_BYTES)) {
+                offset += count;
+            }
+          
+            if ( count == -1 || connection.isClosed() ) {
+                log.error("Did not receive neighbors listener port");
+                return;
+            }
+            
+            neighbor.setTcpPort(Integer.valueOf(new String(data, "UTF-8")).intValue());
+            
             if (neighbor.getSink() == null) {
                 log.info("Creating sink for {}", neighbor.getHostAddress());
                 ReplicatorSinkPool.instance().createSink(neighbor);
             }
-
-            InputStream stream = connection.getInputStream();
+            
             
             if (connection.isConnected()) {
                 log.info("----- NETWORK INFO ----- Source {} is connected", inet_socket_address.getAddress().getHostAddress());

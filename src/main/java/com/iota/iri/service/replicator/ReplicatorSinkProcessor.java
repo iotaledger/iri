@@ -59,10 +59,15 @@ class ReplicatorSinkProcessor implements Runnable {
                 if (!socket.isClosed() && socket.isConnected()) {
                     OutputStream out = socket.getOutputStream();
                     log.info("----- NETWORK INFO ----- Sink {} is connected", remoteAddress);
+                    
+                    // Let neighbor know our tcp listener port
+                    String fmt = "%0"+String.valueOf(ReplicatorSinkPool.PORT_BYTES)+"d";
+                    byte [] portAsString = String.format(fmt, Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP)).getBytes();
+                    out.write(portAsString);
+                    
                     while (!ReplicatorSinkPool.instance().shutdown) {
                         try {
                             ByteBuffer message = neighbor.getNextMessage();
-                            Socket s = neighbor.getSink();
                             if (message == null && (neighbor.getSink().isClosed() || !neighbor.getSink().isConnected())) {
                                 log.info("----- NETWORK INFO ----- Sink {} got disconnected", remoteAddress);
                                 return;

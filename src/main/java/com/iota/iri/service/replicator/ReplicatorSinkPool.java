@@ -23,6 +23,8 @@ public class ReplicatorSinkPool  implements Runnable {
     private ExecutorService sinkPool;
     
     public boolean shutdown = false;
+    
+    public final static int PORT_BYTES = 10;
 
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[Node.TRANSACTION_PACKET_SIZE], Node.TRANSACTION_PACKET_SIZE);
     
@@ -87,22 +89,19 @@ public class ReplicatorSinkPool  implements Runnable {
     public void broadcast(TransactionViewModel transaction) {
         if (transaction != null) {
             List<Neighbor> neighbors = Node.instance().getNeighbors();
-            if (neighbors != null) {          
+            if (neighbors != null) {
                 neighbors.forEach(neighbor -> {
-                    //if ( (neighbor == null) || (neighbor.getSink() != n.getSink()) ) {
-                    {
-                        if (neighbor.isTcpip() && (neighbor.getSink() != null) && !neighbor.getSink().isClosed()) {
-                            try {
-                                synchronized (sendingPacket) {
-                                    System.arraycopy(transaction.getBytes(), 0, sendingPacket.getData(), 0,
-                                            TransactionViewModel.SIZE);
-                                    TransactionRequester.instance().transactionToRequest(sendingPacket.getData(),
-                                            TransactionViewModel.SIZE);
-                                    neighbor.send(sendingPacket);
-                                }
-                            } catch (final Exception e) {
-                                // ignore
+                    if (neighbor.isTcpip() && (neighbor.getSink() != null) && !neighbor.getSink().isClosed()) {
+                        try {
+                            synchronized (sendingPacket) {
+                                System.arraycopy(transaction.getBytes(), 0, sendingPacket.getData(), 0,
+                                        TransactionViewModel.SIZE);
+                                TransactionRequester.instance().transactionToRequest(sendingPacket.getData(),
+                                        TransactionViewModel.SIZE);
+                                neighbor.send(sendingPacket);
                             }
+                        } catch (final Exception e) {
+                            // ignore
                         }
                     }
                 });

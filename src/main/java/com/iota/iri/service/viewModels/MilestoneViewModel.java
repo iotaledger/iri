@@ -63,6 +63,7 @@ public class MilestoneViewModel {
         if(milestoneViewModel != null) {
             long index = milestoneViewModel.index();
             if (milestoneViewModel.snapshot() == null) {
+                milestoneViewModel = null;
                 do {
                     if (--index < 0) {
                         break;

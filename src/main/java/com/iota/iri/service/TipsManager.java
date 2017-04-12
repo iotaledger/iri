@@ -43,33 +43,10 @@ public class TipsManager {
     public void init() {
         try {
             log.info("Scanning Milestones...");
-            Milestone.instance().updateLatestMilestone();
-            log.info("Latest Milestone index: " + Milestone.latestMilestoneIndex);
-            Milestone.updateLatestSolidSubtangleMilestone();
-            log.info("Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
-            log.info("Scanning tangle for snapshot...");
-            MilestoneViewModel latestWithSnapshot = MilestoneViewModel.latestWithSnapshot();
-            long i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX: latestWithSnapshot.index();
-            while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
-                if(!MilestoneViewModel.load(i)) {
-                    new MilestoneViewModel(i, Milestone.findMilestone((int)i)).store();
-                }
-                if(updateSnapshot(MilestoneViewModel.get(i))) {
-                    log.info("Snapshot created at Milestone: " + i);
-                } else {
-                    break;
-                }
-                if(i < Milestone.latestSolidSubtangleMilestoneIndex - 100) {
-                    i += 99;
-                } else if(i < Milestone.latestSolidSubtangleMilestoneIndex - 10) {
-                    i += 9;
-                }
-            }
-            stateSinceMilestone.putAll(latestState);
+            scanMilestonesAndSnapshot();
         } catch (Exception e) {
             log.error("Could not finish milestone scan");
             e.printStackTrace();
-        } finally {
         }
         (new Thread(() -> {
 
@@ -127,6 +104,47 @@ public class TipsManager {
         }, "Latest Milestone Tracker")).start();
     }
 
+    private static void scanMilestonesAndSnapshot() throws Exception {
+        long separator = 1;
+        Milestone.instance().updateLatestMilestone();
+        log.info("Latest Milestone index: " + Milestone.latestMilestoneIndex);
+        Milestone.updateLatestSolidSubtangleMilestone();
+        log.info("Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
+        MilestoneViewModel latestWithSnapshot = MilestoneViewModel.latestWithSnapshot();
+        if(latestWithSnapshot != null) {
+            if(!ledgerIsConsistent(latestWithSnapshot.snapshot())) {
+                updateSnapshotMilestone(latestWithSnapshot.getHash(), false);
+                latestWithSnapshot = null;
+            }
+        }
+        long i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX + 1: latestWithSnapshot.index();
+        long distance = (Milestone.latestSolidSubtangleMilestoneIndex - i)/ 3;
+        while(separator < distance/2) {
+            separator *= 10;
+        }
+        while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
+            if(!MilestoneViewModel.load(i)) {
+                new MilestoneViewModel(i, Milestone.findMilestone((int)i)).store();
+            }
+            if(updateSnapshot(MilestoneViewModel.get(i))) {
+                log.info("Snapshot created at Milestone: " + i);
+            } else {
+                break;
+            }
+            if(separator > 1) {
+                if (i < Milestone.latestSolidSubtangleMilestoneIndex - separator) {
+                    i += separator;
+                } else {
+                    while(i >= Milestone.latestSolidSubtangleMilestoneIndex - separator) {
+                        separator /= 10;
+                    }
+                    i += separator;
+                }
+            }
+        }
+        stateSinceMilestone.putAll(latestState);
+    }
+
     private static boolean updateSnapshot(MilestoneViewModel milestone) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(milestone.getHash());
         boolean isConsistent = transactionViewModel.hasSnapshot();
@@ -135,7 +153,7 @@ public class TipsManager {
             Map<Hash, Long> currentState = getCurrentState(tail, latestState, true);
             isConsistent = currentState != null && ledgerIsConsistent(currentState);
             if (isConsistent) {
-                updateSnapshotMilestone(milestone.getHash());
+                updateSnapshotMilestone(milestone.getHash(), true);
                 synchronized (consistentHashes) {
                     consistentHashes.clear();
                 }
@@ -296,15 +314,15 @@ public class TipsManager {
         return rating;       
     }
 
-    private static void updateSnapshotMilestone(Hash milestone) throws Exception {
+    private static void updateSnapshotMilestone(Hash milestone, boolean mark) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>();
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(!transactionViewModel2.hasSnapshot()) {
-                    transactionViewModel2.markSnapshot();
+                if(!transactionViewModel2.hasSnapshot() || (!mark)) {
+                    transactionViewModel2.markSnapshot(mark);
                     nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
                 }
@@ -612,6 +630,12 @@ public class TipsManager {
     }
 
     private static boolean ledgerIsConsistent(Map<Hash, Long> state) {
+        long stateValue = state.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
+        if(stateValue != TransactionViewModel.SUPPLY) {
+            long difference = TransactionViewModel.SUPPLY - stateValue;
+            log.error("Inconsistent ledger. Missing: " + difference);
+            return false;
+        }
         final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
         while (stateIterator.hasNext()) {
 

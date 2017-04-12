@@ -709,7 +709,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 byte[] bytes = iterator.value();
                 baddies.add(iterator.key());
             } else {
-                //batch.put(markedSnapshotHandle, iterator.key(), new byte[]{0});
+                batch.put(markedSnapshotHandle, iterator.key(), new byte[]{0});
             }
         }
         iterator.close();

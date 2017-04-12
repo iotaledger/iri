@@ -11,8 +11,8 @@ public class Snapshot {
     public static final Map<Hash, Long> latestState = new HashMap<>();
 
     static {
-        
-        initialState.put(Hash.NULL_HASH, TransactionViewModel.SUPPLY - 676000000000000L - 1000000L);  // Total - 676 accounts with 1000000000000 -SPAM
+
+        initialState.put(Hash.NULL_HASH, TransactionViewModel.SUPPLY - 672000000000000L - 1000000L);  // Total - 676 accounts with 1000000000000 -SPAM
 
         initialState.put(new Hash("JHEAAMONCPCQLRIHMUBOVSFYHTAPRCTDSQSTREPBBJCZGNLLFFOYGODOL9GZAZCYLLLNMTJTBAQRZSSGI"), 1000000L);  // SPAM
         initialState.put(new Hash("I9SVTYGLCEEUBYQYUNBGNAHWHCG9UVAZQISZYYAGULIBNUPLJBCIOKBRESZYJUZWVTFDYHKWNHYW9KIFK"), 1000000000000L);  // AA

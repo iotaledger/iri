@@ -31,8 +31,8 @@ public interface IPersistenceProvider {
 
     Object seek(Class<?> model, byte[] key) throws Exception;
 
-    Object next(Class<?> model, int index);
-    Object previous(Class<?> model, int index);
+    Object next(Class<?> model, int index) throws Exception;
+    Object previous(Class<?> model, int index) throws Exception;
 
-    Object first(Class<?> model);
+    Object first(Class<?> model) throws Exception;
 }

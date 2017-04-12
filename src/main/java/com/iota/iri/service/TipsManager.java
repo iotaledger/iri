@@ -336,12 +336,10 @@ public class TipsManager {
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (visitedHashes.add(hashPointer)) {
-                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(consistentHashes.add(hashPointer)) {
-                    nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
-                    nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
-                }
+            final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
+            if(!transactionViewModel2.hasSnapshot() && consistentHashes.add(hashPointer)) {
+                nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
+                nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
             }
         }
     }

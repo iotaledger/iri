@@ -135,11 +135,12 @@ public class Milestone {
             if(milestone == null) {
                 milestone = findMilestone(milestoneIndex);
             }
-            if (milestone != null && TipsManager.checkSolidity(milestone)) {
+            if (!TipsManager.checkSolidity(milestone)) {
+                break;
+            }
+            if (milestone != null) {
                 latestSolidSubtangleMilestone = milestone;
                 latestSolidSubtangleMilestoneIndex = milestoneIndex;
-            } else {
-                break;
             }
         }
     }

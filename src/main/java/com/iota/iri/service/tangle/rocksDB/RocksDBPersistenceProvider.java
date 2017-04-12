@@ -95,6 +95,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         initLatestMap();
         available = true;
         log.info("RocksDB persistence provider initialized.");
+        /*
         restartThread = new Thread(() -> {
             try {
                 Thread.sleep(compationWaitTime * 3);
@@ -107,6 +108,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             }
         });
         restartThread.start();
+        */
     }
 
     @Override

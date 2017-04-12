@@ -40,7 +40,7 @@ public class Tangle {
 
     private boolean loadNow(Object object) throws Exception {
         for(IPersistenceProvider provider: this.persistenceProviders) {
-            while(!provider.isAvailable()) {}
+            //while(!provider.isAvailable()) {}
             if(provider.get(object)) {
                 return true;
             }
@@ -56,7 +56,7 @@ public class Tangle {
         return executor.submit(() -> {
             boolean exists = false;
             for(IPersistenceProvider provider: persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 if(exists = provider.save(model)) {
                     break;
                 }
@@ -68,7 +68,7 @@ public class Tangle {
     public Future<Void> delete(Object model) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 provider.delete(model);
             }
             return null;
@@ -79,7 +79,7 @@ public class Tangle {
         return executor.submit(() -> {
             Object latest = null;
             for(IPersistenceProvider provider: persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 latest = provider.latest(model);
             }
             return latest;
@@ -90,7 +90,7 @@ public class Tangle {
         return executor.submit(() -> {
             boolean success = true;
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 if(!provider.update(model, item)) {
                     success = false;
                     break;
@@ -108,7 +108,7 @@ public class Tangle {
         return executor.submit(() -> {
             Object[] output = new Object[0];
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 output = provider.getKeys(modelClass);
                 if(output != null && output.length > 0) {
                     break;
@@ -122,7 +122,7 @@ public class Tangle {
         return executor.submit(() -> {
             Hash[] output = new Hash[0];
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 output = provider.keysStartingWith(modelClass, value);
                 if(output.length != 0) {
                     break;
@@ -135,7 +135,7 @@ public class Tangle {
     public Future<Boolean> exists(Class<?> modelClass, Hash hash) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 if(provider.exists(modelClass, hash)) return true;
             }
             return false;
@@ -145,7 +145,7 @@ public class Tangle {
     public Future<Boolean> maybeHas(Object object) {
         return executor.submit(() -> {
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 if(provider.mayExist(object)) return true;
             }
             return false;
@@ -156,7 +156,7 @@ public class Tangle {
         return executor.submit(() -> {
             long value = 0;
             for(IPersistenceProvider provider: this.persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 if((value = provider.count(modelClass)) != 0) {
                     break;
                 }
@@ -169,7 +169,7 @@ public class Tangle {
         return executor.submit(() -> {
             Object out = null;
             for (IPersistenceProvider provider : this.persistenceProviders) {
-                while(!provider.isAvailable()) {}
+                //while(!provider.isAvailable()) {}
                 if ((out = provider.seek(model, key)) != null) {
                     break;
                 }

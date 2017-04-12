@@ -19,7 +19,7 @@ public interface IPersistenceProvider {
 
     Object latest(Class<?> model) throws Exception;
 
-    Object[] getKeys(Class<?> modelClass) throws Exception;
+    Object[] keysWithMissingReferences(Class<?> modelClass) throws Exception;
 
     boolean get(Object model) throws Exception;
 

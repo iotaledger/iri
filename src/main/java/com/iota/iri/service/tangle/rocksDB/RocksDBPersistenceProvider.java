@@ -348,17 +348,22 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     };
 
     @Override
-    public Object[] getKeys(Class<?> modelClass) throws Exception {
+    public Object[] keysWithMissingReferences(Class<?> modelClass) throws Exception {
         if(modelClass == Transaction.class) {
             return getMissingTransactions();
         }
-        List<byte[]> tips = new ArrayList<>();
-        RocksIterator iterator = db.newIterator(tipHandle);
-        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            tips.add(iterator.key());
+        if(modelClass == Tip.class) {
+            List<byte[]> tips = new ArrayList<>();
+            RocksIterator iterator = db.newIterator(transactionHandle);
+            for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                if(db.get(approoveeHandle, iterator.key()) == null) {
+                    tips.add(iterator.key());
+                }
+            }
+            iterator.close();
+            return tips.stream().map(Hash::new).toArray();
         }
-        iterator.close();
-        return tips.stream().map(Hash::new).toArray();
+        throw new NotImplementedException("Not implemented");
     }
 
     private Object[] getMissingTransactions() throws RocksDBException {

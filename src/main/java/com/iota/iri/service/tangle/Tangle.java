@@ -1,7 +1,6 @@
 package com.iota.iri.service.tangle;
 
 import com.iota.iri.model.*;
-import com.iota.iri.service.viewModels.MilestoneViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,12 +104,12 @@ public class Tangle {
         return instance;
     }
 
-    public Future<Object[]> scanForTips(Class<?> modelClass) {
+    public Future<Object[]> keysWithMissingReferences(Class<?> modelClass) {
         return executor.submit(() -> {
             Object[] output = new Object[0];
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 //while(!provider.isAvailable()) {}
-                output = provider.getKeys(modelClass);
+                output = provider.keysWithMissingReferences(modelClass);
                 if(output != null && output.length > 0) {
                     break;
                 }

@@ -393,7 +393,7 @@ public class TransactionViewModel {
 
     public static Hash[] getMissingTransactions() throws ExecutionException, InterruptedException {
         return Arrays.stream(Tangle.instance()
-                .scanForTips(Transaction.class).get()).toArray(Hash[]::new);
+                .keysWithMissingReferences(Transaction.class).get()).toArray(Hash[]::new);
     }
 
 

@@ -147,7 +147,7 @@ public class Milestone {
         Hash hashToLoad = getMilestone(milestoneIndexToLoad);
         if(hashToLoad == null) {
             int closestGreaterMilestone = latestMilestoneIndex;
-            Hash[] hashes = Arrays.stream(coordinatorAddress.getTransactionHashes()).map(h -> !milestones.keySet().contains(h)).toArray(Hash[]::new);
+            Hash[] hashes = Arrays.stream(coordinatorAddress.getTransactionHashes()).filter(h -> !milestones.keySet().contains(h)).toArray(Hash[]::new);
             for (final Hash hash : hashes) {
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash).getBundle().getTail();
                 if(transactionViewModel != null) {

@@ -384,9 +384,11 @@ public class TransactionViewModel {
         return transaction.snapshot;
     }
 
-    public void markSnapshot() throws Exception {
-        transaction.snapshot= true;
-        update("markedSnapshot");
+    public void markSnapshot(boolean marker) throws Exception {
+        if(marker ^ transaction.snapshot) {
+            transaction.snapshot = marker;
+            update("markedSnapshot");
+        }
     }
 
     public static Hash[] getMissingTransactions() throws ExecutionException, InterruptedException {

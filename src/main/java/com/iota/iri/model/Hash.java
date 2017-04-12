@@ -2,9 +2,11 @@ package com.iota.iri.model;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.utils.Converter;
+
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class Hash implements Comparable<Hash>{
+public class Hash implements Comparable<Hash>, Serializable{
 
     public static final int SIZE_IN_BYTES = 49;
 
@@ -63,7 +65,7 @@ public class Hash implements Comparable<Hash>{
     }
     
     public byte[] bytes() {
-		return bytes;
+		return bytes.clone();
 	}
 
     @Override

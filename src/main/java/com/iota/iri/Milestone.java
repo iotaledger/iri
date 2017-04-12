@@ -109,7 +109,7 @@ public class Milestone {
                                             indexCopy >>= 1;
                                         }
                                         if(testnet) {
-                                            System.arraycopy(new Hash(hashTrits).bytes(), 0, coordinatorHash.bytes(), 0, coordinatorHash.bytes().length);
+                                            //System.arraycopy(new Hash(hashTrits).bytes(), 0, coordinatorHash.bytes(), 0, coordinatorHash.bytes().length);
                                         }
                                         if (testnet || (new Hash(hashTrits)).equals(coordinatorHash)) {
 

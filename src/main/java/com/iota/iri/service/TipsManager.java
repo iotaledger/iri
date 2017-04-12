@@ -104,7 +104,10 @@ public class TipsManager {
                             break;
                         }
                     }
-                    Thread.sleep(latency - cumulative);
+                    latency -= cumulative;
+                    if(latency > 0) {
+                        Thread.sleep(latency - cumulative);
+                    }
                     
                 } catch (final Exception e) {
                     log.error("Error during TipsManager Milestone updating", e);

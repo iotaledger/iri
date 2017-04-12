@@ -138,7 +138,7 @@ public class TipsManager {
         while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
             start = System.currentTimeMillis();
             if(!MilestoneViewModel.load(i)) {
-                new MilestoneViewModel(i, Milestone.findMilestone((int)i)).store();
+                new MilestoneViewModel(i, Milestone.findMilestone(i)).store();
             }
             if(updateSnapshot(MilestoneViewModel.get(i))) {
                 log.info("Snapshot created at Milestone: " + i);
@@ -177,7 +177,7 @@ public class TipsManager {
                 milestone.initSnapshot(latestSnapshot.diff(currentState));
                 milestone.updateSnapshot();
                 synchronized (latestSnapshot) {
-                    latestSnapshot.patch(milestone.snapshot());
+                    latestSnapshot.merge(latestSnapshot.patch(milestone.snapshot()));
                 }
             }
         }

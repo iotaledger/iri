@@ -689,7 +689,7 @@ public class TipsManager {
 
                             boolean validBundle = false;
 
-                            final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
+                            final BundleValidator bundleValidator = new BundleValidator(transactionViewModel.getBundle());
                             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
 
                                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {

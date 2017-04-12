@@ -73,17 +73,14 @@ public class Node {
 
         Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
         .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
-            if (!"udp".equals(u.getScheme()) && !"tcp".equals(u.getScheme())) {
-                log.warn("WARNING: '{}' is not a valid uri schema.", u);
+            if (!"udp".equals(u.getScheme()) && !"tcp".equals(u.getScheme()) || (new InetSocketAddress(u.getHost(), u.getPort()).getAddress() == null)) {
+                log.error("CONFIGURATION ERROR: '{}' is not a valid uri schema or resolvable address.", u);
             }
-        }).filter(u -> "udp".equals(u.getScheme()) || "tcp".equals(u.getScheme()))
+        }).filter(u -> ("udp".equals(u.getScheme()) || "tcp".equals(u.getScheme())) && (new InetSocketAddress(u.getHost(), u.getPort()).getAddress()) != null)
         .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()),"tcp".equals(u.getScheme()),true)).peek(u -> {
-            //if (Configuration.booling(DefaultConfSettings.DEBUG)) {
                 log.info("-> Adding neighbor : {} ", u.getAddress());
-            //}
         }).forEach(neighbors::add);
-        
-        
+
         executor.submit(spawnReceiverThread());
         executor.submit(spawnBroadcasterThread());
         executor.submit(spawnTipRequesterThread());

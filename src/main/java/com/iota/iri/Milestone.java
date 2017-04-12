@@ -1,13 +1,8 @@
 package com.iota.iri;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
@@ -135,6 +130,11 @@ public class Milestone {
             if (!TipsManager.checkSolidity(milestone)) {
                 break;
             }
+            milestoneIndex = milestones.entrySet().stream()
+                    .filter(e -> e.getValue().equals(milestone))
+                    .findAny()
+                    .orElse(new HashMap.SimpleEntry<Integer, Hash>(milestoneIndex, milestone))
+                    .getKey();
             if (milestone != null) {
                 latestSolidSubtangleMilestone = milestone;
                 latestSolidSubtangleMilestoneIndex = milestoneIndex;

@@ -113,6 +113,8 @@ public class TipsManager {
         MilestoneViewModel latestWithSnapshot = MilestoneViewModel.latestWithSnapshot();
         if(latestWithSnapshot != null) {
             if(!ledgerIsConsistent(latestWithSnapshot.snapshot())) {
+                updateSnapshotMilestone(latestWithSnapshot.getHash(), true);
+            } else {
                 updateSnapshotMilestone(latestWithSnapshot.getHash(), false);
                 latestWithSnapshot = null;
             }

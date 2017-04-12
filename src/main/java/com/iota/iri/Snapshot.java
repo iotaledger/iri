@@ -4,11 +4,12 @@ import com.iota.iri.service.viewModels.TransactionViewModel;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class Snapshot {
 
     public static final Map<Hash, Long> initialState = new HashMap<>();
-    public static final Map<Hash, Long> latestState = new HashMap<>();
+    public static final Snapshot latestSnapshot;
 
     static {
 
@@ -691,7 +692,47 @@ public class Snapshot {
         initialState.put(new Hash("9KVVILVRWBAJKMZQABX9YLNVXLINRU9HADZG9HQEKGYVNAZMLYO9ZFH9SPBMO9PCXSPGQSB9WYE9VCXQU"), 1000000000000L);  // ZX
         initialState.put(new Hash("UYPKRIWENIJRUSDZWEKERYRJIOYLZRJGOS9SEGOTLEPVBPCWQQOLGTVADIOOWSOVRUPJVVCCTOG9DOIZT"), 1000000000000L);  // ZY
         initialState.put(new Hash("BHUCCWMGAOKGFFAYAVCTOYXYVLVXON9HHKYFNGY9WWTWYEOLOFQEHJHCQTY9HDRJWWLWAVILQCFMFHQQL"), 1000000000000L);  // ZZ
-        
-        latestState.putAll(initialState);
+
+        latestSnapshot = new Snapshot(initialState);
     }
+
+    private final Map<Hash, Long> state;
+
+    public Snapshot(Snapshot snapshot) {
+        state = new HashMap<>(snapshot.state);
+    }
+
+    private Snapshot(Map<Hash, Long> initialState) {
+        state = new HashMap<>(initialState);
+    }
+
+    public Map<Hash, Long> getState() {
+        return state;
+    }
+
+    public Map<Hash, Long> diff(Map<Hash, Long> newState) {
+        return newState.entrySet().parallelStream()
+                .map(hashLongEntry ->
+                        new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
+                                hashLongEntry.getValue() - state.get(hashLongEntry.getKey())))
+                .filter(e -> e.getValue() != 0L)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public Snapshot patch(Map<Hash, Long> diff) {
+        Map<Hash, Long> patchedState = state.entrySet().parallelStream()
+                .map( hashLongEntry ->
+                        new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
+                                hashLongEntry.getValue() + diff.get(hashLongEntry.getKey())))
+                .filter(e -> e.getValue() != 0L)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        diff.entrySet().stream().forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
+        return new Snapshot(state);
+    }
+
+    public void merge(Snapshot snapshot) {
+        state.clear();
+        state.putAll(snapshot.state);
+    }
+
 }

@@ -30,4 +30,9 @@ public interface IPersistenceProvider {
     Hash[] keysStartingWith(Class<?> modelClass, byte[] value);
 
     Object seek(Class<?> model, byte[] key) throws Exception;
+
+    Object next(Class<?> model, int index);
+    Object previous(Class<?> model, int index);
+
+    Object first(Class<?> model);
 }

@@ -1,6 +1,7 @@
 package com.iota.iri.service.tangle;
 
 import com.iota.iri.model.*;
+import com.iota.iri.service.viewModels.MilestoneViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -175,6 +176,46 @@ public class Tangle {
                 }
             }
             return out;
+        });
+    }
+
+    public Future<Object> next(Class<?> model, int index) {
+        return executor.submit(() -> {
+            Object latest = null;
+            for(IPersistenceProvider provider: persistenceProviders) {
+                //while(!provider.isAvailable()) {}
+                if(latest == null) {
+                    latest = provider.next(model, index);
+                }
+            }
+            return latest;
+
+        });
+    }
+    public Future<Object> previous(Class<?> model, int index) {
+        return executor.submit(() -> {
+            Object latest = null;
+            for(IPersistenceProvider provider: persistenceProviders) {
+                //while(!provider.isAvailable()) {}
+                if(latest == null) {
+                    latest = provider.previous(model, index);
+                }
+            }
+            return latest;
+
+        });
+    }
+
+    public Future<Object> getFirst(Class<?> model) {
+        return executor.submit(() -> {
+            Object latest = null;
+            for(IPersistenceProvider provider: persistenceProviders) {
+                //while(!provider.isAvailable()) {}
+                if(latest == null) {
+                    latest = provider.first(model);
+                }
+            }
+            return latest;
         });
     }
 }

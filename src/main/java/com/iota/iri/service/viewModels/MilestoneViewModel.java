@@ -50,6 +50,14 @@ public class MilestoneViewModel {
         return false;
     }
 
+    public static MilestoneViewModel first() throws ExecutionException, InterruptedException {
+        Object msObj = Tangle.instance().getFirst(Milestone.class).get();
+        if(msObj != null && msObj instanceof Milestone) {
+            return new MilestoneViewModel((Milestone) msObj);
+        }
+        return null;
+    }
+
     public static MilestoneViewModel latest() throws ExecutionException, InterruptedException {
         Object msObj = Tangle.instance().getLatest(Milestone.class).get();
         if(msObj != null && msObj instanceof Milestone) {
@@ -58,21 +66,34 @@ public class MilestoneViewModel {
         return null;
     }
 
+    public MilestoneViewModel previous() {
+        Object milestone = Tangle.instance().previous(Milestone.class, index());
+        if(milestone != null && milestone instanceof Milestone) {
+            return new MilestoneViewModel((Milestone) milestone);
+        }
+        return null;
+    }
+
+    public MilestoneViewModel next() {
+        Object milestone = Tangle.instance().next(Milestone.class, index());
+        if(milestone != null && milestone instanceof Milestone) {
+            return new MilestoneViewModel((Milestone) milestone);
+        }
+        return null;
+    }
+
+    public MilestoneViewModel nextSnapshot() throws ExecutionException, InterruptedException {
+        MilestoneViewModel milestoneViewModel = first();
+        while(milestoneViewModel !=null && milestoneViewModel.snapshot() == null) {
+            milestoneViewModel = milestoneViewModel.next();
+        }
+        return milestoneViewModel;
+    }
+
     public static MilestoneViewModel latestWithSnapshot() throws ExecutionException, InterruptedException {
         MilestoneViewModel milestoneViewModel = latest();
-        if(milestoneViewModel != null) {
-            int index = milestoneViewModel.index();
-            if (milestoneViewModel.snapshot() == null) {
-                milestoneViewModel = null;
-                do {
-                    if (--index < 0) {
-                        break;
-                    }
-                } while (!MilestoneViewModel.load(index) || MilestoneViewModel.get(index).snapshot() == null);
-            }
-            if (index >= 0) {
-                milestoneViewModel = MilestoneViewModel.get(index);
-            }
+        while(milestoneViewModel !=null && milestoneViewModel.snapshot() == null) {
+            milestoneViewModel = milestoneViewModel.previous();
         }
         return milestoneViewModel;
     }

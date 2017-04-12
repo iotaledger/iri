@@ -430,7 +430,8 @@ public class API {
         final Map<Hash, Long> balances = new HashMap<>();
         for (final Hash address : addresses) {
             balances.put(address,
-                    Snapshot.latestState.containsKey(address) ? Snapshot.latestState.get(address) : Long.valueOf(0));
+                    Snapshot.latestSnapshot.getState().containsKey(address) ?
+                            Snapshot.latestSnapshot.getState().get(address) : Long.valueOf(0));
         }
 
         final Hash milestone = Milestone.latestSolidSubtangleMilestone;

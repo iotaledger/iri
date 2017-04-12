@@ -485,6 +485,21 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return out;
     }
 
+    @Override
+    public Object next(Class<?> model, int index) {
+        return null;
+    }
+
+    @Override
+    public Object previous(Class<?> model, int index) {
+        return null;
+    }
+
+    @Override
+    public Object first(Class<?> model) {
+        return null;
+    }
+
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
         List<byte[]> itemsToDelete = new ArrayList<>();
         RocksIterator iterator = db.newIterator(handle);

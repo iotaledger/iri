@@ -131,10 +131,7 @@ public class Milestone {
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex + 1; milestoneIndex <= latestMilestoneIndex; milestoneIndex++) {
-            Hash milestone = milestones.get(milestoneIndex);
-            if(milestone == null) {
-                milestone = findMilestone(milestoneIndex);
-            }
+            final Hash milestone = findMilestone(milestoneIndex);
             if (!TipsManager.checkSolidity(milestone)) {
                 break;
             }
@@ -150,7 +147,8 @@ public class Milestone {
         Hash hashToLoad = getMilestone(milestoneIndexToLoad);
         if(hashToLoad == null) {
             int closestGreaterMilestone = latestMilestoneIndex;
-            for (final Hash hash : coordinatorAddress.getTransactionHashes()) {
+            Hash[] hashes = Arrays.stream(coordinatorAddress.getTransactionHashes()).map(h -> !milestones.keySet().contains(h)).toArray(Hash[]::new);
+            for (final Hash hash : hashes) {
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash).getBundle().getTail();
                 if(transactionViewModel != null) {
                     int milestoneIndex = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET,

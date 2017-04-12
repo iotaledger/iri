@@ -8,6 +8,7 @@ import com.iota.iri.model.*;
 public interface IPersistenceProvider {
 
     void init() throws Exception;
+    boolean isAvailable();
     void shutdown();
     boolean save(Object o) throws Exception;
     void delete(Object o) throws Exception;

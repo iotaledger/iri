@@ -74,6 +74,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private DBOptions options;
     private BloomFilter bloomFilter;
     private Thread compactionThreadHandle;
+    long compationWaitTime = 5 * 60 * 1000;
+    private Thread restartThread;
+    private boolean available;
 
     @Override
     public void init() throws Exception {
@@ -90,7 +93,25 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         initDeleteMap();
         initCountMap();
         initLatestMap();
+        available = true;
         log.info("RocksDB persistence provider initialized.");
+        restartThread = new Thread(() -> {
+            try {
+                Thread.sleep(compationWaitTime * 3);
+                available = false;
+                Thread.sleep(1000);
+                shutdown();
+                init();
+            } catch (Exception e) {
+                log.info("Could not restart RocksDB");
+            }
+        });
+        restartThread.start();
+    }
+
+    @Override
+    public boolean isAvailable() {
+        return this.available;
     }
 
     private void initLatestMap() {
@@ -127,6 +148,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         });
         deleteMap.put(Tip.class, txObj -> {
             db.delete(tipHandle, ((Tip) txObj).hash.bytes());
+            return null;
+        });
+        deleteMap.put(Milestone.class, msObj -> {
+            db.delete(milestoneHandle, Serializer.serialize(((Milestone)msObj).index));
+            db.delete(snapshotHandle, ((Milestone)msObj).hash.bytes());
             return null;
         });
     }
@@ -638,7 +664,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
         running = true;
         this.compactionThreadHandle = new Thread(() -> {
-            long compationWaitTime = 5 * 60 * 1000;
             while(running) {
                 try {
                     for(ColumnFamilyHandle handle: familyHandles) {
@@ -709,7 +734,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 byte[] bytes = iterator.value();
                 baddies.add(iterator.key());
             } else {
-                batch.put(markedSnapshotHandle, iterator.key(), new byte[]{0});
+                //batch.put(markedSnapshotHandle, iterator.key(), new byte[]{0});
             }
         }
         iterator.close();

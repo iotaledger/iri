@@ -111,13 +111,13 @@ public class TipsManager {
         Milestone.updateLatestSolidSubtangleMilestone();
         log.info("Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
         MilestoneViewModel latestWithSnapshot = MilestoneViewModel.latestWithSnapshot();
+        while(latestWithSnapshot != null && !ledgerIsConsistent(latestWithSnapshot.snapshot())) {
+            updateSnapshotMilestone(latestWithSnapshot.getHash(), false);
+            latestWithSnapshot.delete();
+            latestWithSnapshot = MilestoneViewModel.latestWithSnapshot();
+        }
         if(latestWithSnapshot != null) {
-            if(!ledgerIsConsistent(latestWithSnapshot.snapshot())) {
-                updateSnapshotMilestone(latestWithSnapshot.getHash(), true);
-            } else {
-                updateSnapshotMilestone(latestWithSnapshot.getHash(), false);
-                latestWithSnapshot = null;
-            }
+            updateSnapshotMilestone(latestWithSnapshot.getHash(), true);
         }
         int i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX + 1: latestWithSnapshot.index();
         int distance = (Milestone.latestSolidSubtangleMilestoneIndex - i)/ 3;
@@ -323,7 +323,7 @@ public class TipsManager {
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(!transactionViewModel2.hasSnapshot() || (!mark)) {
+                if(transactionViewModel2.hasSnapshot() ^ mark) {
                     transactionViewModel2.markSnapshot(mark);
                     nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());

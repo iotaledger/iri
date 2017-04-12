@@ -103,4 +103,8 @@ public class MilestoneViewModel {
     public Integer index() {
         return milestoneModel.index;
     }
+
+    public void delete() {
+        Tangle.instance().delete(milestoneModel);
+    }
 }

@@ -118,7 +118,9 @@ public class TipsManager {
     }
 
     private static void scanMilestonesAndSnapshot() throws Exception {
-        long separator = 1;
+        int separator = 1;
+        long start, duration;
+        final long expected = 5000;
         Milestone.instance().updateLatestMilestone();
         log.info("Latest Milestone index: " + Milestone.latestMilestoneIndex);
         Milestone.updateLatestSolidSubtangleMilestone();
@@ -133,11 +135,8 @@ public class TipsManager {
             updateSnapshotMilestone(latestWithSnapshot.getHash(), true);
         }
         int i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX: latestWithSnapshot.index();
-        int distance = (Milestone.latestSolidSubtangleMilestoneIndex - i)/ 3;
-        while(separator < distance/2) {
-            separator *= 10;
-        }
         while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
+            start = System.currentTimeMillis();
             if(!MilestoneViewModel.load(i)) {
                 new MilestoneViewModel(i, Milestone.findMilestone((int)i)).store();
             }
@@ -146,18 +145,21 @@ public class TipsManager {
             } else {
                 break;
             }
-            if(separator > 1 && i < Milestone.latestSolidSubtangleMilestoneIndex) {
-                if (i < Milestone.latestSolidSubtangleMilestoneIndex - separator) {
-                    i += separator;
-                } else {
-                    while(i > Milestone.latestSolidSubtangleMilestoneIndex - separator) {
-                        separator /= 10;
-                    }
-                    i += separator;
-                }
+            duration = System.currentTimeMillis() - start;
+            separator = getSeparator(duration, expected, separator, i, Milestone.latestSolidSubtangleMilestoneIndex);
+            if(i < Milestone.latestSolidSubtangleMilestoneIndex - separator) {
+                i += separator;
             }
         }
         stateSinceMilestone.putAll(latestState);
+    }
+
+    private static int getSeparator(long duration, long expected, int separator, int currentIndex, int max) {
+        separator *= (double)(((double) duration) / ((double) expected));
+        while(currentIndex > max - separator) {
+            separator >>= 1;
+        }
+        return separator;
     }
 
     private static boolean updateSnapshot(MilestoneViewModel milestone) throws Exception {

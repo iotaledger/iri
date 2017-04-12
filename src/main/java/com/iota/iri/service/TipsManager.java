@@ -119,7 +119,7 @@ public class TipsManager {
         if(latestWithSnapshot != null) {
             updateSnapshotMilestone(latestWithSnapshot.getHash(), true);
         }
-        int i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX + 1: latestWithSnapshot.index();
+        int i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX: latestWithSnapshot.index();
         int distance = (Milestone.latestSolidSubtangleMilestoneIndex - i)/ 3;
         while(separator < distance/2) {
             separator *= 10;
@@ -133,11 +133,11 @@ public class TipsManager {
             } else {
                 break;
             }
-            if(separator > 1) {
+            if(separator > 1 && i < Milestone.latestSolidSubtangleMilestoneIndex) {
                 if (i < Milestone.latestSolidSubtangleMilestoneIndex - separator) {
                     i += separator;
                 } else {
-                    while(i >= Milestone.latestSolidSubtangleMilestoneIndex - separator) {
+                    while(i > Milestone.latestSolidSubtangleMilestoneIndex - separator) {
                         separator /= 10;
                     }
                     i += separator;

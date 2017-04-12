@@ -19,7 +19,7 @@ import static org.junit.Assert.*;
 public class MilestoneViewModelTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
-    long index = 0;
+    int index = 0;
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -97,7 +97,7 @@ public class MilestoneViewModelTest {
     public void index() throws Exception {
         Hash milestoneHash = new Hash("EBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(++index, milestoneHash);
-        assertEquals(index, milestoneViewModel.index());
+        assertTrue(index == milestoneViewModel.index());
     }
 
     @Test
@@ -106,7 +106,7 @@ public class MilestoneViewModelTest {
         Hash milestoneHash = new Hash("ZBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(top, milestoneHash);
         milestoneViewModel.store();
-        assertEquals(top, MilestoneViewModel.latest().index());
+        assertTrue(top == MilestoneViewModel.latest().index());
     }
 
     @Test
@@ -121,6 +121,6 @@ public class MilestoneViewModelTest {
         MilestoneViewModel milestoneViewModeltopSnapshot = new MilestoneViewModel(topSnapshot, new Hash("GBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
         milestoneViewModeltopSnapshot.initSnapshot(Snapshot.initialState);
         milestoneViewModeltopSnapshot.store();
-        assertEquals(topSnapshot, MilestoneViewModel.latestWithSnapshot().index());
+        assertTrue(topSnapshot == MilestoneViewModel.latestWithSnapshot().index());
     }
 }

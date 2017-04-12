@@ -279,7 +279,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         RocksIterator iterator = db.newIterator(milestoneHandle);
         iterator.seekToLast();
         if(iterator.isValid()) {
-            milestone.index = Serializer.getLong(iterator.key());
+            milestone.index = Serializer.getInteger(iterator.key());
         }
         if(milestone.index == null) {
             return null;

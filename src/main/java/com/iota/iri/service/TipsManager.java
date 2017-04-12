@@ -119,8 +119,8 @@ public class TipsManager {
                 latestWithSnapshot = null;
             }
         }
-        long i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX + 1: latestWithSnapshot.index();
-        long distance = (Milestone.latestSolidSubtangleMilestoneIndex - i)/ 3;
+        int i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX + 1: latestWithSnapshot.index();
+        int distance = (Milestone.latestSolidSubtangleMilestoneIndex - i)/ 3;
         while(separator < distance/2) {
             separator *= 10;
         }

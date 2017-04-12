@@ -16,7 +16,7 @@ import java.util.concurrent.ExecutionException;
  */
 public class MilestoneViewModel {
     private final Milestone milestoneModel;
-    private static final Map<Long, MilestoneViewModel> milestones = new ConcurrentHashMap<>();
+    private static final Map<Integer, MilestoneViewModel> milestones = new ConcurrentHashMap<>();
 
     private MilestoneViewModel(Milestone milestone) {
         this.milestoneModel = milestone;
@@ -26,13 +26,13 @@ public class MilestoneViewModel {
         milestones.clear();
     }
 
-    public MilestoneViewModel(long index, Hash milestoneHash) {
+    public MilestoneViewModel(int index, Hash milestoneHash) {
         this.milestoneModel = new Milestone();
         this.milestoneModel.index = index;
         this.milestoneModel.hash = milestoneHash;
     }
 
-    public static MilestoneViewModel get(long index) throws ExecutionException, InterruptedException {
+    public static MilestoneViewModel get(int index) throws ExecutionException, InterruptedException {
         MilestoneViewModel milestoneViewModel = milestones.get(index);
         if(milestoneViewModel == null && load(index)) {
             milestoneViewModel = milestones.get(index);
@@ -40,7 +40,7 @@ public class MilestoneViewModel {
         return milestoneViewModel;
     }
 
-    public static boolean load(long index) throws ExecutionException, InterruptedException {
+    public static boolean load(int index) throws ExecutionException, InterruptedException {
         Milestone milestone = new Milestone();
         milestone.index = index;
         if(Tangle.instance().load(milestone).get()) {
@@ -61,7 +61,7 @@ public class MilestoneViewModel {
     public static MilestoneViewModel latestWithSnapshot() throws ExecutionException, InterruptedException {
         MilestoneViewModel milestoneViewModel = latest();
         if(milestoneViewModel != null) {
-            long index = milestoneViewModel.index();
+            int index = milestoneViewModel.index();
             if (milestoneViewModel.snapshot() == null) {
                 milestoneViewModel = null;
                 do {
@@ -100,7 +100,7 @@ public class MilestoneViewModel {
     public Hash getHash() {
         return milestoneModel.hash;
     }
-    public long index() {
+    public Integer index() {
         return milestoneModel.index;
     }
 }

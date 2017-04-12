@@ -73,21 +73,6 @@ public class TipsManager {
                         log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex
                                 + " to #" + Milestone.latestMilestoneIndex);
                     }
-                    if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
-                        MilestoneViewModel milestoneViewModel = new MilestoneViewModel(
-                                Milestone.latestSolidSubtangleMilestoneIndex,
-                                Milestone.latestSolidSubtangleMilestone);
-                        milestoneViewModel.store();
-                        updateSnapshot(milestoneViewModel);
-                        synchronized (stateSinceMilestone) {
-                            stateSinceMilestone.clear();
-                            stateSinceMilestone.putAll(latestState);
-                        }
-
-                        log.info("Latest SOLID SUBTANGLE milestone has changed from #"
-                                + previousSolidSubtangleLatestMilestoneIndex + " to #"
-                                + Milestone.latestSolidSubtangleMilestoneIndex);
-                    }
 
                     long latency = 30000;
                     if (Milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX &&
@@ -103,6 +88,22 @@ public class TipsManager {
                         } else {
                             break;
                         }
+                    }
+
+                    if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
+                        MilestoneViewModel milestoneViewModel = new MilestoneViewModel(
+                                Milestone.latestSolidSubtangleMilestoneIndex,
+                                Milestone.latestSolidSubtangleMilestone);
+                        milestoneViewModel.store();
+                        updateSnapshot(milestoneViewModel);
+                        synchronized (stateSinceMilestone) {
+                            stateSinceMilestone.clear();
+                            stateSinceMilestone.putAll(latestState);
+                        }
+
+                        log.info("Latest SOLID SUBTANGLE milestone has changed from #"
+                                + previousSolidSubtangleLatestMilestoneIndex + " to #"
+                                + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
                     latency -= cumulative;
                     if(latency > 0) {

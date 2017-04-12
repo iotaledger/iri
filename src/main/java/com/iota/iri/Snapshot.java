@@ -727,7 +727,7 @@ public class Snapshot {
                 .filter(e -> e.getValue() != 0L)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         diff.entrySet().stream().forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
-        return new Snapshot(state);
+        return new Snapshot(patchedState);
     }
 
     public void merge(Snapshot snapshot) {

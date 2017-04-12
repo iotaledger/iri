@@ -65,7 +65,7 @@ public class Hash implements Comparable<Hash>, Serializable{
     }
     
     public byte[] bytes() {
-		return bytes;
+		return bytes.clone();
 	}
 
     @Override

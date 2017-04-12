@@ -155,7 +155,7 @@ public class TipsManager {
     }
 
     private static int getSeparator(long duration, long expected, int separator, int currentIndex, int max) {
-        separator *= (double)(((double) duration) / ((double) expected));
+        separator *= (double)(((double) expected) / ((double) duration));
         while(currentIndex > max - separator) {
             separator >>= 1;
         }

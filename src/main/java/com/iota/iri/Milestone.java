@@ -130,8 +130,11 @@ public class Milestone {
     }
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
-        for (int milestoneIndex = latestMilestoneIndex; milestoneIndex > latestSolidSubtangleMilestoneIndex; milestoneIndex--) {
-            final Hash milestone = milestones.get(milestoneIndex);
+        for (int milestoneIndex = latestSolidSubtangleMilestoneIndex; milestoneIndex > latestMilestoneIndex; milestoneIndex--) {
+            Hash milestone = milestones.get(milestoneIndex);
+            if(milestone == null) {
+                milestone = findMilestone(milestoneIndex);
+            }
             if (milestone != null && TipsManager.checkSolidity(milestone)) {
                 latestSolidSubtangleMilestone = milestone;
                 latestSolidSubtangleMilestoneIndex = milestoneIndex;

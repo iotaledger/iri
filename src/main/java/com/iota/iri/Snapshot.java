@@ -726,7 +726,7 @@ public class Snapshot {
                                 hashLongEntry.getValue() + diff.get(hashLongEntry.getKey())))
                 .filter(e -> e.getValue() != 0L)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        diff.entrySet().stream().forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
+        diff.entrySet().forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
         return new Snapshot(patchedState);
     }
 

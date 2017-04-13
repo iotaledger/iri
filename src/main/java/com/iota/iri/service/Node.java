@@ -241,7 +241,14 @@ public class Node {
                                     log.error("File export failed", e);
                                 }
                                 if (writer != null) {
+                                    writer.println(receivedTransactionViewModel.getHash().toString());
                                     writer.println(Converter.trytes(receivedTransactionViewModel.trits()));
+                                    if (neighbor.isTcpip()) {
+                                        writer.println(senderAddress.toString());
+                                    }
+                                    else {
+                                        writer.println(neighbor.getAddress().toString());
+                                    }
                                     writer.close();
                                 }
                             }

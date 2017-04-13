@@ -301,7 +301,9 @@ public class API {
                     log.error("File export failed", e);
                 }
                 if (writer != null) {
+                    writer.println(transactionViewModel.getHash().toString());
                     writer.println(Converter.trytes(transactionViewModel.trits()));
+                    writer.println("local");
                     writer.close();
                 }
             }

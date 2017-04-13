@@ -3,6 +3,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.viewModels.TransactionViewModel;
 
 public class Snapshot {
 
@@ -10,6 +11,7 @@ public class Snapshot {
     public static final Map<Hash, Long> latestState = new HashMap<>();
 
     static {
+        initialState.put(Hash.NULL_HASH, 908343229829300L);  // Total - 676 accounts with 1000000000000 -SPAM
 
         initialState.put(new Hash("GH9TBJICDYIRWHQIVJPQMNW9TCRTSFKHSUDSAV9DQS99OUXXGGYJIRNGNRYPQZTNHRVMIYSLWDZWSBNUH"), 18166864596689L);
         initialState.put(new Hash("UZUDPXUCFJNUYQQSW9Q9SIEHLBEOYYAZWSVQMDGVCGOIDDTULFWQJCVJACIMNNBHYRIMBIEQBSKYRDMEJ"), 18166864596586L);
@@ -164,7 +166,8 @@ public class Snapshot {
         initialState.put(new Hash("TUITVSUODIHTSENQINWHY9ZMNENSJEQUIXSSUSWJBGIBLYCGSRMGWGOEAUXAAVGIJCXYKIBXLOUORKFFO"), 18166864596586L);
         initialState.put(new Hash("EOGGBGBIPMUGVOGGWDVCFXTBNJMYOROQKQOUKZQAUNPVYZGME9XWALKLK9AEIDOKRYQBVYSNEMDCXAVVC"), 18166864596586L);
         initialState.put(new Hash("ESKJOWWRCMQDIBX9VJBR9UIUDRWTMQPIUK9ZZKQRNCPSAYTMQCOB9EHYTPACZHCMHCBZYUAKDHKYYNMZP"), 18166864596586L);
-        
+
+
         latestState.putAll(initialState);
     }
 }

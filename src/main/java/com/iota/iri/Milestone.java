@@ -1,5 +1,11 @@
 package com.iota.iri;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -7,7 +13,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.iota.iri.conf.Configuration;
+import javax.net.ssl.HttpsURLConnection;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
@@ -17,10 +27,12 @@ import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
+
+
 public class Milestone {
 
-
-
+    private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
+    
     public static Hash latestMilestone = Hash.NULL_HASH;
     public static Hash latestSolidSubtangleMilestone = latestMilestone;
     
@@ -165,5 +177,35 @@ public class Milestone {
             }
         }
         return hashToLoad;
+    }
+    
+    public static void reportToSlack(final int milestoneIndex, final int depth, final int nextDepth) {
+
+        try {
+
+            final String request = "token=" + URLEncoder.encode("<botToken>", "UTF-8") + "&channel=" + URLEncoder.encode("#botbox", "UTF-8") + "&text=" + URLEncoder.encode("TESTNET: ", "UTF-8") + "&as_user=true";
+
+            final HttpURLConnection connection = (HttpsURLConnection) (new URL("https://slack.com/api/chat.postMessage")).openConnection();
+            ((HttpsURLConnection)connection).setHostnameVerifier((hostname, session) -> true);
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            OutputStream out = connection.getOutputStream();
+            out.write(request.getBytes("UTF-8"));
+            out.close();
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            InputStream inputStream = connection.getInputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) != -1) {
+
+                result.write(buffer, 0, length);
+            }
+            log.info(result.toString("UTF-8"));
+
+        } catch (final Exception e) {
+
+            e.printStackTrace();
+        }
     }
 }

@@ -41,7 +41,7 @@ public class Configuration {
         CONF_PATH,
         P_REMOVE_REQUEST,
         P_DROP_TRANSACTION,
-        EXPERIMENTAL // experimental features.
+        EXPORT // exports transaction trytes to filesystem
     }
 
     static {
@@ -61,7 +61,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.CONF_PATH.name(), "iota.ini");
         conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.1");
         conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.0");
-        conf.put(DefaultConfSettings.EXPERIMENTAL.name(), "false");
+        conf.put(DefaultConfSettings.EXPORT.name(), "false");
     }
 
     public static boolean init() throws IOException {

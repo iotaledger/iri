@@ -218,6 +218,7 @@ public class TipsManager {
             Map<Hash, Integer> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
             try {
+                int traversedTails = 0;
                 Hash tip = preferableMilestone;
                 if (extraTip != null) {
                     TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
@@ -266,9 +267,11 @@ public class TipsManager {
                     } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)) {
                         break;
                     } else {
+                        traversedTails++;
                         tip = transactionViewModel.getHash();
                     }
                 }
+                log.info("Tails traversed: " + traversedTails);
                 return tip;
             } catch (Exception e) {
                 e.printStackTrace();

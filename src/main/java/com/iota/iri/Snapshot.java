@@ -4,6 +4,7 @@ import com.iota.iri.service.viewModels.TransactionViewModel;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class Snapshot {
@@ -723,9 +724,12 @@ public class Snapshot {
         Map<Hash, Long> patchedState = state.entrySet().parallelStream()
                 .map( hashLongEntry ->
                         new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
-                                hashLongEntry.getValue() + diff.get(hashLongEntry.getKey())))
+                                hashLongEntry.getValue() +
+                                        (diff.containsKey(hashLongEntry.getKey()) ?
+                                         diff.get(hashLongEntry.getKey()) : 0)) )
                 .filter(e -> e.getValue() != 0L)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+
         diff.entrySet().forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
         return new Snapshot(patchedState);
     }

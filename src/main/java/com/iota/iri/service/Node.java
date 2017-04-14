@@ -1,6 +1,9 @@
 package com.iota.iri.service;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.security.SecureRandom;
 import java.util.*;
@@ -64,6 +67,20 @@ public class Node {
     private double P_DROP_TRANSACTION;
     private final SecureRandom rnd = new SecureRandom();
 
+    private static long lastFileNumber = 0L;
+    private static Object lock = new Object();
+
+    public static long getFileNumber() {
+        long now = System.currentTimeMillis();
+        synchronized (lock) {
+            if (now < lastFileNumber) {
+                return ++lastFileNumber;
+            }
+            lastFileNumber = now;
+        }
+        return now;
+    }
+    
     public void init() throws Exception {
 
         int udpport = Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP);
@@ -213,6 +230,28 @@ public class Node {
                             receivedTransactionViewModel.update("arrivalTime");
                             neighbor.incNewTransactions();
                             broadcast(receivedTransactionViewModel);
+                            if (Configuration.booling(DefaultConfSettings.EXPORT)) {
+                                String filename = "./export/" + String.valueOf(getFileNumber()) + ".tx";
+                                PrintWriter writer = null;
+                                try {
+                                    writer = new PrintWriter(filename, "UTF-8");
+                                } catch (FileNotFoundException e) {
+                                    log.error("File export failed", e);
+                                } catch (UnsupportedEncodingException e) {
+                                    log.error("File export failed", e);
+                                }
+                                if (writer != null) {
+                                    writer.println(receivedTransactionViewModel.getHash().toString());
+                                    writer.println(Converter.trytes(receivedTransactionViewModel.trits()));
+                                    if (neighbor.isTcpip()) {
+                                        writer.println(senderAddress.toString());
+                                    }
+                                    else {
+                                        writer.println(neighbor.getAddress().toString());
+                                    }
+                                    writer.close();
+                                }
+                            }
                         }
                         System.arraycopy(receivedData, TransactionViewModel.SIZE, requestedTransaction, 0, TransactionRequester.REQUEST_HASH_SIZE);
 

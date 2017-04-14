@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
@@ -52,6 +53,20 @@ public class IRI {
         if (!Configuration.booling(DefaultConfSettings.HEADLESS)) {
             showIotaLogo();
         }
+        
+        if (Configuration.booling(DefaultConfSettings.EXPORT)) {
+            File exportDir = new File("export");
+
+            // if the directory does not exist, create it
+            if (!exportDir.exists()) {
+                log.info("Create directory 'export'");
+                try {
+                    exportDir.mkdir();
+                } catch (SecurityException e) {
+                    log.error("Could not create directory",e);
+                }
+            }
+        }
 
         try {
             if (Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
@@ -97,7 +112,7 @@ public class IRI {
         final Option<Boolean> remote = parser.addBooleanOption("remote");
         final Option<String> remoteLimitApi = parser.addStringOption("remote-limit-api");
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
-        final Option<Boolean> experimental = parser.addBooleanOption('e', "experimental");
+        final Option<Boolean> export = parser.addBooleanOption('e', "export");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Integer> ratingThr = parser.addIntegerOption('x', "rating-threshold");
         final Option<Integer> artLatency = parser.addIntegerOption('a', "art-latency");
@@ -175,9 +190,9 @@ public class IRI {
             Configuration.put(DefaultConfSettings.API_HOST, "0.0.0.0");
         }
 
-        if (parser.getOptionValue(experimental) != null) {
-            log.info("Experimental IOTA features turned on.");
-            Configuration.put(DefaultConfSettings.EXPERIMENTAL, "true");
+        if (parser.getOptionValue(export) != null) {
+            log.info("Export transaction trytes turned on.");
+            Configuration.put(DefaultConfSettings.EXPORT, "true");
         }
 
         if (Integer.parseInt(cport) < 1024) {
@@ -223,7 +238,7 @@ public class IRI {
                 "[{-c,--enabled-cors} *] " +
                 "[{-h}] [{--headless}] " +
                 "[{-d,--debug}] " +
-                "[{-e,--experimental}]" +
+                "[{-e,--export}]" +
                 "[{-t,--testnet}]" +
                 "[{--remote}]" +
                 "[{-t,--testnet} false] " +

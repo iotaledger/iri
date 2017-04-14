@@ -2,7 +2,9 @@ package com.iota.iri.service;
 
 import static io.undertow.Handlers.path;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -288,6 +290,23 @@ public class API {
             final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
             transactionViewModel.store();
+            if (Configuration.booling(DefaultConfSettings.EXPORT)) {
+                String filename = "./export/" + String.valueOf(Node.getFileNumber()) + ".tx";
+                PrintWriter writer = null;
+                try {
+                    writer = new PrintWriter(filename, "UTF-8");
+                } catch (FileNotFoundException e) {
+                    log.error("File export failed", e);
+                } catch (UnsupportedEncodingException e) {
+                    log.error("File export failed", e);
+                }
+                if (writer != null) {
+                    writer.println(transactionViewModel.getHash().toString());
+                    writer.println(Converter.trytes(transactionViewModel.trits()));
+                    writer.println("local");
+                    writer.close();
+                }
+            }
         }
         return AbstractResponse.createEmptyResponse();
     }

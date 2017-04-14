@@ -216,7 +216,9 @@ public class TipsManager {
             Map<Hash, Integer> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
             try {
+                int traversedTails = 0;
                 Hash tip = preferableMilestone;
+                Hash tail = tip;
                 if (extraTip != null) {
                     TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
                     while (milestoneDepth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
@@ -256,7 +258,7 @@ public class TipsManager {
                             break;
                         }
                     }
-                    transactionViewModel = TransactionViewModel.fromHash(tips[carlo]).getBundle().getTail();
+                    transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                     if (transactionViewModel == null) {
                         break;
                     } else if (!(checkSolidity(transactionViewModel.getHash()) && updateFromSnapshot(transactionViewModel.getHash()))) {
@@ -264,10 +266,15 @@ public class TipsManager {
                     } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)) {
                         break;
                     } else {
+                        traversedTails++;
                         tip = transactionViewModel.getHash();
+                        if(transactionViewModel.getCurrentIndex() == 0) {
+                            tail = tip;
+                        }
                     }
                 }
-                return tip;
+                log.info("Tails traversed: " + traversedTails);
+                return tail;
             } catch (Exception e) {
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());

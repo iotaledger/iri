@@ -1,6 +1,5 @@
 package com.iota.iri.service.viewModels;
 
-import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
@@ -19,7 +18,7 @@ import static org.junit.Assert.*;
 public class MilestoneViewModelTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
-    int index = 0;
+    int index = 30;
 
     @BeforeClass
     public static void setUp() throws Exception {
@@ -110,6 +109,37 @@ public class MilestoneViewModelTest {
     }
 
     @Test
+    public void first() throws Exception {
+        int first = 1;
+        Hash milestoneHash = new Hash("99CDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
+        MilestoneViewModel milestoneViewModel = new MilestoneViewModel(first, milestoneHash);
+        milestoneViewModel.store();
+        assertTrue(first == MilestoneViewModel.first().index());
+    }
+
+    @Test
+    public void next() throws Exception {
+        int first = 1;
+        int next = 2;
+        MilestoneViewModel firstMilestone = new MilestoneViewModel(first, new Hash("99CDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        firstMilestone.store();
+        new MilestoneViewModel(next, new Hash("9ACDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store();
+
+        assertTrue(next == MilestoneViewModel.first().next().index());
+    }
+
+    @Test
+    public void previous() throws Exception {
+        int first = 1;
+        int next = 2;
+        MilestoneViewModel nextMilestone = new MilestoneViewModel(next, new Hash("99CDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        nextMilestone.store();
+        new MilestoneViewModel(first, new Hash("9ACDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store();
+
+        assertTrue(first == nextMilestone.previous().index());
+    }
+
+    @Test
     public void latestSnapshot() throws Exception {
         int nosnapshot = 90;
         int topSnapshot = 80;
@@ -122,5 +152,33 @@ public class MilestoneViewModelTest {
         milestoneViewModeltopSnapshot.initSnapshot(Snapshot.initialState);
         milestoneViewModeltopSnapshot.store();
         assertTrue(topSnapshot == MilestoneViewModel.latestWithSnapshot().index());
+    }
+
+    @Test
+    public void firstWithSnapshot() throws Exception {
+        int first = 5;
+        int firstSnapshot = 6;
+        int next = 7;
+        new MilestoneViewModel(first, new Hash("FBCDEFGHIJ9LMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store();
+        MilestoneViewModel milestoneViewModelmid = new MilestoneViewModel(next, new Hash("GBCDE9GHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        milestoneViewModelmid.initSnapshot(Snapshot.initialState);
+        milestoneViewModelmid.store();
+        MilestoneViewModel milestoneViewModeltopSnapshot = new MilestoneViewModel(firstSnapshot, new Hash("GBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYA9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        milestoneViewModeltopSnapshot.initSnapshot(Snapshot.initialState);
+        milestoneViewModeltopSnapshot.store();
+        assertTrue(firstSnapshot == MilestoneViewModel.firstWithSnapshot().index());
+    }
+
+    @Test
+    public void nextWithSnapshot() throws Exception {
+        int firstSnapshot = 8;
+        int next = 9;
+        MilestoneViewModel milestoneViewModelmid = new MilestoneViewModel(next, new Hash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        milestoneViewModelmid.initSnapshot(Snapshot.initialState);
+        milestoneViewModelmid.store();
+        MilestoneViewModel milestoneViewModel = new MilestoneViewModel(firstSnapshot, new Hash("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        milestoneViewModel.initSnapshot(Snapshot.initialState);
+        milestoneViewModel.store();
+        assertTrue(next == milestoneViewModel.nextWithSnapshot().index());
     }
 }

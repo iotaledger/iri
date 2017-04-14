@@ -12,7 +12,6 @@ import org.rocksdb.*;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -65,7 +64,10 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private final Map<Class<?>, MyFunction<Object, Object>> setKeyMap = new HashMap<>();
     private final Map<Class<?>, MyFunction<Object, Boolean>> loadMap = new HashMap<>();
     private final Map<Class<?>, MyFunction<Object, Boolean>> mayExistMap = new HashMap<>();
+    private final Map<Class<?>, MyFunction<Object, Object>> nextMap = new HashMap<>();
+    private final Map<Class<?>, MyFunction<Object, Object>> prevMap = new HashMap<>();
     private final Map<Class<?>, MyRunnable<Object>> latestMap = new HashMap<>();
+    private final Map<Class<?>, MyRunnable<Object>> firstMap = new HashMap<>();
     private final Map<Class<?>, ColumnFamilyHandle> countMap = new HashMap<>();
 
     private final SecureRandom seed = new SecureRandom();
@@ -92,23 +94,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         initMayExistMap();
         initDeleteMap();
         initCountMap();
-        initLatestMap();
+        initIteratingMaps();
         available = true;
         log.info("RocksDB persistence provider initialized.");
-        /*
-        restartThread = new Thread(() -> {
-            try {
-                Thread.sleep(compationWaitTime * 3);
-                available = false;
-                Thread.sleep(1000);
-                shutdown();
-                init();
-            } catch (Exception e) {
-                log.info("Could not restart RocksDB");
-            }
-        });
-        restartThread.start();
-        */
     }
 
     @Override
@@ -116,8 +104,11 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return this.available;
     }
 
-    private void initLatestMap() {
+    private void initIteratingMaps() {
+        firstMap.put(Milestone.class, firstMilestone);
         latestMap.put(Milestone.class, latestMilestone);
+        nextMap.put(Milestone.class, nextMilestone);
+        prevMap.put(Milestone.class, previousMilestone);
     }
 
     private void initSetKeyMap() {
@@ -302,31 +293,23 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return null;
     }
 
-    private MyRunnable<Object> latestMilestone = () -> {
-        Milestone milestone = new Milestone();
-        RocksIterator iterator = db.newIterator(milestoneHandle);
-        iterator.seekToLast();
-        if(iterator.isValid()) {
-            milestone.index = Serializer.getInteger(iterator.key());
-        }
-        if(milestone.index == null) {
-            return null;
-        }
-        return milestone;
-    };
-
     @Override
-    public Object[] getKeys(Class<?> modelClass) throws Exception {
+    public Object[] keysWithMissingReferences(Class<?> modelClass) throws Exception {
         if(modelClass == Transaction.class) {
             return getMissingTransactions();
         }
-        List<byte[]> tips = new ArrayList<>();
-        RocksIterator iterator = db.newIterator(tipHandle);
-        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            tips.add(iterator.key());
+        if(modelClass == Tip.class) {
+            List<byte[]> tips = new ArrayList<>();
+            RocksIterator iterator = db.newIterator(transactionHandle);
+            for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                if(db.get(approoveeHandle, iterator.key()) == null) {
+                    tips.add(iterator.key());
+                }
+            }
+            iterator.close();
+            return tips.stream().map(Hash::new).toArray();
         }
-        iterator.close();
-        return tips.stream().map(Hash::new).toArray();
+        throw new NotImplementedException("Not implemented");
     }
 
     private Object[] getMissingTransactions() throws RocksDBException {
@@ -416,6 +399,64 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return false;
     };
 
+    private MyRunnable<Object> firstMilestone = () -> {
+        Milestone milestone = new Milestone();
+        RocksIterator iterator = db.newIterator(milestoneHandle);
+        iterator.seekToFirst();
+        if(iterator.isValid()) {
+            milestone.index = Serializer.getInteger(iterator.key());
+            getMilestone.apply(milestone);
+        }
+        if(milestone.index == null) {
+            return null;
+        }
+        return milestone;
+    };
+
+    private MyRunnable<Object> latestMilestone = () -> {
+        Milestone milestone = new Milestone();
+        RocksIterator iterator = db.newIterator(milestoneHandle);
+        iterator.seekToLast();
+        if(iterator.isValid()) {
+            milestone.index = Serializer.getInteger(iterator.key());
+            getMilestone.apply(milestone);
+        }
+        if(milestone.index == null) {
+            return null;
+        }
+        return milestone;
+    };
+
+    private MyFunction<Object, Object> nextMilestone = (start) -> {
+        Milestone milestone = new Milestone();
+        RocksIterator iterator = db.newIterator(milestoneHandle);
+        iterator.seek(Serializer.serialize((int)start));
+        iterator.next();
+        if(iterator.isValid()) {
+            milestone.index = Serializer.getInteger(iterator.key());
+            getMilestone.apply(milestone);
+        }
+        if(milestone.index == null) {
+            return null;
+        }
+        return milestone;
+    };
+
+    private MyFunction<Object, Object> previousMilestone = (start) -> {
+        Milestone milestone = new Milestone();
+        RocksIterator iterator = db.newIterator(milestoneHandle);
+        iterator.seek(Serializer.serialize((int)start));
+        iterator.prev();
+        if(iterator.isValid()) {
+            milestone.index = Serializer.getInteger(iterator.key());
+            getMilestone.apply(milestone);
+        }
+        if(milestone.index == null) {
+            return null;
+        }
+        return milestone;
+    };
+
     private final MyFunction<Object, Boolean> getBundle = bundleObj -> {
         Bundle bundle = ((Bundle) bundleObj);
         byte[] result = db.get(bundleHandle, bundle.hash.bytes());
@@ -483,6 +524,33 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         }
         loadMap.get(model).apply(out);
         return out;
+    }
+
+    @Override
+    public Object next(Class<?> model, int index) throws Exception {
+        MyFunction<Object, Object> locator = nextMap.get(model);
+        if(locator != null) {
+            return locator.apply(index);
+        }
+        return null;
+    }
+
+    @Override
+    public Object previous(Class<?> model, int index) throws Exception {
+        MyFunction<Object, Object> locator = prevMap.get(model);
+        if(locator != null) {
+            return locator.apply(index);
+        }
+        return null;
+    }
+
+    @Override
+    public Object first(Class<?> model) throws Exception {
+        MyRunnable<Object> locator = firstMap.get(model);
+        if(locator != null) {
+            return locator.run();
+        }
+        return null;
     }
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {

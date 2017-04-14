@@ -104,12 +104,12 @@ public class Tangle {
         return instance;
     }
 
-    public Future<Object[]> scanForTips(Class<?> modelClass) {
+    public Future<Object[]> keysWithMissingReferences(Class<?> modelClass) {
         return executor.submit(() -> {
             Object[] output = new Object[0];
             for(IPersistenceProvider provider: this.persistenceProviders) {
                 //while(!provider.isAvailable()) {}
-                output = provider.getKeys(modelClass);
+                output = provider.keysWithMissingReferences(modelClass);
                 if(output != null && output.length > 0) {
                     break;
                 }
@@ -175,6 +175,46 @@ public class Tangle {
                 }
             }
             return out;
+        });
+    }
+
+    public Future<Object> next(Class<?> model, int index) {
+        return executor.submit(() -> {
+            Object latest = null;
+            for(IPersistenceProvider provider: persistenceProviders) {
+                //while(!provider.isAvailable()) {}
+                if(latest == null) {
+                    latest = provider.next(model, index);
+                }
+            }
+            return latest;
+
+        });
+    }
+    public Future<Object> previous(Class<?> model, int index) {
+        return executor.submit(() -> {
+            Object latest = null;
+            for(IPersistenceProvider provider: persistenceProviders) {
+                //while(!provider.isAvailable()) {}
+                if(latest == null) {
+                    latest = provider.previous(model, index);
+                }
+            }
+            return latest;
+
+        });
+    }
+
+    public Future<Object> getFirst(Class<?> model) {
+        return executor.submit(() -> {
+            Object latest = null;
+            for(IPersistenceProvider provider: persistenceProviders) {
+                //while(!provider.isAvailable()) {}
+                if(latest == null) {
+                    latest = provider.first(model);
+                }
+            }
+            return latest;
         });
     }
 }

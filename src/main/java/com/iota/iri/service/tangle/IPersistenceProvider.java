@@ -19,7 +19,7 @@ public interface IPersistenceProvider {
 
     Object latest(Class<?> model) throws Exception;
 
-    Object[] getKeys(Class<?> modelClass) throws Exception;
+    Object[] keysWithMissingReferences(Class<?> modelClass) throws Exception;
 
     boolean get(Object model) throws Exception;
 
@@ -30,4 +30,9 @@ public interface IPersistenceProvider {
     Hash[] keysStartingWith(Class<?> modelClass, byte[] value);
 
     Object seek(Class<?> model, byte[] key) throws Exception;
+
+    Object next(Class<?> model, int index) throws Exception;
+    Object previous(Class<?> model, int index) throws Exception;
+
+    Object first(Class<?> model) throws Exception;
 }

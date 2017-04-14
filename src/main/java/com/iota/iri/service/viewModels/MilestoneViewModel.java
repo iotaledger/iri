@@ -4,9 +4,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.Milestone;
 import com.iota.iri.service.tangle.Tangle;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -50,6 +48,14 @@ public class MilestoneViewModel {
         return false;
     }
 
+    public static MilestoneViewModel first() throws ExecutionException, InterruptedException {
+        Object msObj = Tangle.instance().getFirst(Milestone.class).get();
+        if(msObj != null && msObj instanceof Milestone) {
+            return new MilestoneViewModel((Milestone) msObj);
+        }
+        return null;
+    }
+
     public static MilestoneViewModel latest() throws ExecutionException, InterruptedException {
         Object msObj = Tangle.instance().getLatest(Milestone.class).get();
         if(msObj != null && msObj instanceof Milestone) {
@@ -58,21 +64,42 @@ public class MilestoneViewModel {
         return null;
     }
 
+    public MilestoneViewModel previous() throws ExecutionException, InterruptedException {
+        Object milestone = Tangle.instance().previous(Milestone.class, index()).get();
+        if(milestone != null && milestone instanceof Milestone) {
+            return new MilestoneViewModel((Milestone) milestone);
+        }
+        return null;
+    }
+
+    public MilestoneViewModel next() throws ExecutionException, InterruptedException {
+        Object milestone = Tangle.instance().next(Milestone.class, index()).get();
+        if(milestone != null && milestone instanceof Milestone) {
+            return new MilestoneViewModel((Milestone) milestone);
+        }
+        return null;
+    }
+
+    public MilestoneViewModel nextWithSnapshot() throws ExecutionException, InterruptedException {
+        MilestoneViewModel milestoneViewModel = next();
+        while(milestoneViewModel !=null && milestoneViewModel.snapshot() == null) {
+            milestoneViewModel = milestoneViewModel.next();
+        }
+        return milestoneViewModel;
+    }
+
+    public static MilestoneViewModel firstWithSnapshot() throws ExecutionException, InterruptedException {
+        MilestoneViewModel milestoneViewModel = first();
+        while(milestoneViewModel !=null && milestoneViewModel.snapshot() == null) {
+            milestoneViewModel = milestoneViewModel.next();
+        }
+        return milestoneViewModel;
+    }
+
     public static MilestoneViewModel latestWithSnapshot() throws ExecutionException, InterruptedException {
         MilestoneViewModel milestoneViewModel = latest();
-        if(milestoneViewModel != null) {
-            int index = milestoneViewModel.index();
-            if (milestoneViewModel.snapshot() == null) {
-                milestoneViewModel = null;
-                do {
-                    if (--index < 0) {
-                        break;
-                    }
-                } while (!MilestoneViewModel.load(index) || MilestoneViewModel.get(index).snapshot() == null);
-            }
-            if (index >= 0) {
-                milestoneViewModel = MilestoneViewModel.get(index);
-            }
+        while(milestoneViewModel !=null && milestoneViewModel.snapshot() == null) {
+            milestoneViewModel = milestoneViewModel.previous();
         }
         return milestoneViewModel;
     }
@@ -107,4 +134,5 @@ public class MilestoneViewModel {
     public void delete() {
         Tangle.instance().delete(milestoneModel);
     }
+
 }

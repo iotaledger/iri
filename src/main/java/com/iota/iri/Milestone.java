@@ -1,16 +1,12 @@
 package com.iota.iri;
 
+import java.util.*;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -27,12 +23,10 @@ import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
-
-
 public class Milestone {
 
     private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
-    
+
     public static Hash latestMilestone = Hash.NULL_HASH;
     public static Hash latestSolidSubtangleMilestone = latestMilestone;
     
@@ -143,42 +137,46 @@ public class Milestone {
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex + 1; milestoneIndex <= latestMilestoneIndex; milestoneIndex++) {
-            final Hash milestone = findMilestone(milestoneIndex);
-            if (!TipsManager.checkSolidity(milestone)) {
+            final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
+            if (milestone.getKey() == 0 || !TipsManager.checkSolidity(milestone.getValue())) {
                 break;
             }
-            if (milestone != null) {
-                latestSolidSubtangleMilestone = milestone;
+            milestoneIndex = milestone.getKey();
+            if (milestone.getKey() != 0) {
+                latestSolidSubtangleMilestone = milestone.getValue();
                 latestSolidSubtangleMilestoneIndex = milestoneIndex;
             }
         }
     }
 
-    public static Hash findMilestone(int milestoneIndexToLoad) throws Exception {
+    private static int getIndex(TransactionViewModel transactionViewModel) {
+        return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
+    }
+
+    public static Map.Entry<Integer, Hash> findMilestone(int milestoneIndexToLoad) throws Exception {
+        Map.Entry<Integer, Hash> output;
         AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.instance.coordinatorHash);
         Hash hashToLoad = getMilestone(milestoneIndexToLoad);
+        int index;
         if(hashToLoad == null) {
-            int closestGreaterMilestone = latestMilestoneIndex;
-            Hash[] hashes = Arrays.stream(coordinatorAddress.getTransactionHashes()).filter(h -> !milestones.keySet().contains(h)).toArray(Hash[]::new);
-            for (final Hash hash : hashes) {
-                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash).getBundle().getTail();
-                if(transactionViewModel != null) {
-                    int milestoneIndex = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET,
-                            15);
-                    milestones.put(milestoneIndex, transactionViewModel.getHash());
-                    if (milestoneIndex >= milestoneIndexToLoad && milestoneIndex < closestGreaterMilestone) {
-                        closestGreaterMilestone = milestoneIndex;
-                        hashToLoad = transactionViewModel.getHash();
-                    }
-                    if (milestoneIndex == milestoneIndexToLoad) {
-                        return transactionViewModel.getHash();
-                    }
-                }
-            }
+            Arrays.stream(coordinatorAddress.getTransactionHashes())
+                    .parallel()
+                    .map(TransactionViewModel::quietFromHash)
+                    .map(t -> new AbstractMap.SimpleEntry<>(getIndex(t), t.quietGetBundle().quietGetTail().getHash()))
+                    .forEach(e -> milestones.putIfAbsent(e.getKey(), e.getValue()));
+            index = milestones.keySet()
+                            .stream()
+                            .filter(e -> e.compareTo(milestoneIndexToLoad ) >= 0)
+                            .sorted()
+                            .findFirst()
+                            .orElse(-1);
+            output = new AbstractMap.SimpleEntry<>(index, index != -1 ? milestones.get(index) : Hash.NULL_HASH);
+        } else {
+            output = new AbstractMap.SimpleEntry<>(milestoneIndexToLoad, hashToLoad);
         }
-        return hashToLoad;
+        return output;
     }
-    
+
     public static void reportToSlack(final int milestoneIndex, final int depth, final int nextDepth) {
 
         try {

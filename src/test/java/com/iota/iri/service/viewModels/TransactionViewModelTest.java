@@ -7,7 +7,6 @@ import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.service.tangle.Tangle;
-import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.service.tangle.rocksDB.RocksDBPersistenceProviderTest;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;

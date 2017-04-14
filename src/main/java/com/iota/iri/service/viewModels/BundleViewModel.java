@@ -13,6 +13,14 @@ public class BundleViewModel {
     private final Bundle bundle;
     private TransactionViewModel[] transactionViewModels;
 
+    public static BundleViewModel quietFromHash(Hash hash) {
+        try {
+            return fromHash(hash);
+        } catch (Exception e) {
+            return new BundleViewModel(null);
+        }
+    }
+
     public static BundleViewModel fromHash(Hash hash) throws Exception {
         Bundle bundle = new Bundle();
         bundle.hash = hash;
@@ -21,7 +29,7 @@ public class BundleViewModel {
     }
 
     private BundleViewModel(Bundle bundle) {
-        this.bundle = bundle;
+        this.bundle = bundle == null ? new Bundle() : bundle;
     }
 
     public TransactionViewModel[] getTransactionViewModels() throws Exception {
@@ -39,6 +47,13 @@ public class BundleViewModel {
             }
         }
         return transactionViewModels;
+    }
+    public TransactionViewModel quietGetTail() {
+        try {
+            return getTail();
+        } catch (Exception e) {
+            return null;
+        }
     }
     public TransactionViewModel getTail() throws Exception {
         getTransactionViewModels();

@@ -1,14 +1,21 @@
 package com.iota.iri;
-import java.util.HashMap;
-import java.util.Map;
-
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.viewModels.TransactionViewModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.stream.Collectors;
+
 
 public class Snapshot {
+    private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
 
-    public static final Map<Hash, Long> initialState = new HashMap<>();
-    public static final Map<Hash, Long> latestState = new HashMap<>();
+    public static final Map<
+            Hash, Long> initialState = new HashMap<>();
+    public static final Snapshot latestSnapshot;
 
     static {
         initialState.put(Hash.NULL_HASH, 908343229829300L);
@@ -168,6 +175,83 @@ public class Snapshot {
         initialState.put(new Hash("ESKJOWWRCMQDIBX9VJBR9UIUDRWTMQPIUK9ZZKQRNCPSAYTMQCOB9EHYTPACZHCMHCBZYUAKDHKYYNMZP"), 18166864596586L);
 
 
-        latestState.putAll(initialState);
+        latestSnapshot = new Snapshot(initialState);
+    }
+
+    private final Map<Hash, Long> state;
+
+    public Snapshot(Snapshot snapshot) {
+        state = new HashMap<>(snapshot.state);
+    }
+
+    private Snapshot(Map<Hash, Long> initialState) {
+        state = new HashMap<>(initialState);
+    }
+
+    public Map<Hash, Long> getState() {
+        return state;
+    }
+
+    public Map<Hash, Long> diff(Map<Hash, Long> newState) {
+        return newState.entrySet().parallelStream()
+                .map(hashLongEntry ->
+                        new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
+                                hashLongEntry.getValue() -
+                                        (state.containsKey(hashLongEntry.getKey()) ?
+                                                state.get(hashLongEntry.getKey()): 0) ))
+                .filter(e -> e.getValue() != 0L)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+
+    public Snapshot patch(Map<Hash, Long> diff) {
+        Map<Hash, Long> patchedState = state.entrySet().parallelStream()
+                .map( hashLongEntry ->
+                        new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
+                                hashLongEntry.getValue() +
+                                        (diff.containsKey(hashLongEntry.getKey()) ?
+                                         diff.get(hashLongEntry.getKey()) : 0)) )
+                .filter(e -> e.getValue() != 0L)
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        diff.entrySet().stream()
+                .filter(e -> e.getValue() > 0L)
+                .forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
+        return new Snapshot(patchedState);
+    }
+
+    public void merge(Snapshot snapshot) {
+        state.clear();
+        state.putAll(snapshot.state);
+    }
+
+    public boolean isConsistent() {
+        long stateValue = state.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
+        if(stateValue != TransactionViewModel.SUPPLY) {
+            long difference = TransactionViewModel.SUPPLY - stateValue;
+            log.error("Inconsistent ledger. Missing: " + difference);
+            return false;
+        }
+        final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
+        while (stateIterator.hasNext()) {
+
+            final Map.Entry<Hash, Long> entry = stateIterator.next();
+            if (entry.getValue() <= 0) {
+
+                if (entry.getValue() < 0) {
+                    log.info("Ledger inconsistency detected");
+                    return false;
+                }
+
+                stateIterator.remove();
+            }
+            //////////// --Coo only--
+                /*
+                 * if (entry.getValue() > 0) {
+                 *
+                 * System.out.ln("initialState.put(new Hash(\"" + entry.getKey()
+                 * + "\"), " + entry.getValue() + "L);"); }
+                 */
+            ////////////
+        }
+        return true;
     }
 }

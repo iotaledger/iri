@@ -160,21 +160,27 @@ public class Milestone {
     }
 
     public static Map.Entry<Integer, Hash> findMilestone(int milestoneIndexToLoad) throws Exception {
+        Map.Entry<Integer, Hash> output;
         AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.instance.coordinatorHash);
         Hash hashToLoad = getMilestone(milestoneIndexToLoad);
+        int index;
         if(hashToLoad == null) {
             Arrays.stream(coordinatorAddress.getTransactionHashes())
                     .parallel()
                     .map(TransactionViewModel::quietFromHash)
                     .map(t -> new AbstractMap.SimpleEntry<>(getIndex(t), t.quietGetBundle().quietGetTail().getHash()))
                     .forEach(e -> milestones.putIfAbsent(e.getKey(), e.getValue()));
-            return milestones.entrySet().parallelStream()
-                    .filter(e -> e.getKey() >= milestoneIndexToLoad)
-                    .sorted()
-                    .findFirst()
-                    .orElse(new AbstractMap.SimpleEntry<>(0, Hash.NULL_HASH));
+            index = milestones.keySet()
+                            .stream()
+                            .filter(e -> e.compareTo(milestoneIndexToLoad ) >= 0)
+                            .sorted()
+                            .findFirst()
+                            .orElse(-1);
+            output = new AbstractMap.SimpleEntry<>(index, index != -1 ? milestones.get(index) : Hash.NULL_HASH);
+        } else {
+            output = new AbstractMap.SimpleEntry<>(milestoneIndexToLoad, hashToLoad);
         }
-        return new AbstractMap.SimpleEntry<>(milestoneIndexToLoad, hashToLoad);
+        return output;
     }
 
     public static void reportToSlack(final int milestoneIndex, final int depth, final int nextDepth) {

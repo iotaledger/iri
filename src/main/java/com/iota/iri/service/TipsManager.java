@@ -26,9 +26,10 @@ public class TipsManager {
 
     private static boolean shuttingDown;
 
-    private static int numberOfConfirmedTransactions;
+    private static final Object updateSyncObject = new Object();
     private static final Snapshot stateSinceMilestone = new Snapshot(latestSnapshot);
     private static final Set<Hash> consistentHashes = new HashSet<>();
+    private static volatile int numberOfConfirmedTransactions;
 
     public static void setRATING_THRESHOLD(int value) {
         if (value < 0) value = 0;
@@ -97,7 +98,7 @@ public class TipsManager {
                                 Milestone.latestSolidSubtangleMilestone);
                         milestoneViewModel.store();
                         updateSnapshot(milestoneViewModel);
-                        synchronized (stateSinceMilestone) {
+                        synchronized (updateSyncObject) {
                             stateSinceMilestone.merge(latestSnapshot);
                         }
 
@@ -184,17 +185,15 @@ public class TipsManager {
         boolean isConsistent = transactionViewModel.hasSnapshot();
         if(!isConsistent) {
             Hash tail = transactionViewModel.getHash();
-            Map<Hash, Long> currentState = getCurrentState(tail, latestSnapshot.getState(), true);
-            isConsistent = currentState != null && latestSnapshot.patch(latestSnapshot.diff(currentState)).isConsistent();
+            Map<Hash, Long> currentState = getLatestDiff(tail, true);
+            isConsistent = currentState != null && latestSnapshot.patch(currentState).isConsistent();
             if (isConsistent) {
-                synchronized (consistentHashes) {
-                    synchronized (latestSnapshot) {
-                        updateSnapshotMilestone(milestone.getHash(), true);
-                        consistentHashes.clear();
-                        milestone.initSnapshot(latestSnapshot.diff(currentState));
-                        milestone.updateSnapshot();
-                        latestSnapshot.merge(latestSnapshot.patch(milestone.snapshot()));
-                    }
+                synchronized (updateSyncObject) {
+                    updateSnapshotMilestone(milestone.getHash(), true);
+                    consistentHashes.clear();
+                    milestone.initSnapshot(currentState);
+                    milestone.updateSnapshot();
+                    latestSnapshot.merge(latestSnapshot.patch(milestone.snapshot()));
                 }
             }
         }
@@ -206,14 +205,12 @@ public class TipsManager {
         boolean isConsistent = consistentHashes.contains(tip);
         if(!isConsistent) {
             Hash tail = transactionViewModel.getHash();
-            Map<Hash, Long> currentState = getCurrentState(tail, stateSinceMilestone.getState(), false);
-            isConsistent = currentState != null && latestSnapshot.patch(latestSnapshot.diff(currentState)).isConsistent();
+            Map<Hash, Long> currentState = getLatestDiff(tail, false);
+            isConsistent = currentState != null && latestSnapshot.patch(currentState).isConsistent();
             if (isConsistent) {
-                synchronized (consistentHashes) {
+                synchronized (updateSyncObject) {
                     updateConsistentHashes(tip);
-                }
-                synchronized (stateSinceMilestone) {
-                    stateSinceMilestone.merge(stateSinceMilestone.patch(stateSinceMilestone.diff(currentState)));
+                    stateSinceMilestone.merge(stateSinceMilestone.patch(currentState));
                 }
             }
         }
@@ -665,8 +662,8 @@ public class TipsManager {
         tailsToAnalyze.addAll(tailsWithoutApprovers);    // ...and add to the very end
     }
 
-    private static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot, boolean milestone) throws Exception {
-        Map<Hash, Long> state = new HashMap<>(snapshot);
+    private static Map<Hash,Long> getLatestDiff(Hash tip, boolean milestone) throws Exception {
+        Map<Hash, Long> state = new HashMap<>();
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
         Set<Hash> countedTx = new HashSet<>(Collections.singleton(Hash.NULL_HASH));

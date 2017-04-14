@@ -125,20 +125,16 @@ public class TipsManager {
         log.info("Latest Milestone index: " + Milestone.latestMilestoneIndex);
         Milestone.updateLatestSolidSubtangleMilestone();
         log.info("Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
-        MilestoneViewModel latestWithSnapshot = MilestoneViewModel.latestWithSnapshot();
-        while(latestWithSnapshot != null && !ledgerIsConsistent(latestWithSnapshot.snapshot())) {
-            updateSnapshotMilestone(latestWithSnapshot.getHash(), false);
-            latestWithSnapshot.delete();
-            latestWithSnapshot = MilestoneViewModel.latestWithSnapshot();
+        MilestoneViewModel latestConsistentMilestone = buildSnapshot();
+        if(latestConsistentMilestone != null) {
+            updateSnapshotMilestone(latestConsistentMilestone.getHash(), true);
         }
-        if(latestWithSnapshot != null) {
-            updateSnapshotMilestone(latestWithSnapshot.getHash(), true);
-        }
-        int i = latestWithSnapshot == null? Milestone.MILESTONE_START_INDEX: latestWithSnapshot.index();
+        int i = latestConsistentMilestone == null? Milestone.MILESTONE_START_INDEX: latestConsistentMilestone.index();
         while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
             start = System.currentTimeMillis();
             if(!MilestoneViewModel.load(i)) {
-                new MilestoneViewModel(i, Milestone.findMilestone(i)).store();
+                Map.Entry<Integer, Hash> closestGreaterMilestone = Milestone.findMilestone(i);
+                new MilestoneViewModel(closestGreaterMilestone.getKey(), closestGreaterMilestone.getValue()).store();
             }
             if(updateSnapshot(MilestoneViewModel.get(i))) {
                 log.info("Snapshot created at Milestone: " + i);
@@ -152,6 +148,27 @@ public class TipsManager {
             }
         }
         stateSinceMilestone.merge(latestSnapshot);
+    }
+
+    private static MilestoneViewModel buildSnapshot() throws Exception {
+        Snapshot updatedSnapshot = Snapshot.latestSnapshot;
+        MilestoneViewModel consistentMilestone = null;
+        MilestoneViewModel snapshotMilestone = MilestoneViewModel.firstWithSnapshot();
+        while(snapshotMilestone != null) {
+            updatedSnapshot = updatedSnapshot.patch(snapshotMilestone.snapshot());
+            if(updatedSnapshot.isConsistent()) {
+                consistentMilestone = snapshotMilestone;
+                latestSnapshot.merge(updatedSnapshot);
+                snapshotMilestone = snapshotMilestone.nextWithSnapshot();
+            } else {
+                while (snapshotMilestone != null) {
+                    updateSnapshotMilestone(snapshotMilestone.getHash(), false);
+                    snapshotMilestone.delete();
+                    snapshotMilestone = snapshotMilestone.nextWithSnapshot();
+                }
+            }
+        }
+        return consistentMilestone;
     }
 
     private static int getSeparator(long duration, long expected, int separator, int currentIndex, int max) {
@@ -168,16 +185,16 @@ public class TipsManager {
         if(!isConsistent) {
             Hash tail = transactionViewModel.getHash();
             Map<Hash, Long> currentState = getCurrentState(tail, latestSnapshot.getState(), true);
-            isConsistent = currentState != null && ledgerIsConsistent(currentState);
+            isConsistent = currentState != null && latestSnapshot.patch(latestSnapshot.diff(currentState)).isConsistent();
             if (isConsistent) {
-                updateSnapshotMilestone(milestone.getHash(), true);
                 synchronized (consistentHashes) {
-                    consistentHashes.clear();
-                }
-                milestone.initSnapshot(latestSnapshot.diff(currentState));
-                milestone.updateSnapshot();
-                synchronized (latestSnapshot) {
-                    latestSnapshot.merge(latestSnapshot.patch(milestone.snapshot()));
+                    synchronized (latestSnapshot) {
+                        updateSnapshotMilestone(milestone.getHash(), true);
+                        consistentHashes.clear();
+                        milestone.initSnapshot(latestSnapshot.diff(currentState));
+                        milestone.updateSnapshot();
+                        latestSnapshot.merge(latestSnapshot.patch(milestone.snapshot()));
+                    }
                 }
             }
         }
@@ -190,7 +207,7 @@ public class TipsManager {
         if(!isConsistent) {
             Hash tail = transactionViewModel.getHash();
             Map<Hash, Long> currentState = getCurrentState(tail, stateSinceMilestone.getState(), false);
-            isConsistent = currentState != null && ledgerIsConsistent(currentState);
+            isConsistent = currentState != null && latestSnapshot.patch(latestSnapshot.diff(currentState)).isConsistent();
             if (isConsistent) {
                 synchronized (consistentHashes) {
                     updateConsistentHashes(tip);
@@ -646,38 +663,6 @@ public class TipsManager {
         }
         tailsToAnalyze.removeAll(tailsWithoutApprovers); // Remove them from where they are...
         tailsToAnalyze.addAll(tailsWithoutApprovers);    // ...and add to the very end
-    }
-
-    private static boolean ledgerIsConsistent(Map<Hash, Long> state) {
-        long stateValue = state.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
-        if(stateValue != TransactionViewModel.SUPPLY) {
-            long difference = TransactionViewModel.SUPPLY - stateValue;
-            log.error("Inconsistent ledger. Missing: " + difference);
-            return false;
-        }
-        final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
-        while (stateIterator.hasNext()) {
-
-            final Map.Entry<Hash, Long> entry = stateIterator.next();
-            if (entry.getValue() <= 0) {
-
-                if (entry.getValue() < 0) {
-                    log.info("Ledger inconsistency detected");
-                    return false;
-                }
-
-                stateIterator.remove();
-            }
-            //////////// --Coo only--
-                /*
-                 * if (entry.getValue() > 0) {
-                 *
-                 * System.out.ln("initialState.put(new Hash(\"" + entry.getKey()
-                 * + "\"), " + entry.getValue() + "L);"); }
-                 */
-            ////////////
-        }
-        return true;
     }
 
     private static Map<Hash,Long> getCurrentState(Hash tip, Map<Hash, Long> snapshot, boolean milestone) throws Exception {

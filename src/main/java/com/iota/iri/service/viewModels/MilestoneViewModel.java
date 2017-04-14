@@ -66,23 +66,31 @@ public class MilestoneViewModel {
         return null;
     }
 
-    public MilestoneViewModel previous() {
-        Object milestone = Tangle.instance().previous(Milestone.class, index());
+    public MilestoneViewModel previous() throws ExecutionException, InterruptedException {
+        Object milestone = Tangle.instance().previous(Milestone.class, index()).get();
         if(milestone != null && milestone instanceof Milestone) {
             return new MilestoneViewModel((Milestone) milestone);
         }
         return null;
     }
 
-    public MilestoneViewModel next() {
-        Object milestone = Tangle.instance().next(Milestone.class, index());
+    public MilestoneViewModel next() throws ExecutionException, InterruptedException {
+        Object milestone = Tangle.instance().next(Milestone.class, index()).get();
         if(milestone != null && milestone instanceof Milestone) {
             return new MilestoneViewModel((Milestone) milestone);
         }
         return null;
     }
 
-    public MilestoneViewModel nextSnapshot() throws ExecutionException, InterruptedException {
+    public MilestoneViewModel nextWithSnapshot() throws ExecutionException, InterruptedException {
+        MilestoneViewModel milestoneViewModel = next();
+        while(milestoneViewModel !=null && milestoneViewModel.snapshot() == null) {
+            milestoneViewModel = milestoneViewModel.next();
+        }
+        return milestoneViewModel;
+    }
+
+    public static MilestoneViewModel firstWithSnapshot() throws ExecutionException, InterruptedException {
         MilestoneViewModel milestoneViewModel = first();
         while(milestoneViewModel !=null && milestoneViewModel.snapshot() == null) {
             milestoneViewModel = milestoneViewModel.next();
@@ -128,4 +136,5 @@ public class MilestoneViewModel {
     public void delete() {
         Tangle.instance().delete(milestoneModel);
     }
+
 }

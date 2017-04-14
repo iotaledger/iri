@@ -95,6 +95,13 @@ public class TransactionViewModel {
         return new TransactionViewModel(txObject instanceof Transaction ? (Transaction) txObject : null);
     }
 
+    public static TransactionViewModel quietFromHash(final Hash hash) {
+        try {
+            return fromHash(hash);
+        } catch (Exception e) {
+            return new TransactionViewModel(new Transaction());
+        }
+    }
     public static TransactionViewModel fromHash(final Hash hash) throws Exception {
         Transaction transaction = new Transaction(hash);
         Tangle.instance().load(transaction).get();
@@ -264,6 +271,12 @@ public class TransactionViewModel {
         return new TagViewModel(getTagValue());
     }
 
+    public BundleViewModel quietGetBundle() {
+        if(bundleViewModel == null) {
+            bundleViewModel = BundleViewModel.quietFromHash(getBundleHash());
+        }
+        return bundleViewModel;
+    }
     public BundleViewModel getBundle() throws Exception {
         if(bundleViewModel == null) {
             bundleViewModel = BundleViewModel.fromHash(getBundleHash());

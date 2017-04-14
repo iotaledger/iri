@@ -293,60 +293,6 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         return null;
     }
 
-    private MyRunnable<Object> firstMilestone = () -> {
-        Milestone milestone = new Milestone();
-        RocksIterator iterator = db.newIterator(milestoneHandle);
-        iterator.seekToFirst();
-        if(iterator.isValid()) {
-            milestone.index = Serializer.getInteger(iterator.key());
-        }
-        if(milestone.index == null) {
-            return null;
-        }
-        return milestone;
-    };
-
-    private MyRunnable<Object> latestMilestone = () -> {
-        Milestone milestone = new Milestone();
-        RocksIterator iterator = db.newIterator(milestoneHandle);
-        iterator.seekToLast();
-        if(iterator.isValid()) {
-            milestone.index = Serializer.getInteger(iterator.key());
-        }
-        if(milestone.index == null) {
-            return null;
-        }
-        return milestone;
-    };
-
-    private MyFunction<Object, Object> nextMilestone = (start) -> {
-        Milestone milestone = new Milestone();
-        RocksIterator iterator = db.newIterator(milestoneHandle);
-        iterator.seek(Serializer.serialize((int)start));
-        iterator.next();
-        if(iterator.isValid()) {
-            milestone.index = Serializer.getInteger(iterator.key());
-        }
-        if(milestone.index == null) {
-            return null;
-        }
-        return milestone;
-    };
-
-    private MyFunction<Object, Object> previousMilestone = (start) -> {
-        Milestone milestone = new Milestone();
-        RocksIterator iterator = db.newIterator(milestoneHandle);
-        iterator.seek(Serializer.serialize((int)start));
-        iterator.prev();
-        if(iterator.isValid()) {
-            milestone.index = Serializer.getInteger(iterator.key());
-        }
-        if(milestone.index == null) {
-            return null;
-        }
-        return milestone;
-    };
-
     @Override
     public Object[] keysWithMissingReferences(Class<?> modelClass) throws Exception {
         if(modelClass == Transaction.class) {
@@ -451,6 +397,64 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             }
         }
         return false;
+    };
+
+    private MyRunnable<Object> firstMilestone = () -> {
+        Milestone milestone = new Milestone();
+        RocksIterator iterator = db.newIterator(milestoneHandle);
+        iterator.seekToFirst();
+        if(iterator.isValid()) {
+            milestone.index = Serializer.getInteger(iterator.key());
+            getMilestone.apply(milestone);
+        }
+        if(milestone.index == null) {
+            return null;
+        }
+        return milestone;
+    };
+
+    private MyRunnable<Object> latestMilestone = () -> {
+        Milestone milestone = new Milestone();
+        RocksIterator iterator = db.newIterator(milestoneHandle);
+        iterator.seekToLast();
+        if(iterator.isValid()) {
+            milestone.index = Serializer.getInteger(iterator.key());
+            getMilestone.apply(milestone);
+        }
+        if(milestone.index == null) {
+            return null;
+        }
+        return milestone;
+    };
+
+    private MyFunction<Object, Object> nextMilestone = (start) -> {
+        Milestone milestone = new Milestone();
+        RocksIterator iterator = db.newIterator(milestoneHandle);
+        iterator.seek(Serializer.serialize((int)start));
+        iterator.next();
+        if(iterator.isValid()) {
+            milestone.index = Serializer.getInteger(iterator.key());
+            getMilestone.apply(milestone);
+        }
+        if(milestone.index == null) {
+            return null;
+        }
+        return milestone;
+    };
+
+    private MyFunction<Object, Object> previousMilestone = (start) -> {
+        Milestone milestone = new Milestone();
+        RocksIterator iterator = db.newIterator(milestoneHandle);
+        iterator.seek(Serializer.serialize((int)start));
+        iterator.prev();
+        if(iterator.isValid()) {
+            milestone.index = Serializer.getInteger(iterator.key());
+            getMilestone.apply(milestone);
+        }
+        if(milestone.index == null) {
+            return null;
+        }
+        return milestone;
     };
 
     private final MyFunction<Object, Boolean> getBundle = bundleObj -> {

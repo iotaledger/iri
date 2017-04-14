@@ -1,11 +1,17 @@
 package com.iota.iri;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.viewModels.TransactionViewModel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 
 public class Snapshot {
+    private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
 
     public static final Map<
             Hash, Long> initialState = new HashMap<>();
@@ -190,7 +196,9 @@ public class Snapshot {
         return newState.entrySet().parallelStream()
                 .map(hashLongEntry ->
                         new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
-                                hashLongEntry.getValue() - state.get(hashLongEntry.getKey())))
+                                hashLongEntry.getValue() -
+                                        (state.containsKey(hashLongEntry.getKey()) ?
+                                                state.get(hashLongEntry.getKey()): 0) ))
                 .filter(e -> e.getValue() != 0L)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
@@ -204,8 +212,9 @@ public class Snapshot {
                                          diff.get(hashLongEntry.getKey()) : 0)) )
                 .filter(e -> e.getValue() != 0L)
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-
-        diff.entrySet().forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
+        diff.entrySet().stream()
+                .filter(e -> e.getValue() > 0L)
+                .forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
         return new Snapshot(patchedState);
     }
 
@@ -214,4 +223,35 @@ public class Snapshot {
         state.putAll(snapshot.state);
     }
 
+    public boolean isConsistent() {
+        long stateValue = state.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
+        if(stateValue != TransactionViewModel.SUPPLY) {
+            long difference = TransactionViewModel.SUPPLY - stateValue;
+            log.error("Inconsistent ledger. Missing: " + difference);
+            return false;
+        }
+        final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
+        while (stateIterator.hasNext()) {
+
+            final Map.Entry<Hash, Long> entry = stateIterator.next();
+            if (entry.getValue() <= 0) {
+
+                if (entry.getValue() < 0) {
+                    log.info("Ledger inconsistency detected");
+                    return false;
+                }
+
+                stateIterator.remove();
+            }
+            //////////// --Coo only--
+                /*
+                 * if (entry.getValue() > 0) {
+                 *
+                 * System.out.ln("initialState.put(new Hash(\"" + entry.getKey()
+                 * + "\"), " + entry.getValue() + "L);"); }
+                 */
+            ////////////
+        }
+        return true;
+    }
 }

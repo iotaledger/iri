@@ -4,9 +4,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.Milestone;
 import com.iota.iri.service.tangle.Tangle;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;

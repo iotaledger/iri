@@ -1,6 +1,5 @@
 package com.iota.iri.service.viewModels;
 
-import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;

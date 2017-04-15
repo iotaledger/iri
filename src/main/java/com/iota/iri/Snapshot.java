@@ -227,7 +227,7 @@ public class Snapshot {
         long stateValue = state.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
         if(stateValue != TransactionViewModel.SUPPLY) {
             long difference = TransactionViewModel.SUPPLY - stateValue;
-            log.error("Inconsistent ledger. Missing: " + difference);
+            log.error("Ledger balance incorrect: " + difference);
             return false;
         }
         final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
@@ -237,7 +237,7 @@ public class Snapshot {
             if (entry.getValue() <= 0) {
 
                 if (entry.getValue() < 0) {
-                    log.info("Ledger inconsistency detected");
+                    log.info("Skipping negative value for address: " + entry.getKey() + ": " + entry.getValue());
                     return false;
                 }
 

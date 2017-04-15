@@ -207,8 +207,12 @@ public class API {
                                 ).map(Hash::toString).collect(Collectors.toList()));
                     }
                 }
-                default:
-                    return ErrorResponse.create("Command [" + command + "] is unknown");
+                default: {
+                    AbstractResponse response = IXI.instance().processCommand(command, request);
+                    return response == null ?
+                            ErrorResponse.create("Command [" + command + "] is unknown") :
+                            response;
+                }
             }
 
         } catch (final Exception e) {

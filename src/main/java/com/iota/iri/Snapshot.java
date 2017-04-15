@@ -223,7 +223,7 @@ public class Snapshot {
         state.putAll(snapshot.state);
     }
 
-    public boolean isConsistent() {
+    boolean isConsistent() {
         long stateValue = state.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
         if(stateValue != TransactionViewModel.SUPPLY) {
             long difference = TransactionViewModel.SUPPLY - stateValue;

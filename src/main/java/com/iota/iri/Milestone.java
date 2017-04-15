@@ -172,7 +172,7 @@ public class Milestone {
                                         Converter.getTrits(transactionViewModel.getTrunkTransactionHash().bytes(), trunkTransactionTrits);
                                         final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
-                                        final int[] hashTrits = ISS.getMerkleRoot(ISS.address(ISS.digest(
+                                        final int[] merkleRoot = ISS.getMerkleRoot(ISS.address(ISS.digest(
                                                 Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits),
                                                         ISS.NUMBER_OF_FRAGMENT_CHUNKS),
                                                 signatureFragmentTrits)),
@@ -180,7 +180,7 @@ public class Milestone {
                                         if(testnet) {
                                             //System.arraycopy(new Hash(hashTrits).bytes(), 0, coordinatorHash.bytes(), 0, coordinatorHash.bytes().length);
                                         }
-                                        if (testnet || (new Hash(hashTrits)).equals(coordinatorHash)) {
+                                        if (testnet || (new Hash(merkleRoot)).equals(coordinatorHash)) {
 
                                             latestMilestone = transactionViewModel.getHash();
                                             latestMilestoneIndex = index;

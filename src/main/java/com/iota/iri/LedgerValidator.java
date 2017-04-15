@@ -22,6 +22,25 @@ public class LedgerValidator {
     private static final Set<Hash> consistentHashes = new HashSet<>();
     private static volatile int numberOfConfirmedTransactions;
 
+    /**
+     * Returns a Map of Address and change in balance that can be used to build a new Snapshot state.
+     * Under certain conditions, it will return null:
+     *  - While descending through transactions, if a transaction is marked as {PREFILLED_SLOT}, then its hash has been
+     *    referenced by some transaction, but the transaction data is not found in the database. It notifies
+     *    TransactionRequester to increase the probability this transaction will be present the next time this is checked.
+     *  - When a transaction marked as a tail transaction (if the current index is 0), but it is not the first transaction
+     *    in any of the BundleValidator's transaction lists, then the bundle is marked as invalid, deleted, and re-requested.
+     *  - When the bundle is not internally consistent (the sum of all transactions in the bundle must be zero)
+     * As transactions are being traversed, it will come upon bundles, and will add the transaction value to {state}.
+     * If {milestone} is true, it will search, through trunk and branch, all transactions, starting from {tip},
+     * until it reaches a transaction that is marked as a "snapshot" transaction.
+     * If {milestone} is false, it will search up until it reaches a snapshot, or until it finds a hash that has been
+     * marked as consistent since the previous milestone.
+     * @param tip       the hash of a transaction to start the search from
+     * @param milestone marker to indicate whether to stop only at snapshot
+     * @return {state}  the addresses that have a balance changed since the last diff check
+     * @throws Exception
+     */
     private static Map<Hash,Long> getLatestDiff(Hash tip, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>();
         int numberOfAnalyzedTransactions = 0;
@@ -32,12 +51,11 @@ public class LedgerValidator {
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
-            if (analyzedTips.add(transactionPointer)) {
-
-                numberOfAnalyzedTransactions++;
+            if (analyzedTips.add(transactionPointer) && (milestone || !consistentHashes.contains(transactionPointer))) {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                if(!transactionViewModel.hasSnapshot() && (milestone || !consistentHashes.contains(transactionPointer))) {
+                if (!transactionViewModel.hasSnapshot()) {
+                    numberOfAnalyzedTransactions++;
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         TransactionRequester.instance().requestTransaction(transactionViewModel.getHash());
                         return null;
@@ -82,8 +100,6 @@ public class LedgerValidator {
                         nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
                         nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                     }
-                } else {
-                    log.debug("It is solid here");
                 }
             }
         }

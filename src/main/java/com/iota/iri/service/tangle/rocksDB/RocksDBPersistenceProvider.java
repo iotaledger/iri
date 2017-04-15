@@ -390,7 +390,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 if(snapshot != null) {
                     Object snapshotObject = objectFromBytes(snapshot);
                     if(snapshotObject instanceof Map) {
-                        milestone.snapshot = ((Map<Hash, Long>) snapshotObject);
+                        milestone.snapshot = (Map<Hash, Long>) snapshotObject;
                     }
                 }
                 return true;

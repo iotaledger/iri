@@ -77,6 +77,7 @@ public class IRI {
             TransactionViewModel.init();
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
             Tangle.instance().init();
+            LedgerValidator.init();
             TipsManager.instance().init();
             TransactionRequester.instance().init();
             Node.instance().init();

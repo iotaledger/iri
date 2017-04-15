@@ -259,7 +259,7 @@ public class API {
     }
    
     private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
-        SecureRandom random = new SecureRandom();
+        final SecureRandom random = new SecureRandom();
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth, random);
         if (trunkTransactionToApprove == null) {
             return ErrorResponse.create("The subtangle is not solid");

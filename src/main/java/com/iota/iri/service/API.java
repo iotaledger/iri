@@ -223,11 +223,17 @@ public class API {
 
     private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
         final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
-        uris.stream().map(Node::uri).map(Optional::get).filter(u -> "udp".equals(u.getScheme())).forEach(u -> {
-            if (Node.instance().removeNeighbor(u,true)) {
-                numberOfRemovedNeighbors.incrementAndGet();
+        
+        for (final String uriString : uris) {
+            final URI uri = new URI(uriString);
+            
+            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
+                log.info("Removing neighbor: "+uriString);
+                if (Node.instance().removeNeighbor(uri,true)) {
+                    numberOfRemovedNeighbors.incrementAndGet();
+                }
             }
-        });
+        }
         return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
     }
 

@@ -13,6 +13,9 @@ public class Converter {
     static final int[][] BYTE_TO_TRITS_MAPPINGS = new int[243][];
     static final int[][] TRYTE_TO_TRITS_MAPPINGS = new int[27][];
 
+    public static final int HIGH_INTEGER_BITS = 0xFFFFFFFF;
+    public static final long HIGH_LONG_BITS = 0xFFFFFFFFFFFFFFFFL;
+
     public static final String TRYTE_ALPHABET = "9ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     
     public static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
@@ -124,20 +127,40 @@ public class Converter {
         return trits[offset] + trits[offset + 1] * 3 + trits[offset + 2] * 9;
     }
 
-    public static IntPair[] pair(final int[] trits) {
-        return Arrays.stream(trits).mapToObj(IntPair::fromTrit).toArray(IntPair[]::new);
+    public static Pair intPair(int[] trits) {
+        int[] low = new int[trits.length];
+        int[] hi = new int[trits.length];
+        for(int i = 0; i< trits.length; i++) {
+            low[i] = trits[i] != 1 ? HIGH_INTEGER_BITS: 0;
+            hi[i] = trits[i] != -1 ? HIGH_INTEGER_BITS: 0;
+        }
+        return new Pair<>(low, hi);
     }
 
-    public static int[] trits(final IntPair[] pair) {
-        return Arrays.stream(pair).mapToInt(IntPair::toTrit).toArray();
+    public static Pair longPair(int[] trits) {
+        long[] low = new long[trits.length];
+        long[] hi = new long[trits.length];
+        for(int i = 0; i< trits.length; i++) {
+            low[i] = trits[i] != 1 ? HIGH_LONG_BITS: 0;
+            hi[i] = trits[i] != -1 ? HIGH_LONG_BITS: 0;
+        }
+        return new Pair<>(low, hi);
     }
 
-    public static LongPair[] longPair(final int[] trits) {
-        return Arrays.stream(trits).mapToObj(IntPair::fromTrit).toArray(LongPair[]::new);
+    public static int[] trits(long[] low, long[] hi) {
+        int[] trits = new int[low.length];
+        for(int i = 0; i < trits.length; i++) {
+            trits[i] = low[i] == 0 ? 1 : hi[i] == 0 ? -1 : 0;
+        }
+        return trits;
     }
 
-    public static int[] trits(final LongPair[] pair) {
-        return Arrays.stream(pair).mapToInt(LongPair::toTrit).toArray();
+    public static int[] trits(int[] low, int[] hi) {
+        int[] trits = new int[low.length];
+        for(int i = 0; i < trits.length; i++) {
+            trits[i] = low[i] == 0 ? 1 : hi[i] == 0 ? -1 : 0;
+        }
+        return trits;
     }
 
     private static void increment(final int[] trits, final int size) {

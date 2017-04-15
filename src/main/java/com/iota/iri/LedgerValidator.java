@@ -112,9 +112,16 @@ public class LedgerValidator {
         return state;
     }
 
-    private static void updateSnapshotMilestone(Hash milestone, boolean mark) throws Exception {
+    /**
+     * Descends through the tree of transactions, through trunk and branch, marking each as {mark} until it reaches
+     * a transaction where {snapshot} is equal to {mark}.
+     * @param hash start of the update tree
+     * @param mark
+     * @throws Exception
+     */
+    private static void updateSnapshotMilestone(Hash hash, boolean mark) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>();
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {

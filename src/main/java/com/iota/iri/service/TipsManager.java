@@ -145,8 +145,8 @@ public class TipsManager {
             for(Hash approver : transactionViewModel.getApprovers()) {
                 rating += updateRatings(approver, ratings, analyzedTips);
             }
-            if(rating > Integer.MAX_VALUE/2) {
-                rating = Integer.MAX_VALUE/2;
+            if(rating > Long.MAX_VALUE/2) {
+                rating = Long.MAX_VALUE/2;
             }
             ratings.put(txHash, rating);
         } else {

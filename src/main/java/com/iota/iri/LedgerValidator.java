@@ -114,7 +114,7 @@ public class LedgerValidator {
 
     /**
      * Descends through the tree of transactions, through trunk and branch, marking each as {mark} until it reaches
-     * a transaction where {snapshot} is equal to {mark}.
+     * a transaction while the transaction snapshot marker is mutually exclusive to {mark}
      * @param hash start of the update tree
      * @param mark
      * @throws Exception
@@ -134,6 +134,13 @@ public class LedgerValidator {
             }
         }
     }
+
+    /**
+     * Descends through transactions, trunk and branch, beginning at {tip}, until it reaches a transaction marked as
+     * snapshot, or until it reaches a transaction that has already been added to the transient consistent set.
+     * @param tip
+     * @throws Exception
+     */
     private static void updateConsistentHashes(Hash tip) throws Exception {
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash hashPointer;
@@ -145,6 +152,15 @@ public class LedgerValidator {
             }
         }
     }
+
+    /**
+     * Initializes the LedgerValidator. This updates the latest milestone and solid subtangle milestone, and then
+     * builds up the snapshot until it reaches the latest consistent snapshot. If any inconsistencies are detected,
+     * perhaps by database corruption, it will delete the milestone snapshot and all that follow.
+     * It then starts at the earliest consistent milestone index with a snapshot, and analyzes the tangle until it
+     * either reaches the latest solid subtangle milestone, or until it reaches an inconsistent milestone.
+     * @throws Exception
+     */
     protected static void init() throws Exception {
         int separator = 1;
         long start, duration;
@@ -175,9 +191,24 @@ public class LedgerValidator {
                 i += separator;
             }
         }
-        stateSinceMilestone.merge(latestSnapshot);
     }
 
+    private static int getSeparator(long duration, long expected, int separator, int currentIndex, int max) {
+        separator *= (double)(((double) expected) / ((double) duration));
+        while(currentIndex > max - separator) {
+            separator >>= 1;
+        }
+        return separator;
+    }
+
+
+    /**
+     * Only called once upon initialization, this builds the {latestSnapshot} state up to the most recent
+     * solid milestone snapshot. It gets the earliest snapshot, and while checking for consistency, patches the next
+     * newest snapshot diff into its map.
+     * @return              the most recent consistent milestone with a snapshot.
+     * @throws Exception
+     */
     private static MilestoneViewModel buildSnapshot() throws Exception {
         Snapshot updatedSnapshot = latestSnapshot;
         MilestoneViewModel consistentMilestone = null;
@@ -197,14 +228,6 @@ public class LedgerValidator {
             }
         }
         return consistentMilestone;
-    }
-
-    private static int getSeparator(long duration, long expected, int separator, int currentIndex, int max) {
-        separator *= (double)(((double) expected) / ((double) duration));
-        while(currentIndex > max - separator) {
-            separator >>= 1;
-        }
-        return separator;
     }
 
     public static boolean updateSnapshot(MilestoneViewModel milestone) throws Exception {

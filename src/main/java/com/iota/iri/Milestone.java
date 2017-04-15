@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import java.security.SecureRandom;
 import java.util.*;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -8,9 +9,11 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.iota.iri.service.viewModels.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +21,6 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.service.viewModels.AddressViewModel;
-import com.iota.iri.service.viewModels.BundleViewModel;
-import com.iota.iri.service.viewModels.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
 public class Milestone {
@@ -48,11 +48,85 @@ public class Milestone {
     }
     private static Milestone instance = null;
 
+    private static boolean shuttingDown;
+    private static int ARTIFICAL_LATENCY = 120; // in seconds
+
     public static void init(final Hash coordinator, boolean testnet) {
-        if(instance == null) {
+        if (instance == null) {
             instance = new Milestone(coordinator, testnet);
         }
     }
+
+    public static void setARTIFICAL_LATENCY(int value) {
+        ARTIFICAL_LATENCY = value;
+    }
+
+    public void init() {
+        (new Thread(() -> {
+
+            final SecureRandom rnd = new SecureRandom();
+
+            while (!shuttingDown) {
+
+                try {
+                    TransactionRequester.instance().rescanTransactionsToRequest();
+                } catch (ExecutionException e) {
+                    log.error("Could not execute request rescan. ");
+                } catch (InterruptedException e) {
+                    log.error("Request rescan interrupted. ");
+                }
+                try {
+                    final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
+                    final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
+
+                    Milestone.instance().updateLatestMilestone();
+                    Milestone.updateLatestSolidSubtangleMilestone();
+
+                    if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
+
+                        log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex
+                                + " to #" + Milestone.latestMilestoneIndex);
+                    }
+
+                    long latency = 30000;
+                    if (Milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX &&
+                            Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
+                        latency = ARTIFICAL_LATENCY > 0 ? (long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L +5000L : 5000L;
+                    }
+
+                    long start = System.currentTimeMillis();
+                    long cumulative = 0;
+                    while((cumulative = System.currentTimeMillis() - start) < latency) {
+                        if(Milestone.latestSolidSubtangleMilestoneIndex < Milestone.latestMilestoneIndex) {
+                            Milestone.updateLatestSolidSubtangleMilestone();
+                        } else {
+                            break;
+                        }
+                    }
+
+                    if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
+                        MilestoneViewModel milestoneViewModel = new MilestoneViewModel(
+                                Milestone.latestSolidSubtangleMilestoneIndex,
+                                Milestone.latestSolidSubtangleMilestone);
+                        milestoneViewModel.store();
+                        LedgerValidator.updateSnapshot(milestoneViewModel);
+
+                        log.info("Latest SOLID SUBTANGLE milestone has changed from #"
+                                + previousSolidSubtangleLatestMilestoneIndex + " to #"
+                                + Milestone.latestSolidSubtangleMilestoneIndex);
+                    }
+                    latency -= cumulative;
+                    if(latency > 0) {
+                        Thread.sleep(latency - cumulative);
+                    }
+
+                } catch (final Exception e) {
+                    log.error("Error during TipsManager Milestone updating", e);
+                }
+            }
+        }, "Latest Milestone Tracker")).start();
+    }
+
     public static Milestone instance() {
         return instance;
     }
@@ -175,6 +249,10 @@ public class Milestone {
             output = new AbstractMap.SimpleEntry<>(milestoneIndexToLoad, hashToLoad);
         }
         return output;
+    }
+
+    public void shutDown() {
+        shuttingDown = true;
     }
 
     public static void reportToSlack(final int milestoneIndex, final int depth, final int nextDepth) {

@@ -78,7 +78,7 @@ public class IRI {
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
             Tangle.instance().init();
             LedgerValidator.init();
-            TipsManager.instance().init();
+            Milestone.instance().init();
             TransactionRequester.instance().init();
             Node.instance().init();
             API.instance().init();
@@ -215,7 +215,7 @@ public class IRI {
         final Integer aLatency = parser.getOptionValue(artLatency);
         if (aLatency != null) {
             log.info("Artifical Latency for milestone updater is set to {}.",aLatency);
-            TipsManager.setARTIFICAL_LATENCY(aLatency);
+            Milestone.setARTIFICAL_LATENCY(aLatency);
         }
         
         final Long ts = parser.getOptionValue(timestampThreshold);
@@ -254,7 +254,7 @@ public class IRI {
             try {
                 //IXI.shutdown();
                 API.instance().shutDown();
-                TipsManager.instance().shutDown();
+                Milestone.instance().shutDown();
                 Node.instance().shutdown();
                 ReplicatorSourcePool.instance().shutdown();
                 ReplicatorSinkPool.instance().shutdown();

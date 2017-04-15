@@ -41,4 +41,36 @@ public class CurlTest {
         String out_trytes = Converter.trytes(hash_trits);
         Assert.assertEquals(out_trytes, hash);
     }
+
+    @Test
+    public void pairHashIsFasterThanNormalHash() {
+        int size = 8019;
+        long start1, diff1, start2, diff2;
+        int[] in_trits = Converter.trits(trytes);
+        final int[] hash_trits = new int[Curl.HASH_LENGTH];
+        Curl curl;
+        curl = new Curl(true);
+        Pair<int[], int[]> in_pair = Converter.intPair(in_trits);
+        int iteration = 0;
+        while(iteration++ < 10) {
+            curl.absorb(in_pair, 0, in_trits.length);
+            curl.squeeze(0, Curl.HASH_LENGTH);
+            curl.reset(true);
+            curl.absorb(in_trits, 0, in_trits.length);
+            curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
+            curl.reset();
+        }
+        start1 = System.nanoTime();
+        curl.absorb(in_trits, 0, in_trits.length);
+        curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
+        diff1 = System.nanoTime() - start1;
+        curl.reset(true);
+        start2 = System.nanoTime();
+        curl.absorb(in_pair, 0, in_trits.length);
+        Pair<int[], int[]> hashPair = curl.squeeze(0, Curl.HASH_LENGTH);
+        diff2 = System.nanoTime() - start2;
+        System.arraycopy(Converter.trits(hashPair.low, hashPair.hi), 0, hash_trits, 0, Curl.HASH_LENGTH);
+        String out_trytes = Converter.trytes(hash_trits);
+        Assert.assertEquals(out_trytes, hash);
+    }
 }

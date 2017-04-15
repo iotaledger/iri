@@ -127,7 +127,7 @@ public class Converter {
         return trits[offset] + trits[offset + 1] * 3 + trits[offset + 2] * 9;
     }
 
-    public static Pair intPair(int[] trits) {
+    public static Pair<int[], int[]> intPair(int[] trits) {
         int[] low = new int[trits.length];
         int[] hi = new int[trits.length];
         for(int i = 0; i< trits.length; i++) {

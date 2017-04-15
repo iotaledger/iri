@@ -110,11 +110,11 @@ public class Curl {
         }
     }
 
-    public void absorb(final Pair pair, int offset, int length) {
+    public void absorb(final Pair<int[], int[]> pair, int offset, int length) {
         int o = offset, l = length, i = 0;
         do {
-            System.arraycopy((int[])pair.low, o, state, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
-            System.arraycopy((int[])pair.hi, o, stateHigh, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
+            System.arraycopy(pair.low, o, state, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
+            System.arraycopy(pair.hi, o, stateHigh, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
             pairTransform();
             o += HASH_LENGTH;
         } while ((l -= HASH_LENGTH) > 0);

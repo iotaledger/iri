@@ -132,6 +132,14 @@ public class Converter {
         return Arrays.stream(pair).mapToInt(IntPair::toTrit).toArray();
     }
 
+    public static LongPair[] longPair(final int[] trits) {
+        return Arrays.stream(trits).mapToObj(IntPair::fromTrit).toArray(LongPair[]::new);
+    }
+
+    public static int[] trits(final LongPair[] pair) {
+        return Arrays.stream(pair).mapToInt(LongPair::toTrit).toArray();
+    }
+
     private static void increment(final int[] trits, final int size) {
         for (int i = 0; i < size; i++) {
             if (++trits[i] > Converter.MAX_TRIT_VALUE) {

@@ -109,8 +109,9 @@ class ReplicatorSinkProcessor implements Runnable {
                 }
             }
         } catch (Exception e) {
-            log.error("***** NETWORK ALERT ***** No sink to host {} port {}, reason: {}", 
-                    remoteAddress, neighbor.getTcpPort(), e.getMessage());
+            String reason = e.getMessage();
+            if (reason==null) reason = "closed"; 
+            log.error("***** NETWORK ALERT ***** No sink to host {}:{}, reason: {}", remoteAddress, neighbor.getTcpPort(), e.getMessage());
             synchronized (neighbor) {
                 Socket sourceSocket = neighbor.getSource();
                 if (sourceSocket != null && (sourceSocket.isClosed() || !sourceSocket.isConnected())) {

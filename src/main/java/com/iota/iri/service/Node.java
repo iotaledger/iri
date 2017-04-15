@@ -446,7 +446,14 @@ public class Node {
         if (uri.toString().contains("tcp:")) {
             isTcp = true;
         }
-        return neighbors.remove(new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, isConfigured));
+        Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, isConfigured);
+        neighbors.forEach(n -> {
+            if (n.equals(neighbor) && n.isTcpip()) {
+                n.setSource(null);
+                n.setSink(null);
+            }
+        });
+        return neighbors.remove(neighbor);
     }
 
     public boolean addNeighbor(final URI uri, boolean isConfigured) {

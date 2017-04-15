@@ -179,7 +179,7 @@ public class IRI {
         
         final String vrporttcp = parser.getOptionValue(rporttcp);
         if (vrporttcp != null) {
-            Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP, vrporttcp);
+            Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP, vrporttcp);
         }
 
         if (parser.getOptionValue(headless) != null) {

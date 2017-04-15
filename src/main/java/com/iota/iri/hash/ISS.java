@@ -201,4 +201,21 @@ public class ISS {
 
         return digest;
     }
+
+    public static int[] getMerkleRoot(int[] hash, int[] trits, int offset, int index, int size) {
+        for (int i = 0; i < size; i++) {
+            final Curl curl = new Curl();
+            if ((index & 1) == 0) {
+                curl.absorb(hash, 0, hash.length);
+                curl.absorb(trits, offset + i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
+            } else {
+                curl.absorb(trits, offset + i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
+                curl.absorb(hash, 0, hash.length);
+            }
+            curl.squeeze(hash, 0, hash.length);
+
+            index >>= 1;
+        }
+        return hash;
+    }
 }

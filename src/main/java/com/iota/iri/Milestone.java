@@ -31,6 +31,7 @@ public class Milestone {
     public static Hash latestSolidSubtangleMilestone = latestMilestone;
     
     public static final int MILESTONE_START_INDEX = 0;
+    private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 20;
 
     public static int latestMilestoneIndex = MILESTONE_START_INDEX;
     public static int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
@@ -171,23 +172,11 @@ public class Milestone {
                                         Converter.getTrits(transactionViewModel.getTrunkTransactionHash().bytes(), trunkTransactionTrits);
                                         final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
-                                        final int[] hashTrits = ISS.address(ISS.digest(Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits), ISS.NUMBER_OF_FRAGMENT_CHUNKS), signatureFragmentTrits));
-
-                                        int indexCopy = index;
-                                        for (int i = 0; i < 20; i++) {
-
-                                            final Curl curl = new Curl();
-                                            if ((indexCopy & 1) == 0) {
-                                                curl.absorb(hashTrits, 0, hashTrits.length);
-                                                curl.absorb(transactionViewModel2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
-                                            } else {
-                                                curl.absorb(transactionViewModel2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
-                                                curl.absorb(hashTrits, 0, hashTrits.length);
-                                            }
-                                            curl.squeeze(hashTrits, 0, hashTrits.length);
-
-                                            indexCopy >>= 1;
-                                        }
+                                        final int[] hashTrits = ISS.getMerkleRoot(ISS.address(ISS.digest(
+                                                Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits),
+                                                        ISS.NUMBER_OF_FRAGMENT_CHUNKS),
+                                                signatureFragmentTrits)),
+                                                transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
                                         if(testnet) {
                                             //System.arraycopy(new Hash(hashTrits).bytes(), 0, coordinatorHash.bytes(), 0, coordinatorHash.bytes().length);
                                         }

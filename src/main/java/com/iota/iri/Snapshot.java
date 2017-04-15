@@ -218,7 +218,7 @@ public class Snapshot {
         return new Snapshot(patchedState);
     }
 
-    public void merge(Snapshot snapshot) {
+    void merge(Snapshot snapshot) {
         state.clear();
         state.putAll(snapshot.state);
     }

@@ -105,9 +105,9 @@ public class IRI {
 
         final Option<String> config = parser.addStringOption('c', "conf");
         final Option<String> port = parser.addStringOption('p', "port");
-        final Option<String> rportudp = parser.addStringOption('r', "receiver-port-udp");
-        final Option<String> rporttcp = parser.addStringOption('r', "receiver-port-tcp");
-        final Option<String> cors = parser.addStringOption('c', "enabled-cors");
+        final Option<String> rportudp = parser.addStringOption('u', "udp-receiver-port");
+        final Option<String> rporttcp = parser.addStringOption('t', "tcp-receiver-port");
+        final Option<String> cors = parser.addStringOption("enabled-cors");
         final Option<Boolean> headless = parser.addBooleanOption("headless");
         final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
         final Option<Boolean> remote = parser.addBooleanOption("remote");
@@ -115,10 +115,9 @@ public class IRI {
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
         final Option<Boolean> export = parser.addBooleanOption('e', "export");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
-        final Option<Integer> ratingThr = parser.addIntegerOption('x', "rating-threshold");
         final Option<Integer> artLatency = parser.addIntegerOption('a', "art-latency");
-        final Option<Long> timestampThreshold = parser.addLongOption('t', "timestamp-threshold");
-        final Option<Boolean> testnet = parser.addBooleanOption('t', "testnet");
+        final Option<Long> timestampThreshold = parser.addLongOption("timestamp-threshold");
+        final Option<Boolean> testnet = parser.addBooleanOption("testnet");
 
         try {
             assert args != null;
@@ -204,12 +203,6 @@ public class IRI {
             Configuration.put(DefaultConfSettings.DEBUG, "true");
             log.info(Configuration.allSettings());
             StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
-        }
-        
-        final Integer ratingThreshold = parser.getOptionValue(ratingThr);
-        if (ratingThreshold != null) {
-            log.info("Rating Threshold for TipManager is set to {}.",ratingThreshold);
-            TipsManager.setRATING_THRESHOLD(ratingThreshold);
         }
         
         final Integer aLatency = parser.getOptionValue(artLatency);

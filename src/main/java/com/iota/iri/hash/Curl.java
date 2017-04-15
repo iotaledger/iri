@@ -1,21 +1,36 @@
 package com.iota.iri.hash;
 
+import com.iota.iri.utils.IntPair;
+import com.iota.iri.utils.Pair;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 /**
- * (c) 2016 Come-from-Beyond
- * 
+ * (c) 2016 Come-from-Beyond and Paul Handy
+ *
  * Curl belongs to the sponge function family.
- * 
+ *
  */
 public class Curl {
 
     public static final int HASH_LENGTH = 243;
     private static final int STATE_LENGTH = 3 * HASH_LENGTH;
+    private static final int HALF_LENGTH = 364;
 
     private static final int NUMBER_OF_ROUNDS = 27;
     private static final int[] TRUTH_TABLE = {1, 0, -1, 1, -1, 0, -1, 1, 0};
+    private static final IntPair[] TRANSFORM_INDICES = IntStream.range(0, STATE_LENGTH)
+            .mapToObj(i -> new IntPair(i == 0 ? 0 : (((i - 1) % 2) + 1) * HALF_LENGTH - ((i - 1) >> 1),
+                    ((i % 2) + 1) * HALF_LENGTH - ((i) >> 1)))
+            .toArray(IntPair[]::new);
 
     private final int[] state = new int[STATE_LENGTH];
-    
+
     public void absorb(final int[] trits, int offset, int length) {
 
         do {
@@ -24,7 +39,7 @@ public class Curl {
             offset += HASH_LENGTH;
         } while ((length -= HASH_LENGTH) > 0);
     }
-    
+
 
     public void squeeze(final int[] trits, int offset, int length) {
 
@@ -52,5 +67,51 @@ public class Curl {
             state[stateIndex] = 0;
         }
     }
-    
+
+    private static Pair[] transform(final IntPair[] state) {
+        final IntPair[] scratchpad = new IntPair[STATE_LENGTH];
+        for (int round = 0; round < NUMBER_OF_ROUNDS; round++) {
+            System.arraycopy(state, 0, scratchpad, 0, state.length);
+            for(int i = 0; i < STATE_LENGTH; i++) {
+                final int alpha = scratchpad[TRANSFORM_INDICES[i].key()].key();
+                final int beta = scratchpad[TRANSFORM_INDICES[i].key()].value();
+                final int gamma = scratchpad[TRANSFORM_INDICES[i].value()].value();
+                final int delta = (alpha | (~gamma)) & (scratchpad[TRANSFORM_INDICES[i].value()].key() ^ beta);
+                state[i] = new IntPair(~delta, (alpha ^ gamma) | delta);
+            }
+        }
+        return state;
+    }
+
+    public static IntPair[] state() {
+        return new IntPair[STATE_LENGTH];
+    }
+
+    public static Function<IntPair[], IntPair[]>
+    absorb(final IntPair[] trits, int offset, int length) {
+        return (state) -> Curl.absorb(state, trits, offset, length);
+    }
+    public static IntPair[] absorb(final IntPair[] state, final IntPair[] trits, int offset, int length) {
+        int o = offset, l = length, i = 0;
+        do {
+            System.arraycopy(trits, o, state, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
+            transform(state);
+            o += HASH_LENGTH;
+        } while ((l -= HASH_LENGTH) > 0);
+        return state;
+    }
+
+    public static Function<IntPair[], IntPair[]> squeeze(final IntPair[] trits, int offset, int length) {
+        return (state) -> Curl.squeeze(state, trits, offset, length);
+    }
+    public static IntPair[] squeeze(final IntPair[] state, final IntPair[] trits, int offset, int length) {
+        int o = offset,
+                l = length;
+        do {
+            System.arraycopy(state, 0, trits, o, l < HASH_LENGTH ? l : HASH_LENGTH);
+            transform(state);
+            o += HASH_LENGTH;
+        } while ((l -= HASH_LENGTH) > 0);
+        return trits;
+    }
 }

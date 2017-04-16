@@ -96,7 +96,7 @@ public class TipsManager {
                         }
                     }
                 }
-                log.info("Tails traversed: " + traversedTails);
+                log.info("Tx traversed to find tip: " + traversedTails);
                 return tail;
             } catch (Exception e) {
                 e.printStackTrace();

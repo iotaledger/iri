@@ -20,6 +20,7 @@ public class Transaction {
 
     public byte[] solid = new byte[]{0};
     public boolean snapshot = false;
+    public long height = 0;
 
     public Transaction() {}
     public Transaction(Hash hash) { this.hash = hash;}

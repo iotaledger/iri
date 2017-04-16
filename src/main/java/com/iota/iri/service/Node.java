@@ -249,7 +249,15 @@ public class Node {
                                     else {
                                         writer.println(neighbor.getAddress().toString());
                                     }
-                                    writer.close();
+                                    try {
+                                        long height = receivedTransactionViewModel.getHeight();
+                                        log.info("Height: " + height);
+                                        if(height != 0) {
+                                            writer.println("Height: " + height);
+                                        }
+                                    } finally {
+                                        writer.close();
+                                    }
                                 }
                             }
                         }

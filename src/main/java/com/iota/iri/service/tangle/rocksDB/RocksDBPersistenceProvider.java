@@ -38,7 +38,8 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
             "tip",
             "transactionRating",
             "milestone",
-            "snapshot"
+            "snapshot",
+            "height",
     };
 
     private boolean running;
@@ -55,6 +56,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
     private ColumnFamilyHandle tipHandle;
     private ColumnFamilyHandle milestoneHandle;
     private ColumnFamilyHandle snapshotHandle;
+    private ColumnFamilyHandle heightHandle;
 
     private List<ColumnFamilyHandle> transactionGetList;
 
@@ -201,6 +203,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         batch.put(transactionValidityHandle, key, Serializer.serialize(transaction.validity));
         batch.put(transactionTypeHandle, key, Serializer.serialize(transaction.type));
         batch.put(transactionArrivalTimeHandle, key, Serializer.serialize(transaction.arrivalTime));
+        batch.put(heightHandle, key, Serializer.serialize(transaction.height));
         batch.put(transactionSolidHandle, key, Serializer.serialize(transaction.solid));
         batch.put(markedSnapshotHandle, key, transaction.snapshot ? new byte[]{1}: new byte[]{0});
         batch.merge(addressHandle, transaction.address.hash.bytes(), key);
@@ -349,6 +352,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         transaction.arrivalTime = Serializer.getLong(db.get(transactionArrivalTimeHandle, key));
         transaction.solid =  db.get(transactionSolidHandle, key);
         transaction.snapshot = byteToBoolean(db.get(markedSnapshotHandle, key));
+        transaction.height = Serializer.getLong(db.get(heightHandle, key));
         return true;
     };
 
@@ -589,6 +593,9 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
                 case "markedSnapshot":
                     db.put(markedSnapshotHandle, key, transaction.snapshot ? new byte[]{1} : new byte[]{0});
                     break;
+                case "height":
+                    db.put(heightHandle, key, Serializer.serialize(transaction.height));
+                    break;
                 default: {
                     log.error("That's not available yet.");
                     return false;
@@ -769,6 +776,7 @@ public class RocksDBPersistenceProvider implements IPersistenceProvider {
         tipHandle = familyHandles.get(++i);
         milestoneHandle = familyHandles.get(++i);
         snapshotHandle = familyHandles.get(++i);
+        heightHandle = familyHandles.get(++i);
 
         for(; ++i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.get(i));

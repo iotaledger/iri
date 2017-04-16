@@ -463,4 +463,17 @@ public class TransactionViewModel {
         }
         */
     }
+
+    public long getHeight() throws Exception {
+        if(getHash() != Hash.NULL_HASH) {
+            if(transaction.height == 0L) {
+                TransactionViewModel trunk = getTrunkTransaction();
+                if(trunk.getType() != TransactionViewModel.PREFILLED_SLOT) {
+                    transaction.height = 1 + trunk.getHeight();
+                    update("height");
+                }
+            }
+        }
+        return transaction.height;
+    }
 }

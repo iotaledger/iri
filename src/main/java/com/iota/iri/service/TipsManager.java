@@ -150,18 +150,18 @@ public class TipsManager {
                     tx = TransactionViewModel.fromHash(hash);
                     if(!tx.isSolid()) {
                         fileNumber = tx.getArrivalTime();
-                        Path path = Paths.get("export", String.valueOf(fileNumber++) + ".tx");
+                        Path path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
                         while (path.toFile().exists()) {
-                            path = Paths.get("export", String.valueOf(fileNumber++) + ".tx");
+                            path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
                         }
+                        long height = tx.getHeight();
                         writer = new PrintWriter(path.toString(), "UTF-8");
                         writer.println(tx.getHash().toString());
                         writer.println(Converter.trytes(tx.trits()));
-                        writer.println(tx.getSender());
-                        long height = tx.getHeight();
-                        log.info("Height: " + height);
+                        writer.println(tx.getSender());                        
                         writer.println("Height: " + String.valueOf(height));
                         writer.close();
+                        log.info("Height: " + height);
                     }
                 } catch (UnsupportedEncodingException | FileNotFoundException e) {
                     log.error("File export failed", e);
@@ -193,6 +193,19 @@ public class TipsManager {
         return rating;       
     }
 
+    private static long lastFileNumber = 0L;
+    private static Object lock = new Object();
+
+    public static long getFileNumber() {
+        long now = System.currentTimeMillis();
+        synchronized (lock) {
+            if (now < lastFileNumber) {
+                return ++lastFileNumber;
+            }
+            lastFileNumber = now;
+        }
+        return now;
+    }
 
     public static TipsManager instance() {
         return instance;

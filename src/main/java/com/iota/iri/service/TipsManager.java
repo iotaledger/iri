@@ -46,16 +46,13 @@ public class TipsManager {
                 Hash tip = preferableMilestone;
                 Hash tail = tip;
                 if (extraTip != null) {
-                    TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-                    while (milestoneDepth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
-
-                        tip = transactionViewModel.getHash();
-                        do {
-
-                            transactionViewModel = transactionViewModel.getTrunkTransaction();
-
-                        }
-                        while (transactionViewModel.getCurrentIndex() != 0 && !transactionViewModel.getAddressHash().equals(Milestone.instance().coordinator()));
+                    int milestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex - milestoneDepth;
+                    if(milestoneIndex < 0) {
+                        milestoneIndex = 0;
+                    }
+                    if(!MilestoneViewModel.load(milestoneIndex)) {
+                        Map.Entry<Integer, Hash> closestGreaterMilestone = Milestone.findMilestone(milestoneIndex);
+                        new MilestoneViewModel(closestGreaterMilestone.getKey(), closestGreaterMilestone.getValue()).store();
                     }
                 }
 

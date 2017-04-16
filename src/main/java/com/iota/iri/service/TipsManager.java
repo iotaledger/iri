@@ -10,7 +10,7 @@ import java.util.*;
 import com.iota.iri.LedgerValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.viewModels.*;
+import com.iota.iri.controllers.*;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

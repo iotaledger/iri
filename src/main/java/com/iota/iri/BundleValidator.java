@@ -3,8 +3,8 @@ package com.iota.iri;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.viewModels.BundleViewModel;
-import com.iota.iri.service.viewModels.TransactionViewModel;
+import com.iota.iri.controllers.BundleViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
 import java.util.*;

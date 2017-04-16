@@ -2,9 +2,7 @@ package com.iota.iri.service;
 
 import static io.undertow.Handlers.path;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -19,10 +17,11 @@ import java.util.stream.Collectors;
 
 import com.iota.iri.*;
 
+import com.iota.iri.network.Neighbor;
 import com.iota.iri.network.TCPNeighbor;
 import com.iota.iri.network.UDPNeighbor;
 import com.iota.iri.service.dto.*;
-import com.iota.iri.service.viewModels.*;
+import com.iota.iri.controllers.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -9,13 +9,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.iota.iri.network.TCPNeighbor;
-import com.iota.iri.service.viewModels.TransactionRequester;
+import com.iota.iri.controllers.TransactionRequester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Neighbor;
+import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.Node;
-import com.iota.iri.service.viewModels.TransactionViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 
 public class ReplicatorSinkPool  implements Runnable {
     

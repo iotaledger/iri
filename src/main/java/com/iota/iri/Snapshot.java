@@ -1,6 +1,6 @@
 package com.iota.iri;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.viewModels.TransactionViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

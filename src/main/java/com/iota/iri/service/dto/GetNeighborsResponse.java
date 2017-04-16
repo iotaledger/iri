@@ -36,7 +36,7 @@ public class GetNeighborsResponse extends AbstractResponse {
             return connectionType;
         }
 
-        public static Neighbor createFrom(com.iota.iri.Neighbor n) {
+        public static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
             Neighbor ne = new Neighbor();
             int port = n.getPort();
             ne.address = n.getAddress().getHostString() + ":" + port;
@@ -48,11 +48,11 @@ public class GetNeighborsResponse extends AbstractResponse {
         }
     }
 
-    public static AbstractResponse create(final List<com.iota.iri.Neighbor> elements) {
+    public static AbstractResponse create(final List<com.iota.iri.network.Neighbor> elements) {
         GetNeighborsResponse res = new GetNeighborsResponse();
         res.neighbors = new Neighbor[elements.size()];
         int i = 0;
-        for (com.iota.iri.Neighbor n : elements) {
+        for (com.iota.iri.network.Neighbor n : elements) {
             res.neighbors[i++] = Neighbor.createFrom(n);
         }
         return res;

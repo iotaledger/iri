@@ -1,6 +1,5 @@
 package com.iota.iri.network;
 
-import com.iota.iri.Neighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

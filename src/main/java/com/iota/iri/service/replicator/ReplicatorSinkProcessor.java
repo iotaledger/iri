@@ -10,7 +10,6 @@ import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Neighbor;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.Node;

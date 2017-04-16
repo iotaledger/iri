@@ -11,12 +11,12 @@ import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Neighbor;
+import com.iota.iri.network.Neighbor;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.Node;
-import com.iota.iri.service.viewModels.TransactionViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 
 class ReplicatorSourceProcessor implements Runnable {
 

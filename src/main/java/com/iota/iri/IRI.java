@@ -56,10 +56,19 @@ public class IRI {
         
         if (Configuration.booling(DefaultConfSettings.EXPORT)) {
             File exportDir = new File("export");
-
             // if the directory does not exist, create it
             if (!exportDir.exists()) {
                 log.info("Create directory 'export'");
+                try {
+                    exportDir.mkdir();
+                } catch (SecurityException e) {
+                    log.error("Could not create directory",e);
+                }
+            }
+            exportDir = new File("export-solid");
+            // if the directory does not exist, create it
+            if (!exportDir.exists()) {
+                log.info("Create directory 'export-solid'");
                 try {
                     exportDir.mkdir();
                 } catch (SecurityException e) {

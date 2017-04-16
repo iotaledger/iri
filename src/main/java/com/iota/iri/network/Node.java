@@ -1,7 +1,12 @@
 package com.iota.iri.network;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
 import java.net.*;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
@@ -10,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import com.iota.iri.BundleValidator;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.replicator.ReplicatorSinkPool;
+import com.iota.iri.service.TipsManager;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionRequester;
@@ -182,6 +188,26 @@ public class Node {
                                     senderAddress.toString(): neighbor.getAddress().toString() );
                             neighbor.incNewTransactions();
                             broadcast(receivedTransactionViewModel);
+                            if (Configuration.booling(DefaultConfSettings.EXPORT)) {
+                                try {
+                                    PrintWriter writer;
+                                    if(!receivedTransactionViewModel.isSolid()) {
+                                        Path path = Paths.get("export-solid", String.valueOf(TipsManager.getFileNumber()) + ".tx");
+                                        long height = receivedTransactionViewModel.getHeight();
+                                        writer = new PrintWriter(path.toString(), "UTF-8");
+                                        writer.println(receivedTransactionViewModel.getHash().toString());
+                                        writer.println(Converter.trytes(receivedTransactionViewModel.trits()));
+                                        writer.println(receivedTransactionViewModel.getSender());                        
+                                        writer.println("Height: " + String.valueOf(height));
+                                        writer.close();
+                                        log.info("Height: " + height);
+                                    }
+                                } catch (UnsupportedEncodingException | FileNotFoundException e) {
+                                    log.error("File export failed", e);
+                                } catch (Exception e) {
+                                    log.error("Transaction load failed. ", e);
+                                }
+                            }
                         }
                         System.arraycopy(receivedData, TransactionViewModel.SIZE, requestedTransaction, 0, TransactionRequester.REQUEST_HASH_SIZE);
 

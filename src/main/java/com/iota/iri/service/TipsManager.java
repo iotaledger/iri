@@ -149,11 +149,7 @@ public class TipsManager {
                     PrintWriter writer;
                     tx = TransactionViewModel.fromHash(hash);
                     if(!tx.isSolid()) {
-                        fileNumber = tx.getArrivalTime();
-                        Path path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
-                        while (path.toFile().exists()) {
-                            path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
-                        }
+                        Path path = Paths.get("export-solid", String.valueOf(getFileNumber()) + ".tx");
                         long height = tx.getHeight();
                         writer = new PrintWriter(path.toString(), "UTF-8");
                         writer.println(tx.getHash().toString());

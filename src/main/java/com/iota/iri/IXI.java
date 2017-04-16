@@ -2,12 +2,8 @@ package com.iota.iri;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.CallableRequest;
 import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.ErrorResponse;
-import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +11,7 @@ import javax.script.*;
 import java.io.*;
 import java.nio.file.*;
 import java.util.*;
-import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 
 import static com.sun.jmx.mbeanserver.Util.cast;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
@@ -38,32 +34,16 @@ public class IXI {
     private WatchService watcher;
     private Thread dirWatchThread;
     private Path extensionDirectory;
+    private boolean shutdown = false;
 
-    /*
-    TODO: get configuration variable for directory to watch
-    TODO: initialize directory listener
-    TODO: create events for target added/changed/removed
-     */
     public void init(String extensionDirName) throws Exception {
         if(extensionDirName.length() > 0) {
             watcher = FileSystems.getDefault().newWatchService();
             extensionDirectory = Paths.get(extensionDirName);
-            String s = extensionDirectory.toAbsolutePath().toString();
-            final File ixiDir = new File(s);
-            if(!ixiDir.exists()) ixiDir.mkdir();
-            register(extensionDirectory);
-            dirWatchThread = (new Thread(this::processEvents));
-            dirWatchThread.start();
-        }
-    }
-
-    public void shutdown() throws InterruptedException {
-        if(dirWatchThread != null) {
-            dirWatchThread.interrupt();
-            dirWatchThread.join(6000);
-            Object[] keys = ixiAPI.keySet().toArray();
-            for (Object key : keys) {
-                detach((String)key);
+            if(extensionDirectory.toFile().exists() || extensionDirectory.toFile().mkdir()) {
+                register(extensionDirectory);
+                dirWatchThread = (new Thread(this::processEvents));
+                dirWatchThread.start();
             }
         }
     }
@@ -74,16 +54,14 @@ public class IXI {
             log.info("Searching: "+ path);
             WatchKey key = path.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY);
             watchKeys.put(key, path);
-            // TODO: Add existing files
             addFiles(path);
-        } else if(path.getFileName().toString().equals("package.json")){
-            log.info("ss: " + path.toString());
-            loadExtension(path);
         } else {
             List<Path> extensionPaths = extensions.get(getExtensionPath(path));
-            if(extensionPaths != null && extensionPaths.contains(path)) {
-                log.info("ss: " + path.toString());
-                loadExtension(extensionPaths.get(0));
+            final Path packagePath = path.getFileName().toString().equals("package.json")? path:
+                    extensionPaths != null && extensionPaths.contains(path) ? extensionPaths.get(0): null;
+            if(packagePath != null) {
+                log.info("start script: " + path.toString());
+                loadExtension(path);
             }
         }
     }
@@ -101,18 +79,25 @@ public class IXI {
         });
     }
 
-    private void unloadExtension(Path packageJson) throws FileNotFoundException, ScriptException {
-
+    private void unloadExtension(Path path) {
+        List<Path> paths = extensions.get(getExtensionPath(path));
+        if(paths != null && paths.contains(path)) {
+            log.debug("detach child: "+ path);
+            detach(getExtensionPath(path).toString());
+            ixiAPI.remove(path.toString());
+        }
     }
     private void loadExtension(Path packageJson) throws FileNotFoundException, ScriptException {
         final Map request = gson.fromJson(new FileReader(packageJson.toFile()), Map.class);
-        final Path pathToExtension = getExtensionPath(packageJson);
-        Path pathToMain = Paths.get(extensionDirectory.toString(), pathToExtension.toString(), (String) request.get("main"));
-        String name = pathToExtension.toString().length() != 0? pathToExtension.toString() : pathToMain.getFileName().toString().replaceFirst("[.][^.]+$", "");
-        extensions.put(pathToExtension, Arrays.asList(packageJson, pathToMain));
-        extensions.get(pathToExtension).forEach(visitedPaths::add);
-        //String[] split= relativePathToMain.getFileName().toString().split("[.]+(?=[^.]+$)");
-        attach(new FileReader(pathToMain.toFile()), name);
+        if(request != null && request.get("main") != null) {
+            final Path pathToExtension = getExtensionPath(packageJson);
+            Path pathToMain = Paths.get(extensionDirectory.toString(), pathToExtension.toString(), (String) request.get("main"));
+            String name = pathToExtension.toString().length() != 0 ? pathToExtension.toString() : pathToMain.getFileName().toString().replaceFirst("[.][^.]+$", "");
+            extensions.put(pathToExtension, Arrays.asList(packageJson, pathToMain));
+            extensions.get(pathToExtension).forEach(visitedPaths::add);
+            //String[] split= relativePathToMain.getFileName().toString().split("[.]+(?=[^.]+$)");
+            attach(new FileReader(pathToMain.toFile()), name);
+        }
     }
     private Path getExtensionPath(Path path) {
         return extensionDirectory.relativize(path.getParent());
@@ -137,43 +122,44 @@ public class IXI {
 
     private void processEvents() {
         int i = 0;
-        while(!Thread.interrupted()) {
-            synchronized(instance) {
-                WatchKey key;
-                try {
-                    key = watcher.take();
-                    //log.info("poll #" + ++i);
-                    pollEvents(key, watchKeys.get(key));
-                } catch (InterruptedException e) {
-                    log.error("Watcher interrupted: ", e);
-                }
+        WatchKey key = null;
+        while(!shutdown) {
+            try {
+                key = watcher.poll(1000, TimeUnit.MILLISECONDS);
+            } catch (InterruptedException e) {
+                log.error("Watcher interrupted: ", e);
+            }
+            if(key != null) {
+                pollEvents(key, watchKeys.get(key));
             }
         }
     }
 
     private void pollEvents(WatchKey key, Path dir) {
         Map<Path, List<WatchEvent.Kind>> visitedEvents = new HashMap<>();
-        for (WatchEvent<?> event: key.pollEvents()) {
-            WatchEvent.Kind kind = event.kind();
+        if(key != null) {
+            for (WatchEvent<?> event: key.pollEvents()) {
+                WatchEvent.Kind kind = event.kind();
 
-            if(kind == OVERFLOW) {
-                continue;
-            }
+                if(kind == OVERFLOW) {
+                    continue;
+                }
 
-            WatchEvent<Path> ev = cast(event);
-            Path name = ev.context();
-            Path child = dir.resolve(name);
+                WatchEvent<Path> ev = cast(event);
+                Path name = ev.context();
+                Path child = dir.resolve(name);
 
-            if(visitedEvents.containsKey(child)) {
-                visitedEvents.get(child).add(kind);
-            } else {
-                visitedEvents.put(child, new ArrayList<>(Collections.singleton(kind)));
-            }
+                if(visitedEvents.containsKey(child)) {
+                    visitedEvents.get(child).add(kind);
+                } else {
+                    visitedEvents.put(child, new ArrayList<>(Collections.singleton(kind)));
+                }
 
-            if (!key.reset()) {
-                watchKeys.remove(key);
-                if (watchKeys.isEmpty()) {
-                    break;
+                if (!key.reset()) {
+                    watchKeys.remove(key);
+                    if (watchKeys.isEmpty()) {
+                        break;
+                    }
                 }
             }
         }
@@ -183,8 +169,7 @@ public class IXI {
     //private void executeEvents(WatchEvent.Kind kind, Path child) throws IOException, ScriptException {
     private void executeEvents(Map.Entry<Path, List<WatchEvent.Kind>> pathListEntry) {
         if(pathListEntry.getValue().contains(ENTRY_DELETE) || pathListEntry.getValue().contains(ENTRY_MODIFY)) {
-            log.debug("detach child: "+ pathListEntry.getKey());
-            detach(pathListEntry.getKey().toString().replaceFirst("[.][^.]+$", ""));
+            unloadExtension(pathListEntry.getKey());
         }
         if(pathListEntry.getValue().contains(ENTRY_CREATE) && Files.isDirectory(pathListEntry.getKey(), NOFOLLOW_LINKS)) {
             log.info("Attempting to load directory: "+ pathListEntry.getKey());
@@ -229,8 +214,17 @@ public class IXI {
             Runnable stop = ixiMap.get("shutdown");
             if (stop != null) stop.run();
         }
-        ixiAPI.remove(extensionName);
         ixiLifetime.remove(extensionName);
+    }
+
+    public void shutdown() throws InterruptedException, IOException {
+        if(dirWatchThread != null) {
+            shutdown = true;
+            dirWatchThread.join();
+            ixiAPI.keySet().forEach(this::detach);
+            ixiAPI.clear();
+            ixiLifetime.clear();
+        }
     }
 
     private static final IXI instance = new IXI();
@@ -238,5 +232,4 @@ public class IXI {
     public static IXI instance() {
         return instance;
     }
-
 }

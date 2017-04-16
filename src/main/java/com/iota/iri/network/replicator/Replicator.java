@@ -1,4 +1,4 @@
-package com.iota.iri.service.replicator;
+package com.iota.iri.network.replicator;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,10 +9,10 @@ public class Replicator {
     
     private static final Logger log = LoggerFactory.getLogger(Replicator.class);
     
-    public void init() {
+    public void init(int port) {
         
         new Thread(ReplicatorSinkPool.instance()).start();
-        new Thread(ReplicatorSourcePool.instance()).start();
+        new Thread(ReplicatorSourcePool.init(port)).start();
         log.info("Started ReplicatorSourcePool");
     }
     

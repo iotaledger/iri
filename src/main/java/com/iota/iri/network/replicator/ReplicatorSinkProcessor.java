@@ -1,4 +1,4 @@
-package com.iota.iri.service.replicator;
+package com.iota.iri.network.replicator;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -12,7 +12,7 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.service.Node;
+import com.iota.iri.network.Node;
 
 class ReplicatorSinkProcessor implements Runnable {
 

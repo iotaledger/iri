@@ -1,4 +1,4 @@
-package com.iota.iri.service.replicator;
+package com.iota.iri.network.replicator;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -14,7 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.network.Neighbor;
-import com.iota.iri.service.Node;
+import com.iota.iri.network.Node;
 import com.iota.iri.controllers.TransactionViewModel;
 
 public class ReplicatorSinkPool  implements Runnable {

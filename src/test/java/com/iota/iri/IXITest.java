@@ -77,13 +77,11 @@ public class IXITest {
         Thread.sleep(1000);
         response = IXI.instance().processCommand("test.getParser", request);
 
-        /*
         assertFalse(response instanceof ErrorResponse);
         assertTrue(response instanceof IXIResponse);
 
         ixiResponse = ((IXIResponse) response);
         assertNotNull(ixiResponse.getResponse());
-        */
     }
 
     @Test

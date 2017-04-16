@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.controllers.TransactionRequester;
@@ -19,10 +20,10 @@ import org.slf4j.LoggerFactory;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.service.API;
-import com.iota.iri.service.Node;
-import com.iota.iri.service.replicator.Replicator;
-import com.iota.iri.service.replicator.ReplicatorSinkPool;
-import com.iota.iri.service.replicator.ReplicatorSourcePool;
+import com.iota.iri.network.Node;
+import com.iota.iri.network.replicator.Replicator;
+import com.iota.iri.network.replicator.ReplicatorSinkPool;
+import com.iota.iri.network.replicator.ReplicatorSourcePool;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
 
@@ -73,15 +74,16 @@ public class IRI {
             } else {
                 Milestone.init(MAINNET_COORDINATOR, false);
             }
-            TransactionViewModel.init();
+            TransactionViewModel.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
             Tangle.instance().init();
             LedgerValidator.init();
             Milestone.instance().init();
-            TransactionRequester.instance().init();
-            Node.instance().init();
+            TransactionRequester.instance().init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
+            Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()), Configuration.string(DefaultConfSettings.NEIGHBORS));
+            UDPReceiver.instance().init(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP));
             API.instance().init();
-            Replicator.instance().init();
+            Replicator.instance().init(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP));
             //IXI.instance().init(Configuration.string(DefaultConfSettings.IXI_DIR));
 
         } catch (final Exception e) {
@@ -248,6 +250,7 @@ public class IRI {
                 API.instance().shutDown();
                 Milestone.instance().shutDown();
                 Node.instance().shutdown();
+                UDPReceiver.instance().shutdown();
                 ReplicatorSourcePool.instance().shutdown();
                 ReplicatorSinkPool.instance().shutdown();
                 Tangle.instance().shutdown();
@@ -267,4 +270,5 @@ public class IRI {
             log.error("Impossible to display logo. Charset {} not supported by terminal.", charset);
         }
     }
+
 }

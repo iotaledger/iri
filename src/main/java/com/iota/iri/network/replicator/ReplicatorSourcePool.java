@@ -1,4 +1,4 @@
-package com.iota.iri.service.replicator;
+package com.iota.iri.network.replicator;
 
 import java.io.IOException;
 import java.net.ServerSocket;
@@ -19,6 +19,7 @@ public class ReplicatorSourcePool implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSourcePool.class);
     private ExecutorService pool;
+    private int port;
 
     @Override
     public void run() {
@@ -27,7 +28,7 @@ public class ReplicatorSourcePool implements Runnable {
         pool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
         this.pool = pool;
         try {
-            server = new ServerSocket(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP));
+            server = new ServerSocket(port);
             log.info("TCP replicator is accepting connections on tcp port " + server.getLocalPort());
             while (!shutdown) {
                 try {
@@ -67,6 +68,11 @@ public class ReplicatorSourcePool implements Runnable {
     }
 
     public static ReplicatorSourcePool instance() {
+        return instance;
+    }
+
+    public static ReplicatorSourcePool init(int port) {
+        instance.port = port;
         return instance;
     }
 

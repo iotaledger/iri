@@ -18,6 +18,7 @@ import java.util.stream.Collectors;
 import com.iota.iri.*;
 
 import com.iota.iri.network.Neighbor;
+import com.iota.iri.network.Node;
 import com.iota.iri.network.TCPNeighbor;
 import com.iota.iri.network.UDPNeighbor;
 import com.iota.iri.service.dto.*;

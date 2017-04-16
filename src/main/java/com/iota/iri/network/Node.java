@@ -1,4 +1,4 @@
-package com.iota.iri.service;
+package com.iota.iri.network;
 
 import java.io.IOException;
 import java.net.*;
@@ -9,9 +9,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.BundleValidator;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.TCPNeighbor;
-import com.iota.iri.network.UDPNeighbor;
-import com.iota.iri.service.replicator.ReplicatorSinkPool;
+import com.iota.iri.network.replicator.ReplicatorSinkPool;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionRequester;
@@ -21,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Milestone;
-import com.iota.iri.network.Neighbor;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
@@ -34,28 +31,24 @@ public class Node {
 
     private static final Logger log = LoggerFactory.getLogger(Node.class);
 
-    private static final Node instance = new Node();
 
     public  static final int TRANSACTION_PACKET_SIZE = 1650;
     private static final int QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
-
-    private DatagramSocket socket;
+    private static Node instance = new Node();
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
     private final ConcurrentSkipListSet<TransactionViewModel> queuedTransactionViewModels = weightQueue();
 
-    private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
-            TRANSACTION_PACKET_SIZE);
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
     private final DatagramPacket tipRequestingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
 
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
-    
+
     private static long TIMESTAMP_THRESHOLD = 0L;
 
     public static void setTIMESTAMP_THRESHOLD(long tIMESTAMP_THRESHOLD) {
@@ -69,14 +62,9 @@ public class Node {
     private static long lastFileNumber = 0L;
     private static Object lock = new Object();
 
-    public void init() throws Exception {
-
-        int udpport = Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP);
-        socket = new DatagramSocket(udpport);
-        log.info("UDP replicator is accepting connections on udp port " + udpport);
-        P_DROP_TRANSACTION = Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name());
-
-        Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
+    public void init(double pDropTransaction, String neighborList) throws Exception {
+        P_DROP_TRANSACTION = pDropTransaction;
+        Arrays.stream(neighborList.split(" ")).distinct()
                 .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
                     if (!"udp".equals(u.getScheme()) && !"tcp".equals(u.getScheme()) || (new InetSocketAddress(u.getHost(), u.getPort()).getAddress() == null)) {
                         log.error("CONFIGURATION ERROR: '{}' is not a valid uri schema or resolvable address.", u);
@@ -88,7 +76,6 @@ public class Node {
                 log.info("-> Adding neighbor : {} ", u.getAddress());
         }).forEach(neighbors::add);
 
-        executor.submit(spawnReceiverThread());
         executor.submit(spawnBroadcasterThread());
         executor.submit(spawnTipRequesterThread());
         executor.submit(spawnNeighborDNSRefresherThread());
@@ -112,7 +99,7 @@ public class Node {
                         checkIp(hostname).ifPresent(ip -> {
                             log.info("DNS Checker: Validating DNS Address '{}' with '{}'", hostname, ip);
                             final String neighborAddress = neighborIpCache.get(hostname);
-                            
+
                             if (neighborAddress == null) {
                                 neighborIpCache.put(hostname, ip);
                             } else {
@@ -120,10 +107,10 @@ public class Node {
                                     log.info("{} seems fine.", hostname);
                                 } else {
                                     log.info("CHANGED IP for {}! Updating...", hostname);
-                                    
+
                                     uri("udp://" + hostname).ifPresent(uri -> {
                                         removeNeighbor(uri, n.isFlagged());
-                                        
+
                                         uri("udp://" + ip).ifPresent(nuri -> {
                                             addNeighbor(nuri, n.isFlagged());
                                             neighborIpCache.put(hostname, ip);
@@ -142,7 +129,7 @@ public class Node {
             log.info("Shutting down Neighbor DNS Resolver Thread");
         };
     }
-    
+
     private Optional<String> checkIp(final String dnsName) {
         
         if (StringUtils.isEmpty(dnsName)) {
@@ -165,33 +152,6 @@ public class Node {
         return Optional.of(hostAddress);
     }
     
-    private Runnable spawnReceiverThread() {
-        return () -> {
-
-
-            log.info("Spawning Receiver Thread");
-
-            final Curl curl = new Curl();
-            final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
-            final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
-            while (!shuttingDown.get()) {
-
-                try {
-                    socket.receive(receivingPacket);
-
-                    if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
-                        processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp", curl, receivedTransactionTrits, requestedTransaction);
-                    } else {
-                        receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
-                    }
-                } catch (final Exception e) {
-                    log.error("Receiver Thread Exception:", e);
-                }
-            }
-            log.info("Shutting down spawning Receiver Thread");
-        };
-    }
-
     public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme, Curl curl, int[] receivedTransactionTrits, byte[] requestedTransaction) {
         long timestamp;
         TransactionViewModel receivedTransactionViewModel, transactionViewModel;
@@ -269,8 +229,8 @@ public class Node {
                 } else {
                     newneighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
                 }
-                if (!Node.instance().getNeighbors().contains(newneighbor)) {
-                    Node.instance().getNeighbors().add(newneighbor);
+                if (!getNeighbors().contains(newneighbor)) {
+                    getNeighbors().add(newneighbor);
                 }
             }
             catch (URISyntaxException e) {
@@ -405,14 +365,6 @@ public class Node {
         executor.awaitTermination(6, TimeUnit.SECONDS);
     }
 
-    public void send(final DatagramPacket packet) {
-        try {
-            socket.send(packet);
-        } catch (IOException e) {
-            // ignore
-        }
-    }
-    
     // helpers methods
 
     public boolean removeNeighbor(final URI uri, boolean isConfigured) {
@@ -436,7 +388,7 @@ public class Node {
         } else {
             neighbor =  new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured);
         }
-        return !Node.instance().getNeighbors().contains(neighbor) && Node.instance().getNeighbors().add(neighbor);
+        return !getNeighbors().contains(neighbor) && getNeighbors().add(neighbor);
     }
     
     public static Optional<URI> uri(final String uri) {
@@ -446,10 +398,6 @@ public class Node {
             log.error("Uri {} raised URI Syntax Exception", uri);
         }
         return Optional.empty();
-    }
-
-    public static Node instance() {
-        return instance;
     }
 
     public int queuedTransactionsSize() {
@@ -463,6 +411,8 @@ public class Node {
     public List<Neighbor> getNeighbors() {
         return neighbors;
     }
-    
-    private Node() {}
+
+    public static Node instance() {
+        return instance;
+    }
 }

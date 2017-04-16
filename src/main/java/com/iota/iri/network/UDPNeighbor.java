@@ -1,6 +1,5 @@
 package com.iota.iri.network;
 
-import com.iota.iri.service.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,7 +20,7 @@ public class UDPNeighbor extends Neighbor {
     public void send(DatagramPacket packet) {
         try {
             packet.setSocketAddress(getAddress());
-            Node.instance().send(packet);
+            UDPReceiver.instance().send(packet);
         } catch (final Exception e) {
             log.error("UDP send error: {}",e.getMessage());
         }

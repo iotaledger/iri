@@ -192,7 +192,7 @@ public class Node {
                                 try {
                                     PrintWriter writer;
                                     if(!receivedTransactionViewModel.isSolid()) {
-                                        Path path = Paths.get("export-solid", String.valueOf(TipsManager.getFileNumber()) + ".tx");
+                                        Path path = Paths.get("export", String.valueOf(TipsManager.getFileNumber()) + ".tx");
                                         writer = new PrintWriter(path.toString(), "UTF-8");
                                         writer.println(receivedTransactionViewModel.getHash().toString());
                                         writer.println(Converter.trytes(receivedTransactionViewModel.trits()));

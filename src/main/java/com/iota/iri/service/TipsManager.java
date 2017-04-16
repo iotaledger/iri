@@ -145,7 +145,6 @@ public class TipsManager {
             hashes.forEach(hash -> {
                 TransactionViewModel tx;
                 try {
-                    long fileNumber = 0;
                     PrintWriter writer;
                     tx = TransactionViewModel.fromHash(hash);
                     if(!tx.isSolid()) {

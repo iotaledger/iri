@@ -193,14 +193,12 @@ public class Node {
                                     PrintWriter writer;
                                     if(!receivedTransactionViewModel.isSolid()) {
                                         Path path = Paths.get("export-solid", String.valueOf(TipsManager.getFileNumber()) + ".tx");
-                                        long height = receivedTransactionViewModel.getHeight();
                                         writer = new PrintWriter(path.toString(), "UTF-8");
                                         writer.println(receivedTransactionViewModel.getHash().toString());
                                         writer.println(Converter.trytes(receivedTransactionViewModel.trits()));
                                         writer.println(receivedTransactionViewModel.getSender());                        
-                                        writer.println("Height: " + String.valueOf(height));
+                                        writer.println("Height: ");
                                         writer.close();
-                                        log.info("Height: " + height);
                                     }
                                 } catch (UnsupportedEncodingException | FileNotFoundException e) {
                                     log.error("File export failed", e);

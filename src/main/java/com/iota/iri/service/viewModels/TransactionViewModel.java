@@ -465,15 +465,23 @@ public class TransactionViewModel {
     }
 
     public long getHeight() throws Exception {
-        if(getHash() != Hash.NULL_HASH) {
-            if(transaction.height == 0L) {
-                TransactionViewModel trunk = getTrunkTransaction();
-                if(trunk.getType() != TransactionViewModel.PREFILLED_SLOT) {
-                    transaction.height = 1 + trunk.getHeight();
-                    update("height");
-                }
+        long height = getHash() == Hash.NULL_HASH? 1: transaction.height;
+        if(height == 0L) {
+            TransactionViewModel trunk = getTrunkTransaction();
+            if(trunk.getType() != TransactionViewModel.PREFILLED_SLOT) {
+                height = trunk.getHeight();
+                transaction.height = 1 + trunk.getHeight();
+                update("height");
             }
         }
-        return transaction.height;
+        return height;
+    }
+
+    public void updateSender(String sender) throws Exception {
+        transaction.sender = sender;
+        update("sender");
+    }
+    public String getSender() {
+        return transaction.sender;
     }
 }

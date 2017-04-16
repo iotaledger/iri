@@ -300,23 +300,8 @@ public class API {
             final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
             transactionViewModel.store();
-            if (Configuration.booling(DefaultConfSettings.EXPORT)) {
-                String filename = "./export/" + String.valueOf(Node.getFileNumber()) + ".tx";
-                PrintWriter writer = null;
-                try {
-                    writer = new PrintWriter(filename, "UTF-8");
-                } catch (FileNotFoundException e) {
-                    log.error("File export failed", e);
-                } catch (UnsupportedEncodingException e) {
-                    log.error("File export failed", e);
-                }
-                if (writer != null) {
-                    writer.println(transactionViewModel.getHash().toString());
-                    writer.println(Converter.trytes(transactionViewModel.trits()));
-                    writer.println("local");
-                    writer.close();
-                }
-            }
+            transactionViewModel.updateSender("local");
+            TipsManager.printNewSolidTransactions(Collections.singleton(transactionViewModel.getHash()));
         }
         return AbstractResponse.createEmptyResponse();
     }

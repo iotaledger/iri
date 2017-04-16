@@ -1,18 +1,21 @@
 package com.iota.iri.service;
 
-import java.security.SecureRandom;
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.LedgerValidator;
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.viewModels.*;
+import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Milestone;
-
-import static com.iota.iri.Snapshot.latestSnapshot;
 
 public class TipsManager {
 
@@ -133,9 +136,43 @@ public class TipsManager {
             }
         }
         if (solid) {
+            printNewSolidTransactions(analyzedHashes);
             TransactionViewModel.updateSolidTransactions(analyzedHashes);
         }
         return solid;
+    }
+
+    public static void printNewSolidTransactions(Collection<Hash> hashes) {
+        if (Configuration.booling(Configuration.DefaultConfSettings.EXPORT)) {
+            hashes.remove(Hash.NULL_HASH);
+            hashes.forEach(hash -> {
+                TransactionViewModel tx;
+                try {
+                    long fileNumber = 0;
+                    PrintWriter writer;
+                    tx = TransactionViewModel.fromHash(hash);
+                    if(!tx.isSolid()) {
+                        fileNumber = tx.getArrivalTime();
+                        Path path = Paths.get("export", String.valueOf(fileNumber++) + ".tx");
+                        while (path.toFile().exists()) {
+                            path = Paths.get("export", String.valueOf(fileNumber++) + ".tx");
+                        }
+                        writer = new PrintWriter(path.toString(), "UTF-8");
+                        writer.println(tx.getHash().toString());
+                        writer.println(Converter.trytes(tx.trits()));
+                        writer.println(tx.getSender());
+                        long height = tx.getHeight();
+                        log.info("Height: " + height);
+                        writer.println("Height: " + String.valueOf(height));
+                        writer.close();
+                    }
+                } catch (UnsupportedEncodingException | FileNotFoundException e) {
+                    log.error("File export failed", e);
+                } catch (Exception e) {
+                    log.error("Transaction load failed. ", e);
+                }
+            });
+        }
     }
 
     private static long updateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {

@@ -70,17 +70,6 @@ public class Node {
     private static long lastFileNumber = 0L;
     private static Object lock = new Object();
 
-    public static long getFileNumber() {
-        long now = System.currentTimeMillis();
-        synchronized (lock) {
-            if (now < lastFileNumber) {
-                return ++lastFileNumber;
-            }
-            lastFileNumber = now;
-        }
-        return now;
-    }
-    
     public void init() throws Exception {
 
         int udpport = Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP);
@@ -226,40 +215,12 @@ public class Node {
                     timestamp = receivedTransactionViewModel.getTimestamp();
                     if (timestamp == 0 || timestamp > TIMESTAMP_THRESHOLD) {
                         if(receivedTransactionViewModel.store()) {
-                            receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
+                            receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis());
                             receivedTransactionViewModel.update("arrivalTime");
+                            receivedTransactionViewModel.updateSender(neighbor.isTcpip()?
+                                    senderAddress.toString(): neighbor.getAddress().toString() );
                             neighbor.incNewTransactions();
                             broadcast(receivedTransactionViewModel);
-                            if (Configuration.booling(DefaultConfSettings.EXPORT)) {
-                                String filename = "./export/" + String.valueOf(getFileNumber()) + ".tx";
-                                PrintWriter writer = null;
-                                try {
-                                    writer = new PrintWriter(filename, "UTF-8");
-                                } catch (FileNotFoundException e) {
-                                    log.error("File export failed", e);
-                                } catch (UnsupportedEncodingException e) {
-                                    log.error("File export failed", e);
-                                }
-                                if (writer != null) {
-                                    writer.println(receivedTransactionViewModel.getHash().toString());
-                                    writer.println(Converter.trytes(receivedTransactionViewModel.trits()));
-                                    if (neighbor.isTcpip()) {
-                                        writer.println(senderAddress.toString());
-                                    }
-                                    else {
-                                        writer.println(neighbor.getAddress().toString());
-                                    }
-                                    try {
-                                        long height = receivedTransactionViewModel.getHeight();
-                                        log.info("Height: " + height);
-                                        if(height != 0) {
-                                            writer.println("Height: " + height);
-                                        }
-                                    } finally {
-                                        writer.close();
-                                    }
-                                }
-                            }
                         }
                         System.arraycopy(receivedData, TransactionViewModel.SIZE, requestedTransaction, 0, TransactionRequester.REQUEST_HASH_SIZE);
 

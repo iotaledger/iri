@@ -10,7 +10,6 @@ public class Transaction {
     public int validity;
     public int type;
     public long arrivalTime;
-    public int rating = 1;
 
     public final Tag tag = new Tag();
     public final Address address = new Address();
@@ -21,6 +20,7 @@ public class Transaction {
     public byte[] solid = new byte[]{0};
     public boolean snapshot = false;
     public long height = 0;
+    public String sender = "";
 
     public Transaction() {}
     public Transaction(Hash hash) { this.hash = hash;}

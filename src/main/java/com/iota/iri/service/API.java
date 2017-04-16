@@ -19,6 +19,8 @@ import java.util.stream.Collectors;
 
 import com.iota.iri.*;
 
+import com.iota.iri.network.TCPNeighbor;
+import com.iota.iri.network.UDPNeighbor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.viewModels.*;
 import org.apache.commons.io.IOUtils;
@@ -552,7 +554,17 @@ public class API {
             
             if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
                 // 3rd parameter true if tcp, 4th parameter true (configured tethering)
-                final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),"tcp".equals(uri.getScheme()),true);
+                final Neighbor neighbor;
+                switch(uri.getScheme()) {
+                    case "tcp":
+                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true);
+                        break;
+                    case "udp":
+                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true);
+                        break;
+                    default:
+                        neighbor = null;
+                }
                 if (!Node.instance().getNeighbors().contains(neighbor)) {
                     Node.instance().getNeighbors().add(neighbor);
                     numberOfAddedNeighbors++;

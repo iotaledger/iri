@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 
+import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,9 +19,9 @@ class ReplicatorSinkProcessor implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSinkProcessor.class);
 
-    private final Neighbor neighbor;
+    private final TCPNeighbor neighbor;
 
-    public ReplicatorSinkProcessor(Neighbor neighbor) {
+    public ReplicatorSinkProcessor(TCPNeighbor neighbor) {
         this.neighbor = neighbor;
     }
 
@@ -55,7 +56,7 @@ class ReplicatorSinkProcessor implements Runnable {
             
             if (socket != null) {
                 log.info("Connecting sink {}", remoteAddress);
-                socket.connect(new InetSocketAddress(remoteAddress, neighbor.getTcpPort()), 30000);
+                socket.connect(new InetSocketAddress(remoteAddress, neighbor.getPort()), 30000);
                 if (!socket.isClosed() && socket.isConnected()) {
                     OutputStream out = socket.getOutputStream();
                     log.info("----- NETWORK INFO ----- Sink {} is connected", remoteAddress);
@@ -111,7 +112,7 @@ class ReplicatorSinkProcessor implements Runnable {
         } catch (Exception e) {
             String reason = e.getMessage();
             if (reason==null || reason.equals("null")) reason = "closed"; 
-            log.error("***** NETWORK ALERT ***** No sink to host {}:{}, reason: {}", remoteAddress, neighbor.getTcpPort(), e.getMessage());
+            log.error("***** NETWORK ALERT ***** No sink to host {}:{}, reason: {}", remoteAddress, neighbor.getPort(), e.getMessage());
             synchronized (neighbor) {
                 Socket sourceSocket = neighbor.getSource();
                 if (sourceSocket != null && (sourceSocket.isClosed() || !sourceSocket.isConnected())) {

@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.service.Node;
 
-public class Neighbor {
+public abstract class Neighbor {
     
     private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
 
@@ -23,8 +23,7 @@ public class Neighbor {
     private int numberOfNewTransactions;
     private int numberOfInvalidTransactions;
     
-    private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(50);
-    
+
     private boolean flagged = false;
     
     public boolean isFlagged() {
@@ -34,101 +33,23 @@ public class Neighbor {
     public void setFlagged(boolean flagged) {
         this.flagged = flagged;
     }
-    
-    private boolean tcpip = false;
-    
-    public boolean isTcpip() {
-        return tcpip;
-    }
-
-    public void setTcpip(boolean tcpip) {
-        this.tcpip = tcpip;
-    }
-
-    private Socket source = null;
-    
-    public Socket getSource() {
-        return source;
-    }
 
     private final String hostAddress;
-    
+
     public String getHostAddress() {
         return hostAddress;
     }
-    
-    private int tcpPort;
-    
-    
-    public int getTcpPort() {
-        return tcpPort;
-    }
 
-    public void setTcpPort(int tcpPort) {
-        this.tcpPort = tcpPort;
-    }
-
-    public void setSource(Socket source) {
-        if (source == null) {
-            if (this.source != null && !this.source.isClosed()) {
-                try {
-                    this.source.close();
-                    log.info("Source {} closed", this.getHostAddress());
-                } catch (IOException e) {
-                    log.info("Source {} close failure {}", this.getHostAddress());
-                }
-            }
-        }
-        this.source = source;
-    }
-
-    private Socket sink = null;
-
-    public Socket getSink() {
-        return sink;
-    }
-
-    public void setSink(Socket sink) {
-        if (sink == null) {
-            if (this.sink != null && !this.sink.isClosed()) {
-                try {
-                    this.sink.close();
-                    log.info("Sink {} closed", this.getHostAddress());
-                } catch (IOException e) {
-                    log.info("Source {} close failure {}", this.getHostAddress());
-                }
-            }
-        }
-        this.sink = sink;
-    }
-
-    public Neighbor(final InetSocketAddress address, boolean isTcp, boolean isConfigured) {
+    public Neighbor(final InetSocketAddress address, boolean isConfigured) {
         this.address = address;
         this.hostAddress = address.getAddress().getHostAddress();
-        this.tcpPort = address.getPort();
-        this.tcpip = isTcp;
         this.flagged = isConfigured;
     }
 
-    public void send(final DatagramPacket packet) {
-        if (isTcpip()) {
-            if (isTcpip()) {
-                if ( sendQueue.remainingCapacity() == 0 ) {
-                    sendQueue.poll();
-                }
-                sendQueue.add(ByteBuffer.wrap(packet.getData()));
-            }
-        }
-        else {
-            try {
-                packet.setSocketAddress(address);
-                Node.instance().send(packet);
-            } catch (final Exception e) {
-                log.error("UDP send error: {}",e.getMessage());
-            }
-        }
-    }
-    
+    public abstract void send(final DatagramPacket packet);
+    public abstract int getPort();
+    public abstract String connectionType();
+
     @Override
     public boolean equals(final Object obj) {
         return this == obj || !((obj == null) || (obj.getClass() != this.getClass())) && address.equals(((Neighbor) obj).address);
@@ -167,7 +88,4 @@ public class Neighbor {
 		return numberOfNewTransactions;
 	}
     
-    public ByteBuffer getNextMessage() throws InterruptedException {
-        return (this.sendQueue.poll(10000, TimeUnit.MILLISECONDS));
-    }
 }

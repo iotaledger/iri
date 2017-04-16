@@ -7,6 +7,7 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.List;
 
+import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,7 +29,7 @@ class ReplicatorSourceProcessor implements Runnable {
     
     private boolean existingNeighbor;
     
-    private Neighbor neighbor;
+    private TCPNeighbor neighbor;
     
 
 
@@ -54,15 +55,15 @@ class ReplicatorSourceProcessor implements Runnable {
 
             existingNeighbor = false;
             List<Neighbor> neighbors = Node.instance().getNeighbors();            
-            neighbors.forEach(n -> {
-                if (n.isTcpip()) {
-                    String hisAddress = inet_socket_address.getAddress().getHostAddress();
-                    if (n.getHostAddress().equals(hisAddress)) {
-                        existingNeighbor = true;
-                        neighbor = n;
-                    }
-                }
-            });
+            neighbors.stream().filter(n -> n instanceof TCPNeighbor)
+                    .map(n -> ((TCPNeighbor) n))
+                    .forEach(n -> {
+                        String hisAddress = inet_socket_address.getAddress().getHostAddress();
+                        if (n.getHostAddress().equals(hisAddress)) {
+                            existingNeighbor = true;
+                            neighbor = n;
+                        }
+                    });
             
             if (!existingNeighbor) {
                 if (!Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
@@ -77,7 +78,7 @@ class ReplicatorSourceProcessor implements Runnable {
                     return;
                 } else {
                     // TODO This code is only for testnet/stresstest - remove for mainnet!
-                    Neighbor fresh_neighbor = new Neighbor(inet_socket_address, true, false);
+                    final TCPNeighbor fresh_neighbor = new TCPNeighbor(inet_socket_address, false);
                     Node.instance().getNeighbors().add(fresh_neighbor);
                     neighbor = fresh_neighbor;
                 }
@@ -88,7 +89,6 @@ class ReplicatorSourceProcessor implements Runnable {
                 finallyClose = false;
                 return;
             }
-            neighbor.setTcpip(true);
             neighbor.setSource(connection);
             
             // Read neighbors tcp listener port number.

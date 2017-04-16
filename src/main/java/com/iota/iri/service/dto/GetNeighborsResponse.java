@@ -38,12 +38,12 @@ public class GetNeighborsResponse extends AbstractResponse {
 
         public static Neighbor createFrom(com.iota.iri.Neighbor n) {
             Neighbor ne = new Neighbor();
-            int port = n.isTcpip() ? n.getTcpPort() : n.getAddress().getPort();
+            int port = n.getPort();
             ne.address = n.getAddress().getHostString() + ":" + port;
             ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
             ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();
             ne.numberOfNewTransactions = n.getNumberOfNewTransactions();
-            ne.connectionType = n.isTcpip() ? "tcp" : "udp";
+            ne.connectionType = n.connectionType();
             return ne;
         }
     }

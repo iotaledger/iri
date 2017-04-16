@@ -1,9 +1,6 @@
 package com.iota.iri.service;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.*;
 import java.security.SecureRandom;
 import java.util.*;
@@ -12,6 +9,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.BundleValidator;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.TCPNeighbor;
+import com.iota.iri.network.UDPNeighbor;
 import com.iota.iri.service.replicator.ReplicatorSinkPool;
 import com.iota.iri.service.viewModels.BundleViewModel;
 import com.iota.iri.service.viewModels.TipsViewModel;
@@ -78,12 +77,14 @@ public class Node {
         P_DROP_TRANSACTION = Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name());
 
         Arrays.stream(Configuration.string(DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
-        .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
-            if (!"udp".equals(u.getScheme()) && !"tcp".equals(u.getScheme()) || (new InetSocketAddress(u.getHost(), u.getPort()).getAddress() == null)) {
-                log.error("CONFIGURATION ERROR: '{}' is not a valid uri schema or resolvable address.", u);
-            }
-        }).filter(u -> ("udp".equals(u.getScheme()) || "tcp".equals(u.getScheme())) && (new InetSocketAddress(u.getHost(), u.getPort()).getAddress()) != null)
-        .map(u -> new Neighbor(new InetSocketAddress(u.getHost(), u.getPort()),"tcp".equals(u.getScheme()),true)).peek(u -> {
+                .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
+                    if (!"udp".equals(u.getScheme()) && !"tcp".equals(u.getScheme()) || (new InetSocketAddress(u.getHost(), u.getPort()).getAddress() == null)) {
+                        log.error("CONFIGURATION ERROR: '{}' is not a valid uri schema or resolvable address.", u);
+                    }})
+                .filter(u -> ("udp".equals(u.getScheme()) || "tcp".equals(u.getScheme())) && (new InetSocketAddress(u.getHost(), u.getPort()).getAddress()) != null)
+                .map(u -> "tcp".equals(u.getScheme())? new TCPNeighbor(new InetSocketAddress(u.getHost(), u.getPort()),true):
+                    new UDPNeighbor(new InetSocketAddress(u.getHost(), u.getPort()),true))
+                .peek(u -> {
                 log.info("-> Adding neighbor : {} ", u.getAddress());
         }).forEach(neighbors::add);
 
@@ -198,7 +199,7 @@ public class Node {
 
         boolean addressMatch = false;
         for (final Neighbor neighbor : neighbors) {
-            if (neighbor.isTcpip()) {
+            if (neighbor instanceof TCPNeighbor) {
                 if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
             }
             else {
@@ -217,7 +218,7 @@ public class Node {
                         if(receivedTransactionViewModel.store()) {
                             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis());
                             receivedTransactionViewModel.update("arrivalTime");
-                            receivedTransactionViewModel.updateSender(neighbor.isTcpip()?
+                            receivedTransactionViewModel.updateSender(neighbor instanceof TCPNeighbor?
                                     senderAddress.toString(): neighbor.getAddress().toString() );
                             neighbor.incNewTransactions();
                             broadcast(receivedTransactionViewModel);
@@ -262,8 +263,12 @@ public class Node {
             try {
                 final URI uri = new URI(uriString);
                 // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
-                boolean isTcp = uriScheme.equals("tcp") ? true : false;
-                final Neighbor newneighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, false);
+                final Neighbor newneighbor;
+                if(uriScheme.equals("tcp")) {
+                    newneighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
+                } else {
+                    newneighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
+                }
                 if (!Node.instance().getNeighbors().contains(newneighbor)) {
                     Node.instance().getNeighbors().add(newneighbor);
                 }
@@ -411,26 +416,26 @@ public class Node {
     // helpers methods
 
     public boolean removeNeighbor(final URI uri, boolean isConfigured) {
-        boolean isTcp = false;
+        Neighbor neighbor;
         if (uri.toString().contains("tcp:")) {
-            isTcp = true;
+            neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured);
+            neighbors.stream().filter(n -> n instanceof TCPNeighbor)
+                    .map(n -> ((TCPNeighbor) n))
+                    .filter(n -> n.equals(neighbor))
+                    .forEach(TCPNeighbor::clear);
+        } else {
+            neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured);
         }
-        Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, isConfigured);
-        neighbors.forEach(n -> {
-            if (n.equals(neighbor) && n.isTcpip()) {
-                n.setSource(null);
-                n.setSink(null);
-            }
-        });
         return neighbors.remove(neighbor);
     }
 
     public boolean addNeighbor(final URI uri, boolean isConfigured) {
-        boolean isTcp = false;
+        final Neighbor neighbor;
         if (uri.toString().contains("tcp:")) {
-            isTcp = true;
+            neighbor =  new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured);
+        } else {
+            neighbor =  new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured);
         }
-        final Neighbor neighbor = new Neighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isTcp, isConfigured);
         return !Node.instance().getNeighbors().contains(neighbor) && Node.instance().getNeighbors().add(neighbor);
     }
     

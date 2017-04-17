@@ -1,7 +1,6 @@
 package com.iota.iri.network;
 
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.net.*;
@@ -14,7 +13,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.BundleValidator;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.network.replicator.ReplicatorSinkPool;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.controllers.BundleViewModel;
@@ -212,7 +210,7 @@ public class Node {
                         }
                         Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
                         if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
-                            transactionPointer = getNextTransactionPointer(requestedHash);
+                            transactionPointer = getRandomTipPointer();
                             transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         } else {
                             transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
@@ -260,40 +258,11 @@ public class Node {
         }
     }
 
-    private Hash getNextTransactionPointer(Hash requestedTransaction) throws Exception {
-        Hash mBytes, transactionPointer = Hash.NULL_HASH;
+    private Hash getRandomTipPointer() throws Exception {
+        Hash transactionPointer = Hash.NULL_HASH;
         final Hash[] tips = TipsViewModel.getTipHashes();
         if(tips.length > 0) {
             transactionPointer = tips[rnd.nextInt(tips.length)];
-        }
-        if (Milestone.latestMilestoneIndex > 0 && Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
-            if (randomTipBroadcastCounter % 60 == 0) {
-                mBytes = Milestone.latestMilestone;
-                if (!mBytes.equals(Hash.NULL_HASH)) {
-                    transactionPointer = mBytes;
-                }
-            } else if (randomTipBroadcastCounter % 48 == 0) {
-                mBytes = Milestone.latestMilestone;
-                if (!mBytes.equals(Hash.NULL_HASH)) {
-                    transactionPointer = mBytes;
-
-                    final TransactionViewModel milestoneTx = TransactionViewModel.fromHash(transactionPointer);
-                    final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(milestoneTx.getBundleHash()));
-                    Collection<List<TransactionViewModel>> tList = bundleValidator.getTransactions();
-                    if (tList != null && tList.size() != 0) {
-                        for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
-                            if (bundleTransactionViewModels.size() > 1) {
-                                transactionPointer = bundleTransactionViewModels.get(1).getHash();
-                            }
-                        }
-                    }
-                }
-            }
-            randomTipBroadcastCounter++;
-
-        } else {
-
-            transactionPointer = requestedTransaction;
         }
         return transactionPointer;
     }

@@ -115,7 +115,7 @@ public class Milestone {
                     }
                     latency -= cumulative;
                     if(latency > 0) {
-                        Thread.sleep(latency - cumulative);
+                        Thread.sleep(latency);
                     }
 
                 } catch (final Exception e) {

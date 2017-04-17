@@ -14,6 +14,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.BundleValidator;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.network.replicator.ReplicatorSinkPool;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.controllers.BundleViewModel;
@@ -160,7 +161,7 @@ public class Node {
         return Optional.of(hostAddress);
     }
     
-    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme, Curl curl, int[] receivedTransactionTrits, byte[] requestedTransaction) {
+    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme, Curl curl, int[] receivedTransactionTrits) {
         long timestamp;
         TransactionViewModel receivedTransactionViewModel, transactionViewModel;
         Hash transactionPointer;
@@ -209,17 +210,15 @@ public class Node {
                                 }
                             }
                         }
-                        System.arraycopy(receivedData, TransactionViewModel.SIZE, requestedTransaction, 0, TransactionRequester.REQUEST_HASH_SIZE);
-
-                        if (Arrays.equals(requestedTransaction, TransactionViewModel.NULL_TRANSACTION_HASH_BYTES)) {
-                            transactionPointer = getNextTransactionPointer(requestedTransaction);
+                        Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
+                        if (requestedHash.equals(Hash.NULL_HASH)) {
+                            transactionPointer = getNextTransactionPointer(requestedHash);
                             transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         } else {
-                            transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedTransaction, TransactionRequester.REQUEST_HASH_SIZE));
-                            log.debug("Requested Hash: " + new Hash(requestedTransaction) + " \nFound: " +
-                                    transactionViewModel.getHash());
+                            transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
+                            log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
                         }
-                        if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
+                        if (transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
                             //log.info(neighbor.getAddress().getHostString() + "Requested TX Hash: " + transactionPointer);
                             sendPacket(sendingPacket, transactionViewModel, neighbor);
                         }
@@ -261,7 +260,7 @@ public class Node {
         }
     }
 
-    private Hash getNextTransactionPointer(byte[] requestedTransaction) throws Exception {
+    private Hash getNextTransactionPointer(Hash requestedTransaction) throws Exception {
         Hash mBytes, transactionPointer = Hash.NULL_HASH;
         if (Milestone.latestMilestoneIndex > 0 && Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
             if (randomTipBroadcastCounter % 60 == 0) {
@@ -295,7 +294,7 @@ public class Node {
 
         } else {
 
-            transactionPointer = new Hash(Converter.bytes(new Hash(requestedTransaction).trits()));
+            transactionPointer = requestedTransaction;
         }
         return transactionPointer;
     }

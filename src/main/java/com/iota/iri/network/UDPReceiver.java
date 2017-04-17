@@ -53,7 +53,7 @@ public class UDPReceiver extends Node {
                     socket.receive(receivingPacket);
 
                     if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
-                        processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp", curl, receivedTransactionTrits, requestedTransaction);
+                        processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp", curl, receivedTransactionTrits);
                     } else {
                         receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                     }

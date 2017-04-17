@@ -63,12 +63,12 @@ public abstract class TransactionRequester {
         while(transactionsToRequest.size() > 0) {
             synchronized (this) {
                 hash = transactionsToRequest.poll();
-                if(!TransactionViewModel.mightExist(hash)) {
-                    transactionsToRequest.offer(hash);
-                    break;
-                } else {
+                if(TransactionViewModel.exists(hash)) {
                     log.info("Removed existing tx from request list: " + hash);
                     hash = null;
+                } else {
+                    transactionsToRequest.offer(hash);
+                    break;
                 }
             }
         }

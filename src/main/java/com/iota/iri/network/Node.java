@@ -303,7 +303,7 @@ public class Node {
                     MissingMilestones.instance() : MissingTipTransactions.instance();
             System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
             Hash hash = requester.transactionToRequest();
-            System.arraycopy(hash != null && !hash.equals(Hash.NULL_HASH)? hash.bytes(): Hash.NULL_HASH.bytes(), 0,
+            System.arraycopy(hash != null ? hash.bytes(): transactionViewModel.getHash().bytes(), 0,
                     sendingPacket.getData(), TransactionViewModel.SIZE, REQUEST_HASH_SIZE);
             neighbor.send(sendingPacket);
         }

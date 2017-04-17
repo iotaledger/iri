@@ -22,7 +22,7 @@ public class TransactionRequester {
     private final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private static double P_REMOVE_REQUEST;
     private static boolean initialized = false;
-    private final Set<Hash> transactionsToRequest = new HashSet<>();
+    private final Queue<Hash> transactionsToRequest = new LinkedList<>();
     private final SecureRandom random = new SecureRandom();
     private volatile long lastTime = System.currentTimeMillis();
     public  static final int REQUEST_HASH_SIZE = 46;
@@ -70,13 +70,14 @@ public class TransactionRequester {
         Hash hash = null;
         if(transactionsToRequest.size() > 0) {
             while(hash == null) {
-                hash = ((Hash) transactionsToRequest.toArray()[random.nextInt(transactionsToRequest.size())]);
-                if(TransactionViewModel.exists(hash)) {
-                    synchronized (this) {
-                        log.info("Removing existing tx from request list: " + hash);
-                        transactionsToRequest.remove(hash);
+                synchronized (this) {
+                    hash = transactionsToRequest.poll();
+                    if(!TransactionViewModel.exists(hash)) {
+                        transactionsToRequest.offer(hash);
+                    } else {
+                        log.info("Removed existing tx from request list: " + hash);
+                        hash = null;
                     }
-                    hash = null;
                 }
                 if(transactionsToRequest.size() == 0) {
                     break;

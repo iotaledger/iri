@@ -158,7 +158,7 @@ public class TransactionViewModel {
         weightMagnitude = 0;
         while(weightMagnitude++ < MIN_WEIGHT_MAGNITUDE) {
             if(hashTrits[Curl.HASH_LENGTH - weightMagnitude] != 0) {
-                log.error("Invalid transaction hash. Hash found: " + new Hash(trits).toString());
+                log.error("Hash found: " + new Hash(trits).toString());
                 throw new RuntimeException("Invalid transaction hash");
             }
         }

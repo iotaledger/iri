@@ -211,7 +211,7 @@ public class Node {
                             }
                         }
                         Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
-                        if (requestedHash.equals(Hash.NULL_HASH)) {
+                        if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
                             transactionPointer = getNextTransactionPointer(requestedHash);
                             transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                         } else {

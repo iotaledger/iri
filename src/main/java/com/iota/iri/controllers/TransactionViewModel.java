@@ -211,7 +211,7 @@ public class TransactionViewModel {
     }
     public boolean store() throws Exception {
         MissingTipTransactions.instance().clearTransactionRequest(getHash());
-        if(!Tangle.instance().exists(Transaction.class, getHash()).get()) {
+        if(!exists(getHash())) {
             //log.info("Tx To save Hash: " + getHash());
             getBytes();
             getAddressHash();
@@ -469,12 +469,18 @@ public class TransactionViewModel {
     }
 
     public long getHeight() throws Exception {
-        long height = getHash() == Hash.NULL_HASH? 1: transaction.height;
+        long height = transaction.height;
         if(height == 0L) {
-            TransactionViewModel trunk = getTrunkTransaction();
-            if(trunk.getType() != TransactionViewModel.PREFILLED_SLOT) {
-                height = trunk.getHeight();
-                transaction.height = 1 + trunk.getHeight();
+            if(getTrunkTransactionHash().equals(Hash.NULL_HASH)) {
+                height = 1;
+            } else {
+                TransactionViewModel trunk = getTrunkTransaction();
+                if(trunk.getType() != TransactionViewModel.PREFILLED_SLOT) {
+                    height = 1 + trunk.getHeight();
+                }
+            }
+            if(height != 0L) {
+                transaction.height = height;
                 update("height");
             }
         }

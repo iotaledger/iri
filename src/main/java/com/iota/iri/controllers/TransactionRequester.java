@@ -59,13 +59,11 @@ public abstract class TransactionRequester {
 
     public Hash transactionToRequest() throws Exception {
         final long beginningTime = System.currentTimeMillis();
-        Hash hash = null;
-        while(transactionsToRequest.size() > 0) {
-            synchronized (this) {
-                hash = transactionsToRequest.poll();
+        Hash hash;
+        synchronized (this) {
+            while((hash = transactionsToRequest.poll()) != null) {
                 if(TransactionViewModel.exists(hash)) {
                     log.info("Removed existing tx from request list: " + hash);
-                    hash = null;
                 } else {
                     transactionsToRequest.offer(hash);
                     break;

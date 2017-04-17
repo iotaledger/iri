@@ -162,7 +162,7 @@ public class API {
                             Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                             Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
                             System.currentTimeMillis(), TipsViewModel.getTipHashes().length,
-                            TransactionRequester.instance().numberOfTransactionsToRequest());
+                            TransactionRequester.getTotalNumberOfRequestedTransactions());
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -197,16 +197,19 @@ public class API {
                     return storeTransactionStatement(trytes);
                 }
                 case "rescanTransactions": {
-                    TransactionRequester.instance().rescanTransactionsToRequest();
+                    TransactionRequester.tips().rescanTransactionsToRequest();
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "getMissingTransactions": {
-                    TransactionRequester.instance().rescanTransactionsToRequest();
+                    TransactionRequester.tips().rescanTransactionsToRequest();
                     synchronized (TransactionRequester.class) {
-                        return GetTipsResponse.create(
-                                Arrays.stream(
-                                        TransactionRequester.instance().getRequestedTransactions()
-                                ).map(Hash::toString).collect(Collectors.toList()));
+                        List<String> missingTx = Arrays.stream(TransactionRequester.tips().getRequestedTransactions())
+                                .map(Hash::toString)
+                                .collect(Collectors.toList());
+                        missingTx.addAll(Arrays.stream(TransactionRequester.milestones().getRequestedTransactions())
+                                .map(Hash::toString)
+                                .collect(Collectors.toList()));
+                        return GetTipsResponse.create(missingTx);
                     }
                 }
                 default: {

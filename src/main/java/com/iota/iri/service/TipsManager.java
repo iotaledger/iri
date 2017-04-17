@@ -11,6 +11,7 @@ import com.iota.iri.LedgerValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.*;
+import com.iota.iri.network.TipRequester;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -84,7 +85,8 @@ public class TipsManager {
                     transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                     if (transactionViewModel == null) {
                         break;
-                    } else if (!(checkSolidity(transactionViewModel.getHash()) && LedgerValidator.updateFromSnapshot(transactionViewModel.getHash()))) {
+                    } else if (!(TipRequester.instance().checkSolidity(transactionViewModel.getHash()) &&
+                            LedgerValidator.updateFromSnapshot(transactionViewModel.getHash()))) {
                         break;
                     } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)) {
                         break;
@@ -106,37 +108,6 @@ public class TipsManager {
             }
         }
         return null;
-    }
-
-
-    public static boolean checkSolidity(Hash hash) throws Exception {
-        Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
-        boolean solid = true;
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
-        Hash hashPointer, trunkInteger, branchInteger;
-        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (analyzedHashes.add(hashPointer)) {
-                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(!transactionViewModel2.isSolid()) {
-                    if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                        TransactionRequester.instance().requestTransaction(hashPointer);
-                        solid = false;
-                        break;
-
-                    } else {
-                        trunkInteger = transactionViewModel2.getTrunkTransactionHash();
-                        branchInteger = transactionViewModel2.getBranchTransactionHash();
-                        nonAnalyzedTransactions.offer(trunkInteger);
-                        nonAnalyzedTransactions.offer(branchInteger);
-                    }
-                }
-            }
-        }
-        if (solid) {
-            printNewSolidTransactions(analyzedHashes);
-            TransactionViewModel.updateSolidTransactions(analyzedHashes);
-        }
-        return solid;
     }
 
     public static void printNewSolidTransactions(Collection<Hash> hashes) {

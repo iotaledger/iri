@@ -211,7 +211,7 @@ public class TransactionViewModel {
         Tangle.instance().delete(transaction).get();
     }
     public boolean store() throws Exception {
-        TransactionRequester.instance().clearTransactionRequest(getHash());
+        TransactionRequester.tips().clearTransactionRequest(getHash());
         if(!Tangle.instance().exists(Transaction.class, getHash()).get()) {
             //log.info("Tx To save Hash: " + getHash());
             getBytes();
@@ -220,8 +220,13 @@ public class TransactionViewModel {
             getBranchTransactionHash();
             getTrunkTransactionHash();
             getTagValue();
-            TransactionRequester.instance().requestTransaction(getBranchTransactionHash());
-            TransactionRequester.instance().requestTransaction(getTrunkTransactionHash());
+            if(TransactionRequester.milestones().clearTransactionRequest(getHash())) {
+                TransactionRequester.milestones().requestTransaction(getBranchTransactionHash());
+                TransactionRequester.milestones().requestTransaction(getTrunkTransactionHash());
+            } else {
+                TransactionRequester.tips().requestTransaction(getBranchTransactionHash());
+                TransactionRequester.tips().requestTransaction(getTrunkTransactionHash());
+            }
             return Tangle.instance().save(transaction).get();
         }
         return false;

@@ -6,28 +6,32 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
+
+import static com.iota.iri.service.TipsManager.printNewSolidTransactions;
 
 /**
  * Created by paul on 3/27/17.
  */
 public class TransactionRequester {
 
-    private static final TransactionRequester instance = new TransactionRequester();
+    private static final TransactionRequester tipInstance = new TransactionRequester();
+    private static final TransactionRequester milestoneInstance = new TransactionRequester();
 
     private final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private static double P_REMOVE_REQUEST;
+    private static boolean initialized = false;
     private final Set<Hash> transactionsToRequest = new HashSet<>();
     private final SecureRandom random = new SecureRandom();
     private volatile long lastTime = System.currentTimeMillis();
     public  static final int REQUEST_HASH_SIZE = 46;
     private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUEST_HASH_SIZE];
 
-    public void init(double p_REMOVE_REQUEST) {
-        P_REMOVE_REQUEST = p_REMOVE_REQUEST;
+    public static void init(double p_REMOVE_REQUEST) {
+        if(!initialized) {
+            P_REMOVE_REQUEST = p_REMOVE_REQUEST;
+        }
     }
 
     public void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
@@ -41,13 +45,16 @@ public class TransactionRequester {
         return transactionsToRequest.stream().toArray(Hash[]::new);
     }
 
+    public static int getTotalNumberOfRequestedTransactions() {
+        return tips().transactionsToRequest.size() + milestones().transactionsToRequest.size();
+    }
     public int numberOfTransactionsToRequest() {
         return transactionsToRequest.size();
     }
 
-    void clearTransactionRequest(Hash hash) {
+    boolean clearTransactionRequest(Hash hash) {
         synchronized (this) {
-            transactionsToRequest.remove(hash);
+            return transactionsToRequest.remove(hash);
         }
     }
 
@@ -94,7 +101,40 @@ public class TransactionRequester {
         }
     }
 
-    public static TransactionRequester instance() {
-        return instance;
+    public boolean checkSolidity(Hash hash) throws Exception {
+        Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
+        boolean solid = true;
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
+        Hash hashPointer, trunkInteger, branchInteger;
+        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
+            if (analyzedHashes.add(hashPointer)) {
+                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
+                if(!transactionViewModel2.isSolid()) {
+                    if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
+                        requestTransaction(hashPointer);
+                        solid = false;
+                        break;
+
+                    } else {
+                        trunkInteger = transactionViewModel2.getTrunkTransactionHash();
+                        branchInteger = transactionViewModel2.getBranchTransactionHash();
+                        nonAnalyzedTransactions.offer(trunkInteger);
+                        nonAnalyzedTransactions.offer(branchInteger);
+                    }
+                }
+            }
+        }
+        if (solid) {
+            printNewSolidTransactions(analyzedHashes);
+            TransactionViewModel.updateSolidTransactions(analyzedHashes);
+        }
+        return solid;
+    }
+
+    public static TransactionRequester tips() {
+        return tipInstance;
+    }
+    public static TransactionRequester milestones() {
+        return milestoneInstance;
     }
 }

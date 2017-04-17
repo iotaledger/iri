@@ -88,8 +88,10 @@ public class IRI {
             Tangle.instance().init();
             LedgerValidator.init();
             Milestone.instance().init();
-            TransactionRequester.instance().init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
-            Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()), Configuration.string(DefaultConfSettings.NEIGHBORS));
+            TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
+            Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()),
+                    Configuration.doubling(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name()),
+                    Configuration.string(DefaultConfSettings.NEIGHBORS));
             UDPReceiver.instance().init(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP));
             API.instance().init();
             Replicator.instance().init(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP));

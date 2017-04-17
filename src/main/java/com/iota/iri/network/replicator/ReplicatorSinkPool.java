@@ -3,6 +3,7 @@ package com.iota.iri.network.replicator;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.Socket;
+import java.security.SecureRandom;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -24,7 +25,7 @@ public class ReplicatorSinkPool  implements Runnable {
     private ExecutorService sinkPool;
     
     public boolean shutdown = false;
-    
+
     public final static int PORT_BYTES = 10;
 
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[Node.TRANSACTION_PACKET_SIZE], Node.TRANSACTION_PACKET_SIZE);
@@ -94,13 +95,7 @@ public class ReplicatorSinkPool  implements Runnable {
                         .filter(n -> n.getSink() != null && !n.getSink().isClosed())
                         .forEach(neighbor -> {
                             try {
-                                synchronized (sendingPacket) {
-                                    System.arraycopy(transaction.getBytes(), 0, sendingPacket.getData(), 0,
-                                            TransactionViewModel.SIZE);
-                                    TransactionRequester.instance().transactionToRequest(sendingPacket.getData(),
-                                            TransactionViewModel.SIZE);
-                                    neighbor.send(sendingPacket);
-                                }
+                                Node.sendPacket(sendingPacket, transaction, neighbor);
                             } catch (final Exception e) {
                                 // ignore
                             }

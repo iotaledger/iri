@@ -14,6 +14,7 @@ import java.util.concurrent.ExecutionException;
 import javax.net.ssl.HttpsURLConnection;
 
 import com.iota.iri.controllers.*;
+import com.iota.iri.network.MilestoneTransactionRequester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,11 +70,9 @@ public class Milestone {
             while (!shuttingDown) {
 
                 try {
-                    TransactionRequester.instance().rescanTransactionsToRequest();
-                } catch (ExecutionException e) {
+                    TransactionRequester.tips().rescanTransactionsToRequest();
+                } catch (ExecutionException | InterruptedException e) {
                     log.error("Could not execute request rescan. ");
-                } catch (InterruptedException e) {
-                    log.error("Request rescan interrupted. ");
                 }
                 try {
                     final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
@@ -200,7 +199,7 @@ public class Milestone {
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex + 1; milestoneIndex <= latestMilestoneIndex; milestoneIndex++) {
             final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
-            if (milestone.getKey() == 0 || !TipsManager.checkSolidity(milestone.getValue())) {
+            if (milestone.getKey() == 0 || !MilestoneTransactionRequester.instance().checkSolidity(milestone.getValue())) {
                 break;
             }
             milestoneIndex = milestone.getKey();

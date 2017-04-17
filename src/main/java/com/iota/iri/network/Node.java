@@ -41,6 +41,7 @@ public class Node {
     public  static final int TRANSACTION_PACKET_SIZE = 1650;
     private static final int QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
+    private static double P_SELECT_MILESTONE;
     private static Node instance = new Node();
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
@@ -63,13 +64,14 @@ public class Node {
 
     private volatile long randomTipBroadcastCounter = 1;
     private double P_DROP_TRANSACTION;
-    private final SecureRandom rnd = new SecureRandom();
+    private static final SecureRandom rnd = new SecureRandom();
 
     private static long lastFileNumber = 0L;
     private static Object lock = new Object();
 
-    public void init(double pDropTransaction, String neighborList) throws Exception {
+    public void init(double pDropTransaction, double p_SELECT_MILESTONE, String neighborList) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
+        P_SELECT_MILESTONE = p_SELECT_MILESTONE;
         Arrays.stream(neighborList.split(" ")).distinct()
                 .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
                     if (!"udp".equals(u.getScheme()) && !"tcp".equals(u.getScheme()) || (new InetSocketAddress(u.getHost(), u.getPort()).getAddress() == null)) {
@@ -218,12 +220,8 @@ public class Node {
                                     transactionViewModel.getHash());
                         }
                         if (!Arrays.equals(transactionViewModel.getBytes(), TransactionViewModel.NULL_TRANSACTION_BYTES)) {
-                            synchronized (sendingPacket) {
-                                //log.info(neighbor.getAddress().getHostString() + "Requested TX Hash: " + transactionPointer);
-                                System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-                                TransactionRequester.instance().transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
-                                neighbor.send(sendingPacket);
-                            }
+                            //log.info(neighbor.getAddress().getHostString() + "Requested TX Hash: " + transactionPointer);
+                            sendPacket(sendingPacket, transactionViewModel, neighbor);
                         }
                     }
                 } catch (final RuntimeException e) {
@@ -302,6 +300,16 @@ public class Node {
         return transactionPointer;
     }
 
+    public static void sendPacket(DatagramPacket sendingPacket, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {
+        synchronized (sendingPacket) {
+            TransactionRequester requester = rnd.nextDouble() < P_SELECT_MILESTONE ?
+                    TransactionRequester.milestones() : TransactionRequester.tips();
+            System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
+            requester.transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
+            neighbor.send(sendingPacket);
+        }
+    }
+
     private Runnable spawnBroadcasterThread() {
         return () -> {
 
@@ -315,13 +323,7 @@ public class Node {
 
                         for (final Neighbor neighbor : neighbors) {
                             try {
-                                synchronized (sendingPacket) {
-                                    System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0,
-                                            TransactionViewModel.SIZE);
-                                    TransactionRequester.instance().transactionToRequest(sendingPacket.getData(),
-                                            TransactionViewModel.SIZE);
-                                    neighbor.send(sendingPacket);
-                                }
+                                sendPacket(sendingPacket, transactionViewModel, neighbor);
                             } catch (final Exception e) {
                                 // ignore
                             }

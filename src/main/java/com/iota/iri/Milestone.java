@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutionException;
 import javax.net.ssl.HttpsURLConnection;
 
 import com.iota.iri.controllers.*;
-import com.iota.iri.network.MilestoneTransactionRequester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,7 +198,7 @@ public class Milestone {
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex + 1; milestoneIndex <= latestMilestoneIndex; milestoneIndex++) {
             final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
-            if (milestone.getKey() == 0 || !MilestoneTransactionRequester.instance().checkSolidity(milestone.getValue())) {
+            if (milestone.getKey() == 0 || !TransactionRequester.milestones().checkSolidity(milestone.getValue())) {
                 break;
             }
             milestoneIndex = milestone.getKey();

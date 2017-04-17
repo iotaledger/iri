@@ -11,7 +11,6 @@ import com.iota.iri.LedgerValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.*;
-import com.iota.iri.network.TipRequester;
 import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,7 +84,7 @@ public class TipsManager {
                     transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                     if (transactionViewModel == null) {
                         break;
-                    } else if (!(TipRequester.instance().checkSolidity(transactionViewModel.getHash()) &&
+                    } else if (!(TransactionRequester.tips().checkSolidity(transactionViewModel.getHash()) &&
                             LedgerValidator.updateFromSnapshot(transactionViewModel.getHash()))) {
                         break;
                     } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)) {

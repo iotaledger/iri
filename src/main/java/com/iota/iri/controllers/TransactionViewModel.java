@@ -108,9 +108,8 @@ public class TransactionViewModel {
         return new TransactionViewModel(transaction);
     }
 
-    public static boolean mightExist(byte[] hash) throws ExecutionException, InterruptedException {
-        Transaction transaction = new Transaction(new Hash(hash));
-        return Tangle.instance().maybeHas(transaction).get();
+    public static boolean mightExist(Hash hash) throws ExecutionException, InterruptedException {
+        return Tangle.instance().maybeHas(new Transaction(hash)).get();
     }
 
     public TransactionViewModel(final Transaction transaction) {

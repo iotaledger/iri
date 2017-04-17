@@ -68,20 +68,18 @@ public class TransactionRequester {
     public void transactionToRequest(byte[] buffer, int offset) throws Exception {
         final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
-        if(transactionsToRequest.size() > 0) {
-            while(hash == null) {
-                synchronized (this) {
-                    hash = transactionsToRequest.poll();
-                    if(!TransactionViewModel.exists(hash)) {
-                        transactionsToRequest.offer(hash);
-                    } else {
-                        log.info("Removed existing tx from request list: " + hash);
-                        hash = null;
-                    }
+        while(hash == null && transactionsToRequest.size() > 0) {
+            synchronized (this) {
+                hash = transactionsToRequest.poll();
+                if(!TransactionViewModel.mightExist(hash)) {
+                    transactionsToRequest.offer(hash);
+                } else {
+                    log.info("Removed existing tx from request list: " + hash);
+                    hash = null;
                 }
-                if(transactionsToRequest.size() == 0) {
-                    break;
-                }
+            }
+            if(transactionsToRequest.size() == 0) {
+                break;
             }
         }
 

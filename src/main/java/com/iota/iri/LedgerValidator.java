@@ -1,9 +1,7 @@
 package com.iota.iri;
 
+import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
-import com.iota.iri.controllers.MilestoneViewModel;
-import com.iota.iri.controllers.TransactionRequester;
-import com.iota.iri.controllers.TransactionViewModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,9 +56,9 @@ public class LedgerValidator {
                     numberOfAnalyzedTransactions++;
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         if(milestone) {
-                            TransactionRequester.milestones().requestTransaction(transactionViewModel.getHash());
+                            MissingMilestones.instance().requestTransaction(transactionViewModel.getHash());
                         } else {
-                            TransactionRequester.tips().requestTransaction(transactionViewModel.getHash());
+                            MissingTipTransactions.instance().requestTransaction(transactionViewModel.getHash());
                         }
                         return null;
 
@@ -96,9 +94,9 @@ public class LedgerValidator {
                                 for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
                                     transactionViewModel1.delete();
                                     if(milestone) {
-                                        TransactionRequester.milestones().requestTransaction(transactionViewModel.getHash());
+                                        MissingMilestones.instance().requestTransaction(transactionViewModel.getHash());
                                     } else {
-                                        TransactionRequester.tips().requestTransaction(transactionViewModel.getHash());
+                                        MissingTipTransactions.instance().requestTransaction(transactionViewModel.getHash());
                                     }
                                 }
                                 return null;

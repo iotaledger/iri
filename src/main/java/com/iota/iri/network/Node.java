@@ -12,13 +12,10 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.BundleValidator;
+import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.replicator.ReplicatorSinkPool;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.controllers.BundleViewModel;
-import com.iota.iri.controllers.TipsViewModel;
-import com.iota.iri.controllers.TransactionRequester;
-import com.iota.iri.controllers.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,6 +37,7 @@ public class Node {
     public  static final int TRANSACTION_PACKET_SIZE = 1650;
     private static final int QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
+    public  static final int REQUEST_HASH_SIZE = 46;
     private static double P_SELECT_MILESTONE;
     private static Node instance = new Node();
 
@@ -270,9 +268,11 @@ public class Node {
     public static void sendPacket(DatagramPacket sendingPacket, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {
         synchronized (sendingPacket) {
             TransactionRequester requester = rnd.nextDouble() < P_SELECT_MILESTONE ?
-                    TransactionRequester.milestones() : TransactionRequester.tips();
+                    MissingMilestones.instance() : MissingTipTransactions.instance();
             System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-            requester.transactionToRequest(sendingPacket.getData(), TransactionViewModel.SIZE);
+            Hash hash = requester.transactionToRequest();
+            System.arraycopy(hash != null && !hash.equals(Hash.NULL_HASH)? hash.bytes(): Hash.NULL_HASH.bytes(), 0,
+                    sendingPacket.getData(), TransactionViewModel.SIZE, REQUEST_HASH_SIZE);
             neighbor.send(sendingPacket);
         }
     }

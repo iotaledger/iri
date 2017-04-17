@@ -14,25 +14,14 @@ import static com.iota.iri.service.TipsManager.printNewSolidTransactions;
 /**
  * Created by paul on 3/27/17.
  */
-public class TransactionRequester {
-
-    private static final TransactionRequester tipInstance = new TransactionRequester();
-    private static final TransactionRequester milestoneInstance = new TransactionRequester();
+public abstract class TransactionRequester {
 
     private final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
-    private static double P_REMOVE_REQUEST;
-    private static boolean initialized = false;
     private final Queue<Hash> transactionsToRequest = new LinkedList<>();
-    private final SecureRandom random = new SecureRandom();
     private volatile long lastTime = System.currentTimeMillis();
     public  static final int REQUEST_HASH_SIZE = 46;
     private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUEST_HASH_SIZE];
 
-    public static void init(double p_REMOVE_REQUEST) {
-        if(!initialized) {
-            P_REMOVE_REQUEST = p_REMOVE_REQUEST;
-        }
-    }
 
     public void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
         Hash[] missingTx = TransactionViewModel.getMissingTransactions();
@@ -46,8 +35,10 @@ public class TransactionRequester {
     }
 
     public static int getTotalNumberOfRequestedTransactions() {
-        return tips().transactionsToRequest.size() + milestones().transactionsToRequest.size();
+        return MissingMilestones.instance().numberOfTransactionsToRequest() +
+                MissingTipTransactions.instance().numberOfTransactionsToRequest();
     }
+
     public int numberOfTransactionsToRequest() {
         return transactionsToRequest.size();
     }
@@ -65,7 +56,8 @@ public class TransactionRequester {
             }
         }
     }
-    public void transactionToRequest(byte[] buffer, int offset) throws Exception {
+
+    public Hash transactionToRequest() throws Exception {
         final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
         while(hash == null && transactionsToRequest.size() > 0) {
@@ -83,21 +75,12 @@ public class TransactionRequester {
             }
         }
 
-        if(hash != null && !hash.equals(Hash.NULL_HASH)) {
-            if(random.nextDouble() < P_REMOVE_REQUEST) {
-                synchronized (this) {
-                    transactionsToRequest.remove(hash);
-                }
-            }
-            System.arraycopy(hash.bytes(), 0, buffer, offset, REQUEST_HASH_SIZE);
-        } else {
-            System.arraycopy(Hash.NULL_HASH.bytes(), 0, buffer, offset, REQUEST_HASH_SIZE);
-        }
         long now = System.currentTimeMillis();
         if ((now - lastTime) > 10000L) {
             lastTime = now;
             log.info("Transactions to request = {}", transactionsToRequest.size() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
         }
+        return hash;
     }
 
     public boolean checkSolidity(Hash hash) throws Exception {
@@ -130,10 +113,4 @@ public class TransactionRequester {
         return solid;
     }
 
-    public static TransactionRequester tips() {
-        return tipInstance;
-    }
-    public static TransactionRequester milestones() {
-        return milestoneInstance;
-    }
 }

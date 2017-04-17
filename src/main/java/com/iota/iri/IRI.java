@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
+import com.iota.iri.controllers.MissingTipTransactions;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.storage.Tangle;
@@ -88,7 +89,7 @@ public class IRI {
             Tangle.instance().init();
             LedgerValidator.init();
             Milestone.instance().init();
-            TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
+            MissingTipTransactions.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
             Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()),
                     Configuration.doubling(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name()),
                     Configuration.string(DefaultConfSettings.NEIGHBORS));

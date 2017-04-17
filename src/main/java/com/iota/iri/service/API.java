@@ -197,16 +197,16 @@ public class API {
                     return storeTransactionStatement(trytes);
                 }
                 case "rescanTransactions": {
-                    TransactionRequester.tips().rescanTransactionsToRequest();
+                    MissingTipTransactions.instance().rescanTransactionsToRequest();
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "getMissingTransactions": {
-                    TransactionRequester.tips().rescanTransactionsToRequest();
+                    MissingTipTransactions.instance().rescanTransactionsToRequest();
                     synchronized (TransactionRequester.class) {
-                        List<String> missingTx = Arrays.stream(TransactionRequester.tips().getRequestedTransactions())
+                        List<String> missingTx = Arrays.stream(MissingMilestones.instance().getRequestedTransactions())
                                 .map(Hash::toString)
                                 .collect(Collectors.toList());
-                        missingTx.addAll(Arrays.stream(TransactionRequester.milestones().getRequestedTransactions())
+                        missingTx.addAll(Arrays.stream(MissingTipTransactions.instance().getRequestedTransactions())
                                 .map(Hash::toString)
                                 .collect(Collectors.toList()));
                         return GetTipsResponse.create(missingTx);

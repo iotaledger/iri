@@ -262,6 +262,10 @@ public class Node {
 
     private Hash getNextTransactionPointer(Hash requestedTransaction) throws Exception {
         Hash mBytes, transactionPointer = Hash.NULL_HASH;
+        final Hash[] tips = TipsViewModel.getTipHashes();
+        if(tips.length > 0) {
+            transactionPointer = tips[rnd.nextInt(tips.length)];
+        }
         if (Milestone.latestMilestoneIndex > 0 && Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
             if (randomTipBroadcastCounter % 60 == 0) {
                 mBytes = Milestone.latestMilestone;
@@ -283,11 +287,6 @@ public class Node {
                             }
                         }
                     }
-                }
-            } else if (randomTipBroadcastCounter % 24 == 0) {
-                final Hash[] tips = TipsViewModel.getTipHashes();
-                if(tips.length > 0) {
-                    transactionPointer = tips[rnd.nextInt(tips.length)];
                 }
             }
             randomTipBroadcastCounter++;

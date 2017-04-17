@@ -60,18 +60,16 @@ public abstract class TransactionRequester {
     public Hash transactionToRequest() throws Exception {
         final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
-        while(hash == null && transactionsToRequest.size() > 0) {
+        while(transactionsToRequest.size() > 0) {
             synchronized (this) {
                 hash = transactionsToRequest.poll();
                 if(!TransactionViewModel.mightExist(hash)) {
                     transactionsToRequest.offer(hash);
+                    break;
                 } else {
                     log.info("Removed existing tx from request list: " + hash);
                     hash = null;
                 }
-            }
-            if(transactionsToRequest.size() == 0) {
-                break;
             }
         }
 

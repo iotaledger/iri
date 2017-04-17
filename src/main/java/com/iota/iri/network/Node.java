@@ -164,6 +164,7 @@ public class Node {
 
         boolean addressMatch = false;
         for (final Neighbor neighbor : neighbors) {
+            boolean stored = false;
             if (neighbor instanceof TCPNeighbor) {
                 if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
             }
@@ -171,55 +172,85 @@ public class Node {
                 if (neighbor.getAddress().toString().contains(senderAddress.toString())) addressMatch = true;
             }
             if (addressMatch) {
+                neighbor.incAllTransactions();
+                if(rnd.nextDouble() < P_DROP_TRANSACTION) {
+                    //log.info("Randomly dropping transaction. Stand by... ");
+                    break;
+                }
                 try {
-                    neighbor.incAllTransactions();
-                    if(rnd.nextDouble() < P_DROP_TRANSACTION) {
-                        //log.info("Randomly dropping transaction. Stand by... ");
-                        break;
-                    }
                     receivedTransactionViewModel = new TransactionViewModel(receivedData, receivedTransactionTrits, curl);
-                    timestamp = receivedTransactionViewModel.getTimestamp();
-                    if (timestamp == 0 || timestamp > TIMESTAMP_THRESHOLD) {
-                        if(receivedTransactionViewModel.store()) {
-                            receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis());
+                } catch (final RuntimeException e) {
+                    log.error("Received an Invalid TransactionViewModel. Dropping it...");
+                    neighbor.incInvalidTransactions();
+                    break;
+                }
+                timestamp = receivedTransactionViewModel.getTimestamp();
+                if (timestamp == 0 || timestamp > TIMESTAMP_THRESHOLD) {
+                    try {
+                        stored = receivedTransactionViewModel.store();
+                    } catch (Exception e) {
+                        log.error("Error accessing persistence store.", e);
+                        neighbor.incInvalidTransactions();
+                    }
+                    if(stored) {
+                        receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis());
+                        try {
                             receivedTransactionViewModel.update("arrivalTime");
                             receivedTransactionViewModel.updateSender(neighbor instanceof TCPNeighbor?
                                     senderAddress.toString(): neighbor.getAddress().toString() );
-                            neighbor.incNewTransactions();
-                            broadcast(receivedTransactionViewModel);
-                            if (Configuration.booling(DefaultConfSettings.EXPORT)) {
-                                try {
-                                    PrintWriter writer;
-                                    if(!receivedTransactionViewModel.isSolid()) {
-                                        Path path = Paths.get("export", String.valueOf(TipsManager.getFileNumber()) + ".tx");
-                                        writer = new PrintWriter(path.toString(), "UTF-8");
-                                        writer.println(receivedTransactionViewModel.getHash().toString());
-                                        writer.println(Converter.trytes(receivedTransactionViewModel.trits()));
-                                        writer.println(receivedTransactionViewModel.getSender());                        
-                                        writer.println("Height: ");
-                                        writer.close();
-                                    }
-                                } catch (UnsupportedEncodingException | FileNotFoundException e) {
-                                    log.error("File export failed", e);
-                                } catch (Exception e) {
-                                    log.error("Transaction load failed. ", e);
+                        } catch (Exception e) {
+                            log.error("Error updating transactions.", e);
+                        }
+                        neighbor.incNewTransactions();
+                        broadcast(receivedTransactionViewModel);
+                        if (Configuration.booling(DefaultConfSettings.EXPORT)) {
+                            try {
+                                PrintWriter writer;
+                                if(!receivedTransactionViewModel.isSolid()) {
+                                    Path path = Paths.get("export", String.valueOf(TipsManager.getFileNumber()) + ".tx");
+                                    writer = new PrintWriter(path.toString(), "UTF-8");
+                                    writer.println(receivedTransactionViewModel.getHash().toString());
+                                    writer.println(Converter.trytes(receivedTransactionViewModel.trits()));
+                                    writer.println(receivedTransactionViewModel.getSender());
+                                    writer.println("Height: ");
+                                    writer.close();
                                 }
+                            } catch (UnsupportedEncodingException | FileNotFoundException e) {
+                                log.error("File export failed", e);
+                            } catch (Exception e) {
+                                log.error("Transaction load failed. ", e);
                             }
                         }
-                        Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
-                        if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
+                    }
+                    Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
+                    if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
+                        try {
                             transactionPointer = getRandomTipPointer();
                             transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                        } else {
+                        } catch (Exception e) {
+                            log.error("Error getting random tip.", e);
+                            break;
+                        }
+                    } else {
+                        try {
                             transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
                             log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
-                        }
-                        if (transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
-                            //log.info(neighbor.getAddress().getHostString() + "Requested TX Hash: " + transactionPointer);
-                            sendPacket(sendingPacket, transactionViewModel, neighbor);
+                        } catch (Exception e) {
+                            log.error("Error while searching for transaction.", e);
+                            break;
                         }
                     }
-                } catch (final RuntimeException e) {
+                    if (transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
+                        //log.info(neighbor.getAddress().getHostString() + "Requested TX Hash: " + transactionPointer);
+                        try {
+                            sendPacket(sendingPacket, transactionViewModel, neighbor);
+                        } catch (Exception e) {
+                            log.error("Error fetching transaction to request.", e);
+                        }
+                    }
+                }
+                /*
+                catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();
                 } catch (InterruptedException e) {
@@ -230,6 +261,7 @@ public class Node {
                     log.error("Error accessing persistence store.");
                     neighbor.incInvalidTransactions();
                 }
+                */
                 break;
             }            
         }

@@ -133,7 +133,7 @@ public class TransactionViewModel {
     }
 
 
-    public TransactionViewModel(final byte[] bytes, final int[] trits, final Curl curl) {
+    public TransactionViewModel(final byte[] bytes, final int[] trits, final Curl curl) throws RuntimeException {
         transaction = new Transaction();
         transaction.bytes = new byte[SIZE];
         System.arraycopy(bytes, 0, transaction.bytes, 0, SIZE);

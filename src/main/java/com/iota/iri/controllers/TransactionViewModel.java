@@ -145,8 +145,11 @@ public class TransactionViewModel {
             }
         }
 
+        transaction.hash = Hash.calculate(trits(), 0, TRINARY_SIZE, curl);
+
+        /*
         getHashTrits(curl);
-        getHash();
+        */
         // For testnet, reduced minWeight from 13 to 9
         // if (this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 1] != 0) {
         /*
@@ -155,7 +158,7 @@ public class TransactionViewModel {
             throw new RuntimeException("Invalid transaction hash");
         }
         */
-        weightMagnitude = 0;
+        weightMagnitude = getHash().trailingZeros();
         while(weightMagnitude++ < MIN_WEIGHT_MAGNITUDE) {
             if(hashTrits[Curl.HASH_LENGTH - weightMagnitude] != 0) {
                 log.error("Hash found: " + new Hash(trits).toString());
@@ -163,10 +166,12 @@ public class TransactionViewModel {
             }
         }
 
-        weightMagnitude = MIN_WEIGHT_MAGNITUDE;
+        //weightMagnitude = MIN_WEIGHT_MAGNITUDE;
+        /*
         while (weightMagnitude < Curl.HASH_LENGTH && hashTrits[Curl.HASH_LENGTH - weightMagnitude - 1] == 0) {
             weightMagnitude++;
         }
+        */
 
 
         transaction.type = FILLED_SLOT;
@@ -260,7 +265,7 @@ public class TransactionViewModel {
 
     public Hash getHash() {
         if(transaction.hash == null) {
-            transaction.hash = new Hash(Converter.bytes(getHashTrits(null)));
+            transaction.hash = Hash.calculate(trits(), 0, TRINARY_SIZE, new Curl());
         }
         return transaction.hash;
     }

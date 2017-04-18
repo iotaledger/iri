@@ -5,15 +5,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TransactionViewModel {
     private static ExecutorService executorService = Executors.newCachedThreadPool();
@@ -369,6 +366,7 @@ public class TransactionViewModel {
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
+            transactionViewModel.updateHeight();
             transactionViewModel.setSolid();
         }
     }
@@ -455,7 +453,7 @@ public class TransactionViewModel {
         */
     }
 
-    public long getHeight() throws Exception {
+    public long updateHeight() throws Exception {
         long height = transaction.height;
         if(height == 0L) {
             if(getTrunkTransactionHash().equals(Hash.NULL_HASH)) {
@@ -463,7 +461,7 @@ public class TransactionViewModel {
             } else {
                 TransactionViewModel trunk = getTrunkTransaction();
                 if(trunk.getType() != TransactionViewModel.PREFILLED_SLOT) {
-                    height = 1 + trunk.getHeight();
+                    height = 1 + trunk.updateHeight();
                 }
             }
             if(height != 0L) {

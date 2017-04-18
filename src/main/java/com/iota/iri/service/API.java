@@ -306,7 +306,6 @@ public class API {
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
             transactionViewModel.store();
             transactionViewModel.updateSender("local");
-            TipsManager.printNewSolidTransactions(Collections.singleton(transactionViewModel.getHash()));
         }
         return AbstractResponse.createEmptyResponse();
     }

@@ -3,6 +3,7 @@ package com.iota.iri;
 import java.io.File;
 import java.io.IOException;
 
+import com.iota.iri.storage.FileExportProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -87,6 +88,9 @@ public class IRI {
             }
             TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
+            if (Configuration.booling(DefaultConfSettings.EXPORT)) {
+                Tangle.instance().addPersistenceProvider(new FileExportProvider());
+            }
             Tangle.instance().init();
             LedgerValidator.init();
             Milestone.instance().init();

@@ -204,24 +204,6 @@ public class Node {
                         }
                         neighbor.incNewTransactions();
                         broadcast(receivedTransactionViewModel);
-                        if (Configuration.booling(DefaultConfSettings.EXPORT)) {
-                            try {
-                                PrintWriter writer;
-                                if(!receivedTransactionViewModel.isSolid()) {
-                                    Path path = Paths.get("export", String.valueOf(TipsManager.getFileNumber()) + ".tx");
-                                    writer = new PrintWriter(path.toString(), "UTF-8");
-                                    writer.println(receivedTransactionViewModel.getHash().toString());
-                                    writer.println(Converter.trytes(receivedTransactionViewModel.trits()));
-                                    writer.println(receivedTransactionViewModel.getSender());
-                                    writer.println("Height: ");
-                                    writer.close();
-                                }
-                            } catch (UnsupportedEncodingException | FileNotFoundException e) {
-                                log.error("File export failed", e);
-                            } catch (Exception e) {
-                                log.error("Transaction load failed. ", e);
-                            }
-                        }
                     }
                     Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
                     if (requestedHash.equals(receivedTransactionViewModel.getHash())) {

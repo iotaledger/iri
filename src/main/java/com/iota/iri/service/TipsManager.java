@@ -109,34 +109,6 @@ public class TipsManager {
         return null;
     }
 
-    public static void printNewSolidTransactions(Collection<Hash> hashes) {
-        if (Configuration.booling(Configuration.DefaultConfSettings.EXPORT)) {
-            hashes.remove(Hash.NULL_HASH);
-            hashes.forEach(hash -> {
-                TransactionViewModel tx;
-                try {
-                    PrintWriter writer;
-                    tx = TransactionViewModel.fromHash(hash);
-                    if(!tx.isSolid()) {
-                        Path path = Paths.get("export-solid", String.valueOf(getFileNumber()) + ".tx");
-                        long height = tx.getHeight();
-                        writer = new PrintWriter(path.toString(), "UTF-8");
-                        writer.println(tx.getHash().toString());
-                        writer.println(Converter.trytes(tx.trits()));
-                        writer.println(tx.getSender());                        
-                        writer.println("Height: " + String.valueOf(height));
-                        writer.close();
-                        log.info("Height: " + height);
-                    }
-                } catch (UnsupportedEncodingException | FileNotFoundException e) {
-                    log.error("File export failed", e);
-                } catch (Exception e) {
-                    log.error("Transaction load failed. ", e);
-                }
-            });
-        }
-    }
-
     private static long updateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
         long rating = 1;
         if(analyzedTips.add(txHash)) {
@@ -156,20 +128,6 @@ public class TipsManager {
             }
         }
         return rating;       
-    }
-
-    private static long lastFileNumber = 0L;
-    private static Object lock = new Object();
-
-    public static long getFileNumber() {
-        long now = System.currentTimeMillis();
-        synchronized (lock) {
-            if (now < lastFileNumber) {
-                return ++lastFileNumber;
-            }
-            lastFileNumber = now;
-        }
-        return now;
     }
 
     public static TipsManager instance() {

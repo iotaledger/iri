@@ -9,8 +9,6 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 
-import static com.iota.iri.service.TipsManager.printNewSolidTransactions;
-
 /**
  * Created by paul on 3/27/17.
  */
@@ -106,7 +104,6 @@ public abstract class TransactionRequester {
             }
         }
         if (solid) {
-            printNewSolidTransactions(analyzedHashes);
             TransactionViewModel.updateSolidTransactions(analyzedHashes);
         }
         return solid;

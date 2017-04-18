@@ -367,21 +367,6 @@ public class TransactionViewModel {
         return Tangle.instance().exists(Transaction.class, hash).get();
     }
 
-    public int[] getHashTrits(Curl curl) {
-        if(hashTrits == null) {
-            if(curl == null) {
-                curl = new Curl();
-            } else {
-                curl.reset();
-            }
-            curl.absorb(trits(), 0, TRINARY_SIZE);
-            hashTrits = new int[Curl.HASH_LENGTH];
-            curl.squeeze(hashTrits, 0, hashTrits.length);
-        }
-        return hashTrits;
-    }
-
-
     public static void updateSolidTransactions(Set<Hash> analyzedHashes) throws Exception {
         Iterator<Hash> hashIterator = analyzedHashes.iterator();
         TransactionViewModel transactionViewModel;

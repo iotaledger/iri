@@ -279,11 +279,9 @@ public class TransactionViewModel {
         return Converter.longValue(trits(), VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
     }
 
-    public void setValidity(int validity, boolean update) throws Exception {
+    public void setValidity(int validity) throws Exception {
         transaction.validity = validity;
-        if(update) {
-            update("validity");
-        }
+        update("validity");
     }
 
     public int getValidity() {

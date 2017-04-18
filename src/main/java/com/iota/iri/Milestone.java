@@ -147,46 +147,42 @@ public class Milestone {
 
                     final int index = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
 
-                    if (index > latestMilestoneIndex) {
+                    if (index > latestMilestoneIndex && validateMilestone(transactionViewModel, index)) {
+                        latestMilestone = transactionViewModel.getHash();
+                        latestMilestoneIndex = index;
+                    }
+                }
+            }
+        }
+    }
 
-                        final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
-                        if (bundleValidator.getTransactions().size() == 0) {
-							// BundleValidator not available, try again later.
-                            analyzedMilestoneRetryCandidates.add(hash);
-                        }
-                        else {
-                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
+    private boolean validateMilestone(TransactionViewModel transactionViewModel, int index) throws Exception {
+        final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
+        if (bundleValidator.getTransactions().size() == 0) {
+            return false;
+        }
+        else {
+            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
 
-                                //if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(),transactionViewModel.getHash())) {
-                                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+                //if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(),transactionViewModel.getHash())) {
+                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
-                                    //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
-                                    final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction();
-                                    if (transactionViewModel2.getType() == TransactionViewModel.FILLED_SLOT
-                                            && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
+                    //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
+                    final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction();
+                    if (transactionViewModel2.getType() == TransactionViewModel.FILLED_SLOT
+                            && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
 
-                                        final int[] trunkTransactionTrits = transactionViewModel.getTrunkTransactionHash().trits();
-                                        final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
+                        final int[] trunkTransactionTrits = transactionViewModel.getTrunkTransactionHash().trits();
+                        final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
-                                        final int[] merkleRoot = ISS.getMerkleRoot(ISS.address(ISS.digest(
-                                                Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits),
-                                                        ISS.NUMBER_OF_FRAGMENT_CHUNKS),
-                                                signatureFragmentTrits)),
-                                                transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
-                                        if(testnet) {
-                                            //System.arraycopy(new Hash(hashTrits).bytes(), 0, coordinatorHash.bytes(), 0, coordinatorHash.bytes().length);
-                                        }
-                                        if (testnet || (new Hash(merkleRoot)).equals(coordinatorHash)) {
-
-                                            latestMilestone = transactionViewModel.getHash();
-                                            latestMilestoneIndex = index;
-
-                                            milestones.put(latestMilestoneIndex, latestMilestone);
-                                        }
-                                    }
-                                    break;
-                                }
-                            }
+                        final int[] merkleRoot = ISS.getMerkleRoot(ISS.address(ISS.digest(
+                                Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits),
+                                        ISS.NUMBER_OF_FRAGMENT_CHUNKS),
+                                signatureFragmentTrits)),
+                                transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
+                        if (testnet || (new Hash(merkleRoot)).equals(coordinatorHash)) {
+                            milestones.put(index, transactionViewModel.getHash());
+                            return true;
                         }
                     }
                 }
@@ -221,8 +217,13 @@ public class Milestone {
             Arrays.stream(coordinatorAddress.getTransactionHashes())
                     .parallel()
                     .map(TransactionViewModel::quietFromHash)
-                    .map(t -> new AbstractMap.SimpleEntry<>(getIndex(t), t.quietGetBundle().quietGetTail().getHash()))
-                    .forEach(e -> milestones.putIfAbsent(e.getKey(), e.getValue()));
+                    .forEach(t -> {
+                        try {
+                            Milestone.instance().validateMilestone(t, getIndex(t));
+                        } catch (Exception e) {
+                            log.error("Could not validate milestone. {}", t.getHash());
+                        }
+                    });
             index = milestones.keySet()
                             .stream()
                             .filter(e -> e.compareTo(milestoneIndexToLoad ) >= 0)

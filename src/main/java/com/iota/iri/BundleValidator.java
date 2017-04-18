@@ -38,7 +38,7 @@ public class BundleValidator {
 
                     if (transactionViewModel.getCurrentIndex() != i || transactionViewModel.getLastIndex() != lastIndex
                             || ((bundleValue += transactionViewModel.value()) < -TransactionViewModel.SUPPLY || bundleValue > TransactionViewModel.SUPPLY)) {
-                        instanceTransactionViewModels.get(0).setValidity(-1, true);
+                        instanceTransactionViewModels.get(0).setValidity(-1);
                         break;
                     }
 
@@ -80,7 +80,7 @@ public class BundleValidator {
                                             address.squeeze(addressTrits, 0, addressTrits.length);
                                             //if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
                                             if (! transactionViewModel.getAddress().getHash().equals(new Hash(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE)))) {
-                                                instanceTransactionViewModels.get(0).setValidity(-1, true);
+                                                instanceTransactionViewModels.get(0).setValidity(-1);
                                                 break MAIN_LOOP;
                                             }
                                         } else {
@@ -88,16 +88,16 @@ public class BundleValidator {
                                         }
                                     }
 
-                                    instanceTransactionViewModels.get(0).setValidity(1, true);
+                                    instanceTransactionViewModels.get(0).setValidity(1);
                                     transactions.add(instanceTransactionViewModels);
                                 } else {
-                                    instanceTransactionViewModels.get(0).setValidity(-1, true);
+                                    instanceTransactionViewModels.get(0).setValidity(-1);
                                 }
                             } else {
                                 transactions.add(instanceTransactionViewModels);
                             }
                         } else {
-                            instanceTransactionViewModels.get(0).setValidity(-1, true);
+                            instanceTransactionViewModels.get(0).setValidity(-1);
                         }
                         break;
 

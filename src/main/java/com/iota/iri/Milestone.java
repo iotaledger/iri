@@ -188,6 +188,7 @@ public class Milestone {
                 }
             }
         }
+        return false;
     }
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {

@@ -5,7 +5,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
@@ -125,54 +124,6 @@ public class TransactionViewModel {
         System.arraycopy(bytes, 0, transaction.bytes, 0, SIZE);
         transaction.hash = hash;
         transaction.type = FILLED_SLOT;
-    }
-
-    public TransactionViewModel(final byte[] bytes, final int[] trits, final Curl curl) throws RuntimeException {
-        transaction = new Transaction();
-        transaction.bytes = new byte[SIZE];
-        System.arraycopy(bytes, 0, transaction.bytes, 0, SIZE);
-
-        for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
-
-            if (trits[i] != 0) {
-                throw new RuntimeException("Invalid transaction value");
-            }
-        }
-
-        transaction.hash = Hash.calculate(trits(), 0, TRINARY_SIZE, curl);
-
-        /*
-        getHashTrits(curl);
-        */
-        // For testnet, reduced minWeight from 13 to 9
-        // if (this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 1] != 0) {
-        /*
-        if (this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 3] != 0 || this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 2] != 0 || this.transaction.hash.bytes()[Hash.SIZE_IN_BYTES - 1] != 0) {
-            log.error("Invalid transaction hash. Hash found: " + new Hash(trits).toString());
-            throw new RuntimeException("Invalid transaction hash");
-        }
-        */
-        /*
-        weightMagnitude = getHash().trailingZeros();
-        while(weightMagnitude++ < MIN_WEIGHT_MAGNITUDE) {
-            if(hashTrits[Curl.HASH_LENGTH - weightMagnitude] != 0) {
-                log.error("Hash found: " + new Hash(trits).toString());
-                throw new RuntimeException("Invalid transaction hash");
-            }
-        }
-        */
-
-        //weightMagnitude = MIN_WEIGHT_MAGNITUDE;
-        /*
-        while (weightMagnitude < Curl.HASH_LENGTH && hashTrits[Curl.HASH_LENGTH - weightMagnitude - 1] == 0) {
-            weightMagnitude++;
-        }
-        */
-
-
-        transaction.type = FILLED_SLOT;
-        transaction.validity = 0;
-        transaction.arrivalTime = 0;
     }
 
     public static int getNumberOfStoredTransactions() throws ExecutionException, InterruptedException {

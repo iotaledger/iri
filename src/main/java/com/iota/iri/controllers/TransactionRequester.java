@@ -17,7 +17,7 @@ import static com.iota.iri.service.TipsManager.printNewSolidTransactions;
 public abstract class TransactionRequester {
 
     private final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
-    private final Queue<Hash> transactionsToRequest = new LinkedList<>();
+    private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
     private volatile long lastTime = System.currentTimeMillis();
     public  static final int REQUEST_HASH_SIZE = 46;
     private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUEST_HASH_SIZE];
@@ -52,9 +52,7 @@ public abstract class TransactionRequester {
     public void requestTransaction(Hash hash) throws ExecutionException, InterruptedException {
         if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(hash)) {
             synchronized (this) {
-                if(!transactionsToRequest.contains(hash)) {
-                    transactionsToRequest.add(hash);
-                }
+                transactionsToRequest.add(hash);
             }
         }
     }
@@ -63,11 +61,14 @@ public abstract class TransactionRequester {
         final long beginningTime = System.currentTimeMillis();
         Hash hash;
         synchronized (this) {
-            while((hash = transactionsToRequest.poll()) != null) {
+            Iterator<Hash> iterator = transactionsToRequest.iterator();
+            while(iterator.hasNext()) {
+                hash = iterator.next();
+                iterator.remove();
                 if(TransactionViewModel.exists(hash)) {
                     log.info("Removed existing tx from request list: " + hash);
                 } else {
-                    transactionsToRequest.offer(hash);
+                    transactionsToRequest.add(hash);
                     break;
                 }
             }

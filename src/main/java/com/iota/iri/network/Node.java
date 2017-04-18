@@ -12,6 +12,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.BundleValidator;
+import com.iota.iri.TransactionValidator;
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.replicator.ReplicatorSinkPool;
@@ -178,7 +179,7 @@ public class Node {
                     break;
                 }
                 try {
-                    receivedTransactionViewModel = new TransactionViewModel(receivedData, receivedTransactionTrits, curl);
+                    receivedTransactionViewModel = TransactionValidator.validate(receivedData, curl);
                 } catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();

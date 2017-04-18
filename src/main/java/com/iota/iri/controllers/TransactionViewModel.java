@@ -19,7 +19,6 @@ public class TransactionViewModel {
     private static ExecutorService executorService = Executors.newCachedThreadPool();
 
     private final com.iota.iri.model.Transaction transaction;
-    private static final Logger log = LoggerFactory.getLogger(TransactionViewModel.class);
 
     public static final int SIZE = 1604;
     private static final int TAG_SIZE = 17;
@@ -64,28 +63,17 @@ public class TransactionViewModel {
     public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Hash.SIZE_IN_BYTES];
     public static final byte[] NULL_TRANSACTION_BYTES = new byte[SIZE];
 
-    public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction value)
-    public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only another tx references that hash
-    public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
-
     private AddressViewModel address;
     private BundleViewModel bundleViewModel;
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
 
 
-    private int[] hashTrits;
+    public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction value)
+    public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only another tx references that hash
+    public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
 
-    private static final int TESTNET_MIN_WEIGHT_MAGNITUDE = 9;
-    private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 18;
-    private static int MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
-    public static void init(boolean testnet) {
-        if(testnet) {
-            MIN_WEIGHT_MAGNITUDE = TESTNET_MIN_WEIGHT_MAGNITUDE;
-        } else {
-            MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
-        }
-    }
+    private int[] hashTrits;
 
     private int[] trits;
     public int weightMagnitude;
@@ -126,12 +114,19 @@ public class TransactionViewModel {
         this.trits = trits;
         this.transaction.bytes = Converter.bytes(trits);
 
-        transaction.type = TransactionViewModel.FILLED_SLOT;
+        transaction.type = FILLED_SLOT;
 
         transaction.validity = 0;
         transaction.arrivalTime = 0;
     }
 
+
+    public TransactionViewModel(final byte[] bytes) throws RuntimeException {
+        transaction = new Transaction();
+        transaction.bytes = new byte[SIZE];
+        System.arraycopy(bytes, 0, transaction.bytes, 0, SIZE);
+        transaction.type = FILLED_SLOT;
+    }
 
     public TransactionViewModel(final byte[] bytes, final int[] trits, final Curl curl) throws RuntimeException {
         transaction = new Transaction();
@@ -158,6 +153,7 @@ public class TransactionViewModel {
             throw new RuntimeException("Invalid transaction hash");
         }
         */
+        /*
         weightMagnitude = getHash().trailingZeros();
         while(weightMagnitude++ < MIN_WEIGHT_MAGNITUDE) {
             if(hashTrits[Curl.HASH_LENGTH - weightMagnitude] != 0) {
@@ -165,6 +161,7 @@ public class TransactionViewModel {
                 throw new RuntimeException("Invalid transaction hash");
             }
         }
+        */
 
         //weightMagnitude = MIN_WEIGHT_MAGNITUDE;
         /*

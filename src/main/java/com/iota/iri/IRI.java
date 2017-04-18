@@ -84,7 +84,7 @@ public class IRI {
             } else {
                 Milestone.init(MAINNET_COORDINATOR, false);
             }
-            TransactionViewModel.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
+            TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
             Tangle.instance().init();
             LedgerValidator.init();

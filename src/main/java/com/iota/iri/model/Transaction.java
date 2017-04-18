@@ -4,12 +4,13 @@ package com.iota.iri.model;
  * Created by paul on 3/2/17 for iri.
  */
 public class Transaction {
+
     public Hash hash;
 
     public byte[] bytes;
-    public int validity;
-    public int type;
-    public long arrivalTime;
+    public int validity = 0;
+    public int type = 1;
+    public long arrivalTime = 0;
 
     public final Tag tag = new Tag();
     public final Address address = new Address();

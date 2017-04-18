@@ -83,7 +83,7 @@ public class Node {
         }).forEach(neighbors::add);
 
         executor.submit(spawnBroadcasterThread());
-        executor.submit(spawnTipRequesterThread());
+        //executor.submit(spawnTipRequesterThread());
         executor.submit(spawnNeighborDNSRefresherThread());
 
         executor.shutdown();

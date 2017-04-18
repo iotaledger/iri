@@ -56,9 +56,10 @@ public class Tangle {
         return executor.submit(() -> {
             boolean exists = false;
             for(PersistenceProvider provider: persistenceProviders) {
-                //while(!provider.isAvailable()) {}
-                if(exists = provider.save(model)) {
-                    break;
+                if(exists) {
+                    provider.save(model);
+                } else {
+                   exists = provider.save(model);
                 }
             }
             return exists;
@@ -88,12 +89,12 @@ public class Tangle {
 
     public Future<Boolean> update(Object model, String item) {
         return executor.submit(() -> {
-            boolean success = true;
+            boolean success = false;
             for(PersistenceProvider provider: this.persistenceProviders) {
-                //while(!provider.isAvailable()) {}
-                if(!provider.update(model, item)) {
-                    success = false;
-                    break;
+                if(success) {
+                    provider.update(model, item);
+                } else {
+                    success = provider.update(model, item);
                 }
             }
             return success;

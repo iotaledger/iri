@@ -60,8 +60,8 @@ public class IXI {
             final Path packagePath = path.getFileName().toString().equals("package.json")? path:
                     extensionPaths != null && extensionPaths.contains(path) ? extensionPaths.get(0): null;
             if(packagePath != null) {
-                log.info("start script: " + path.toString());
-                loadExtension(path);
+                log.info("start script: " + packagePath.toString());
+                loadExtension(packagePath);
             }
         }
     }

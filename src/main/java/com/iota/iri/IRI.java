@@ -97,7 +97,7 @@ public class IRI {
             UDPReceiver.instance().init(Configuration.integer(DefaultConfSettings.UDP_RECEIVER_PORT));
             API.instance().init();
             Replicator.instance().init(Configuration.integer(DefaultConfSettings.TCP_RECEIVER_PORT));
-            //IXI.instance().init(Configuration.string(DefaultConfSettings.IXI_DIR));
+            IXI.instance().init(Configuration.string(DefaultConfSettings.IXI_DIR));
 
         } catch (final Exception e) {
             log.error("Exception during IOTA node initialisation: ", e);
@@ -241,7 +241,7 @@ public class IRI {
 
             log.info("Shutting down IOTA node, please hold tight...");
             try {
-                //IXI.instance().shutdown();
+                IXI.instance().shutdown();
                 API.instance().shutDown();
                 Milestone.instance().shutDown();
                 Node.instance().shutdown();

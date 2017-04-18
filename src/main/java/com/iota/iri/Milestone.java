@@ -165,8 +165,7 @@ public class Milestone {
                                     if (transactionViewModel2.getType() == TransactionViewModel.FILLED_SLOT
                                             && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
 
-                                        final int[] trunkTransactionTrits = new int[TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE];
-                                        Converter.getTrits(transactionViewModel.getTrunkTransactionHash().bytes(), trunkTransactionTrits);
+                                        final int[] trunkTransactionTrits = transactionViewModel.getTrunkTransactionHash().trits();
                                         final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
                                         final int[] merkleRoot = ISS.getMerkleRoot(ISS.address(ISS.digest(

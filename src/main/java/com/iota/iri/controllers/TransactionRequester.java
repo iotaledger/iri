@@ -59,7 +59,7 @@ public abstract class TransactionRequester {
 
     public Hash transactionToRequest() throws Exception {
         final long beginningTime = System.currentTimeMillis();
-        Hash hash;
+        Hash hash = null;
         synchronized (this) {
             Iterator<Hash> iterator = transactionsToRequest.iterator();
             while(iterator.hasNext()) {

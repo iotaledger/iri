@@ -139,7 +139,7 @@ public class IRI {
         String inicport = Configuration.getIniValue(DefaultConfSettings.PORT.name());
         final String cport = inicport == null ? parser.getOptionValue(port) : inicport;
         if (cport == null) {
-            log.error("Invalid arguments list. Provide at least the API_PORT in iota.ini or with -p option");
+            log.error("Invalid arguments list. Provide at least the PORT in iota.ini or with -p option");
             printUsage();
         }
         else {

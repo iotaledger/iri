@@ -25,9 +25,7 @@ public class TransactionValidator {
         }
     }
 
-    public static TransactionViewModel validate(final byte[] bytes, Curl curl) {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes);
-
+    private static void runValidation(TransactionViewModel transactionViewModel) {
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
                 throw new RuntimeException("Invalid transaction value");
@@ -39,6 +37,16 @@ public class TransactionValidator {
             log.error("Hash found: {}", transactionViewModel.getHash());
             throw new RuntimeException("Invalid transaction hash");
         }
+    }
+
+    public static TransactionViewModel validate(final int[] trits) {
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, new Curl()));
+        runValidation(transactionViewModel);
+        return transactionViewModel;
+    }
+    public static TransactionViewModel validate(final byte[] bytes, Curl curl) {
+        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, curl));
+        runValidation(transactionViewModel);
         return transactionViewModel;
     }
 }

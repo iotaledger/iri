@@ -16,6 +16,8 @@ import org.junit.rules.TemporaryFolder;
 import java.util.Arrays;
 import java.util.Random;
 
+import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
+
 /**
  * Created by paul on 3/3/17 for iri.
  */
@@ -57,7 +59,8 @@ public class TangleTest {
 
     @Test
     public void getKeysStartingWithValue() throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionTrits());
+        int[] trits = getRandomTransactionTrits();
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
         transactionViewModel.store();
         Hash[] tag = Tangle.instance().keysStartingWith(Transaction.class, Arrays.copyOf(transactionViewModel.getTagValue().bytes(), 15)).get();
         //Assert.assertNotEquals(tag.length, 0);

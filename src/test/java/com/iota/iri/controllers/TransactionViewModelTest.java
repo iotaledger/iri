@@ -76,8 +76,8 @@ public class TransactionViewModelTest {
     @Test
     public void getBranchTransaction() throws Exception {
         TransactionViewModel transactionViewModel, branchTransaction;
-
-        branchTransaction = new TransactionViewModel(getRandomTransactionTrits());
+        int[] trits = getRandomTransactionTrits();
+        branchTransaction = new TransactionViewModel(trits, Hash.calculate(trits));
 
         Transaction transaction = getRandomTransaction(seed);
         transaction.branch = new Approvee();
@@ -114,19 +114,20 @@ public class TransactionViewModelTest {
         TransactionViewModel transactionViewModel, otherTxVM, trunkTx, branchTx;
 
 
-        trunkTx = new TransactionViewModel(getRandomTransactionTrits());
+        int[] trits = getRandomTransactionTrits();
+        trunkTx = new TransactionViewModel(trits, Hash.calculate(trits));
 
-        branchTx = new TransactionViewModel(getRandomTransactionTrits());
+        branchTx = new TransactionViewModel(trits, Hash.calculate(trits));
 
         int[] childTx = getRandomTransactionTrits();
         System.arraycopy(trunkTx.getHash().trits(), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branchTx.getHash().trits(), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
-        transactionViewModel = new TransactionViewModel(childTx);
+        transactionViewModel = new TransactionViewModel(childTx, Hash.calculate(childTx));
 
         childTx = getRandomTransactionTrits();
         System.arraycopy(trunkTx.getHash().trits(), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branchTx.getHash().trits(), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
-        otherTxVM = new TransactionViewModel(childTx);
+        otherTxVM = new TransactionViewModel(childTx, Hash.calculate(childTx));
 
         otherTxVM.store();
         transactionViewModel.store();
@@ -331,7 +332,8 @@ public class TransactionViewModelTest {
 
     @Test
     public void findShouldBeSuccessful() throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(getRandomTransactionTrits());
+        int[] trits = getRandomTransactionTrits();
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
         transactionViewModel.store();
         Hash hash = transactionViewModel.getHash();
         Assert.assertArrayEquals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)).getBytes(), transactionViewModel.getBytes());
@@ -339,8 +341,10 @@ public class TransactionViewModelTest {
 
     @Test
     public void findShoultReturnNull() throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(getRandomTransactionTrits());
-        TransactionViewModel transactionViewModelNoSave = new TransactionViewModel(getRandomTransactionTrits());
+        int[] trits = getRandomTransactionTrits();
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
+        trits = getRandomTransactionTrits();
+        TransactionViewModel transactionViewModelNoSave = new TransactionViewModel(trits, Hash.calculate(trits));
         transactionViewModel.store();
         Hash hash = transactionViewModelNoSave.getHash();
         Assert.assertFalse(Arrays.equals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)).getBytes(), transactionViewModel.getBytes()));

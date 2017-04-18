@@ -37,7 +37,8 @@ public class RocksDBPersistenceProviderTest {
 
     @Test
     public void find() throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(getRandomTransactionTrits());
+        int[] trits = getRandomTransactionTrits();
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
         transactionViewModel.store();
         Hash hash = transactionViewModel.getHash();
         Transaction transaction = ((Transaction) rocksDBPersistenceProvider.seek(Transaction.class, Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)));

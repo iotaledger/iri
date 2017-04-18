@@ -6,6 +6,9 @@ import com.iota.iri.utils.Converter;
 import java.io.Serializable;
 import java.util.Arrays;
 
+import static com.iota.iri.utils.Converter.NUMBER_OF_TRITS_IN_A_BYTE;
+import static com.iota.iri.utils.Converter.NUMBER_OF_TRITS_IN_A_TRYTE;
+
 public class Hash implements Comparable<Hash>, Serializable{
 
     public static final int SIZE_IN_TRITS = 243;
@@ -41,6 +44,19 @@ public class Hash implements Comparable<Hash>, Serializable{
     }
 
     //
+    public static Hash calculate(byte[] bytes) {
+        return calculate(bytes, new Curl());
+    }
+    public static Hash calculate(int[] trits) {
+        return calculate(trits, 0, trits.length, new Curl());
+    }
+
+    public static Hash calculate(byte[] bytes, final Curl curl) {
+        int length = (bytes.length * NUMBER_OF_TRITS_IN_A_BYTE / NUMBER_OF_TRITS_IN_A_TRYTE) * NUMBER_OF_TRITS_IN_A_TRYTE;
+        int[] trits = new int[length];
+        Converter.getTrits(bytes, trits);
+        return calculate(trits, 0, length, curl);
+    }
     public static Hash calculate(final int[] tritsToCalculate, int offset, int length, final Curl curl) {
         int[] hashTrits = new int[SIZE_IN_TRITS];
         curl.reset();

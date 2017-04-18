@@ -302,7 +302,7 @@ public class API {
 
     private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {
         for (final String trytes : trys) {
-            final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(trytes));
+            final TransactionViewModel transactionViewModel = TransactionValidator.validate(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
             transactionViewModel.store();
             transactionViewModel.updateSender("local");
@@ -429,7 +429,9 @@ public class API {
 
     private AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
         for (final String tryte : trytes2) {
-            final TransactionViewModel transactionViewModel = new TransactionViewModel(Converter.trits(tryte));
+            int[] trits = Converter.trits(tryte);
+            final Hash hash = Hash.calculate(trits, 0, trits.length, new Curl());
+            final TransactionViewModel transactionViewModel = new TransactionViewModel(trits, hash);
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             Node.instance().broadcast(transactionViewModel);
         }
@@ -524,7 +526,8 @@ public class API {
                     transactionViewModels.clear();
                     break;
                 }
-                final TransactionViewModel transactionViewModel = new TransactionViewModel(transactionTrits);
+                final Hash transactionHash = Hash.calculate(transactionTrits, 0, transactionTrits.length, new Curl());
+                final TransactionViewModel transactionViewModel = new TransactionViewModel(transactionTrits, transactionHash);
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {

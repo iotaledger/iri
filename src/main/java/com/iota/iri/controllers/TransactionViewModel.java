@@ -105,11 +105,12 @@ public class TransactionViewModel {
         }
     }
 
-    public TransactionViewModel(final int[] trits) {
+    public TransactionViewModel(final int[] trits, Hash hash) {
         transaction = new com.iota.iri.model.Transaction();
-
-        this.trits = trits;
-        this.transaction.bytes = Converter.bytes(trits);
+        this.trits = new int[trits.length];
+        System.arraycopy(trits, 0, this.trits, 0, trits.length);
+        transaction.bytes = Converter.bytes(trits);
+        transaction.hash = hash;
 
         transaction.type = FILLED_SLOT;
 
@@ -118,10 +119,11 @@ public class TransactionViewModel {
     }
 
 
-    public TransactionViewModel(final byte[] bytes) throws RuntimeException {
+    public TransactionViewModel(final byte[] bytes, Hash hash) throws RuntimeException {
         transaction = new Transaction();
         transaction.bytes = new byte[SIZE];
         System.arraycopy(bytes, 0, transaction.bytes, 0, SIZE);
+        transaction.hash = hash;
         transaction.type = FILLED_SLOT;
     }
 
@@ -195,11 +197,19 @@ public class TransactionViewModel {
         return trunk;
     }
 
+    public static int[] trits(byte[] transactionBytes) {
+        int[] trits;
+        trits = new int[TRINARY_SIZE];
+        if(transactionBytes != null) {
+            Converter.getTrits(transactionBytes, trits);
+        }
+        return trits;
+    }
+
     public synchronized int[] trits() {
         if (trits == null) {
-            trits = new int[TRINARY_SIZE];
             if(transaction.bytes != null) {
-                Converter.getTrits(getBytes(), trits);
+                trits = trits(transaction.bytes);
             }
         }
         return trits;
@@ -258,9 +268,6 @@ public class TransactionViewModel {
     }
 
     public Hash getHash() {
-        if(transaction.hash == null) {
-            transaction.hash = Hash.calculate(trits(), 0, TRINARY_SIZE, new Curl());
-        }
         return transaction.hash;
     }
 

@@ -351,61 +351,6 @@ public class TransactionViewModel {
                 .keysWithMissingReferences(Transaction.class).get()).toArray(Hash[]::new);
     }
 
-
-    public static void dump(final byte[] mainBuffer, final byte[] hash, final TransactionViewModel transaction) {
-        /*
-        System.arraycopy(new byte[AbstractStorage.CELL_SIZE], 0, mainBuffer, 0, AbstractStorage.CELL_SIZE);
-        System.arraycopy(hash, 0, mainBuffer, HASH_OFFSET, HASH_SIZE);
-
-        if (transaction == null) {
-            mainBuffer[TYPE_OFFSET] = Storage.PREFILLED_SLOT;
-        } else {
-            mainBuffer[TYPE_OFFSET] = (byte)transaction.type;
-
-            System.arraycopy(transaction.bytes, 0, mainBuffer, BYTES_OFFSET, BYTES_SIZE);
-            System.arraycopy(transaction.address, 0, mainBuffer, ADDRESS_OFFSET, ADDRESS_SIZE);
-            Storage.setValue(mainBuffer, VALUE_OFFSET, transaction.value);
-            final int[] trits = transaction.trits();
-            System.arraycopy(Converter.bytes(trits, TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, mainBuffer, TAG_OFFSET, TAG_SIZE);
-            Storage.setValue(mainBuffer, CURRENT_INDEX_OFFSET, transaction.currentIndex);
-            Storage.setValue(mainBuffer, LAST_INDEX_OFFSET, transaction.lastIndex);
-            System.arraycopy(Converter.bytes(trits, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE), 0, mainBuffer, BUNDLE_OFFSET, BUNDLE_SIZE);
-            System.arraycopy(transaction.trunkTransaction, 0, mainBuffer, TRUNK_TRANSACTION_OFFSET, TRUNK_TRANSACTION_SIZE);
-            System.arraycopy(transaction.branchTransaction, 0, mainBuffer, BRANCH_TRANSACTION_OFFSET, BRANCH_TRANSACTION_SIZE);
-
-            long approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.trunkTransaction);
-            if (approvedTransactionPointer == 0) {
-                Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.trunkTransaction;
-            } else {
-
-                if (approvedTransactionPointer < 0) {
-                    approvedTransactionPointer = -approvedTransactionPointer;
-                }
-                final long index = (approvedTransactionPointer - (AbstractStorage.CELLS_OFFSET - AbstractStorage.SUPER_GROUPS_OFFSET)) >> 11;
-                StorageTransactions.instance().transactionsTipsFlags().put(
-                		(int)(index >> 3),
-                		(byte)(StorageTransactions.instance().transactionsTipsFlags().get((int)(index >> 3)) & (0xFF ^ (1 << (index & 7)))));
-            }
-            if (!Arrays.equals(transaction.branchTransaction, transaction.trunkTransaction)) {
-
-                approvedTransactionPointer = StorageTransactions.instance().transactionPointer(transaction.branchTransaction);
-                if (approvedTransactionPointer == 0) {
-                    Storage.approvedTransactionsToStore[Storage.numberOfApprovedTransactionsToStore++] = transaction.branchTransaction;
-                } else {
-
-                    if (approvedTransactionPointer < 0) {
-                        approvedTransactionPointer = -approvedTransactionPointer;
-                    }
-                    final long index = (approvedTransactionPointer - (Storage.CELLS_OFFSET - Storage.SUPER_GROUPS_OFFSET)) >> 11;
-                    StorageTransactions.instance().transactionsTipsFlags().put(
-                    		(int) (index >> 3),
-                    		(byte) (StorageTransactions.instance().transactionsTipsFlags().get((int) (index >> 3)) & (0xFF ^ (1 << (index & 7)))));
-                }
-            }
-        }
-        */
-    }
-
     public long updateHeight() throws Exception {
         long height = transaction.height;
         if(height == 0L) {

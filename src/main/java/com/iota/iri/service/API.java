@@ -59,7 +59,7 @@ public class API {
 
     public void init() throws IOException {
 
-        final int apiPort = Configuration.integer(DefaultConfSettings.API_PORT);
+        final int apiPort = Configuration.integer(DefaultConfSettings.PORT);
         final String apiHost = Configuration.string(DefaultConfSettings.API_HOST);
 
         log.debug("Binding JSON-REST API Undertown server on {}:{}", apiHost, apiPort);
@@ -102,7 +102,7 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            if (Configuration.string(DefaultConfSettings.REMOTEAPILIMIT).contains(command) &&
+            if (Configuration.string(DefaultConfSettings.REMOTE_LIMIT_API).contains(command) &&
                     !sourceAddress.getAddress().isLoopbackAddress()) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
@@ -615,8 +615,7 @@ public class API {
 
     private static void setupResponseHeaders(final HttpServerExchange exchange) {
         final HeaderMap headerMap = exchange.getResponseHeaders();
-        headerMap.add(new HttpString("Access-Control-Allow-Origin"),
-                Configuration.string(DefaultConfSettings.CORS_ENABLED));
+        headerMap.add(new HttpString("Access-Control-Allow-Origin"),"*");
         headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
     }
 

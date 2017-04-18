@@ -185,8 +185,8 @@ public class Node {
                     neighbor.incInvalidTransactions();
                     break;
                 }
-                timestamp = receivedTransactionViewModel.getTimestamp();
-                if (timestamp == 0 || timestamp > TIMESTAMP_THRESHOLD) {
+
+                {
                     try {
                         stored = receivedTransactionViewModel.store();
                     } catch (Exception e) {

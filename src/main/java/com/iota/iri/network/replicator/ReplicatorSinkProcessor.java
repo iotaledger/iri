@@ -64,7 +64,7 @@ class ReplicatorSinkProcessor implements Runnable {
                     String fmt = "%0"+String.valueOf(ReplicatorSinkPool.PORT_BYTES)+"d";
                     byte [] portAsByteArray = new byte [10];
                     System.arraycopy(String.format(fmt, 
-                            Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP)).getBytes(), 0, 
+                            Configuration.integer(DefaultConfSettings.TCP_RECEIVER_PORT)).getBytes(), 0, 
                             portAsByteArray, 0, ReplicatorSinkPool.PORT_BYTES);
                     out.write(portAsByteArray);
                     

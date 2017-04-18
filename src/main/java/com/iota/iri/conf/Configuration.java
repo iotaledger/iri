@@ -25,20 +25,19 @@ public class Configuration {
     private static final Map<String, String> conf = new ConcurrentHashMap<>();
 
     public enum DefaultConfSettings {
-        API_PORT,
+        CONFIG,
+        PORT,
         API_HOST,
-        TANGLE_RECEIVER_PORT_UDP,
-        TANGLE_RECEIVER_PORT_TCP,
-        CORS_ENABLED,
-        TESTNET, // not used yet
-        HEADLESS,
-        REMOTEAPILIMIT,
-        NEIGHBORS,
+        UDP_RECEIVER_PORT,
+        TCP_RECEIVER_PORT,
+        TESTNET,
         DEBUG,
+        REMOTE_LIMIT_API,
+        REMOTE_AUTH,
+        NEIGHBORS,        
         IXI_DIR,
         DB_PATH,
         DB_LOG_PATH,
-        CONF_PATH,
         P_REMOVE_REQUEST,
         P_DROP_TRANSACTION,
         P_SELECT_MILESTONE_CHILD,
@@ -47,19 +46,19 @@ public class Configuration {
 
     static {
         // defaults
-        conf.put(DefaultConfSettings.API_PORT.name(), "14700");
+        conf.put(DefaultConfSettings.PORT.name(), "14600");
         conf.put(DefaultConfSettings.API_HOST.name(), "localhost");
-        conf.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP.name(), "14700");
-        conf.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP.name(), "15600");
-        conf.put(DefaultConfSettings.CORS_ENABLED.name(), "*");
+        conf.put(DefaultConfSettings.UDP_RECEIVER_PORT.name(), "14600");
+        conf.put(DefaultConfSettings.TCP_RECEIVER_PORT.name(), "15600");
         conf.put(DefaultConfSettings.TESTNET.name(), "false");
-        conf.put(DefaultConfSettings.HEADLESS.name(), "false");
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
-        conf.put(DefaultConfSettings.REMOTEAPILIMIT.name(), "");
+        conf.put(DefaultConfSettings.REMOTE_LIMIT_API.name(), "");
+        conf.put(DefaultConfSettings.REMOTE_AUTH.name(), "");
+        conf.put(DefaultConfSettings.NEIGHBORS.name(), "");
         conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
         conf.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
         conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnet.log");
-        conf.put(DefaultConfSettings.CONF_PATH.name(), "iota.ini");
+        conf.put(DefaultConfSettings.CONFIG.name(), "iota.ini");
         conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.1");
         conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.0");
         conf.put(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name(), "0.7");
@@ -67,7 +66,7 @@ public class Configuration {
     }
 
     public static boolean init() throws IOException {
-        File confFile = new File(Configuration.string(Configuration.DefaultConfSettings.CONF_PATH));
+        File confFile = new File(Configuration.string(Configuration.DefaultConfSettings.CONFIG));
         if(confFile.exists()) {
             ini = new Ini(confFile);
             prefs = new IniPreferences(ini);

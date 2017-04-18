@@ -2,29 +2,23 @@ package com.iota.iri;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.charset.Charset;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
-import com.iota.iri.controllers.MissingTipTransactions;
-import com.iota.iri.model.Hash;
-import com.iota.iri.network.UDPReceiver;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.controllers.TransactionRequester;
-import com.iota.iri.controllers.TransactionViewModel;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.service.API;
+import com.iota.iri.controllers.MissingTipTransactions;
+import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
+import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.network.replicator.ReplicatorSinkPool;
 import com.iota.iri.network.replicator.ReplicatorSourcePool;
+import com.iota.iri.service.API;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
 
@@ -50,10 +44,6 @@ public class IRI {
         log.info("Welcome to {} {}", MAINNET_NAME, VERSION);
         validateParams(args);
         shutdownHook();
-
-        if (!Configuration.booling(DefaultConfSettings.HEADLESS)) {
-            showIotaLogo();
-        }
         
         if (Configuration.booling(DefaultConfSettings.EXPORT)) {
             File exportDir = new File("export");
@@ -93,9 +83,9 @@ public class IRI {
             Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()),
                     Configuration.doubling(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name()),
                     Configuration.string(DefaultConfSettings.NEIGHBORS));
-            UDPReceiver.instance().init(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP));
+            UDPReceiver.instance().init(Configuration.integer(DefaultConfSettings.UDP_RECEIVER_PORT));
             API.instance().init();
-            Replicator.instance().init(Configuration.integer(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP));
+            Replicator.instance().init(Configuration.integer(DefaultConfSettings.TCP_RECEIVER_PORT));
             //IXI.instance().init(Configuration.string(DefaultConfSettings.IXI_DIR));
 
         } catch (final Exception e) {
@@ -116,20 +106,17 @@ public class IRI {
 
         final CmdLineParser parser = new CmdLineParser();
 
-        final Option<String> config = parser.addStringOption('c', "conf");
+        final Option<String> config = parser.addStringOption('c', "config");
         final Option<String> port = parser.addStringOption('p', "port");
         final Option<String> rportudp = parser.addStringOption('u', "udp-receiver-port");
         final Option<String> rporttcp = parser.addStringOption('t', "tcp-receiver-port");
-        final Option<String> cors = parser.addStringOption("enabled-cors");
-        final Option<Boolean> headless = parser.addBooleanOption("headless");
         final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
         final Option<Boolean> remote = parser.addBooleanOption("remote");
         final Option<String> remoteLimitApi = parser.addStringOption("remote-limit-api");
+        final Option<String> remoteAuth = parser.addStringOption("remote-auth");
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
         final Option<Boolean> export = parser.addBooleanOption('e', "export");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
-        final Option<Integer> artLatency = parser.addIntegerOption('a', "art-latency");
-        final Option<Long> timestampThreshold = parser.addLongOption("timestamp-threshold");
         final Option<Boolean> testnet = parser.addBooleanOption("testnet");
 
         try {
@@ -144,19 +131,19 @@ public class IRI {
         // optional config file path
         String confFilePath = parser.getOptionValue(config);
         if(confFilePath != null ) {
-            Configuration.put(DefaultConfSettings.CONF_PATH, confFilePath);
+            Configuration.put(DefaultConfSettings.CONFIG, confFilePath);
             Configuration.init();
         }
 
         // mandatory args
-        String inicport = Configuration.getIniValue(DefaultConfSettings.API_PORT.name());
+        String inicport = Configuration.getIniValue(DefaultConfSettings.PORT.name());
         final String cport = inicport == null ? parser.getOptionValue(port) : inicport;
         if (cport == null) {
             log.error("Invalid arguments list. Provide at least the API_PORT in iota.ini or with -p option");
             printUsage();
         }
         else {
-            Configuration.put(DefaultConfSettings.API_PORT, cport);
+            Configuration.put(DefaultConfSettings.PORT, cport);
         }
 
         // optional flags
@@ -171,31 +158,26 @@ public class IRI {
         }
         Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
 
-
-        final String vcors = parser.getOptionValue(cors);
-        if (vcors != null) {
-            log.debug("Enabled CORS with value : {} ", vcors);
-            Configuration.put(DefaultConfSettings.CORS_ENABLED, vcors);
-        }
-
         final String vremoteapilimit = parser.getOptionValue(remoteLimitApi);
         if (vremoteapilimit != null) {
             log.debug("The following api calls are not allowed : {} ", vremoteapilimit);
-            Configuration.put(DefaultConfSettings.REMOTEAPILIMIT, vremoteapilimit);
+            Configuration.put(DefaultConfSettings.REMOTE_LIMIT_API, vremoteapilimit);
+        }
+        
+        final String vremoteauth = parser.getOptionValue(remoteAuth);
+        if (vremoteauth != null) {
+            log.debug("Remote access requires basic authentication");
+            Configuration.put(DefaultConfSettings.REMOTE_AUTH, vremoteauth);
         }
 
         final String vrportudp = parser.getOptionValue(rportudp);
         if (vrportudp != null) {
-            Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_UDP, vrportudp);
+            Configuration.put(DefaultConfSettings.UDP_RECEIVER_PORT, vrportudp);
         }
         
         final String vrporttcp = parser.getOptionValue(rporttcp);
         if (vrporttcp != null) {
-            Configuration.put(DefaultConfSettings.TANGLE_RECEIVER_PORT_TCP, vrporttcp);
-        }
-
-        if (parser.getOptionValue(headless) != null) {
-            Configuration.put(DefaultConfSettings.HEADLESS, "true");
+            Configuration.put(DefaultConfSettings.TCP_RECEIVER_PORT, vrporttcp);
         }
 
         if (parser.getOptionValue(remote) != null) {
@@ -218,18 +200,6 @@ public class IRI {
             StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
         }
         
-        final Integer aLatency = parser.getOptionValue(artLatency);
-        if (aLatency != null) {
-            log.info("Artifical Latency for milestone updater is set to {}.",aLatency);
-            Milestone.setARTIFICAL_LATENCY(aLatency);
-        }
-        
-        final Long ts = parser.getOptionValue(timestampThreshold);
-        if (ts != null) {
-            log.info("Timestamp threshold is set to {}.",ts);
-            Node.setTIMESTAMP_THRESHOLD(ts);
-        }
-        
         if (parser.getOptionValue(testnet) != null) {
             Configuration.put(DefaultConfSettings.TESTNET, "true");
             Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
@@ -240,16 +210,18 @@ public class IRI {
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " +
-                "[{-p,--port} 14265] " +
-                "[{-r,--receiver-port} 14265] " +
-                "[{-c,--enabled-cors} *] " +
-                "[{-h}] [{--headless}] " +
-                "[{-d,--debug}] " +
-                "[{-e,--export}]" +
-                "[{-t,--testnet}]" +
-                "[{--remote}]" +
-                "[{-t,--testnet} false] " +
-                "[{-n,--neighbors} '<list of neighbors>'] ", MAINNET_NAME, VERSION);
+                "[{-n,--neighbors} '<list of neighbors>'] " +
+                "[{-p,--port} 14600] " +                
+                "[{-c,--config} 'config-file-name'] " +
+                "[{-u,--udp-receiver-port} 14600] " +
+                "[{-t,--tcp-receiver-port} 15600] " +
+                "[{-d,--debug} false] " +
+                "[{--export} false]" +
+                "[{--testnet} false]" +
+                "[{--remote} false]" +
+                "[{--remote-auth} string]" +
+                "[{--remote-limit-api} string]"
+                , MAINNET_NAME, VERSION);
         System.exit(0);
     }
 
@@ -271,16 +243,4 @@ public class IRI {
             }
         }, "Shutdown Hook"));
     }
-
-    private static void showIotaLogo() {
-        final String charset = "UTF8";
-
-        try {
-            final Path path = Paths.get("logo.utf8.ans");
-            Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
-        } catch (IOException e) {
-            log.error("Impossible to display logo. Charset {} not supported by terminal.", charset);
-        }
-    }
-
 }

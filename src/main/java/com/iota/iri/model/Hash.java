@@ -8,6 +8,7 @@ import java.util.Arrays;
 
 public class Hash implements Comparable<Hash>, Serializable{
 
+    public static final int SIZE_IN_TRITS = 243;
     public static final int SIZE_IN_BYTES = 49;
 
     public static final Hash NULL_HASH = new Hash(new int[Curl.HASH_LENGTH]);
@@ -40,7 +41,26 @@ public class Hash implements Comparable<Hash>, Serializable{
     }
 
     //
-    
+    public static Hash calculate(final int[] tritsToCalculate, int offset, int length, final Curl curl) {
+        int[] hashTrits = new int[SIZE_IN_TRITS];
+        curl.reset();
+        curl.absorb(tritsToCalculate, offset, length);
+        curl.squeeze(hashTrits, 0, SIZE_IN_TRITS);
+        return new Hash(hashTrits);
+    }
+
+    public int trailingZeros() {
+        int index, zeros;
+        final int[] trits;
+        index = SIZE_IN_TRITS;
+        zeros = 0;
+        trits = trits();
+        while(index-- > 0 && trits[index] == 0) {
+            zeros++;
+        }
+        return zeros;
+    }
+
     public int[] trits() {
         final int[] trits = new int[Curl.HASH_LENGTH];
         Converter.getTrits(bytes, trits);

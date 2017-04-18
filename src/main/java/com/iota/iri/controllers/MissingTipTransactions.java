@@ -29,6 +29,9 @@ public class MissingTipTransactions extends TransactionRequester{
     @Override
     public Hash transactionToRequest() throws Exception {
         Hash hash = super.transactionToRequest();
+        if(hash == null) {
+            return MissingMilestones.instance().transactionToRequest();
+        }
         /*
         if(hash != null && !hash.equals(Hash.NULL_HASH)) {
             System.arraycopy(hash.bytes(), 0, buffer, offset, REQUEST_HASH_SIZE);

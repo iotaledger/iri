@@ -207,12 +207,7 @@ public class TransactionViewModel {
     }
 
     public synchronized int[] trits() {
-        if (trits == null) {
-            if(transaction.bytes != null) {
-                trits = trits(transaction.bytes);
-            }
-        }
-        return trits;
+        return (trits == null) ? (trits = trits(transaction.bytes)) : trits;
     }
 
     public void delete() throws Exception {

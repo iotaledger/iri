@@ -23,7 +23,8 @@ public class Hash implements Comparable<Hash>, Serializable{
 
     public Hash(final byte[] bytes, final int offset, final int size) {
         this.bytes = new byte[SIZE_IN_BYTES];
-        System.arraycopy(bytes, offset, this.bytes, 0, size);
+        int length = size - offset > bytes.length ? bytes.length-offset: size;
+        System.arraycopy(bytes, offset, this.bytes, 0, length);
         hashCode = Arrays.hashCode(this.bytes);
     }
 
@@ -32,7 +33,7 @@ public class Hash implements Comparable<Hash>, Serializable{
     }
 
     public Hash(final int[] trits, final int offset) {
-        this(Converter.bytes(trits, offset, Curl.HASH_LENGTH));
+        this(Converter.bytes(trits, offset, trits.length));
     }
 
     public Hash(final int[] trits) {

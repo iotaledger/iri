@@ -69,10 +69,21 @@ public class IRI {
         }
 
         try {
+            String dbPath = Configuration.string(Configuration.DefaultConfSettings.DB_PATH);
             if (Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
-                Milestone.init(TESTNET_COORDINATOR, true);
+                Milestone.init(TESTNET_COORDINATOR, true);                
+                if (dbPath.isEmpty() || dbPath.equals("mainnetdb")) {
+                    // testnetusers must not use mainnetdb, overwrite it unless an explicit name is set.
+                    Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
+                    Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+                }
             } else {
                 Milestone.init(MAINNET_COORDINATOR, false);
+                if (dbPath.isEmpty() || dbPath.equals("testnetdb")) {
+                    // mainnetusers must not use testnetdb, overwrite it unless an explicit name is set.
+                    Configuration.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
+                    Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnetdb.log");
+                }
             }
             TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());

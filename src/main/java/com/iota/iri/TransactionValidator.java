@@ -45,7 +45,7 @@ public class TransactionValidator {
         return transactionViewModel;
     }
     public static TransactionViewModel validate(final byte[] bytes, Curl curl) {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, curl));
+        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel);
         return transactionViewModel;
     }

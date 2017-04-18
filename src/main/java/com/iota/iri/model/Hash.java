@@ -44,18 +44,19 @@ public class Hash implements Comparable<Hash>, Serializable{
     }
 
     //
+    /*
     public static Hash calculate(byte[] bytes) {
-        return calculate(bytes, new Curl());
+        return calculate(bytes, SIZE_IN_TRITS, new Curl());
     }
+    */
     public static Hash calculate(int[] trits) {
         return calculate(trits, 0, trits.length, new Curl());
     }
 
-    public static Hash calculate(byte[] bytes, final Curl curl) {
-        int length = (bytes.length * NUMBER_OF_TRITS_IN_A_BYTE / NUMBER_OF_TRITS_IN_A_TRYTE) * NUMBER_OF_TRITS_IN_A_TRYTE;
-        int[] trits = new int[length];
+    public static Hash calculate(byte[] bytes, int tritsLength, final Curl curl) {
+        int[] trits = new int[tritsLength];
         Converter.getTrits(bytes, trits);
-        return calculate(trits, 0, length, curl);
+        return calculate(trits, 0, tritsLength, curl);
     }
     public static Hash calculate(final int[] tritsToCalculate, int offset, int length, final Curl curl) {
         int[] hashTrits = new int[SIZE_IN_TRITS];

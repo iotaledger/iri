@@ -39,6 +39,7 @@ public class Node {
     private static final int QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
     public  static final int REQUEST_HASH_SIZE = 46;
+    private static double P_DROP_RANDOM_REQUEST;
     private static double P_SELECT_MILESTONE;
     private static Node instance = new Node();
 
@@ -57,9 +58,10 @@ public class Node {
     private double P_DROP_TRANSACTION;
     private static final SecureRandom rnd = new SecureRandom();
 
-    public void init(double pDropTransaction, double p_SELECT_MILESTONE, String neighborList) throws Exception {
+    public void init(double pDropTransaction, double p_SELECT_MILESTONE, double p_DROP_RANDOM_REQUEST, String neighborList) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
         P_SELECT_MILESTONE = p_SELECT_MILESTONE;
+        P_DROP_RANDOM_REQUEST = p_DROP_RANDOM_REQUEST;
         Arrays.stream(neighborList.split(" ")).distinct()
                 .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
                     if (!"udp".equals(u.getScheme()) && !"tcp".equals(u.getScheme()) || (new InetSocketAddress(u.getHost(), u.getPort()).getAddress() == null)) {
@@ -197,6 +199,9 @@ public class Node {
                     }
                     Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
                     if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
+                        if(Milestone.latestSolidSubtangleMilestoneIndex == Milestone.latestMilestoneIndex && rnd.nextDouble() < P_DROP_RANDOM_REQUEST) {
+                            break;
+                        }
                         try {
                             transactionPointer = getRandomTipPointer();
                             transactionViewModel = TransactionViewModel.fromHash(transactionPointer);

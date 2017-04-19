@@ -54,18 +54,8 @@ public class Node {
 
     private final ExecutorService executor = Executors.newFixedThreadPool(4);
 
-    private static long TIMESTAMP_THRESHOLD = 0L;
-
-    public static void setTIMESTAMP_THRESHOLD(long tIMESTAMP_THRESHOLD) {
-        TIMESTAMP_THRESHOLD = tIMESTAMP_THRESHOLD;
-    }
-
-    private volatile long randomTipBroadcastCounter = 1;
     private double P_DROP_TRANSACTION;
     private static final SecureRandom rnd = new SecureRandom();
-
-    private static long lastFileNumber = 0L;
-    private static Object lock = new Object();
 
     public void init(double pDropTransaction, double p_SELECT_MILESTONE, String neighborList) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
@@ -337,7 +327,7 @@ public class Node {
 
                     neighbors.forEach(n -> n.send(tipRequestingPacket));
 
-                    Thread.sleep(60000);
+                    Thread.sleep(5000);
                 } catch (final Exception e) {
                     log.error("Tips Requester Thread Exception:", e);
                 }

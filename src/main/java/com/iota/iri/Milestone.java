@@ -49,7 +49,7 @@ public class Milestone {
     private static Milestone instance = null;
 
     private static boolean shuttingDown;
-    private static int ARTIFICAL_LATENCY = 120; // in seconds
+    private static int ARTIFICAL_LATENCY = 0; // in seconds
 
     public static void init(final Hash coordinator, boolean testnet) {
         if (instance == null) {
@@ -86,7 +86,7 @@ public class Milestone {
                                 + " to #" + Milestone.latestMilestoneIndex);
                     }
 
-                    long latency = 30000;
+                    long latency = 5000;
                     if (Milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX &&
                             Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
                         latency = ARTIFICAL_LATENCY > 0 ? (long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L +5000L : 5000L;
@@ -97,6 +97,7 @@ public class Milestone {
                     while((cumulative = System.currentTimeMillis() - start) < latency) {
                         if(Milestone.latestSolidSubtangleMilestoneIndex < Milestone.latestMilestoneIndex) {
                             Milestone.updateLatestSolidSubtangleMilestone();
+                            Thread.yield();
                         } else {
                             break;
                         }

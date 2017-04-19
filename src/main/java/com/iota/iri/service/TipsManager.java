@@ -44,7 +44,6 @@ public class TipsManager {
             try {
                 int traversedTails = 0;
                 Hash tip = preferableMilestone;
-                Hash tail = tip;
                 if (extraTip != null) {
                     int milestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex - milestoneDepth;
                     if(milestoneIndex < 0) {
@@ -53,8 +52,12 @@ public class TipsManager {
                     if(!MilestoneViewModel.load(milestoneIndex)) {
                         Map.Entry<Integer, Hash> closestGreaterMilestone = Milestone.findMilestone(milestoneIndex);
                         new MilestoneViewModel(closestGreaterMilestone.getKey(), closestGreaterMilestone.getValue()).store();
+                        tip = closestGreaterMilestone.getValue();
+                    } else {
+                        tip = MilestoneViewModel.get(milestoneIndex).getHash();
                     }
                 }
+                Hash tail = tip;
 
                 updateRatings(tip, ratings, analyzedTips);
                 analyzedTips.clear();

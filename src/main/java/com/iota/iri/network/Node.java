@@ -83,7 +83,7 @@ public class Node {
         }).forEach(neighbors::add);
 
         executor.submit(spawnBroadcasterThread());
-        //executor.submit(spawnTipRequesterThread());
+        executor.submit(spawnTipRequesterThread());
         executor.submit(spawnNeighborDNSRefresherThread());
 
         executor.shutdown();
@@ -337,7 +337,7 @@ public class Node {
 
                     neighbors.forEach(n -> n.send(tipRequestingPacket));
 
-                    Thread.sleep(5000);
+                    Thread.sleep(60000);
                 } catch (final Exception e) {
                     log.error("Tips Requester Thread Exception:", e);
                 }

@@ -249,16 +249,7 @@ public class Node {
             log.info("Adding non-tethered neighbor: "+uriString);
             try {
                 final URI uri = new URI(uriString);
-                // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
-                final Neighbor newneighbor;
-                if(uriScheme.equals("tcp")) {
-                    newneighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
-                } else {
-                    newneighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
-                }
-                if (!getNeighbors().contains(newneighbor)) {
-                    getNeighbors().add(newneighbor);
-                }
+                addNeighbor(uri,false);
             }
             catch (URISyntaxException e) {
                 log.error("Invalid URI string: "+uriString);

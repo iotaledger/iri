@@ -77,8 +77,8 @@ public class TransactionRequester {
     public Hash transactionToRequest(boolean milestone) throws Exception {
         final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
+        Set<Hash> requestSet;
         synchronized (this) {
-            Set<Hash> requestSet;
             if(milestone) {
                  requestSet = milestoneTransactionsToRequest;
                  if(requestSet.size() == 0) {
@@ -103,7 +103,7 @@ public class TransactionRequester {
             }
         }
 
-        if(random.nextDouble() < P_REMOVE_REQUEST) {
+        if(random.nextDouble() < P_REMOVE_REQUEST && !requestSet.equals(milestoneTransactionsToRequest)) {
             synchronized (this) {
                 clearTransactionRequest(hash);
             }

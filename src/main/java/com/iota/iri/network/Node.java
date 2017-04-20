@@ -199,9 +199,6 @@ public class Node {
                     }
                     Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
                     if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
-                        if(Milestone.latestSolidSubtangleMilestoneIndex == Milestone.latestMilestoneIndex && rnd.nextDouble() < P_DROP_RANDOM_REQUEST) {
-                            break;
-                        }
                         try {
                             transactionPointer = getRandomTipPointer();
                             transactionViewModel = TransactionViewModel.fromHash(transactionPointer);

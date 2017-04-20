@@ -156,7 +156,7 @@ public class Node {
         Hash transactionPointer;
 
         boolean addressMatch = false;
-        for (final Neighbor neighbor : Node.instance().neighbors) {
+        for (final Neighbor neighbor : getNeighbors()) {
             boolean stored = false;
             if (neighbor instanceof TCPNeighbor) {
                 if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;

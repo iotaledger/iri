@@ -75,7 +75,7 @@ public abstract class TransactionRequester {
         long now = System.currentTimeMillis();
         if ((now - lastTime) > 10000L) {
             lastTime = now;
-            log.info("Transactions to request = {}", transactionsToRequest.size() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
+            log.info("Transactions to request = {}", TransactionRequester.getTotalNumberOfRequestedTransactions() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
         }
         return hash;
     }

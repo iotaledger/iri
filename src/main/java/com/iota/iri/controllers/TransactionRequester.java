@@ -90,10 +90,8 @@ public class TransactionRequester {
                     requestSet = milestoneTransactionsToRequest;
                 }
             }
-            Iterator<Hash> iterator = requestSet.iterator();
-            while(iterator.hasNext()) {
-                hash = iterator.next();
-                iterator.remove();
+            while(requestSet.size() != 0) {
+                hash = (Hash) requestSet.toArray()[random.nextInt(requestSet.size())];
                 if(TransactionViewModel.exists(hash)) {
                     log.info("Removed existing tx from request list: " + hash);
                 } else {

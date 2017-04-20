@@ -50,6 +50,7 @@ public class Milestone {
 
     private static boolean shuttingDown;
     private static int ARTIFICAL_LATENCY = 0; // in seconds
+    private static int NUMBER_OF_LOOPS_BEFORE_RESCAN = 6;
 
     public static void init(final Hash coordinator, boolean testnet) {
         if (instance == null) {
@@ -65,13 +66,16 @@ public class Milestone {
         (new Thread(() -> {
 
             final SecureRandom rnd = new SecureRandom();
+            int loops = 0;
 
             while (!shuttingDown) {
-
-                try {
-                    TransactionRequester.instance().rescanTransactionsToRequest();
-                } catch (ExecutionException | InterruptedException e) {
-                    log.error("Could not execute request rescan. ");
+                if(++loops == NUMBER_OF_LOOPS_BEFORE_RESCAN) {
+                    loops = 0;
+                    try {
+                        TransactionRequester.instance().rescanTransactionsToRequest();
+                    } catch (ExecutionException | InterruptedException e) {
+                        log.error("Could not execute request rescan. ");
+                    }
                 }
                 try {
                     final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;

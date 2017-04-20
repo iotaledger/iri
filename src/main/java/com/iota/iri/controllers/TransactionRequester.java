@@ -91,7 +91,10 @@ public class TransactionRequester {
                 }
             }
             while(requestSet.size() != 0) {
-                hash = (Hash) requestSet.toArray()[random.nextInt(requestSet.size())];
+                //hash = (Hash) requestSet.toArray()[random.nextInt(requestSet.size())];
+                Iterator<Hash> iterator = requestSet.iterator();
+                hash = iterator.next();
+                iterator.remove();
                 if(TransactionViewModel.exists(hash)) {
                     log.info("Removed existing tx from request list: " + hash);
                 } else {

@@ -165,7 +165,7 @@ public class TransactionViewModel {
         Tangle.instance().delete(transaction).get();
     }
     public boolean store() throws Exception {
-        MissingTipTransactions.instance().clearTransactionRequest(getHash());
+        TransactionRequester.instance().clearTransactionRequest(getHash());
         if(!exists(getHash())) {
             //log.info("Tx To save Hash: " + getHash());
             getBytes();
@@ -174,13 +174,8 @@ public class TransactionViewModel {
             getBranchTransactionHash();
             getTrunkTransactionHash();
             getTagValue();
-            if(MissingMilestones.instance().clearTransactionRequest(getHash())) {
-                MissingMilestones.instance().requestTransaction(getBranchTransactionHash());
-                MissingMilestones.instance().requestTransaction(getTrunkTransactionHash());
-            } else {
-                MissingTipTransactions.instance().requestTransaction(getBranchTransactionHash());
-                MissingTipTransactions.instance().requestTransaction(getTrunkTransactionHash());
-            }
+            TransactionRequester.instance().requestTransaction(getBranchTransactionHash(), false);
+            TransactionRequester.instance().requestTransaction(getTrunkTransactionHash(), false);
             return Tangle.instance().save(transaction).get();
         }
         return false;

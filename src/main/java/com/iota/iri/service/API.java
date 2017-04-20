@@ -162,7 +162,7 @@ public class API {
                             Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                             Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
                             System.currentTimeMillis(), TipsViewModel.getTipHashes().length,
-                            TransactionRequester.getTotalNumberOfRequestedTransactions());
+                            TransactionRequester.instance().numberOfTransactionsToRequest());
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -197,18 +197,15 @@ public class API {
                     return storeTransactionStatement(trytes);
                 }
                 case "rescanTransactions": {
-                    MissingTipTransactions.instance().rescanTransactionsToRequest();
+                    TransactionRequester.instance().rescanTransactionsToRequest();
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "getMissingTransactions": {
-                    MissingTipTransactions.instance().rescanTransactionsToRequest();
+                    TransactionRequester.instance().rescanTransactionsToRequest();
                     synchronized (TransactionRequester.class) {
-                        List<String> missingTx = Arrays.stream(MissingMilestones.instance().getRequestedTransactions())
+                        List<String> missingTx = Arrays.stream(TransactionRequester.instance().getRequestedTransactions())
                                 .map(Hash::toString)
                                 .collect(Collectors.toList());
-                        missingTx.addAll(Arrays.stream(MissingTipTransactions.instance().getRequestedTransactions())
-                                .map(Hash::toString)
-                                .collect(Collectors.toList()));
                         return GetTipsResponse.create(missingTx);
                     }
                 }

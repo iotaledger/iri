@@ -3,6 +3,7 @@ package com.iota.iri;
 import java.io.File;
 import java.io.IOException;
 
+import com.iota.iri.controllers.TransactionRequester;
 import com.iota.iri.storage.FileExportProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -10,7 +11,6 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.controllers.MissingTipTransactions;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.UDPReceiver;
@@ -94,7 +94,7 @@ public class IRI {
             Tangle.instance().init();
             LedgerValidator.init();
             Milestone.instance().init();
-            MissingTipTransactions.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
+            TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
             Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()),
                     Configuration.doubling(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name()),
                     Configuration.doubling(DefaultConfSettings.P_DROP_RANDOM_REQUEST.name()),

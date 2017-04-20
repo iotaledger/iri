@@ -69,7 +69,7 @@ public class Milestone {
             while (!shuttingDown) {
 
                 try {
-                    MissingTipTransactions.instance().rescanTransactionsToRequest();
+                    TransactionRequester.instance().rescanTransactionsToRequest();
                 } catch (ExecutionException | InterruptedException e) {
                     log.error("Could not execute request rescan. ");
                 }
@@ -195,7 +195,7 @@ public class Milestone {
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex + 1; milestoneIndex <= latestMilestoneIndex; milestoneIndex++) {
             final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
-            if (milestone.getKey() == 0 || !MissingMilestones.instance().checkSolidity(milestone.getValue())) {
+            if (milestone.getKey() == 0 || !TransactionRequester.instance().checkSolidity(milestone.getValue(), true)) {
                 break;
             }
             milestoneIndex = milestone.getKey();

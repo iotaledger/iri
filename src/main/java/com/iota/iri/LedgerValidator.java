@@ -55,11 +55,7 @@ public class LedgerValidator {
                 if (!transactionViewModel.hasSnapshot()) {
                     numberOfAnalyzedTransactions++;
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                        if(milestone) {
-                            MissingMilestones.instance().requestTransaction(transactionViewModel.getHash());
-                        } else {
-                            MissingTipTransactions.instance().requestTransaction(transactionViewModel.getHash());
-                        }
+                        TransactionRequester.instance().requestTransaction(transactionViewModel.getHash(), milestone);
                         return null;
 
                     } else {
@@ -93,11 +89,7 @@ public class LedgerValidator {
                             if (!validBundle || bundleValidator.isInconsistent()) {
                                 for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
                                     transactionViewModel1.delete();
-                                    if(milestone) {
-                                        MissingMilestones.instance().requestTransaction(transactionViewModel.getHash());
-                                    } else {
-                                        MissingTipTransactions.instance().requestTransaction(transactionViewModel.getHash());
-                                    }
+                                    TransactionRequester.instance().requestTransaction(transactionViewModel.getHash(), milestone);
                                 }
                                 return null;
                             }

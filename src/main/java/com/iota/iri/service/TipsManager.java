@@ -87,7 +87,7 @@ public class TipsManager {
                     transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                     if (transactionViewModel == null) {
                         break;
-                    } else if (!(MissingTipTransactions.instance().checkSolidity(transactionViewModel.getHash()) &&
+                    } else if (!(TransactionRequester.instance().checkSolidity(transactionViewModel.getHash(), false) &&
                             LedgerValidator.updateFromSnapshot(transactionViewModel.getHash()))) {
                         break;
                     } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)) {

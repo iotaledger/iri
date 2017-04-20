@@ -274,11 +274,8 @@ public class Node {
 
     public static void sendPacket(DatagramPacket sendingPacket, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {
         synchronized (sendingPacket) {
-            TransactionRequester requester = rnd.nextDouble() < P_SELECT_MILESTONE &&
-                    MissingMilestones.instance().numberOfTransactionsToRequest() != 0 ?
-                    MissingMilestones.instance() : MissingTipTransactions.instance();
             System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-            Hash hash = requester.transactionToRequest();
+            Hash hash = TransactionRequester.instance().transactionToRequest(rnd.nextDouble() < P_SELECT_MILESTONE );
             System.arraycopy(hash != null ? hash.bytes(): transactionViewModel.getHash().bytes(), 0,
                     sendingPacket.getData(), TransactionViewModel.SIZE, REQUEST_HASH_SIZE);
             neighbor.send(sendingPacket);

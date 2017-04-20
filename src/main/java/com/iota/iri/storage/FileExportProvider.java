@@ -60,7 +60,7 @@ public class FileExportProvider implements PersistenceProvider {
                     writer.println(transaction.sender);
                     if(item.equals("height")) {
                         long height = transaction.height;
-                        log.info("Height: " + height);
+                        //log.debug("Height: " + height);
                         writer.println("Height: " + String.valueOf(height));
                     } else {
                         writer.println("Height: ");

@@ -16,7 +16,7 @@ public abstract class TransactionRequester {
 
     private final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
-    private volatile long lastTime = System.currentTimeMillis();
+    private static volatile long lastTime = System.currentTimeMillis();
     public  static final int REQUEST_HASH_SIZE = 46;
     private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUEST_HASH_SIZE];
 

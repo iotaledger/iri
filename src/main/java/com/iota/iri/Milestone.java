@@ -199,11 +199,11 @@ public class Milestone {
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex + 1; milestoneIndex <= latestMilestoneIndex; milestoneIndex++) {
             final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
-            if (milestone.getKey() == 0 || !TransactionRequester.instance().checkSolidity(milestone.getValue(), true)) {
+            if (milestone.getKey() <= 0) {
                 break;
             }
             milestoneIndex = milestone.getKey();
-            if (milestone.getKey() != 0) {
+            if (TransactionRequester.instance().checkSolidity(milestone.getValue(), true)) {
                 latestSolidSubtangleMilestone = milestone.getValue();
                 latestSolidSubtangleMilestoneIndex = milestoneIndex;
             }

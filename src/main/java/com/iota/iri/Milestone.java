@@ -49,8 +49,8 @@ public class Milestone {
     private static Milestone instance = null;
 
     private static boolean shuttingDown;
-    private static int ARTIFICAL_LATENCY = 0; // in seconds
     private static int NUMBER_OF_LOOPS_BEFORE_RESCAN = 6;
+    private static int SCAN_INTERVAL = 5000;
 
     public static void init(final Hash coordinator, boolean testnet) {
         if (instance == null) {
@@ -58,14 +58,9 @@ public class Milestone {
         }
     }
 
-    public static void setARTIFICAL_LATENCY(int value) {
-        ARTIFICAL_LATENCY = value;
-    }
-
     public void init() {
         (new Thread(() -> {
 
-            final SecureRandom rnd = new SecureRandom();
             int loops = 0;
 
             while (!shuttingDown) {
@@ -90,21 +85,8 @@ public class Milestone {
                                 + " to #" + Milestone.latestMilestoneIndex);
                     }
 
-                    long latency = 5000;
-                    if (Milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX &&
-                            Milestone.latestMilestoneIndex == Milestone.latestSolidSubtangleMilestoneIndex) {
-                        latency = ARTIFICAL_LATENCY > 0 ? (long)(rnd.nextInt(ARTIFICAL_LATENCY))*1000L +5000L : 5000L;
-                    }
-
-                    long start = System.currentTimeMillis();
-                    long cumulative = 0;
-                    while((cumulative = System.currentTimeMillis() - start) < latency) {
-                        if(Milestone.latestSolidSubtangleMilestoneIndex < Milestone.latestMilestoneIndex) {
-                            Milestone.updateLatestSolidSubtangleMilestone();
-                            Thread.yield();
-                        } else {
-                            break;
-                        }
+                    if(Milestone.latestSolidSubtangleMilestoneIndex < Milestone.latestMilestoneIndex) {
+                        Milestone.updateLatestSolidSubtangleMilestone();
                     }
 
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
@@ -118,10 +100,8 @@ public class Milestone {
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
-                    latency -= cumulative;
-                    if(latency > 0) {
-                        Thread.sleep(latency);
-                    }
+
+                    Thread.sleep(SCAN_INTERVAL);
 
                 } catch (final Exception e) {
                     log.error("Error during TipsManager Milestone updating", e);
@@ -162,6 +142,11 @@ public class Milestone {
     }
 
     private boolean validateMilestone(TransactionViewModel transactionViewModel, int index) throws Exception {
+        
+        if (milestones.get(index) != null) {
+            // Already validated.
+            return true;
+        }
         final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
         if (bundleValidator.getTransactions().size() == 0) {
             return false;

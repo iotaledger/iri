@@ -4,6 +4,8 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.utils.Converter;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,6 +30,7 @@ public class TransactionValidator {
     private static void runValidation(TransactionViewModel transactionViewModel) {
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
+                log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));
                 throw new RuntimeException("Invalid transaction value");
             }
         }

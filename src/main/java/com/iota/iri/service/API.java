@@ -161,7 +161,7 @@ public class API {
                             Runtime.getRuntime().totalMemory(), Milestone.latestMilestone, Milestone.latestMilestoneIndex,
                             Milestone.latestSolidSubtangleMilestone, Milestone.latestSolidSubtangleMilestoneIndex,
                             Node.instance().howManyNeighbors(), Node.instance().queuedTransactionsSize(),
-                            System.currentTimeMillis(), TipsViewModel.getTipHashes().length,
+                            System.currentTimeMillis(), TipsViewModel.size(),
                             TransactionRequester.instance().numberOfTransactionsToRequest());
                 }
                 case "getTips": {
@@ -293,8 +293,7 @@ public class API {
     }
 
     private AbstractResponse getTipsStatement() throws ExecutionException, InterruptedException {
-        return GetTipsResponse.create(
-                Arrays.stream(TipsViewModel.getTipHashes()).map(Hash::toString).collect(Collectors.toList()));
+        return GetTipsResponse.create(TipsViewModel.getTips().stream().map(Hash::toString).collect(Collectors.toList()));
     }
 
     private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {

@@ -1,31 +1,21 @@
 package com.iota.iri.network;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
 import java.net.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import com.iota.iri.BundleValidator;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.replicator.ReplicatorSinkPool;
-import com.iota.iri.service.TipsManager;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Milestone;
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
-import com.iota.iri.utils.Converter;
 
 /**
  * The class node is responsible for managing Thread's connection.
@@ -77,7 +67,7 @@ public class Node {
         executor.submit(spawnBroadcasterThread());
         executor.submit(spawnTipRequesterThread());
         executor.submit(spawnNeighborDNSRefresherThread());
-
+        TipsViewModel.loadTipHashes();
         executor.shutdown();
     }
 
@@ -264,12 +254,8 @@ public class Node {
     }
 
     private Hash getRandomTipPointer() throws Exception {
-        Hash transactionPointer = Hash.NULL_HASH;
-        final Hash[] tips = TipsViewModel.getTipHashes();
-        if(tips.length > 0) {
-            transactionPointer = tips[rnd.nextInt(tips.length)];
-        }
-        return transactionPointer;
+        final Hash tip = TipsViewModel.getRandomTipHash();
+        return tip == null ? Hash.NULL_HASH: tip;
     }
 
     public static void sendPacket(DatagramPacket sendingPacket, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {

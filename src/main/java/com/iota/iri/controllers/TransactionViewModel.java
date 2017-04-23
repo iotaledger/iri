@@ -176,6 +176,11 @@ public class TransactionViewModel {
             getTagValue();
             TransactionRequester.instance().requestTransaction(getBranchTransactionHash(), false);
             TransactionRequester.instance().requestTransaction(getTrunkTransactionHash(), false);
+            if(getApprovers().length == 0) {
+                TipsViewModel.addTipHash(getHash());
+            }
+            TipsViewModel.removeTipHash(getBranchTransactionHash());
+            TipsViewModel.removeTipHash(getTrunkTransactionHash());
             return Tangle.instance().save(transaction).get();
         }
         return false;

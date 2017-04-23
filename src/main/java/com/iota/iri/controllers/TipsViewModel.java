@@ -35,14 +35,7 @@ public class TipsViewModel {
     }
 
     public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-        final int index = seed.nextInt(size());
-        int i = 0;
-        for(Hash hash : tips) {
-            if(i++ == index) {
-                return hash;
-            }
-        }
-        return null;
+        return (Hash) tips.toArray()[seed.nextInt(size())];
     }
 
     public static int size() {

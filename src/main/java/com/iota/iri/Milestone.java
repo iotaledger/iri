@@ -191,6 +191,7 @@ public class Milestone {
             if (TransactionRequester.instance().checkSolidity(milestone.getValue(), true)) {
                 latestSolidSubtangleMilestone = milestone.getValue();
                 latestSolidSubtangleMilestoneIndex = milestoneIndex;
+                new MilestoneViewModel(milestoneIndex, milestone.getValue()).store();
             }
         }
     }

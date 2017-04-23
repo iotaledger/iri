@@ -192,6 +192,8 @@ public class LedgerValidator {
     }
 
     private static int getSeparator(long duration, long expected, int separator, int currentIndex, int max) {
+        int difference = max - currentIndex;
+
         separator *= (double)(((double) expected) / ((double) duration));
         while(currentIndex > max - separator) {
             separator >>= 1;

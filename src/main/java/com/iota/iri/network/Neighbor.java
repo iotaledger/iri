@@ -86,5 +86,9 @@ public abstract class Neighbor {
     public int getNumberOfNewTransactions() {
 		return numberOfNewTransactions;
 	}
+
+	public int getNumberOfRandomTransactionRequests() {
+        return randomTransactionRequests;
+    }
     
 }

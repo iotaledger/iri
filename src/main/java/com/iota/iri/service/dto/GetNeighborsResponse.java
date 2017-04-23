@@ -13,7 +13,7 @@ public class GetNeighborsResponse extends AbstractResponse {
     static class Neighbor {
 
         private String address;
-        public int numberOfAllTransactions, numberOfNewTransactions, numberOfInvalidTransactions;
+        public int numberOfAllTransactions, numberOfRandomTransactionRequests, numberOfNewTransactions, numberOfInvalidTransactions;
         public String connectionType;
 
         public String getAddress() {
@@ -43,6 +43,7 @@ public class GetNeighborsResponse extends AbstractResponse {
             ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
             ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();
             ne.numberOfNewTransactions = n.getNumberOfNewTransactions();
+            ne.numberOfRandomTransactionRequests = n.getNumberOfRandomTransactionRequests();
             ne.connectionType = n.connectionType();
             return ne;
         }

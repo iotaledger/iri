@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
  */
 public class TipsViewModel {
 
-    private static Set<Hash> tips = new HashSet<>();
+    private static List<Hash> tips = new ArrayList<>();
     private static SecureRandom seed = new SecureRandom();
 
     public static boolean addTipHash (Hash hash) throws ExecutionException, InterruptedException {
@@ -30,12 +30,12 @@ public class TipsViewModel {
         }
     }
 
-    public static List<Hash> getTips() {
-        return tips.stream().collect(Collectors.toList());
+    public static Hash[] getTips() {
+        return tips.stream().toArray(Hash[]::new);
     }
 
     public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-        return (Hash) tips.toArray()[seed.nextInt(size())];
+        return tips.get(seed.nextInt(size()));
     }
 
     public static int size() {

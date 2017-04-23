@@ -49,9 +49,11 @@ public class Milestone {
     private static Milestone instance = null;
 
     private static boolean shuttingDown;
-    private static int NUMBER_OF_LOOPS_BEFORE_RESCAN = 6;
-    private static int SCAN_INTERVAL = 5000;
+    private static int RESCAN_INTERVAL = 30000;
+    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 300000;
 
+    private long nextRescanTxToRequestTime = Long.MAX_VALUE;
+    
     public static void init(final Hash coordinator, boolean testnet) {
         if (instance == null) {
             instance = new Milestone(coordinator, testnet);
@@ -64,20 +66,22 @@ public class Milestone {
             int loops = 0;
 
             while (!shuttingDown) {
-                if(++loops == NUMBER_OF_LOOPS_BEFORE_RESCAN) {
-                    loops = 0;
+                long scanTime = System.currentTimeMillis();
+    
+                if (scanTime > nextRescanTxToRequestTime) {                    
                     try {
                         TransactionRequester.instance().rescanTransactionsToRequest();
                     } catch (ExecutionException | InterruptedException e) {
                         log.error("Could not execute request rescan. ");
                     }
+                    nextRescanTxToRequestTime = System.currentTimeMillis() + RESCAN_TX_TO_REQUEST_INTERVAL;
                 }
+                
                 try {
                     final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
                     final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
                     Milestone.instance().updateLatestMilestone();
-                    Milestone.updateLatestSolidSubtangleMilestone();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
 
@@ -101,7 +105,7 @@ public class Milestone {
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
 
-                    Thread.sleep(SCAN_INTERVAL);
+                    Thread.sleep(RESCAN_INTERVAL);
 
                 } catch (final Exception e) {
                     log.error("Error during TipsManager Milestone updating", e);

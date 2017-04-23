@@ -15,10 +15,11 @@ public abstract class Neighbor {
     private int numberOfAllTransactions;
     private int numberOfNewTransactions;
     private int numberOfInvalidTransactions;
-    
+    private int randomTransactionRequests;
+
 
     private boolean flagged = false;
-    
+
     public boolean isFlagged() {
         return flagged;
     }
@@ -57,14 +58,19 @@ public abstract class Neighbor {
 		return address;
 	}
     
-    public void incAllTransactions() {
+    void incAllTransactions() {
     	numberOfAllTransactions++;
     }
     
-    public void incNewTransactions() {
+    void incNewTransactions() {
     	numberOfNewTransactions++;
     }
-    
+
+    void incRandomTransactionRequests() {
+        numberOfAllTransactions--;
+        randomTransactionRequests++;
+    }
+
     public void incInvalidTransactions() {
     	numberOfInvalidTransactions++;
     }

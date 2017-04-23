@@ -67,9 +67,6 @@ public abstract class Neighbor {
     }
 
     void incRandomTransactionRequests() {
-        if(numberOfAllTransactions > 0) {
-            numberOfAllTransactions--;
-        }
         randomTransactionRequests++;
     }
 

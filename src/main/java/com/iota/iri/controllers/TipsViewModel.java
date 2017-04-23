@@ -35,7 +35,7 @@ public class TipsViewModel {
     }
 
     public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-        return tips.get(seed.nextInt(size()));
+        return tips.size() != 0? tips.get(seed.nextInt(size())) : null;
     }
 
     public static int size() {

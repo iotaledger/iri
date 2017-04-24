@@ -317,7 +317,7 @@ public class Node {
     private static ConcurrentSkipListSet<TransactionViewModel> weightQueue() {
         return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
             if (transaction1.weightMagnitude == transaction2.weightMagnitude) {
-                for (int i = 0; i < Hash.SIZE_IN_BYTES; i++) {
+                for (int i = Hash.SIZE_IN_BYTES; i-- > 0;) {
                     if (transaction1.getHash().bytes()[i] != transaction2.getHash().bytes()[i]) {
                         return transaction2.getHash().bytes()[i] - transaction1.getHash().bytes()[i];
                     }

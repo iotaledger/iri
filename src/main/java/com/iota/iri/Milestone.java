@@ -1,22 +1,30 @@
 package com.iota.iri;
 
-import java.security.SecureRandom;
-import java.util.*;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.util.AbstractMap;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
 
-import com.iota.iri.controllers.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.iota.iri.controllers.AddressViewModel;
+import com.iota.iri.controllers.BundleViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.TransactionRequester;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.TipsManager;
@@ -50,9 +58,9 @@ public class Milestone {
 
     private static boolean shuttingDown;
     private static int RESCAN_INTERVAL = 30000;
-    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 300000;
+    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 60000;
 
-    private long nextRescanTxToRequestTime = Long.MAX_VALUE;
+    private long nextRescanTxToRequestTime = System.currentTimeMillis() + RESCAN_TX_TO_REQUEST_INTERVAL;
     
     public static void init(final Hash coordinator, boolean testnet) {
         if (instance == null) {
@@ -62,8 +70,6 @@ public class Milestone {
 
     public void init() {
         (new Thread(() -> {
-
-            int loops = 0;
 
             while (!shuttingDown) {
                 long scanTime = System.currentTimeMillis();

@@ -140,7 +140,7 @@ public class FileExportProvider implements PersistenceProvider {
     public static long getFileNumber() {
         long now = System.currentTimeMillis();
         synchronized (lock) {
-            if (now < lastFileNumber) {
+            if (now <= lastFileNumber) {
                 return ++lastFileNumber;
             }
             lastFileNumber = now;

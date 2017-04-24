@@ -190,9 +190,14 @@ public class Node {
                     Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
                     if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
                         try {
-                            neighbor.incRandomTransactionRequests();
-                            transactionPointer = getRandomTipPointer();
-                            transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
+                            if (TransactionRequester.instance().numberOfTransactionsToRequest() > 0) {
+                                neighbor.incRandomTransactionRequests();
+                                transactionPointer = getRandomTipPointer();
+                                transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
+                            }
+                            else {
+                                transactionViewModel = null;
+                            }
                         } catch (Exception e) {
                             log.error("Error getting random tip.", e);
                             break;
@@ -206,7 +211,7 @@ public class Node {
                             break;
                         }
                     }
-                    if (transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
+                    if (transactionViewModel != null && transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
                         //log.info(neighbor.getAddress().getHostString() + "Requested TX Hash: " + transactionPointer);
                         try {
                             sendPacket(sendingPacket, transactionViewModel, neighbor);
@@ -215,19 +220,6 @@ public class Node {
                         }
                     }
                 }
-                /*
-                catch (final RuntimeException e) {
-                    log.error("Received an Invalid TransactionViewModel. Dropping it...");
-                    neighbor.incInvalidTransactions();
-                } catch (InterruptedException e) {
-                    log.error("Interrupted");
-                } catch (ExecutionException e) {
-                    log.error("Transdaction propagation exception ",e);
-                } catch (Exception e) {
-                    log.error("Error accessing persistence store.");
-                    neighbor.incInvalidTransactions();
-                }
-                */
                 break;
             }            
         }

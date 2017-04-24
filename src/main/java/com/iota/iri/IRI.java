@@ -97,7 +97,7 @@ public class IRI {
             TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
             Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()),
                     Configuration.doubling(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name()),
-                    Configuration.doubling(DefaultConfSettings.P_DROP_RANDOM_REQUEST.name()),
+                    Configuration.doubling(DefaultConfSettings.P_SEND_MILESTONE.name()),
                     Configuration.string(DefaultConfSettings.NEIGHBORS));
             UDPReceiver.instance().init(Configuration.integer(DefaultConfSettings.UDP_RECEIVER_PORT));
             API.instance().init();

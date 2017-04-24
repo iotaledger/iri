@@ -5,9 +5,6 @@ import org.ini4j.IniPreferences;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Milestone;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
@@ -44,7 +41,7 @@ public class Configuration {
         P_REMOVE_REQUEST,
         P_DROP_TRANSACTION,
         P_SELECT_MILESTONE_CHILD,
-        P_DROP_RANDOM_REQUEST,
+        P_SEND_MILESTONE,
         EXPORT // exports transaction trytes to filesystem
     }
 
@@ -66,7 +63,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.1");
         conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.0");
         conf.put(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name(), "0.7");
-        conf.put(DefaultConfSettings.P_DROP_RANDOM_REQUEST.name(), "0.0");
+        conf.put(DefaultConfSettings.P_SEND_MILESTONE.name(), "0.02");
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
     }
 

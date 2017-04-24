@@ -14,10 +14,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.iota.iri.network.Node.TRANSACTION_PACKET_SIZE;
+
 /**
  * Created by paul on 4/16/17.
  */
-public class UDPReceiver extends Node {
+public class UDPReceiver {
     private static final Logger log = LoggerFactory.getLogger(UDPReceiver.class);
 
     private static final UDPReceiver instance = new UDPReceiver();
@@ -53,7 +55,7 @@ public class UDPReceiver extends Node {
                     socket.receive(receivingPacket);
 
                     if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
-                        processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp", curl, receivedTransactionTrits);
+                        Node.instance().processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp", curl, receivedTransactionTrits);
                     } else {
                         receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                     }

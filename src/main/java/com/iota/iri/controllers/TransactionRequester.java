@@ -98,7 +98,7 @@ public class TransactionRequester {
                 if(TransactionViewModel.exists(hash)) {
                     log.info("Removed existing tx from request list: " + hash);
                 } else {
-                    transactionsToRequest.add(hash);
+                    requestSet.add(hash);
                     break;
                 }
             }

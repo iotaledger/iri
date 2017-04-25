@@ -329,7 +329,6 @@ public class Node {
     }
 
     public void broadcast(final TransactionViewModel transactionViewModel) {
-        ReplicatorSinkPool.instance().broadcast(transactionViewModel);
         queuedTransactionViewModels.add(transactionViewModel);
         if (queuedTransactionViewModels.size() > QUEUE_SIZE) {
             queuedTransactionViewModels.pollLast();

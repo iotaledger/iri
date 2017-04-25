@@ -196,10 +196,6 @@ public class API {
                     log.debug("Invoking 'storeTransactions' with {}", trytes);
                     return storeTransactionStatement(trytes);
                 }
-                case "rescanTransactions": {
-                    TransactionRequester.instance().rescanTransactionsToRequest();
-                    return AbstractResponse.createEmptyResponse();
-                }
                 case "getMissingTransactions": {
                     TransactionRequester.instance().rescanTransactionsToRequest();
                     synchronized (TransactionRequester.class) {

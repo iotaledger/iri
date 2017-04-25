@@ -86,7 +86,7 @@ public class IRI {
                     Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnetdb.log");
                 }
             }
-            TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
+            TransactionValidator.init(Configuration.integer(DefaultConfSettings.MIN_WEIGHT_MAGNITUDE));
             Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
             if (Configuration.booling(DefaultConfSettings.EXPORT)) {
                 Tangle.instance().addPersistenceProvider(new FileExportProvider());
@@ -127,6 +127,7 @@ public class IRI {
         final Option<String> rportudp = parser.addStringOption('u', "udp-receiver-port");
         final Option<String> rporttcp = parser.addStringOption('t', "tcp-receiver-port");
         final Option<Boolean> debug = parser.addBooleanOption('d', "debug");
+        final Option<String> weight = parser.addStringOption('w', "min-weight-magnitude");
         final Option<Boolean> remote = parser.addBooleanOption("remote");
         final Option<String> remoteLimitApi = parser.addStringOption("remote-limit-api");
         final Option<String> remoteAuth = parser.addStringOption("remote-auth");
@@ -221,7 +222,13 @@ public class IRI {
             Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
             Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
         }
-        
+
+        final String weightMagnitude = parser.getOptionValue(weight);
+        if (weightMagnitude != null) {
+            log.debug("Min Weight Magnitude set to : {} ", weightMagnitude);
+            Configuration.put(DefaultConfSettings.MIN_WEIGHT_MAGNITUDE, weightMagnitude);
+        }
+
     }
 
     private static void printUsage() {

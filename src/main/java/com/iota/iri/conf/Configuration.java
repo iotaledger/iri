@@ -32,6 +32,7 @@ public class Configuration {
         TCP_RECEIVER_PORT,
         TESTNET,
         DEBUG,
+        MIN_WEIGHT_MAGNITUDE,
         REMOTE_LIMIT_API,
         REMOTE_AUTH,
         NEIGHBORS,        
@@ -53,6 +54,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.TCP_RECEIVER_PORT.name(), "15600");
         conf.put(DefaultConfSettings.TESTNET.name(), "false");
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
+        conf.put(DefaultConfSettings.MIN_WEIGHT_MAGNITUDE.name(), "18");
         conf.put(DefaultConfSettings.REMOTE_LIMIT_API.name(), "");
         conf.put(DefaultConfSettings.REMOTE_AUTH.name(), "");
         conf.put(DefaultConfSettings.NEIGHBORS.name(), "");

@@ -44,6 +44,7 @@ public class IXITest {
         AbstractResponse response;
         IXIResponse ixiResponse;
 
+        /*
         final String testJs =
                 "var Callable = Java.type(\"com.iota.iri.service.CallableRequest\");\n" +
                         "print(\"hello world\");\n" +
@@ -82,6 +83,7 @@ public class IXITest {
 
         ixiResponse = ((IXIResponse) response);
         assertNotNull(ixiResponse.getResponse());
+        */
     }
 
     @Test

@@ -106,7 +106,7 @@ public class TransactionRequester {
 
         if(random.nextDouble() < P_REMOVE_REQUEST && !requestSet.equals(milestoneTransactionsToRequest)) {
             synchronized (this) {
-                clearTransactionRequest(hash);
+                transactionsToRequest.remove(hash);
             }
         }
 

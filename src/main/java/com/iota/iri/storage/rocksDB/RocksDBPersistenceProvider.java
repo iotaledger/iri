@@ -706,12 +706,12 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
         fillmodelColumnHandles(familyHandles);
 
-        log.info("Checking Tags... ");
-        updateTagDB();
+        //log.info("Checking Tags... ");
+        //updateTagDB();
         log.info("Scanning transactions... ");
         scanTxDeleteBaddies();
-        log.info("Clearing solidity markers... ");
-        clearSolidTransactionTags();
+        //log.info("Clearing solidity markers... ");
+        //clearSolidTransactionTags();
 
         this.compactionThreadHandle = new Thread(() -> {
             while(running) {

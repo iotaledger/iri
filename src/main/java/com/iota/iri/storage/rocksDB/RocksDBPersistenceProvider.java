@@ -79,7 +79,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private RocksDB db;
     private DBOptions options;
     private BloomFilter bloomFilter;
-    private Thread compactionThreadHandle;
     long compationWaitTime = 5 * 60 * 1000;
     private Thread restartThread;
     private boolean available;
@@ -186,11 +185,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     @Override
     public void shutdown() {
         running = false;
-        try {
-            compactionThreadHandle.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
         if (db != null) db.close();
         options.close();
         bloomFilter.close();
@@ -689,7 +683,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         Thread.yield();
         bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
         BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
-        options = new DBOptions().setCreateIfMissing(true).setCreateMissingColumnFamilies(true).setDbLogDir(logPath);
+        options = new DBOptions()
+                .setCreateIfMissing(true)
+                .setCreateMissingColumnFamilies(true)
+                .setDbLogDir(logPath);
 
         List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
         List<ColumnFamilyDescriptor> familyDescriptors = Arrays.stream(columnFamilyNames)
@@ -712,19 +709,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         scanTxDeleteBaddies();
         //log.info("Clearing solidity markers... ");
         //clearSolidTransactionTags();
-
-        this.compactionThreadHandle = new Thread(() -> {
-            while(running) {
-                try {
-                    db.compactRange();
-                    Thread.sleep(300 * 1000);
-                } catch (Exception e) {
-                    log.error("Compaction Error: " + e.getLocalizedMessage());
-                }
-            }
-        }, "Compaction Thread");
-        log.info("Starting DB compaction timer... ");
-        this.compactionThreadHandle.start();
     }
 
     private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles, String path) throws Exception {
@@ -747,18 +731,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             missingFromDescription.forEach(familyDescriptors::add);
         }
         running = true;
-        this.compactionThreadHandle = new Thread(() -> {
-            while(running) {
-                try {
-                    for(ColumnFamilyHandle handle: familyHandles) {
-                        db.compactRange(handle);
-                    }
-                    Thread.sleep(compationWaitTime);
-                } catch (InterruptedException | RocksDBException e) {
-                    e.printStackTrace();
-                }
-            }
-        });
     }
 
     private void addColumnFamily(byte[] familyName, RocksDB db) throws RocksDBException {

@@ -112,15 +112,19 @@ public class TipsManager {
         return null;
     }
 
+    private static long capSum(long a, long b, long max) {
+        if(a + b < 0 || a + b > max) {
+            return max;
+        }
+        return a+b;
+    }
+
     private static long updateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
         long rating = 1;
         if(analyzedTips.add(txHash)) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
             for(Hash approver : transactionViewModel.getApprovers()) {
-                rating += updateRatings(approver, ratings, analyzedTips);
-            }
-            if(rating > Long.MAX_VALUE/2) {
-                rating = Long.MAX_VALUE/2;
+                rating = capSum(rating, updateRatings(approver, ratings, analyzedTips), Long.MAX_VALUE/2);
             }
             ratings.put(txHash, rating);
         } else {

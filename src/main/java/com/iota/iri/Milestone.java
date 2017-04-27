@@ -195,6 +195,7 @@ public class Milestone {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex + 1; milestoneIndex <= latestMilestoneIndex; milestoneIndex++) {
             final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
             if (milestone.getKey() <= 0) {
+                log.info("Could not find milestone greater than or equal to {}", milestoneIndex);
                 break;
             }
             milestoneIndex = milestone.getKey();

@@ -130,8 +130,6 @@ public class TransactionRequester {
                     if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
                         requestTransaction(hashPointer, milestone);
                         solid = false;
-                        break;
-
                     } else {
                         trunkInteger = transactionViewModel2.getTrunkTransactionHash();
                         branchInteger = transactionViewModel2.getBranchTransactionHash();

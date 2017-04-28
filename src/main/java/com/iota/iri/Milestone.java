@@ -192,7 +192,7 @@ public class Milestone {
     }
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
-        for (int milestoneIndex = latestSolidSubtangleMilestoneIndex + 1; milestoneIndex <= latestMilestoneIndex; milestoneIndex++) {
+        for (int milestoneIndex = latestSolidSubtangleMilestoneIndex; milestoneIndex++ < latestMilestoneIndex;) {
             final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
             if (milestone.getKey() <= 0) {
                 log.info("Could not find milestone greater than or equal to {}", milestoneIndex);

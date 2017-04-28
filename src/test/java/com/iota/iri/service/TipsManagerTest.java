@@ -63,7 +63,7 @@ public class TipsManagerTest {
         transaction1.store();
         transaction2.store();
         Map<Hash, Set<Hash>> ratings = new HashMap<>();
-        TipsManager.updateRatings(transaction.getHash(), ratings, new HashSet<>());
+        TipsManager.updateHashRatings(transaction.getHash(), ratings, new HashSet<>());
         Assert.assertEquals(ratings.get(transaction.getHash()).size(), 3);
         Assert.assertEquals(ratings.get(transaction1.getHash()).size(), 2);
         Assert.assertEquals(ratings.get(transaction2.getHash()).size(), 1);
@@ -83,7 +83,7 @@ public class TipsManagerTest {
         transaction3.store();
         transaction4.store();
         Map<Hash, Set<Hash>> ratings = new HashMap<>();
-        TipsManager.updateRatings(transaction.getHash(), ratings, new HashSet<>());
+        TipsManager.updateHashRatings(transaction.getHash(), ratings, new HashSet<>());
         Assert.assertEquals(ratings.get(transaction.getHash()).size(), 5);
         Assert.assertEquals(ratings.get(transaction1.getHash()).size(),4);
         Assert.assertEquals(ratings.get(transaction2.getHash()).size(), 3);
@@ -103,7 +103,7 @@ public class TipsManagerTest {
         transaction3.store();
         transaction4.store();
         Map<Hash, Long> ratings = new HashMap<>();
-        TipsManager.updateLongRatings(transaction.getHash(), ratings, new HashSet<>());
+        TipsManager.updateRatings(transaction.getHash(), ratings, new HashSet<>());
         Assert.assertTrue(ratings.get(transaction.getHash()).equals(5L));
     }
 }

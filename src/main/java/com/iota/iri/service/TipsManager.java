@@ -32,7 +32,7 @@ public class TipsManager {
                 Milestone.latestMilestoneIndex == Milestone.MILESTONE_START_INDEX) {
             final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
-            Map<Hash, Set<Hash>> ratings = new HashMap<>();
+            Map<Hash, Long> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
             try {
                 int traversedTails = 0;
@@ -69,10 +69,10 @@ public class TipsManager {
                         analyzedTips.clear();
                     }
 
-                    monte = seed.nextDouble() * Math.sqrt(ratings.get(tip).size());
+                    monte = seed.nextDouble() * Math.sqrt(ratings.get(tip));
                     for (carlo = tips.length; carlo-- > 1; ) {
                         if (ratings.containsKey(tips[carlo])) {
-                            monte -= Math.sqrt(ratings.get(tips[carlo]).size());
+                            monte -= Math.sqrt(ratings.get(tips[carlo]));
                         }
                         if (monte <= 0) {
                             break;
@@ -113,13 +113,13 @@ public class TipsManager {
         return a+b;
     }
 
-    static Set<Hash> updateRatings(Hash txHash, Map<Hash, Set<Hash>> ratings, Set<Hash> analyzedTips) throws Exception {
+    static Set<Hash> updateHashRatings(Hash txHash, Map<Hash, Set<Hash>> ratings, Set<Hash> analyzedTips) throws Exception {
         Set<Hash> rating;
         if(analyzedTips.add(txHash)) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
             rating = new HashSet<>(Collections.singleton(txHash));
             for(Hash approver : transactionViewModel.getApprovers()) {
-                rating.addAll(updateRatings(approver, ratings, analyzedTips));
+                rating.addAll(updateHashRatings(approver, ratings, analyzedTips));
             }
             ratings.put(txHash, rating);
         } else {
@@ -132,12 +132,12 @@ public class TipsManager {
         return rating;       
     }
 
-    static long updateLongRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
+    static long updateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
         long rating = 1;
         if(analyzedTips.add(txHash)) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
             for(Hash approver : transactionViewModel.getApprovers()) {
-                rating = capSum(rating, updateLongRatings(approver, ratings, analyzedTips), Long.MAX_VALUE/2);
+                rating = capSum(rating, updateRatings(approver, ratings, analyzedTips), Long.MAX_VALUE/2);
             }
             ratings.put(txHash, rating);
         } else {

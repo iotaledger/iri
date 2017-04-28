@@ -379,15 +379,15 @@ public class TransactionViewModel {
 
     public void updateHeights() throws Exception {
         TransactionViewModel transaction = this, trunk = this.getTrunkTransaction();
-        Stack<TransactionViewModel> transactionViewModels = new Stack<>();
-        transactionViewModels.push(transaction);
+        Stack<Hash> transactionViewModels = new Stack<>();
+        transactionViewModels.push(transaction.getHash());
         while(trunk.getHeight() == 0 && trunk.getType() != PREFILLED_SLOT && !trunk.getHash().equals(Hash.NULL_HASH)) {
             transaction = trunk;
             trunk = transaction.getTrunkTransaction();
-            transactionViewModels.push(transaction);
+            transactionViewModels.push(transaction.getHash());
         }
         while(transactionViewModels.size() != 0) {
-            transaction = transactionViewModels.pop();
+            transaction = TransactionViewModel.fromHash(transactionViewModels.pop());
             if(trunk.getHash().equals(Hash.NULL_HASH)) {
                 transaction.updateHeight(1L);
             } else if ( trunk.getType() != PREFILLED_SLOT ){

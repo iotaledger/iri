@@ -100,11 +100,7 @@ public class Milestone {
                     }
 
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
-                        MilestoneViewModel milestoneViewModel = new MilestoneViewModel(
-                                Milestone.latestSolidSubtangleMilestoneIndex,
-                                Milestone.latestSolidSubtangleMilestone);
-                        milestoneViewModel.store();
-                        LedgerValidator.updateSnapshot(milestoneViewModel);
+                        LedgerValidator.updateSnapshot(MilestoneViewModel.get(Milestone.latestSolidSubtangleMilestoneIndex));
 
                         log.info("Latest SOLID SUBTANGLE milestone has changed from #"
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"

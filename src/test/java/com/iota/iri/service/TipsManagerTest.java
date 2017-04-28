@@ -131,4 +131,31 @@ public class TipsManagerTest {
         TipsManager.recursiveUpdateRatings(hashes[0], ratings, new HashSet<>());
         Assert.assertTrue(ratings.get(hashes[0]).equals(12L));
     }
+
+    //@Test
+    public void testUpdateRatingsTime() throws Exception {
+        int max = 100001;
+        long time;
+        List<Long> times = new LinkedList<>();
+        for(int size = 1; size < max; size *= 10) {
+            time = ratingTime(size);
+            times.add(time);
+        }
+        Assert.assertEquals(1, 1);
+    }
+
+    public long ratingTime(int size) throws Exception {
+        Hash[] hashes = new Hash[size];
+        hashes[0] = getRandomTransactionHash();
+        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store();
+        Random random = new Random();
+        for(int i = 1; i < hashes.length; i ++) {
+            hashes[i] = getRandomTransactionHash();
+            new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i-random.nextInt(i)-1], hashes[i-random.nextInt(i)-1]), hashes[i]).store();
+        }
+        Map<Hash, Long> ratings = new HashMap<>();
+        long start = System.currentTimeMillis();
+        TipsManager.serialUpdateRatings(hashes[0], ratings, new HashSet<>());
+        return System.currentTimeMillis() - start;
+    }
 }

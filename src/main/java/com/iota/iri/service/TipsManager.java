@@ -39,7 +39,7 @@ public class TipsManager {
                 Milestone.latestMilestoneIndex == Milestone.MILESTONE_START_INDEX) {
             final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
 
-            Map<Hash, Long> ratings = new HashMap<>();
+            Map<Hash, Set<Hash>> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
             try {
                 int traversedTails = 0;
@@ -75,10 +75,10 @@ public class TipsManager {
                         updateRatings(tip, ratings, analyzedTips);
                         analyzedTips.clear();
                     }
-                    monte = seed.nextDouble() * ratings.get(tip);
+                    monte = seed.nextDouble() * ratings.get(tip).size();
                     for (carlo = tips.length; carlo-- > 1; ) {
                         if (ratings.containsKey(tips[carlo])) {
-                            monte -= ratings.get(tips[carlo]);
+                            monte -= ratings.get(tips[carlo]).size();
                         }
                         if (monte <= 0) {
                             break;
@@ -119,19 +119,20 @@ public class TipsManager {
         return a+b;
     }
 
-    private static long updateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
-        long rating = 1;
+    private static Set<Hash> updateRatings(Hash txHash, Map<Hash, Set<Hash>> ratings, Set<Hash> analyzedTips) throws Exception {
+        Set<Hash> rating;
         if(analyzedTips.add(txHash)) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
+            rating = new HashSet<>();
             for(Hash approver : transactionViewModel.getApprovers()) {
-                rating = capSum(rating, updateRatings(approver, ratings, analyzedTips), Long.MAX_VALUE/2);
+                rating.addAll(updateRatings(approver, ratings, analyzedTips));
             }
             ratings.put(txHash, rating);
         } else {
             if(ratings.containsKey(txHash)) {
                 rating = ratings.get(txHash);
             } else {
-                rating = 0;
+                rating = new HashSet<>();
             }
         }
         return rating;       

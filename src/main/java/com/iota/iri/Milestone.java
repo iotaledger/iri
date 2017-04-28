@@ -57,7 +57,7 @@ public class Milestone {
     private static Milestone instance = null;
 
     private static boolean shuttingDown;
-    private static int RESCAN_INTERVAL = 30000;
+    private static int RESCAN_INTERVAL = 5000;
     private static int RESCAN_TX_TO_REQUEST_INTERVAL = 60000;
 
     private long nextRescanTxToRequestTime = System.currentTimeMillis() + RESCAN_TX_TO_REQUEST_INTERVAL;

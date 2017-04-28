@@ -131,10 +131,12 @@ public class TransactionRequester {
                         requestTransaction(hashPointer, milestone);
                         solid = false;
                     } else {
-                        trunkInteger = transactionViewModel2.getTrunkTransactionHash();
-                        branchInteger = transactionViewModel2.getBranchTransactionHash();
-                        nonAnalyzedTransactions.offer(trunkInteger);
-                        nonAnalyzedTransactions.offer(branchInteger);
+                        if (solid) {
+                            trunkInteger = transactionViewModel2.getTrunkTransactionHash();
+                            branchInteger = transactionViewModel2.getBranchTransactionHash();
+                            nonAnalyzedTransactions.offer(trunkInteger);
+                            nonAnalyzedTransactions.offer(branchInteger);
+                        }
                     }
                 }
             }

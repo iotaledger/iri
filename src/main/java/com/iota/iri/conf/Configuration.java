@@ -60,7 +60,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
         conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnet.log");
         conf.put(DefaultConfSettings.CONFIG.name(), "iota.ini");
-        conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.1");
+        conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.0");
         conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.0");
         conf.put(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name(), "0.7");
         conf.put(DefaultConfSettings.P_SEND_MILESTONE.name(), "0.02");

@@ -11,10 +11,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionHash;
 import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
@@ -103,7 +100,35 @@ public class TipsManagerTest {
         transaction3.store();
         transaction4.store();
         Map<Hash, Long> ratings = new HashMap<>();
-        TipsManager.updateRatings(transaction.getHash(), ratings, new HashSet<>());
+        TipsManager.recursiveUpdateRatings(transaction.getHash(), ratings, new HashSet<>());
         Assert.assertTrue(ratings.get(transaction.getHash()).equals(5L));
+    }
+
+    @Test
+    public void updateRatingsSerialWorks() throws Exception {
+        Hash[] hashes = new Hash[5];
+        hashes[0] = getRandomTransactionHash();
+        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store();
+        for(int i = 1; i < hashes.length; i ++) {
+            hashes[i] = getRandomTransactionHash();
+            new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i-1], hashes[i-1]), hashes[i]).store();
+        }
+        Map<Hash, Long> ratings = new HashMap<>();
+        TipsManager.recursiveUpdateRatings(hashes[0], ratings, new HashSet<>());
+        Assert.assertTrue(ratings.get(hashes[0]).equals(5L));
+    }
+
+    @Test
+    public void updateRatingsSerialWorks2() throws Exception {
+        Hash[] hashes = new Hash[5];
+        hashes[0] = getRandomTransactionHash();
+        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store();
+        for(int i = 1; i < hashes.length; i ++) {
+            hashes[i] = getRandomTransactionHash();
+            new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i-1], hashes[i-(i > 1 ?2:1)]), hashes[i]).store();
+        }
+        Map<Hash, Long> ratings = new HashMap<>();
+        TipsManager.recursiveUpdateRatings(hashes[0], ratings, new HashSet<>());
+        Assert.assertTrue(ratings.get(hashes[0]).equals(12L));
     }
 }

@@ -331,6 +331,66 @@ public class TransactionViewModelTest {
     }
 
     @Test
+    public void updateHeightShouldWork() throws Exception {
+        TransactionViewModel transactionViewModel, transactionViewModel1, transactionViewModel2, transactionViewModel3;
+        transactionViewModel = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH.trits(),
+                Hash.NULL_HASH.trits()), new Hash(getRandomTransactionHash()));
+        transactionViewModel.store();
+        transactionViewModel1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel.getHash().trits(),
+                Hash.NULL_HASH.trits()), new Hash(getRandomTransactionHash()));
+        transactionViewModel1.store();
+        transactionViewModel2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel1.getHash().trits(),
+                Hash.NULL_HASH.trits()), new Hash(getRandomTransactionHash()));
+        transactionViewModel2.store();
+        transactionViewModel3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel2.getHash().trits(),
+                Hash.NULL_HASH.trits()), new Hash(getRandomTransactionHash()));
+        transactionViewModel3.store();
+
+
+        transactionViewModel3.updateHeights();
+
+        transactionViewModel = TransactionViewModel.fromHash(transactionViewModel.getHash());
+        transactionViewModel1 = TransactionViewModel.fromHash(transactionViewModel1.getHash());
+        transactionViewModel2 = TransactionViewModel.fromHash(transactionViewModel2.getHash());
+        transactionViewModel3 = TransactionViewModel.fromHash(transactionViewModel3.getHash());
+
+        assertEquals(4, transactionViewModel3.getHeight());
+        assertEquals(3, transactionViewModel2.getHeight());
+        assertEquals(2, transactionViewModel1.getHeight());
+        assertEquals(1, transactionViewModel.getHeight());
+    }
+
+    @Test
+    public void updateHeightPrefilledSlotShouldFail() throws Exception {
+        TransactionViewModel transactionViewModel, transactionViewModel1, transactionViewModel2, transactionViewModel3;
+        transactionViewModel = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(getRandomTransactionHash(),
+                Hash.NULL_HASH.trits()), new Hash(getRandomTransactionHash()));
+        transactionViewModel.store();
+        transactionViewModel1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel.getHash().trits(),
+                Hash.NULL_HASH.trits()), new Hash(getRandomTransactionHash()));
+        transactionViewModel1.store();
+        transactionViewModel2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel1.getHash().trits(),
+                Hash.NULL_HASH.trits()), new Hash(getRandomTransactionHash()));
+        transactionViewModel2.store();
+        transactionViewModel3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel2.getHash().trits(),
+                Hash.NULL_HASH.trits()), new Hash(getRandomTransactionHash()));
+        transactionViewModel3.store();
+
+
+        transactionViewModel3.updateHeights();
+
+        transactionViewModel = TransactionViewModel.fromHash(transactionViewModel.getHash());
+        transactionViewModel1 = TransactionViewModel.fromHash(transactionViewModel1.getHash());
+        transactionViewModel2 = TransactionViewModel.fromHash(transactionViewModel2.getHash());
+        transactionViewModel3 = TransactionViewModel.fromHash(transactionViewModel3.getHash());
+
+        assertEquals(0, transactionViewModel3.getHeight());
+        assertEquals(0, transactionViewModel2.getHeight());
+        assertEquals(0, transactionViewModel1.getHeight());
+        assertEquals(0, transactionViewModel.getHeight());
+    }
+
+    @Test
     public void findShouldBeSuccessful() throws Exception {
         int[] trits = getRandomTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
@@ -356,7 +416,18 @@ public class TransactionViewModelTest {
         transaction.hash = new Hash(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray());
         return transaction;
     }
+    public static int[] getRandomTransactionWithTrunkAndBranch(int[] trunk, int[] branch) {
+        int[] trits = getRandomTransactionTrits();
+        System.arraycopy(trunk, 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
+                TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
+        System.arraycopy(branch, 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
+                TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
+        return trits;
+    }
     public static int[] getRandomTransactionTrits() {
         return Arrays.stream(new int[TransactionViewModel.TRINARY_SIZE]).map(i -> seed.nextInt(3)-1).toArray();
+    }
+    public static int[] getRandomTransactionHash() {
+        return Arrays.stream(new int[Hash.SIZE_IN_TRITS]).map(i -> seed.nextInt(3)-1).toArray();
     }
 }

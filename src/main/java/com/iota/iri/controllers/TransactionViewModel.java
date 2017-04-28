@@ -317,7 +317,7 @@ public class TransactionViewModel {
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
-            transactionViewModel.updateHeight();
+            transactionViewModel.updateHeights();
             transactionViewModel.setSolid();
         }
     }
@@ -349,7 +349,16 @@ public class TransactionViewModel {
                 .keysWithMissingReferences(Transaction.class).get()).toArray(Hash[]::new);
     }
 
-    public long updateHeight() throws Exception {
+    public long getHeight() {
+        return transaction.height;
+    }
+
+    public void updateHeight(long height) throws Exception {
+        transaction.height = height;
+        update("height");
+    }
+
+    public long recursiveHeightUpdate() throws Exception {
         long height = transaction.height;
         if(height == 0L) {
             if(getTrunkTransactionHash().equals(Hash.NULL_HASH)) {
@@ -357,7 +366,7 @@ public class TransactionViewModel {
             } else {
                 TransactionViewModel trunk = getTrunkTransaction();
                 if(trunk.getType() != TransactionViewModel.PREFILLED_SLOT) {
-                    height = 1 + trunk.updateHeight();
+                    height = 1 + trunk.recursiveHeightUpdate();
                 }
             }
             if(height != 0L) {
@@ -366,6 +375,28 @@ public class TransactionViewModel {
             }
         }
         return height;
+    }
+
+    public void updateHeights() throws Exception {
+        TransactionViewModel transaction = this, trunk = this.getTrunkTransaction();
+        Stack<TransactionViewModel> transactionViewModels = new Stack<>();
+        transactionViewModels.push(transaction);
+        while(trunk.getHeight() == 0 && trunk.getType() != PREFILLED_SLOT && !trunk.getHash().equals(Hash.NULL_HASH)) {
+            transaction = trunk;
+            trunk = transaction.getTrunkTransaction();
+            transactionViewModels.push(transaction);
+        }
+        while(transactionViewModels.size() != 0) {
+            transaction = transactionViewModels.pop();
+            if(trunk.getHash().equals(Hash.NULL_HASH)) {
+                transaction.updateHeight(1L);
+            } else if ( trunk.getType() != PREFILLED_SLOT ){
+                transaction.updateHeight(1 + trunk.getHeight());
+            } else {
+                break;
+            }
+            trunk = transaction;
+        }
     }
 
     public void updateSender(String sender) throws Exception {

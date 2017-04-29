@@ -58,10 +58,8 @@ public class Milestone {
 
     private static boolean shuttingDown;
     private static int RESCAN_INTERVAL = 5000;
-    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 60000;
 
-    private long nextRescanTxToRequestTime = System.currentTimeMillis() + RESCAN_TX_TO_REQUEST_INTERVAL;
-    
+
     public static void init(final Hash coordinator, boolean testnet) {
         if (instance == null) {
             instance = new Milestone(coordinator, testnet);
@@ -73,16 +71,7 @@ public class Milestone {
 
             while (!shuttingDown) {
                 long scanTime = System.currentTimeMillis();
-    
-                if (scanTime > nextRescanTxToRequestTime) {                    
-                    try {
-                        TransactionRequester.instance().rescanTransactionsToRequest();
-                    } catch (ExecutionException | InterruptedException e) {
-                        log.error("Could not execute request rescan. ");
-                    }
-                    nextRescanTxToRequestTime = System.currentTimeMillis() + RESCAN_TX_TO_REQUEST_INTERVAL;
-                }
-                
+
                 try {
                     final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
                     final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
@@ -107,7 +96,7 @@ public class Milestone {
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
 
-                    Thread.sleep(RESCAN_INTERVAL);
+                    Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
 
                 } catch (final Exception e) {
                     log.error("Error during TipsManager Milestone updating", e);

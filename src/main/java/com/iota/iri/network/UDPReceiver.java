@@ -59,7 +59,6 @@ public class UDPReceiver {
                         SocketAddress address = receivingPacket.getSocketAddress();
                         processor.submit(() -> Node.instance().processReceivedData(bytes,
                                 address, "udp", new Curl()));
-                        Thread.yield();
                     } else {
                         receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                     }

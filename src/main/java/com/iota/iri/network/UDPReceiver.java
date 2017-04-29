@@ -1,8 +1,6 @@
 package com.iota.iri.network;
 
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,14 +23,15 @@ public class UDPReceiver {
     private static final UDPReceiver instance = new UDPReceiver();
     private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
-    private final int PROCESSOR_THREADS = Runtime.getRuntime().availableProcessors();
-    private final ExecutorService processor = new ThreadPoolExecutor(PROCESSOR_THREADS, PROCESSOR_THREADS, 5000L,
-            TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(PROCESSOR_THREADS, true),
-            new ThreadPoolExecutor.CallerRunsPolicy());
+    private final int NUM_PROCESSING_THREADS = Runtime.getRuntime().availableProcessors();
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private DatagramSocket socket;
     private Thread receivingThread;
+    private final Thread[] processingThreads = new Thread[NUM_PROCESSING_THREADS];
+    private volatile AtomicBoolean[] processingFlags = new AtomicBoolean[NUM_PROCESSING_THREADS];;
+    private final byte[][] bytesToProcess = new byte[NUM_PROCESSING_THREADS][TRANSACTION_PACKET_SIZE];
+    private final SocketAddress[] socketAddresses = new SocketAddress[NUM_PROCESSING_THREADS];
 
     public void init(int port) throws Exception {
 
@@ -40,6 +39,11 @@ public class UDPReceiver {
         log.info("UDP replicator is accepting connections on udp port " + port);
 
         receivingThread = new Thread(spawnReceiverThread(), "UDP receiving thread");
+        for(int i = 0; i < NUM_PROCESSING_THREADS; i++) {
+            processingFlags[i] = new AtomicBoolean(false);
+            processingThreads[i] = new Thread(spawnProcessingThread(i));
+            processingThreads[i].start();
+        }
         receivingThread.start();
     }
 
@@ -55,10 +59,7 @@ public class UDPReceiver {
                     socket.receive(receivingPacket);
 
                     if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
-                        byte[] bytes = Arrays.copyOf(receivingPacket.getData(), receivingPacket.getLength());
-                        SocketAddress address = receivingPacket.getSocketAddress();
-                        processor.submit(() -> Node.instance().processReceivedData(bytes,
-                                address, "udp", new Curl()));
+                        submitPacketToProcessor(receivingPacket.getData(), receivingPacket.getSocketAddress());
                     } else {
                         receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                     }
@@ -67,6 +68,43 @@ public class UDPReceiver {
                 }
             }
             log.info("Shutting down spawning Receiver Thread");
+        };
+    }
+
+    private void submitPacketToProcessor (byte[] bytes, SocketAddress socketAddress) {
+        int index;
+        boolean canProcess = false;
+        for(index = NUM_PROCESSING_THREADS; index-- > 0;) {
+            if(!processingFlags[index].get()) {
+                canProcess = true;
+                break;
+            }
+        }
+        if(canProcess) {
+            synchronized (bytesToProcess[index]) {
+                System.arraycopy(bytes, 0, bytesToProcess[index], 0, TRANSACTION_PACKET_SIZE);
+                socketAddresses[index] = socketAddress;
+                processingFlags[index].set(true);
+            }
+        }
+    }
+
+    private Runnable spawnProcessingThread(int index) {
+        return () -> {
+            Curl curl = new Curl();
+            while(!shuttingDown.get()) {
+                if(processingFlags[index].get()) {
+                    synchronized (bytesToProcess[index]) {
+                    }
+                    Node.instance().processReceivedData(bytesToProcess[index], socketAddresses[index], "udp", curl);
+                    processingFlags[index].set(false);
+                }
+                try {
+                    Thread.sleep(0);
+                } catch (InterruptedException e) {
+                    log.error("Processing Thread interrupted. ", e);
+                }
+            }
         };
     }
 
@@ -80,8 +118,9 @@ public class UDPReceiver {
 
     public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
-        processor.shutdown();
-        processor.awaitTermination(6, TimeUnit.SECONDS);
+        for(Thread thread: processingThreads) {
+            thread.join();
+        }
         receivingThread.join(6000L);
     }
 

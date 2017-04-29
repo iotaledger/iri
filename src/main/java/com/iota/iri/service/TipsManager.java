@@ -1,17 +1,10 @@
 package com.iota.iri.service;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 
 import com.iota.iri.LedgerValidator;
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.*;
-import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,7 +52,7 @@ public class TipsManager {
                 }
                 Hash tail = tip;
 
-                updateRatings(tip, ratings, analyzedTips);
+                serialUpdateRatings(tip, ratings, analyzedTips);
                 analyzedTips.clear();
 
                 Hash[] tips;
@@ -72,13 +65,14 @@ public class TipsManager {
                         break;
                     }
                     if (!ratings.containsKey(tip)) {
-                        updateRatings(tip, ratings, analyzedTips);
+                        serialUpdateRatings(tip, ratings, analyzedTips);
                         analyzedTips.clear();
                     }
-                    monte = seed.nextDouble() * ratings.get(tip);
+
+                    monte = seed.nextDouble() * Math.sqrt(ratings.get(tip));
                     for (carlo = tips.length; carlo-- > 1; ) {
                         if (ratings.containsKey(tips[carlo])) {
-                            monte -= ratings.get(tips[carlo]);
+                            monte -= Math.sqrt(ratings.get(tips[carlo]));
                         }
                         if (monte <= 0) {
                             break;
@@ -119,12 +113,57 @@ public class TipsManager {
         return a+b;
     }
 
-    private static long updateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
+    static void serialUpdateRatings(final Hash txHash, final Map<Hash, Long> ratings, final Set<Hash> analyzedTips) throws Exception {
+        Stack<Hash> hashesToRate = new Stack<>();
+        hashesToRate.push(txHash);
+        Hash currentHash;
+        boolean addedBack;
+        while(!hashesToRate.empty()) {
+            currentHash = hashesToRate.pop();
+            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(currentHash);
+            addedBack = false;
+            Hash[] approvers = transactionViewModel.getApprovers();
+            for(Hash approver : approvers) {
+                if(ratings.get(approver) == null) {
+                    if(!addedBack) {
+                        addedBack = true;
+                        hashesToRate.push(currentHash);
+                    }
+                    hashesToRate.push(approver);
+                }
+            }
+            if(!addedBack) {
+                ratings.put(currentHash, 1 + Arrays.stream(approvers).map(ratings::get)
+                        .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L));
+            }
+        }
+    }
+
+    static Set<Hash> updateHashRatings(Hash txHash, Map<Hash, Set<Hash>> ratings, Set<Hash> analyzedTips) throws Exception {
+        Set<Hash> rating;
+        if(analyzedTips.add(txHash)) {
+            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
+            rating = new HashSet<>(Collections.singleton(txHash));
+            for(Hash approver : transactionViewModel.getApprovers()) {
+                rating.addAll(updateHashRatings(approver, ratings, analyzedTips));
+            }
+            ratings.put(txHash, rating);
+        } else {
+            if(ratings.containsKey(txHash)) {
+                rating = ratings.get(txHash);
+            } else {
+                rating = new HashSet<>();
+            }
+        }
+        return rating;       
+    }
+
+    static long recursiveUpdateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
         long rating = 1;
         if(analyzedTips.add(txHash)) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
             for(Hash approver : transactionViewModel.getApprovers()) {
-                rating = capSum(rating, updateRatings(approver, ratings, analyzedTips), Long.MAX_VALUE/2);
+                rating = capSum(rating, recursiveUpdateRatings(approver, ratings, analyzedTips), Long.MAX_VALUE/2);
             }
             ratings.put(txHash, rating);
         } else {
@@ -134,7 +173,7 @@ public class TipsManager {
                 rating = 0;
             }
         }
-        return rating;       
+        return rating;
     }
 
     public static TipsManager instance() {

@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 
 import com.iota.iri.controllers.TransactionRequester;
+import com.iota.iri.service.TipsManager;
 import com.iota.iri.storage.FileExportProvider;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
@@ -94,6 +95,7 @@ public class IRI {
             Tangle.instance().init();
             LedgerValidator.init();
             Milestone.instance().init();
+            TipsManager.instance.init();
             TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
             Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()),
                     Configuration.doubling(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name()),
@@ -249,6 +251,7 @@ public class IRI {
                 IXI.instance().shutdown();
                 API.instance().shutDown();
                 Milestone.instance().shutDown();
+                TipsManager.instance.shutdown();
                 Node.instance().shutdown();
                 UDPReceiver.instance().shutdown();
                 ReplicatorSourcePool.instance().shutdown();

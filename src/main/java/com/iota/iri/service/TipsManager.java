@@ -152,7 +152,7 @@ public class TipsManager {
             addedBack = false;
             Hash[] approvers = transactionViewModel.getApprovers();
             for(Hash approver : approvers) {
-                if(ratings.get(approver) == null) {
+                if(ratings.get(approver) == null && !approver.equals(currentHash)) {
                     if(!addedBack) {
                         addedBack = true;
                         hashesToRate.push(currentHash);
@@ -160,8 +160,8 @@ public class TipsManager {
                     hashesToRate.push(approver);
                 }
             }
-            if(!addedBack) {
-                ratings.put(currentHash, 1 + Arrays.stream(approvers).map(ratings::get)
+            if(!addedBack && analyzedTips.add(currentHash)) {
+                ratings.put(currentHash, 1 + Arrays.stream(approvers).map(ratings::get).filter(Objects::nonNull)
                         .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L));
             }
         }
@@ -204,11 +204,7 @@ public class TipsManager {
         return rating;
     }
 
-    public static TipsManager instance() {
-        return instance;
-    }
-    
     private TipsManager() {}
     
-    private static final TipsManager instance = new TipsManager();
+    public static final TipsManager instance = new TipsManager();
 }

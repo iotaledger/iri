@@ -31,7 +31,11 @@ public class TipsViewModel {
     }
 
     public static Hash[] getTips() {
-        return tips.stream().toArray(Hash[]::new);
+        Hash[] hashes;
+        synchronized (tips) {
+            hashes = tips.stream().toArray(Hash[]::new);
+        }
+        return hashes;
     }
 
     public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {

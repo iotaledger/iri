@@ -2,6 +2,7 @@ package com.iota.iri.model;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.utils.Converter;
+import com.sun.istack.internal.NotNull;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -16,8 +17,9 @@ public class Hash implements Comparable<Hash>, Serializable{
 
     public static final Hash NULL_HASH = new Hash(new int[Curl.HASH_LENGTH]);
 
-    private final byte[] bytes;
-    private final int hashCode;
+    private byte[] bytes;
+    private int[] trits;
+    private int hashCode;
     
     // constructors' bill
 
@@ -32,7 +34,9 @@ public class Hash implements Comparable<Hash>, Serializable{
     }
 
     public Hash(final int[] trits, final int offset) {
-        this(Converter.bytes(trits, offset, trits.length));
+        this.trits = new int[SIZE_IN_TRITS];
+        System.arraycopy(trits, 0, this.trits, 0, SIZE_IN_TRITS);
+        //this(Converter.bytes(trits, offset, trits.length));
     }
 
     public Hash(final int[] trits) {
@@ -58,7 +62,7 @@ public class Hash implements Comparable<Hash>, Serializable{
         Converter.getTrits(bytes, trits);
         return calculate(trits, 0, tritsLength, curl);
     }
-    public static Hash calculate(final int[] tritsToCalculate, int offset, int length, final Curl curl) {
+    public static Hash calculate(final int[] tritsToCalculate, int offset, int length, @NotNull final Curl curl) {
         int[] hashTrits = new int[SIZE_IN_TRITS];
         curl.reset();
         curl.absorb(tritsToCalculate, offset, length);
@@ -79,8 +83,10 @@ public class Hash implements Comparable<Hash>, Serializable{
     }
 
     public int[] trits() {
-        final int[] trits = new int[Curl.HASH_LENGTH];
-        Converter.getTrits(bytes, trits);
+        if(trits == null) {
+            trits = new int[Curl.HASH_LENGTH];
+            Converter.getTrits(bytes, trits);
+        }
         return trits;
     }
 
@@ -88,11 +94,14 @@ public class Hash implements Comparable<Hash>, Serializable{
     public boolean equals(final Object obj) {
         assert obj instanceof Hash;
         if (obj == null) return false;
-        return Arrays.equals(bytes, ((Hash) obj).bytes);
+        return Arrays.equals(bytes(), ((Hash) obj).bytes());
     }
 
     @Override
     public int hashCode() {
+        if(bytes == null) {
+            bytes();
+        }
         return hashCode;
     }
 
@@ -102,12 +111,23 @@ public class Hash implements Comparable<Hash>, Serializable{
     }
     
     public byte[] bytes() {
-		return bytes.clone();
+        if(bytes == null) {
+            bytes = Converter.bytes(trits);
+            hashCode = Arrays.hashCode(this.bytes);
+        }
+		return bytes;
 	}
 
     @Override
     public int compareTo(Hash hash) {
-        return this.equals(hash) ? 0 : 1;
+        if(this.equals(hash)) {
+            return 0;
+        }
+        long diff = Converter.longValue(hash.trits(), 0, SIZE_IN_TRITS) - Converter.longValue(trits(), 0, SIZE_IN_TRITS);
+        if(Math.abs(diff) > Integer.MAX_VALUE) {
+            return diff > 0L ? Integer.MAX_VALUE : Integer.MIN_VALUE + 1;
+        }
+        return (int) diff;
     }
 }
 

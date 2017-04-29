@@ -7,6 +7,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.replicator.ReplicatorSinkPool;
@@ -223,7 +224,7 @@ public class Node {
                 break;
             }            
         }
-        if (!addressMatch) {
+        if (!addressMatch && Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
             // TODO This code is only for testnet/stresstest - remove for mainnet
             String uriString = uriScheme + ":/" + senderAddress.toString();
             log.info("Adding non-tethered neighbor: "+uriString);

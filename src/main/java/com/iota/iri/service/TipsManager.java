@@ -1,6 +1,7 @@
 package com.iota.iri.service;
 
 import java.util.*;
+import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.LedgerValidator;
 import com.iota.iri.model.Hash;
@@ -15,13 +16,40 @@ public class TipsManager {
     private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
 
     private static int RATING_THRESHOLD = 75; // Must be in [0..100] range
+    private boolean shuttingDown = false;
+    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 60000;
+    private Thread solidityRescanHandle;
 
     public static void setRATING_THRESHOLD(int value) {
         if (value < 0) value = 0;
         if (value > 100) value = 100;
         RATING_THRESHOLD = value;
     }
-    
+    public void init() {
+        solidityRescanHandle = new Thread(() -> {
+
+            while(!shuttingDown) {
+                Arrays.stream(TipsViewModel.getTips()).forEach(t -> {
+                    try {
+                        TransactionRequester.instance().checkSolidity(t, false);
+                    } catch (Exception e) {
+                        log.error("Error during solidity scan for {}: {}", t, e);
+                    }
+                });
+                try {
+                    Thread.sleep(RESCAN_TX_TO_REQUEST_INTERVAL);
+                } catch (InterruptedException e) {
+                    log.error("Solidity rescan interrupted.");
+                }
+            }
+        }, "Tip Solidity Rescan");
+        solidityRescanHandle.start();
+    }
+    public void shutdown() throws InterruptedException {
+        shuttingDown = true;
+        solidityRescanHandle.join();
+    }
+
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
 
         int milestoneDepth = depth;

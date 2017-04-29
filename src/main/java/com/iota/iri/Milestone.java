@@ -58,10 +58,8 @@ public class Milestone {
 
     private static boolean shuttingDown;
     private static int RESCAN_INTERVAL = 5000;
-    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 60000;
 
-    private long nextRescanTxToRequestTime = System.currentTimeMillis() + RESCAN_TX_TO_REQUEST_INTERVAL;
-    
+
     public static void init(final Hash coordinator, boolean testnet) {
         if (instance == null) {
             instance = new Milestone(coordinator, testnet);
@@ -70,12 +68,6 @@ public class Milestone {
 
     public void init() {
         (new Thread(() -> {
-
-            try {
-                TransactionRequester.instance().rescanTransactionsToRequest();
-            } catch (ExecutionException | InterruptedException e) {
-                log.error("Could not execute request rescan. ");
-            }
 
             while (!shuttingDown) {
                 long scanTime = System.currentTimeMillis();

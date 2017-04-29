@@ -2,13 +2,9 @@ package com.iota.iri.model;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.utils.Converter;
-import com.sun.istack.internal.NotNull;
 
 import java.io.Serializable;
 import java.util.Arrays;
-
-import static com.iota.iri.utils.Converter.NUMBER_OF_TRITS_IN_A_BYTE;
-import static com.iota.iri.utils.Converter.NUMBER_OF_TRITS_IN_A_TRYTE;
 
 public class Hash implements Comparable<Hash>, Serializable{
 
@@ -62,7 +58,7 @@ public class Hash implements Comparable<Hash>, Serializable{
         Converter.getTrits(bytes, trits);
         return calculate(trits, 0, tritsLength, curl);
     }
-    public static Hash calculate(final int[] tritsToCalculate, int offset, int length, @NotNull final Curl curl) {
+    public static Hash calculate(final int[] tritsToCalculate, int offset, int length, final Curl curl) {
         int[] hashTrits = new int[SIZE_IN_TRITS];
         curl.reset();
         curl.absorb(tritsToCalculate, offset, length);

@@ -17,7 +17,7 @@ public class TipsManager {
 
     private static int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
-    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 60000;
+    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 6000;
     private Thread solidityRescanHandle;
 
     public static void setRATING_THRESHOLD(int value) {

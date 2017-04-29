@@ -1,7 +1,6 @@
 package com.iota.iri.service;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 import com.iota.iri.LedgerValidator;
 import com.iota.iri.model.Hash;
@@ -29,13 +28,7 @@ public class TipsManager {
         solidityRescanHandle = new Thread(() -> {
 
             while(!shuttingDown) {
-                Arrays.stream(TipsViewModel.getTips()).forEach(t -> {
-                    try {
-                        TransactionRequester.instance().checkSolidity(t, false);
-                    } catch (Exception e) {
-                        log.error("Error during solidity scan for {}: {}", t, e);
-                    }
-                });
+                scanTipsForSolidity();
                 try {
                     Thread.sleep(RESCAN_TX_TO_REQUEST_INTERVAL);
                 } catch (InterruptedException e) {
@@ -44,6 +37,15 @@ public class TipsManager {
             }
         }, "Tip Solidity Rescan");
         solidityRescanHandle.start();
+    }
+    private void scanTipsForSolidity() {
+        Arrays.stream(TipsViewModel.getTips()).forEach(t -> {
+            try {
+                TransactionRequester.instance().checkSolidity(t, false);
+            } catch (Exception e) {
+                log.error("Error during solidity scan for {}: {}", t, e);
+            }
+        });
     }
     public void shutdown() throws InterruptedException {
         shuttingDown = true;

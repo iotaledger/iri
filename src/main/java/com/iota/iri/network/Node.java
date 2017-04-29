@@ -141,7 +141,7 @@ public class Node {
         return Optional.of(hostAddress);
     }
     
-    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme, Curl curl, int[] receivedTransactionTrits) {
+    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme, Curl curl) {
         long timestamp;
         TransactionViewModel receivedTransactionViewModel, transactionViewModel;
         Hash transactionPointer;

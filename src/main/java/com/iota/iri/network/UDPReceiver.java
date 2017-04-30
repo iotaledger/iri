@@ -85,7 +85,9 @@ public class UDPReceiver {
                 System.arraycopy(bytes, 0, bytesToProcess[index], 0, TRANSACTION_PACKET_SIZE);
                 socketAddresses[index] = socketAddress;
                 processingFlags[index].set(true);
-                processingThreads[index].notify();
+                synchronized (processingThreads[index]) {
+                    processingThreads[index].notify();
+                }
             }
         }
     }

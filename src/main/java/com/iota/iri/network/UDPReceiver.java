@@ -85,6 +85,9 @@ public class UDPReceiver {
                 System.arraycopy(bytes, 0, bytesToProcess[index], 0, TRANSACTION_PACKET_SIZE);
                 socketAddresses[index] = socketAddress;
                 processingFlags[index].set(true);
+                synchronized (processingThreads[index]) {
+                    processingThreads[index].notify();
+                }
             }
         }
     }
@@ -100,7 +103,9 @@ public class UDPReceiver {
                     processingFlags[index].set(false);
                 }
                 try {
-                    Thread.sleep(0);
+                    synchronized (processingThreads[index]) {
+                        processingThreads[index].wait();
+                    }
                 } catch (InterruptedException e) {
                     log.error("Processing Thread interrupted. ", e);
                 }

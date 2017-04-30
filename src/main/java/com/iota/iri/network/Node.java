@@ -179,7 +179,7 @@ public class Node {
                     try {
                         //first check if Hash seen recently
                         if (recentSeenHashes.get(receivedTransactionViewModel.getHash())) {
-                            stored = true;
+                            stored = false;
                         } else {
                             //if not, store tx. & update recentSeenHashes
                             stored = receivedTransactionViewModel.store();

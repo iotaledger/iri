@@ -30,6 +30,10 @@ public class TipsViewModel {
         }
     }
 
+    public static Iterator<Hash> iterator() {
+        return tips.iterator();
+    }
+
     public static Hash[] getTips() {
         Hash[] hashes;
         synchronized (tips) {

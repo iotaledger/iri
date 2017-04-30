@@ -158,6 +158,8 @@ public class Node {
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
             boolean stored = false;
+            boolean cached = false;
+
             if (neighbor instanceof TCPNeighbor) {
                 if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
             }
@@ -181,12 +183,17 @@ public class Node {
                 {
                     try {
                         //first check if Hash seen recently
-                        if (recentSeenHashes.get(receivedTransactionViewModel.getHash())) {
+                        synchronized (recentSeenHashes) {
+                            cached = recentSeenHashes.get(receivedTransactionViewModel.getHash());
+                        }
+                        if (cached) {
                             stored = false;
                         } else {
                             //if not, store tx. & update recentSeenHashes
                             stored = receivedTransactionViewModel.store();
-                            recentSeenHashes.set(receivedTransactionViewModel.getHash(),true);
+                            synchronized (recentSeenHashes) {
+                                recentSeenHashes.set(receivedTransactionViewModel.getHash(), true);
+                            }
                         }
                     } catch (Exception e) {
                         log.error("Error accessing persistence store.", e);

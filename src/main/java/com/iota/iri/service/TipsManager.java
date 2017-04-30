@@ -44,10 +44,20 @@ public class TipsManager {
     }
     private void scanTipsForSolidity() throws Exception {
         Iterator<Hash> tipsIterator = TipsViewModel.iterator();
-        while(tipsIterator.hasNext()) {
-            TransactionRequester.instance().checkSolidity(tipsIterator.next(), false);
+        Hash hash;
+        boolean hasNext;
+
+        do {
+            synchronized (TipsViewModel.sync) {
+                hasNext = tipsIterator.hasNext();
+                if(!hasNext) {
+                    break;
+                }
+                hash = tipsIterator.next();
+            }
+            TransactionRequester.instance().checkSolidity(hash, false);
             Thread.sleep(0);
-        }
+        } while (true);
     }
 
     public void shutdown() throws InterruptedException {

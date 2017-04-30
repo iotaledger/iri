@@ -17,15 +17,16 @@ public class TipsViewModel {
 
     private static List<Hash> tips = new ArrayList<>();
     private static SecureRandom seed = new SecureRandom();
+    public static final Object sync = new Object();
 
     public static boolean addTipHash (Hash hash) throws ExecutionException, InterruptedException {
-        synchronized (tips) {
+        synchronized (sync) {
             return tips.add(hash);
         }
     }
 
     public static boolean removeTipHash (Hash hash) throws ExecutionException, InterruptedException {
-        synchronized (tips) {
+        synchronized (sync) {
             return tips.remove(hash);
         }
     }
@@ -36,14 +37,14 @@ public class TipsViewModel {
 
     public static Hash[] getTips() {
         Hash[] hashes;
-        synchronized (tips) {
+        synchronized (sync) {
             hashes = tips.stream().toArray(Hash[]::new);
         }
         return hashes;
     }
 
     public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-        synchronized (tips) {
+        synchronized (sync) {
             return tips.size() != 0 ? tips.get(seed.nextInt(size())) : null;
         }
     }

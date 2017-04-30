@@ -3,6 +3,7 @@ package com.iota.iri.controllers;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tip;
 import com.iota.iri.storage.Tangle;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.security.SecureRandom;
 import java.util.*;
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 public class TipsViewModel {
 
     private static List<Hash> tips = new ArrayList<>();
+    private static List<Hash> solidTips = new ArrayList<>();
     private static SecureRandom seed = new SecureRandom();
     public static final Object sync = new Object();
 
@@ -27,14 +29,25 @@ public class TipsViewModel {
 
     public static boolean removeTipHash (Hash hash) throws ExecutionException, InterruptedException {
         synchronized (sync) {
-            return tips.remove(hash);
+            if(!tips.remove(hash)) {
+                return solidTips.remove(hash);
+            }
+        }
+        return true;
+    }
+
+    public static void setSolid(Hash tip) {
+        synchronized (sync) {
+            if(!tips.remove(tip)) {
+                solidTips.add(tip);
+            }
         }
     }
 
     public static Hash[] getTips() {
         Hash[] hashes;
         synchronized (sync) {
-            hashes = tips.stream().toArray(Hash[]::new);
+            hashes = ArrayUtils.addAll(tips.stream().toArray(Hash[]::new), solidTips.stream().toArray(Hash[]::new));
         }
         return hashes;
     }
@@ -45,8 +58,12 @@ public class TipsViewModel {
         }
     }
 
-    public static int size() {
+    public static int nonSolidSize() {
         return tips.size();
+    }
+
+    public static int size() {
+        return tips.size() + solidTips.size();
     }
 
     public static void loadTipHashes() throws ExecutionException, InterruptedException {

@@ -86,6 +86,7 @@ public class Node {
             log.info("Spawning Neighbor DNS Refresher Thread");
 
             while (!shuttingDown.get()) {
+                int dnsCounter = 0;
                 log.info("Checking Neighbors' Ip...");
 
                 try {
@@ -116,7 +117,9 @@ public class Node {
                         });
                     });
 
-                    Thread.sleep(1000*60*30);
+                    while(dnsCounter++ < 60*30 && !shuttingDown.get()) {
+                        Thread.sleep(1000);
+                    }
                 } catch (final Exception e) {
                     log.error("Neighbor DNS Refresher Thread Exception:", e);
                 }
@@ -352,7 +355,6 @@ public class Node {
 
     public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
-        executor.shutdown();
         executor.awaitTermination(6, TimeUnit.SECONDS);
     }
 

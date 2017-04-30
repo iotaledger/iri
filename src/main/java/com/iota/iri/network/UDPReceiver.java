@@ -57,14 +57,15 @@ public class UDPReceiver {
 
                 try {
                     socket.receive(receivingPacket);
-
-                    if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
-                        submitPacketToProcessor(receivingPacket.getData(), receivingPacket.getSocketAddress());
-                    } else {
-                        receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
+                } catch (IOException e) {
+                    if(!shuttingDown.get()) {
+                        log.error("Receiver Thread Exception:", e);
                     }
-                } catch (final Exception e) {
-                    log.error("Receiver Thread Exception:", e);
+                }
+                if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
+                    submitPacketToProcessor(receivingPacket.getData(), receivingPacket.getSocketAddress());
+                } else {
+                    receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                 }
             }
             log.info("Shutting down spawning Receiver Thread");
@@ -124,9 +125,13 @@ public class UDPReceiver {
     public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
         for(Thread thread: processingThreads) {
+            synchronized (thread) {
+                thread.notify();
+            }
             thread.join();
         }
-        receivingThread.join(6000L);
+        socket.close();
+        receivingThread.join();
     }
 
     public static UDPReceiver instance() {

@@ -79,6 +79,7 @@ public class UDPReceiver {
         shuttingDown.set(true);
         executor.shutdown();
         executor.awaitTermination(6, TimeUnit.SECONDS);
+
     }
 
     public static UDPReceiver instance() {

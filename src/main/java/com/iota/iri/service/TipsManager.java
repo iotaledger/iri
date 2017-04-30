@@ -42,12 +42,11 @@ public class TipsManager {
         }, "Tip Solidity Rescan");
         solidityRescanHandle.start();
     }
+
     private void scanTipsForSolidity() throws Exception {
-        Hash[] hashes = TipsViewModel.getNonSolidTips();
-        for(Hash hash: hashes) {
-            if(TransactionRequester.instance().checkSolidity(hash, false)) {
-                TipsViewModel.removeSolidHash(hash);
-            }
+        for(int i = 0; i++ < TipsViewModel.size();) {
+            Hash hash = TipsViewModel.getRandomTipHash();
+            TransactionRequester.instance().checkSolidity(hash, false);
             Thread.sleep(1);
         }
     }

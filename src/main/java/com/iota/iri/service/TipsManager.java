@@ -46,6 +46,7 @@ public class TipsManager {
         Iterator<Hash> tipsIterator = TipsViewModel.iterator();
         while(tipsIterator.hasNext()) {
             TransactionRequester.instance().checkSolidity(tipsIterator.next(), false);
+            Thread.sleep(0);
         }
     }
 

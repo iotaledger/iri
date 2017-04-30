@@ -95,8 +95,8 @@ public class Milestone {
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"
                                 + Milestone.latestSolidSubtangleMilestoneIndex);
                     }
-                    Thread.sleep(3000);
-                    //Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
+
+                    Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
 
                 } catch (final Exception e) {
                     log.error("Error during TipsManager Milestone updating", e);

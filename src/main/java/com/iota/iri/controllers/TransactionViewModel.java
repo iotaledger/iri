@@ -388,9 +388,9 @@ public class TransactionViewModel {
         }
         while(transactionViewModels.size() != 0) {
             transaction = TransactionViewModel.fromHash(transactionViewModels.pop());
-            if(trunk.getHash().equals(Hash.NULL_HASH)) {
+            if(trunk.getHash().equals(Hash.NULL_HASH) && trunk.getHeight() == 0 && !transaction.getHash().equals(Hash.NULL_HASH)) {
                 transaction.updateHeight(1L);
-            } else if ( trunk.getType() != PREFILLED_SLOT ){
+            } else if ( trunk.getType() != PREFILLED_SLOT && transaction.getHeight() == 0){
                 transaction.updateHeight(1 + trunk.getHeight());
             } else {
                 break;

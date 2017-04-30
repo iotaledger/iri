@@ -98,8 +98,6 @@ public class UDPReceiver {
             Curl curl = new Curl();
             while(!shuttingDown.get()) {
                 if(processingFlags[index].get()) {
-                    synchronized (bytesToProcess[index]) {
-                    }
                     Node.instance().processReceivedData(bytesToProcess[index], socketAddresses[index], "udp", curl);
                     processingFlags[index].set(false);
                 }

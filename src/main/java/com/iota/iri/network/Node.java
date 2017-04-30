@@ -155,6 +155,8 @@ public class Node {
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
             boolean stored = false;
+            boolean cached = false;
+
             if (neighbor instanceof TCPNeighbor) {
                 if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
             }

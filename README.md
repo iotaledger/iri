@@ -1,7 +1,7 @@
 ## Master branch build status: 
 [![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=master)](https://travis-ci.org/iotaledger/iri)
 
-##Introduction
+## Introduction
 
 The IRI is the IOTA reference implementation project. It is a complete [[IOTA]](http://www.iotatoken.com/) Node with a JSON-REST HTTP interface.
 
@@ -13,11 +13,11 @@ It allows to connect easily using java directly to a local or a remote [[IOTA no
 
 The current reference implementation is in refatoring/improvements phase. Any contribution is highly appreciated.
 
-##Technologies & dependencies
+## Technologies & dependencies
 
 The IOTA Reference Implementation has been designed to be used with Java8.
 
-##Usage
+## Usage
 
 You'll need maven installed. In order
 

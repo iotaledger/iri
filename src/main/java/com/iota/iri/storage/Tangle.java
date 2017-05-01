@@ -81,7 +81,9 @@ public class Tangle {
             Object latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
                 //while(!provider.isAvailable()) {}
-                latest = provider.latest(model);
+                if (latest == null) {
+                    latest = provider.latest(model);
+                }
             }
             return latest;
         });

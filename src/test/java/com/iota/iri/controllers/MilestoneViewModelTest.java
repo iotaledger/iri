@@ -5,9 +5,7 @@ import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProviderTest;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.*;
@@ -16,12 +14,12 @@ import static org.junit.Assert.*;
  * Created by paul on 4/11/17.
  */
 public class MilestoneViewModelTest {
-    private static final TemporaryFolder dbFolder = new TemporaryFolder();
-    private static final TemporaryFolder logFolder = new TemporaryFolder();
+    final TemporaryFolder dbFolder = new TemporaryFolder();
+    final TemporaryFolder logFolder = new TemporaryFolder();
     int index = 30;
 
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @Before
+    public void setUpTest() throws Exception {
         dbFolder.create();
         logFolder.create();
         Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
@@ -30,10 +28,11 @@ public class MilestoneViewModelTest {
         Tangle.instance().init();
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         Tangle.instance().shutdown();
         dbFolder.delete();
+        logFolder.delete();
     }
 
     @Test
@@ -180,5 +179,23 @@ public class MilestoneViewModelTest {
         milestoneViewModel.initSnapshot(Snapshot.initialState);
         milestoneViewModel.store();
         assertTrue(next == milestoneViewModel.nextWithSnapshot().index());
+    }
+
+    @Test
+    public void nextGreaterThan() throws Exception {
+        int first = 8;
+        int next = 9;
+        new MilestoneViewModel(next, new Hash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store();
+        new MilestoneViewModel(first, new Hash("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store();
+        assertEquals(next, MilestoneViewModel.findClosestNextMilestone(first).index().intValue());
+    }
+
+    @Test
+    public void PrevBefore() throws Exception {
+        int first = 8;
+        int next = 9;
+        new MilestoneViewModel(next, new Hash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store();
+        new MilestoneViewModel(first, new Hash("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store();
+        assertEquals(first, MilestoneViewModel.findClosestPrevMilestone(next).index().intValue());
     }
 }

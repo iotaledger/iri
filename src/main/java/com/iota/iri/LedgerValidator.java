@@ -174,10 +174,7 @@ public class LedgerValidator {
         int i = latestConsistentMilestone == null? Milestone.MILESTONE_START_INDEX: latestConsistentMilestone.index();
         while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
             start = System.currentTimeMillis();
-            if(!MilestoneViewModel.load(i)) {
-                Map.Entry<Integer, Hash> closestGreaterMilestone = Milestone.findMilestone(i);
-                new MilestoneViewModel(closestGreaterMilestone.getKey(), closestGreaterMilestone.getValue()).store();
-            }
+            i = MilestoneViewModel.findClosestNextMilestone(i-1).index();
             if(updateSnapshot(MilestoneViewModel.get(i))) {
                 log.info("Snapshot created at Milestone: " + i);
             } else {

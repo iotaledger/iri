@@ -78,12 +78,9 @@ public class TipsManager {
                     if(milestoneIndex < 0) {
                         milestoneIndex = 0;
                     }
-                    if(!MilestoneViewModel.load(milestoneIndex)) {
-                        Map.Entry<Integer, Hash> closestGreaterMilestone = Milestone.findMilestone(milestoneIndex);
-                        new MilestoneViewModel(closestGreaterMilestone.getKey(), closestGreaterMilestone.getValue()).store();
-                        tip = closestGreaterMilestone.getValue();
-                    } else {
-                        tip = MilestoneViewModel.get(milestoneIndex).getHash();
+                    MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(milestoneIndex);
+                    if(milestoneViewModel != null) {
+                        tip = milestoneViewModel.getHash();
                     }
                 }
                 Hash tail = tip;

@@ -163,7 +163,6 @@ public class Milestone {
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex; milestoneIndex < latestMilestoneIndex;) {
-            //final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
             MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(milestoneIndex);
             if (milestoneViewModel == null) {
                 log.info("Could not find milestone greater than or equal to {}", milestoneIndex);
@@ -173,6 +172,9 @@ public class Milestone {
             if (TransactionRequester.instance().checkSolidity(milestoneViewModel.getHash(), true)) {
                 latestSolidSubtangleMilestone = milestoneViewModel.getHash();
                 latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
+            }
+            if(milestoneIndex == 0) {
+                milestoneIndex++;
             }
         }
     }

@@ -112,7 +112,7 @@ public class Milestone {
         return coordinatorHash;
     }
 
-    public void updateLatestMilestone() throws Exception { // refactor
+    void updateLatestMilestone() throws Exception { // refactor
         findNewMilestones();
         MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest();
         if(milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {

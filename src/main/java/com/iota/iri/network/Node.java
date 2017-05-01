@@ -307,7 +307,7 @@ public class Node {
     }
 
     private Hash getRandomTipPointer() throws Exception {
-        final Hash tip = rnd.nextDouble() < P_SEND_MILESTONE? Milestone.latestMilestone: TipsViewModel.getRandomTipHash();
+        final Hash tip = rnd.nextDouble() < P_SEND_MILESTONE? Milestone.latestMilestone: TipsViewModel.getRandomSolidTipHash();
         return tip == null ? Hash.NULL_HASH: tip;
     }
 

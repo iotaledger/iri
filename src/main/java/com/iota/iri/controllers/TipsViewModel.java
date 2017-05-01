@@ -51,6 +51,11 @@ public class TipsViewModel {
         }
         return hashes;
     }
+    public static Hash getRandomSolidTipHash() {
+        synchronized (sync) {
+            return solidTips.size() != 0 ? solidTips.get(seed.nextInt(solidTips.size())) : getRandomNonSolidTipHash();
+        }
+    }
 
     public static Hash getRandomNonSolidTipHash() {
         synchronized (sync) {

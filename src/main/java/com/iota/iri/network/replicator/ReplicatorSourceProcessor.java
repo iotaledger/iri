@@ -133,7 +133,6 @@ class ReplicatorSourceProcessor implements Runnable {
 
                 try {
                     Node.instance().preProcessReceivedData(data, address, "tcp");
-                    Node.instance().processReceivedDataFromQueue();
                 }
                   catch (IllegalStateException e) {
                     log.error("Queue is full for neighbor IP {}",inet_socket_address.getAddress().getHostAddress());

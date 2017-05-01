@@ -78,6 +78,7 @@ public class Node {
         executor.submit(spawnBroadcasterThread());
         executor.submit(spawnTipRequesterThread());
         executor.submit(spawnNeighborDNSRefresherThread());
+        executor.submit(spawnProcessReceivedThread());
         TipsViewModel.loadTipHashes();
         executor.shutdown();
     }
@@ -490,6 +491,24 @@ public class Node {
                 }
             }
             log.info("Shutting down Requester Thread");
+        };
+    }
+
+    private Runnable spawnProcessReceivedThread() {
+        return () -> {
+
+            log.info("Spawning Process Received Data Thread");
+
+            while (!shuttingDown.get()) {
+
+                try {
+                    Node.instance().processReceivedDataFromQueue();
+                    Thread.sleep(1);
+                } catch (final Exception e) {
+                    log.error("Process Received Data Thread Exception:", e);
+                }
+            }
+            log.info("Shutting down Broadcaster Thread");
         };
     }
 

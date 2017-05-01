@@ -6,9 +6,6 @@ import com.iota.iri.utils.Converter;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import static com.iota.iri.utils.Converter.NUMBER_OF_TRITS_IN_A_BYTE;
-import static com.iota.iri.utils.Converter.NUMBER_OF_TRITS_IN_A_TRYTE;
-
 public class Hash implements Comparable<Hash>, Serializable{
 
     public static final int SIZE_IN_TRITS = 243;

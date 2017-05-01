@@ -16,30 +16,46 @@ import java.util.stream.Collectors;
 public class TipsViewModel {
 
     private static List<Hash> tips = new ArrayList<>();
+    private static Set<Hash> nonSolidTips = new HashSet<>();
     private static SecureRandom seed = new SecureRandom();
+    public static final Object sync = new Object();
 
     public static boolean addTipHash (Hash hash) throws ExecutionException, InterruptedException {
-        synchronized (tips) {
+        synchronized (sync) {
+            nonSolidTips.add(hash);
             return tips.add(hash);
         }
     }
 
     public static boolean removeTipHash (Hash hash) throws ExecutionException, InterruptedException {
-        synchronized (tips) {
+        synchronized (sync) {
+            nonSolidTips.remove(hash);
             return tips.remove(hash);
+        }
+    }
+
+    public static boolean removeSolidHash(Hash hash) {
+        synchronized (sync) {
+            return nonSolidTips.remove(hash);
+        }
+    }
+
+    public static Hash[] getNonSolidTips() {
+        synchronized (sync) {
+            return nonSolidTips.toArray(new Hash[nonSolidTips.size()]);
         }
     }
 
     public static Hash[] getTips() {
         Hash[] hashes;
-        synchronized (tips) {
+        synchronized (sync) {
             hashes = tips.stream().toArray(Hash[]::new);
         }
         return hashes;
     }
 
     public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-        synchronized (tips) {
+        synchronized (sync) {
             return tips.size() != 0 ? tips.get(seed.nextInt(size())) : null;
         }
     }

@@ -28,7 +28,11 @@ public class TipsManager {
         solidityRescanHandle = new Thread(() -> {
 
             while(!shuttingDown) {
-                scanTipsForSolidity();
+                try {
+                    scanTipsForSolidity();
+                } catch (Exception e) {
+                    log.error("Error during solidity scan : {}", e);
+                }
                 try {
                     Thread.sleep(RESCAN_TX_TO_REQUEST_INTERVAL);
                 } catch (InterruptedException e) {
@@ -38,15 +42,16 @@ public class TipsManager {
         }, "Tip Solidity Rescan");
         solidityRescanHandle.start();
     }
-    private void scanTipsForSolidity() {
-        Arrays.stream(TipsViewModel.getTips()).forEach(t -> {
-            try {
-                TransactionRequester.instance().checkSolidity(t, false);
-            } catch (Exception e) {
-                log.error("Error during solidity scan for {}: {}", t, e);
+    private void scanTipsForSolidity() throws Exception {
+        Hash[] hashes = TipsViewModel.getNonSolidTips();
+        for(Hash hash: hashes) {
+            if(TransactionRequester.instance().checkSolidity(hash, false)) {
+                TipsViewModel.removeSolidHash(hash);
             }
-        });
+            Thread.sleep(1);
+        }
     }
+
     public void shutdown() throws InterruptedException {
         shuttingDown = true;
         solidityRescanHandle.join();

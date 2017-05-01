@@ -34,6 +34,7 @@ public class Node {
 
     public  static final int TRANSACTION_PACKET_SIZE = 1653;
     private static final int QUEUE_SIZE = 1000;
+    private static final int RECV_QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
     public  static final int REQUEST_HASH_SIZE = 49;
     private static double P_SELECT_MILESTONE;
@@ -215,7 +216,7 @@ public class Node {
 
     public void addReceivedDataToQueue(TransactionViewModel receivedTransactionViewModel, Hash requestedHash, Neighbor neighbor) {
         receiveQueue.add(new ImmutableTriple<>(receivedTransactionViewModel,requestedHash,neighbor));
-        if (receiveQueue.size() > QUEUE_SIZE) {
+        if (receiveQueue.size() > RECV_QUEUE_SIZE) {
             receiveQueue.pollLast();
         }
 
@@ -304,127 +305,6 @@ public class Node {
 
 
     }
-
-    
-//    public void processReceivedDataOld(byte[] receivedData, SocketAddress senderAddress, String uriScheme, Curl curl) {
-//        long timestamp;
-//        TransactionViewModel receivedTransactionViewModel, transactionViewModel;
-//        Hash transactionPointer;
-//
-//        boolean addressMatch = false;
-//        for (final Neighbor neighbor : getNeighbors()) {
-//            boolean stored = false;
-//            boolean cached = false;
-//
-//            if (neighbor instanceof TCPNeighbor) {
-//                if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
-//            }
-//            else {
-//                if (neighbor.getAddress().toString().contains(senderAddress.toString())) addressMatch = true;
-//            }
-//            if (addressMatch) {
-//                neighbor.incAllTransactions();
-//                if(rnd.nextDouble() < P_DROP_TRANSACTION) {
-//                    //log.info("Randomly dropping transaction. Stand by... ");
-//                    break;
-//                }
-//                try {
-//                    receivedTransactionViewModel = TransactionValidator.validate(receivedData, curl);
-//                } catch (final RuntimeException e) {
-//                    log.error("Received an Invalid TransactionViewModel. Dropping it...");
-//                    neighbor.incInvalidTransactions();
-//                    break;
-//                }
-//
-//                {
-//                    try {
-//                        //first check if Hash seen recently
-//                        synchronized (recentSeenHashes) {
-//                            cached = recentSeenHashes.get(receivedTransactionViewModel.getHash());
-//                        }
-//                        if (cached) {
-//                            stored = false;
-//                        } else {
-//                            //if not, store tx. & update recentSeenHashes
-//                            stored = receivedTransactionViewModel.store();
-//                            synchronized (recentSeenHashes) {
-//                                recentSeenHashes.set(receivedTransactionViewModel.getHash(), true);
-//                            }
-//                        }
-//                    } catch (Exception e) {
-//                        log.error("Error accessing persistence store.", e);
-//                        neighbor.incInvalidTransactions();
-//                    }
-//                    if(stored) {
-//                        receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis());
-//                        try {
-//                            receivedTransactionViewModel.update("arrivalTime");
-//                            receivedTransactionViewModel.updateSender(neighbor instanceof TCPNeighbor?
-//                                    senderAddress.toString(): neighbor.getAddress().toString() );
-//                        } catch (Exception e) {
-//                            log.error("Error updating transactions.", e);
-//                        }
-//                        neighbor.incNewTransactions();
-//                        broadcast(receivedTransactionViewModel);
-//                    }
-//                    Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
-//                    if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
-//                        try {
-//                            if (TransactionRequester.instance().numberOfTransactionsToRequest() > 0) {
-//                                neighbor.incRandomTransactionRequests();
-//                                transactionPointer = getRandomTipPointer();
-//                                transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-//                            }
-//                            else {
-//                                transactionViewModel = null;
-//                            }
-//                        } catch (Exception e) {
-//                            log.error("Error getting random tip.", e);
-//                            break;
-//                        }
-//                    } else {
-//                        try {
-//                            transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
-//                            log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
-//                        } catch (Exception e) {
-//                            log.error("Error while searching for transaction.", e);
-//                            break;
-//                        }
-//                    }
-//                    if (transactionViewModel != null && transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
-//                        //log.info(neighbor.getAddress().getHostString() + "Requested TX Hash: " + transactionPointer);
-//                        try {
-//                            sendPacket(sendingPacket, transactionViewModel, neighbor);
-//                        } catch (Exception e) {
-//                            log.error("Error fetching transaction to request.", e);
-//                        }
-//                    }
-//                }
-//                break;
-//            }
-//        }
-//        if (!addressMatch && Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
-//            // TODO This code is only for testnet/stresstest - remove for mainnet
-//            String uriString = uriScheme + ":/" + senderAddress.toString();
-//            log.info("Adding non-tethered neighbor: "+uriString);
-//            try {
-//                final URI uri = new URI(uriString);
-//                // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
-//                final Neighbor newneighbor;
-//                if(uriScheme.equals("tcp")) {
-//                    newneighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
-//                } else {
-//                    newneighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
-//                }
-//                if (!getNeighbors().contains(newneighbor)) {
-//                    getNeighbors().add(newneighbor);
-//                }
-//            }
-//            catch (URISyntaxException e) {
-//                log.error("Invalid URI string: "+uriString);
-//            }
-//        }
-//    }
 
     private Hash getRandomTipPointer() throws Exception {
         final Hash tip = rnd.nextDouble() < P_SEND_MILESTONE? Milestone.latestMilestone: TipsViewModel.getRandomTipHash();

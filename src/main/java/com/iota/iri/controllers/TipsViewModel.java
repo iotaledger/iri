@@ -52,9 +52,23 @@ public class TipsViewModel {
         return hashes;
     }
 
-    public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
+    public static Hash getRandomNonSolidTipHash() {
         synchronized (sync) {
             return tips.size() != 0 ? tips.get(seed.nextInt(tips.size())) : null;
+        }
+    }
+
+    public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
+        synchronized (sync) {
+            if(size() == 0) {
+                return null;
+            }
+            int index = seed.nextInt(size());
+            if(index >= tips.size()) {
+                index -= tips.size();
+                return solidTips.get(index);
+            }
+            return tips.get(index);
         }
     }
 

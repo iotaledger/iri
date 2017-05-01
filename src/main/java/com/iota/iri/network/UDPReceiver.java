@@ -47,7 +47,6 @@ public class UDPReceiver {
             log.info("Spawning Receiver Thread");
 
             final Curl curl = new Curl();
-            final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
             final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
             while (!shuttingDown.get()) {
 
@@ -55,7 +54,7 @@ public class UDPReceiver {
                     socket.receive(receivingPacket);
 
                     if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
-                        Node.instance().processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp", curl, receivedTransactionTrits);
+                        Node.instance().processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp", curl);
                     } else {
                         receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                     }

@@ -16,7 +16,7 @@ public class TipsManager {
 
     private static int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
-    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 6000;
+    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 1000;
     private Thread solidityRescanHandle;
 
     public static void setRATING_THRESHOLD(int value) {
@@ -42,11 +42,12 @@ public class TipsManager {
         }, "Tip Solidity Rescan");
         solidityRescanHandle.start();
     }
+
     private void scanTipsForSolidity() throws Exception {
-        Hash[] hashes = TipsViewModel.getNonSolidTips();
-        for(Hash hash: hashes) {
+        for(int i = 0; i++ < TipsViewModel.nonSolidSize();) {
+            Hash hash = TipsViewModel.getRandomTipHash();
             if(TransactionRequester.instance().checkSolidity(hash, false)) {
-                TipsViewModel.removeSolidHash(hash);
+                TipsViewModel.setSolid(hash);
             }
             Thread.sleep(1);
         }

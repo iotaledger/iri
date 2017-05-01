@@ -176,7 +176,7 @@ public class Node {
                     break;
                 }
                 try {
-                    receivedTransactionViewModel = TransactionValidator.validate(receivedData, new Curl()); //TODO remove Curl
+                    receivedTransactionViewModel = TransactionValidator.validate(receivedData);
                 } catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();

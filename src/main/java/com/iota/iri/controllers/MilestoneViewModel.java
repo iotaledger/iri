@@ -96,6 +96,25 @@ public class MilestoneViewModel {
         return milestoneViewModel;
     }
 
+    public static MilestoneViewModel findClosestPrevMilestone(int index) throws ExecutionException, InterruptedException {
+        Object milestone = Tangle.instance().previous(Milestone.class, index).get();
+        if(milestone != null && milestone instanceof Milestone) {
+            return new MilestoneViewModel((Milestone) milestone);
+        }
+        return null;
+    }
+
+    public static MilestoneViewModel findClosestNextMilestone(int index) throws ExecutionException, InterruptedException {
+        if(index <= 0) {
+            return first();
+        }
+        Object milestone = Tangle.instance().next(Milestone.class, index).get();
+        if(milestone != null && milestone instanceof Milestone) {
+            return new MilestoneViewModel((Milestone) milestone);
+        }
+        return null;
+    }
+
     public static MilestoneViewModel latestWithSnapshot() throws ExecutionException, InterruptedException {
         MilestoneViewModel milestoneViewModel = latest();
         while(milestoneViewModel !=null && milestoneViewModel.snapshot() == null) {

@@ -45,7 +45,6 @@ public class Milestone {
 
     private static final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
     private static final Set<Hash> analyzedMilestoneRetryCandidates = new HashSet<>();
-    private static final Map<Integer, Hash> milestones = new ConcurrentHashMap<>();
 
     private final Hash coordinatorHash;
     private final boolean testnet;
@@ -109,36 +108,22 @@ public class Milestone {
         return instance;
     }
 
-    public static Hash getMilestone(int milestoneIndex) {
-        return milestones.get(milestoneIndex);
-    }
-
     public Hash coordinator() {
         return coordinatorHash;
     }
-    public void updateLatestMilestone() throws Exception { // refactor
 
-        AddressViewModel coordinator = new AddressViewModel(coordinatorHash);
-        for (final Hash hash : coordinator.getTransactionHashes()) {
-            if (analyzedMilestoneCandidates.add(hash) || analyzedMilestoneRetryCandidates.remove(hash)) {
-
-                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
-                if (transactionViewModel.getCurrentIndex() == 0) {
-
-                    final int index = (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
-
-                    if (index > latestMilestoneIndex && validateMilestone(transactionViewModel, index)) {
-                        latestMilestone = transactionViewModel.getHash();
-                        latestMilestoneIndex = index;
-                    }
-                }
-            }
+    void updateLatestMilestone() throws Exception { // refactor
+        findNewMilestones();
+        MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest();
+        if(milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
+            latestMilestone = milestoneViewModel.getHash();
+            latestMilestoneIndex = milestoneViewModel.index();
         }
     }
 
     private boolean validateMilestone(TransactionViewModel transactionViewModel, int index) throws Exception {
-        
-        if (milestones.get(index) != null) {
+
+        if (MilestoneViewModel.get(index) != null) {
             // Already validated.
             return true;
         }
@@ -166,7 +151,7 @@ public class Milestone {
                                 signatureFragmentTrits)),
                                 transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
                         if (testnet || (new Hash(merkleRoot)).equals(coordinatorHash)) {
-                            milestones.put(index, transactionViewModel.getHash());
+                            new MilestoneViewModel(index, transactionViewModel.getHash()).store();
                             return true;
                         }
                     }
@@ -178,16 +163,16 @@ public class Milestone {
 
     public static void updateLatestSolidSubtangleMilestone() throws Exception {
         for (int milestoneIndex = latestSolidSubtangleMilestoneIndex; milestoneIndex++ < latestMilestoneIndex;) {
-            final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
-            if (milestone.getKey() <= 0) {
+            //final Map.Entry<Integer, Hash> milestone = findMilestone(milestoneIndex);
+            MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(milestoneIndex - 1);
+            if (milestoneViewModel == null) {
                 log.info("Could not find milestone greater than or equal to {}", milestoneIndex);
                 break;
             }
-            milestoneIndex = milestone.getKey();
-            if (TransactionRequester.instance().checkSolidity(milestone.getValue(), true)) {
-                latestSolidSubtangleMilestone = milestone.getValue();
-                latestSolidSubtangleMilestoneIndex = milestoneIndex;
-                new MilestoneViewModel(milestoneIndex, milestone.getValue()).store();
+            milestoneIndex = milestoneViewModel.index();
+            if (TransactionRequester.instance().checkSolidity(milestoneViewModel.getHash(), true)) {
+                latestSolidSubtangleMilestone = milestoneViewModel.getHash();
+                latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
             }
         }
     }
@@ -196,33 +181,19 @@ public class Milestone {
         return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
     }
 
-    public static Map.Entry<Integer, Hash> findMilestone(int milestoneIndexToLoad) throws Exception {
-        Map.Entry<Integer, Hash> output;
+    public static void findNewMilestones() throws Exception {
         AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.instance.coordinatorHash);
-        Hash hashToLoad = getMilestone(milestoneIndexToLoad);
-        int index;
-        if(hashToLoad == null) {
-            Arrays.stream(coordinatorAddress.getTransactionHashes())
-                    .parallel()
-                    .map(TransactionViewModel::quietFromHash)
-                    .forEach(t -> {
-                        try {
-                            Milestone.instance().validateMilestone(t, getIndex(t));
-                        } catch (Exception e) {
-                            log.error("Could not validate milestone. {}", t.getHash());
-                        }
-                    });
-            index = milestones.keySet()
-                            .stream()
-                            .filter(e -> e.compareTo(milestoneIndexToLoad ) >= 0)
-                            .sorted()
-                            .findFirst()
-                            .orElse(-1);
-            output = new AbstractMap.SimpleEntry<>(index, index != -1 ? milestones.get(index) : Hash.NULL_HASH);
-        } else {
-            output = new AbstractMap.SimpleEntry<>(milestoneIndexToLoad, hashToLoad);
-        }
-        return output;
+        Arrays.stream(coordinatorAddress.getTransactionHashes())
+                .filter(hash -> analyzedMilestoneCandidates.add(hash) || analyzedMilestoneRetryCandidates.remove(hash))
+                .map(TransactionViewModel::quietFromHash)
+                .filter(t -> t.getCurrentIndex() == 0)
+                .forEach(t -> {
+                    try {
+                        Milestone.instance().validateMilestone(t, getIndex(t));
+                    } catch (Exception e) {
+                        log.error("Could not validate milestone: ", t.getHash());
+                    }
+                });
     }
 
     public void shutDown() {

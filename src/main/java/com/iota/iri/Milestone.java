@@ -169,6 +169,7 @@ public class Milestone {
                 log.info("Could not find milestone greater than or equal to {}", milestoneIndex);
                 break;
             }
+            milestoneIndex = milestoneViewModel.index();
             if (TransactionRequester.instance().checkSolidity(milestoneViewModel.getHash(), true)) {
                 latestSolidSubtangleMilestone = milestoneViewModel.getHash();
                 latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();

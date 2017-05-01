@@ -183,7 +183,6 @@ public class Milestone {
     public static void findNewMilestones() throws Exception {
         AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.instance.coordinatorHash);
         Arrays.stream(coordinatorAddress.getTransactionHashes())
-                .parallel()
                 .filter(hash -> analyzedMilestoneCandidates.add(hash) || analyzedMilestoneRetryCandidates.remove(hash))
                 .map(TransactionViewModel::quietFromHash)
                 .filter(t -> t.getCurrentIndex() == 0)

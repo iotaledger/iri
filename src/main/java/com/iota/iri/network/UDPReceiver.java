@@ -9,9 +9,9 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.net.SocketAddress;
+import java.util.Arrays;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.iota.iri.network.Node.TRANSACTION_PACKET_SIZE;
@@ -30,14 +30,20 @@ public class UDPReceiver {
 
     private DatagramSocket socket;
 
+    private final int PROCESSOR_THREADS = Runtime.getRuntime().availableProcessors();
+    private final ExecutorService processor = new ThreadPoolExecutor(PROCESSOR_THREADS, PROCESSOR_THREADS, 5000L,
+                                            TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(PROCESSOR_THREADS, true),
+                                             new ThreadPoolExecutor.DiscardPolicy());
+
+    private Thread receivingThread;
+
     public void init(int port) throws Exception {
 
         socket = new DatagramSocket(port);
         log.info("UDP replicator is accepting connections on udp port " + port);
 
-        executor.submit(spawnReceiverThread());
-
-        executor.shutdown();
+        receivingThread = new Thread(spawnReceiverThread(), "UDP receiving thread");
+        receivingThread.start();
     }
 
     private Runnable spawnReceiverThread() {
@@ -54,7 +60,12 @@ public class UDPReceiver {
                     socket.receive(receivingPacket);
 
                     if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
-                        Node.instance().preProcessReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp");
+                        byte[] bytes = Arrays.copyOf(receivingPacket.getData(), receivingPacket.getLength());
+                        SocketAddress address = receivingPacket.getSocketAddress();
+
+                        processor.submit(() -> Node.instance().preProcessReceivedData(bytes, address, "udp"));
+                        Thread.yield();
+
                     } else {
                         receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                     }
@@ -76,8 +87,10 @@ public class UDPReceiver {
 
     public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
-        executor.shutdown();
-        executor.awaitTermination(6, TimeUnit.SECONDS);
+        processor.shutdown();
+        processor.awaitTermination(6, TimeUnit.SECONDS);
+        receivingThread.join(6000L);
+
 
     }
 

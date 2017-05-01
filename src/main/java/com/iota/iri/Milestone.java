@@ -161,20 +161,17 @@ public class Milestone {
         return false;
     }
 
-    public static void updateLatestSolidSubtangleMilestone() throws Exception {
-        for (int milestoneIndex = latestSolidSubtangleMilestoneIndex; milestoneIndex < latestMilestoneIndex;) {
-            MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(milestoneIndex);
-            if (milestoneViewModel == null) {
-                log.info("Could not find milestone greater than or equal to {}", milestoneIndex);
-                break;
-            }
-            milestoneIndex = milestoneViewModel.index();
-            if (TransactionRequester.instance().checkSolidity(milestoneViewModel.getHash(), true)) {
-                latestSolidSubtangleMilestone = milestoneViewModel.getHash();
-                latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
-            }
-            if(milestoneIndex == 0) {
-                milestoneIndex++;
+    static void updateLatestSolidSubtangleMilestone() throws Exception {
+        MilestoneViewModel milestoneViewModel;
+        MilestoneViewModel latest = MilestoneViewModel.latest();
+        if (latest != null) {
+            for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(latestSolidSubtangleMilestoneIndex);
+                 milestoneViewModel != null && milestoneViewModel.index() <= latest.index();
+                 milestoneViewModel = milestoneViewModel.next()) {
+                if (TransactionRequester.instance().checkSolidity(milestoneViewModel.getHash(), true)) {
+                    latestSolidSubtangleMilestone = milestoneViewModel.getHash();
+                    latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
+                }
             }
         }
     }

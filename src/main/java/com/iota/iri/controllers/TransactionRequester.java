@@ -2,6 +2,7 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.Node;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -113,7 +114,7 @@ public class TransactionRequester {
         long now = System.currentTimeMillis();
         if ((now - lastTime) > 10000L) {
             lastTime = now;
-            log.info("Transactions to request = {}", numberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
+            //log.info("Transactions to request = {}", numberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
         }
         return hash;
     }

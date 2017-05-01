@@ -353,7 +353,7 @@ public class Node {
         return () -> {
 
             log.info("Spawning Tips Requester Thread");
-
+            long lastTime = 0;
             while (!shuttingDown.get()) {
 
                 try {
@@ -364,6 +364,12 @@ public class Node {
                             //Hash.SIZE_IN_BYTES);
 
                     neighbors.forEach(n -> n.send(tipRequestingPacket));
+
+                    long now = System.currentTimeMillis();
+                    if ((now - lastTime) > 10000L) {
+                        lastTime = now;
+                        log.info("toProcess = {} , toBroadcast = {} , toRequest = {} / totalTransactions = {}", getBroadcastQueueSize(),getReceiveQueueSize() ,TransactionRequester.instance().numberOfTransactionsToRequest() , TransactionViewModel.getNumberOfStoredTransactions());
+                    }
 
                     Thread.sleep(5000);
                 } catch (final Exception e) {
@@ -485,6 +491,14 @@ public class Node {
 
     public static Node instance() {
         return instance;
+    }
+
+    public int getBroadcastQueueSize() {
+        return broadcastQueue.size();
+    }
+
+    public int getReceiveQueueSize() {
+        return receiveQueue.size();
     }
 
 

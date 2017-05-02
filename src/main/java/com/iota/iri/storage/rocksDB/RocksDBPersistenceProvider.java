@@ -630,7 +630,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         } else if (thing instanceof Milestone){
             return updateMilestone(item).apply(thing);
         }
-        throw new NotImplementedException("Mada Sono Update ga dekinai yo");
+        throw new NotImplementedException("Update for object " + thing.getClass().getName() + " is not implemented yet.");
     }
 
     public void createBackup(String path) throws RocksDBException {

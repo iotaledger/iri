@@ -57,7 +57,6 @@ public class API {
     private PearlDiver pearlDiver = new PearlDiver();
 
     private final AtomicInteger counter = new AtomicInteger(0);
-    private final AtomicBoolean canGetTransactionToApproveStatement = new AtomicBoolean(true);
     private final AtomicBoolean canAttachToTangleStatement = new AtomicBoolean(true);
 
     public void init() throws IOException {
@@ -180,11 +179,7 @@ public class API {
                     //    return ErrorResponse
                     //            .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     //}
-                    if(canGetTransactionToApproveStatement.get()) {
-                        return getTransactionToApproveStatement(depth);
-                    } else {
-                        return ErrorResponse.create("getTxToApprove is pending.");
-                    }
+                    return getTransactionToApproveStatement(depth);
                 }
                 case "getTrytes": {
                     final List<String> hashes = (List<String>) request.get("hashes");
@@ -278,7 +273,6 @@ public class API {
     }
    
     private AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
-        canGetTransactionToApproveStatement.set(false);
         final SecureRandom random = new SecureRandom();
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth, random);
         if (trunkTransactionToApprove == null) {
@@ -297,7 +291,6 @@ public class API {
             counter_getTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
-        canGetTransactionToApproveStatement.set(true);
         return GetTransactionsToApproveResponse.create(trunkTransactionToApprove, branchTransactionToApprove);
     }
 

@@ -38,6 +38,7 @@ public class TransactionValidator {
         int weightMagnitude = transactionViewModel.getHash().trailingZeros();
         if(weightMagnitude < MIN_WEIGHT_MAGNITUDE) {
             log.error("Hash found: {}", transactionViewModel.getHash());
+            log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));
             throw new RuntimeException("Invalid transaction hash");
         }
     }

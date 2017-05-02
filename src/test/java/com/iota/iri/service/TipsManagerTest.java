@@ -155,7 +155,7 @@ public class TipsManagerTest {
         }
         Map<Hash, Long> ratings = new HashMap<>();
         long start = System.currentTimeMillis();
-        TipsManager.serialUpdateRatings(hashes[0], ratings, new HashSet<>(), null);
+        TipsManager.serialUpdateRatings(hashes[0], ratings, new HashSet<>());
         return System.currentTimeMillis() - start;
     }
 }

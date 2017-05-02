@@ -138,7 +138,7 @@ public class FileExportProvider implements PersistenceProvider {
     private static Object lock = new Object();
 
     public static long getFileNumber() {
-        long now = System.currentTimeMillis()*1000;
+        long now = System.currentTimeMillis();
         synchronized (lock) {
             if (now <= lastFileNumber) {
                 return ++lastFileNumber;

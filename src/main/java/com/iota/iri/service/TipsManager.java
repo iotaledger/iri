@@ -16,7 +16,7 @@ public class TipsManager {
 
     private static int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
-    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 1000;
+    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 6000;
     private Thread solidityRescanHandle;
 
     public static void setRATING_THRESHOLD(int value) {
@@ -28,11 +28,7 @@ public class TipsManager {
         solidityRescanHandle = new Thread(() -> {
 
             while(!shuttingDown) {
-                try {
-                    scanTipsForSolidity();
-                } catch (Exception e) {
-                    log.error("Error during solidity scan : {}", e);
-                }
+                scanTipsForSolidity();
                 try {
                     Thread.sleep(RESCAN_TX_TO_REQUEST_INTERVAL);
                 } catch (InterruptedException e) {
@@ -42,17 +38,15 @@ public class TipsManager {
         }, "Tip Solidity Rescan");
         solidityRescanHandle.start();
     }
-
-    private void scanTipsForSolidity() throws Exception {
-        for(int i = 0; i++ < TipsViewModel.nonSolidSize();) {
-            Hash hash = TipsViewModel.getRandomTipHash();
-            if(TransactionRequester.instance().checkSolidity(hash, false)) {
-                TipsViewModel.setSolid(hash);
+    private void scanTipsForSolidity() {
+        Arrays.stream(TipsViewModel.getTips()).forEach(t -> {
+            try {
+                TransactionRequester.instance().checkSolidity(t, false);
+            } catch (Exception e) {
+                log.error("Error during solidity scan for {}: {}", t, e);
             }
-            Thread.sleep(1);
-        }
+        });
     }
-
     public void shutdown() throws InterruptedException {
         shuttingDown = true;
         solidityRescanHandle.join();
@@ -88,7 +82,7 @@ public class TipsManager {
                 }
                 Hash tail = tip;
 
-                serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
+                serialUpdateRatings(tip, ratings, analyzedTips);
                 analyzedTips.clear();
 
                 Hash[] tips;
@@ -101,7 +95,7 @@ public class TipsManager {
                         break;
                     }
                     if (!ratings.containsKey(tip)) {
-                        serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
+                        serialUpdateRatings(tip, ratings, analyzedTips);
                         analyzedTips.clear();
                     }
 
@@ -137,8 +131,6 @@ public class TipsManager {
                 log.error("Encountered error: " + e.getLocalizedMessage());
             } finally {
                 API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
-                ratings.clear();
-                analyzedTips.clear();
             }
         }
         return null;
@@ -151,7 +143,7 @@ public class TipsManager {
         return a+b;
     }
 
-    static void serialUpdateRatings(final Hash txHash, final Map<Hash, Long> ratings, final Set<Hash> analyzedTips, Hash extraTip) throws Exception {
+    static void serialUpdateRatings(final Hash txHash, final Map<Hash, Long> ratings, final Set<Hash> analyzedTips) throws Exception {
         Stack<Hash> hashesToRate = new Stack<>();
         hashesToRate.push(txHash);
         Hash currentHash;
@@ -171,12 +163,8 @@ public class TipsManager {
                 }
             }
             if(!addedBack && analyzedTips.add(currentHash)) {
-                long approversRating = Arrays.stream(approvers).map(ratings::get).filter(Objects::nonNull).reduce((a, b) -> capSum(a, b, Long.MAX_VALUE / 2)).orElse(0L);
-                if(extraTip == null) {
-                    ratings.put(currentHash, 1 + approversRating);
-                } else {
-                    ratings.put(currentHash, (LedgerValidator.isApproved(currentHash) ? 0 : 1) + approversRating);
-                }
+                ratings.put(currentHash, 1 + Arrays.stream(approvers).map(ratings::get).filter(Objects::nonNull)
+                        .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L));
             }
         }
     }

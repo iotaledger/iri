@@ -17,7 +17,7 @@ public class LedgerValidator {
     private static final Logger log = LoggerFactory.getLogger(LedgerValidator.class);
     private static final Object updateSyncObject = new Object();
     private static final Snapshot stateSinceMilestone = new Snapshot(latestSnapshot);
-    private static final Set<Hash> approvedHashes = new HashSet<>();
+    private static final Set<Hash> consistentHashes = new HashSet<>();
     private static volatile int numberOfConfirmedTransactions;
 
     /**
@@ -49,7 +49,7 @@ public class LedgerValidator {
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
 
-            if (analyzedTips.add(transactionPointer) && (milestone || !approvedHashes.contains(transactionPointer))) {
+            if (analyzedTips.add(transactionPointer) && (milestone || !consistentHashes.contains(transactionPointer))) {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                 if (!transactionViewModel.hasSnapshot()) {
@@ -144,7 +144,7 @@ public class LedgerValidator {
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-            if(!transactionViewModel2.hasSnapshot() && approvedHashes.add(hashPointer)) {
+            if(!transactionViewModel2.hasSnapshot() && consistentHashes.add(hashPointer)) {
                 nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
                 nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
             }
@@ -201,10 +201,6 @@ public class LedgerValidator {
         return separator;
     }
 
-    public static boolean isApproved(Hash hash) {
-        return approvedHashes.contains(hash);
-    }
-
 
     /**
      * Only called once upon initialization, this builds the {latestSnapshot} state up to the most recent
@@ -244,7 +240,7 @@ public class LedgerValidator {
             if (isConsistent) {
                 synchronized (updateSyncObject) {
                     updateSnapshotMilestone(milestone.getHash(), true);
-                    approvedHashes.clear();
+                    consistentHashes.clear();
                     milestone.initSnapshot(currentState);
                     milestone.updateSnapshot();
                     latestSnapshot.merge(latestSnapshot.patch(milestone.snapshot()));
@@ -257,7 +253,7 @@ public class LedgerValidator {
 
     public static boolean updateFromSnapshot(Hash tip) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-        boolean isConsistent = approvedHashes.contains(tip);
+        boolean isConsistent = consistentHashes.contains(tip);
         if(!isConsistent) {
             Hash tail = transactionViewModel.getHash();
             Map<Hash, Long> currentState = getLatestDiff(tail, false);

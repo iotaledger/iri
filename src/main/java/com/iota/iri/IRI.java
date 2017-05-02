@@ -61,6 +61,7 @@ public class IRI {
         if (args == null || args.length < 2) {
             log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
             printUsage();
+            System.exit(0);
         }
 
         final CmdLineParser parser = new CmdLineParser();
@@ -89,12 +90,14 @@ public class IRI {
         if (cport == null) {
             log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
             printUsage();
+            System.exit(0);
         }
         Configuration.put(DefaultConfSettings.API_PORT, cport);
 
         // optional flags
         if (parser.getOptionValue(help) != null) {
             printUsage();
+            System.exit(0);
         }
 
         String cns = parser.getOptionValue(neighbors);
@@ -158,7 +161,6 @@ public class IRI {
                 "[{--remote}]" +
                 // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
                 "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
-        System.exit(0);
     }
 
     private static void shutdownHook() {

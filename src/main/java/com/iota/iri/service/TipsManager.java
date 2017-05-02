@@ -109,7 +109,6 @@ public class TipsManager {
                             monte -= Math.sqrt(ratings.get(tips[carlo]));
                         }
                         if (monte <= 0) {
-                            log.info("Reason to stop: monte <= 0");
                             break;
                         }
                     }

@@ -85,7 +85,7 @@ public class TipsManager {
                 }
                 Hash tail = tip;
 
-                serialUpdateRatings(tip, ratings, analyzedTips);
+                serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
 
                 Hash[] tips;
@@ -98,7 +98,7 @@ public class TipsManager {
                         break;
                     }
                     if (!ratings.containsKey(tip)) {
-                        serialUpdateRatings(tip, ratings, analyzedTips);
+                        serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
                         analyzedTips.clear();
                     }
 
@@ -146,7 +146,7 @@ public class TipsManager {
         return a+b;
     }
 
-    static void serialUpdateRatings(final Hash txHash, final Map<Hash, Long> ratings, final Set<Hash> analyzedTips) throws Exception {
+    static void serialUpdateRatings(final Hash txHash, final Map<Hash, Long> ratings, final Set<Hash> analyzedTips, final Hash extraTip) throws Exception {
         Stack<Hash> hashesToRate = new Stack<>();
         hashesToRate.push(txHash);
         Hash currentHash;
@@ -166,8 +166,9 @@ public class TipsManager {
                 }
             }
             if(!addedBack && analyzedTips.add(currentHash)) {
-                ratings.put(currentHash, 1 + Arrays.stream(approvers).map(ratings::get).filter(Objects::nonNull)
-                        .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L));
+                long rating = (extraTip != null && LedgerValidator.isApproved(currentHash)? 0: 1) + Arrays.stream(approvers).map(ratings::get).filter(Objects::nonNull)
+                        .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L);
+                ratings.put(currentHash, rating);
             }
         }
     }

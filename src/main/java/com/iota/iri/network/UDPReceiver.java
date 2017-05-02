@@ -1,15 +1,17 @@
 package com.iota.iri.network;
 
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
+import com.iota.iri.model.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
-import java.net.SocketAddress;
-import java.util.Arrays;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.iota.iri.network.Node.TRANSACTION_PACKET_SIZE;
@@ -23,28 +25,19 @@ public class UDPReceiver {
     private static final UDPReceiver instance = new UDPReceiver();
     private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
-    private final int NUM_PROCESSING_THREADS = Runtime.getRuntime().availableProcessors();
+    private final ExecutorService executor = Executors.newFixedThreadPool(4);
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private DatagramSocket socket;
-    private Thread receivingThread;
-    private final Thread[] processingThreads = new Thread[NUM_PROCESSING_THREADS];
-    private volatile AtomicBoolean[] processingFlags = new AtomicBoolean[NUM_PROCESSING_THREADS];;
-    private final byte[][] bytesToProcess = new byte[NUM_PROCESSING_THREADS][TRANSACTION_PACKET_SIZE];
-    private final SocketAddress[] socketAddresses = new SocketAddress[NUM_PROCESSING_THREADS];
 
     public void init(int port) throws Exception {
 
         socket = new DatagramSocket(port);
         log.info("UDP replicator is accepting connections on udp port " + port);
 
-        receivingThread = new Thread(spawnReceiverThread(), "UDP receiving thread");
-        for(int i = 0; i < NUM_PROCESSING_THREADS; i++) {
-            processingFlags[i] = new AtomicBoolean(false);
-            processingThreads[i] = new Thread(spawnProcessingThread(i));
-            processingThreads[i].start();
-        }
-        receivingThread.start();
+        executor.submit(spawnReceiverThread());
+
+        executor.shutdown();
     }
 
     private Runnable spawnReceiverThread() {
@@ -53,62 +46,24 @@ public class UDPReceiver {
 
             log.info("Spawning Receiver Thread");
 
+            final Curl curl = new Curl();
+            final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
+            final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
             while (!shuttingDown.get()) {
 
                 try {
                     socket.receive(receivingPacket);
-                } catch (IOException e) {
-                    if(!shuttingDown.get()) {
-                        log.error("Receiver Thread Exception:", e);
+
+                    if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
+                        Node.instance().processReceivedData(receivingPacket.getData(), receivingPacket.getSocketAddress(), "udp", curl, receivedTransactionTrits);
+                    } else {
+                        receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                     }
-                }
-                if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
-                    submitPacketToProcessor(receivingPacket.getData(), receivingPacket.getSocketAddress());
-                } else {
-                    receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
+                } catch (final Exception e) {
+                    log.error("Receiver Thread Exception:", e);
                 }
             }
             log.info("Shutting down spawning Receiver Thread");
-        };
-    }
-
-    private void submitPacketToProcessor (byte[] bytes, SocketAddress socketAddress) {
-        int index;
-        boolean canProcess = false;
-        for(index = NUM_PROCESSING_THREADS; index-- > 0;) {
-            if(!processingFlags[index].get()) {
-                canProcess = true;
-                break;
-            }
-        }
-        if(canProcess) {
-            synchronized (bytesToProcess[index]) {
-                System.arraycopy(bytes, 0, bytesToProcess[index], 0, TRANSACTION_PACKET_SIZE);
-                socketAddresses[index] = socketAddress;
-                processingFlags[index].set(true);
-                synchronized (processingThreads[index]) {
-                    processingThreads[index].notify();
-                }
-            }
-        }
-    }
-
-    private Runnable spawnProcessingThread(int index) {
-        return () -> {
-            Curl curl = new Curl();
-            while(!shuttingDown.get()) {
-                if(processingFlags[index].get()) {
-                    Node.instance().processReceivedData(bytesToProcess[index], socketAddresses[index], "udp", curl);
-                    processingFlags[index].set(false);
-                }
-                try {
-                    synchronized (processingThreads[index]) {
-                        processingThreads[index].wait();
-                    }
-                } catch (InterruptedException e) {
-                    log.error("Processing Thread interrupted. ", e);
-                }
-            }
         };
     }
 
@@ -122,14 +77,8 @@ public class UDPReceiver {
 
     public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
-        for(Thread thread: processingThreads) {
-            synchronized (thread) {
-                thread.notify();
-            }
-            thread.join();
-        }
-        socket.close();
-        receivingThread.join();
+        executor.shutdown();
+        executor.awaitTermination(6, TimeUnit.SECONDS);
     }
 
     public static UDPReceiver instance() {

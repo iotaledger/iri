@@ -18,10 +18,6 @@ import org.slf4j.LoggerFactory;
 import com.iota.iri.Milestone;
 import com.iota.iri.hash.Curl;
 
-
-import java.util.LinkedHashMap;
-import java.util.Iterator;
-
 /**
  * The class node is responsible for managing Thread's connection.
  */
@@ -52,8 +48,6 @@ public class Node {
     private double P_DROP_TRANSACTION;
     private static final SecureRandom rnd = new SecureRandom();
     private double P_SEND_MILESTONE;
-
-    private LRUCache recentSeenHashes = new LRUCache(5000);
 
     public void init(double pDropTransaction, double p_SELECT_MILESTONE, double pSendMilestone, String neighborList) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
@@ -86,7 +80,6 @@ public class Node {
             log.info("Spawning Neighbor DNS Refresher Thread");
 
             while (!shuttingDown.get()) {
-                int dnsCounter = 0;
                 log.info("Checking Neighbors' Ip...");
 
                 try {
@@ -117,9 +110,7 @@ public class Node {
                         });
                     });
 
-                    while(dnsCounter++ < 60*30 && !shuttingDown.get()) {
-                        Thread.sleep(1000);
-                    }
+                    Thread.sleep(1000*60*30);
                 } catch (final Exception e) {
                     log.error("Neighbor DNS Refresher Thread Exception:", e);
                 }
@@ -150,7 +141,7 @@ public class Node {
         return Optional.of(hostAddress);
     }
     
-    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme, Curl curl) {
+    public void processReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme, Curl curl, int[] receivedTransactionTrits) {
         long timestamp;
         TransactionViewModel receivedTransactionViewModel, transactionViewModel;
         Hash transactionPointer;
@@ -158,8 +149,6 @@ public class Node {
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
             boolean stored = false;
-            boolean cached = false;
-
             if (neighbor instanceof TCPNeighbor) {
                 if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
             }
@@ -182,19 +171,7 @@ public class Node {
 
                 {
                     try {
-                        //first check if Hash seen recently
-                        synchronized (recentSeenHashes) {
-                            cached = recentSeenHashes.get(receivedTransactionViewModel.getHash());
-                        }
-                        if (cached) {
-                            stored = false;
-                        } else {
-                            //if not, store tx. & update recentSeenHashes
-                            stored = receivedTransactionViewModel.store();
-                            synchronized (recentSeenHashes) {
-                                recentSeenHashes.set(receivedTransactionViewModel.getHash(), true);
-                            }
-                        }
+                        stored = receivedTransactionViewModel.store();
                     } catch (Exception e) {
                         log.error("Error accessing persistence store.", e);
                         neighbor.incInvalidTransactions();
@@ -228,8 +205,7 @@ public class Node {
                         }
                     } else {
                         try {
-                            transactionViewModel = TransactionViewModel.fromHash(requestedHash);
-
+                            transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
                             log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
                         } catch (Exception e) {
                             log.error("Error while searching for transaction.", e);
@@ -362,6 +338,7 @@ public class Node {
 
     public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
+        executor.shutdown();
         executor.awaitTermination(6, TimeUnit.SECONDS);
     }
 
@@ -414,41 +391,5 @@ public class Node {
 
     public static Node instance() {
         return instance;
-    }
-
-
-
-
-
-    public class LRUCache {
-
-        private int capacity;
-        private LinkedHashMap<Hash,Boolean> map;
-
-        public LRUCache(int capacity) {
-            this.capacity = capacity;
-            this.map = new LinkedHashMap<>();
-        }
-
-        public Boolean get(Hash key) {
-            Boolean value = this.map.get(key);
-            if (value == null) {
-                value = false;
-            } else {
-                this.set(key, value);
-            }
-            return value;
-        }
-
-        public void set(Hash key, Boolean value) {
-            if (this.map.containsKey(key)) {
-                this.map.remove(key);
-            } else if (this.map.size() == this.capacity) {
-                Iterator<Hash> it = this.map.keySet().iterator();
-                it.next();
-                it.remove();
-            }
-            map.put(key, value);
-        }
     }
 }

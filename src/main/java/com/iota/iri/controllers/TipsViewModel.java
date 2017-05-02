@@ -3,7 +3,6 @@ package com.iota.iri.controllers;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tip;
 import com.iota.iri.storage.Tangle;
-import org.apache.commons.lang3.ArrayUtils;
 
 import java.security.SecureRandom;
 import java.util.*;
@@ -17,53 +16,36 @@ import java.util.stream.Collectors;
 public class TipsViewModel {
 
     private static List<Hash> tips = new ArrayList<>();
-    private static List<Hash> solidTips = new ArrayList<>();
     private static SecureRandom seed = new SecureRandom();
-    public static final Object sync = new Object();
 
     public static boolean addTipHash (Hash hash) throws ExecutionException, InterruptedException {
-        synchronized (sync) {
+        synchronized (tips) {
             return tips.add(hash);
         }
     }
 
     public static boolean removeTipHash (Hash hash) throws ExecutionException, InterruptedException {
-        synchronized (sync) {
-            if(!tips.remove(hash)) {
-                return solidTips.remove(hash);
-            }
-        }
-        return true;
-    }
-
-    public static void setSolid(Hash tip) {
-        synchronized (sync) {
-            if(!tips.remove(tip)) {
-                solidTips.add(tip);
-            }
+        synchronized (tips) {
+            return tips.remove(hash);
         }
     }
 
     public static Hash[] getTips() {
         Hash[] hashes;
-        synchronized (sync) {
-            hashes = ArrayUtils.addAll(tips.stream().toArray(Hash[]::new), solidTips.stream().toArray(Hash[]::new));
+        synchronized (tips) {
+            hashes = tips.stream().toArray(Hash[]::new);
         }
         return hashes;
     }
 
     public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-        synchronized (sync) {
-            return tips.size() != 0 ? tips.get(seed.nextInt(tips.size())) : null;
+        synchronized (tips) {
+            return tips.size() != 0 ? tips.get(seed.nextInt(size())) : null;
         }
     }
 
-    public static int nonSolidSize() {
-        return tips.size();
-    }
-
     public static int size() {
-        return tips.size() + solidTips.size();
+        return tips.size();
     }
 
     public static void loadTipHashes() throws ExecutionException, InterruptedException {

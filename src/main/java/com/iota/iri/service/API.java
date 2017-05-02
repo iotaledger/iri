@@ -53,7 +53,7 @@ public class API {
     private Undertow server;
 
     private final Gson gson = new GsonBuilder().create();
-    private final Set<PearlDiver> pearlDivers = new HashSet<>();
+    private final PearlDiver pearlDiver = new PearlDiver();
 
     private final AtomicInteger counter = new AtomicInteger(0);
 
@@ -182,9 +182,7 @@ public class API {
                 }
 
                 case "interruptAttachingToTangle": {
-                    synchronized (pearlDivers) {
-                        pearlDivers.forEach(PearlDiver::cancel);
-                    }
+                    pearlDiver.cancel();
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "removeNeighbors": {
@@ -503,10 +501,6 @@ public class API {
     private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
-        PearlDiver pearlDiver = new PearlDiver();
-        synchronized (pearlDivers) {
-            pearlDivers.add(pearlDiver);
-        }
 
         Hash prevTransaction = null;
 

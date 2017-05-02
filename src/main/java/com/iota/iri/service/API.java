@@ -57,8 +57,8 @@ public class API {
     private PearlDiver pearlDiver = new PearlDiver();
 
     private final AtomicInteger counter = new AtomicInteger(0);
-    private final AtomicBoolean canGetTransactionToApproveStatement = new AtomicBoolean();
-    private final AtomicBoolean canAttachToTangleStatement = new AtomicBoolean();
+    private final AtomicBoolean canGetTransactionToApproveStatement = new AtomicBoolean(true);
+    private final AtomicBoolean canAttachToTangleStatement = new AtomicBoolean(true);
 
     public void init() throws IOException {
 
@@ -278,7 +278,7 @@ public class API {
     }
    
     private AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
-        canGetTransactionToApproveStatement.set(true);
+        canGetTransactionToApproveStatement.set(false);
         final SecureRandom random = new SecureRandom();
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth, random);
         if (trunkTransactionToApprove == null) {
@@ -297,7 +297,7 @@ public class API {
             counter_getTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
-        canGetTransactionToApproveStatement.set(false);
+        canGetTransactionToApproveStatement.set(true);
         return GetTransactionsToApproveResponse.create(trunkTransactionToApprove, branchTransactionToApprove);
     }
 
@@ -513,7 +513,7 @@ public class API {
     
     private AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
-        canAttachToTangleStatement.set(true);
+        canAttachToTangleStatement.set(false);
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
 
         Hash prevTransaction = null;
@@ -555,7 +555,7 @@ public class API {
         for (int i = transactionViewModels.size(); i-- > 0; ) {
             elements.add(Converter.trytes(transactionViewModels.get(i).trits()));
         }
-        canAttachToTangleStatement.set(false);
+        canAttachToTangleStatement.set(true);
         return AttachToTangleResponse.create(elements);
     }
 

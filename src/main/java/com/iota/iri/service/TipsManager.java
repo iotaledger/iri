@@ -95,6 +95,7 @@ public class TipsManager {
                 while (tip != null) {
                     tips = TransactionViewModel.fromHash(tip).getApprovers();
                     if (tips.length == 0) {
+                        log.info("Reason to stop: TransactionViewModel is a tip");
                         break;
                     }
                     if (!ratings.containsKey(tip)) {
@@ -108,16 +109,22 @@ public class TipsManager {
                             monte -= Math.sqrt(ratings.get(tips[carlo]));
                         }
                         if (monte <= 0) {
+                            log.info("Reason to stop: monte <= 0");
                             break;
                         }
                     }
                     transactionViewModel = TransactionViewModel.fromHash(tips[carlo]);
                     if (transactionViewModel == null) {
+                        log.info("Reason to stop: transactionViewModel == null");
                         break;
-                    } else if (!(TransactionRequester.instance().checkSolidity(transactionViewModel.getHash(), false) &&
-                            LedgerValidator.updateFromSnapshot(transactionViewModel.getHash()))) {
+                    } else if (!TransactionRequester.instance().checkSolidity(transactionViewModel.getHash(), false)) {
+                        log.info("Reason to stop: !checkSolidity");
+                        break;
+                    } else if (!LedgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
+                        log.info("Reason to stop: !LedgerValidator");
                         break;
                     } else if (transactionViewModel.getHash().equals(extraTip) || transactionViewModel.getHash().equals(tip)) {
+                        log.info("Reason to stop: !transactionViewModel==extraTip || tip");
                         break;
                     } else {
                         traversedTails++;

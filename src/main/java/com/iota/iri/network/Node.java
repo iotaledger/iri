@@ -12,13 +12,11 @@ import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Milestone;
-import com.iota.iri.hash.Curl;
 
 
 import java.util.LinkedHashMap;

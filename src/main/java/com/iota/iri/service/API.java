@@ -53,7 +53,7 @@ public class API {
     private Undertow server;
 
     private final Gson gson = new GsonBuilder().create();
-    private final PearlDiver pearlDiver = new PearlDiver();
+    private PearlDiver pearlDiver = new PearlDiver();
 
     private final AtomicInteger counter = new AtomicInteger(0);
 
@@ -503,6 +503,7 @@ public class API {
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
 
         Hash prevTransaction = null;
+        pearlDiver = new PearlDiver();
 
         for (final String tryte : trytes) {
             long startTime = System.nanoTime();

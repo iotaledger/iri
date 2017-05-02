@@ -2,6 +2,7 @@ package com.iota.iri;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -61,6 +62,7 @@ public class IRI {
         if (args == null || args.length < 2) {
             log.error("Invalid arguments list. Provide Api port number (i.e. '-p 14265').");
             printUsage();
+            System.exit(0);
         }
 
         final CmdLineParser parser = new CmdLineParser();
@@ -89,12 +91,14 @@ public class IRI {
         if (cport == null) {
             log.error("Invalid arguments list. Provide at least 1 neighbor with -n or --neighbors '<list>'");
             printUsage();
+            System.exit(0);
         }
         Configuration.put(DefaultConfSettings.API_PORT, cport);
 
         // optional flags
         if (parser.getOptionValue(help) != null) {
             printUsage();
+            System.exit(0);
         }
 
         String cns = parser.getOptionValue(neighbors);
@@ -158,7 +162,6 @@ public class IRI {
                 "[{--remote}]" +
                 // + "[{-t,--testnet} false] " // -> TBDiscussed (!)
                 "[{-n,--neighbors} '<list of neighbors>'] ", NAME, VERSION);
-        System.exit(0);
     }
 
     private static void shutdownHook() {
@@ -179,13 +182,11 @@ public class IRI {
     }
 
     private static void showIotaLogo() {
-        final String charset = "UTF8";
-
         try {
             final Path path = Paths.get("logo.utf8.ans");
-            Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
+            Files.readAllLines(path, StandardCharsets.UTF_8).forEach(log::info);
         } catch (IOException e) {
-            log.error("Impossible to display logo. Charset {} not supported by terminal.", charset);
+            log.error("Impossible to display logo. Charset {} not supported by terminal.", StandardCharsets.UTF_8);
         }
     }
 }

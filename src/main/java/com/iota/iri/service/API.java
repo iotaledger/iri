@@ -12,6 +12,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -56,6 +57,8 @@ public class API {
     private PearlDiver pearlDiver = new PearlDiver();
 
     private final AtomicInteger counter = new AtomicInteger(0);
+    private final AtomicBoolean canGetTransactionToApproveStatement = new AtomicBoolean();
+    private final AtomicBoolean canAttachToTangleStatement = new AtomicBoolean();
 
     public void init() throws IOException {
 
@@ -122,7 +125,11 @@ public class API {
                     final int minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
                     final List<String> trytes = (List<String>) request.get("trytes");
 
-                    return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
+                    if(canAttachToTangleStatement.get()) {
+                        return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
+                    } else {
+                        return ErrorResponse.create("AttachToTangleStatement pending.");
+                    }
                 }
                 case "broadcastTransactions": {
                     final List<String> trytes = (List<String>) request.get("trytes");
@@ -173,7 +180,11 @@ public class API {
                     //    return ErrorResponse
                     //            .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     //}
-                    return getTransactionToApproveStatement(depth);
+                    if(canGetTransactionToApproveStatement.get()) {
+                        return getTransactionToApproveStatement(depth);
+                    } else {
+                        return ErrorResponse.create("getTxToApprove is pending.");
+                    }
                 }
                 case "getTrytes": {
                     final List<String> hashes = (List<String>) request.get("hashes");
@@ -198,7 +209,7 @@ public class API {
                 }
                 case "getMissingTransactions": {
                     TransactionRequester.instance().rescanTransactionsToRequest();
-                    synchronized (TransactionRequester.class) {
+                    synchronized (TransactionRequester.instance()) {
                         List<String> missingTx = Arrays.stream(TransactionRequester.instance().getRequestedTransactions())
                                 .map(Hash::toString)
                                 .collect(Collectors.toList());
@@ -266,7 +277,8 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
    
-    private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
+    private AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
+        canGetTransactionToApproveStatement.set(true);
         final SecureRandom random = new SecureRandom();
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth, random);
         if (trunkTransactionToApprove == null) {
@@ -285,6 +297,7 @@ public class API {
             counter_getTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
+        canGetTransactionToApproveStatement.set(false);
         return GetTransactionsToApproveResponse.create(trunkTransactionToApprove, branchTransactionToApprove);
     }
 
@@ -498,8 +511,9 @@ public class API {
         ellapsedTime_PoW += ellapsedTime;
     }
     
-    private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
+    private AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
+        canAttachToTangleStatement.set(true);
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
 
         Hash prevTransaction = null;
@@ -541,6 +555,7 @@ public class API {
         for (int i = transactionViewModels.size(); i-- > 0; ) {
             elements.add(Converter.trytes(transactionViewModels.get(i).trits()));
         }
+        canAttachToTangleStatement.set(false);
         return AttachToTangleResponse.create(elements);
     }
 

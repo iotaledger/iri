@@ -281,7 +281,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         if(model == Transaction.class) {
             return db.get(transactionHandle, key.bytes()) != null;
         }
-        throw new NotImplementedException("Mada mada exists shinai");
+        throw new NotImplementedException("Exists for " + model.getName() + " has not yet been implemented.");
     }
 
     @Override

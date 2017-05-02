@@ -2,6 +2,7 @@ package com.iota.iri;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -181,13 +182,11 @@ public class IRI {
     }
 
     private static void showIotaLogo() {
-        final String charset = "UTF8";
-
         try {
             final Path path = Paths.get("logo.utf8.ans");
-            Files.readAllLines(path, Charset.forName(charset)).forEach(log::info);
+            Files.readAllLines(path, StandardCharsets.UTF_8).forEach(log::info);
         } catch (IOException e) {
-            log.error("Impossible to display logo. Charset {} not supported by terminal.", charset);
+            log.error("Impossible to display logo. Charset {} not supported by terminal.", StandardCharsets.UTF_8);
         }
     }
 }

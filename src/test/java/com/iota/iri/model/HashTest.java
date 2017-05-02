@@ -9,8 +9,6 @@ import org.junit.Test;
 
 import java.util.Arrays;
 
-import static org.junit.Assert.*;
-
 /**
  * Created by paul on 4/29/17.
  */

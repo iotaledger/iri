@@ -16,7 +16,7 @@ public class TipsManager {
 
     private static int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
-    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 6000;
+    private static int RESCAN_TX_TO_REQUEST_INTERVAL = 1000;
     private Thread solidityRescanHandle;
 
     public static void setRATING_THRESHOLD(int value) {
@@ -28,7 +28,11 @@ public class TipsManager {
         solidityRescanHandle = new Thread(() -> {
 
             while(!shuttingDown) {
-                scanTipsForSolidity();
+                try {
+                    scanTipsForSolidity();
+                } catch (Exception e) {
+                    log.error("Error during solidity scan : {}", e);
+                }
                 try {
                     Thread.sleep(RESCAN_TX_TO_REQUEST_INTERVAL);
                 } catch (InterruptedException e) {
@@ -38,15 +42,17 @@ public class TipsManager {
         }, "Tip Solidity Rescan");
         solidityRescanHandle.start();
     }
-    private void scanTipsForSolidity() {
-        Arrays.stream(TipsViewModel.getTips()).forEach(t -> {
-            try {
-                TransactionRequester.instance().checkSolidity(t, false);
-            } catch (Exception e) {
-                log.error("Error during solidity scan for {}: {}", t, e);
+
+    private void scanTipsForSolidity() throws Exception {
+        for(int i = 0; i++ < TipsViewModel.nonSolidSize();) {
+            Hash hash = TipsViewModel.getRandomNonSolidTipHash();
+            if(TransactionRequester.instance().checkSolidity(hash, false)) {
+                TipsViewModel.setSolid(hash);
             }
-        });
+            Thread.sleep(1);
+        }
     }
+
     public void shutdown() throws InterruptedException {
         shuttingDown = true;
         solidityRescanHandle.join();
@@ -72,12 +78,9 @@ public class TipsManager {
                     if(milestoneIndex < 0) {
                         milestoneIndex = 0;
                     }
-                    if(!MilestoneViewModel.load(milestoneIndex)) {
-                        Map.Entry<Integer, Hash> closestGreaterMilestone = Milestone.findMilestone(milestoneIndex);
-                        new MilestoneViewModel(closestGreaterMilestone.getKey(), closestGreaterMilestone.getValue()).store();
-                        tip = closestGreaterMilestone.getValue();
-                    } else {
-                        tip = MilestoneViewModel.get(milestoneIndex).getHash();
+                    MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(milestoneIndex);
+                    if(milestoneViewModel != null) {
+                        tip = milestoneViewModel.getHash();
                     }
                 }
                 Hash tail = tip;

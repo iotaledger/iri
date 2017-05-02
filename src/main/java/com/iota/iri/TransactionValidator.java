@@ -47,6 +47,11 @@ public class TransactionValidator {
         runValidation(transactionViewModel);
         return transactionViewModel;
     }
+    public static TransactionViewModel validate(final byte[] bytes) {
+        return validate(bytes, new Curl());
+
+    }
+
     public static TransactionViewModel validate(final byte[] bytes, Curl curl) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel);

@@ -522,7 +522,22 @@ public class API {
                     break;
                 }
                 //validate PoW - throws exception if invalid
-                final TransactionViewModel transactionViewModel = TransactionValidator.validate(transactionTrits);
+                //final TransactionViewModel transactionViewModel = TransactionValidator.validate(transactionTrits);
+
+                //WORKAROUND
+                //retry pearlDiver until tx is valid
+                boolean isValid = false;
+                TransactionViewModel transactionViewModel = null;
+                while (!isValid) {
+                    try {
+                        transactionViewModel = TransactionValidator.validate(transactionTrits);
+                        isValid = true;
+                    } catch (RuntimeException e) {
+                        //recalculate PoW
+                        log.info("Tx not valid, rerunning pearlDiver.search()");
+                        pearlDiver.search(transactionTrits, minWeightMagnitude, 0);
+                    }
+                }
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();

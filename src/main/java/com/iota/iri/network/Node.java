@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
@@ -60,6 +61,9 @@ public class Node {
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
     private LRUByteCache recentSeenBytes = new LRUByteCache(5000);
 
+    private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
+    private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);    
+    
     public void init(double pDropTransaction, double p_SELECT_MILESTONE, double pSendMilestone, String neighborList) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
         P_SELECT_MILESTONE = p_SELECT_MILESTONE;
@@ -177,14 +181,24 @@ public class Node {
                     //check if cached
                     synchronized (recentSeenBytes) {
                         receivedTransactionViewModel = recentSeenBytes.get(ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE));
+                        if (((recentSeenBytesMissCount.get() + recentSeenBytesHitCount.get()) % 50000L == 0)) {
+                            log.info("RecentSeenBytes cache hit/miss ratio: "+recentSeenBytesHitCount.get()+"/"+recentSeenBytesMissCount.get());
+                            recentSeenBytesMissCount.set(0L);
+                            recentSeenBytesHitCount.set(0L);
+                        }
                     }
                     if (receivedTransactionViewModel == null) {
                         //if not then validate
+                        recentSeenBytesMissCount.getAndIncrement();
                         receivedTransactionViewModel = TransactionValidator.validate(receivedData);
                         synchronized (recentSeenBytes) {
                             recentSeenBytes.set(ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE), receivedTransactionViewModel);
                         }
                     }
+                    else {
+                        recentSeenBytesHitCount.getAndIncrement();
+                    }
+                    
                 } catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();
@@ -236,7 +250,7 @@ public class Node {
     }
 
     public void processReceivedData(TransactionViewModel receivedTransactionViewModel, Hash requestedHash, Neighbor neighbor) {
-        long timestamp;
+
         TransactionViewModel transactionViewModel = null;
         Hash transactionPointer;
 

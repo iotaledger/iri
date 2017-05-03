@@ -95,6 +95,7 @@ public class PearlDiver {
         }
 
         Thread[] workers = new Thread[numberOfThreads];
+        Object syncObj = new Object();
         
         while (numberOfThreads-- > 0) {
 
@@ -126,8 +127,8 @@ public class PearlDiver {
                         }
                     }
                     if(mask == 0) continue;
-                    
-                    synchronized (this) {
+
+                    synchronized (syncObj) {
                         if (state == RUNNING) {
                             state = COMPLETED;
                             while((outMask & mask) == 0) {
@@ -136,7 +137,7 @@ public class PearlDiver {
                             for (int i = 0; i < CURL_HASH_LENGTH; i++) {
                                 transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] = (midCurlStateCopyLow[i] & outMask) == 0 ? 1: (midCurlStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
                             }
-							notifyAll();
+							syncObj.notifyAll();
 						}
                     }
                     break;
@@ -147,8 +148,10 @@ public class PearlDiver {
         }
 
         try {
-            while (state == RUNNING) {
-                wait();
+            synchronized (syncObj) {
+                if(state == RUNNING) {
+                    syncObj.wait();
+                }
             }
         } catch (final InterruptedException e) {
             state = CANCELLED;
@@ -156,7 +159,7 @@ public class PearlDiver {
 
         for (Thread worker : workers) {
             try {
-                worker.join(200);
+                worker.join();
             } catch (final InterruptedException e) {
                 state = CANCELLED;
             }

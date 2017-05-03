@@ -1,5 +1,7 @@
 package com.iota.iri.hash;
 
+import com.iota.iri.controllers.TransactionViewModelTest;
+import com.iota.iri.model.Hash;
 import com.iota.iri.utils.Converter;
 import java.util.Random;
 import static org.junit.Assert.*;
@@ -33,7 +35,28 @@ public class PearlDiverTest {
         assertTrue("The hash should have n nines", success);
 
 	}
-	
+
+	// Remove below comment to test pearlDiver iteratively
+    //@Test
+    public void testNoRandomFail() {
+        PearlDiver pearlDiver = new PearlDiver();
+
+        int[] trits;
+        Hash hash;
+        int minWeightMagnitude = 9, numCores = -1; // use n-1 cores
+        for(int i = 0; i++ < 10000;) {
+            trits = TransactionViewModelTest.getRandomTransactionTrits();
+            pearlDiver.search(trits, minWeightMagnitude, numCores);
+            hash = Hash.calculate(trits);
+            for(int j = Hash.SIZE_IN_TRITS; j --> Hash.SIZE_IN_TRITS - minWeightMagnitude;) {
+                assertEquals(hash.trits()[j], 0);
+            }
+            if(i % 100 == 0) {
+                System.out.println(i + " successful hashes.");
+            }
+        }
+    }
+
 	private String getRandomTrytes() {
 		String trytes = "";
 		Random rand = new Random();

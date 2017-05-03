@@ -54,10 +54,9 @@ public class API {
     private Undertow server;
 
     private final Gson gson = new GsonBuilder().create();
-    private PearlDiver pearlDiver = new PearlDiver();
+    private volatile PearlDiver pearlDiver = new PearlDiver();
 
     private final AtomicInteger counter = new AtomicInteger(0);
-    private final AtomicBoolean canAttachToTangleStatement = new AtomicBoolean(true);
 
     public void init() throws IOException {
 
@@ -124,11 +123,8 @@ public class API {
                     final int minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
                     final List<String> trytes = (List<String>) request.get("trytes");
 
-                    if(canAttachToTangleStatement.get()) {
-                        return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
-                    } else {
-                        return ErrorResponse.create("AttachToTangleStatement pending.");
-                    }
+                    return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
+
                 }
                 case "broadcastTransactions": {
                     final List<String> trytes = (List<String>) request.get("trytes");
@@ -272,7 +268,7 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
    
-    private AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
+    private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
         final SecureRandom random = new SecureRandom();
         final Hash trunkTransactionToApprove = TipsManager.transactionToApprove(null, depth, random);
         if (trunkTransactionToApprove == null) {
@@ -427,9 +423,9 @@ public class API {
 
     private AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
         for (final String tryte : trytes2) {
-            int[] trits = Converter.trits(tryte);
-            final Hash hash = Hash.calculate(trits, 0, trits.length, new Curl());
-            final TransactionViewModel transactionViewModel = new TransactionViewModel(trits, hash);
+            //validate PoW - throws exception if invalid
+            final TransactionViewModel transactionViewModel = TransactionValidator.validate(Converter.trits(tryte));
+            //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             Node.instance().broadcast(transactionViewModel);
         }
@@ -504,9 +500,8 @@ public class API {
         ellapsedTime_PoW += ellapsedTime;
     }
     
-    private AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
+    private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
-        canAttachToTangleStatement.set(false);
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
 
         Hash prevTransaction = null;
@@ -526,8 +521,9 @@ public class API {
                     transactionViewModels.clear();
                     break;
                 }
-                final Hash transactionHash = Hash.calculate(transactionTrits, 0, transactionTrits.length, new Curl());
-                final TransactionViewModel transactionViewModel = new TransactionViewModel(transactionTrits, transactionHash);
+                //validate PoW - throws exception if invalid
+                final TransactionViewModel transactionViewModel = TransactionValidator.validate(transactionTrits);
+
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {
@@ -548,7 +544,6 @@ public class API {
         for (int i = transactionViewModels.size(); i-- > 0; ) {
             elements.add(Converter.trytes(transactionViewModels.get(i).trits()));
         }
-        canAttachToTangleStatement.set(true);
         return AttachToTangleResponse.create(elements);
     }
 

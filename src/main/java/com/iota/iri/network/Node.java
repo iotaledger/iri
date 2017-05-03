@@ -1,6 +1,7 @@
 package com.iota.iri.network;
 
 import java.net.*;
+import java.nio.ByteBuffer;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
@@ -56,7 +57,8 @@ public class Node {
     private static final SecureRandom rnd = new SecureRandom();
     private double P_SEND_MILESTONE;
 
-    private LRUCache recentSeenHashes = new LRUCache(5000);
+    private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
+    private LRUByteCache recentSeenBytes = new LRUByteCache(5000);
 
     public void init(double pDropTransaction, double p_SELECT_MILESTONE, double pSendMilestone, String neighborList) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
@@ -154,14 +156,10 @@ public class Node {
         return Optional.of(hostAddress);
     }
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
-        long timestamp;
-        TransactionViewModel receivedTransactionViewModel, transactionViewModel;
-        Hash transactionPointer;
+        TransactionViewModel receivedTransactionViewModel;
 
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
-            boolean stored = false;
-            boolean cached = false;
 
             if (neighbor instanceof TCPNeighbor) {
                 if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
@@ -176,7 +174,13 @@ public class Node {
                     break;
                 }
                 try {
-                    receivedTransactionViewModel = TransactionValidator.validate(receivedData);
+                    //check if cached
+                    receivedTransactionViewModel = recentSeenBytes.get(ByteBuffer.wrap(receivedData,0, TransactionViewModel.SIZE));
+                    if (receivedTransactionViewModel == null) {
+                        //if not then validate
+                        receivedTransactionViewModel = TransactionValidator.validate(receivedData);
+                        recentSeenBytes.set(ByteBuffer.wrap(receivedData,0, TransactionViewModel.SIZE),receivedTransactionViewModel);
+                    }
                 } catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();
@@ -500,12 +504,12 @@ public class Node {
     }
 
 
-    public class LRUCache {
+    public class LRUHashCache {
 
         private int capacity;
         private LinkedHashMap<Hash,Boolean> map;
 
-        public LRUCache(int capacity) {
+        public LRUHashCache(int capacity) {
             this.capacity = capacity;
             this.map = new LinkedHashMap<>();
         }
@@ -525,6 +529,38 @@ public class Node {
                 this.map.remove(key);
             } else if (this.map.size() == this.capacity) {
                 Iterator<Hash> it = this.map.keySet().iterator();
+                it.next();
+                it.remove();
+            }
+            map.put(key, value);
+        }
+    }
+
+    public class LRUByteCache {
+
+        private int capacity;
+        private LinkedHashMap<ByteBuffer,TransactionViewModel> map;
+
+        public LRUByteCache(int capacity) {
+            this.capacity = capacity;
+            this.map = new LinkedHashMap<>();
+        }
+
+        public TransactionViewModel get(ByteBuffer key) {
+            TransactionViewModel value = this.map.get(key);
+            if (value == null) {
+                value = null;
+            } else {
+                this.set(key, value);
+            }
+            return value;
+        }
+
+        public void set(ByteBuffer key, TransactionViewModel value) {
+            if (this.map.containsKey(key)) {
+                this.map.remove(key);
+            } else if (this.map.size() == this.capacity) {
+                Iterator<ByteBuffer> it = this.map.keySet().iterator();
                 it.next();
                 it.remove();
             }

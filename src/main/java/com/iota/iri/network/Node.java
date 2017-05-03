@@ -175,11 +175,15 @@ public class Node {
                 }
                 try {
                     //check if cached
-                    receivedTransactionViewModel = recentSeenBytes.get(ByteBuffer.wrap(receivedData,0, TransactionViewModel.SIZE));
+                    synchronized (recentSeenBytes) {
+                        receivedTransactionViewModel = recentSeenBytes.get(ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE));
+                    }
                     if (receivedTransactionViewModel == null) {
                         //if not then validate
                         receivedTransactionViewModel = TransactionValidator.validate(receivedData);
-                        recentSeenBytes.set(ByteBuffer.wrap(receivedData,0, TransactionViewModel.SIZE),receivedTransactionViewModel);
+                        synchronized (recentSeenBytes) {
+                            recentSeenBytes.set(ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE), receivedTransactionViewModel);
+                        }
                     }
                 } catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");

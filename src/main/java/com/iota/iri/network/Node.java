@@ -183,6 +183,8 @@ public class Node {
                         receivedTransactionViewModel = recentSeenBytes.get(ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE));
                         if (((recentSeenBytesMissCount.get() + recentSeenBytesHitCount.get()) % 10000L == 0)) {
                             log.info("RecentSeenBytes cache hit/miss ratio: "+recentSeenBytesHitCount.get()+"/"+recentSeenBytesMissCount.get());
+                            recentSeenBytesMissCount.set(0L);
+                            recentSeenBytesHitCount.set(0L);
                         }
                     }
                     if (receivedTransactionViewModel == null) {

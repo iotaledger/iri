@@ -61,9 +61,15 @@ public class Node {
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
     private LRUByteCache recentSeenBytes = new LRUByteCache(50000);
 
+    private LRUByteBoolCache recentSeenRequests = new LRUByteBoolCache(50000);
+
+
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
-    private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);    
-    
+    private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);
+
+    private static AtomicLong recentSeenRequestsMissCount = new AtomicLong(0L);
+    private static AtomicLong recentSeenRequestsHitCount = new AtomicLong(0L);
+
     public void init(double pDropTransaction, double p_SELECT_MILESTONE, double pSendMilestone, String neighborList) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
         P_SELECT_MILESTONE = p_SELECT_MILESTONE;
@@ -204,6 +210,29 @@ public class Node {
                     neighbor.incInvalidTransactions();
                     break;
                 }
+
+                //TODO remove - only for metering
+                //check if cached
+                boolean cached = false;
+                synchronized (recentSeenRequests) {
+                    cached = recentSeenRequests.get(ByteBuffer.wrap(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE));
+                    if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
+                        log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
+                        recentSeenRequestsMissCount.set(0L);
+                        recentSeenRequestsHitCount.set(0L);
+                    }
+                }
+                if (!cached) {
+                    //if not then validate
+                    recentSeenRequestsMissCount.getAndIncrement();
+                    synchronized (recentSeenBytes) {
+                        recentSeenRequests.set(ByteBuffer.wrap(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE), true);
+                    }
+                }
+                else {
+                    recentSeenRequestsHitCount.getAndIncrement();
+                }
+
                 Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
 
                 //if valid - add to queue (receivedTransactionViewModel, requestedHash, neighbor)
@@ -301,6 +330,9 @@ public class Node {
                     neighbor.incRandomTransactionRequests();
                     transactionPointer = getRandomTipPointer();
                     transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
+                } else {
+                    //no tx to request, so no random tip will be sent as aa reply.
+                    return;
                 }
             } catch (Exception e) {
                 log.error("Error getting random tip.", e);
@@ -320,6 +352,15 @@ public class Node {
                 sendPacket(sendingPacket, transactionViewModel, neighbor);
             } catch (Exception e) {
                 log.error("Error fetching transaction to request.", e);
+            }
+        } else {
+            //TODO remove or optimize "isHashInRequests" to O(1), only used for metering
+            //trytes not found
+            if (!TransactionRequester.instance().isHashInRequests(requestedHash) && !requestedHash.equals(Hash.NULL_HASH)) {
+                //hash isn't in node's request pool
+                log.info("not found && not in req queue: {} ", requestedHash);
+
+
             }
         }
 
@@ -585,4 +626,38 @@ public class Node {
             map.put(key, value);
         }
     }
+
+
+    public class LRUByteBoolCache {
+
+        private int capacity;
+        private LinkedHashMap<ByteBuffer,Boolean> map;
+
+        public LRUByteBoolCache(int capacity) {
+            this.capacity = capacity;
+            this.map = new LinkedHashMap<>();
+        }
+
+        public Boolean get(ByteBuffer key) {
+            Boolean value = this.map.get(key);
+            if (value == null) {
+                value = false;
+            } else {
+                this.set(key, value);
+            }
+            return value;
+        }
+
+        public void set(ByteBuffer key, Boolean value) {
+            if (this.map.containsKey(key)) {
+                this.map.remove(key);
+            } else if (this.map.size() == this.capacity) {
+                Iterator<ByteBuffer> it = this.map.keySet().iterator();
+                it.next();
+                it.remove();
+            }
+            map.put(key, value);
+        }
+    }
+
 }

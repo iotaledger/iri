@@ -154,4 +154,14 @@ public class TransactionRequester {
     public static TransactionRequester instance() {
         return instance;
     }
+
+    public boolean isHashInRequests(Hash hash) {
+        Hash[] requests = this.getRequestedTransactions();
+        for (Hash reqHash : requests) {
+            if (reqHash.equals(hash)) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

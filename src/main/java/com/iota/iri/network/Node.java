@@ -359,7 +359,7 @@ public class Node {
             //trytes not found
             if (!TransactionRequester.instance().isHashInRequests(requestedHash) && !requestedHash.equals(Hash.NULL_HASH)) {
                 //hash isn't in node's request pool
-                log.info("not found && not in req queue: {} ", requestedHash);
+                log.info("not found && not in req queue: {} from: {}", requestedHash,neighbor.getAddress());
 
 
             }

@@ -30,10 +30,11 @@ public class UDPReceiver {
 
     private DatagramSocket socket;
 
-    private final int PROCESSOR_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
+    private final int PROCESSOR_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors() / 2 );
+
     private final ExecutorService processor = new ThreadPoolExecutor(PROCESSOR_THREADS, PROCESSOR_THREADS, 5000L,
                                             TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(PROCESSOR_THREADS, true),
-                                             new ThreadPoolExecutor.DiscardPolicy());
+                                             new ThreadPoolExecutor.AbortPolicy());
 
     private Thread receivingThread;
 
@@ -54,21 +55,37 @@ public class UDPReceiver {
 
             final Curl curl = new Curl();
             final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
+
+            int processed = 0, dropped = 0;
+
             while (!shuttingDown.get()) {
+
+                if (((processed + dropped) % 50000 == 0)) {
+                    log.info("Receiver thread processed/dropped ratio: "+processed+"/"+dropped);
+                    processed = 0;
+                    dropped = 0;
+                }
 
                 try {
                     socket.receive(receivingPacket);
 
                     if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
+
                         byte[] bytes = Arrays.copyOf(receivingPacket.getData(), receivingPacket.getLength());
                         SocketAddress address = receivingPacket.getSocketAddress();
 
                         processor.submit(() -> Node.instance().preProcessReceivedData(bytes, address, "udp"));
+                        processed++;
+
                         Thread.yield();
 
                     } else {
                         receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
                     }
+                } catch (final RejectedExecutionException e) {
+                    //no free thread, packet dropped
+                    dropped++;
+
                 } catch (final Exception e) {
                     log.error("Receiver Thread Exception:", e);
                 }

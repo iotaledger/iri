@@ -59,9 +59,9 @@ public class Node {
     private double P_SEND_MILESTONE;
 
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
-    private LRUByteCache recentSeenBytes = new LRUByteCache(50000);
+    private LRUByteCache recentSeenBytes = new LRUByteCache(40000);
 
-    private LRUByteBoolCache recentSeenRequests = new LRUByteBoolCache(50000);
+    private LRUByteBoolCache recentSeenRequests = new LRUByteBoolCache(5000);
 
 
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);

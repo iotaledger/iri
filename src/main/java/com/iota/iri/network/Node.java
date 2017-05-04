@@ -225,7 +225,7 @@ public class Node {
                 if (!cached) {
                     //if not then validate
                     recentSeenRequestsMissCount.getAndIncrement();
-                    synchronized (recentSeenBytes) {
+                    synchronized (recentSeenRequests) {
                         recentSeenRequests.set(ByteBuffer.wrap(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE), true);
                     }
                 }
@@ -346,6 +346,9 @@ public class Node {
                 log.error("Error while searching for transaction.", e);
             }
         }
+        log.debug("Requested Hash: " + requestedHash);
+        log.info("Requested Hash: " + requestedHash);
+
         if (transactionViewModel != null && transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
             //send trytes back to neighbor
             try {

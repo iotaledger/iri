@@ -346,8 +346,6 @@ public class Node {
                 log.error("Error while searching for transaction.", e);
             }
         }
-        log.debug("Requested Hash: " + requestedHash);
-        log.info("Requested Hash: " + requestedHash);
 
         if (transactionViewModel != null && transactionViewModel.getType() == TransactionViewModel.FILLED_SLOT) {
             //send trytes back to neighbor

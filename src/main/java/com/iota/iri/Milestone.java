@@ -180,16 +180,19 @@ public class Milestone {
         return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
     }
 
-    public static void findNewMilestones() throws Exception {
+    void findNewMilestones() throws Exception {
         AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.instance.coordinatorHash);
         Arrays.stream(coordinatorAddress.getTransactionHashes())
-                .filter(hash -> analyzedMilestoneCandidates.add(hash) || analyzedMilestoneRetryCandidates.remove(hash))
+                .filter(analyzedMilestoneCandidates::add)
                 .map(TransactionViewModel::quietFromHash)
                 .filter(t -> t.getCurrentIndex() == 0)
                 .forEach(t -> {
                     try {
-                        Milestone.instance().validateMilestone(t, getIndex(t));
+                        if(!validateMilestone(t, getIndex(t))) {
+                            analyzedMilestoneCandidates.remove(t.getHash());
+                        }
                     } catch (Exception e) {
+                        analyzedMilestoneCandidates.remove(t.getHash());
                         log.error("Could not validate milestone: ", t.getHash());
                     }
                 });

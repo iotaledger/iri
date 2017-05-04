@@ -63,7 +63,7 @@ public class Node {
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
     private LRUByteCache recentSeenBytes = new LRUByteCache(40000);
 
-    private FIFOHashNeighborCache recentSeenRequests = new FIFOHashNeighborCache(5000);
+    private FIFOHashNeighborCache recentSeenRequests = new FIFOHashNeighborCache(1000);
 
 
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
@@ -218,36 +218,6 @@ public class Node {
 
                 Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
 
-                //Timeout for recently requested Hashes from neighbor.
-
-                //check if cached
-                boolean cached = false;
-                synchronized (recentSeenRequests) {
-                    cached = recentSeenRequests.get(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor));
-                }
-
-                if (cached) {
-                    //if cached, then drop request - Timeout
-                    requestedHash = null;
-
-                    recentSeenRequestsHitCount.getAndIncrement();
-                }
-                else {
-                    //if not cached, then reply to request and cache.
-                    synchronized (recentSeenRequests) {
-                        recentSeenRequests.set(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor), true);
-                    }
-
-                    recentSeenRequestsMissCount.getAndIncrement();
-                }
-
-
-                if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
-                    log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
-                    recentSeenRequestsMissCount.set(0L);
-                    recentSeenRequestsHitCount.set(0L);
-                }
-
                 //if valid - add to queue (receivedTransactionViewModel, requestedHash, neighbor)
                 addReceivedDataToQueue(receivedTransactionViewModel, requestedHash, neighbor);
 
@@ -335,12 +305,32 @@ public class Node {
             broadcast(receivedTransactionViewModel);
         }
 
-        if (requestedHash == null) {
-            //request was timed-out, so no reply.
+
+        //retrieve requested transaction
+
+        //Timeout for recently requested Hashes from neighbor.
+
+        //check if cached
+        int cachedRequest = 0;
+        synchronized (recentSeenRequests) {
+            cachedRequest = recentSeenRequests.get(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor));
+        }
+
+        if (cachedRequest % 10 != 0) {
+            //if cached, then drop request - Timeout
+            recentSeenRequests.set(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor), cachedRequest+1);
+            recentSeenRequestsHitCount.getAndIncrement();
             return;
         }
 
-        //retrieve requested transaction
+
+
+        if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
+            log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
+            recentSeenRequestsMissCount.set(0L);
+            recentSeenRequestsHitCount.set(0L);
+        }
+
         if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
             //Random Tip Request
             try {
@@ -369,6 +359,13 @@ public class Node {
             //send trytes back to neighbor
             try {
                 sendPacket(sendingPacket, transactionViewModel, neighbor);
+
+                //if not cached, then reply to request and cache.
+                synchronized (recentSeenRequests) {
+                    recentSeenRequests.set(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor), 1);
+                }
+                recentSeenRequestsMissCount.getAndIncrement();
+
             } catch (Exception e) {
                 log.error("Error fetching transaction to request.", e);
             }
@@ -649,17 +646,17 @@ public class Node {
     public class FIFOHashNeighborCache {
 
         private int capacity;
-        private LinkedHashMap<Pair<Hash,Neighbor>,Boolean> map;
+        private LinkedHashMap<Pair<Hash,Neighbor>,Integer> map;
 
         public FIFOHashNeighborCache(int capacity) {
             this.capacity = capacity;
             this.map = new LinkedHashMap<>();
         }
 
-        public Boolean get(Pair<Hash,Neighbor> key) {
-            Boolean value = this.map.get(key);
+        public int get(Pair<Hash,Neighbor> key) {
+            Integer value = this.map.get(key);
             if (value == null) {
-                value = false;
+                value = 0;
             } else {
                 //FIFO
                 //this.set(key, value);
@@ -667,7 +664,7 @@ public class Node {
             return value;
         }
 
-        public void set(Pair<Hash,Neighbor> key, Boolean value) {
+        public void set(Pair<Hash,Neighbor> key, int value) {
             if (this.map.containsKey(key)) {
                 this.map.remove(key);
             } else if (this.map.size() == this.capacity) {

@@ -43,8 +43,10 @@ public class TransactionRequester {
         }
     }
     public Hash[] getRequestedTransactions() {
-        return ArrayUtils.addAll(transactionsToRequest.stream().toArray(Hash[]::new),
-                milestoneTransactionsToRequest.stream().toArray(Hash[]::new));
+        synchronized (this) {
+            return ArrayUtils.addAll(transactionsToRequest.stream().toArray(Hash[]::new),
+                    milestoneTransactionsToRequest.stream().toArray(Hash[]::new));
+        }
     }
 
     public int numberOfTransactionsToRequest() {

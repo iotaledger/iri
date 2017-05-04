@@ -13,7 +13,9 @@ import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
+import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +63,7 @@ public class Node {
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
     private LRUByteCache recentSeenBytes = new LRUByteCache(40000);
 
-    private LRUByteBoolCache recentSeenRequests = new LRUByteBoolCache(5000);
+    private FIFOHashNeighborCache recentSeenRequests = new FIFOHashNeighborCache(5000);
 
 
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
@@ -187,22 +189,25 @@ public class Node {
                     //check if cached
                     synchronized (recentSeenBytes) {
                         receivedTransactionViewModel = recentSeenBytes.get(ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE));
-                        if (((recentSeenBytesMissCount.get() + recentSeenBytesHitCount.get()) % 50000L == 0)) {
-                            log.info("RecentSeenBytes cache hit/miss ratio: "+recentSeenBytesHitCount.get()+"/"+recentSeenBytesMissCount.get());
-                            recentSeenBytesMissCount.set(0L);
-                            recentSeenBytesHitCount.set(0L);
-                        }
                     }
                     if (receivedTransactionViewModel == null) {
-                        //if not then validate
-                        recentSeenBytesMissCount.getAndIncrement();
+                        //if not, then validate
                         receivedTransactionViewModel = TransactionValidator.validate(receivedData);
                         synchronized (recentSeenBytes) {
                             recentSeenBytes.set(ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE), receivedTransactionViewModel);
                         }
+
+                        recentSeenBytesMissCount.getAndIncrement();
+
                     }
                     else {
                         recentSeenBytesHitCount.getAndIncrement();
+                    }
+
+                    if (((recentSeenBytesMissCount.get() + recentSeenBytesHitCount.get()) % 50000L == 0)) {
+                        log.info("RecentSeenBytes cache hit/miss ratio: "+recentSeenBytesHitCount.get()+"/"+recentSeenBytesMissCount.get());
+                        recentSeenBytesMissCount.set(0L);
+                        recentSeenBytesHitCount.set(0L);
                     }
                     
                 } catch (final RuntimeException e) {
@@ -211,29 +216,37 @@ public class Node {
                     break;
                 }
 
-                //TODO remove - only for metering
+                Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
+
+                //Timeout for recently requested Hashes from neighbor.
+
                 //check if cached
                 boolean cached = false;
                 synchronized (recentSeenRequests) {
-                    cached = recentSeenRequests.get(ByteBuffer.wrap(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE));
-                    if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
-                        log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
-                        recentSeenRequestsMissCount.set(0L);
-                        recentSeenRequestsHitCount.set(0L);
-                    }
-                }
-                if (!cached) {
-                    //if not then validate
-                    recentSeenRequestsMissCount.getAndIncrement();
-                    synchronized (recentSeenRequests) {
-                        recentSeenRequests.set(ByteBuffer.wrap(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE), true);
-                    }
-                }
-                else {
-                    recentSeenRequestsHitCount.getAndIncrement();
+                    cached = recentSeenRequests.get(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor));
                 }
 
-                Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
+                if (cached) {
+                    //if cached, then drop request - Timeout
+                    requestedHash = null;
+
+                    recentSeenRequestsHitCount.getAndIncrement();
+                }
+                else {
+                    //if not cached, then reply to request and cache.
+                    synchronized (recentSeenRequests) {
+                        recentSeenRequests.set(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor), true);
+                    }
+
+                    recentSeenRequestsMissCount.getAndIncrement();
+                }
+
+
+                if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
+                    log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
+                    recentSeenRequestsMissCount.set(0L);
+                    recentSeenRequestsHitCount.set(0L);
+                }
 
                 //if valid - add to queue (receivedTransactionViewModel, requestedHash, neighbor)
                 addReceivedDataToQueue(receivedTransactionViewModel, requestedHash, neighbor);
@@ -322,6 +335,11 @@ public class Node {
             broadcast(receivedTransactionViewModel);
         }
 
+        if (requestedHash == null) {
+            //request was timed-out, so no reply.
+            return;
+        }
+
         //retrieve requested transaction
         if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
             //Random Tip Request
@@ -331,7 +349,7 @@ public class Node {
                     transactionPointer = getRandomTipPointer();
                     transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
                 } else {
-                    //no tx to request, so no random tip will be sent as aa reply.
+                    //no tx to request, so no random tip will be sent as a reply.
                     return;
                 }
             } catch (Exception e) {
@@ -628,37 +646,36 @@ public class Node {
         }
     }
 
-
-    public class LRUByteBoolCache {
+    public class FIFOHashNeighborCache {
 
         private int capacity;
-        private LinkedHashMap<ByteBuffer,Boolean> map;
+        private LinkedHashMap<Pair<Hash,Neighbor>,Boolean> map;
 
-        public LRUByteBoolCache(int capacity) {
+        public FIFOHashNeighborCache(int capacity) {
             this.capacity = capacity;
             this.map = new LinkedHashMap<>();
         }
 
-        public Boolean get(ByteBuffer key) {
+        public Boolean get(Pair<Hash,Neighbor> key) {
             Boolean value = this.map.get(key);
             if (value == null) {
                 value = false;
             } else {
-                this.set(key, value);
+                //FIFO
+                //this.set(key, value);
             }
             return value;
         }
 
-        public void set(ByteBuffer key, Boolean value) {
+        public void set(Pair<Hash,Neighbor> key, Boolean value) {
             if (this.map.containsKey(key)) {
                 this.map.remove(key);
             } else if (this.map.size() == this.capacity) {
-                Iterator<ByteBuffer> it = this.map.keySet().iterator();
+                Iterator<Pair<Hash,Neighbor>> it = this.map.keySet().iterator();
                 it.next();
                 it.remove();
             }
             map.put(key, value);
         }
     }
-
 }

@@ -63,7 +63,7 @@ public class Node {
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
     private LRUByteCache recentSeenBytes = new LRUByteCache(40000);
 
-    private FIFOHashNeighborCache recentSeenRequests = new FIFOHashNeighborCache(1000);
+    private FIFOHashNeighborCache recentSeenRequests = new FIFOHashNeighborCache(2000);
 
 
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
@@ -323,6 +323,11 @@ public class Node {
             return;
         }
 
+        //if not cached, then reply to request and cache.
+        synchronized (recentSeenRequests) {
+            recentSeenRequests.set(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor), 1);
+        }
+        recentSeenRequestsMissCount.getAndIncrement();
 
 
         if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
@@ -360,12 +365,6 @@ public class Node {
             try {
                 sendPacket(sendingPacket, transactionViewModel, neighbor);
 
-                //if not cached, then reply to request and cache.
-                synchronized (recentSeenRequests) {
-                    recentSeenRequests.set(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor), 1);
-                }
-                recentSeenRequestsMissCount.getAndIncrement();
-
             } catch (Exception e) {
                 log.error("Error fetching transaction to request.", e);
             }
@@ -375,8 +374,6 @@ public class Node {
             if (!TransactionRequester.instance().isHashInRequests(requestedHash) && !requestedHash.equals(Hash.NULL_HASH)) {
                 //hash isn't in node's request pool
                 log.info("not found && not in req queue: {} from: {}", requestedHash,neighbor.getAddress());
-
-
             }
         }
 

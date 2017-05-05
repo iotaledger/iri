@@ -117,7 +117,7 @@ class ReplicatorSourceProcessor implements Runnable {
             offset = 0;
             while (!shutdown) {
 
-                while ( ((count = stream.read(data, offset, (TRANSACTION_PACKET_SIZE - offset - ReplicatorSinkProcessor.CRC32_BYTES))) != -1) 
+                while ( ((count = stream.read(data, offset, (TRANSACTION_PACKET_SIZE - offset + ReplicatorSinkProcessor.CRC32_BYTES))) != -1) 
                         && (offset < (TRANSACTION_PACKET_SIZE + ReplicatorSinkProcessor.CRC32_BYTES))) {
                     offset += count;
                 }

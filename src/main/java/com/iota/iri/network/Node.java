@@ -61,7 +61,7 @@ public class Node {
     private double P_SEND_MILESTONE;
 
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
-    private LRUByteCache recentSeenBytes = new LRUByteCache(40000);
+    private LRUByteCache recentSeenBytes = new LRUByteCache(15000);
 
     private FIFOHashNeighborCache recentSeenRequests = new FIFOHashNeighborCache(2000);
 
@@ -186,15 +186,18 @@ public class Node {
                     break;
                 }
                 try {
+                    final int byteHash = ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE).hashCode();
                     //check if cached
                     synchronized (recentSeenBytes) {
-                        receivedTransactionViewModel = recentSeenBytes.get(ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE));
+                        receivedTransactionViewModel = recentSeenBytes.get(byteHash);
+
                     }
                     if (receivedTransactionViewModel == null) {
                         //if not, then validate
                         receivedTransactionViewModel = TransactionValidator.validate(receivedData);
                         synchronized (recentSeenBytes) {
-                            recentSeenBytes.set(ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE), receivedTransactionViewModel);
+                            recentSeenBytes.set(byteHash, receivedTransactionViewModel);
+
                         }
 
                         recentSeenBytesMissCount.getAndIncrement();
@@ -611,14 +614,14 @@ public class Node {
     public class LRUByteCache {
 
         private int capacity;
-        private LinkedHashMap<ByteBuffer,TransactionViewModel> map;
+        private LinkedHashMap<Integer,TransactionViewModel> map;
 
         public LRUByteCache(int capacity) {
             this.capacity = capacity;
             this.map = new LinkedHashMap<>();
         }
 
-        public TransactionViewModel get(ByteBuffer key) {
+        public TransactionViewModel get(Integer key) {
             TransactionViewModel value = this.map.get(key);
             if (value == null) {
                 value = null;
@@ -628,11 +631,11 @@ public class Node {
             return value;
         }
 
-        public void set(ByteBuffer key, TransactionViewModel value) {
+        public void set(Integer key, TransactionViewModel value) {
             if (this.map.containsKey(key)) {
                 this.map.remove(key);
             } else if (this.map.size() == this.capacity) {
-                Iterator<ByteBuffer> it = this.map.keySet().iterator();
+                Iterator<Integer> it = this.map.keySet().iterator();
                 it.next();
                 it.remove();
             }

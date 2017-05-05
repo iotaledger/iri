@@ -88,7 +88,6 @@ public class Milestone {
                     }
 
                     if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
-                        LedgerValidator.updateSnapshot(MilestoneViewModel.get(Milestone.latestSolidSubtangleMilestoneIndex));
 
                         log.info("Latest SOLID SUBTANGLE milestone has changed from #"
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"
@@ -168,7 +167,9 @@ public class Milestone {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(latestSolidSubtangleMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index();
                  milestoneViewModel = milestoneViewModel.next()) {
-                if (TransactionRequester.instance().checkSolidity(milestoneViewModel.getHash(), true)) {
+                if (TransactionRequester.instance().checkSolidity(milestoneViewModel.getHash(), true) &&
+                        milestoneViewModel.index() > latestSolidSubtangleMilestoneIndex &&
+                        LedgerValidator.updateSnapshot(milestoneViewModel)) {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();
                     latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
                 }

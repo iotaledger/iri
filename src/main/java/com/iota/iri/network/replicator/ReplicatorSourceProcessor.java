@@ -46,9 +46,6 @@ class ReplicatorSourceProcessor implements Runnable {
         boolean finallyClose = true;
 
         try {
-            final Curl curl = new Curl();
-            final int[] receivedTransactionTrits = new int[TransactionViewModel.TRINARY_SIZE];
-            final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
 
             SocketAddress address = connection.getRemoteSocketAddress();
             InetSocketAddress inet_socket_address = (InetSocketAddress) address;

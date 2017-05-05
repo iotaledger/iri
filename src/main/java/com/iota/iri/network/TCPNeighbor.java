@@ -18,7 +18,7 @@ public class TCPNeighbor extends Neighbor {
     private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
     private int tcpPort;
 
-    private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(50);
+    private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(10);
 
     public TCPNeighbor(InetSocketAddress address, boolean isConfigured) {
         super(address, isConfigured);

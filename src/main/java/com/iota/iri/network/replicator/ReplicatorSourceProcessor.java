@@ -6,6 +6,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.List;
+import java.util.zip.CRC32;
 
 import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
@@ -30,8 +31,6 @@ class ReplicatorSourceProcessor implements Runnable {
     private boolean existingNeighbor;
     
     private TCPNeighbor neighbor;
-    
-
 
     public ReplicatorSourceProcessor(Socket connection) {
         this.connection = connection;
@@ -118,7 +117,8 @@ class ReplicatorSourceProcessor implements Runnable {
             offset = 0;
             while (!shutdown) {
 
-                while (((count = stream.read(data, offset, TRANSACTION_PACKET_SIZE - offset)) != -1) && (offset < TRANSACTION_PACKET_SIZE)) {
+                while ( ((count = stream.read(data, offset, (TRANSACTION_PACKET_SIZE - offset - ReplicatorSinkProcessor.CRC32_BYTES))) != -1) 
+                        && (offset < (TRANSACTION_PACKET_SIZE + ReplicatorSinkProcessor.CRC32_BYTES))) {
                     offset += count;
                 }
               
@@ -129,6 +129,20 @@ class ReplicatorSourceProcessor implements Runnable {
                 offset = 0;
 
                 try {
+                    CRC32 crc32 = new CRC32();
+                    for (int i=0; i<TRANSACTION_PACKET_SIZE; i++) {
+                        crc32.update(data[i]);
+                    }
+                    String crc32_string = Long.toHexString(crc32.getValue());
+                    while (crc32_string.length() < ReplicatorSinkProcessor.CRC32_BYTES) crc32_string = "0"+crc32_string;
+                    byte [] crc32_bytes = crc32_string.getBytes();
+                    
+                    for (int i=0; i<ReplicatorSinkProcessor.CRC32_BYTES; i++) {
+                        if (crc32_bytes[i] != data[TRANSACTION_PACKET_SIZE + i]) {
+                            log.error("Checksum error");
+                        }
+                    }
+                    
                     Node.instance().preProcessReceivedData(data, address, "tcp");
                 }
                   catch (IllegalStateException e) {

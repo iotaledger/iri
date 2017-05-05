@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
+import java.util.zip.CRC32;
 
 import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
@@ -19,10 +20,12 @@ class ReplicatorSinkProcessor implements Runnable {
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSinkProcessor.class);
 
     private final TCPNeighbor neighbor;
+    
+    public final static int CRC32_BYTES = 16;
 
     public ReplicatorSinkProcessor(TCPNeighbor neighbor) {
         this.neighbor = neighbor;
-    }
+    }    
 
     @Override
     public void run() {
@@ -84,7 +87,12 @@ class ReplicatorSinkProcessor implements Runnable {
                                         do {
                                             resend = false;
                                             try {
+                                                CRC32 crc32 = new CRC32();                                        
+                                                crc32.update(message.array());
+                                                String crc32_string = Long.toHexString(crc32.getValue());
+                                                while (crc32_string.length() < CRC32_BYTES) crc32_string = "0"+crc32_string;
                                                 out.write(message.array());
+                                                out.write(crc32_string.getBytes());
                                                 out.flush();
                                             } catch (IOException e2) {
                                                 if (!neighbor.getSink().isClosed()

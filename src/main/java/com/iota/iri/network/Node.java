@@ -313,6 +313,12 @@ public class Node {
 
         //Timeout for recently requested Hashes from neighbor.
 
+        if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
+            log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
+            recentSeenRequestsMissCount.set(0L);
+            recentSeenRequestsHitCount.set(0L);
+        }
+
         //check if cached
         int cachedRequest = 0;
         synchronized (recentSeenRequests) {
@@ -332,12 +338,6 @@ public class Node {
         }
         recentSeenRequestsMissCount.getAndIncrement();
 
-
-        if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
-            log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
-            recentSeenRequestsMissCount.set(0L);
-            recentSeenRequestsHitCount.set(0L);
-        }
 
         if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
             //Random Tip Request

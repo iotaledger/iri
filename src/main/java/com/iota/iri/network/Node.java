@@ -61,9 +61,7 @@ public class Node {
     private double P_SEND_MILESTONE;
 
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
-    //TODO only a test - revert to 15K
-    //private LRUByteCache recentSeenBytes = new LRUByteCache(15000);
-    private LRUByteCache recentSeenBytes = new LRUByteCache(1);
+    private LRUByteCache recentSeenBytes = new LRUByteCache(15000);
 
 
     private FIFOHashNeighborCache recentSeenRequests = new FIFOHashNeighborCache(2000);
@@ -316,11 +314,6 @@ public class Node {
 
         //Timeout for recently requested Hashes from neighbor.
 
-        if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
-            log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
-            recentSeenRequestsMissCount.set(0L);
-            recentSeenRequestsHitCount.set(0L);
-        }
 
         //check if cached
         int cachedRequest = 0;
@@ -341,6 +334,11 @@ public class Node {
         }
         recentSeenRequestsMissCount.getAndIncrement();
 
+        if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
+            log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
+            recentSeenRequestsMissCount.set(0L);
+            recentSeenRequestsHitCount.set(0L);
+        }
 
         if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
             //Random Tip Request

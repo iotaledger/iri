@@ -30,7 +30,7 @@ public class UDPReceiver {
 
     private DatagramSocket socket;
 
-    private final int PROCESSOR_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors() / 2 );
+    private final int PROCESSOR_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors() * 4 );
 
     private final ExecutorService processor = new ThreadPoolExecutor(PROCESSOR_THREADS, PROCESSOR_THREADS, 5000L,
                                             TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(PROCESSOR_THREADS, true),

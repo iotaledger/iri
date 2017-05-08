@@ -165,8 +165,8 @@ public class TransactionViewModel {
         Tangle.instance().delete(transaction).get();
     }
     public boolean store() throws Exception {
-        TransactionRequester.instance().clearTransactionRequest(getHash());
         if(!exists(getHash())) {
+            TransactionRequester.instance().clearTransactionRequest(getHash());
             //log.info("Tx To save Hash: " + getHash());
             getBytes();
             getAddressHash();

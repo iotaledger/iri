@@ -28,6 +28,8 @@ public class TransactionRequester {
     private static final TransactionRequester instance = new TransactionRequester();
     private final SecureRandom random = new SecureRandom();
 
+    private final Object syncObj = new Object();
+
     public static void init(double p_REMOVE_REQUEST) {
         if(!initialized) {
             initialized = true;
@@ -43,7 +45,7 @@ public class TransactionRequester {
         }
     }
     public Hash[] getRequestedTransactions() {
-        synchronized (this) {
+        synchronized (syncObj) {
             return ArrayUtils.addAll(transactionsToRequest.stream().toArray(Hash[]::new),
                     milestoneTransactionsToRequest.stream().toArray(Hash[]::new));
         }
@@ -54,7 +56,7 @@ public class TransactionRequester {
     }
 
     boolean clearTransactionRequest(Hash hash) {
-        synchronized (this) {
+        synchronized (syncObj) {
             boolean milestone = milestoneTransactionsToRequest.remove(hash);
             boolean normal = transactionsToRequest.remove(hash);
             return normal || milestone;
@@ -63,7 +65,7 @@ public class TransactionRequester {
 
     public void requestTransaction(Hash hash, boolean milestone) throws ExecutionException, InterruptedException {
         if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(hash)) {
-            synchronized (this) {
+            synchronized (syncObj) {
                 if(milestone) {
                     transactionsToRequest.remove(hash);
                     milestoneTransactionsToRequest.add(hash);
@@ -81,24 +83,23 @@ public class TransactionRequester {
         final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
         Set<Hash> requestSet;
-        synchronized (this) {
-            if(milestone) {
-                 requestSet = milestoneTransactionsToRequest;
-                 if(requestSet.size() == 0) {
-                     requestSet = transactionsToRequest;
-                 }
-            } else {
-                requestSet = transactionsToRequest;
-                if(requestSet.size() == 0) {
-                    requestSet = milestoneTransactionsToRequest;
-                }
+        if(milestone) {
+             requestSet = milestoneTransactionsToRequest;
+             if(requestSet.size() == 0) {
+                 requestSet = transactionsToRequest;
+             }
+        } else {
+            requestSet = transactionsToRequest;
+            if(requestSet.size() == 0) {
+                requestSet = milestoneTransactionsToRequest;
             }
-            while(requestSet.size() != 0) {
-                //hash = (Hash) requestSet.toArray()[random.nextInt(requestSet.size())];
+        }
+        synchronized (syncObj) {
+            while (requestSet.size() != 0) {
                 Iterator<Hash> iterator = requestSet.iterator();
                 hash = iterator.next();
                 iterator.remove();
-                if(TransactionViewModel.exists(hash)) {
+                if (TransactionViewModel.exists(hash)) {
                     log.info("Removed existing tx from request list: " + hash);
                 } else {
                     requestSet.add(hash);
@@ -108,7 +109,7 @@ public class TransactionRequester {
         }
 
         if(random.nextDouble() < P_REMOVE_REQUEST && !requestSet.equals(milestoneTransactionsToRequest)) {
-            synchronized (this) {
+            synchronized (syncObj) {
                 transactionsToRequest.remove(hash);
             }
         }

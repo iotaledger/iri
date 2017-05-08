@@ -372,12 +372,7 @@ public class Node {
                 log.error("Error fetching transaction to request.", e);
             }
         } else {
-            //TODO remove or optimize "isHashInRequests" to O(1), only used for metering
             //trytes not found
-            if (!TransactionRequester.instance().isHashInRequests(requestedHash) && !requestedHash.equals(Hash.NULL_HASH)) {
-                //hash isn't in node's request pool
-                log.info("not found && not in req queue: {} from: {}", requestedHash,neighbor.getAddress());
-            }
         }
 
 

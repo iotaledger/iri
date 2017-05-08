@@ -25,7 +25,7 @@ public class UDPReceiver {
     private static final UDPReceiver instance = new UDPReceiver();
     private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
-    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private DatagramSocket socket;

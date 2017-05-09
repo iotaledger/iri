@@ -2,6 +2,8 @@ package com.iota.iri.network;
 
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
@@ -12,6 +14,7 @@ import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
+import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
@@ -37,6 +40,7 @@ public class Node {
     public  static final int TRANSACTION_PACKET_SIZE = 1653;
     private static final int QUEUE_SIZE = 1000;
     private static final int RECV_QUEUE_SIZE = 1000;
+    private static final int REPLY_QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
     public  static final int REQUEST_HASH_SIZE = 49;
     private static double P_SELECT_MILESTONE;
@@ -46,7 +50,8 @@ public class Node {
 
     private final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
     private final ConcurrentSkipListSet<TransactionViewModel> broadcastQueue = weightQueue();
-    private final ConcurrentSkipListSet<Triple<TransactionViewModel,Hash,Neighbor>> receiveQueue = weightQueueTriple();
+    private final ConcurrentSkipListSet<Pair<TransactionViewModel,Neighbor>> receiveQueue = weightQueueTxPair();
+    private final ConcurrentSkipListSet<Pair<Hash,Neighbor>> replyQueue = weightQueueHashPair();
 
 
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
@@ -54,7 +59,7 @@ public class Node {
     private final DatagramPacket tipRequestingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+    private final ExecutorService executor = Executors.newFixedThreadPool(5);
 
     private double P_DROP_TRANSACTION;
     private static final SecureRandom rnd = new SecureRandom();
@@ -63,15 +68,8 @@ public class Node {
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
     private LRUByteCache recentSeenBytes = new LRUByteCache(15000);
 
-
-    private FIFOHashNeighborCache recentSeenRequests = new FIFOHashNeighborCache(2000);
-
-
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
     private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);
-
-    private static AtomicLong recentSeenRequestsMissCount = new AtomicLong(0L);
-    private static AtomicLong recentSeenRequestsHitCount = new AtomicLong(0L);
 
     public void init(double pDropTransaction, double p_SELECT_MILESTONE, double pSendMilestone, String neighborList) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
@@ -93,6 +91,8 @@ public class Node {
         executor.submit(spawnTipRequesterThread());
         executor.submit(spawnNeighborDNSRefresherThread());
         executor.submit(spawnProcessReceivedThread());
+        executor.submit(spawnReplyToRequestThread());
+
         TipsViewModel.loadTipHashes();
         executor.shutdown();
     }
@@ -169,7 +169,7 @@ public class Node {
         return Optional.of(hostAddress);
     }
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
-        TransactionViewModel receivedTransactionViewModel;
+        TransactionViewModel receivedTransactionViewModel = null;
 
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
@@ -187,18 +187,28 @@ public class Node {
                     break;
                 }
                 try {
-                    final int byteHash = ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE).hashCode();
+
+                    //Transaction bytes
+
+                    //final int byteHash = ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE).hashCode();
+                    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                    digest.update(receivedData, 0, TransactionViewModel.SIZE);
+                    ByteBuffer byteHash = ByteBuffer.wrap(digest.digest());
+                    
                     //check if cached
                     synchronized (recentSeenBytes) {
                         receivedTransactionViewModel = recentSeenBytes.get(byteHash);
-
                     }
+
                     if (receivedTransactionViewModel == null) {
                         //if not, then validate
                         receivedTransactionViewModel = TransactionValidator.validate(receivedData);
+
+                        //if valid - add to receive queue (receivedTransactionViewModel, neighbor)
+                        addReceivedDataToReceiveQueue(receivedTransactionViewModel, neighbor);
+
                         synchronized (recentSeenBytes) {
                             recentSeenBytes.set(byteHash, receivedTransactionViewModel);
-
                         }
 
                         recentSeenBytesMissCount.getAndIncrement();
@@ -214,16 +224,24 @@ public class Node {
                         recentSeenBytesHitCount.set(0L);
                     }
                     
+                } catch (NoSuchAlgorithmException e) {
+                    log.error("MessageDigest: "+e);
                 } catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();
                     break;
                 }
 
-                Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
+                //Request bytes
 
-                //if valid - add to queue (receivedTransactionViewModel, requestedHash, neighbor)
-                addReceivedDataToQueue(receivedTransactionViewModel, requestedHash, neighbor);
+                //add request to reply queue (requestedHash, neighbor)
+                Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
+                if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
+                    //requesting a random tip
+                    requestedHash = Hash.NULL_HASH;
+                }
+
+                addReceivedDataToReplyQueue(requestedHash, neighbor);
 
             }
         }
@@ -250,22 +268,37 @@ public class Node {
         }
     }
 
-    public void addReceivedDataToQueue(TransactionViewModel receivedTransactionViewModel, Hash requestedHash, Neighbor neighbor) {
-        receiveQueue.add(new ImmutableTriple<>(receivedTransactionViewModel,requestedHash,neighbor));
+    public void addReceivedDataToReceiveQueue(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
+        receiveQueue.add(new ImmutablePair<>(receivedTransactionViewModel,neighbor));
         if (receiveQueue.size() > RECV_QUEUE_SIZE) {
             receiveQueue.pollLast();
         }
 
     }
 
-    public void processReceivedDataFromQueue() {
-        final Triple<TransactionViewModel, Hash, Neighbor> recievedData = receiveQueue.pollFirst();
-        if (recievedData != null) {
-            processReceivedData(recievedData.getLeft(),recievedData.getMiddle(),recievedData.getRight());
+    public void addReceivedDataToReplyQueue(Hash requestedHash, Neighbor neighbor) {
+        replyQueue.add(new ImmutablePair<>(requestedHash,neighbor));
+        if (replyQueue.size() > REPLY_QUEUE_SIZE) {
+            replyQueue.pollLast();
         }
     }
 
-    public void processReceivedData(TransactionViewModel receivedTransactionViewModel, Hash requestedHash, Neighbor neighbor) {
+
+    public void processReceivedDataFromQueue() {
+        final Pair<TransactionViewModel, Neighbor> receivedData = receiveQueue.pollFirst();
+        if (receivedData != null) {
+            processReceivedData(receivedData.getLeft(),receivedData.getRight());
+        }
+    }
+
+    public void replyToRequestFromQueue() {
+        final Pair<Hash, Neighbor> receivedData = replyQueue.pollFirst();
+        if (receivedData != null) {
+            replyToRequest(receivedData.getLeft(),receivedData.getRight());
+        }
+    }
+
+    public void processReceivedData(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
 
         TransactionViewModel transactionViewModel = null;
         Hash transactionPointer;
@@ -298,9 +331,7 @@ public class Node {
             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis());
             try {
                 receivedTransactionViewModel.update("arrivalTime");
-                receivedTransactionViewModel.updateSender(neighbor.getAddress().toString()); //TODO validate this change
-//                receivedTransactionViewModel.updateSender(neighbor instanceof TCPNeighbor?
-//                        senderAddress.toString(): neighbor.getAddress().toString() );
+                receivedTransactionViewModel.updateSender(neighbor.getAddress().toString());
 
             } catch (Exception e) {
                 log.error("Error updating transactions.", e);
@@ -309,38 +340,15 @@ public class Node {
             broadcast(receivedTransactionViewModel);
         }
 
+    }
+
+    public void replyToRequest(Hash requestedHash, Neighbor neighbor) {
+
+        TransactionViewModel transactionViewModel = null;
+        Hash transactionPointer;
 
         //retrieve requested transaction
-
-        //Timeout for recently requested Hashes from neighbor.
-
-
-        //check if cached
-        int cachedRequest = 0;
-        synchronized (recentSeenRequests) {
-            cachedRequest = recentSeenRequests.get(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor));
-        }
-
-        if (cachedRequest % 10 != 0) {
-            //if cached, then drop request - Timeout
-            recentSeenRequests.set(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor), cachedRequest+1);
-            recentSeenRequestsHitCount.getAndIncrement();
-            return;
-        }
-
-        //if not cached, then reply to request and cache.
-        synchronized (recentSeenRequests) {
-            recentSeenRequests.set(new ImmutablePair<Hash,Neighbor>(requestedHash,neighbor), 1);
-        }
-        recentSeenRequestsMissCount.getAndIncrement();
-
-        if (((recentSeenRequestsMissCount.get() + recentSeenRequestsHitCount.get()) % 50000L == 0)) {
-            log.info("recentSeenRequests cache hit/miss ratio: "+recentSeenRequestsHitCount.get()+"/"+recentSeenRequestsMissCount.get());
-            recentSeenRequestsMissCount.set(0L);
-            recentSeenRequestsHitCount.set(0L);
-        }
-
-        if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
+        if (requestedHash.equals(Hash.NULL_HASH)) {
             //Random Tip Request
             try {
                 if (TransactionRequester.instance().numberOfTransactionsToRequest() > 0) {
@@ -357,8 +365,9 @@ public class Node {
         } else {
             //find requested trytes
             try {
-                transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
-                log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
+                //transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
+                transactionViewModel = TransactionViewModel.fromHash(new Hash(requestedHash.bytes(), 0, TransactionRequester.REQUEST_HASH_SIZE));
+                //log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
             } catch (Exception e) {
                 log.error("Error while searching for transaction.", e);
             }
@@ -373,14 +382,8 @@ public class Node {
                 log.error("Error fetching transaction to request.", e);
             }
         } else {
-            //TODO remove or optimize "isHashInRequests" to O(1), only used for metering
             //trytes not found
-            if (!TransactionRequester.instance().isHashInRequests(requestedHash) && !requestedHash.equals(Hash.NULL_HASH)) {
-                //hash isn't in node's request pool
-                log.info("not found && not in req queue: {} from: {}", requestedHash,neighbor.getAddress());
-            }
         }
-
 
     }
 
@@ -446,7 +449,7 @@ public class Node {
                     long now = System.currentTimeMillis();
                     if ((now - lastTime) > 10000L) {
                         lastTime = now;
-                        log.info("toProcess = {} , toBroadcast = {} , toRequest = {} / totalTransactions = {}", getBroadcastQueueSize(),getReceiveQueueSize() ,TransactionRequester.instance().numberOfTransactionsToRequest() , TransactionViewModel.getNumberOfStoredTransactions());
+                        log.info("activeDBThreads = {}, toProcess = {} , toBroadcast = {} , toRequest = {} , toReply = {} / totalTransactions = {}", Tangle.instance().getActiveThreads(), getReceiveQueueSize(), getBroadcastQueueSize() ,TransactionRequester.instance().numberOfTransactionsToRequest() ,getReplyQueueSize(), TransactionViewModel.getNumberOfStoredTransactions());
                     }
 
                     Thread.sleep(5000);
@@ -472,9 +475,28 @@ public class Node {
                     log.error("Process Received Data Thread Exception:", e);
                 }
             }
-            log.info("Shutting down Broadcaster Thread");
+            log.info("Shutting down Process Received Data Thread");
         };
     }
+
+    private Runnable spawnReplyToRequestThread() {
+        return () -> {
+
+            log.info("Spawning Reply To Request Thread");
+
+            while (!shuttingDown.get()) {
+
+                try {
+                    Node.instance().replyToRequestFromQueue();
+                    Thread.sleep(1);
+                } catch (final Exception e) {
+                    log.error("Reply To Request Thread Exception:", e);
+                }
+            }
+            log.info("Shutting down Reply To Request Thread");
+        };
+    }
+
 
     private static ConcurrentSkipListSet<TransactionViewModel> weightQueue() {
         return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
@@ -489,9 +511,24 @@ public class Node {
             return transaction2.weightMagnitude - transaction1.weightMagnitude;
         });
     }
+    //TODO generalize these weightQueues
+    private static ConcurrentSkipListSet<Pair<Hash,Neighbor>> weightQueueHashPair() {
+        return new ConcurrentSkipListSet<Pair<Hash,Neighbor>>((transaction1, transaction2) -> {
+            Hash tx1 = transaction1.getLeft();
+            Hash tx2 = transaction2.getLeft();
 
-    private static ConcurrentSkipListSet<Triple<TransactionViewModel,Hash,Neighbor>> weightQueueTriple() {
-        return new ConcurrentSkipListSet<Triple<TransactionViewModel,Hash,Neighbor>>((transaction1, transaction2) -> {
+            for (int i = Hash.SIZE_IN_BYTES; i-- > 0;) {
+                if (tx1.bytes()[i] != tx2.bytes()[i]) {
+                    return tx2.bytes()[i] - tx1.bytes()[i];
+                }
+            }
+            return 0;
+
+        });
+    }
+
+    private static ConcurrentSkipListSet<Pair<TransactionViewModel,Neighbor>> weightQueueTxPair() {
+        return new ConcurrentSkipListSet<Pair<TransactionViewModel,Neighbor>>((transaction1, transaction2) -> {
             TransactionViewModel tx1 = transaction1.getLeft();
             TransactionViewModel tx2 = transaction2.getLeft();
 
@@ -579,6 +616,9 @@ public class Node {
         return receiveQueue.size();
     }
 
+    public int getReplyQueueSize() {
+        return replyQueue.size();
+    }
 
     public class LRUHashCache {
 
@@ -615,14 +655,14 @@ public class Node {
     public class LRUByteCache {
 
         private int capacity;
-        private LinkedHashMap<Integer,TransactionViewModel> map;
+        private LinkedHashMap<ByteBuffer,TransactionViewModel> map;
 
         public LRUByteCache(int capacity) {
             this.capacity = capacity;
             this.map = new LinkedHashMap<>();
         }
 
-        public TransactionViewModel get(Integer key) {
+        public TransactionViewModel get(ByteBuffer key) {
             TransactionViewModel value = this.map.get(key);
             if (value == null) {
                 value = null;
@@ -632,11 +672,11 @@ public class Node {
             return value;
         }
 
-        public void set(Integer key, TransactionViewModel value) {
+        public void set(ByteBuffer key, TransactionViewModel value) {
             if (this.map.containsKey(key)) {
                 this.map.remove(key);
             } else if (this.map.size() == this.capacity) {
-                Iterator<Integer> it = this.map.keySet().iterator();
+                Iterator<ByteBuffer> it = this.map.keySet().iterator();
                 it.next();
                 it.remove();
             }
@@ -644,36 +684,4 @@ public class Node {
         }
     }
 
-    public class FIFOHashNeighborCache {
-
-        private int capacity;
-        private LinkedHashMap<Pair<Hash,Neighbor>,Integer> map;
-
-        public FIFOHashNeighborCache(int capacity) {
-            this.capacity = capacity;
-            this.map = new LinkedHashMap<>();
-        }
-
-        public int get(Pair<Hash,Neighbor> key) {
-            Integer value = this.map.get(key);
-            if (value == null) {
-                value = 0;
-            } else {
-                //FIFO
-                //this.set(key, value);
-            }
-            return value;
-        }
-
-        public void set(Pair<Hash,Neighbor> key, int value) {
-            if (this.map.containsKey(key)) {
-                this.map.remove(key);
-            } else if (this.map.size() == this.capacity) {
-                Iterator<Pair<Hash,Neighbor>> it = this.map.keySet().iterator();
-                it.next();
-                it.remove();
-            }
-            map.put(key, value);
-        }
-    }
 }

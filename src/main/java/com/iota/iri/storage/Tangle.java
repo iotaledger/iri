@@ -26,7 +26,10 @@ public class Tangle {
         for(PersistenceProvider provider: this.persistenceProviders) {
             provider.init();
         }
-        //new TransactionViewModel(TransactionViewModel.NULL_TRANSACTION_BYTES, new int[TransactionViewModel.TRINARY_SIZE], null).store();
+    }
+
+    public int getActiveThreads() {
+        return ((ThreadPoolExecutor) executor).getActiveCount();
     }
 
 

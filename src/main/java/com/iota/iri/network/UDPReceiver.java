@@ -25,12 +25,12 @@ public class UDPReceiver {
     private static final UDPReceiver instance = new UDPReceiver();
     private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
-    private final ExecutorService executor = Executors.newFixedThreadPool(4);
+
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private DatagramSocket socket;
 
-    private final int PROCESSOR_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors() / 2 );
+    private final int PROCESSOR_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors() * 4 );
 
     private final ExecutorService processor = new ThreadPoolExecutor(PROCESSOR_THREADS, PROCESSOR_THREADS, 5000L,
                                             TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(PROCESSOR_THREADS, true),

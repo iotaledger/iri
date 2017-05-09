@@ -137,13 +137,16 @@ class ReplicatorSourceProcessor implements Runnable {
                     while (crc32_string.length() < ReplicatorSinkProcessor.CRC32_BYTES) crc32_string = "0"+crc32_string;
                     byte [] crc32_bytes = crc32_string.getBytes();
                     
+                    boolean crcError = false;
                     for (int i=0; i<ReplicatorSinkProcessor.CRC32_BYTES; i++) {
                         if (crc32_bytes[i] != data[TRANSACTION_PACKET_SIZE + i]) {
-                            log.error("Checksum error");
+                            crcError = true;
+                            break;
                         }
                     }
-                    
-                    Node.instance().preProcessReceivedData(data, address, "tcp");
+                    if (!crcError) {
+                        Node.instance().preProcessReceivedData(data, address, "tcp");
+                    }
                 }
                   catch (IllegalStateException e) {
                     log.error("Queue is full for neighbor IP {}",inet_socket_address.getAddress().getHostAddress());

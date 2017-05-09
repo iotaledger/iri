@@ -2,6 +2,8 @@ package com.iota.iri.network;
 
 import java.net.*;
 import java.nio.ByteBuffer;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
@@ -173,7 +175,7 @@ public class Node {
         return Optional.of(hostAddress);
     }
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
-        TransactionViewModel receivedTransactionViewModel;
+        TransactionViewModel receivedTransactionViewModel = null;
 
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
@@ -194,7 +196,11 @@ public class Node {
 
                     //Transaction bytes
 
-                    final int byteHash = ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE).hashCode();
+                    //final int byteHash = ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE).hashCode();
+                    MessageDigest digest = MessageDigest.getInstance("SHA-256");
+                    digest.update(receivedData, 0, TransactionViewModel.SIZE);
+                    ByteBuffer byteHash = ByteBuffer.wrap(digest.digest());
+                    
                     //check if cached
                     synchronized (recentSeenBytes) {
                         receivedTransactionViewModel = recentSeenBytes.get(byteHash);
@@ -224,6 +230,8 @@ public class Node {
                         recentSeenBytesHitCount.set(0L);
                     }
                     
+                } catch (NoSuchAlgorithmException e) {
+                    log.error("MessageDigest: "+e);
                 } catch (final RuntimeException e) {
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();
@@ -678,14 +686,14 @@ public class Node {
     public class LRUByteCache {
 
         private int capacity;
-        private LinkedHashMap<Integer,TransactionViewModel> map;
+        private LinkedHashMap<ByteBuffer,TransactionViewModel> map;
 
         public LRUByteCache(int capacity) {
             this.capacity = capacity;
             this.map = new LinkedHashMap<>();
         }
 
-        public TransactionViewModel get(Integer key) {
+        public TransactionViewModel get(ByteBuffer key) {
             TransactionViewModel value = this.map.get(key);
             if (value == null) {
                 value = null;
@@ -695,11 +703,11 @@ public class Node {
             return value;
         }
 
-        public void set(Integer key, TransactionViewModel value) {
+        public void set(ByteBuffer key, TransactionViewModel value) {
             if (this.map.containsKey(key)) {
                 this.map.remove(key);
             } else if (this.map.size() == this.capacity) {
-                Iterator<Integer> it = this.map.keySet().iterator();
+                Iterator<ByteBuffer> it = this.map.keySet().iterator();
                 it.next();
                 it.remove();
             }

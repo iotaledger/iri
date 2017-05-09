@@ -14,6 +14,7 @@ import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
+import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.ImmutableTriple;
@@ -448,7 +449,7 @@ public class Node {
                     long now = System.currentTimeMillis();
                     if ((now - lastTime) > 10000L) {
                         lastTime = now;
-                        log.info("toProcess = {} , toBroadcast = {} , toRequest = {} , toReply = {} / totalTransactions = {}", getReceiveQueueSize(), getBroadcastQueueSize() ,TransactionRequester.instance().numberOfTransactionsToRequest() ,getReplyQueueSize(), TransactionViewModel.getNumberOfStoredTransactions());
+                        log.info("activeDBThreads = {}, toProcess = {} , toBroadcast = {} , toRequest = {} , toReply = {} / totalTransactions = {}", Tangle.instance().getActiveThreads(), getReceiveQueueSize(), getBroadcastQueueSize() ,TransactionRequester.instance().numberOfTransactionsToRequest() ,getReplyQueueSize(), TransactionViewModel.getNumberOfStoredTransactions());
                     }
 
                     Thread.sleep(5000);

@@ -74,18 +74,17 @@ class ReplicatorSinkProcessor implements Runnable {
                     while (!ReplicatorSinkPool.instance().shutdown) {
                         try {
                             ByteBuffer message = neighbor.getNextMessage();
-                            if (message == null && (neighbor.getSink().isClosed() || !neighbor.getSink().isConnected())) {
-                                log.info("----- NETWORK INFO ----- Sink {} got disconnected", remoteAddress);
-                                return;
-                            } else {
-                                if ((neighbor.getSink() != null && neighbor.getSink().isConnected())
+                            if (neighbor.getSink() != null) { 
+                                if (neighbor.getSink().isClosed() || !neighbor.getSink().isConnected()) {
+                                    log.info("----- NETWORK INFO ----- Sink {} got disconnected", remoteAddress);
+                                    return;
+                                } else {
+                                    if ((message != null) && (neighbor.getSink() != null && neighbor.getSink().isConnected())
                                         && (neighbor.getSource() != null && neighbor.getSource().isConnected())) {
-                                    byte[] bytes = message.array();
+                                    
+                                        byte[] bytes = message.array();
 
-                                    if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
-                                        boolean resend;
-                                        do {
-                                            resend = false;
+                                        if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
                                             try {
                                                 CRC32 crc32 = new CRC32();                                        
                                                 crc32.update(message.array());
@@ -95,24 +94,22 @@ class ReplicatorSinkProcessor implements Runnable {
                                                 out.write(crc32_string.getBytes());
                                                 out.flush();
                                             } catch (IOException e2) {
-                                                if (!neighbor.getSink().isClosed()
-                                                        && neighbor.getSink().isConnected()) {
+                                                if (!neighbor.getSink().isClosed() && neighbor.getSink().isConnected()) {
                                                     out.close();
                                                     out = neighbor.getSink().getOutputStream();
-                                                    resend = true;
                                                 } else {
                                                     log.info("----- NETWORK INFO ----- Sink {} thread terminating",
-                                                            remoteAddress);
+                                                        remoteAddress);
                                                     return;
                                                 }
                                             }
-                                        } while (resend);
+                                        }
                                     }
                                 }
                             }
                         } catch (InterruptedException e) {
                             log.error("Interrupted while waiting for send buffer");
-                        }
+                        }                        
                     }
                 }
             }

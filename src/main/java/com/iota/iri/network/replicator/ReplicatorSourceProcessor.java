@@ -164,9 +164,9 @@ class ReplicatorSourceProcessor implements Runnable {
                     ReplicatorSinkPool.instance().shutdownSink(neighbor);
                     neighbor.setSource(null);
                     neighbor.setSink(null);
-                    if (!neighbor.isFlagged() ) {
-                       Node.instance().getNeighbors().remove(neighbor);   
-                    }
+                    //if (!neighbor.isFlagged() ) {
+                    //   Node.instance().getNeighbors().remove(neighbor);   
+                    //}
                 }                   
             }
         }

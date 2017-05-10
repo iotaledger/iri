@@ -46,7 +46,12 @@ public class TipsManager {
     private void scanTipsForSolidity() throws Exception {
         for(int i = 0; i++ < TipsViewModel.nonSolidSize();) {
             Hash hash = TipsViewModel.getRandomNonSolidTipHash();
-            if(TransactionRequester.instance().checkSolidity(hash, false)) {
+            boolean isTip = true;
+            if(TransactionViewModel.fromHash(hash).getApprovers().length != 0) {
+                TipsViewModel.removeTipHash(hash);
+                isTip = false;
+            }
+            if(TransactionRequester.instance().checkSolidity(hash, false) && isTip) {
                 TipsViewModel.setSolid(hash);
             }
             Thread.sleep(1);

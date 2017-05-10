@@ -54,3 +54,18 @@ Option | Shortened version | Description | Example Input
 `--remote` | | Remotely access your node and send API commands | `--remote`
 `--remote-auth` | | Require authentication password for accessing remotely. Requires a correct `username:hashedpassword` combination | `--remote-auth iotatoken:LL9EZFNCHZCMLJLVUBCKJSWKFEXNYRHHMYS9XQLUZRDEKUUDOCMBMRBWJEMEDDXSDPHIGQULENCRVEYMO`
 `--remote-limit-api` | | Exclude certain API calls from being able to be accessed remotely | `--remote-limit-api "attachToTangle, addNeighbors"`
+
+### INI File
+
+You can also provide an ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` flag. Here is an example INI file:
+```
+[IRI]
+PORT = 14700
+UDP_RECEIVER_PORT = 14700
+NEIGHBORS = udp://my.favorite.com:15600
+IXI_DIR = ixi
+HEADLESS = true
+DEBUG = true
+TESTNET = true
+DB_PATH = db
+```

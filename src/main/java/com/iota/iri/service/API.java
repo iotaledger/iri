@@ -346,7 +346,7 @@ public class API {
     }
 
     private AbstractResponse getTipsStatement() throws ExecutionException, InterruptedException {
-        return GetTipsResponse.create(Arrays.stream(TipsViewModel.getTips()).map(Hash::toString).collect(Collectors.toList()));
+        return GetTipsResponse.create(TipsViewModel.getTips().stream().map(Hash::toString).collect(Collectors.toList()));
     }
 
     private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {

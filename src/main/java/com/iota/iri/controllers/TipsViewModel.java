@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
  */
 public class TipsViewModel {
 
-    private static List<Hash> tips = new ArrayList<>();
-    private static List<Hash> solidTips = new ArrayList<>();
+    private static Set<Hash> tips = new HashSet<>();
+    private static Set<Hash> solidTips = new HashSet<>();
     private static SecureRandom seed = new SecureRandom();
     public static final Object sync = new Object();
 
@@ -44,22 +44,43 @@ public class TipsViewModel {
         }
     }
 
-    public static Hash[] getTips() {
-        Hash[] hashes;
+    public static Set<Hash> getTips() {
+        Set<Hash> hashes = new HashSet<>();
         synchronized (sync) {
-            hashes = ArrayUtils.addAll(tips.stream().toArray(Hash[]::new), solidTips.stream().toArray(Hash[]::new));
+            hashes.addAll(tips);
+            hashes.addAll(solidTips);
         }
         return hashes;
     }
     public static Hash getRandomSolidTipHash() {
         synchronized (sync) {
-            return solidTips.size() != 0 ? solidTips.get(seed.nextInt(solidTips.size())) : getRandomNonSolidTipHash();
+            int size = solidTips.size();
+            if(size == 0) {
+                return null;
+            }
+            int index = seed.nextInt(size);
+            Iterator<Hash> hashIterator;
+            hashIterator = solidTips.iterator();
+            Hash hash = null;
+            while(index-- > 1 && hashIterator.hasNext()){ hash = hashIterator.next();}
+            return hash;
+            //return solidTips.size() != 0 ? solidTips.get(seed.nextInt(solidTips.size())) : getRandomNonSolidTipHash();
         }
     }
 
     public static Hash getRandomNonSolidTipHash() {
         synchronized (sync) {
-            return tips.size() != 0 ? tips.get(seed.nextInt(tips.size())) : null;
+            int size = tips.size();
+            if(size == 0) {
+                return null;
+            }
+            int index = seed.nextInt(size);
+            Iterator<Hash> hashIterator;
+            hashIterator = tips.iterator();
+            Hash hash = null;
+            while(index-- > 1 && hashIterator.hasNext()){ hash = hashIterator.next();}
+            return hash;
+            //return tips.size() != 0 ? tips.get(seed.nextInt(tips.size())) : null;
         }
     }
 
@@ -70,10 +91,10 @@ public class TipsViewModel {
             }
             int index = seed.nextInt(size());
             if(index >= tips.size()) {
-                index -= tips.size();
-                return solidTips.get(index);
+                return getRandomSolidTipHash();
+            } else {
+                return getRandomNonSolidTipHash();
             }
-            return tips.get(index);
         }
     }
 

@@ -9,9 +9,11 @@ import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
+import org.rocksdb.util.SizeUnit;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -681,12 +683,74 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             throw e;
         }
         Thread.yield();
-        bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
-        BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
+
+        File pathToLogDir = Paths.get(logPath).toFile();
+        if(!pathToLogDir.exists() || !pathToLogDir.isDirectory()) {
+            pathToLogDir.mkdir();
+        }
+
+        RocksEnv.getDefault()
+                .setBackgroundThreads(Runtime.getRuntime().availableProcessors()/2, RocksEnv.FLUSH_POOL)
+                .setBackgroundThreads(Runtime.getRuntime().availableProcessors()/2, RocksEnv.COMPACTION_POOL)
+        /*
+                .setBackgroundThreads(Runtime.getRuntime().availableProcessors())
+        */
+        ;
+
         options = new DBOptions()
                 .setCreateIfMissing(true)
                 .setCreateMissingColumnFamilies(true)
-                .setDbLogDir(logPath);
+                .setDbLogDir(logPath)
+                .setMaxLogFileSize(SizeUnit.MB)
+                .setMaxManifestFileSize(SizeUnit.MB)
+                .setMaxOpenFiles(10000)
+                .setMaxBackgroundCompactions(1)
+                /*
+                .setBytesPerSync(4 * SizeUnit.MB)
+                .setMaxTotalWalSize(16 * SizeUnit.MB)
+                */
+        ;
+        options.setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
+
+        bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
+        PlainTableConfig plainTableConfig = new PlainTableConfig();
+        BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
+        blockBasedTableConfig
+                .setFilter(bloomFilter)
+                .setCacheNumShardBits(2)
+                .setBlockSizeDeviation(10)
+                .setBlockRestartInterval(16)
+                .setBlockCacheSize(200 * SizeUnit.KB)
+                .setBlockCacheCompressedNumShardBits(10)
+                .setBlockCacheCompressedSize(32 * SizeUnit.KB)
+                /*
+                .setHashIndexAllowCollision(true)
+                .setCacheIndexAndFilterBlocks(true)
+                */
+                ;
+        options.setAllowConcurrentMemtableWrite(true);
+
+        MemTableConfig hashSkipListMemTableConfig = new HashSkipListMemTableConfig()
+                .setHeight(9)
+                .setBranchingFactor(9)
+                .setBucketCount(2 * SizeUnit.MB);
+        MemTableConfig hashLinkedListMemTableConfig = new HashLinkedListMemTableConfig().setBucketCount(100000);
+        MemTableConfig vectorTableConfig = new VectorMemTableConfig().setReservedSize(10000);
+        MemTableConfig skipListMemTableConfig = new SkipListMemTableConfig();
+
+
+        MergeOperator mergeOperator = new StringAppendOperator();
+        ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions()
+                .setMergeOperator(mergeOperator)
+                .setTableFormatConfig(blockBasedTableConfig)
+                .setMaxWriteBufferNumber(2)
+                .setWriteBufferSize(2 * SizeUnit.MB)
+                .setCompactionStyle(CompactionStyle.UNIVERSAL)
+                .setCompressionType(CompressionType.SNAPPY_COMPRESSION)
+                /*
+                */
+                ;
+        //columnFamilyOptions.setMemTableConfig(hashSkipListMemTableConfig);
 
         List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
         List<ColumnFamilyDescriptor> familyDescriptors = Arrays.stream(columnFamilyNames)

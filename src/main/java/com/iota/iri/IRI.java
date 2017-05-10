@@ -234,7 +234,6 @@ public class IRI {
                 "[{-u,--udp-receiver-port} 14600] " +
                 "[{-t,--tcp-receiver-port} 15600] " +
                 "[{-d,--debug} false] " +
-                "[{--export} false]" +
                 "[{--testnet} false]" +
                 "[{--remote} false]" +
                 "[{--remote-auth} string]" +

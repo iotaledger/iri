@@ -4,7 +4,7 @@ This is the testnet branch of the main IRI repository, as this is a IOTA referen
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.3.6 Testnet Release
+* **Latest release:** 1.1.3.7 Testnet Release
 * **License:** GPLv3
 
 # Purpose of this repository
@@ -46,7 +46,7 @@ This will create a `target` directory in which you will find the executable jar 
 Option | Shortened version | Description | Example Input
 --- | --- | --- | --- 
 `--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14800`
-`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14265"`
+`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14265 udp://[2001:db8:a0b:12f0::1]:14265"`
 `--config` | `-c` | Config INI file that can be used instead of CLI options. See more below | `-c iri.ini`
 `--udp-receiver-port` | `-u` | UDP receiver port | `-u 14800`
 `--tcp-receiver-port` | `-t` | TCP receiver port | `-t 14800`

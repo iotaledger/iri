@@ -1,15 +1,10 @@
-## IOTA Testnet IRI
-
-##Dev branch build status: 
-[![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=master)](https://travis-ci.org/iotaledger/iri)
-
-# Introduction
+## IOTA: Refactored Testnet Version
 
 This is the testnet branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for the testnet we have setup. It is a complete [[IOTA]](http://www.iotatoken.com/) Node with a JSON-REST HTTP interface.
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.3.7 Testnet Release
+* **Latest release:** 1.1.3.6 Testnet Release
 * **License:** GPLv3
 
 # Purpose of this repository
@@ -36,56 +31,26 @@ You have two options, the preferred option is that you compile yourself. The sec
 
 Make sure to have Maven and Java 8 installed on your computer. When cloning the project from github, also make sure to get the `testnet` branch.
 
-#### To compile
+#### To compile & package
 ```
 $ git clone https://github.com/iotaledger/iri -b testnet
 $ mvn clean compile
-```
-
-#### To create an executable build.
-
-```
 $ mvn package
 ```
 
-This will create in the `target` directory of the project an executable jar package called IRI-${release-version}.jar . For instance `iri-1.1.1.jar`
-
-#### To execute
-
-* To execute:
-
-`java -jar IRI-${version}.jar --testnet [{-p,--port} 14600] [{-u,--udp-receiver-port} 14600] [{-t,--tcp-receiver-port} 15600] [{-n,--neighbors} '<list of neighbors>']`
-
-Where
-
---testnet  defines that is is a testnet version
-
-`-p or --port define the API port (MANDATORY)`
+This will create a `target` directory in which you will find the executable jar file that you can use for the 
 
 
-the following parameters are optional:
+### Command Line Options 
 
-`-c or --config define the name of an .ini-style configuration file
-
-`-n specify the list of neighbors Please note: neighbors must be defined between '' or "" depends on the Terminal`
-
-`-u or --ucp-receiver-port define the Transaction receiver port for UDP connection (default 14600)`
-
-`-t or --ucp-receiver-port define the Transaction receiver port for TCP connection (default 15600)`
-
---remote  defines that API access from over the Internet is possible
-
---remote-auth 'credentials-string'  defines the credentials for HTTP basic authentication in the format 'user:password'. Password is either clear text or IRI curl hash of the password.
-
---remote-limit-api 'string'  defines a list of commands that are not allowed to execute over the remote API access.
-
-`-d or --debug prints on the standard output, more debug informations`
-
-
-`-h prints the usage`
- 
-For instance
-
-`java -jar iri-1.1.3.7.jar -p 14600 --testnet -n 'udp://1.1.3.7:14600 udp://2.2.2.2:14600'`
-
-
+Option | Shortened version | Description | Example Input
+--- | --- | --- | --- 
+`--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14800`
+`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14265"`
+`--config` | `-c` | Config INI file that can be used instead of CLI options. See more below | `-c iri.ini`
+`--udp-receiver-port` | `-u` | UDP receiver port | `-u 14800`
+`--tcp-receiver-port` | `-t` | TCP receiver port | `-t 14800`
+`--testnet` | | Makes it possible to run IRI with the IOTA testnet | `--testnet`
+`--remote` | | Remotely access your node and send API commands | `--remote`
+`--remote-auth` | | Require authentication password for accessing remotely. Requires a correct `username:hashedpassword` combination | `--remote-auth iotatoken:LL9EZFNCHZCMLJLVUBCKJSWKFEXNYRHHMYS9XQLUZRDEKUUDOCMBMRBWJEMEDDXSDPHIGQULENCRVEYMO`
+`--remote-limit-api` | | Exclude certain API calls from being able to be accessed remotely | `--remote-limit-api "attachToTangle, addNeighbors"`

@@ -9,7 +9,7 @@ This is the testnet branch of the main IRI repository, as this is a IOTA referen
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](https://iota.readme.io/docs/syncing-to-the-network).
 
-* **Latest release:** 1.1.3.6 Testnet Release
+* **Latest release:** 1.1.3.7 Testnet Release
 * **License:** GPLv3
 
 # Purpose of this repository
@@ -54,29 +54,38 @@ This will create in the `target` directory of the project an executable jar pack
 
 * To execute:
 
-`java -jar IRI-${version}.jar [{-p,--port} 14265] [{-r,--receiver-port} 14265] [{-c,--enabled-cors} *] [{-h}] [[--headless}] [{-d,--debug}] [{-n,--neighbors} '<list of neighbors>'] [{-e,--experimental}]`
+`java -jar IRI-${version}.jar --testnet [{-p,--port} 14600] [{-u,--udp-receiver-port} 14600] [{-t,--tcp-receiver-port} 15600] [{-n,--neighbors} '<list of neighbors>']`
 
 Where
 
+--testnet  defines that is is a testnet version
+
 `-p or --port define the API port (MANDATORY)`
+
 
 the following parameters are optional:
 
+`-c or --config define the name of an .ini-style configuration file
+
 `-n specify the list of neighbors Please note: neighbors must be defined between '' or "" depends on the Terminal`
 
-`-r or --receiver-port define the Transaction receiver port`
+`-u or --ucp-receiver-port define the Transaction receiver port for UDP connection (default 14600)`
 
-`-c or --enabled-cors enable the API cross origin filter: cors domain defined between ''`
+`-t or --ucp-receiver-port define the Transaction receiver port for TCP connection (default 15600)`
 
-`--headless disable the logo (logo still WIP)`
+--remote  defines that API access from over the Internet is possible
+
+--remote-auth 'credentials-string'  defines the credentials for HTTP basic authentication in the format 'user:password'. Password is either clear text or IRI curl hash of the password.
+
+--remote-limit-api 'string'  defines a list of commands that are not allowed to execute over the remote API access.
 
 `-d or --debug prints on the standard output, more debug informations`
 
-`-e or --experimental activates experimental features. Current feature: Random Tip Selector Broadcaster.`
 
 `-h prints the usage`
  
 For instance
 
-`java -jar target/iri-1.1.1.jar -p 14265 -n 'udp://1.1.1.1:14265 udp://2.2.2.2:14265' -d -c 'iotatoken.com'`
+`java -jar iri-1.1.3.7.jar -p 14600 --testnet -n 'udp://1.1.3.7:14600 udp://2.2.2.2:14600'`
+
 

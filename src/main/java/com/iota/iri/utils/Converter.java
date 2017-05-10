@@ -172,4 +172,21 @@ public class Converter {
             }
         }
     }
+    
+    public static String asciiToTrytes(String input) {
+        StringBuilder sb = new StringBuilder(80);               
+        for (int i = 0; i < input.length(); i++) {            
+            int asciiValue = input.charAt(i);
+            // If not recognizable ASCII character, return null
+            if (asciiValue > 255) {
+                return null;
+            }
+            int firstValue = asciiValue % 27;
+            int secondValue = (asciiValue - firstValue) / 27;
+            sb.append(TRYTE_ALPHABET.charAt(firstValue));
+            sb.append(TRYTE_ALPHABET.charAt(secondValue));
+        }
+        return sb.toString();
+    }
+
 }

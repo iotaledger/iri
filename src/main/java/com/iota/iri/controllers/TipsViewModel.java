@@ -1,20 +1,23 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Tip;
+import com.iota.iri.model.Transaction;
+import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 
 /**
  * Created by paul on 3/14/17 for iri-testnet.
  */
 public class TipsViewModel {
+    static final Logger log = LoggerFactory.getLogger(TipsViewModel.class);
 
     private static Set<Hash> tips = new HashSet<>();
     private static Set<Hash> solidTips = new HashSet<>();
@@ -106,10 +109,11 @@ public class TipsViewModel {
         return tips.size() + solidTips.size();
     }
 
-    public static void loadTipHashes() throws ExecutionException, InterruptedException {
-        Hash[] hashes = Arrays.stream(Tangle.instance()
-                .keysWithMissingReferences(Tip.class).get())
-                .toArray(Hash[]::new);
-        tips.addAll(Arrays.asList(hashes));
+    public static void loadTipHashes() throws Exception {
+        Set<Indexable> hashes = Tangle.instance()
+                .keysWithMissingReferences(Transaction.class);
+        if(hashes != null) {
+            tips.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
+        }
     }
 }

@@ -17,14 +17,10 @@ import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.iota.iri.controllers.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.controllers.AddressViewModel;
-import com.iota.iri.controllers.BundleViewModel;
-import com.iota.iri.controllers.MilestoneViewModel;
-import com.iota.iri.controllers.TransactionRequester;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.TipsManager;
@@ -32,7 +28,7 @@ import com.iota.iri.utils.Converter;
 
 public class Milestone {
 
-    private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
+    private static final Logger log = LoggerFactory.getLogger(Milestone.class);
 
     public static Hash latestMilestone = Hash.NULL_HASH;
     public static Hash latestSolidSubtangleMilestone = latestMilestone;
@@ -75,7 +71,7 @@ public class Milestone {
                     final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
                     final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
 
-                    Milestone.instance().updateLatestMilestone();
+                    updateLatestMilestone();
 
                     if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
 
@@ -126,7 +122,7 @@ public class Milestone {
             // Already validated.
             return true;
         }
-        final BundleValidator bundleValidator = new BundleValidator(BundleViewModel.fromHash(transactionViewModel.getBundleHash()));
+        final BundleValidator bundleValidator = BundleValidator.load(HashesViewModel.load(transactionViewModel.getBundleHash()));
         if (bundleValidator.getTransactions().size() == 0) {
             return false;
         }
@@ -181,9 +177,8 @@ public class Milestone {
         return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
     }
 
-    void findNewMilestones() throws Exception {
-        AddressViewModel coordinatorAddress = new AddressViewModel(Milestone.instance.coordinatorHash);
-        Arrays.stream(coordinatorAddress.getTransactionHashes())
+    private void findNewMilestones() throws Exception {
+        HashesViewModel.load(Milestone.instance.coordinatorHash).getHashes().stream()
                 .filter(analyzedMilestoneCandidates::add)
                 .map(TransactionViewModel::quietFromHash)
                 .filter(t -> t.getCurrentIndex() == 0)
@@ -199,7 +194,7 @@ public class Milestone {
                 });
     }
 
-    public void shutDown() {
+    void shutDown() {
         shuttingDown = true;
     }
 

@@ -1,20 +1,20 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.conf.Configuration;
-import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Approvee;
-import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.storage.MemDBPersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProviderTest;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.SystemUtils;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
 
 import static org.junit.Assert.*;
 
@@ -25,6 +25,7 @@ public class TransactionViewModelTest {
 
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
+    Logger log = LoggerFactory.getLogger(TransactionViewModelTest.class);
 
     private static final Random seed = new Random();
 
@@ -32,9 +33,14 @@ public class TransactionViewModelTest {
     public static void setUp() throws Exception {
         dbFolder.create();
         logFolder.create();
+        /*
+        Configuration.put(Configuration.DefaultConfSettings.DB_PATH, "./tvmtestdb");
+        Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, "./tvmtestdbl");
+        */
         Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
         Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, logFolder.getRoot().getAbsolutePath());
         Tangle.instance().addPersistenceProvider(RocksDBPersistenceProviderTest.rocksDBPersistenceProvider);
+        //Tangle.instance().addPersistenceProvider(new MemDBPersistenceProvider());
         Tangle.instance().init();
     }
 
@@ -42,71 +48,19 @@ public class TransactionViewModelTest {
     public static void tearDown() throws Exception {
         Tangle.instance().shutdown();
         dbFolder.delete();
+        logFolder.delete();
     }
 
     @Test
     public void getBundleTransactions() throws Exception {
-        Random r = new Random();
-        Hash bundleHash = new Hash(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
-        TransactionViewModel[] bundle, transactionViewModels;
-        transactionViewModels = Arrays.stream(new com.iota.iri.model.Transaction[4]).map(t -> {
-            com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
-            transaction.bundle = new Bundle();
-            transaction.bundle.hash = bundleHash;
-            transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-            transaction.hash = new Hash(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> r.nextInt(3)-1).toArray());
-            return new TransactionViewModel(transaction);
-        }).toArray(TransactionViewModel[]::new);
-        {
-            com.iota.iri.model.Transaction transaction = new com.iota.iri.model.Transaction();
-            transaction.bundle = new Bundle();
-            transaction.bundle.hash = bundleHash;
-            transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> r.nextInt(3)-1).toArray());
-            transaction.hash = bundleHash;
-            transactionViewModels = ArrayUtils.addAll(transactionViewModels, new TransactionViewModel(transaction));
-        }
-        for(TransactionViewModel transactionViewModel : transactionViewModels) {
-            transactionViewModel.store();
-        }
-
-        //bundleValidator = transactionViewModels[0].getBundleTransactions();
-        //assertEquals(bundleValidator.length, transactionViewModels.length);
     }
 
     @Test
     public void getBranchTransaction() throws Exception {
-        TransactionViewModel transactionViewModel, branchTransaction;
-        int[] trits = getRandomTransactionTrits();
-        branchTransaction = new TransactionViewModel(trits, Hash.calculate(trits));
-
-        Transaction transaction = getRandomTransaction(seed);
-        transaction.branch = new Approvee();
-        transaction.branch.hash = branchTransaction.getHash();
-        transactionViewModel = new TransactionViewModel(transaction);
-
-        transactionViewModel.store();
-        branchTransaction.store();
-
-        TransactionViewModel branchTransactionQuery = transactionViewModel.getBranchTransaction();
-        //assertArrayEquals(branchTransactionQuery.getHash(), branchTransaction.getHash());
     }
 
     @Test
     public void getTrunkTransaction() throws Exception {
-        TransactionViewModel transactionViewModel, trunkTransactionViewModel;
-
-        trunkTransactionViewModel = new TransactionViewModel(getRandomTransaction(seed));
-
-        Transaction transaction = getRandomTransaction(seed);
-        transaction.trunk = new Approvee();
-        transaction.trunk.hash = trunkTransactionViewModel.getHash();
-        transactionViewModel = new TransactionViewModel(transaction);
-
-        transactionViewModel.store();
-        trunkTransactionViewModel.store();
-
-        TransactionViewModel trunkTransactionQuery = transactionViewModel.getTrunkTransaction();
-        assertTrue(trunkTransactionQuery.getHash().equals(trunkTransactionViewModel.getHash()));
     }
 
     @Test
@@ -134,8 +88,8 @@ public class TransactionViewModelTest {
         trunkTx.store();
         branchTx.store();
 
-        Hash[] approvers = trunkTx.getApprovers();
-        assertNotEquals(approvers.length, 0);
+        Set<Hash> approvers = trunkTx.getApprovers();
+        assertNotEquals(approvers.size(), 0);
     }
 
     @Test
@@ -332,62 +286,41 @@ public class TransactionViewModelTest {
 
     @Test
     public void updateHeightShouldWork() throws Exception {
-        TransactionViewModel transactionViewModel, transactionViewModel1, transactionViewModel2, transactionViewModel3;
-        transactionViewModel = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH,
-                Hash.NULL_HASH), getRandomTransactionHash());
-        transactionViewModel.store();
-        transactionViewModel1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel.getHash(),
-                Hash.NULL_HASH), getRandomTransactionHash());
-        transactionViewModel1.store();
-        transactionViewModel2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel1.getHash(),
-                Hash.NULL_HASH), getRandomTransactionHash());
-        transactionViewModel2.store();
-        transactionViewModel3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel2.getHash(),
-                Hash.NULL_HASH), getRandomTransactionHash());
-        transactionViewModel3.store();
+        int count = 4;
+        TransactionViewModel[] transactionViewModels = new TransactionViewModel[count];
+        Hash hash = getRandomTransactionHash();
+        transactionViewModels[0] = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH,
+                Hash.NULL_HASH), hash);
+        transactionViewModels[0].store();
+        for(int i = 0; ++i < count; ) {
+            transactionViewModels[i] = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hash,
+                    Hash.NULL_HASH), hash = getRandomTransactionHash());
+            transactionViewModels[i].store();
+        }
 
+        transactionViewModels[count-1].updateHeights();
 
-        transactionViewModel3.updateHeights();
-
-        transactionViewModel = TransactionViewModel.fromHash(transactionViewModel.getHash());
-        transactionViewModel1 = TransactionViewModel.fromHash(transactionViewModel1.getHash());
-        transactionViewModel2 = TransactionViewModel.fromHash(transactionViewModel2.getHash());
-        transactionViewModel3 = TransactionViewModel.fromHash(transactionViewModel3.getHash());
-
-        assertEquals(4, transactionViewModel3.getHeight());
-        assertEquals(3, transactionViewModel2.getHeight());
-        assertEquals(2, transactionViewModel1.getHeight());
-        assertEquals(1, transactionViewModel.getHeight());
+        for(int i = count; i > 1; ) {
+            assertEquals(i, TransactionViewModel.fromHash(transactionViewModels[--i].getHash()).getHeight());
+        }
     }
 
     @Test
     public void updateHeightPrefilledSlotShouldFail() throws Exception {
-        TransactionViewModel transactionViewModel, transactionViewModel1, transactionViewModel2, transactionViewModel3;
-        transactionViewModel = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(getRandomTransactionHash(),
-                Hash.NULL_HASH), getRandomTransactionHash());
-        transactionViewModel.store();
-        transactionViewModel1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel.getHash(),
-                Hash.NULL_HASH), getRandomTransactionHash());
-        transactionViewModel1.store();
-        transactionViewModel2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel1.getHash(),
-                Hash.NULL_HASH), getRandomTransactionHash());
-        transactionViewModel2.store();
-        transactionViewModel3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transactionViewModel2.getHash(),
-                Hash.NULL_HASH), getRandomTransactionHash());
-        transactionViewModel3.store();
+        int count = 4;
+        TransactionViewModel[] transactionViewModels = new TransactionViewModel[count];
+        Hash hash = getRandomTransactionHash();
+        for(int i = 0; ++i < count; ) {
+            transactionViewModels[i] = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hash,
+                    Hash.NULL_HASH), hash = getRandomTransactionHash());
+            transactionViewModels[i].store();
+        }
 
+        transactionViewModels[count-1].updateHeights();
 
-        transactionViewModel3.updateHeights();
-
-        transactionViewModel = TransactionViewModel.fromHash(transactionViewModel.getHash());
-        transactionViewModel1 = TransactionViewModel.fromHash(transactionViewModel1.getHash());
-        transactionViewModel2 = TransactionViewModel.fromHash(transactionViewModel2.getHash());
-        transactionViewModel3 = TransactionViewModel.fromHash(transactionViewModel3.getHash());
-
-        assertEquals(0, transactionViewModel3.getHeight());
-        assertEquals(0, transactionViewModel2.getHeight());
-        assertEquals(0, transactionViewModel1.getHeight());
-        assertEquals(0, transactionViewModel.getHeight());
+        for(int i = count; i > 1; ) {
+            assertEquals(0, TransactionViewModel.fromHash(transactionViewModels[--i].getHash()).getHeight());
+        }
     }
 
     @Test
@@ -400,7 +333,7 @@ public class TransactionViewModelTest {
     }
 
     @Test
-    public void findShoultReturnNull() throws Exception {
+    public void findShouldReturnNull() throws Exception {
         int[] trits = getRandomTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
         trits = getRandomTransactionTrits();
@@ -410,10 +343,62 @@ public class TransactionViewModelTest {
         Assert.assertFalse(Arrays.equals(TransactionViewModel.find(Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)).getBytes(), transactionViewModel.getBytes()));
     }
 
+    //@Test
+    public void testManyTXInDB() throws Exception {
+        int i, j;
+        LinkedList<Hash> hashes = new LinkedList<>();
+        Hash hash;
+        hash = getRandomTransactionHash();
+        hashes.add(hash);
+        long start, diff, diffget;
+        long subSumDiff=0,maxdiff=0, sumdiff = 0;
+        int max = 990 * 1000;
+        int interval1 = 50;
+        int interval = interval1*10;
+        log.info("Starting Test. #TX: {}", TransactionViewModel.getNumberOfStoredTransactions());
+        new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH), hash).store();
+        TransactionViewModel transactionViewModel;
+        boolean pop = false;
+        for (i = 0; i++ < max;) {
+            hash = getRandomTransactionHash();
+            j = hashes.size();
+            transactionViewModel = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes.get(seed.nextInt(j)), hashes.get(seed.nextInt(j))), hash);
+            start = System.nanoTime();
+            transactionViewModel.store();
+            diff = System.nanoTime() - start;
+            subSumDiff += diff;
+            if (diff>maxdiff) {
+                maxdiff = diff;
+            }
+            hash = hashes.get(seed.nextInt(j));
+            start = System.nanoTime();
+            TransactionViewModel.fromHash(hash);
+            diffget = System.nanoTime() - start;
+            hashes.add(hash);
+            if(pop || i > 1000) {
+                hashes.removeFirst();
+            }
+
+            //log.info("{}", new String(new char[(int) ((diff/ 10000))]).replace('\0', '|'));
+            if(i % interval1 == 0) {
+                //log.info("{}", new String(new char[(int) (diff / 50000)]).replace('\0', '-'));
+                //log.info("{}", new String(new char[(int) ((subSumDiff / interval1 / 100000))]).replace('\0', '|'));
+                sumdiff += subSumDiff;
+                subSumDiff = 0;
+            }
+            if(i % interval == 0) {
+                log.info("Save time for {}: {} us.\tGet Time: {} us.\tMax time: {} us. Average: {}", i,
+                        (diff / 1000) , diffget/1000, (maxdiff/ 1000), sumdiff/interval/1000);
+                sumdiff = 0;
+                maxdiff = 0;
+            }
+        }
+        log.info("Done. #TX: {}", TransactionViewModel.getNumberOfStoredTransactions());
+    }
+
     private Transaction getRandomTransaction(Random seed) {
         Transaction transaction = new Transaction();
         transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> seed.nextInt(3)-1).toArray());
-        transaction.hash = new Hash(Arrays.stream(new int[Curl.HASH_LENGTH]).map(i -> seed.nextInt(3)-1).toArray());
         return transaction;
     }
     public static int[] getRandomTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {

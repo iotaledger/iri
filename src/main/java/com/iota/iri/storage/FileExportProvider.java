@@ -12,6 +12,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Map;
+import java.util.Set;
 
 import static com.iota.iri.controllers.TransactionViewModel.TRINARY_SIZE;
 
@@ -37,17 +39,44 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public boolean save(Object o) throws Exception {
+    public boolean save(Persistable model, Indexable index) throws Exception {
+        /*
+        if(model instanceof Transaction) {
+            Transaction transaction = ((Transaction) model);
+            try {
+                PrintWriter writer;
+                Path path = Paths.get(transaction.height != 0? "export-solid": "export", String.valueOf(getFileNumber()) + ".tx");
+                writer = new PrintWriter(path.toString(), "UTF-8");
+                writer.println(index.toString());
+                writer.println(Converter.trytes(trits(transaction)));
+                writer.println(transaction.sender);
+                if(transaction.height != 0) {
+                    writer.println("Height: " + String.valueOf(transaction.height));
+                } else {
+                    writer.println("Height: ");
+                }
+                writer.close();
+                return true;
+            } catch (UnsupportedEncodingException | FileNotFoundException e) {
+                log.error("File export failed", e);
+            } catch (Exception e) {
+                log.error("Transaction load failed. ", e);
+            } finally {
+
+            }
+        }
+        */
         return false;
     }
 
     @Override
-    public void delete(Object o) throws Exception {
+    public void delete(Class<?> model, Indexable index) throws Exception {
 
     }
 
     @Override
-    public boolean update(Object model, String item) throws Exception {
+    public boolean update(Persistable model, Indexable index, String item) throws Exception {
+
         if(model instanceof Transaction) {
             Transaction transaction = ((Transaction) model);
             if(item.equals("sender") || item.equals("height")) {
@@ -55,13 +84,11 @@ public class FileExportProvider implements PersistenceProvider {
                     PrintWriter writer;
                     Path path = Paths.get(item.equals("sender")? "export": "export-solid", String.valueOf(getFileNumber()) + ".tx");
                     writer = new PrintWriter(path.toString(), "UTF-8");
-                    writer.println(transaction.hash.toString());
+                    writer.println(index.toString());
                     writer.println(Converter.trytes(trits(transaction)));
                     writer.println(transaction.sender);
                     if(item.equals("height")) {
-                        long height = transaction.height;
-                        //log.debug("Height: " + height);
-                        writer.println("Height: " + String.valueOf(height));
+                        writer.println("Height: " + String.valueOf(transaction.height));
                     } else {
                         writer.println("Height: ");
                     }
@@ -80,27 +107,27 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public boolean exists(Class<?> model, Hash key) throws Exception {
+    public boolean exists(Class<?> model, Indexable key) throws Exception {
         return false;
     }
 
     @Override
-    public Object latest(Class<?> model) throws Exception {
+    public Persistable latest(Class<?> model) throws Exception {
         return null;
     }
 
     @Override
-    public Object[] keysWithMissingReferences(Class<?> modelClass) throws Exception {
-        return new Object[0];
+    public Set<Indexable> keysWithMissingReferences(Class<?> modelClass) throws Exception {
+        return null;
     }
 
     @Override
-    public boolean get(Object model) throws Exception {
-        return false;
+    public Persistable get(Class<?> model, Indexable index) throws Exception {
+        return null;
     }
 
     @Override
-    public boolean mayExist(Object model) throws Exception {
+    public boolean mayExist(Class<?> model, Indexable index) throws Exception {
         return false;
     }
 
@@ -110,28 +137,37 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public Hash[] keysStartingWith(Class<?> modelClass, byte[] value) {
-        return new Hash[0];
-    }
-
-    @Override
-    public Object seek(Class<?> model, byte[] key) throws Exception {
+    public Set<Indexable> keysStartingWith(Class<?> modelClass, byte[] value) {
         return null;
     }
 
     @Override
-    public Object next(Class<?> model, int index) throws Exception {
+    public Persistable seek(Class<?> model, byte[] key) throws Exception {
         return null;
     }
 
     @Override
-    public Object previous(Class<?> model, int index) throws Exception {
+    public Persistable next(Class<?> model, Indexable index) throws Exception {
         return null;
     }
 
     @Override
-    public Object first(Class<?> model) throws Exception {
+    public Persistable previous(Class<?> model, Indexable index) throws Exception {
         return null;
+    }
+
+    @Override
+    public Persistable first(Class<?> model) throws Exception {
+        return null;
+    }
+
+    public boolean merge(Persistable model, Indexable index) throws Exception {
+        return false;
+    }
+
+    @Override
+    public boolean saveBatch(Map<Indexable, Persistable> models) throws Exception {
+        return false;
     }
 
     private static long lastFileNumber = 0L;

@@ -1,9 +1,9 @@
 package com.iota.iri;
 
+import com.iota.iri.controllers.HashesViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
-import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 
@@ -11,11 +11,16 @@ import java.util.*;
 
 public class BundleValidator {
     private final List<List<TransactionViewModel>> transactions = new LinkedList<>();
-    private final BundleViewModel bundleViewModel;
+    private final HashesViewModel bundle;
 
-    public BundleValidator(BundleViewModel bundleViewModel) throws Exception {
-        this.bundleViewModel = bundleViewModel;
-        this.init();
+    BundleValidator(HashesViewModel bundleHashes) throws Exception {
+        this.bundle = bundleHashes;
+    }
+
+    public static BundleValidator load(HashesViewModel bundleHashes) throws Exception {
+        BundleValidator bundleValidator = new BundleValidator(bundleHashes);
+        bundleValidator.init();
+        return bundleValidator;
     }
 
     private void init() throws Exception {
@@ -127,8 +132,8 @@ public class BundleValidator {
     private Map<Hash, TransactionViewModel> loadTransactionsFromTangle() {
         final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();
         try {
-            for (final TransactionViewModel transactionViewModel : this.bundleViewModel.getTransactionViewModels()) {
-                bundleTransactions.put(transactionViewModel.getHash(), transactionViewModel);
+            for (final Hash transactionViewModel : this.bundle.getHashes()) {
+                bundleTransactions.put(transactionViewModel, TransactionViewModel.fromHash(transactionViewModel));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -139,7 +144,12 @@ public class BundleValidator {
     public List<List<TransactionViewModel>> getTransactions() {
         return transactions;
     }
-    public TransactionViewModel[] getTransactionViewModels() throws Exception {
-        return bundleViewModel.getTransactionViewModels();
+
+    Set<TransactionViewModel> getTransactionViewModels() throws Exception {
+        Set<TransactionViewModel> transactionViewModelSet = new HashSet<>();
+        for(Hash hash: bundle.getHashes()) {
+            transactionViewModelSet.add(TransactionViewModel.fromHash(hash));
+        }
+        return transactionViewModelSet;
     }
 }

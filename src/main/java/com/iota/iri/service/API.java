@@ -23,6 +23,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+import com.iota.iri.controllers.HashesViewModel;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -38,9 +39,6 @@ import com.iota.iri.Snapshot;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.controllers.AddressViewModel;
-import com.iota.iri.controllers.BundleViewModel;
-import com.iota.iri.controllers.TagViewModel;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionRequester;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -254,7 +252,7 @@ public class API {
                     return storeTransactionStatement(trytes);
                 }
                 case "getMissingTransactions": {
-                    TransactionRequester.instance().rescanTransactionsToRequest();
+                    //TransactionRequester.instance().rescanTransactionsToRequest();
                     synchronized (TransactionRequester.instance()) {
                         List<String> missingTx = Arrays.stream(TransactionRequester.instance().getRequestedTransactions())
                                 .map(Hash::toString)
@@ -354,6 +352,12 @@ public class API {
             final TransactionViewModel transactionViewModel = TransactionValidator.validate(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
             transactionViewModel.store();
+            TransactionRequester.instance().clearTransactionRequest(transactionViewModel.getHash());
+            TransactionRequester.instance().requestTransaction(transactionViewModel.getBranchTransactionHash(), false);
+            TransactionRequester.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash(), false);
+            if(transactionViewModel.getApprovers().size() == 0) {
+                TipsViewModel.addTipHash(transactionViewModel.getHash());
+            }
             transactionViewModel.updateSender("local");
         }
         return AbstractResponse.createEmptyResponse();
@@ -418,7 +422,7 @@ public class API {
         final Set<Hash> bundlesTransactions = new HashSet<>();
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
-                bundlesTransactions.addAll(Arrays.stream(BundleViewModel.fromHash(new Hash(bundle)).getTransactionViewModels()).map(TransactionViewModel::getHash).collect(Collectors.toSet()));
+                bundlesTransactions.addAll(HashesViewModel.load(new Hash(bundle)).getHashes());
             }
         }
 
@@ -431,7 +435,7 @@ public class API {
                 if (address.length() != 81) {
                     log.error("Address {} doesn't look a valid address", address);
                 }
-                addressesTransactions.addAll(Arrays.stream(new AddressViewModel(new Hash(address)).getTransactionHashes()).collect(Collectors.toSet()));
+                addressesTransactions.addAll(HashesViewModel.load(new Hash(address)).getHashes());
             }
         }
 
@@ -441,7 +445,7 @@ public class API {
                 while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
                     tag += Converter.TRYTE_ALPHABET.charAt(0);
                 }
-                tagsTransactions.addAll(Arrays.stream(new TagViewModel(new Hash(tag)).getTransactionHashes()).collect(Collectors.toSet()));
+                tagsTransactions.addAll(HashesViewModel.load(new Hash(tag)).getHashes());
             }
         }
 
@@ -449,7 +453,7 @@ public class API {
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
-                approveeTransactions.addAll(Arrays.stream(TransactionViewModel.fromHash(new Hash(approvee)).getApprovers()).collect(Collectors.toSet()));
+                approveeTransactions.addAll(TransactionViewModel.fromHash(new Hash(approvee)).getApprovers());
             }
         }
 

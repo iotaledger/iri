@@ -745,9 +745,9 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setTableFormatConfig(blockBasedTableConfig)
                 .setMaxWriteBufferNumber(2)
                 .setWriteBufferSize(2 * SizeUnit.MB)
+                /*
                 .setCompactionStyle(CompactionStyle.UNIVERSAL)
                 .setCompressionType(CompressionType.SNAPPY_COMPRESSION)
-                /*
                 */
                 ;
         //columnFamilyOptions.setMemTableConfig(hashSkipListMemTableConfig);

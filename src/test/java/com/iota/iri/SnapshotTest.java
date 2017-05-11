@@ -22,7 +22,7 @@ public class SnapshotTest {
 
     @Test
     public void isConsistent() throws Exception {
-        Assert.assertTrue("Initial snapshot should be consistent", latestSnapshot.isConsistent());
+        Assert.assertTrue("Initial confirmed should be consistent", latestSnapshot.isConsistent());
     }
 
     @Test

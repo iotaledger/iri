@@ -42,7 +42,7 @@ public class Configuration {
         P_DROP_TRANSACTION,
         P_SELECT_MILESTONE_CHILD,
         P_SEND_MILESTONE,
-        EXPORT // exports transaction trytes to filesystem
+        MAIN_DB, EXPORT // exports transaction trytes to filesystem
     }
 
     static {
@@ -64,6 +64,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.0");
         conf.put(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name(), "0.7");
         conf.put(DefaultConfSettings.P_SEND_MILESTONE.name(), "0.02");
+        conf.put(DefaultConfSettings.MAIN_DB.name(), "rocksdb");
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
     }
 

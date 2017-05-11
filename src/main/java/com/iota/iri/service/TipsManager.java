@@ -47,7 +47,7 @@ public class TipsManager {
         for(int i = 0; i++ < TipsViewModel.nonSolidSize();) {
             Hash hash = TipsViewModel.getRandomNonSolidTipHash();
             boolean isTip = true;
-            if(hash != null && TransactionViewModel.fromHash(hash).getApprovers().length != 0) {
+            if(hash != null && TransactionViewModel.fromHash(hash).getApprovers().size() != 0) {
                 TipsViewModel.removeTipHash(hash);
                 isTip = false;
             }
@@ -84,7 +84,7 @@ public class TipsManager {
                         milestoneIndex = 0;
                     }
                     MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(milestoneIndex);
-                    if(milestoneViewModel != null) {
+                    if(milestoneViewModel != null && milestoneViewModel.getHash() != null) {
                         tip = milestoneViewModel.getHash();
                     }
                 }
@@ -94,11 +94,13 @@ public class TipsManager {
                 analyzedTips.clear();
 
                 Hash[] tips;
+                Set<Hash> tipSet;
                 TransactionViewModel transactionViewModel;
                 int carlo;
                 double monte;
                 while (tip != null) {
-                    tips = TransactionViewModel.fromHash(tip).getApprovers();
+                    tipSet = TransactionViewModel.fromHash(tip).getApprovers();
+                    tips = tipSet.toArray(new Hash[tipSet.size()]);
                     if (tips.length == 0) {
                         log.info("Reason to stop: TransactionViewModel is a tip");
                         break;
@@ -169,7 +171,7 @@ public class TipsManager {
             currentHash = hashesToRate.pop();
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(currentHash);
             addedBack = false;
-            Hash[] approvers = transactionViewModel.getApprovers();
+            Set<Hash> approvers = transactionViewModel.getApprovers();
             for(Hash approver : approvers) {
                 if(ratings.get(approver) == null && !approver.equals(currentHash)) {
                     if(!addedBack) {
@@ -180,7 +182,7 @@ public class TipsManager {
                 }
             }
             if(!addedBack && analyzedTips.add(currentHash)) {
-                long rating = (extraTip != null && LedgerValidator.isApproved(currentHash)? 0: 1) + Arrays.stream(approvers).map(ratings::get).filter(Objects::nonNull)
+                long rating = (extraTip != null && LedgerValidator.isApproved(currentHash)? 0: 1) + approvers.stream().map(ratings::get).filter(Objects::nonNull)
                         .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L);
                 ratings.put(currentHash, rating);
             }

@@ -17,16 +17,22 @@ public class Serializer {
         return buffer.array();
     }
     public static long getLong(byte[] bytes) {
-        if(bytes == null || bytes.length != Long.BYTES) return 0;
+        return getLong(bytes, 0);
+    }
+    public static long getLong(byte[] bytes, int start) {
+        if(bytes == null) return 0;
         ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-        buffer.put(bytes);
+        buffer.put(bytes, start, Long.BYTES);
         buffer.flip();
         return buffer.getLong();
     }
     public static int getInteger(byte[] bytes) {
-        if(bytes == null || bytes.length != Integer.BYTES) return 0;
+        return getInteger(bytes, 0);
+    }
+    public static int getInteger(byte[] bytes, int start) {
+        if(bytes == null) return 0;
         ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
-        buffer.put(bytes);
+        buffer.put(bytes, start, Integer.BYTES);
         buffer.flip();
         return buffer.getInt();
     }

@@ -6,6 +6,7 @@ import java.io.IOException;
 import com.iota.iri.controllers.TransactionRequester;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.storage.FileExportProvider;
+import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,29 +72,9 @@ public class IRI {
         }
 
         try {
-            String dbPath = Configuration.string(Configuration.DefaultConfSettings.DB_PATH);
-            if (Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
-                Milestone.init(TESTNET_COORDINATOR, true);                
-                if (dbPath.isEmpty() || dbPath.equals("mainnetdb")) {
-                    // testnetusers must not use mainnetdb, overwrite it unless an explicit name is set.
-                    Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
-                    Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
-                }
-            } else {
-                Milestone.init(MAINNET_COORDINATOR, false);
-                if (dbPath.isEmpty() || dbPath.equals("testnetdb")) {
-                    // mainnetusers must not use testnetdb, overwrite it unless an explicit name is set.
-                    Configuration.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
-                    Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnetdb.log");
-                }
-            }
             TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
-            Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-            if (Configuration.booling(DefaultConfSettings.EXPORT)) {
-                Tangle.instance().addPersistenceProvider(new FileExportProvider());
-            }
+            initializeTangle();
             Tangle.instance().init();
-            LedgerValidator.init();
             Milestone.instance().init();
             TipsManager.instance.init();
             TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
@@ -111,6 +92,37 @@ public class IRI {
             System.exit(-1);
         }
         log.info("IOTA Node initialised correctly.");
+    }
+
+    private static void initializeTangle() {
+        String dbPath = Configuration.string(Configuration.DefaultConfSettings.DB_PATH);
+        if (Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
+            Milestone.init(TESTNET_COORDINATOR, true);
+            if (dbPath.isEmpty() || dbPath.equals("mainnetdb")) {
+                // testnetusers must not use mainnetdb, overwrite it unless an explicit name is set.
+                Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
+                Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+            }
+        } else {
+            Milestone.init(MAINNET_COORDINATOR, false);
+            if (dbPath.isEmpty() || dbPath.equals("testnetdb")) {
+                // mainnetusers must not use testnetdb, overwrite it unless an explicit name is set.
+                Configuration.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
+                Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnetdb.log");
+            }
+        }
+        switch (Configuration.string(DefaultConfSettings.MAIN_DB)) {
+            case "rocksdb": {
+                Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
+                break;
+            }
+            default: {
+                throw new NotImplementedException("No such database type.");
+            }
+        }
+        if (Configuration.booling(DefaultConfSettings.EXPORT)) {
+            Tangle.instance().addPersistenceProvider(new FileExportProvider());
+        }
     }
 
     private static void validateParams(final String[] args) throws IOException {
@@ -223,7 +235,6 @@ public class IRI {
             Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
             Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
         }
-        
     }
 
     private static void printUsage() {

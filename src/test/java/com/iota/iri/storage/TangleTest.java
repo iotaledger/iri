@@ -15,6 +15,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.util.Arrays;
 import java.util.Random;
+import java.util.Set;
 
 import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
 
@@ -52,7 +53,6 @@ public class TangleTest {
         curl.absorb(trits, 0, trits.length);
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
         transaction.bytes = Converter.bytes(trits);
-        transaction.hash = new Hash(Converter.bytes(hash));
 
         //assertTrue("Should be a new, unique transaction", !Tangle.instance().save(transaction).get());
     }
@@ -62,7 +62,7 @@ public class TangleTest {
         int[] trits = getRandomTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
         transactionViewModel.store();
-        Hash[] tag = Tangle.instance().keysStartingWith(Transaction.class, Arrays.copyOf(transactionViewModel.getTagValue().bytes(), 15)).get();
+        Set<Indexable> tag = Tangle.instance().keysStartingWith(Transaction.class, Arrays.copyOf(transactionViewModel.getTagValue().bytes(), 15));
         //Assert.assertNotEquals(tag.length, 0);
     }
 

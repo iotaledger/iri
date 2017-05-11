@@ -1,6 +1,8 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.model.*;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.Hashes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,212 +17,186 @@ public class Tangle {
 
     private static final Tangle instance = new Tangle();
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
-    private ExecutorService executor;
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
     }
 
     public void init() throws Exception {
-        executor = Executors.newCachedThreadPool();
         for(PersistenceProvider provider: this.persistenceProviders) {
             provider.init();
         }
     }
 
-    public int getActiveThreads() {
-        return ((ThreadPoolExecutor) executor).getActiveCount();
-    }
-
 
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
-        executor.shutdown();
-        executor.awaitTermination(6, TimeUnit.SECONDS);
         this.persistenceProviders.forEach(PersistenceProvider::shutdown);
         this.persistenceProviders.clear();
     }
 
-    private boolean loadNow(Object object) throws Exception {
-        for(PersistenceProvider provider: this.persistenceProviders) {
-            //while(!provider.isAvailable()) {}
-            if(provider.get(object)) {
-                return true;
+    public Persistable load(Class<?> model, Indexable index) throws Exception {
+            Persistable out = null;
+            for(PersistenceProvider provider: this.persistenceProviders) {
+                if((out = provider.get(model, index)) != null) {
+                    break;
+                }
+            }
+            return out;
+    }
+
+    public Boolean saveBatch(Map<Indexable, Persistable> models) throws Exception {
+        boolean exists = false;
+        for(PersistenceProvider provider: persistenceProviders) {
+            if(exists) {
+                provider.saveBatch(models);
+            } else {
+                exists = provider.saveBatch(models);
             }
         }
-        return false;
+        return exists;
     }
-
-    public Future<Boolean> load(Object object) {
-        return executor.submit(() -> loadNow(object));
-    }
-
-    public Future<Boolean> save(Object model) {
-        return executor.submit(() -> {
+    public Boolean save(Persistable model, Indexable index) throws Exception {
             boolean exists = false;
             for(PersistenceProvider provider: persistenceProviders) {
                 if(exists) {
-                    provider.save(model);
+                    provider.save(model, index);
                 } else {
-                   exists = provider.save(model);
+                   exists = provider.save(model, index);
                 }
             }
             return exists;
-        });
     }
 
-    public Future<Void> delete(Object model) {
-        return executor.submit(() -> {
+    public void delete(Class<?> model, Indexable index) throws Exception {
             for(PersistenceProvider provider: persistenceProviders) {
-                //while(!provider.isAvailable()) {}
-                provider.delete(model);
+                provider.delete(model, index);
             }
-            return null;
-        });
     }
 
-    public Future<Object> getLatest(Class<?> model) {
-        return executor.submit(() -> {
-            Object latest = null;
+    public Persistable getLatest(Class<?> model) throws Exception {
+            Persistable latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
-                //while(!provider.isAvailable()) {}
                 if (latest == null) {
                     latest = provider.latest(model);
                 }
             }
             return latest;
-        });
     }
 
-    public Future<Boolean> update(Object model, String item) {
-        return executor.submit(() -> {
+    public Boolean update(Persistable model, Indexable index, String item) throws Exception {
             boolean success = false;
             for(PersistenceProvider provider: this.persistenceProviders) {
                 if(success) {
-                    provider.update(model, item);
+                    provider.update(model, index, item);
                 } else {
-                    success = provider.update(model, item);
+                    success = provider.update(model, index, item);
                 }
             }
             return success;
-        });
     }
 
     public static Tangle instance() {
         return instance;
     }
 
-    public Future<Object[]> keysWithMissingReferences(Class<?> modelClass) {
-        return executor.submit(() -> {
-            Object[] output = new Object[0];
+    public Set<Indexable> keysWithMissingReferences(Class<?> modelClass) throws Exception {
+            Set<Indexable> output = null;
             for(PersistenceProvider provider: this.persistenceProviders) {
-                //while(!provider.isAvailable()) {}
                 output = provider.keysWithMissingReferences(modelClass);
-                if(output != null && output.length > 0) {
+                if(output != null && output.size() > 0) {
                     break;
                 }
             }
             return output;
-        });
     }
 
-    public Future<Hash[]> keysStartingWith(Class<?> modelClass, byte[] value) {
-        return executor.submit(() -> {
-            Hash[] output = new Hash[0];
+    public Set<Indexable> keysStartingWith(Class<?> modelClass, byte[] value) {
+            Set<Indexable> output = null;
             for(PersistenceProvider provider: this.persistenceProviders) {
-                //while(!provider.isAvailable()) {}
                 output = provider.keysStartingWith(modelClass, value);
-                if(output.length != 0) {
+                if(output.size() != 0) {
                     break;
                 }
             }
             return output;
-        });
     }
 
-    public Future<Boolean> exists(Class<?> modelClass, Hash hash) {
-        return executor.submit(() -> {
+    public Boolean exists(Class<?> modelClass, Indexable hash) throws Exception {
             for(PersistenceProvider provider: this.persistenceProviders) {
-                //while(!provider.isAvailable()) {}
                 if(provider.exists(modelClass, hash)) return true;
             }
             return false;
-        });
     }
 
-    public Future<Boolean> maybeHas(Object object) {
-        return executor.submit(() -> {
+    public Boolean maybeHas(Class<?> model, Indexable index) throws Exception {
             for(PersistenceProvider provider: this.persistenceProviders) {
-                //while(!provider.isAvailable()) {}
-                if(provider.mayExist(object)) return true;
+                if(provider.mayExist(model, index)) return true;
             }
             return false;
-        });
     }
 
-    public Future<Long> getCount(Class<?> modelClass) {
-        return executor.submit(() -> {
+    public Long getCount(Class<?> modelClass) throws Exception {
             long value = 0;
             for(PersistenceProvider provider: this.persistenceProviders) {
-                //while(!provider.isAvailable()) {}
                 if((value = provider.count(modelClass)) != 0) {
                     break;
                 }
             }
             return value;
-        });
     }
 
-    public Future<Object> find(Class<?> model, byte[] key) {
-        return executor.submit(() -> {
-            Object out = null;
+    public Persistable find(Class<?> model, byte[] key) throws Exception {
+            Persistable out = null;
             for (PersistenceProvider provider : this.persistenceProviders) {
-                //while(!provider.isAvailable()) {}
                 if ((out = provider.seek(model, key)) != null) {
                     break;
                 }
             }
             return out;
-        });
     }
 
-    public Future<Object> next(Class<?> model, int index) {
-        return executor.submit(() -> {
-            Object latest = null;
+    public Persistable next(Class<?> model, Indexable index) throws Exception {
+            Persistable latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
-                //while(!provider.isAvailable()) {}
                 if(latest == null) {
                     latest = provider.next(model, index);
                 }
             }
             return latest;
-
-        });
     }
-    public Future<Object> previous(Class<?> model, int index) {
-        return executor.submit(() -> {
-            Object latest = null;
+
+    public Persistable previous(Class<?> model, Indexable index) throws Exception {
+            Persistable latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
-                //while(!provider.isAvailable()) {}
                 if(latest == null) {
                     latest = provider.previous(model, index);
                 }
             }
             return latest;
-
-        });
     }
 
-    public Future<Object> getFirst(Class<?> model) {
-        return executor.submit(() -> {
-            Object latest = null;
+    public Persistable getFirst(Class<?> model) throws Exception {
+            Persistable latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
-                //while(!provider.isAvailable()) {}
                 if(latest == null) {
                     latest = provider.first(model);
                 }
             }
             return latest;
-        });
     }
+
+    /*
+    public boolean merge(Persistable model, Indexable index) throws Exception {
+        boolean exists = false;
+        for(PersistenceProvider provider: persistenceProviders) {
+            if(exists) {
+                provider.save(model, index);
+            } else {
+                exists = provider.merge(model, index);
+            }
+        }
+        return exists;
+    }
+    */
 }

@@ -1,12 +1,13 @@
 package com.iota.iri.model;
 
 import com.iota.iri.hash.Curl;
+import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Converter;
 
 import java.io.Serializable;
 import java.util.Arrays;
 
-public class Hash implements Comparable<Hash>, Serializable{
+public class Hash implements Serializable, Indexable {
 
     public static final int SIZE_IN_TRITS = 243;
     public static final int SIZE_IN_BYTES = 49;
@@ -115,12 +116,23 @@ public class Hash implements Comparable<Hash>, Serializable{
 	}
 
     @Override
-    public int compareTo(Hash hash) {
-        if(this.equals(hash)) {
+    public Indexable incremented() {
+        return null;
+    }
+
+    @Override
+    public Indexable decremented() {
+        return null;
+    }
+
+    @Override
+    public int compareTo(Indexable indexable) {
+        Hash hash = new Hash(indexable.bytes());
+        if (this.equals(hash)) {
             return 0;
         }
         long diff = Converter.longValue(hash.trits(), 0, SIZE_IN_TRITS) - Converter.longValue(trits(), 0, SIZE_IN_TRITS);
-        if(Math.abs(diff) > Integer.MAX_VALUE) {
+        if (Math.abs(diff) > Integer.MAX_VALUE) {
             return diff > 0L ? Integer.MAX_VALUE : Integer.MIN_VALUE + 1;
         }
         return (int) diff;

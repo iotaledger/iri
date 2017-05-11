@@ -37,6 +37,7 @@ public class TransactionRequester {
         }
     }
 
+    /*
     public void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
         Hash[] missingTx = TransactionViewModel.getMissingTransactions();
         synchronized (this) {
@@ -44,6 +45,7 @@ public class TransactionRequester {
             transactionsToRequest.addAll(Arrays.asList(missingTx));
         }
     }
+    */
     public Hash[] getRequestedTransactions() {
         synchronized (syncObj) {
             return ArrayUtils.addAll(transactionsToRequest.stream().toArray(Hash[]::new),
@@ -55,7 +57,7 @@ public class TransactionRequester {
         return transactionsToRequest.size() + milestoneTransactionsToRequest.size();
     }
 
-    boolean clearTransactionRequest(Hash hash) {
+    public boolean clearTransactionRequest(Hash hash) {
         synchronized (syncObj) {
             boolean milestone = milestoneTransactionsToRequest.remove(hash);
             boolean normal = transactionsToRequest.remove(hash);
@@ -63,7 +65,7 @@ public class TransactionRequester {
         }
     }
 
-    public void requestTransaction(Hash hash, boolean milestone) throws ExecutionException, InterruptedException {
+    public void requestTransaction(Hash hash, boolean milestone) throws Exception {
         if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(hash)) {
             synchronized (syncObj) {
                 if(milestone) {

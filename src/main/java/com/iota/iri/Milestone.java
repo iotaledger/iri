@@ -64,6 +64,11 @@ public class Milestone {
     public void init() {
         (new Thread(() -> {
 
+            try {
+                LedgerValidator.init();
+            } catch (Exception e) {
+                log.error("Error initializing snapshots. Skipping.", e);
+            }
             while (!shuttingDown) {
                 long scanTime = System.currentTimeMillis();
 

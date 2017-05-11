@@ -75,7 +75,6 @@ public class IRI {
             TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
             initializeTangle();
             Tangle.instance().init();
-            LedgerValidator.init();
             Milestone.instance().init();
             TipsManager.instance.init();
             TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));

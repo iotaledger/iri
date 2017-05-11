@@ -1,9 +1,7 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.Snapshot;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
-import com.iota.iri.storage.MemDBPersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProviderTest;
 import org.junit.*;

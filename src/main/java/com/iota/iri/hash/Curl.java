@@ -27,20 +27,25 @@ public class Curl {
             */
 
     private final int[] state;
-    private final int[] stateHigh;
+    private final long[] stateLow;
+    private final long[] stateHigh;
 
     public Curl() {
         state = new int[STATE_LENGTH];
         stateHigh = null;
+        stateLow = null;
     }
 
     public Curl(boolean pair) {
-        state = new int[STATE_LENGTH];
         if(pair) {
-            stateHigh = new int[STATE_LENGTH];
+            stateHigh = new long[STATE_LENGTH];
+            stateLow = new long[STATE_LENGTH];
+            state = null;
             set();
         } else {
+            state = new int[STATE_LENGTH];
             stateHigh = null;
+            stateLow = null;
         }
     }
 
@@ -88,44 +93,44 @@ public class Curl {
         }
     }
     private void set() {
-        Arrays.fill(state, Converter.HIGH_INTEGER_BITS);
-        Arrays.fill(stateHigh, Converter.HIGH_INTEGER_BITS);
+        Arrays.fill(stateLow, Converter.HIGH_LONG_BITS);
+        Arrays.fill(stateHigh, Converter.HIGH_LONG_BITS);
     }
 
     private void pairTransform() {
-        final int[] curlScratchpadLow = new int[STATE_LENGTH];
-        final int[] curlScratchpadHigh = new int[STATE_LENGTH];
+        final long[] curlScratchpadLow = new long[STATE_LENGTH];
+        final long[] curlScratchpadHigh = new long[STATE_LENGTH];
         int curlScratchpadIndex = 0;
         for (int round = 27; round-- > 0; ) {
-            System.arraycopy(state, 0, curlScratchpadLow, 0, STATE_LENGTH);
+            System.arraycopy(stateLow, 0, curlScratchpadLow, 0, STATE_LENGTH);
             System.arraycopy(stateHigh, 0, curlScratchpadHigh, 0, STATE_LENGTH);
             for (int curlStateIndex = 0; curlStateIndex < STATE_LENGTH; curlStateIndex++) {
-                final int alpha = curlScratchpadLow[curlScratchpadIndex];
-                final int beta = curlScratchpadHigh[curlScratchpadIndex];
-                final int gamma = curlScratchpadHigh[curlScratchpadIndex += (curlScratchpadIndex < 365 ? 364 : -365)];
-                final int delta = (alpha | (~gamma)) & (curlScratchpadLow[curlScratchpadIndex] ^ beta);
-                state[curlStateIndex] = ~delta;
+                final long alpha = curlScratchpadLow[curlScratchpadIndex];
+                final long beta = curlScratchpadHigh[curlScratchpadIndex];
+                final long gamma = curlScratchpadHigh[curlScratchpadIndex += (curlScratchpadIndex < 365 ? 364 : -365)];
+                final long delta = (alpha | (~gamma)) & (curlScratchpadLow[curlScratchpadIndex] ^ beta);
+                stateLow[curlStateIndex] = ~delta;
                 stateHigh[curlStateIndex] = (alpha ^ gamma) | delta;
             }
         }
     }
 
-    public void absorb(final Pair<int[], int[]> pair, int offset, int length) {
+    public void absorb(final Pair<long[], long[]> pair, int offset, int length) {
         int o = offset, l = length, i = 0;
         do {
-            System.arraycopy(pair.low, o, state, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
+            System.arraycopy(pair.low, o, stateLow, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
             System.arraycopy(pair.hi, o, stateHigh, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
             pairTransform();
             o += HASH_LENGTH;
         } while ((l -= HASH_LENGTH) > 0);
     }
 
-    public Pair<int[], int[]> squeeze(int offset, int length) {
+    public Pair<long[], long[]> squeeze(Pair<long[], long[]> pair, int offset, int length) {
         int o = offset, l = length, i = 0;
-        int[] low = new int[length];
-        int[] hi = new int[length];
+        long[] low = pair.low;
+        long[] hi = pair.hi;
         do {
-            System.arraycopy(state, 0, low, o, l < HASH_LENGTH ? l : HASH_LENGTH);
+            System.arraycopy(stateLow, 0, low, o, l < HASH_LENGTH ? l : HASH_LENGTH);
             System.arraycopy(stateHigh, 0, hi, o, l < HASH_LENGTH ? l : HASH_LENGTH);
             pairTransform();
             o += HASH_LENGTH;

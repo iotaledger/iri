@@ -33,10 +33,11 @@ public class CurlTest {
     public void pairHashWorks() {
         int size = 8019;
         int[] in_trits = Converter.trits(trytes);
+        Pair<long[], long[]> hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         Curl curl;
         curl = new Curl(true);
-        curl.absorb(Converter.intPair(in_trits), 0, in_trits.length);
-        Pair<int[], int[]> hashPair = curl.squeeze(0, Curl.HASH_LENGTH);
+        curl.absorb(Converter.longPair(in_trits), 0, in_trits.length);
+        curl.squeeze(hashPair, 0, Curl.HASH_LENGTH);
         int[] hash_trits = Converter.trits(hashPair.low, hashPair.hi);
         String out_trytes = Converter.trytes(hash_trits);
         Assert.assertEquals(out_trytes, hash);
@@ -48,29 +49,36 @@ public class CurlTest {
         long start1, diff1, start2, diff2;
         int[] in_trits = Converter.trits(trytes);
         final int[] hash_trits = new int[Curl.HASH_LENGTH];
-        Curl curl;
+        Curl curl, curl1;
         curl = new Curl(true);
-        Pair<int[], int[]> in_pair = Converter.intPair(in_trits);
+        curl1 = new Curl();
+        Pair<long[], long[]> in_pair = Converter.longPair(in_trits);
+        Pair<long[], long[]> hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         int iteration = 0;
         while(iteration++ < 10) {
             curl.absorb(in_pair, 0, in_trits.length);
-            curl.squeeze(0, Curl.HASH_LENGTH);
+            curl.squeeze(hashPair, 0, Curl.HASH_LENGTH);
             curl.reset(true);
-            curl.absorb(in_trits, 0, in_trits.length);
-            curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
-            curl.reset();
+            curl1.absorb(in_trits, 0, in_trits.length);
+            curl1.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
+            curl1.reset();
         }
+        int serialCount = 64;
         start1 = System.nanoTime();
-        curl.absorb(in_trits, 0, in_trits.length);
-        curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
+        while(serialCount-- > 0) {
+            curl1.absorb(in_trits, 0, in_trits.length);
+            curl1.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
+            curl1.reset();
+        }
         diff1 = System.nanoTime() - start1;
-        curl.reset(true);
+        hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         start2 = System.nanoTime();
         curl.absorb(in_pair, 0, in_trits.length);
-        Pair<int[], int[]> hashPair = curl.squeeze(0, Curl.HASH_LENGTH);
+        curl.squeeze(hashPair, 0, Curl.HASH_LENGTH);
         diff2 = System.nanoTime() - start2;
         System.arraycopy(Converter.trits(hashPair.low, hashPair.hi), 0, hash_trits, 0, Curl.HASH_LENGTH);
         String out_trytes = Converter.trytes(hash_trits);
         Assert.assertEquals(out_trytes, hash);
+        Assert.assertTrue(diff2 < diff1);
     }
 }

@@ -137,7 +137,7 @@ public class Converter {
         return new Pair<>(low, hi);
     }
 
-    public static Pair longPair(int[] trits) {
+    public static Pair<long[], long[]> longPair(int[] trits) {
         long[] low = new long[trits.length];
         long[] hi = new long[trits.length];
         for(int i = 0; i< trits.length; i++) {

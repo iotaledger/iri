@@ -55,7 +55,7 @@ public class CurlTest {
         Pair<long[], long[]> in_pair = Converter.longPair(in_trits);
         Pair<long[], long[]> hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         int iteration = 0;
-        while(iteration++ < 10000) {
+        while(iteration++ < 10) {
             curl.absorb(in_pair, 0, in_trits.length);
             curl.squeeze(hashPair, 0, Curl.HASH_LENGTH);
             curl.reset(true);

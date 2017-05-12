@@ -16,7 +16,7 @@ import static com.iota.iri.controllers.TransactionViewModel.*;
  */
 public class TransactionValidator {
     private static final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
-    private static final int TESTNET_MIN_WEIGHT_MAGNITUDE = 9;
+    private static final int TESTNET_MIN_WEIGHT_MAGNITUDE = 13;
     private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 18;
     private static int MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
     public static void init(boolean testnet) {

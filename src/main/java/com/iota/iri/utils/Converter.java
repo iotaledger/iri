@@ -147,6 +147,44 @@ public class Converter {
         return new Pair<>(low, hi);
     }
 
+    public static void shiftPair(Pair<long[], long[]> source, Pair<long[], long[]> dest) {
+        if(source.low.length == dest.low.length && source.hi.length == dest.hi.length) {
+            for(int i = 0; i < dest.low.length; i++) {
+                dest.low[i] <<= 1;
+                dest.low[i] |= source.low[i] & 1;
+            }
+            for(int i = 0; i < dest.hi.length; i++) {
+                dest.hi[i] <<= 1;
+                dest.hi[i] |= source.hi[i] & 1;
+            }
+        }
+    }
+
+    public static int[] trits(final Pair<long[], long[]> pair, final int bitIndex) {
+        final int length;
+        if(pair.low.length == pair.hi.length || pair.low.length < pair.hi.length) {
+            length = pair.low.length;
+        } else {
+            length = pair.hi.length;
+        }
+        final int[] trits = new int[length];
+        long low;
+        long hi;
+        int mask = 1 << bitIndex;
+        for(int i = 0; i < length; i++) {
+            low = pair.low[i] & mask;
+            hi = pair.hi[i] & mask;
+            if( hi == low ) {
+                trits[i] = 0;
+            } else if ( low == 0 ) {
+                trits[i] = 1;
+            } else if ( hi == 0 ) {
+                trits[i] = -1;
+            }
+        }
+        return trits;
+    }
+
     public static int[] trits(long[] low, long[] hi) {
         int[] trits = new int[low.length];
         for(int i = 0; i < trits.length; i++) {

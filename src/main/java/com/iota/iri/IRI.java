@@ -44,8 +44,8 @@ public class IRI {
 
     public static void main(final String[] args) throws IOException {
 
-        log.info("Welcome to {} {}", MAINNET_NAME, VERSION);
         validateParams(args);
+        log.info("Welcome to {} {}", Configuration.booling(DefaultConfSettings.TESTNET) ? TESTNET_NAME : MAINNET_NAME, VERSION);
         shutdownHook();
         
         if (Configuration.booling(DefaultConfSettings.EXPORT)) {

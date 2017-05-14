@@ -101,7 +101,8 @@ public class API {
 
     private Pattern trytesPattern = Pattern.compile("[9A-Z]*");
     
-    private final static int SIZE_IN_TRYTES = 81;
+    private final static int HASH_SIZE = 81;
+    private final static int TRYTES_SIZE = 2673;
     
     public void init() throws IOException {
 
@@ -181,20 +182,39 @@ public class API {
                     return addNeighborsStatement(uris);
                 }
                 case "attachToTangle": {
+                    if (!request.containsKey("trunkTransaction") || 
+                            !request.containsKey("branchTransaction") ||
+                            !request.containsKey("minWeightMagnitude") ||
+                            !request.containsKey("trytes")) {  
+                        return ErrorResponse.create("Invalid params");
+                    }
+                    if (!validTrytes((String)request.get("trunkTransaction"), HASH_SIZE)) {
+                        return ErrorResponse.create("Invalid trunkTransaction hash");
+                    }
+                    if (!validTrytes((String)request.get("branchTransaction"), HASH_SIZE)) {
+                        return ErrorResponse.create("Invalid branchTransaction hash");
+                    }             
                     final Hash trunkTransaction = new Hash((String) request.get("trunkTransaction"));
                     final Hash branchTransaction = new Hash((String) request.get("branchTransaction"));
                     final int minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
                     final List<String> trytes = (List<String>) request.get("trytes");
-
+                    for (final String tryt : trytes) {
+                        if (!validTrytes(tryt, TRYTES_SIZE)) {
+                            return ErrorResponse.create("Invalid trytes input");
+                        }
+                    }
                     return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
-
                 }
                 case "broadcastTransactions": {
                     if (!request.containsKey("trytes")) {  
                         return ErrorResponse.create("Invalid params");
                     }
                     final List<String> trytes = (List<String>) request.get("trytes");
-                    log.debug("Invoking 'broadcastTransactions' with {}", trytes);
+                    for (final String tryt : trytes) {
+                        if (!validTrytes(tryt, TRYTES_SIZE)) {
+                            return ErrorResponse.create("Invalid trytes input");
+                        }
+                    }
                     return broadcastTransactionStatement(trytes);
                 }
                 case "findTransactions": {
@@ -212,7 +232,7 @@ public class API {
                     }
                     final List<String> addresses = (List<String>) request.get("addresses");
                     for (final String address : addresses) {
-                        if (!validTrytes(address, SIZE_IN_TRYTES)) {
+                        if (!validTrytes(address, HASH_SIZE)) {
                             return ErrorResponse.create("Invalid addresses input");
                         }
                     }
@@ -227,12 +247,12 @@ public class API {
                     final List<String> tps = (List<String>) request.get("tips");
 
                     for (final String tx : trans) {
-                        if (!validTrytes(tx, SIZE_IN_TRYTES)) {
+                        if (!validTrytes(tx, HASH_SIZE)) {
                             return ErrorResponse.create("Invalid transactions input");
                         }
                     }
                     for (final String ti : tps) {
-                        if (!validTrytes(ti, SIZE_IN_TRYTES)) {
+                        if (!validTrytes(ti, HASH_SIZE)) {
                             return ErrorResponse.create("Invalid tips input");
                         }
                     }
@@ -276,7 +296,7 @@ public class API {
                         return ErrorResponse.create("Wrong arguments"); 
                     }
                     for (final String hash : hashes) {
-                        if (!validTrytes(hash, SIZE_IN_TRYTES))  {
+                        if (!validTrytes(hash, HASH_SIZE))  {
                             return ErrorResponse.create("Invalid hash input");                            
                         }
                     }
@@ -406,7 +426,7 @@ public class API {
     private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {
         for (final String trytes : trys) {
            
-            if (!validTrytes(trytes, 2673)) {
+            if (!validTrytes(trytes, TRYTES_SIZE)) {
                 return ErrorResponse.create("Invalid trytes input");
             }
             final TransactionViewModel transactionViewModel = TransactionValidator.validate(Converter.trits(trytes));
@@ -483,7 +503,7 @@ public class API {
         
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
-                if (!validTrytes(bundle, SIZE_IN_TRYTES)) {
+                if (!validTrytes(bundle, HASH_SIZE)) {
                     return ErrorResponse.create("Invalid bundle hash");
                 }
                 bundlesTransactions.addAll(HashesViewModel.load(new Hash(bundle)).getHashes());
@@ -496,7 +516,7 @@ public class API {
             log.debug("Searching: {}", addresses.stream().reduce((a, b) -> a += ',' + b));
 
             for (final String address : addresses) {
-                if (!validTrytes(address, SIZE_IN_TRYTES)) {
+                if (!validTrytes(address, HASH_SIZE)) {
                     return ErrorResponse.create("Invalid address input");
                 }
                 addressesTransactions.addAll(HashesViewModel.load(new Hash(address)).getHashes());
@@ -520,7 +540,7 @@ public class API {
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
-                if (!validTrytes(approvee,SIZE_IN_TRYTES)) {
+                if (!validTrytes(approvee,HASH_SIZE)) {
                     return ErrorResponse.create("Invalid approvees hash");
                 }
                 approveeTransactions.addAll(TransactionViewModel.fromHash(new Hash(approvee)).getApprovers());

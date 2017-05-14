@@ -64,11 +64,6 @@ public class TransactionViewModel {
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
     private final Hash hash;
-    public Hash addressHash;
-    public Hash bundleHash;
-    public Hash trunkHash;
-    public Hash branchHash;
-    public Hash tagValue;
 
 
     public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction value)
@@ -131,6 +126,9 @@ public class TransactionViewModel {
     }
 
     public boolean update(String item) throws Exception {
+        if(hash.equals(Hash.NULL_HASH)) {
+            return false;
+        }
         return Tangle.instance().update(transaction, getHash(), item);
     }
 
@@ -169,6 +167,7 @@ public class TransactionViewModel {
         Map<Indexable, Persistable> hashesMap = storeHashes(Arrays.asList(getAddressHash(), getBundleHash(),
                 getBranchTransactionHash(), getTrunkTransactionHash(), getTagValue()));
         getBytes();
+        setMetadata();
         hashesMap.put(getHash(), transaction);
         return hashesMap;
     }
@@ -239,42 +238,42 @@ public class TransactionViewModel {
     }
 
     public Hash getAddressHash() {
-        if(addressHash == null) {
-            addressHash = new Hash(Converter.bytes(trits(), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE));
+        if(transaction.address == null) {
+            transaction.address = new Hash(trits(), ADDRESS_TRINARY_OFFSET);
         }
-        return addressHash;
+        return transaction.address;
     }
 
     public Hash getTagValue() {
-        if(tagValue == null) {
-            tagValue = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
+        if(transaction.tag == null) {
+            transaction.tag = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
         }
-        return tagValue;
+        return transaction.tag;
     }
 
     public Hash getBundleHash() {
-        if(bundleHash == null) {
-            bundleHash = new Hash(Converter.bytes(trits(), BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE));
+        if(transaction.bundle == null) {
+            transaction.bundle = new Hash(trits(), BUNDLE_TRINARY_OFFSET);
         }
-        return bundleHash;
+        return transaction.bundle;
     }
 
     public Hash getTrunkTransactionHash() {
-        if(trunkHash == null) {
-            trunkHash = new Hash(Converter.bytes(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE));
+        if(transaction.trunk == null) {
+            transaction.trunk = new Hash(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET);
         }
-        return trunkHash;
+        return transaction.trunk;
     }
 
     public Hash getBranchTransactionHash() {
-        if(branchHash == null) {
-            branchHash = new Hash(Converter.bytes(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE));
+        if(transaction.branch == null) {
+            transaction.branch = new Hash(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET);
         }
-        return branchHash;
+        return transaction.branch;
     }
 
     public long value() {
-        return Converter.longValue(trits(), VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
+        return transaction.value;
     }
 
     public void setValidity(int validity) throws Exception {
@@ -287,7 +286,7 @@ public class TransactionViewModel {
     }
 
     public long getCurrentIndex() {
-        return Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
+        return transaction.currentIndex;
     }
 
     public int[] getSignature() {
@@ -295,15 +294,22 @@ public class TransactionViewModel {
     }
 
     public long getTimestamp() {
-        return Converter.longValue(trits(), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+        return transaction.timestamp;
     }
 
     public byte[] getNonce() {
         return Converter.bytes(trits(), NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
     }
 
-    public long getLastIndex() {
-        return Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
+        public long lastIndex() {
+        return transaction.lastIndex;
+    }
+
+    public void setMetadata() {
+        transaction.value = Converter.longValue(trits(), VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
+        transaction.timestamp = Converter.longValue(trits(), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+        transaction.currentIndex = Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
+        transaction.lastIndex = Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
     }
 
     public static boolean exists(Hash hash) throws Exception {

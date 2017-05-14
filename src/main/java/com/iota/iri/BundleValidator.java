@@ -33,7 +33,7 @@ public class BundleValidator {
 
                 final List<TransactionViewModel> instanceTransactionViewModels = new LinkedList<>();
 
-                final long lastIndex = transactionViewModel.getLastIndex();
+                final long lastIndex = transactionViewModel.lastIndex();
                 long bundleValue = 0;
                 int i = 0;
                 MAIN_LOOP:
@@ -41,7 +41,7 @@ public class BundleValidator {
 
                     instanceTransactionViewModels.add(transactionViewModel);
 
-                    if (transactionViewModel.getCurrentIndex() != i || transactionViewModel.getLastIndex() != lastIndex
+                    if (transactionViewModel.getCurrentIndex() != i || transactionViewModel.lastIndex() != lastIndex
                             || ((bundleValue += transactionViewModel.value()) < -TransactionViewModel.SUPPLY || bundleValue > TransactionViewModel.SUPPLY)) {
                         instanceTransactionViewModels.get(0).setValidity(-1);
                         break;

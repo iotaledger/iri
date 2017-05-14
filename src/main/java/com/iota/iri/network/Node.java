@@ -70,10 +70,19 @@ public class Node {
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
     private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);
 
-    public void init(double pDropTransaction, double p_SELECT_MILESTONE, double pSendMilestone, String neighborList) throws Exception {
+    private static long sendLimit = -1;
+    private static AtomicLong sendPacketsCounter = new AtomicLong(0L);
+    private static AtomicLong sendPacketsTimer = new AtomicLong(0L);
+
+
+
+    public void init(double pDropTransaction, double p_SELECT_MILESTONE, double pSendMilestone, String neighborList, double SEND_LIMIT) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
         P_SELECT_MILESTONE = p_SELECT_MILESTONE;
         P_SEND_MILESTONE = pSendMilestone;
+
+        sendLimit = (long) ( (SEND_LIMIT * 1000000) / (TRANSACTION_PACKET_SIZE * 8) );
+
         Arrays.stream(neighborList.split(" ")).distinct()
                 .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
                     if (!"udp".equals(u.getScheme()) && !"tcp".equals(u.getScheme()) || (new InetSocketAddress(u.getHost(), u.getPort()).getAddress() == null)) {
@@ -398,6 +407,20 @@ public class Node {
     }
 
     public static void sendPacket(DatagramPacket sendingPacket, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {
+
+        //limit amount of sends per second
+        long now = System.currentTimeMillis();
+        if ((now - sendPacketsTimer.get()) > 1000L) {
+            //reset counter every second
+            sendPacketsCounter.set(0);
+            sendPacketsTimer.set(now);
+        }
+        if ( sendLimit >= 0  && sendPacketsCounter.get() > sendLimit) {
+            //if exceeded limit - don't send
+            //log.info("exceeded limit - don't send - {}",sendPacketsCounter.get());
+            return;
+        }
+
         synchronized (sendingPacket) {
             System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
             Hash hash = TransactionRequester.instance().transactionToRequest(rnd.nextDouble() < P_SELECT_MILESTONE );
@@ -405,6 +428,8 @@ public class Node {
                     sendingPacket.getData(), TransactionViewModel.SIZE, REQUEST_HASH_SIZE);
             neighbor.send(sendingPacket);
         }
+
+        sendPacketsCounter.getAndIncrement();
     }
 
     private Runnable spawnBroadcasterThread() {

@@ -81,7 +81,8 @@ public class IRI {
             Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()),
                     Configuration.doubling(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name()),
                     Configuration.doubling(DefaultConfSettings.P_SEND_MILESTONE.name()),
-                    Configuration.string(DefaultConfSettings.NEIGHBORS));
+                    Configuration.string(DefaultConfSettings.NEIGHBORS),
+                    Configuration.doubling(DefaultConfSettings.SEND_LIMIT.name()));
             UDPReceiver.instance().init(Configuration.integer(DefaultConfSettings.UDP_RECEIVER_PORT));
             API.instance().init();
             Replicator.instance().init(Configuration.integer(DefaultConfSettings.TCP_RECEIVER_PORT));
@@ -148,6 +149,8 @@ public class IRI {
         final Option<Boolean> export = parser.addBooleanOption('e', "export");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Boolean> testnet = parser.addBooleanOption("testnet");
+        final Option<String> sendLimit = parser.addStringOption("send-limit");
+
 
         try {
             assert args != null;
@@ -234,6 +237,11 @@ public class IRI {
             Configuration.put(DefaultConfSettings.TESTNET, "true");
             Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
             Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+        }
+
+        final String vsendLimit = parser.getOptionValue(sendLimit);
+        if (vsendLimit != null) {
+            Configuration.put(DefaultConfSettings.SEND_LIMIT, vsendLimit);
         }
     }
 

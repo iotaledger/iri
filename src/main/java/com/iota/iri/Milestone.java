@@ -63,6 +63,29 @@ public class Milestone {
 
     public void init() {
         (new Thread(() -> {
+            while (!shuttingDown) {
+                long scanTime = System.currentTimeMillis();
+
+                try {
+                    final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
+
+                    updateLatestMilestone();
+
+                    if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
+
+                        log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex
+                                + " to #" + Milestone.latestMilestoneIndex);
+                    }
+
+                    Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
+
+                } catch (final Exception e) {
+                    log.error("Error during Latest Milestone updating", e);
+                }
+            }
+        }, "Latest Milestone Tracker")).start();
+
+        (new Thread(() -> {
 
             try {
                 LedgerValidator.init();
@@ -73,16 +96,7 @@ public class Milestone {
                 long scanTime = System.currentTimeMillis();
 
                 try {
-                    final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
                     final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
-
-                    updateLatestMilestone();
-
-                    if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
-
-                        log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex
-                                + " to #" + Milestone.latestMilestoneIndex);
-                    }
 
                     if(Milestone.latestSolidSubtangleMilestoneIndex < Milestone.latestMilestoneIndex) {
                         Milestone.updateLatestSolidSubtangleMilestone();
@@ -98,10 +112,12 @@ public class Milestone {
                     Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
 
                 } catch (final Exception e) {
-                    log.error("Error during TipsManager Milestone updating", e);
+                    log.error("Error during Solid Milestone updating", e);
                 }
             }
-        }, "Latest Milestone Tracker")).start();
+        }, "Solid Milestone Tracker")).start();
+
+
     }
 
     public static Milestone instance() {

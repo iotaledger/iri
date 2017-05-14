@@ -72,14 +72,20 @@ public class Curl {
 
         final int[] scratchpad = new int[STATE_LENGTH];
         int scratchpadIndex = 0;
+        int prev_scratchpadIndex = 0;
         for (int round = 0; round < NUMBER_OF_ROUNDS; round++) {
             System.arraycopy(state, 0, scratchpad, 0, STATE_LENGTH);
             for (int stateIndex = 0; stateIndex < STATE_LENGTH; stateIndex++) {
-                state[stateIndex] = TRUTH_TABLE[scratchpad[scratchpadIndex] + scratchpad[scratchpadIndex += (scratchpadIndex < 365 ? 364 : -365)] * 3 + 4];
+                prev_scratchpadIndex = scratchpadIndex;
+                if (scratchpadIndex < 365) {
+                    scratchpadIndex += 364;
+                } else {
+                    scratchpadIndex += -365;
+                }
+                state[stateIndex] = TRUTH_TABLE[scratchpad[prev_scratchpadIndex] + scratchpad[scratchpadIndex] * 3 + 4];
             }
         }
     }
-
     public void reset() {
         for (int stateIndex = 0; stateIndex < STATE_LENGTH; stateIndex++) {
             state[stateIndex] = 0;

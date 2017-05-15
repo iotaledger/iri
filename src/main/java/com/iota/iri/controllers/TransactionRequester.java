@@ -65,6 +65,14 @@ public class TransactionRequester {
         }
     }
 
+    public void requestTransactions(Set<Hash> hashes, boolean milestone) throws Exception {
+        synchronized (syncObj) {
+            for(Hash hash: hashes) {
+                requestTransaction(hash, milestone);
+            }
+        }
+    }
+
     public void requestTransaction(Hash hash, boolean milestone) throws Exception {
         if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(hash)) {
             synchronized (syncObj) {
@@ -122,38 +130,6 @@ public class TransactionRequester {
             //log.info("Transactions to request = {}", numberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
         }
         return hash;
-    }
-
-    public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
-        if(TransactionViewModel.fromHash(hash).isSolid()) {
-            return true;
-        }
-        Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
-        boolean solid = true;
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
-        Hash hashPointer, trunkInteger, branchInteger;
-        while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (analyzedHashes.add(hashPointer)) {
-                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
-                if(!transactionViewModel2.isSolid()) {
-                    if (transactionViewModel2.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                        requestTransaction(hashPointer, milestone);
-                        solid = false;
-                    } else {
-                        if (solid) {
-                            trunkInteger = transactionViewModel2.getTrunkTransactionHash();
-                            branchInteger = transactionViewModel2.getBranchTransactionHash();
-                            nonAnalyzedTransactions.offer(trunkInteger);
-                            nonAnalyzedTransactions.offer(branchInteger);
-                        }
-                    }
-                }
-            }
-        }
-        if (solid) {
-            TransactionViewModel.updateSolidTransactions(analyzedHashes);
-        }
-        return solid;
     }
 
     public static TransactionRequester instance() {

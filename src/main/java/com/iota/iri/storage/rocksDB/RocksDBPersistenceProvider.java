@@ -34,7 +34,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             "transaction-metadata",
             "milestone",
             "stateDiff",
-            "hashes"
+            "hashes",
+            "localSolidity"
     );
 
     private ColumnFamilyHandle transactionHandle;
@@ -42,6 +43,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private ColumnFamilyHandle milestoneHandle;
     private ColumnFamilyHandle stateDiffHandle;
     private ColumnFamilyHandle hashesHandle;
+    private ColumnFamilyHandle localSolidityHandle;
 
     private List<ColumnFamilyHandle> transactionGetList;
 
@@ -79,6 +81,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         classMap.put(Milestone.class, milestoneHandle);
         classMap.put(StateDiff.class, stateDiffHandle);
         classMap.put(Hashes.class, hashesHandle);
+        classMap.put(LocalSolidityHashes.class, localSolidityHandle);
         classTreeMap.set(classMap);
 
         Map<Class<?>, ColumnFamilyHandle> metadataHashMap = new HashMap<>();
@@ -474,6 +477,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         milestoneHandle = familyHandles.get(++i);
         stateDiffHandle = familyHandles.get(++i);
         hashesHandle = familyHandles.get(++i);
+        localSolidityHandle = familyHandles.get(++i);
 
         for(; ++i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.get(i));

@@ -14,24 +14,24 @@ import java.util.concurrent.ExecutionException;
  */
 public class HashesViewModel {
     private Hashes self;
-    private Hash hash;
+    private Indexable hash;
 
     public HashesViewModel(Hash hash) {
         this.hash = hash;
     }
 
-    private HashesViewModel(Hashes hashes, Hash hash) {
+    private HashesViewModel(Hashes hashes, Indexable hash) {
         self = hashes == null || hashes.set == null ? new Hashes(): hashes;
         this.hash = hash;
     }
 
-    public static HashesViewModel load(Hash hash) throws Exception {
+    public static HashesViewModel load(Indexable hash) throws Exception {
         return new HashesViewModel((Hashes) Tangle.instance().load(Hashes.class, hash), hash);
     }
 
     public static Map.Entry<Indexable, Persistable> getEntry(Hash hash, Hash hashToMerge) throws Exception {
         Hashes hashes = new Hashes();
-        hashes.set = new HashSet<>(Collections.singleton(hashToMerge));
+        hashes.set.add(hashToMerge);
         return new HashMap.SimpleEntry<>(hash, hashes);
     }
 
@@ -47,18 +47,19 @@ public class HashesViewModel {
         return Tangle.instance().save(self, hash);
     }
 
+    public int size() {
+        return self.set.size();
+    }
+
     public boolean addHash(Hash theHash) {
         return getHashes().add(theHash);
     }
 
-    public Hash getHash() {
+    public Indexable getIndex() {
         return hash;
     }
 
     public Set<Hash> getHashes() {
-        if(self.set == null) {
-            self.set = new HashSet<>();
-        }
         return self.set;
     }
 }

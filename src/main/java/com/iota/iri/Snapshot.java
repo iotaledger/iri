@@ -20,6 +20,7 @@ public class Snapshot {
     static {
         initialState.put(Hash.NULL_HASH, 908343229829300L);
 
+        // TODO: Read this from a singed binary file
         initialState.put(new Hash("GH9TBJICDYIRWHQIVJPQMNW9TCRTSFKHSUDSAV9DQS99OUXXGGYJIRNGNRYPQZTNHRVMIYSLWDZWSBNUH"), 18166864596689L);
         initialState.put(new Hash("UZUDPXUCFJNUYQQSW9Q9SIEHLBEOYYAZWSVQMDGVCGOIDDTULFWQJCVJACIMNNBHYRIMBIEQBSKYRDMEJ"), 18166864596586L);
         initialState.put(new Hash("NXVDMIFWMBEQSTMCGJ9BHOKSIIV9LLWVRWDKCLWRTGKVDEFYUBHFMVWRDVKLXAHFX9EAMTFHYKKYIPLD9"), 18166864596586L);
@@ -175,17 +176,25 @@ public class Snapshot {
         initialState.put(new Hash("ESKJOWWRCMQDIBX9VJBR9UIUDRWTMQPIUK9ZZKQRNCPSAYTMQCOB9EHYTPACZHCMHCBZYUAKDHKYYNMZP"), 18166864596586L);
 
 
-        latestSnapshot = new Snapshot(initialState);
+        latestSnapshot = new Snapshot(initialState, 0);
     }
 
+    public static final Object latestSnapshotSyncObject = new Object();
     private final Map<Hash, Long> state;
+    private int index;
+
+    public int index() {
+        return index;
+    }
 
     public Snapshot(Snapshot snapshot) {
         state = new HashMap<>(snapshot.state);
+        this.index = snapshot.index;
     }
 
-    private Snapshot(Map<Hash, Long> initialState) {
+    private Snapshot(Map<Hash, Long> initialState, int index) {
         state = new HashMap<>(initialState);
+        this.index = index;
     }
 
     public Map<Hash, Long> getState() {
@@ -203,7 +212,7 @@ public class Snapshot {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    public Snapshot patch(Map<Hash, Long> diff) {
+    public Snapshot patch(Map<Hash, Long> diff, int index) {
         Map<Hash, Long> patchedState = state.entrySet().parallelStream()
                 .map( hashLongEntry ->
                         new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
@@ -215,12 +224,13 @@ public class Snapshot {
         diff.entrySet().stream()
                 .filter(e -> e.getValue() > 0L)
                 .forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
-        return new Snapshot(patchedState);
+        return new Snapshot(patchedState, index);
     }
 
     void merge(Snapshot snapshot) {
         state.clear();
         state.putAll(snapshot.state);
+        index = snapshot.index;
     }
 
     boolean isConsistent() {

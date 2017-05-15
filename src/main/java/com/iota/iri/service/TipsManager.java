@@ -3,6 +3,7 @@ package com.iota.iri.service;
 import java.util.*;
 
 import com.iota.iri.LedgerValidator;
+import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.*;
 import org.slf4j.Logger;
@@ -51,7 +52,7 @@ public class TipsManager {
                 TipsViewModel.removeTipHash(hash);
                 isTip = false;
             }
-            if(hash != null && TransactionRequester.instance().checkSolidity(hash, false) && isTip) {
+            if(hash != null && TransactionValidator.checkGroupSolidity(hash, false) && isTip) {
                 TipsViewModel.setSolid(hash);
             }
             Thread.sleep(1);
@@ -99,7 +100,7 @@ public class TipsManager {
                 int carlo;
                 double monte;
                 while (tip != null) {
-                    tipSet = TransactionViewModel.fromHash(tip).getApprovers();
+                    tipSet = TransactionViewModel.fromHash(tip).getApprovers().getHashes();
                     tips = tipSet.toArray(new Hash[tipSet.size()]);
                     if (tips.length == 0) {
                         log.info("Reason to stop: TransactionViewModel is a tip");
@@ -123,8 +124,8 @@ public class TipsManager {
                     if (transactionViewModel == null) {
                         log.info("Reason to stop: transactionViewModel == null");
                         break;
-                    } else if (!TransactionRequester.instance().checkSolidity(transactionViewModel.getHash(), false)) {
-                        log.info("Reason to stop: !checkSolidity");
+                    } else if (!TransactionValidator.checkGroupSolidity(transactionViewModel.getHash(), false)) {
+                        log.info("Reason to stop: !checkGroupSolidity");
                         break;
                     } else if (!LedgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
                         log.info("Reason to stop: !LedgerValidator");
@@ -171,7 +172,7 @@ public class TipsManager {
             currentHash = hashesToRate.pop();
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(currentHash);
             addedBack = false;
-            Set<Hash> approvers = transactionViewModel.getApprovers();
+            Set<Hash> approvers = transactionViewModel.getApprovers().getHashes();
             for(Hash approver : approvers) {
                 if(ratings.get(approver) == null && !approver.equals(currentHash)) {
                     if(!addedBack) {
@@ -194,7 +195,8 @@ public class TipsManager {
         if(analyzedTips.add(txHash)) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
             rating = new HashSet<>(Collections.singleton(txHash));
-            for(Hash approver : transactionViewModel.getApprovers()) {
+            Set<Hash> approverHashes = transactionViewModel.getApprovers().getHashes();
+            for(Hash approver : approverHashes) {
                 rating.addAll(updateHashRatings(approver, ratings, analyzedTips));
             }
             ratings.put(txHash, rating);
@@ -212,7 +214,8 @@ public class TipsManager {
         long rating = 1;
         if(analyzedTips.add(txHash)) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(txHash);
-            for(Hash approver : transactionViewModel.getApprovers()) {
+            Set<Hash> approverHashes = transactionViewModel.getApprovers().getHashes();
+            for(Hash approver : approverHashes) {
                 rating = capSum(rating, recursiveUpdateRatings(approver, ratings, analyzedTips), Long.MAX_VALUE/2);
             }
             ratings.put(txHash, rating);

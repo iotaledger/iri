@@ -11,7 +11,7 @@ import java.util.Set;
  * Created by paul on 3/8/17 for iri.
  */
 public class Hashes implements Persistable {
-    public Set<Hash> set;
+    public final Set<Hash> set = new HashSet<>();
 
     public byte[] bytes() {
         return set.parallelStream()
@@ -22,7 +22,6 @@ public class Hashes implements Persistable {
 
     public void read(byte[] bytes) {
         if(bytes != null) {
-            set = new HashSet<>();
             for (int i = 0; i < bytes.length; i += 1 + Hash.SIZE_IN_BYTES) {
                 set.add(new Hash(bytes, i, Hash.SIZE_IN_BYTES));
             }

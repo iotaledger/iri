@@ -78,13 +78,13 @@ public class BundleValidator {
                                                         0, Curl.HASH_LENGTH);
 
                                             } while (++j < instanceTransactionViewModels.size()
-                                                    && instanceTransactionViewModels.get(j).getAddress().getHash().equals(transactionViewModel.getAddress().getHash())
+                                                    && instanceTransactionViewModels.get(j).getAddressHash().equals(transactionViewModel.getAddressHash())
                                                     && instanceTransactionViewModels.get(j).value() == 0);
 
                                             final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
                                             address.squeeze(addressTrits, 0, addressTrits.length);
                                             //if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
-                                            if (! transactionViewModel.getAddress().getHash().equals(new Hash(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE)))) {
+                                            if (! transactionViewModel.getAddressHash().equals(new Hash(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE)))) {
                                                 instanceTransactionViewModels.get(0).setValidity(-1);
                                                 break MAIN_LOOP;
                                             }

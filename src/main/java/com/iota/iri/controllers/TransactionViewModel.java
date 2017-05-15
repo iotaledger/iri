@@ -1,11 +1,10 @@
 package com.iota.iri.controllers;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import com.iota.iri.model.Hashes;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -61,6 +60,7 @@ public class TransactionViewModel {
 
     private HashesViewModel address;
     private HashesViewModel bundle;
+    private HashesViewModel approovers;
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
     private final Hash hash;
@@ -179,6 +179,38 @@ public class TransactionViewModel {
         return false;
     }
 
+    public void updateStatus() throws Exception {
+        TransactionRequester.instance().clearTransactionRequest(getHash());
+        quickSetSolid();
+        if(getApprovers().size() == 0) {
+            TipsViewModel.addTipHash(getHash());
+        } else {
+            if(isSolid()) {
+                for (Hash hash : approovers.getHashes()) {
+                    TransactionViewModel approver = TransactionViewModel.fromHash(hash);
+                    if (!approver.isSolid()) {
+                        approver.quickSetSolid();
+                    }
+                }
+            }
+        }
+    }
+
+    private void quickSetSolid() throws Exception {
+        if(checkApproovee(getTrunkTransaction()) && checkApproovee(getBranchTransaction())) {
+            updateSolid(true);
+            updateSubSolidGroup(trunk.getSubSolidGroup());
+        }
+    }
+
+    private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
+        if(approovee.getType() == PREFILLED_SLOT) {
+            TransactionRequester.instance().requestTransaction(approovee.getHash(), false);
+            return false;
+        }
+        return approovee.isSolid();
+    }
+
     private Map<Indexable, Persistable> storeHashes(Collection<Hash> hashesToSave) throws Exception {
         Map<Indexable, Persistable> map = new HashMap<>();
         for(Hash hash: hashesToSave) {
@@ -188,12 +220,11 @@ public class TransactionViewModel {
         return map;
     }
 
-    public Set<Hash> getApprovers() throws Exception {
-        Hashes self = (Hashes) Tangle.instance().load(Hashes.class, hash);
-        if(self == null || self.set == null) {
-            return new HashSet<>();
+    public HashesViewModel getApprovers() throws Exception {
+        if(approovers == null) {
+            approovers = HashesViewModel.load(hash);
         }
-        return self.set;
+        return approovers;
     }
 
     public final int getType() {
@@ -316,35 +347,52 @@ public class TransactionViewModel {
         return Tangle.instance().exists(Transaction.class, hash);
     }
 
-    public static void updateSolidTransactions(Set<Hash> analyzedHashes) throws Exception {
+    public static void updateSolidTransactions(final Set<Hash> analyzedHashes) throws Exception {
         Iterator<Hash> hashIterator = analyzedHashes.iterator();
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
             transactionViewModel.updateHeights();
-            transactionViewModel.setSolid();
+            transactionViewModel.updateSolid(true);
         }
     }
 
-    public void setSolid() throws Exception {
-        if(!transaction.solid) {
-            transaction.solid = true;
+    public int getSubSolidGroup() {
+        return transaction.group;
+    }
+
+    public void updateSolid(final boolean solid) throws Exception {
+        if(solid != transaction.solid) {
+            transaction.solid = solid;
             update("solid");
         }
     }
 
-    public boolean isSolid() {
+    public void updateSubSolidGroup (final int group) throws Exception {
+        if(group != transaction.group) {
+            transaction.group = group;
+            update("group");
+        }
+    }
+
+    /*
+    public HashesViewModel nonSolidGroup() throws Exception {
+        return HashesViewModel.load(new IntegerIndex(-Math.abs(transaction.group)));
+    }
+    */
+
+    public boolean isSolid() throws Exception {
         return transaction.solid;
     }
 
-    public boolean hasSnapshot() {
-        return transaction.confirmed;
+    public int snapshotIndex() {
+        return transaction.snapshot;
     }
 
-    public void markConfirmed(boolean marker) throws Exception {
-        if(marker ^ transaction.confirmed) {
-            transaction.confirmed = marker;
-            update("confirmed");
+    public void setSnapshot(final int index) throws Exception {
+        if ( index != transaction.snapshot ) {
+            transaction.snapshot = index;
+            update("snapshot");
         }
     }
 
@@ -352,31 +400,12 @@ public class TransactionViewModel {
         return transaction.height;
     }
 
-    public void updateHeight(long height) throws Exception {
+    private void updateHeight(long height) throws Exception {
         transaction.height = height;
         update("height");
     }
 
-    public long recursiveHeightUpdate() throws Exception {
-        long height = transaction.height;
-        if(height == 0L) {
-            if(getTrunkTransactionHash().equals(Hash.NULL_HASH)) {
-                height = 1;
-            } else {
-                TransactionViewModel trunk = getTrunkTransaction();
-                if(trunk.getType() != TransactionViewModel.PREFILLED_SLOT) {
-                    height = 1 + trunk.recursiveHeightUpdate();
-                }
-            }
-            if(height != 0L) {
-                transaction.height = height;
-                update("height");
-            }
-        }
-        return height;
-    }
-
-    public void updateHeights() throws Exception {
+    void updateHeights() throws Exception {
         TransactionViewModel transaction = this, trunk = this.getTrunkTransaction();
         Stack<Hash> transactionViewModels = new Stack<>();
         transactionViewModels.push(transaction.getHash());

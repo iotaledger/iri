@@ -281,12 +281,10 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final int depth = ((Double) request.get("depth")).intValue();
-                    /*
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    */
                     return getTransactionToApproveStatement(depth);
                 }
                 case "getTrytes": {

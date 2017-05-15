@@ -197,7 +197,9 @@ public class TransactionViewModel {
     }
 
     private void quickSetSolid() throws Exception {
-        if(checkApproovee(getTrunkTransaction()) && checkApproovee(getBranchTransaction())) {
+        boolean solid = checkApproovee(getTrunkTransaction());
+        solid = checkApproovee(getBranchTransaction()) && solid;
+        if(solid) {
             updateSolid(true);
             updateSubSolidGroup(trunk.getSubSolidGroup());
         }

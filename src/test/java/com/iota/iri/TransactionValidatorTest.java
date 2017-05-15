@@ -85,6 +85,7 @@ public class TransactionValidatorTest {
         }
 
         Assert.assertFalse(TransactionValidator.checkGroupSolidity(transactions.get(4).getHash(), false));
+        Assert.assertFalse(TransactionValidator.checkGroupSolidity(transactions.get(4).getHash(), false));
         Assert.assertTrue(TransactionValidator.checkGroupSolidity(transactions.get(6).getHash(), false));
 
         transactions.get(0).store();

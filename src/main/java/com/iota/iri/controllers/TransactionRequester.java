@@ -61,7 +61,7 @@ public class TransactionRequester {
         if(transaction != null) {
             transaction.quickSetSolid();
             while ((transaction = transaction.next()) != null) {
-                transaction.quickSetSolid();
+                transaction.updateStatus();
                 Thread.sleep(0, RESCAN_SLEEP_NANOS);
             }
         }

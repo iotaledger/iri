@@ -72,9 +72,9 @@ public class IRI {
         }
 
         try {
-            TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
             initializeTangle();
             Tangle.instance().init();
+            TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
             Milestone.instance().init();
             TipsManager.instance.init();
             TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
@@ -279,6 +279,7 @@ public class IRI {
                 UDPReceiver.instance().shutdown();
                 ReplicatorSourcePool.instance().shutdown();
                 ReplicatorSinkPool.instance().shutdown();
+                TransactionValidator.shutdown();
                 Tangle.instance().shutdown();
             } catch (final Exception e) {
                 log.error("Exception occurred shutting down IOTA node: ", e);

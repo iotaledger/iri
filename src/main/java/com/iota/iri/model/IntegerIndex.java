@@ -12,6 +12,8 @@ public class IntegerIndex implements Indexable{
         this.value = value;
     }
 
+    public IntegerIndex() {}
+
     public int getValue() {
         return value;
     }

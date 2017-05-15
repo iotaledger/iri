@@ -24,6 +24,8 @@ public class Hash implements Serializable, Indexable {
         fullRead(bytes, offset, size);
     }
 
+    public Hash(){}
+
     public Hash(final byte[] bytes) {
         this(bytes, 0, SIZE_IN_BYTES);
     }

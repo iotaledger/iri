@@ -103,9 +103,9 @@ public class MilestoneViewModel {
     }
 
     public static MilestoneViewModel findClosestPrevMilestone(int index) throws Exception {
-        Object milestone = Tangle.instance().previous(Milestone.class, new IntegerIndex(index));
-        if(milestone != null && milestone instanceof Milestone) {
-            return new MilestoneViewModel((Milestone) milestone);
+        Pair<Indexable, Persistable> milestonePair = Tangle.instance().previous(Milestone.class, new IntegerIndex(index));
+        if(milestonePair != null) {
+            return new MilestoneViewModel((Milestone) milestonePair.hi);
         }
         return null;
     }
@@ -114,9 +114,9 @@ public class MilestoneViewModel {
         if(index <= 0) {
             return first();
         }
-        Object milestone = Tangle.instance().next(Milestone.class, new IntegerIndex(index));
-        if(milestone != null && milestone instanceof Milestone) {
-            return new MilestoneViewModel((Milestone) milestone);
+        Pair<Indexable, Persistable> milestonePair = Tangle.instance().next(Milestone.class, new IntegerIndex(index));
+        if(milestonePair != null) {
+            return new MilestoneViewModel((Milestone) milestonePair.hi);
         }
         return null;
     }

@@ -82,7 +82,7 @@ public class FileExportProvider implements PersistenceProvider {
             if(item.equals("sender")) {
                 try {
                     PrintWriter writer;
-                    Path path = Paths.get(item.equals("sender")? "export": "export-solid", String.valueOf(getFileNumber()) + ".tx");
+                    Path path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
                     writer = new PrintWriter(path.toString(), "UTF-8");
                     writer.println(index.toString());
                     writer.println(Converter.trytes(trits(transaction)));

@@ -85,7 +85,7 @@ public class TransactionViewModelTest {
         trunkTx.store();
         branchTx.store();
 
-        Set<Hash> approvers = trunkTx.getApprovers();
+        Set<Hash> approvers = trunkTx.getApprovers().getHashes();
         assertNotEquals(approvers.size(), 0);
     }
 

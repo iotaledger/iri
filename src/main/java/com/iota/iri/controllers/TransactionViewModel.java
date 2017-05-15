@@ -1,11 +1,10 @@
 package com.iota.iri.controllers;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import com.iota.iri.model.Hashes;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -61,14 +60,10 @@ public class TransactionViewModel {
 
     private HashesViewModel address;
     private HashesViewModel bundle;
+    private HashesViewModel approovers;
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
     private final Hash hash;
-    public Hash addressHash;
-    public Hash bundleHash;
-    public Hash trunkHash;
-    public Hash branchHash;
-    public Hash tagValue;
 
 
     public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction value)
@@ -131,6 +126,9 @@ public class TransactionViewModel {
     }
 
     public boolean update(String item) throws Exception {
+        if(hash.equals(Hash.NULL_HASH)) {
+            return false;
+        }
         return Tangle.instance().update(transaction, getHash(), item);
     }
 
@@ -169,6 +167,7 @@ public class TransactionViewModel {
         Map<Indexable, Persistable> hashesMap = storeHashes(Arrays.asList(getAddressHash(), getBundleHash(),
                 getBranchTransactionHash(), getTrunkTransactionHash(), getTagValue()));
         getBytes();
+        setMetadata();
         hashesMap.put(getHash(), transaction);
         return hashesMap;
     }
@@ -180,6 +179,38 @@ public class TransactionViewModel {
         return false;
     }
 
+    public void updateStatus() throws Exception {
+        TransactionRequester.instance().clearTransactionRequest(getHash());
+        quickSetSolid();
+        if(getApprovers().size() == 0) {
+            TipsViewModel.addTipHash(getHash());
+        } else {
+            if(isSolid()) {
+                for (Hash hash : approovers.getHashes()) {
+                    TransactionViewModel approver = TransactionViewModel.fromHash(hash);
+                    if (!approver.isSolid()) {
+                        approver.quickSetSolid();
+                    }
+                }
+            }
+        }
+    }
+
+    private void quickSetSolid() throws Exception {
+        if(checkApproovee(getTrunkTransaction()) && checkApproovee(getBranchTransaction())) {
+            updateSolid(true);
+            updateSubSolidGroup(trunk.getSubSolidGroup());
+        }
+    }
+
+    private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
+        if(approovee.getType() == PREFILLED_SLOT) {
+            TransactionRequester.instance().requestTransaction(approovee.getHash(), false);
+            return false;
+        }
+        return approovee.isSolid();
+    }
+
     private Map<Indexable, Persistable> storeHashes(Collection<Hash> hashesToSave) throws Exception {
         Map<Indexable, Persistable> map = new HashMap<>();
         for(Hash hash: hashesToSave) {
@@ -189,12 +220,11 @@ public class TransactionViewModel {
         return map;
     }
 
-    public Set<Hash> getApprovers() throws Exception {
-        Hashes self = (Hashes) Tangle.instance().load(Hashes.class, hash);
-        if(self == null || self.set == null) {
-            return new HashSet<>();
+    public HashesViewModel getApprovers() throws Exception {
+        if(approovers == null) {
+            approovers = HashesViewModel.load(hash);
         }
-        return self.set;
+        return approovers;
     }
 
     public final int getType() {
@@ -239,42 +269,42 @@ public class TransactionViewModel {
     }
 
     public Hash getAddressHash() {
-        if(addressHash == null) {
-            addressHash = new Hash(Converter.bytes(trits(), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE));
+        if(transaction.address == null) {
+            transaction.address = new Hash(trits(), ADDRESS_TRINARY_OFFSET);
         }
-        return addressHash;
+        return transaction.address;
     }
 
     public Hash getTagValue() {
-        if(tagValue == null) {
-            tagValue = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
+        if(transaction.tag == null) {
+            transaction.tag = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
         }
-        return tagValue;
+        return transaction.tag;
     }
 
     public Hash getBundleHash() {
-        if(bundleHash == null) {
-            bundleHash = new Hash(Converter.bytes(trits(), BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE));
+        if(transaction.bundle == null) {
+            transaction.bundle = new Hash(trits(), BUNDLE_TRINARY_OFFSET);
         }
-        return bundleHash;
+        return transaction.bundle;
     }
 
     public Hash getTrunkTransactionHash() {
-        if(trunkHash == null) {
-            trunkHash = new Hash(Converter.bytes(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET, TRUNK_TRANSACTION_TRINARY_SIZE));
+        if(transaction.trunk == null) {
+            transaction.trunk = new Hash(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET);
         }
-        return trunkHash;
+        return transaction.trunk;
     }
 
     public Hash getBranchTransactionHash() {
-        if(branchHash == null) {
-            branchHash = new Hash(Converter.bytes(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET, BRANCH_TRANSACTION_TRINARY_SIZE));
+        if(transaction.branch == null) {
+            transaction.branch = new Hash(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET);
         }
-        return branchHash;
+        return transaction.branch;
     }
 
     public long value() {
-        return Converter.longValue(trits(), VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
+        return transaction.value;
     }
 
     public void setValidity(int validity) throws Exception {
@@ -287,7 +317,7 @@ public class TransactionViewModel {
     }
 
     public long getCurrentIndex() {
-        return Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
+        return transaction.currentIndex;
     }
 
     public int[] getSignature() {
@@ -295,50 +325,74 @@ public class TransactionViewModel {
     }
 
     public long getTimestamp() {
-        return Converter.longValue(trits(), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+        return transaction.timestamp;
     }
 
     public byte[] getNonce() {
         return Converter.bytes(trits(), NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
     }
 
-    public long getLastIndex() {
-        return Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
+        public long lastIndex() {
+        return transaction.lastIndex;
+    }
+
+    public void setMetadata() {
+        transaction.value = Converter.longValue(trits(), VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
+        transaction.timestamp = Converter.longValue(trits(), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+        transaction.currentIndex = Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
+        transaction.lastIndex = Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
     }
 
     public static boolean exists(Hash hash) throws Exception {
         return Tangle.instance().exists(Transaction.class, hash);
     }
 
-    public static void updateSolidTransactions(Set<Hash> analyzedHashes) throws Exception {
+    public static void updateSolidTransactions(final Set<Hash> analyzedHashes) throws Exception {
         Iterator<Hash> hashIterator = analyzedHashes.iterator();
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
             transactionViewModel.updateHeights();
-            transactionViewModel.setSolid();
+            transactionViewModel.updateSolid(true);
         }
     }
 
-    public void setSolid() throws Exception {
-        if(!transaction.solid) {
-            transaction.solid = true;
+    public int getSubSolidGroup() {
+        return transaction.group;
+    }
+
+    public void updateSolid(final boolean solid) throws Exception {
+        if(solid != transaction.solid) {
+            transaction.solid = solid;
             update("solid");
         }
     }
 
-    public boolean isSolid() {
+    public void updateSubSolidGroup (final int group) throws Exception {
+        if(group != transaction.group) {
+            transaction.group = group;
+            update("group");
+        }
+    }
+
+    /*
+    public HashesViewModel nonSolidGroup() throws Exception {
+        return HashesViewModel.load(new IntegerIndex(-Math.abs(transaction.group)));
+    }
+    */
+
+    public boolean isSolid() throws Exception {
         return transaction.solid;
     }
 
-    public boolean hasSnapshot() {
-        return transaction.confirmed;
+    public int snapshotIndex() {
+        return transaction.snapshot;
     }
 
-    public void markConfirmed(boolean marker) throws Exception {
-        if(marker ^ transaction.confirmed) {
-            transaction.confirmed = marker;
-            update("confirmed");
+    public void setSnapshot(final int index) throws Exception {
+        if ( index != transaction.snapshot ) {
+            transaction.snapshot = index;
+            update("snapshot");
         }
     }
 
@@ -346,31 +400,12 @@ public class TransactionViewModel {
         return transaction.height;
     }
 
-    public void updateHeight(long height) throws Exception {
+    private void updateHeight(long height) throws Exception {
         transaction.height = height;
         update("height");
     }
 
-    public long recursiveHeightUpdate() throws Exception {
-        long height = transaction.height;
-        if(height == 0L) {
-            if(getTrunkTransactionHash().equals(Hash.NULL_HASH)) {
-                height = 1;
-            } else {
-                TransactionViewModel trunk = getTrunkTransaction();
-                if(trunk.getType() != TransactionViewModel.PREFILLED_SLOT) {
-                    height = 1 + trunk.recursiveHeightUpdate();
-                }
-            }
-            if(height != 0L) {
-                transaction.height = height;
-                update("height");
-            }
-        }
-        return height;
-    }
-
-    public void updateHeights() throws Exception {
+    void updateHeights() throws Exception {
         TransactionViewModel transaction = this, trunk = this.getTrunkTransaction();
         Stack<Hash> transactionViewModels = new Stack<>();
         transactionViewModels.push(transaction.getHash());

@@ -352,12 +352,7 @@ public class API {
             final TransactionViewModel transactionViewModel = TransactionValidator.validate(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
             transactionViewModel.store();
-            TransactionRequester.instance().clearTransactionRequest(transactionViewModel.getHash());
-            TransactionRequester.instance().requestTransaction(transactionViewModel.getBranchTransactionHash(), false);
-            TransactionRequester.instance().requestTransaction(transactionViewModel.getTrunkTransactionHash(), false);
-            if(transactionViewModel.getApprovers().size() == 0) {
-                TipsViewModel.addTipHash(transactionViewModel.getHash());
-            }
+            transactionViewModel.updateStatus();
             transactionViewModel.updateSender("local");
         }
         return AbstractResponse.createEmptyResponse();
@@ -453,7 +448,7 @@ public class API {
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
-                approveeTransactions.addAll(TransactionViewModel.fromHash(new Hash(approvee)).getApprovers());
+                approveeTransactions.addAll(TransactionViewModel.fromHash(new Hash(approvee)).getApprovers().getHashes());
             }
         }
 
@@ -501,10 +496,14 @@ public class API {
                 .collect(Collectors.toCollection(LinkedList::new));
 
         final Map<Hash, Long> balances = new HashMap<>();
-        for (final Hash address : addresses) {
-            balances.put(address,
-                    Snapshot.latestSnapshot.getState().containsKey(address) ?
-                            Snapshot.latestSnapshot.getState().get(address) : Long.valueOf(0));
+        final int index;
+        synchronized (Snapshot.latestSnapshotSyncObject) {
+            index = Snapshot.latestSnapshot.index();
+            for (final Hash address : addresses) {
+                balances.put(address,
+                        Snapshot.latestSnapshot.getState().containsKey(address) ?
+                                Snapshot.latestSnapshot.getState().get(address) : Long.valueOf(0));
+            }
         }
 
         final Hash milestone = Milestone.latestSolidSubtangleMilestone;
@@ -522,10 +521,10 @@ public class API {
 
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(hash);
 
-                    if(!transactionViewModel.hasSnapshot()) {
+                    if(transactionViewModel.snapshotIndex() == 0 || transactionViewModel.snapshotIndex() > index) {
                         if (transactionViewModel.value() != 0) {
 
-                            final Hash address = transactionViewModel.getAddress().getHash();
+                            final Hash address = transactionViewModel.getAddressHash();
                             final Long balance = balances.get(address);
                             if (balance != null) {
 

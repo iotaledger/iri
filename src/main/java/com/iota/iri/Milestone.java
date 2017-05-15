@@ -6,14 +6,10 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -23,7 +19,6 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.TipsManager;
 import com.iota.iri.utils.Converter;
 
 public class Milestone {
@@ -184,7 +179,7 @@ public class Milestone {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(latestSolidSubtangleMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index();
                  milestoneViewModel = milestoneViewModel.next()) {
-                if (TransactionRequester.instance().checkSolidity(milestoneViewModel.getHash(), true) &&
+                if (TransactionValidator.checkGroupSolidity(milestoneViewModel.getHash(), true) &&
                         milestoneViewModel.index() > latestSolidSubtangleMilestoneIndex &&
                         LedgerValidator.updateSnapshot(milestoneViewModel)) {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();
@@ -194,7 +189,7 @@ public class Milestone {
         }
     }
 
-    private static int getIndex(TransactionViewModel transactionViewModel) {
+    static int getIndex(TransactionViewModel transactionViewModel) {
         return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
     }
 

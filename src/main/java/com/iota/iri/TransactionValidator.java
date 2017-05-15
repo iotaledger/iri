@@ -139,7 +139,20 @@ public class TransactionValidator {
                     try {
                         TransactionViewModel.fromHash(cascadeIterator.next()).getApprovers().getHashes().stream()
                                 .map(TransactionViewModel::quietFromHash)
-                                .filter(TransactionViewModel::quietQuickSetSolid)
+                                .filter(tx -> {
+                                    if(tx.quietQuickSetSolid()) {
+                                        return true;
+                                    } else {
+                                        synchronized (cascadeSync) {
+                                            if(useFirst.get()) {
+                                                newSolidTransactionsOne.add(tx.getHash());
+                                            } else {
+                                                newSolidTransactionsTwo.add(tx.getHash());
+                                            }
+                                        }
+                                        return false;
+                                    }
+                                })
                                 .map(TransactionViewModel::getHash)
                                 .forEach(hashesToCascade::add);
                     } catch (Exception e) {

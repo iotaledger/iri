@@ -21,6 +21,8 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import com.iota.iri.controllers.HashesViewModel;
@@ -97,6 +99,11 @@ public class API {
 
     private final AtomicInteger counter = new AtomicInteger(0);
 
+    private Pattern trytesPattern = Pattern.compile("[9A-Z]*");
+
+    private final static int HASH_SIZE = 81;
+    private final static int TRYTES_SIZE = 2673;
+
     public void init() throws IOException {
 
         final int apiPort = Configuration.integer(DefaultConfSettings.PORT);
@@ -166,38 +173,88 @@ public class API {
             switch (command) {
 
                 case "addNeighbors": {
+                    if (!request.containsKey("uris")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
                     final List<String> uris = (List<String>) request.get("uris");
                     log.debug("Invoking 'addNeighbors' with {}", uris);
+
                     return addNeighborsStatement(uris);
                 }
                 case "attachToTangle": {
+                    if (!request.containsKey("trunkTransaction") ||
+                            !request.containsKey("branchTransaction") ||
+                            !request.containsKey("minWeightMagnitude") ||
+                            !request.containsKey("trytes")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
+                    if (!validTrytes((String)request.get("trunkTransaction"), HASH_SIZE)) {
+                        return ErrorResponse.create("Invalid trunkTransaction hash");
+                    }
+                    if (!validTrytes((String)request.get("branchTransaction"), HASH_SIZE)) {
+                        return ErrorResponse.create("Invalid branchTransaction hash");
+                    }
                     final Hash trunkTransaction = new Hash((String) request.get("trunkTransaction"));
                     final Hash branchTransaction = new Hash((String) request.get("branchTransaction"));
                     final int minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
                     final List<String> trytes = (List<String>) request.get("trytes");
-
+                    for (final String tryt : trytes) {
+                        if (!validTrytes(tryt, TRYTES_SIZE)) {
+                            return ErrorResponse.create("Invalid trytes input");
+                        }
+                    }
                     return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
-
                 }
                 case "broadcastTransactions": {
+                    if (!request.containsKey("trytes")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
                     final List<String> trytes = (List<String>) request.get("trytes");
-                    log.debug("Invoking 'broadcastTransactions' with {}", trytes);
+                    for (final String tryt : trytes) {
+                        if (!validTrytes(tryt, TRYTES_SIZE)) {
+                            return ErrorResponse.create("Invalid trytes input");
+                        }
+                    }
                     return broadcastTransactionStatement(trytes);
                 }
                 case "findTransactions": {
+                    if (!request.containsKey("bundles") &&
+                            !request.containsKey("addresses") &&
+                            !request.containsKey("tags") &&
+                            !request.containsKey("approvees")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
                     return findTransactionStatement(request);
                 }
                 case "getBalances": {
+                    if (!request.containsKey("addresses") || !request.containsKey("threshold")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
                     final List<String> addresses = (List<String>) request.get("addresses");
+                    for (final String address : addresses) {
+                        if (!validTrytes(address, HASH_SIZE)) {
+                            return ErrorResponse.create("Invalid addresses input");
+                        }
+                    }
                     final int threshold = ((Double) request.get("threshold")).intValue();
                     return getBalancesStatement(addresses, threshold);
                 }
                 case "getInclusionStates": {
+                    if (!request.containsKey("transactions") || !request.containsKey("tips")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
                     final List<String> trans = (List<String>) request.get("transactions");
                     final List<String> tps = (List<String>) request.get("tips");
 
-                    if (trans == null || tps == null) {
-                        return ErrorResponse.create("getInclusionStates Bad Request.");
+                    for (final String tx : trans) {
+                        if (!validTrytes(tx, HASH_SIZE)) {
+                            return ErrorResponse.create("Invalid transactions input");
+                        }
+                    }
+                    for (final String ti : tps) {
+                        if (!validTrytes(ti, HASH_SIZE)) {
+                            return ErrorResponse.create("Invalid tips input");
+                        }
                     }
 
                     if (invalidSubtangleStatus()) {
@@ -224,15 +281,25 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final int depth = ((Double) request.get("depth")).intValue();
-                    //if (invalidSubtangleStatus()) {
-                    //    return ErrorResponse
-                    //            .create("This operations cannot be executed: The subtangle has not been updated yet.");
-                    //}
+                    if (invalidSubtangleStatus()) {
+                        return ErrorResponse
+                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    }
                     return getTransactionToApproveStatement(depth);
                 }
                 case "getTrytes": {
+                    if (!request.containsKey("hashes")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
                     final List<String> hashes = (List<String>) request.get("hashes");
-                    log.debug("Executing getTrytesStatement: {}", hashes);
+                    if (hashes == null || hashes.size() == 0) {
+                        return ErrorResponse.create("Wrong arguments");
+                    }
+                    for (final String hash : hashes) {
+                        if (!validTrytes(hash, HASH_SIZE))  {
+                            return ErrorResponse.create("Invalid hash input");
+                        }
+                    }
                     return getTrytesStatement(hashes);
                 }
 
@@ -241,12 +308,18 @@ public class API {
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "removeNeighbors": {
+                    if (!request.containsKey("uris")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
                     final List<String> uris = (List<String>) request.get("uris");
                     log.debug("Invoking 'removeNeighbors' with {}", uris);
                     return removeNeighborsStatement(uris);
                 }
 
                 case "storeTransactions": {
+                    if (!request.containsKey("trytes")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
                     List<String> trytes = (List<String>) request.get("trytes");
                     log.debug("Invoking 'storeTransactions' with {}", trytes);
                     return storeTransactionStatement(trytes);
@@ -289,6 +362,9 @@ public class API {
                 if (Node.instance().removeNeighbor(uri,true)) {
                     numberOfRemovedNeighbors.incrementAndGet();
                 }
+            }
+            else {
+                return ErrorResponse.create("Invalid uri scheme");
             }
         }
         return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
@@ -349,6 +425,10 @@ public class API {
 
     private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {
         for (final String trytes : trys) {
+
+            if (!validTrytes(trytes, TRYTES_SIZE)) {
+                return ErrorResponse.create("Invalid trytes input");
+            }
             final TransactionViewModel transactionViewModel = TransactionValidator.validate(Converter.trits(trytes));
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
             transactionViewModel.store();
@@ -415,8 +495,12 @@ public class API {
 
     private AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {
         final Set<Hash> bundlesTransactions = new HashSet<>();
+
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
+                if (!validTrytes(bundle, HASH_SIZE)) {
+                    return ErrorResponse.create("Invalid bundle hash");
+                }
                 bundlesTransactions.addAll(HashesViewModel.load(new Hash(bundle)).getHashes());
             }
         }
@@ -427,8 +511,8 @@ public class API {
             log.debug("Searching: {}", addresses.stream().reduce((a, b) -> a += ',' + b));
 
             for (final String address : addresses) {
-                if (address.length() != 81) {
-                    log.error("Address {} doesn't look a valid address", address);
+                if (!validTrytes(address, HASH_SIZE)) {
+                    return ErrorResponse.create("Invalid address input");
                 }
                 addressesTransactions.addAll(HashesViewModel.load(new Hash(address)).getHashes());
             }
@@ -437,6 +521,9 @@ public class API {
         final Set<Hash> tagsTransactions = new HashSet<>();
         if (request.containsKey("tags")) {
             for (String tag : (List<String>) request.get("tags")) {
+                if (!validTrytes(tag,tag.length())) {
+                    return ErrorResponse.create("Invalid tag input");
+                }
                 while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
                     tag += Converter.TRYTE_ALPHABET.charAt(0);
                 }
@@ -448,6 +535,9 @@ public class API {
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
+                if (!validTrytes(approvee,HASH_SIZE)) {
+                    return ErrorResponse.create("Invalid approvees hash");
+                }
                 approveeTransactions.addAll(TransactionViewModel.fromHash(new Hash(approvee)).getApprovers().getHashes());
             }
         }
@@ -622,12 +712,15 @@ public class API {
                         neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true);
                         break;
                     default:
-                        neighbor = null;
+                        return ErrorResponse.create("Invalid uri scheme");
                 }
                 if (!Node.instance().getNeighbors().contains(neighbor)) {
                     Node.instance().getNeighbors().add(neighbor);
                     numberOfAddedNeighbors++;
                 }
+            }
+            else {
+                return ErrorResponse.create("Invalid uri scheme");
             }
         }
         return AddedNeighborsResponse.create(numberOfAddedNeighbors);
@@ -667,6 +760,14 @@ public class API {
             }
         });
         sinkChannel.resumeWrites();
+    }
+
+    private boolean validTrytes(String trytes, int minimalLength) {
+        if (trytes.length() < minimalLength) {
+            return false;
+        }
+        Matcher matcher = trytesPattern.matcher(trytes);
+        return matcher.matches();
     }
 
     private static void setupResponseHeaders(final HttpServerExchange exchange) {

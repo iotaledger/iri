@@ -52,7 +52,7 @@ public class MilestoneViewModel {
 
     public static MilestoneViewModel first() throws Exception {
         Pair<Indexable, Persistable> milestonePair = Tangle.instance().getFirst(Milestone.class, IntegerIndex.class);
-        if(milestonePair != null) {
+        if(milestonePair != null && milestonePair.hi != null) {
             Milestone milestone = (Milestone) milestonePair.hi;
             return new MilestoneViewModel(milestone);
         }
@@ -61,7 +61,7 @@ public class MilestoneViewModel {
 
     public static MilestoneViewModel latest() throws Exception {
         Pair<Indexable, Persistable> milestonePair = Tangle.instance().getLatest(Milestone.class, IntegerIndex.class);
-        if(milestonePair != null) {
+        if(milestonePair != null && milestonePair.hi != null) {
             Milestone milestone = (Milestone) milestonePair.hi;
             return new MilestoneViewModel(milestone);
         }
@@ -70,7 +70,7 @@ public class MilestoneViewModel {
 
     public MilestoneViewModel previous() throws Exception {
         Pair<Indexable, Persistable> milestonePair = Tangle.instance().previous(Milestone.class, this.milestone.index);
-        if(milestonePair != null) {
+        if(milestonePair != null && milestonePair.hi != null) {
             Milestone milestone = (Milestone) milestonePair.hi;
             return new MilestoneViewModel((Milestone) milestone);
         }
@@ -79,7 +79,7 @@ public class MilestoneViewModel {
 
     public MilestoneViewModel next() throws Exception {
         Pair<Indexable, Persistable> milestonePair = Tangle.instance().next(Milestone.class, this.milestone.index);
-        if(milestonePair != null) {
+        if(milestonePair != null && milestonePair.hi != null) {
             Milestone milestone = (Milestone) milestonePair.hi;
             return new MilestoneViewModel((Milestone) milestone);
         }
@@ -104,7 +104,7 @@ public class MilestoneViewModel {
 
     public static MilestoneViewModel findClosestPrevMilestone(int index) throws Exception {
         Pair<Indexable, Persistable> milestonePair = Tangle.instance().previous(Milestone.class, new IntegerIndex(index));
-        if(milestonePair != null) {
+        if(milestonePair != null && milestonePair.hi != null) {
             return new MilestoneViewModel((Milestone) milestonePair.hi);
         }
         return null;
@@ -115,7 +115,7 @@ public class MilestoneViewModel {
             return first();
         }
         Pair<Indexable, Persistable> milestonePair = Tangle.instance().next(Milestone.class, new IntegerIndex(index));
-        if(milestonePair != null) {
+        if(milestonePair != null && milestonePair.hi != null) {
             return new MilestoneViewModel((Milestone) milestonePair.hi);
         }
         return null;

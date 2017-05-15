@@ -176,7 +176,7 @@ public class TransactionViewModel {
 
     public static TransactionViewModel first() throws Exception {
         Pair<Indexable, Persistable> transactionPair = Tangle.instance().getFirst(Transaction.class, Hash.class);
-        if(transactionPair != null) {
+        if(transactionPair != null && transactionPair.hi != null) {
             return new TransactionViewModel((Transaction) transactionPair.hi, (Hash) transactionPair.low);
         }
         return null;
@@ -184,7 +184,7 @@ public class TransactionViewModel {
 
     public TransactionViewModel next() throws Exception {
         Pair<Indexable, Persistable> transactionPair = Tangle.instance().next(Transaction.class, getHash());
-        if(transactionPair != null) {
+        if(transactionPair != null && transactionPair.hi != null) {
             return new TransactionViewModel((Transaction) transactionPair.hi, (Hash) transactionPair.low);
         }
         return null;

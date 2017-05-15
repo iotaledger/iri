@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;
@@ -26,12 +27,28 @@ public class TransactionValidator {
     private static final int TESTNET_MIN_WEIGHT_MAGNITUDE = 13;
     private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 18;
     private static int MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
+
+    private static Thread newSolidThread;
+
+    private static final AtomicBoolean useFirst = new AtomicBoolean(true);
+    private static final AtomicBoolean shuttingDown = new AtomicBoolean(false);
+    private static final Object cascadeSync = new Object();
+    private static final Set<Hash> newSolidTransactionsOne = new LinkedHashSet<>();
+    private static final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
+
     public static void init(boolean testnet) {
         if(testnet) {
             MIN_WEIGHT_MAGNITUDE = TESTNET_MIN_WEIGHT_MAGNITUDE;
         } else {
             MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
         }
+        newSolidThread = new Thread(spawnSolidTransactionsCascader(), "Solid TX cascader");
+        newSolidThread.start();
+    }
+
+    public static void shutdown() throws InterruptedException {
+        shuttingDown.set(true);
+        newSolidThread.join();
     }
 
     private static void runValidation(TransactionViewModel transactionViewModel) {
@@ -259,5 +276,54 @@ public class TransactionValidator {
         }
         visitedHashes.clear();
         return referencedHashes;
+    }
+
+    public static void addSolidTransaction(Hash hash) {
+        synchronized (cascadeSync) {
+            if (useFirst.get()) {
+                newSolidTransactionsOne.add(hash);
+            } else {
+                newSolidTransactionsTwo.add(hash);
+            }
+        }
+    }
+
+    public static Runnable spawnSolidTransactionsCascader() {
+        return () -> {
+            while(!shuttingDown.get()) {
+                Set<Hash> newSolidHashes;
+                useFirst.set(!useFirst.get());
+                synchronized (cascadeSync) {
+                    if (useFirst.get()) {
+                        newSolidHashes = newSolidTransactionsTwo;
+                    } else {
+                        newSolidHashes = newSolidTransactionsOne;
+                    }
+                }
+                Iterator<Hash> cascadeIterator = newSolidHashes.iterator();
+                Set<Hash> hashesToCascade = new HashSet<>();
+                while(cascadeIterator.hasNext() && !shuttingDown.get()) {
+                    try {
+                        TransactionViewModel.fromHash(cascadeIterator.next()).getApprovers().getHashes().stream()
+                                .map(TransactionViewModel::quietFromHash)
+                                .filter(TransactionViewModel::quietQuickSetSolid)
+                                .map(TransactionViewModel::getHash)
+                                .forEach(hashesToCascade::add);
+                    } catch (Exception e) {
+                        // TODO: Do something, maybe, or do nothing.
+                    }
+                    if(!cascadeIterator.hasNext()) {
+                        newSolidHashes.clear();
+                        newSolidHashes = hashesToCascade;
+                        cascadeIterator = newSolidHashes.iterator();
+                    }
+                }
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
     }
 }

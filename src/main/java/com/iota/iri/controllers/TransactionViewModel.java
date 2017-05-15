@@ -2,6 +2,7 @@ package com.iota.iri.controllers;
 
 import java.util.*;
 
+import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hashes;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
@@ -181,22 +182,23 @@ public class TransactionViewModel {
 
     public void updateStatus() throws Exception {
         TransactionRequester.instance().clearTransactionRequest(getHash());
-        quickSetSolid();
+        if(quickSetSolid()) {
+            TransactionValidator.addSolidTransaction(getHash());
+        }
         if(getApprovers().size() == 0) {
             TipsViewModel.addTipHash(getHash());
-        } else {
-            if(isSolid()) {
-                for (Hash hash : approovers.getHashes()) {
-                    TransactionViewModel approver = TransactionViewModel.fromHash(hash);
-                    if (!approver.isSolid()) {
-                        approver.quickSetSolid();
-                    }
-                }
-            }
         }
     }
 
-    private void quickSetSolid() throws Exception {
+    public boolean quietQuickSetSolid() {
+        try {
+            return quickSetSolid();
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    private boolean quickSetSolid() throws Exception {
         boolean solid = true;
         if(!checkApproovee(getTrunkTransaction())) {
             solid = false;
@@ -205,14 +207,20 @@ public class TransactionViewModel {
             solid = false;
         }
         if(solid) {
-            updateSolid(true);
-            updateSubSolidGroup(trunk.getSubSolidGroup());
+            if(updateSolid(true)) {
+                updateSubSolidGroup(trunk.getSubSolidGroup());
+                return true;
+            }
         }
+        return false;
     }
 
     private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
         if(approovee.getType() == PREFILLED_SLOT) {
             TransactionRequester.instance().requestTransaction(approovee.getHash(), false);
+            if(approovee.getHash().equals(Hash.NULL_HASH)) {
+                return true;
+            }
             return false;
         }
         return approovee.isSolid();
@@ -368,11 +376,13 @@ public class TransactionViewModel {
         return transaction.group;
     }
 
-    public void updateSolid(final boolean solid) throws Exception {
+    public boolean updateSolid(final boolean solid) throws Exception {
         if(solid != transaction.solid) {
             transaction.solid = solid;
             update("solid");
+            return solid;
         }
+        return false;
     }
 
     public void updateSubSolidGroup (final int group) throws Exception {

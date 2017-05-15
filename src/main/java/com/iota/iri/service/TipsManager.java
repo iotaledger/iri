@@ -52,7 +52,8 @@ public class TipsManager {
                 TipsViewModel.removeTipHash(hash);
                 isTip = false;
             }
-            if(hash != null && TransactionValidator.checkGroupSolidity(hash, false) && isTip) {
+            //if(hash != null && TransactionValidator.checkGroupSolidity(hash, false) && isTip) {
+            if(hash != null && TransactionViewModel.fromHash(hash).isSolid() && isTip) {
                 TipsViewModel.setSolid(hash);
             }
             Thread.sleep(1);
@@ -124,7 +125,8 @@ public class TipsManager {
                     if (transactionViewModel == null) {
                         log.info("Reason to stop: transactionViewModel == null");
                         break;
-                    } else if (!TransactionValidator.checkGroupSolidity(transactionViewModel.getHash(), false)) {
+                    //} else if (!TransactionValidator.checkGroupSolidity(transactionViewModel.getHash(), false)) {
+                    } else if (!transactionViewModel.isSolid()) {
                         log.info("Reason to stop: !checkGroupSolidity");
                         break;
                     } else if (!LedgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {

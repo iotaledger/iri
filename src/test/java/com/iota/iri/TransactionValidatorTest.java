@@ -67,33 +67,4 @@ public class TransactionValidatorTest {
     public void validate2() throws Exception {
 
     }
-
-    @Test
-    public void checkSolidity() throws Exception {
-        // TODO: create a set of transactions (exclusively solid)
-        List<TransactionViewModel> transactions = new ArrayList<>();
-        transactions.add(new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH), TransactionViewModelTest.getRandomTransactionHash()));
-        transactions.add(new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH), TransactionViewModelTest.getRandomTransactionHash()));
-        transactions.add(new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(transactions.get(1).getHash(), Hash.NULL_HASH), TransactionViewModelTest.getRandomTransactionHash()));
-        transactions.add(new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(transactions.get(1).getHash(), transactions.get(2).getHash()), TransactionViewModelTest.getRandomTransactionHash()));
-        transactions.add(new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(transactions.get(0).getHash(), transactions.get(3).getHash()), TransactionViewModelTest.getRandomTransactionHash()));
-        transactions.add(new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(transactions.get(3).getHash(), transactions.get(2).getHash()), TransactionViewModelTest.getRandomTransactionHash()));
-        transactions.add(new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(transactions.get(5).getHash(), transactions.get(5).getHash()), TransactionViewModelTest.getRandomTransactionHash()));
-
-        for(int i = transactions.size(); i-- > 1;) {
-            transactions.get(i).store();
-        }
-
-        Assert.assertFalse(TransactionValidator.checkGroupSolidity(transactions.get(4).getHash(), false));
-        Assert.assertFalse(TransactionValidator.checkGroupSolidity(transactions.get(4).getHash(), false));
-        Assert.assertTrue(TransactionValidator.checkGroupSolidity(transactions.get(6).getHash(), false));
-
-        transactions.get(0).store();
-
-        Assert.assertTrue(TransactionValidator.checkGroupSolidity(transactions.get(4).getHash(), false));
-        // TODO: save some, but not all transactions
-        // TODO: check solidities and solidity groups
-        // TODO: check solidities and solidity groups
-    }
-
 }

@@ -208,7 +208,7 @@ public class TransactionViewModel {
         }
         if(solid) {
             if(updateSolid(true)) {
-                updateSubSolidGroup(trunk.getSubSolidGroup());
+                updateHeights();
                 return true;
             }
         }
@@ -372,10 +372,6 @@ public class TransactionViewModel {
         }
     }
 
-    public int getSubSolidGroup() {
-        return transaction.group;
-    }
-
     public boolean updateSolid(final boolean solid) throws Exception {
         if(solid != transaction.solid) {
             transaction.solid = solid;
@@ -383,13 +379,6 @@ public class TransactionViewModel {
             return solid;
         }
         return false;
-    }
-
-    public void updateSubSolidGroup (final int group) throws Exception {
-        if(group != transaction.group) {
-            transaction.group = group;
-            update("group");
-        }
     }
 
     /*

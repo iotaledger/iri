@@ -32,7 +32,6 @@ public class Transaction implements Persistable {
     public boolean solid = false;
     public long height = 0;
     public String sender = "";
-    public int group;
     public int snapshot;
 
     public byte[] bytes() {
@@ -48,7 +47,7 @@ public class Transaction implements Persistable {
 
     @Override
     public byte[] metadata() {
-        ByteBuffer buffer = ByteBuffer.allocate(Hash.SIZE_IN_BYTES * 5 + Long.BYTES * 4 + Integer.BYTES * 2 + Long.BYTES * 4 + 1 + sender.getBytes().length);
+        ByteBuffer buffer = ByteBuffer.allocate(Hash.SIZE_IN_BYTES * 5 + Long.BYTES * 4 + Integer.BYTES + Long.BYTES * 4 + 1 + sender.getBytes().length);
         buffer.put(address.bytes());
         buffer.put(bundle.bytes());
         buffer.put(trunk.bytes());
@@ -64,7 +63,6 @@ public class Transaction implements Persistable {
         buffer.put(Serializer.serialize(height));
         //buffer.put((byte) (confirmed ? 1:0));
         buffer.put(new byte[]{(byte) (solid ? 1 : 0)});
-        buffer.put(Serializer.serialize(group));
         buffer.put(Serializer.serialize(snapshot));
         buffer.put(sender.getBytes());
         return buffer.array();
@@ -106,8 +104,6 @@ public class Transaction implements Persistable {
             */
             solid = bytes[i] == 1;
             i++;
-            group = Serializer.getInteger(bytes, i);
-            i += Integer.BYTES;
             snapshot = Serializer.getInteger(bytes, i);
             i += Integer.BYTES;
             byte[] senderBytes = new byte[bytes.length - i];

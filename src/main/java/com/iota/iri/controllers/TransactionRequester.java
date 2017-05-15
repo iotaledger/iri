@@ -1,8 +1,11 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
 import com.iota.iri.network.Node;
+import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,15 +40,16 @@ public class TransactionRequester {
         }
     }
 
-    /*
-    public void rescanTransactionsToRequest() throws ExecutionException, InterruptedException {
-        Hash[] missingTx = TransactionViewModel.getMissingTransactions();
-        synchronized (this) {
-            transactionsToRequest.clear();
-            transactionsToRequest.addAll(Arrays.asList(missingTx));
+    public void rescanTransactionsToRequest() throws Exception {
+        Transaction first = (Transaction) Tangle.instance().getFirst(Transaction.class);
+        if(first != null) {
+            TransactionViewModel transaction = TransactionValidator.validate(first.bytes);
+            transaction.quickSetSolid();
+            while((transaction = TransactionValidator.validate(((Transaction) Tangle.instance().next(Transaction.class, transaction.getHash())).bytes)) != null) {
+                transaction.quickSetSolid();
+            }
         }
     }
-    */
     public Hash[] getRequestedTransactions() {
         synchronized (syncObj) {
             return ArrayUtils.addAll(transactionsToRequest.stream().toArray(Hash[]::new),

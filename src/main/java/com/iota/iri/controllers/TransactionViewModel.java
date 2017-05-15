@@ -198,7 +198,7 @@ public class TransactionViewModel {
         }
     }
 
-    private boolean quickSetSolid() throws Exception {
+    boolean quickSetSolid() throws Exception {
         boolean solid = true;
         if(!checkApproovee(getTrunkTransaction())) {
             solid = false;

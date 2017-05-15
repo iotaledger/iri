@@ -270,6 +270,7 @@ public class Node {
                     }
                     if (!getNeighbors().contains(newneighbor)) {
                         getNeighbors().add(newneighbor);
+                        Neighbor.incNumPeers();
                     }
                 } catch (URISyntaxException e) {
                     log.error("Invalid URI string: " + uriString);

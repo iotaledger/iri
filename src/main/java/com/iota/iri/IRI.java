@@ -75,7 +75,6 @@ public class IRI {
             initializeTangle();
             Tangle.instance().init();
             TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
-            TransactionRequester.instance().rescanTransactionsToRequest();
             Milestone.instance().init();
             TipsManager.instance.init();
             TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));

@@ -21,25 +21,48 @@ public class TransactionRequester {
     private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUEST_HASH_SIZE];
 
     private static double P_REMOVE_REQUEST;
+    private static int RESCAN_SLEEP_NANOS = 20000;
     private static boolean initialized = false;
     private static final TransactionRequester instance = new TransactionRequester();
     private final SecureRandom random = new SecureRandom();
 
     private final Object syncObj = new Object();
+    private static Thread rescanThread;
 
     public static void init(double p_REMOVE_REQUEST) {
         if(!initialized) {
             initialized = true;
             P_REMOVE_REQUEST = p_REMOVE_REQUEST;
+
+            rescanThread = new Thread(() -> {
+                try {
+                    rescanTransactionsToRequest();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }, "Rescan Transactions Thread");
+            TransactionRequester.instance();
+            rescanThread.start();
         }
     }
 
-    public void rescanTransactionsToRequest() throws Exception {
+    public static void shutdown() {
+        if(rescanThread != null) {
+            try {
+                rescanThread.join();
+            } catch (InterruptedException e) {
+            }
+        }
+    }
+
+
+    private static void rescanTransactionsToRequest() throws Exception {
         TransactionViewModel transaction = TransactionViewModel.first();
         if(transaction != null) {
             transaction.quickSetSolid();
             while ((transaction = transaction.next()) != null) {
                 transaction.quickSetSolid();
+                Thread.sleep(0, RESCAN_SLEEP_NANOS);
             }
         }
     }

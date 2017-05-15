@@ -43,7 +43,8 @@ public class Configuration {
         P_SELECT_MILESTONE_CHILD,
         P_SEND_MILESTONE,
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
-        SEND_LIMIT
+        SEND_LIMIT,
+        MAX_PEERS,
     }
 
     static {
@@ -68,7 +69,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAIN_DB.name(), "rocksdb");
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
-
+        conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
     }
 
     public static boolean init() throws IOException {

@@ -2,6 +2,7 @@ package com.iota.iri.network;
 
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,15 +18,24 @@ public abstract class Neighbor {
     private int numberOfInvalidTransactions;
     private int randomTransactionRequests;
 
-
     private boolean flagged = false;
-
     public boolean isFlagged() {
         return flagged;
     }
-
     public void setFlagged(boolean flagged) {
         this.flagged = flagged;
+    }
+    
+    private final static AtomicInteger numPeers = new AtomicInteger(0);
+    public static int getNumPeers() {
+        return numPeers.get();
+    }
+    public static void incNumPeers() {
+        numPeers.incrementAndGet();
+    }
+    public static void decNumPeers() {
+        int v = numPeers.decrementAndGet();
+        if (v < 0) numPeers.set(0);;
     }
 
     private final String hostAddress;

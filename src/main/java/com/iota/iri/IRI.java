@@ -150,7 +150,7 @@ public class IRI {
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Boolean> testnet = parser.addBooleanOption("testnet");
         final Option<String> sendLimit = parser.addStringOption("send-limit");
-
+        final Option<String> maxPeers = parser.addStringOption("max-peers");
 
         try {
             assert args != null;
@@ -242,6 +242,11 @@ public class IRI {
         final String vsendLimit = parser.getOptionValue(sendLimit);
         if (vsendLimit != null) {
             Configuration.put(DefaultConfSettings.SEND_LIMIT, vsendLimit);
+        }
+        
+        final String vmaxPeers = parser.getOptionValue(maxPeers);
+        if (vmaxPeers != null) {
+            Configuration.put(DefaultConfSettings.MAX_PEERS, vmaxPeers);
         }
     }
 

@@ -62,10 +62,15 @@ class ReplicatorSourceProcessor implements Runnable {
                     });
             
             if (!existingNeighbor) {
-                if (!Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
+                int maxPeersAllowed = Configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
+                boolean isTestnet = Configuration.booling(Configuration.DefaultConfSettings.TESTNET);
+                if (!isTestnet || Neighbor.getNumPeers() > maxPeersAllowed) {
                     String sb = "***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://"
                             + inet_socket_address.getHostName() + ":" + String.valueOf(inet_socket_address.getPort())
-                            + " (" + inet_socket_address.getAddress().getHostAddress() + ") - closing connection";
+                            + " (" + inet_socket_address.getAddress().getHostAddress() + ") - closing connection";                    
+                    if (isTestnet && Neighbor.getNumPeers() > maxPeersAllowed) {
+                        sb = sb + (" (max-peers allowed is "+String.valueOf(maxPeersAllowed)+")");
+                    }
                     log.info(sb);
                     connection.getInputStream().close();
                     connection.shutdownInput();
@@ -73,10 +78,10 @@ class ReplicatorSourceProcessor implements Runnable {
                     connection.close();
                     return;
                 } else {
-                    // TODO This code is only for testnet/stresstest - remove for mainnet!
                     final TCPNeighbor fresh_neighbor = new TCPNeighbor(inet_socket_address, false);
                     Node.instance().getNeighbors().add(fresh_neighbor);
                     neighbor = fresh_neighbor;
+                    Neighbor.incNumPeers();
                 }
             }
             

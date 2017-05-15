@@ -255,23 +255,29 @@ public class Node {
         }
 
         if (!addressMatch && Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
-            // TODO This code is only for testnet/stresstest - remove for mainnet
+            int maxPeersAllowed = Configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
             String uriString = uriScheme + ":/" + senderAddress.toString();
-            log.info("Adding non-tethered neighbor: " + uriString);
-            try {
-                final URI uri = new URI(uriString);
-                // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
-                final Neighbor newneighbor;
-                if (uriScheme.equals("tcp")) {
-                    newneighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
-                } else {
-                    newneighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
+            if (Neighbor.getNumPeers() < maxPeersAllowed) {
+                log.info("Adding non-tethered neighbor: " + uriString);
+                try {
+                    final URI uri = new URI(uriString);
+                    // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
+                    final Neighbor newneighbor;
+                    if (uriScheme.equals("tcp")) {
+                        newneighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
+                    } else {
+                        newneighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
+                    }
+                    if (!getNeighbors().contains(newneighbor)) {
+                        getNeighbors().add(newneighbor);
+                    }
+                } catch (URISyntaxException e) {
+                    log.error("Invalid URI string: " + uriString);
                 }
-                if (!getNeighbors().contains(newneighbor)) {
-                    getNeighbors().add(newneighbor);
-                }
-            } catch (URISyntaxException e) {
-                log.error("Invalid URI string: " + uriString);
+            }
+            else {
+                log.info("Refused non-tethered neighbor: " + uriString + 
+                        " (max-peers ="+ String.valueOf(maxPeersAllowed) + ")");
             }
         }
     }

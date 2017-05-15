@@ -79,7 +79,7 @@ public class FileExportProvider implements PersistenceProvider {
 
         if(model instanceof Transaction) {
             Transaction transaction = ((Transaction) model);
-            if(item.equals("sender") || item.equals("height")) {
+            if(item.equals("sender")) {
                 try {
                     PrintWriter writer;
                     Path path = Paths.get(item.equals("sender")? "export": "export-solid", String.valueOf(getFileNumber()) + ".tx");

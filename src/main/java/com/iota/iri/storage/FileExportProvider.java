@@ -4,6 +4,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -112,9 +113,11 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public Persistable latest(Class<?> model) throws Exception {
+    public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception {
         return null;
     }
+
+
 
     @Override
     public Set<Indexable> keysWithMissingReferences(Class<?> modelClass) throws Exception {
@@ -147,17 +150,17 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public Persistable next(Class<?> model, Indexable index) throws Exception {
+    public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception {
         return null;
     }
 
     @Override
-    public Persistable previous(Class<?> model, Indexable index) throws Exception {
+    public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception {
         return null;
     }
 
     @Override
-    public Persistable first(Class<?> model) throws Exception {
+    public Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) throws Exception {
         return null;
     }
 

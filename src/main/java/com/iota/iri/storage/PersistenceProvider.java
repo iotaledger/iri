@@ -1,6 +1,7 @@
 package com.iota.iri.storage;
 
 import com.iota.iri.model.*;
+import com.iota.iri.utils.Pair;
 
 import java.util.Map;
 import java.util.Set;
@@ -20,7 +21,7 @@ public interface PersistenceProvider {
 
     boolean exists(Class<?> model, Indexable key) throws Exception;
 
-    Persistable latest(Class<?> model) throws Exception;
+    Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception;
 
     Set<Indexable> keysWithMissingReferences(Class<?> modelClass) throws Exception;
 
@@ -34,12 +35,10 @@ public interface PersistenceProvider {
 
     Persistable seek(Class<?> model, byte[] key) throws Exception;
 
-    Persistable next(Class<?> model, Indexable index) throws Exception;
-    Persistable previous(Class<?> model, Indexable index) throws Exception;
+    Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception;
+    Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception;
 
-    Persistable first(Class<?> model) throws Exception;
-
-    //boolean merge(Persistable model, Indexable index) throws Exception;
+    Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) throws Exception;
 
     boolean saveBatch(Map<Indexable, Persistable> models) throws Exception;
 }

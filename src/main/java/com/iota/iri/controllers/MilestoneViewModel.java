@@ -3,7 +3,10 @@ package com.iota.iri.controllers;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.Milestone;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Pair;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,32 +51,36 @@ public class MilestoneViewModel {
     }
 
     public static MilestoneViewModel first() throws Exception {
-        Milestone milestone = (Milestone) Tangle.instance().getFirst(Milestone.class);
-        if(milestone != null) {
+        Pair<Indexable, Persistable> milestonePair = Tangle.instance().getFirst(Milestone.class, IntegerIndex.class);
+        if(milestonePair != null) {
+            Milestone milestone = (Milestone) milestonePair.hi;
             return new MilestoneViewModel(milestone);
         }
         return null;
     }
 
     public static MilestoneViewModel latest() throws Exception {
-        Object msObj = Tangle.instance().getLatest(Milestone.class);
-        if(msObj != null && msObj instanceof Milestone) {
-            return new MilestoneViewModel((Milestone) msObj);
+        Pair<Indexable, Persistable> milestonePair = Tangle.instance().getLatest(Milestone.class, IntegerIndex.class);
+        if(milestonePair != null) {
+            Milestone milestone = (Milestone) milestonePair.hi;
+            return new MilestoneViewModel(milestone);
         }
         return null;
     }
 
     public MilestoneViewModel previous() throws Exception {
-        Object milestone = Tangle.instance().previous(Milestone.class, this.milestone.index);
-        if(milestone != null && milestone instanceof Milestone) {
+        Pair<Indexable, Persistable> milestonePair = Tangle.instance().previous(Milestone.class, this.milestone.index);
+        if(milestonePair != null) {
+            Milestone milestone = (Milestone) milestonePair.hi;
             return new MilestoneViewModel((Milestone) milestone);
         }
         return null;
     }
 
     public MilestoneViewModel next() throws Exception {
-        Object milestone = Tangle.instance().next(Milestone.class, this.milestone.index);
-        if(milestone != null && milestone instanceof Milestone) {
+        Pair<Indexable, Persistable> milestonePair = Tangle.instance().next(Milestone.class, this.milestone.index);
+        if(milestonePair != null) {
+            Milestone milestone = (Milestone) milestonePair.hi;
             return new MilestoneViewModel((Milestone) milestone);
         }
         return null;

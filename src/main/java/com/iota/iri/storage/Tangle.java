@@ -3,6 +3,7 @@ package com.iota.iri.storage;
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Hashes;
+import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,11 +75,11 @@ public class Tangle {
             }
     }
 
-    public Persistable getLatest(Class<?> model) throws Exception {
-            Persistable latest = null;
+    public Pair<Indexable, Persistable> getLatest(Class<?> model, Class<?> index) throws Exception {
+            Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
                 if (latest == null) {
-                    latest = provider.latest(model);
+                    latest = provider.latest(model, index);
                 }
             }
             return latest;
@@ -156,8 +157,8 @@ public class Tangle {
             return out;
     }
 
-    public Persistable next(Class<?> model, Indexable index) throws Exception {
-            Persistable latest = null;
+    public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception {
+            Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
                 if(latest == null) {
                     latest = provider.next(model, index);
@@ -166,8 +167,8 @@ public class Tangle {
             return latest;
     }
 
-    public Persistable previous(Class<?> model, Indexable index) throws Exception {
-            Persistable latest = null;
+    public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception {
+            Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
                 if(latest == null) {
                     latest = provider.previous(model, index);
@@ -176,11 +177,11 @@ public class Tangle {
             return latest;
     }
 
-    public Persistable getFirst(Class<?> model) throws Exception {
-            Persistable latest = null;
+    public Pair<Indexable, Persistable > getFirst(Class<?> model, Class<?> index) throws Exception {
+            Pair<Indexable, Persistable> latest = null;
             for(PersistenceProvider provider: persistenceProviders) {
                 if(latest == null) {
-                    latest = provider.first(model);
+                    latest = provider.first(model, index);
                 }
             }
             return latest;

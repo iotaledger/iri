@@ -1,18 +1,12 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.TransactionValidator;
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
-import com.iota.iri.network.Node;
-import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 3/27/17.
@@ -41,15 +35,15 @@ public class TransactionRequester {
     }
 
     public void rescanTransactionsToRequest() throws Exception {
-        Transaction first = (Transaction) Tangle.instance().getFirst(Transaction.class);
-        if(first != null) {
-            TransactionViewModel transaction = TransactionValidator.validate(first.bytes);
+        TransactionViewModel transaction = TransactionViewModel.first();
+        if(transaction != null) {
             transaction.quickSetSolid();
-            while((transaction = TransactionValidator.validate(((Transaction) Tangle.instance().next(Transaction.class, transaction.getHash())).bytes)) != null) {
+            while ((transaction = transaction.next()) != null) {
                 transaction.quickSetSolid();
             }
         }
     }
+
     public Hash[] getRequestedTransactions() {
         synchronized (syncObj) {
             return ArrayUtils.addAll(transactionsToRequest.stream().toArray(Hash[]::new),

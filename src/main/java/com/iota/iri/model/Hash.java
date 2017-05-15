@@ -21,9 +21,7 @@ public class Hash implements Serializable, Indexable {
     // constructors' bill
 
     public Hash(final byte[] bytes, final int offset, final int size) {
-        this.bytes = new byte[SIZE_IN_BYTES];
-        System.arraycopy(bytes, offset, this.bytes, 0, size - offset > bytes.length ? bytes.length-offset: size);
-        hashCode = Arrays.hashCode(this.bytes);
+        fullRead(bytes, offset, size);
     }
 
     public Hash(final byte[] bytes) {
@@ -114,6 +112,18 @@ public class Hash implements Serializable, Indexable {
         }
 		return bytes;
 	}
+
+	private void fullRead(byte[] bytes, int offset, int size) {
+        this.bytes = new byte[SIZE_IN_BYTES];
+        System.arraycopy(bytes, offset, this.bytes, 0, size - offset > bytes.length ? bytes.length-offset: size);
+        hashCode = Arrays.hashCode(this.bytes);
+
+    }
+
+    @Override
+    public void read(byte[] bytes) {
+        fullRead(bytes, 0, SIZE_IN_BYTES);
+    }
 
     @Override
     public Indexable incremented() {

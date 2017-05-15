@@ -22,6 +22,11 @@ public class IntegerIndex implements Indexable{
     }
 
     @Override
+    public void read(byte[] bytes) {
+        this.value = Serializer.getInteger(bytes);
+    }
+
+    @Override
     public Indexable incremented() {
         return new IntegerIndex(value + 1);
     }

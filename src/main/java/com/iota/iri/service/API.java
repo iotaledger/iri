@@ -1,7 +1,5 @@
 package com.iota.iri.service;
 
-import static com.iota.iri.Snapshot.latestSnapshot;
-import static com.iota.iri.Snapshot.latestSnapshotSyncObject;
 import static io.undertow.Handlers.path;
 
 import java.io.IOException;
@@ -499,12 +497,12 @@ public class API {
 
         final Map<Hash, Long> balances = new HashMap<>();
         final int index;
-        synchronized (latestSnapshotSyncObject) {
-            index = latestSnapshot.index();
+        synchronized (Snapshot.latestSnapshotSyncObject) {
+            index = Snapshot.latestSnapshot.index();
             for (final Hash address : addresses) {
                 balances.put(address,
-                        latestSnapshot.getState().containsKey(address) ?
-                                latestSnapshot.getState().get(address) : Long.valueOf(0));
+                        Snapshot.latestSnapshot.getState().containsKey(address) ?
+                                Snapshot.latestSnapshot.getState().get(address) : Long.valueOf(0));
             }
         }
 

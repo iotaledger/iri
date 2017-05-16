@@ -200,7 +200,6 @@ public class TransactionViewModel {
     public void updateStatus() throws Exception {
         TransactionRequester.instance().clearTransactionRequest(getHash());
         if(quickSetSolid()) {
-            TransactionValidator.addSolidTransaction(getHash());
         }
         if(getApprovers().size() == 0) {
             TipsViewModel.addTipHash(getHash());
@@ -216,20 +215,21 @@ public class TransactionViewModel {
     }
 
     boolean quickSetSolid() throws Exception {
-        boolean solid = true;
-        if(!checkApproovee(getTrunkTransaction())) {
-            solid = false;
-        }
-        if(!checkApproovee(getBranchTransaction())) {
-            solid = false;
-        }
-        if(solid) {
-            if(updateSolid(true)) {
-                updateHeights();
+        if(!isSolid()) {
+            boolean solid = true;
+            if (!checkApproovee(getTrunkTransaction())) {
+                solid = false;
             }
-            return solid;
+            if (!checkApproovee(getBranchTransaction())) {
+                solid = false;
+            }
+            if(solid) {
+                updateSolid(true);
+                updateHeights();
+                TransactionValidator.addSolidTransaction(getHash());
+            }
         }
-        return false;
+        return isSolid();
     }
 
     private boolean checkApproovee(TransactionViewModel approovee) throws Exception {

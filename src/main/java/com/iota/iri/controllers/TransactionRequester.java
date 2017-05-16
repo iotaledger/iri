@@ -59,9 +59,9 @@ public class TransactionRequester {
     private static void rescanTransactionsToRequest() throws Exception {
         TransactionViewModel transaction = TransactionViewModel.first();
         if(transaction != null) {
-            transaction.updateStatus();
+            transaction.quickSetSolid();
             while ((transaction = transaction.next()) != null) {
-                transaction.updateStatus();
+                transaction.quickSetSolid();
                 Thread.sleep(0, RESCAN_SLEEP_NANOS);
             }
         }

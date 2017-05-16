@@ -124,13 +124,13 @@ public class TransactionValidator {
     public static Runnable spawnSolidTransactionsCascader() {
         return () -> {
             while(!shuttingDown.get()) {
-                Set<Hash> newSolidHashes;
+                Set<Hash> newSolidHashes = new HashSet<>();
                 useFirst.set(!useFirst.get());
                 synchronized (cascadeSync) {
                     if (useFirst.get()) {
-                        newSolidHashes = newSolidTransactionsTwo;
+                        newSolidHashes.addAll(newSolidTransactionsTwo);
                     } else {
-                        newSolidHashes = newSolidTransactionsOne;
+                        newSolidHashes.addAll(newSolidTransactionsOne);
                     }
                 }
                 Iterator<Hash> cascadeIterator = newSolidHashes.iterator();
@@ -148,11 +148,13 @@ public class TransactionValidator {
                                     }
                                 });
                     } catch (Exception e) {
+                        log.error("Some error", e);
                         // TODO: Do something, maybe, or do nothing.
                     }
                     if(!cascadeIterator.hasNext()) {
                         newSolidHashes.clear();
-                        newSolidHashes = hashesToCascade;
+                        newSolidHashes.addAll(hashesToCascade);
+                        hashesToCascade.clear();
                         cascadeIterator = newSolidHashes.iterator();
                     }
                 }

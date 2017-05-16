@@ -94,12 +94,6 @@ public class LedgerValidator {
                             }
 
                             if (!validBundle || bundleValidator.isInconsistent()) {
-                                /*
-                                for(TransactionViewModel transactionViewModel1: bundleValidator.getTransactionViewModels()) {
-                                    transactionViewModel1.delete();
-                                    TransactionRequester.instance().requestTransaction(transactionViewModel.getHash(), milestone);
-                                }
-                                */
                                 return null;
                             }
                         }

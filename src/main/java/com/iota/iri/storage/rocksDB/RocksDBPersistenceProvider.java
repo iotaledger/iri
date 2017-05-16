@@ -35,8 +35,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             "address",
             "approvee",
             "bundle",
-            "tag",
-            "hashes"
+            "tag"
     );
 
     private ColumnFamilyHandle transactionHandle;
@@ -47,7 +46,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private ColumnFamilyHandle approveeHandle;
     private ColumnFamilyHandle bundleHandle;
     private ColumnFamilyHandle tagHandle;
-    private ColumnFamilyHandle hashesHandle;
 
     private List<ColumnFamilyHandle> transactionGetList;
 
@@ -88,7 +86,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         classMap.put(Approvee.class, approveeHandle);
         classMap.put(Bundle.class, bundleHandle);
         classMap.put(Tag.class, tagHandle);
-        classMap.put(Hashes.class, hashesHandle);
         classTreeMap.set(classMap);
 
         Map<Class<?>, ColumnFamilyHandle> metadataHashMap = new HashMap<>();
@@ -506,47 +503,16 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         approveeHandle = familyHandles.get(++i);
         bundleHandle = familyHandles.get(++i);
         tagHandle = familyHandles.get(++i);
-        hashesHandle = familyHandles.get(++i);
+        //hashesHandle = familyHandles.get(++i);
 
         for(; ++i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.get(i));
         }
 
-        migrateDatabase();
-
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {
             transactionGetList.add(familyHandles.get(i));
         }
-    }
-
-    private void migrateDatabase() throws RocksDBException {
-        RocksIterator iterator = db.newIterator(hashesHandle);
-        iterator.seekToFirst();
-        boolean isOpen = iterator.isValid();
-        iterator.close();
-        if(isOpen) {
-            log.info("Migrating database...");
-            WriteOptions writeOptions = new WriteOptions();
-            WriteBatch writeBatch = new WriteBatch();
-            iterator = db.newIterator(transactionMetadataHandle);
-            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                Transaction transaction = new Transaction();
-                Hash hash = new Hash(iterator.key());
-                transaction.readMetadata(iterator.value());
-                writeBatch.merge(addressHandle, hash.bytes(), transaction.address.bytes());
-                writeBatch.merge(approveeHandle, hash.bytes(), transaction.trunk.bytes());
-                writeBatch.merge(approveeHandle, hash.bytes(), transaction.branch.bytes());
-                writeBatch.merge(bundleHandle, hash.bytes(), transaction.bundle.bytes());
-                writeBatch.merge(tagHandle, hash.bytes(), transaction.tag.bytes());
-                db.write(writeOptions, writeBatch);
-                writeBatch.clear();
-            }
-            writeBatch.close();
-            writeOptions.close();
-            iterator.close();
-        }
-        db.dropColumnFamily(hashesHandle);
     }
 
     @FunctionalInterface

@@ -43,7 +43,7 @@ public class TransactionRequester {
                 try {
                     rescanTransactionsToRequest();
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    log.error("Could rescan transactions", e);
                 }
             }, "Rescan Transactions Thread");
             TransactionRequester.instance();
@@ -63,13 +63,13 @@ public class TransactionRequester {
 
     private static void rescanTransactionsToRequest() throws Exception {
 
-        Tangle.instance().keysWithMissingReferences(Approvee.class, Transaction.class).forEach(h -> {
-            try {
-                instance().requestTransaction((Hash) h, false);
-            } catch (Exception e) {
-                log.error("Could not request transaction", e);
+        Set<Indexable> missingTransactions = Tangle.instance().keysWithMissingReferences(Approvee.class, Transaction.class);
+        if(missingTransactions != null) {
+            for(Indexable hash : missingTransactions) {
+                instance().requestTransaction((Hash) hash, false);
+
             }
-        });
+        }
         /*
         TransactionViewModel transaction = TransactionViewModel.first();
         if(transaction != null) {

@@ -258,7 +258,7 @@ public class API {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    return getInclusionStateStatement(trans, tps);
+                    return getNewInclusionStateStatement(trans, tps);
                 }
                 case "getNeighbors": {
                     return getNeighborsStatement();
@@ -437,6 +437,95 @@ public class API {
 
     private AbstractResponse getNeighborsStatement() {
         return GetNeighborsResponse.create(Node.instance().getNeighbors());
+    }
+
+    private AbstractResponse getNewInclusionStateStatement(final List<String> trans, final List<String> tps) throws Exception {
+        final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
+        final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
+        int numberOfNonMetTransactions = transactions.size();
+        final int[] inclusionStates = new int[numberOfNonMetTransactions];
+
+        int[] tipsIndex = tips.stream().map(TransactionViewModel::quietFromHash)
+                .filter(tx -> tx.getType() != TransactionViewModel.PREFILLED_SLOT)
+                .mapToInt(TransactionViewModel::snapshotIndex)
+                .toArray();
+        int minTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a < b ? a : b).orElse(0);
+        if(minTipsIndex > 0) {
+            int maxTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a > b ? a : b).orElse(0);
+            transactions.stream().map(TransactionViewModel::quietFromHash).forEach(transaction -> {
+                if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
+                    inclusionStates[transactions.indexOf(transaction.getHash())] = -1;
+                } else if(transaction.snapshotIndex() > maxTipsIndex) {
+                    inclusionStates[transactions.indexOf(transaction.getHash())] = -1;
+                } else if(transaction.snapshotIndex() < maxTipsIndex) {
+                    inclusionStates[transactions.indexOf(transaction.getHash())] = 1;
+                }
+            });
+        }
+
+        Set<Hash> analyzedTips = new HashSet<>();
+        Map<Integer, Set<Hash>> sameIndexTips = new HashMap<>();
+        Map<Integer, Set<Hash>> sameIndexTransactions = new HashMap<>();
+        Map<Integer, Queue<Hash>> nonAnalyzedTransactionsMap = new HashMap<>();
+        for (final Hash tip : tips) {
+            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
+            if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
+                return ErrorResponse.create("One of the tips absents");
+            }
+            sameIndexTips.putIfAbsent(transactionViewModel.snapshotIndex(), new HashSet<>());
+            sameIndexTips.get(transactionViewModel.snapshotIndex()).add(tip);
+            nonAnalyzedTransactionsMap.putIfAbsent(transactionViewModel.snapshotIndex(), new LinkedList<>());
+            nonAnalyzedTransactionsMap.get(transactionViewModel.snapshotIndex()).offer(tip);
+        }
+        for(int i = 0; i < inclusionStates.length; i++) {
+            if(inclusionStates[i] == 0) {
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactions.get(i));
+                sameIndexTransactions.putIfAbsent(transactionViewModel.snapshotIndex(), new HashSet<>());
+                sameIndexTransactions.get(transactionViewModel.snapshotIndex()).add(transactionViewModel.getHash());
+            }
+        }
+        for(Map.Entry<Integer, Set<Hash>> entry: sameIndexTransactions.entrySet()) {
+            if(!exhaustiveSearchWithinIndex(nonAnalyzedTransactionsMap.get(entry.getKey()), analyzedTips, transactions, inclusionStates, entry.getValue().size(), entry.getKey())) {
+                return ErrorResponse.create("The subtangle is not solid");
+            }
+        }
+        final boolean[] inclusionStatesBoolean = new boolean[inclusionStates.length];
+        for(int i = 0; i < inclusionStates.length; i++) {
+            inclusionStatesBoolean[i] = inclusionStates[i] == 1;
+        }
+        {
+            return GetInclusionStatesResponse.create(inclusionStatesBoolean);
+        }
+    }
+    private boolean exhaustiveSearchWithinIndex(Queue<Hash> nonAnalyzedTransactions, Set<Hash> analyzedTips, List<Hash> transactions, int[] inclusionStates, int count, int index) throws Exception {
+        Hash pointer;
+        MAIN_LOOP:
+        while ((pointer = nonAnalyzedTransactions.poll()) != null) {
+
+
+            if (analyzedTips.add(pointer)) {
+
+                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(pointer);
+                if(transactionViewModel.snapshotIndex() == index) {
+                    if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                        return false;
+                    } else {
+                        for (int i = 0; i < inclusionStates.length; i++) {
+
+                            if (inclusionStates[i] < 1 && pointer.equals(transactions.get(i))) {
+                                inclusionStates[i] = 1;
+                                if (--count<= 0) {
+                                    break MAIN_LOOP;
+                                }
+                            }
+                        }
+                        nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                        nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
+                    }
+                }
+            }
+        }
+        return true;
     }
 
     private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) throws Exception {

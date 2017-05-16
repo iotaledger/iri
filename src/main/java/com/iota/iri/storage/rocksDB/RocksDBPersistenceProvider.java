@@ -521,12 +521,12 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     private void migrateDatabase() throws RocksDBException {
-        log.info("Migrating database...");
         RocksIterator iterator = db.newIterator(hashesHandle);
         iterator.seekToFirst();
         boolean isOpen = iterator.isValid();
         iterator.close();
         if(isOpen) {
+            log.info("Migrating database...");
             WriteOptions writeOptions = new WriteOptions();
             WriteBatch writeBatch = new WriteBatch();
             iterator = db.newIterator(transactionMetadataHandle);

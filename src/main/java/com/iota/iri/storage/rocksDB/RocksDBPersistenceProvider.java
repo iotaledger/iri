@@ -521,7 +521,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     private void migrateDatabase() throws RocksDBException {
-        log.info("Merging database...");
+        log.info("Migrating database...");
         RocksIterator iterator = db.newIterator(hashesHandle);
         iterator.seekToFirst();
         boolean isOpen = iterator.isValid();

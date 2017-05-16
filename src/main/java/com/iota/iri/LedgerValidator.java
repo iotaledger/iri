@@ -255,12 +255,13 @@ public class LedgerValidator {
         synchronized (latestSnapshotSyncObject) {
             final int lastSnapshotIndex = Snapshot.latestSnapshot.index();
             final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
-            boolean isConsistent = transactionSnapshotIndex <= lastSnapshotIndex;
-            if(!isConsistent) {
+            //boolean isConsistent = transactionSnapshotIndex <= lastSnapshotIndex;
+            boolean hasSnapshot = transactionSnapshotIndex != 0;
+            if(!hasSnapshot) {
                 Hash tail = transactionViewModel.getHash();
                 Map<Hash, Long> currentState = getLatestDiff(tail, lastSnapshotIndex, true);
-                isConsistent = currentState != null && Snapshot.latestSnapshot.patch(currentState, milestone.index()).isConsistent();
-                if (isConsistent) {
+                hasSnapshot = currentState != null && Snapshot.latestSnapshot.patch(currentState, milestone.index()).isConsistent();
+                if (hasSnapshot) {
                     updateSnapshotMilestone(milestone);
                     synchronized (approvalsSyncObject) {
                         approvedHashes.clear();
@@ -271,7 +272,7 @@ public class LedgerValidator {
                     stateSinceMilestone.merge(Snapshot.latestSnapshot);
                 }
             }
-            return isConsistent;
+            return hasSnapshot;
         }
     }
 

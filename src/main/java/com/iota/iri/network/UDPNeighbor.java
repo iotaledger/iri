@@ -21,6 +21,7 @@ public class UDPNeighbor extends Neighbor {
         try {
             packet.setSocketAddress(getAddress());
             UDPReceiver.instance().send(packet);
+            incSentTransactions();
         } catch (final Exception e) {
             log.error("UDP send error: {}",e.getMessage());
         }

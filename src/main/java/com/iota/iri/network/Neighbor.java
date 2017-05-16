@@ -4,19 +4,15 @@ import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public abstract class Neighbor {
-    
-    private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
 
     private final InetSocketAddress address;
     
-    private int numberOfAllTransactions;
-    private int numberOfNewTransactions;
-    private int numberOfInvalidTransactions;
-    private int randomTransactionRequests;
+    private long numberOfAllTransactions;
+    private long numberOfNewTransactions;
+    private long numberOfInvalidTransactions;
+    private long randomTransactionRequests;
+    private long numberOfSentTransactions;
 
     private boolean flagged = false;
     public boolean isFlagged() {
@@ -84,20 +80,28 @@ public abstract class Neighbor {
     	numberOfInvalidTransactions++;
     }
     
-    public int getNumberOfAllTransactions() {
+    public void incSentTransactions() {
+        numberOfSentTransactions++;
+    }
+    
+    public long getNumberOfAllTransactions() {
 		return numberOfAllTransactions;
 	}
     
-    public int getNumberOfInvalidTransactions() {
+    public long getNumberOfInvalidTransactions() {
 		return numberOfInvalidTransactions;
 	}
     
-    public int getNumberOfNewTransactions() {
+    public long getNumberOfNewTransactions() {
 		return numberOfNewTransactions;
 	}
 
-	public int getNumberOfRandomTransactionRequests() {
+	public long getNumberOfRandomTransactionRequests() {
         return randomTransactionRequests;
     }
+	
+	public long getNumberOfSentTransactions() {
+	    return numberOfSentTransactions;
+	}
     
 }

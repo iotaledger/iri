@@ -93,6 +93,7 @@ class ReplicatorSinkProcessor implements Runnable {
                                                 out.write(message.array());
                                                 out.write(crc32_string.getBytes());
                                                 out.flush();
+                                                neighbor.incSentTransactions();
                                             } catch (IOException e2) {
                                                 if (!neighbor.getSink().isClosed() && neighbor.getSink().isConnected()) {
                                                     out.close();

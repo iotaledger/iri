@@ -274,11 +274,11 @@ public class LedgerValidator {
     public static boolean updateFromSnapshot(Hash tip) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
         boolean isConsistent;
-        synchronized (approvalsSyncObject) {
+        synchronized (latestSnapshotSyncObject) {
+            synchronized (approvalsSyncObject) {
             isConsistent = approvedHashes.contains(tip);
             if (!isConsistent) {
                 Hash tail = transactionViewModel.getHash();
-                synchronized (latestSnapshotSyncObject) {
                     int latestSyncIndex = Snapshot.latestSnapshot.index();
                     Map<Hash, Long> currentState = getLatestDiff(tail, latestSyncIndex, false);
                     isConsistent = currentState != null && stateSinceMilestone.patch(currentState, latestSyncIndex).isConsistent();

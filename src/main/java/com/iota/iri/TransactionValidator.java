@@ -137,11 +137,16 @@ public class TransactionValidator {
                 Set<Hash> hashesToCascade = new HashSet<>();
                 while(cascadeIterator.hasNext() && !shuttingDown.get()) {
                     try {
-                        TransactionViewModel.fromHash(cascadeIterator.next()).getApprovers().getHashes().stream()
+                        Hash hash = cascadeIterator.next();
+                        TransactionViewModel.fromHash(hash).getApprovers().getHashes().stream()
                                 .map(TransactionViewModel::quietFromHash)
-                                .filter(TransactionViewModel::quietQuickSetSolid)
-                                .map(TransactionViewModel::getHash)
-                                .forEach(hashesToCascade::add);
+                                .forEach(tx -> {
+                                    if(tx.quietQuickSetSolid()) {
+                                        hashesToCascade.add(tx.getHash());
+                                    } else {
+                                        addSolidTransaction(hash);
+                                    }
+                                });
                     } catch (Exception e) {
                         // TODO: Do something, maybe, or do nothing.
                     }
@@ -152,7 +157,7 @@ public class TransactionValidator {
                     }
                 }
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(500);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

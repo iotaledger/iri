@@ -226,8 +226,8 @@ public class TransactionViewModel {
         if(solid) {
             if(updateSolid(true)) {
                 updateHeights();
-                return true;
             }
+            return solid;
         }
         return false;
     }

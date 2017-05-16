@@ -142,12 +142,8 @@ public class TransactionValidator {
                         transaction.getApprovers().getHashes().stream()
                                 .map(TransactionViewModel::quietFromHash)
                                 .forEach(tx -> {
-                                    if(tx.quietQuickSetSolid()) {
-                                        hashesToCascade.add(tx.getHash());
-                                    } else {
-                                        if(transaction.isSolid()) {
-                                            addSolidTransaction(hash);
-                                        }
+                                    if(!tx.quietQuickSetSolid() && transaction.isSolid()) {
+                                        addSolidTransaction(hash);
                                     }
                                 });
                     } catch (Exception e) {

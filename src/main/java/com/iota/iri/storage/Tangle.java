@@ -101,10 +101,10 @@ public class Tangle {
         return instance;
     }
 
-    public Set<Indexable> keysWithMissingReferences(Class<?> modelClass) throws Exception {
+    public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> referencedClass) throws Exception {
             Set<Indexable> output = null;
             for(PersistenceProvider provider: this.persistenceProviders) {
-                output = provider.keysWithMissingReferences(modelClass);
+                output = provider.keysWithMissingReferences(modelClass, referencedClass);
                 if(output != null && output.size() > 0) {
                     break;
                 }

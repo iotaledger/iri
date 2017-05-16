@@ -120,7 +120,7 @@ public class FileExportProvider implements PersistenceProvider {
 
 
     @Override
-    public Set<Indexable> keysWithMissingReferences(Class<?> modelClass) throws Exception {
+    public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> other) throws Exception {
         return null;
     }
 

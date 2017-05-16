@@ -3,10 +3,7 @@ package com.iota.iri.controllers;
 import java.util.*;
 
 import com.iota.iri.TransactionValidator;
-import com.iota.iri.model.Hashes;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.IntegerIndex;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.model.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -62,7 +59,7 @@ public class TransactionViewModel {
 
     private HashesViewModel address;
     private HashesViewModel bundle;
-    private HashesViewModel approovers;
+    private ApproveeViewModel approovers;
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
     private final Hash hash;
@@ -166,8 +163,12 @@ public class TransactionViewModel {
     }
 
     public Map<Indexable, Persistable> getSaveBatch() throws Exception {
-        Map<Indexable, Persistable> hashesMap = storeHashes(Arrays.asList(getAddressHash(), getBundleHash(),
-                getBranchTransactionHash(), getTrunkTransactionHash(), getTagValue()));
+        Map<Indexable, Persistable> hashesMap = new HashMap<>();
+        hashesMap.put(getAddressHash(), new Address(getHash()));
+        hashesMap.put(getBundleHash(), new Bundle(getHash()));
+        hashesMap.put(getBranchTransactionHash(), new Approvee(getHash()));
+        hashesMap.put(getTrunkTransactionHash(), new Approvee(getHash()));
+        hashesMap.put(getTagValue(), new Tag(getHash()));
         getBytes();
         setMetadata();
         hashesMap.put(getHash(), transaction);
@@ -224,7 +225,7 @@ public class TransactionViewModel {
                 solid = false;
             }
             if(solid) {
-                updateSolid(true);
+                updateSolid();
                 updateHeights();
                 TransactionValidator.addSolidTransaction(getHash());
             }
@@ -235,26 +236,19 @@ public class TransactionViewModel {
     private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
         if(approovee.getType() == PREFILLED_SLOT) {
             TransactionRequester.instance().requestTransaction(approovee.getHash(), false);
-            if(approovee.getHash().equals(Hash.NULL_HASH)) {
-                return true;
-            }
             return false;
+        }
+        if(approovee.getHash().equals(Hash.NULL_HASH)) {
+            return true;
         }
         return approovee.isSolid();
     }
 
-    private Map<Indexable, Persistable> storeHashes(Collection<Hash> hashesToSave) throws Exception {
-        Map<Indexable, Persistable> map = new HashMap<>();
-        for(Hash hash: hashesToSave) {
-            Map.Entry<Indexable, Persistable> entry = HashesViewModel.getEntry(hash, getHash());
-            map.put(entry.getKey(), entry.getValue());
-        }
-        return map;
-    }
-
-    public HashesViewModel getApprovers() throws Exception {
+    public ApproveeViewModel getApprovers() throws Exception {
         if(approovers == null) {
-            approovers = HashesViewModel.load(hash);
+            approovers = ApproveeViewModel.load(hash);
+            approovers.getHashes().remove(getHash());
+            approovers.store();
         }
         return approovers;
     }
@@ -284,18 +278,18 @@ public class TransactionViewModel {
 
     public HashesViewModel getAddress() throws Exception {
         if(address == null) {
-            address = HashesViewModel.load(getAddressHash());
+            address = AddressViewModel.load(getAddressHash());
         }
         return address;
     }
 
     public HashesViewModel getTag() throws Exception {
-        return HashesViewModel.load(getTagValue());
+        return TagViewModel.load(getTagValue());
     }
 
     public HashesViewModel getBundle() throws Exception {
         if(bundle == null) {
-            bundle = HashesViewModel.load(getBundleHash());
+            bundle = BundleViewModel.load(getBundleHash());
         }
         return bundle;
     }
@@ -385,24 +379,18 @@ public class TransactionViewModel {
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
             transactionViewModel.updateHeights();
-            transactionViewModel.updateSolid(true);
+            transactionViewModel.updateSolid();
         }
     }
 
-    public boolean updateSolid(final boolean solid) throws Exception {
-        if(solid != transaction.solid) {
-            transaction.solid = solid;
+    public boolean updateSolid() throws Exception {
+        if(!transaction.solid) {
+            transaction.solid = true;
             update("solid");
-            return solid;
+            return true;
         }
         return false;
     }
-
-    /*
-    public HashesViewModel nonSolidGroup() throws Exception {
-        return HashesViewModel.load(new IntegerIndex(-Math.abs(transaction.group)));
-    }
-    */
 
     public boolean isSolid() {
         return transaction.solid;

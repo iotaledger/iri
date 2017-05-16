@@ -25,7 +25,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
-import com.iota.iri.controllers.HashesViewModel;
+import com.iota.iri.controllers.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,9 +41,6 @@ import com.iota.iri.Snapshot;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.controllers.TipsViewModel;
-import com.iota.iri.controllers.TransactionRequester;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
@@ -501,7 +498,7 @@ public class API {
                 if (!validTrytes(bundle, HASH_SIZE)) {
                     return ErrorResponse.create("Invalid bundle hash");
                 }
-                bundlesTransactions.addAll(HashesViewModel.load(new Hash(bundle)).getHashes());
+                bundlesTransactions.addAll(BundleViewModel.load(new Hash(bundle)).getHashes());
             }
         }
 
@@ -514,7 +511,7 @@ public class API {
                 if (!validTrytes(address, HASH_SIZE)) {
                     return ErrorResponse.create("Invalid address input");
                 }
-                addressesTransactions.addAll(HashesViewModel.load(new Hash(address)).getHashes());
+                addressesTransactions.addAll(AddressViewModel.load(new Hash(address)).getHashes());
             }
         }
 
@@ -527,7 +524,7 @@ public class API {
                 while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
                     tag += Converter.TRYTE_ALPHABET.charAt(0);
                 }
-                tagsTransactions.addAll(HashesViewModel.load(new Hash(tag)).getHashes());
+                tagsTransactions.addAll(TagViewModel.load(new Hash(tag)).getHashes());
             }
         }
 

@@ -32,6 +32,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             "transaction-metadata",
             "milestone",
             "stateDiff",
+            "address",
+            "approvee",
+            "bundle",
+            "tag",
             "hashes"
     );
 
@@ -39,6 +43,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private ColumnFamilyHandle transactionMetadataHandle;
     private ColumnFamilyHandle milestoneHandle;
     private ColumnFamilyHandle stateDiffHandle;
+    private ColumnFamilyHandle addressHandle;
+    private ColumnFamilyHandle approveeHandle;
+    private ColumnFamilyHandle bundleHandle;
+    private ColumnFamilyHandle tagHandle;
     private ColumnFamilyHandle hashesHandle;
 
     private List<ColumnFamilyHandle> transactionGetList;
@@ -76,6 +84,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         classMap.put(Transaction.class, transactionHandle);
         classMap.put(Milestone.class, milestoneHandle);
         classMap.put(StateDiff.class, stateDiffHandle);
+        classMap.put(Address.class, addressHandle);
+        classMap.put(Approvee.class, approveeHandle);
+        classMap.put(Bundle.class, bundleHandle);
+        classMap.put(Tag.class, tagHandle);
         classMap.put(Hashes.class, hashesHandle);
         classTreeMap.set(classMap);
 
@@ -154,12 +166,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public Set<Indexable> keysWithMissingReferences(Class<?> model) throws Exception {
+    public Set<Indexable> keysWithMissingReferences(Class<?> model, Class<?> other) throws Exception {
         ColumnFamilyHandle handle = classTreeMap.get().get(model);
+        ColumnFamilyHandle otherHandle = classTreeMap.get().get(other);
         RocksIterator iterator = db.newIterator(handle);
         Set<Indexable> indexables = new HashSet<>();
         for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            if(db.get(hashesHandle, iterator.key()) == null) {
+            if(db.get(otherHandle, iterator.key()) == null) {
                 indexables.add(new Hash(iterator.key()));
             }
         }
@@ -474,7 +487,9 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         //List<ColumnFamilyDescriptor> familyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
         //familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
 
-        db = RocksDB.open(options, path, columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList()), familyHandles);
+        List<ColumnFamilyDescriptor> columnFamilyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
+        //fillMissingColumns(columnFamilyDescriptors, familyHandles, path);
+        db = RocksDB.open(options, path, columnFamilyDescriptors, familyHandles);
         db.enableFileDeletions(true);
 
         fillmodelColumnHandles(familyHandles);
@@ -487,16 +502,51 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         transactionMetadataHandle = familyHandles.get(++i);
         milestoneHandle = familyHandles.get(++i);
         stateDiffHandle = familyHandles.get(++i);
+        addressHandle = familyHandles.get(++i);
+        approveeHandle = familyHandles.get(++i);
+        bundleHandle = familyHandles.get(++i);
+        tagHandle = familyHandles.get(++i);
         hashesHandle = familyHandles.get(++i);
 
         for(; ++i < familyHandles.size();) {
             db.dropColumnFamily(familyHandles.get(i));
         }
 
+        migrateDatabase();
+
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {
             transactionGetList.add(familyHandles.get(i));
         }
+    }
+
+    private void migrateDatabase() throws RocksDBException {
+        log.info("Merging database...");
+        RocksIterator iterator = db.newIterator(hashesHandle);
+        iterator.seekToFirst();
+        boolean isOpen = iterator.isValid();
+        iterator.close();
+        if(isOpen) {
+            WriteOptions writeOptions = new WriteOptions();
+            WriteBatch writeBatch = new WriteBatch();
+            iterator = db.newIterator(transactionMetadataHandle);
+            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                Transaction transaction = new Transaction();
+                Hash hash = new Hash(iterator.key());
+                transaction.readMetadata(iterator.value());
+                writeBatch.merge(addressHandle, hash.bytes(), transaction.address.bytes());
+                writeBatch.merge(approveeHandle, hash.bytes(), transaction.trunk.bytes());
+                writeBatch.merge(approveeHandle, hash.bytes(), transaction.branch.bytes());
+                writeBatch.merge(bundleHandle, hash.bytes(), transaction.bundle.bytes());
+                writeBatch.merge(tagHandle, hash.bytes(), transaction.tag.bytes());
+                db.write(writeOptions, writeBatch);
+                writeBatch.clear();
+            }
+            writeBatch.close();
+            writeOptions.close();
+            iterator.close();
+        }
+        db.dropColumnFamily(hashesHandle);
     }
 
     @FunctionalInterface
@@ -518,8 +568,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private interface MyRunnable<R> {
         R run() throws Exception;
     }
-}
-/*
     private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles, String path) throws Exception {
         List<ColumnFamilyDescriptor> columnFamilies = RocksDB.listColumnFamilies(new Options().setCreateIfMissing(true), path)
                 .stream()
@@ -548,4 +596,4 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         assert (columnFamilyHandle != null);
     }
 
- */
+}

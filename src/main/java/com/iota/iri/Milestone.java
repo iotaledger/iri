@@ -138,7 +138,7 @@ public class Milestone {
             // Already validated.
             return true;
         }
-        final BundleValidator bundleValidator = BundleValidator.load(HashesViewModel.load(transactionViewModel.getBundleHash()));
+        final BundleValidator bundleValidator = BundleValidator.load(BundleViewModel.load(transactionViewModel.getBundleHash()));
         if (bundleValidator.getTransactions().size() == 0) {
             return false;
         }
@@ -196,7 +196,7 @@ public class Milestone {
     }
 
     private void findNewMilestones() throws Exception {
-        HashesViewModel.load(Milestone.instance.coordinatorHash).getHashes().stream()
+        AddressViewModel.load(Milestone.instance.coordinatorHash).getHashes().stream()
                 .filter(analyzedMilestoneCandidates::add)
                 .map(TransactionViewModel::quietFromHash)
                 .filter(t -> t.getCurrentIndex() == 0)

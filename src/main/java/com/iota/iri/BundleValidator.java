@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.HashesViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
@@ -11,13 +12,13 @@ import java.util.*;
 
 public class BundleValidator {
     private final List<List<TransactionViewModel>> transactions = new LinkedList<>();
-    private final HashesViewModel bundle;
+    private final BundleViewModel bundle;
 
-    BundleValidator(HashesViewModel bundleHashes) throws Exception {
+    BundleValidator(BundleViewModel bundleHashes) throws Exception {
         this.bundle = bundleHashes;
     }
 
-    public static BundleValidator load(HashesViewModel bundleHashes) throws Exception {
+    public static BundleValidator load(BundleViewModel bundleHashes) throws Exception {
         BundleValidator bundleValidator = new BundleValidator(bundleHashes);
         bundleValidator.init();
         return bundleValidator;

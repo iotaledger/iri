@@ -23,7 +23,7 @@ public interface PersistenceProvider {
 
     Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception;
 
-    Set<Indexable> keysWithMissingReferences(Class<?> modelClass) throws Exception;
+    Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> otherClass) throws Exception;
 
     Persistable get(Class<?> model, Indexable index) throws Exception;
 

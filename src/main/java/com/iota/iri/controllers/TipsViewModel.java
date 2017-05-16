@@ -1,5 +1,6 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Indexable;
@@ -111,7 +112,7 @@ public class TipsViewModel {
 
     public static void loadTipHashes() throws Exception {
         Set<Indexable> hashes = Tangle.instance()
-                .keysWithMissingReferences(Transaction.class);
+                .keysWithMissingReferences(Transaction.class, Approvee.class);
         if(hashes != null) {
             tips.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
         }

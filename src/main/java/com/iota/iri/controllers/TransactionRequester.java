@@ -1,7 +1,11 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.Transaction;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +18,7 @@ import java.util.*;
  */
 public class TransactionRequester {
 
-    private final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
+    private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
     private final Set<Hash> milestoneTransactionsToRequest = new LinkedHashSet<>();
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
     private static volatile long lastTime = System.currentTimeMillis();
@@ -58,11 +62,18 @@ public class TransactionRequester {
 
 
     private static void rescanTransactionsToRequest() throws Exception {
-        TransactionViewModel.fromHash(Hash.NULL_HASH).getApprovers().getHashes().forEach(TransactionValidator::addSolidTransaction);
+
+        Tangle.instance().keysWithMissingReferences(Approvee.class, Transaction.class).forEach(h -> {
+            try {
+                instance().requestTransaction((Hash) h, false);
+            } catch (Exception e) {
+                log.error("Could not request transaction", e);
+            }
+        });
         TransactionViewModel transaction = TransactionViewModel.first();
         if(transaction != null) {
             transaction.quickSetSolid();
-            while ((transaction = transaction.next()) != null) {
+            while (!(transaction = transaction.next()).getHash().equals(Hash.NULL_HASH)) {
                 transaction.quickSetSolid();
                 Thread.sleep(0, RESCAN_SLEEP_NANOS);
             }

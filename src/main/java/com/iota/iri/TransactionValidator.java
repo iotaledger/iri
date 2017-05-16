@@ -138,13 +138,16 @@ public class TransactionValidator {
                 while(cascadeIterator.hasNext() && !shuttingDown.get()) {
                     try {
                         Hash hash = cascadeIterator.next();
-                        TransactionViewModel.fromHash(hash).getApprovers().getHashes().stream()
+                        TransactionViewModel transaction = TransactionViewModel.fromHash(hash);
+                        transaction.getApprovers().getHashes().stream()
                                 .map(TransactionViewModel::quietFromHash)
                                 .forEach(tx -> {
                                     if(tx.quietQuickSetSolid()) {
                                         hashesToCascade.add(tx.getHash());
                                     } else {
-                                        addSolidTransaction(hash);
+                                        if(transaction.isSolid()) {
+                                            addSolidTransaction(hash);
+                                        }
                                     }
                                 });
                     } catch (Exception e) {

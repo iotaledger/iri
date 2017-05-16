@@ -404,7 +404,7 @@ public class TransactionViewModel {
     }
     */
 
-    public boolean isSolid() throws Exception {
+    public boolean isSolid() {
         return transaction.solid;
     }
 

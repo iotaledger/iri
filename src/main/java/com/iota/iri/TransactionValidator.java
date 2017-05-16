@@ -81,7 +81,7 @@ public class TransactionValidator {
 
     private static final AtomicInteger nextSubSolidGroup = new AtomicInteger(1);
 
-    public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
+    public static boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
         if(TransactionViewModel.fromHash(hash).isSolid()) {
             return true;
         }
@@ -108,6 +108,7 @@ public class TransactionValidator {
         if (solid) {
             TransactionViewModel.updateSolidTransactions(analyzedHashes);
         }
+        analyzedHashes.clear();
         return solid;
     }
 

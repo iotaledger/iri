@@ -103,7 +103,9 @@ public class TipsViewModel {
     }
 
     public static int nonSolidSize() {
-        return tips.size();
+        synchronized (sync) {
+            return tips.size();
+        }
     }
 
     public static int size() {

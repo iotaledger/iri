@@ -70,6 +70,7 @@ public class TransactionRequester {
                 log.error("Could not request transaction", e);
             }
         });
+        /*
         TransactionViewModel transaction = TransactionViewModel.first();
         if(transaction != null) {
             transaction.quickSetSolid();
@@ -78,6 +79,7 @@ public class TransactionRequester {
                 Thread.sleep(0, RESCAN_SLEEP_NANOS);
             }
         }
+        */
     }
 
     public Hash[] getRequestedTransactions() {

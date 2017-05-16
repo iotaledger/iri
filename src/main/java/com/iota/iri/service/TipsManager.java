@@ -45,18 +45,19 @@ public class TipsManager {
     }
 
     private void scanTipsForSolidity() throws Exception {
-        for(int i = 0; i++ < TipsViewModel.nonSolidSize() && !shuttingDown;) {
+        int end = TipsViewModel.nonSolidSize();
+        for(int i = 0; i++ < end && !shuttingDown;) {
             Hash hash = TipsViewModel.getRandomNonSolidTipHash();
             boolean isTip = true;
             if(hash != null && TransactionViewModel.fromHash(hash).getApprovers().size() != 0) {
                 TipsViewModel.removeTipHash(hash);
                 isTip = false;
             }
-            //if(hash != null && TransactionValidator.checkGroupSolidity(hash, false) && isTip) {
-            if(hash != null && TransactionViewModel.fromHash(hash).isSolid() && isTip) {
+            if(hash != null && TransactionValidator.checkSolidity(hash, false) && isTip) {
+            //if(hash != null && TransactionViewModel.fromHash(hash).isSolid() && isTip) {
                 TipsViewModel.setSolid(hash);
             }
-            Thread.sleep(1);
+            Thread.sleep(10);
         }
     }
 
@@ -125,9 +126,9 @@ public class TipsManager {
                     if (transactionViewModel == null) {
                         log.info("Reason to stop: transactionViewModel == null");
                         break;
-                    //} else if (!TransactionValidator.checkGroupSolidity(transactionViewModel.getHash(), false)) {
-                    } else if (!transactionViewModel.isSolid()) {
-                        log.info("Reason to stop: !checkGroupSolidity");
+                    } else if (!TransactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
+                    //} else if (!transactionViewModel.isSolid()) {
+                        log.info("Reason to stop: !checkSolidity");
                         break;
                     } else if (!LedgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
                         log.info("Reason to stop: !LedgerValidator");

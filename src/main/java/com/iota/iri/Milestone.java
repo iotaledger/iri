@@ -177,11 +177,10 @@ public class Milestone {
         MilestoneViewModel latest = MilestoneViewModel.latest();
         if (latest != null) {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(latestSolidSubtangleMilestoneIndex);
-                 milestoneViewModel != null && milestoneViewModel.index() <= latest.index();
+                 milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
                  milestoneViewModel = milestoneViewModel.next()) {
-                //if (TransactionValidator.checkGroupSolidity(milestoneViewModel.getHash(), true) &&
-                if (TransactionViewModel.fromHash(milestoneViewModel.getHash()).isSolid() &&
-                        //TransactionValidator.checkGroupSolidity(milestoneViewModel.getHash(), true) &&
+                if (TransactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&
+                //if (TransactionViewModel.fromHash(milestoneViewModel.getHash()).isSolid() &&
                         milestoneViewModel.index() > latestSolidSubtangleMilestoneIndex &&
                         LedgerValidator.updateSnapshot(milestoneViewModel)) {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();

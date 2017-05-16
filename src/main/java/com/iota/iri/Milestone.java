@@ -181,10 +181,12 @@ public class Milestone {
                  milestoneViewModel = milestoneViewModel.next()) {
                 if (TransactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&
                 //if (TransactionViewModel.fromHash(milestoneViewModel.getHash()).isSolid() &&
-                        milestoneViewModel.index() > latestSolidSubtangleMilestoneIndex &&
+                        milestoneViewModel.index() >= latestSolidSubtangleMilestoneIndex &&
                         LedgerValidator.updateSnapshot(milestoneViewModel)) {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();
                     latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
+                } else {
+                    break;
                 }
             }
         }

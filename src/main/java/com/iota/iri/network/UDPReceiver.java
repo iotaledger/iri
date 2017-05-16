@@ -96,7 +96,9 @@ public class UDPReceiver {
 
     public void send(final DatagramPacket packet) {
         try {
-            socket.send(packet);
+            if (socket != null) {
+                socket.send(packet);
+            }
         } catch (IOException e) {
             // ignore
         }

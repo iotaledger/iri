@@ -48,6 +48,10 @@ public class IRI {
         log.info("Welcome to {} {}", Configuration.booling(DefaultConfSettings.TESTNET) ? TESTNET_NAME : MAINNET_NAME, VERSION);
         shutdownHook();
         
+        if (Configuration.booling(DefaultConfSettings.DEBUG)) {
+            log.info("You have set the debug flag. To enable debug output, you need to uncomment the DEBUG appender in the source tree at iri/src/main/resources/logback.xml and re-package iri.jar");
+        }
+        
         if (Configuration.booling(DefaultConfSettings.EXPORT)) {
             File exportDir = new File("export");
             // if the directory does not exist, create it

@@ -59,6 +59,14 @@ public class TransactionRequester {
 
     private static void rescanTransactionsToRequest() throws Exception {
         TransactionViewModel.fromHash(Hash.NULL_HASH).getApprovers().getHashes().forEach(TransactionValidator::addSolidTransaction);
+        TransactionViewModel transaction = TransactionViewModel.first();
+        if(transaction != null) {
+            transaction.quickSetSolid();
+            while ((transaction = transaction.next()) != null) {
+                transaction.quickSetSolid();
+                Thread.sleep(0, RESCAN_SLEEP_NANOS);
+            }
+        }
     }
 
     public Hash[] getRequestedTransactions() {

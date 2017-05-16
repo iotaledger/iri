@@ -1,5 +1,6 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -57,14 +58,7 @@ public class TransactionRequester {
 
 
     private static void rescanTransactionsToRequest() throws Exception {
-        TransactionViewModel transaction = TransactionViewModel.first();
-        if(transaction != null) {
-            transaction.quickSetSolid();
-            while ((transaction = transaction.next()) != null) {
-                transaction.quickSetSolid();
-                Thread.sleep(0, RESCAN_SLEEP_NANOS);
-            }
-        }
+        TransactionViewModel.fromHash(Hash.NULL_HASH).getApprovers().getHashes().forEach(TransactionValidator::addSolidTransaction);
     }
 
     public Hash[] getRequestedTransactions() {

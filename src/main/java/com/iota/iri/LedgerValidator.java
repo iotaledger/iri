@@ -251,7 +251,6 @@ public class LedgerValidator {
         synchronized (latestSnapshotSyncObject) {
             final int lastSnapshotIndex = Snapshot.latestSnapshot.index();
             final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
-            //boolean isConsistent = transactionSnapshotIndex <= lastSnapshotIndex;
             boolean hasSnapshot = transactionSnapshotIndex != 0 && transactionSnapshotIndex <= lastSnapshotIndex;
             if(!hasSnapshot) {
                 Hash tail = transactionViewModel.getHash();

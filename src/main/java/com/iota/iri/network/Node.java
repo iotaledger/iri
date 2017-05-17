@@ -181,13 +181,15 @@ public class Node {
 
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
+            boolean localAddressMatch = false;
 
             if (neighbor instanceof TCPNeighbor) {
-                if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
+                if (senderAddress.toString().contains(neighbor.getHostAddress())) localAddressMatch = true;
             } else {
-                if (neighbor.getAddress().toString().contains(senderAddress.toString())) addressMatch = true;
+                if (neighbor.getAddress().toString().contains(senderAddress.toString())) localAddressMatch = true;
             }
-            if (addressMatch) {
+            addressMatch = addressMatch || localAddressMatch;
+            if (localAddressMatch) {
                 //Validate transaction
                 neighbor.incAllTransactions();
                 if (rnd.nextDouble() < P_DROP_TRANSACTION) {
@@ -251,7 +253,6 @@ public class Node {
 
                 addReceivedDataToReplyQueue(requestedHash, neighbor);
 
-                addressMatch = false;
             }
         }
 

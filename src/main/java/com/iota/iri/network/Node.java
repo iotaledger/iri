@@ -231,9 +231,6 @@ public class Node {
                         recentSeenBytesMissCount.set(0L);
                         recentSeenBytesHitCount.set(0L);
                     }
-
-                    //found addressMatch.
-                    break;
                     
                 } catch (NoSuchAlgorithmException e) {
                     log.error("MessageDigest: "+e);

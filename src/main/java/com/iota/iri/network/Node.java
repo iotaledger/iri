@@ -349,8 +349,8 @@ public class Node {
             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis());
             try {
                 receivedTransactionViewModel.updateStatus();
-                receivedTransactionViewModel.update("arrivalTime");
                 receivedTransactionViewModel.updateSender(neighbor.getAddress().toString());
+                receivedTransactionViewModel.update("arrivalTime");
 
             } catch (Exception e) {
                 log.error("Error updating transactions.", e);

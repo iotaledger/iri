@@ -125,6 +125,10 @@ public class TransactionViewModel {
     }
 
     public boolean update(String item) throws Exception {
+        getAddressHash();
+        getTrunkTransactionHash();
+        getBranchTransaction();
+        getBundleHash();
         if(hash.equals(Hash.NULL_HASH)) {
             return false;
         }
@@ -200,8 +204,7 @@ public class TransactionViewModel {
 
     public void updateStatus() throws Exception {
         TransactionRequester.instance().clearTransactionRequest(getHash());
-        if(quickSetSolid()) {
-        }
+        quickSetSolid();
         if(getApprovers().size() == 0) {
             TipsViewModel.addTipHash(getHash());
         }
@@ -215,7 +218,7 @@ public class TransactionViewModel {
         }
     }
 
-    boolean quickSetSolid() throws Exception {
+    private boolean quickSetSolid() throws Exception {
         if(!isSolid()) {
             boolean solid = true;
             if (!checkApproovee(getTrunkTransaction())) {
@@ -380,13 +383,13 @@ public class TransactionViewModel {
             transactionViewModel = TransactionViewModel.fromHash(hashIterator.next());
             transactionViewModel.updateHeights();
             transactionViewModel.updateSolid();
+            transactionViewModel.update("solid|height");
         }
     }
 
     public boolean updateSolid() throws Exception {
         if(!transaction.solid) {
             transaction.solid = true;
-            update("solid");
             return true;
         }
         return false;
@@ -413,7 +416,6 @@ public class TransactionViewModel {
 
     private void updateHeight(long height) throws Exception {
         transaction.height = height;
-        update("height");
     }
 
     void updateHeights() throws Exception {
@@ -429,8 +431,10 @@ public class TransactionViewModel {
             transaction = TransactionViewModel.fromHash(transactionViewModels.pop());
             if(trunk.getHash().equals(Hash.NULL_HASH) && trunk.getHeight() == 0 && !transaction.getHash().equals(Hash.NULL_HASH)) {
                 transaction.updateHeight(1L);
+                transaction.update("height");
             } else if ( trunk.getType() != PREFILLED_SLOT && transaction.getHeight() == 0){
                 transaction.updateHeight(1 + trunk.getHeight());
+                transaction.update("height");
             } else {
                 break;
             }
@@ -440,7 +444,6 @@ public class TransactionViewModel {
 
     public void updateSender(String sender) throws Exception {
         transaction.sender = sender;
-        update("sender");
     }
     public String getSender() {
         return transaction.sender;

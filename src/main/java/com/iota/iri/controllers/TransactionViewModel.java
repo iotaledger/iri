@@ -57,8 +57,8 @@ public class TransactionViewModel {
     public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Hash.SIZE_IN_BYTES];
     public static final byte[] NULL_TRANSACTION_BYTES = new byte[SIZE];
 
-    private HashesViewModel address;
-    private HashesViewModel bundle;
+    private AddressViewModel address;
+    private BundleViewModel bundle;
     private ApproveeViewModel approovers;
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
@@ -129,6 +129,7 @@ public class TransactionViewModel {
         getTrunkTransactionHash();
         getBranchTransaction();
         getBundleHash();
+        getTagValue();
         if(hash.equals(Hash.NULL_HASH)) {
             return false;
         }
@@ -196,7 +197,7 @@ public class TransactionViewModel {
     }
 
     public boolean store() throws Exception {
-        if(!exists(getHash())) {
+        if(!exists(getHash()) && !getHash().equals(Hash.NULL_HASH)) {
             return Tangle.instance().saveBatch(getSaveBatch());
         }
         return false;
@@ -250,8 +251,6 @@ public class TransactionViewModel {
     public ApproveeViewModel getApprovers() throws Exception {
         if(approovers == null) {
             approovers = ApproveeViewModel.load(hash);
-            approovers.getHashes().remove(getHash());
-            approovers.store();
         }
         return approovers;
     }
@@ -279,18 +278,18 @@ public class TransactionViewModel {
         return hash;
     }
 
-    public HashesViewModel getAddress() throws Exception {
+    public AddressViewModel getAddress() throws Exception {
         if(address == null) {
             address = AddressViewModel.load(getAddressHash());
         }
         return address;
     }
 
-    public HashesViewModel getTag() throws Exception {
+    public TagViewModel getTag() throws Exception {
         return TagViewModel.load(getTagValue());
     }
 
-    public HashesViewModel getBundle() throws Exception {
+    public BundleViewModel getBundle() throws Exception {
         if(bundle == null) {
             bundle = BundleViewModel.load(getBundleHash());
         }

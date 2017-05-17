@@ -12,11 +12,12 @@ import java.util.Set;
  */
 public class Hashes implements Persistable {
     public final Set<Hash> set = new HashSet<>();
+    private static final byte delimiter = ",".getBytes()[0];
 
     public byte[] bytes() {
         return set.parallelStream()
                 .map(Hash::bytes)
-                .reduce((a,b) -> ArrayUtils.addAll(ArrayUtils.add(a, (byte)44), b))
+                .reduce((a,b) -> ArrayUtils.addAll(ArrayUtils.add(a, delimiter), b))
                 .orElse(new byte[0]);
     }
 

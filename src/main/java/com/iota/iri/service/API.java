@@ -431,7 +431,7 @@ public class API {
             transactionViewModel.store();
             transactionViewModel.updateStatus();
             transactionViewModel.updateSender("local");
-            transactionViewModel.update("store");
+            transactionViewModel.update("sender");
         }
         return AbstractResponse.createEmptyResponse();
     }

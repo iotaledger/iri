@@ -179,8 +179,8 @@ public class Node {
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
         TransactionViewModel receivedTransactionViewModel = null;
 
-        boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
+            boolean addressMatch = false;
 
             if (neighbor instanceof TCPNeighbor) {
                 if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;

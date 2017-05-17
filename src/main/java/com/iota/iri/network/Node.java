@@ -348,7 +348,7 @@ public class Node {
             try {
                 receivedTransactionViewModel.updateStatus();
                 receivedTransactionViewModel.updateSender(neighbor.getAddress().toString());
-                receivedTransactionViewModel.update("arrivalTime");
+                receivedTransactionViewModel.update("arrivalTime|sender");
 
             } catch (Exception e) {
                 log.error("Error updating transactions.", e);

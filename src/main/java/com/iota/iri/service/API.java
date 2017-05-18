@@ -100,6 +100,9 @@ public class API {
 
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
+    
+    private final static char ZERO_LENGTH_ALLOWED = 'Y';
+    private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
 
     public void init() throws IOException {
 
@@ -185,10 +188,10 @@ public class API {
                             !request.containsKey("trytes")) {
                         return ErrorResponse.create("Invalid params");
                     }
-                    if (!validTrytes((String)request.get("trunkTransaction"), HASH_SIZE)) {
+                    if (!validTrytes((String)request.get("trunkTransaction"), HASH_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                         return ErrorResponse.create("Invalid trunkTransaction hash");
                     }
-                    if (!validTrytes((String)request.get("branchTransaction"), HASH_SIZE)) {
+                    if (!validTrytes((String)request.get("branchTransaction"), HASH_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                         return ErrorResponse.create("Invalid branchTransaction hash");
                     }
                     final Hash trunkTransaction = new Hash((String) request.get("trunkTransaction"));
@@ -196,7 +199,7 @@ public class API {
                     final int minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
                     final List<String> trytes = (List<String>) request.get("trytes");
                     for (final String tryt : trytes) {
-                        if (!validTrytes(tryt, TRYTES_SIZE)) {
+                        if (!validTrytes(tryt, TRYTES_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                             return ErrorResponse.create("Invalid trytes input");
                         }
                     }
@@ -208,7 +211,7 @@ public class API {
                     }
                     final List<String> trytes = (List<String>) request.get("trytes");
                     for (final String tryt : trytes) {
-                        if (!validTrytes(tryt, TRYTES_SIZE)) {
+                        if (!validTrytes(tryt, TRYTES_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                             return ErrorResponse.create("Invalid trytes input");
                         }
                     }
@@ -229,7 +232,7 @@ public class API {
                     }
                     final List<String> addresses = (List<String>) request.get("addresses");
                     for (final String address : addresses) {
-                        if (!validTrytes(address, HASH_SIZE)) {
+                        if (!validTrytes(address, HASH_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                             return ErrorResponse.create("Invalid addresses input");
                         }
                     }
@@ -244,12 +247,12 @@ public class API {
                     final List<String> tps = (List<String>) request.get("tips");
 
                     for (final String tx : trans) {
-                        if (!validTrytes(tx, HASH_SIZE)) {
+                        if (!validTrytes(tx, HASH_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                             return ErrorResponse.create("Invalid transactions input");
                         }
                     }
                     for (final String ti : tps) {
-                        if (!validTrytes(ti, HASH_SIZE)) {
+                        if (!validTrytes(ti, HASH_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                             return ErrorResponse.create("Invalid tips input");
                         }
                     }
@@ -289,11 +292,11 @@ public class API {
                         return ErrorResponse.create("Invalid params");
                     }
                     final List<String> hashes = (List<String>) request.get("hashes");
-                    if (hashes == null || hashes.size() == 0) {
+                    if (hashes == null) {
                         return ErrorResponse.create("Wrong arguments");
                     }
                     for (final String hash : hashes) {
-                        if (!validTrytes(hash, HASH_SIZE))  {
+                        if (!validTrytes(hash, HASH_SIZE, ZERO_LENGTH_ALLOWED))  {
                             return ErrorResponse.create("Invalid hash input");
                         }
                     }
@@ -423,7 +426,7 @@ public class API {
     private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {
         for (final String trytes : trys) {
 
-            if (!validTrytes(trytes, TRYTES_SIZE)) {
+            if (!validTrytes(trytes, TRYTES_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                 return ErrorResponse.create("Invalid trytes input");
             }
             final TransactionViewModel transactionViewModel = TransactionValidator.validate(Converter.trits(trytes));
@@ -529,63 +532,12 @@ public class API {
         return true;
     }
 
-    private AbstractResponse getInclusionStateStatement(final List<String> trans, final List<String> tps) throws Exception {
-
-        final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
-        final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
-
-        int numberOfNonMetTransactions = transactions.size();
-        final boolean[] inclusionStates = new boolean[numberOfNonMetTransactions];
-
-            Set<Hash> analyzedTips = new HashSet<>();
-
-            final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>();
-            for (final Hash tip : tips) {
-
-                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
-                if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
-                    return ErrorResponse.create("One of the tips absents");
-                }
-
-                nonAnalyzedTransactions.offer(tip);
-            }
-
-            {
-                Hash pointer;
-                MAIN_LOOP:
-                while ((pointer = nonAnalyzedTransactions.poll()) != null) {
-
-
-                    if (analyzedTips.add(pointer)) {
-
-                        final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(pointer);
-                        if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                            return ErrorResponse.create("The subtangle is not solid");
-                        } else {
-                            for (int i = 0; i < inclusionStates.length; i++) {
-
-                                if (!inclusionStates[i] && pointer.equals(transactions.get(i))) {
-                                    inclusionStates[i] = true;
-                                    if(--numberOfNonMetTransactions <= 0) {
-                                        break MAIN_LOOP;
-                                    }
-                                }
-                            }
-                            nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                            nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
-                        }
-                    }
-                }
-                return GetInclusionStatesResponse.create(inclusionStates);
-            }
-    }
-
     private AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {
         final Set<Hash> bundlesTransactions = new HashSet<>();
 
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
-                if (!validTrytes(bundle, HASH_SIZE)) {
+                if (!validTrytes(bundle, HASH_SIZE, ZERO_LENGTH_ALLOWED)) {
                     return ErrorResponse.create("Invalid bundle hash");
                 }
                 bundlesTransactions.addAll(BundleViewModel.load(new Hash(bundle)).getHashes());
@@ -598,7 +550,7 @@ public class API {
             log.debug("Searching: {}", addresses.stream().reduce((a, b) -> a += ',' + b));
 
             for (final String address : addresses) {
-                if (!validTrytes(address, HASH_SIZE)) {
+                if (!validTrytes(address, HASH_SIZE, ZERO_LENGTH_ALLOWED)) {
                     return ErrorResponse.create("Invalid address input");
                 }
                 addressesTransactions.addAll(AddressViewModel.load(new Hash(address)).getHashes());
@@ -608,7 +560,7 @@ public class API {
         final Set<Hash> tagsTransactions = new HashSet<>();
         if (request.containsKey("tags")) {
             for (String tag : (List<String>) request.get("tags")) {
-                if (!validTrytes(tag,tag.length())) {
+                if (!validTrytes(tag,tag.length(), ZERO_LENGTH_ALLOWED)) {
                     return ErrorResponse.create("Invalid tag input");
                 }
                 while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
@@ -622,7 +574,7 @@ public class API {
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
-                if (!validTrytes(approvee,HASH_SIZE)) {
+                if (!validTrytes(approvee,HASH_SIZE, ZERO_LENGTH_ALLOWED)) {
                     return ErrorResponse.create("Invalid approvees hash");
                 }
                 approveeTransactions.addAll(TransactionViewModel.fromHash(new Hash(approvee)).getApprovers().getHashes());
@@ -849,7 +801,10 @@ public class API {
         sinkChannel.resumeWrites();
     }
 
-    private boolean validTrytes(String trytes, int minimalLength) {
+    private boolean validTrytes(String trytes, int minimalLength, char zeroAllowed) {
+        if (trytes.length() == 0 && zeroAllowed == ZERO_LENGTH_ALLOWED) {
+            return true;
+        }
         if (trytes.length() < minimalLength) {
             return false;
         }

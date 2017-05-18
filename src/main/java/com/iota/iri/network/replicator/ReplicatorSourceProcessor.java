@@ -64,14 +64,17 @@ class ReplicatorSourceProcessor implements Runnable {
             if (!existingNeighbor) {
                 int maxPeersAllowed = Configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
                 boolean isTestnet = Configuration.booling(Configuration.DefaultConfSettings.TESTNET);
-                if (!isTestnet || Neighbor.getNumPeers() > maxPeersAllowed) {
-                    String sb = "***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://"
-                            + inet_socket_address.getHostName() + ":" + String.valueOf(inet_socket_address.getPort())
+                if (!isTestnet || Neighbor.getNumPeers() >= maxPeersAllowed) {
+                    String hostAndPort = inet_socket_address.getHostName() + ":" + String.valueOf(inet_socket_address.getPort());
+                    if (Node.rejectedAddresses.add(inet_socket_address.getHostName())) {
+                        String sb = "***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://"
+                            + hostAndPort
                             + " (" + inet_socket_address.getAddress().getHostAddress() + ") - closing connection";                    
-                    if (isTestnet && Neighbor.getNumPeers() > maxPeersAllowed) {
-                        sb = sb + (" (max-peers allowed is "+String.valueOf(maxPeersAllowed)+")");
+                        if (isTestnet && Neighbor.getNumPeers() >= maxPeersAllowed) {
+                            sb = sb + (" (max-peers allowed is "+String.valueOf(maxPeersAllowed)+")");
+                        }
+                        log.info(sb);
                     }
-                    log.info(sb);
                     connection.getInputStream().close();
                     connection.shutdownInput();
                     connection.shutdownOutput();

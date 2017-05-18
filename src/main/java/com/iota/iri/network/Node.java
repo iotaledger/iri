@@ -1,32 +1,44 @@
 package com.iota.iri.network;
 
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.iota.iri.TransactionValidator;
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.controllers.*;
-import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.ImmutableTriple;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.Milestone;
-
-
-import java.util.LinkedHashMap;
-import java.util.Iterator;
+import com.iota.iri.TransactionValidator;
+import com.iota.iri.conf.Configuration;
+import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionRequester;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
 
 /**
  * The class node is responsible for managing Thread's connection.
@@ -74,7 +86,7 @@ public class Node {
     private static AtomicLong sendPacketsCounter = new AtomicLong(0L);
     private static AtomicLong sendPacketsTimer = new AtomicLong(0L);
 
-
+    public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
 
     public void init(double pDropTransaction, double p_SELECT_MILESTONE, double pSendMilestone, String neighborList, double SEND_LIMIT) throws Exception {
         P_DROP_TRANSACTION = pDropTransaction;
@@ -277,9 +289,15 @@ public class Node {
                     log.error("Invalid URI string: " + uriString);
                 }
             }
-            else {
-                log.info("Refused non-tethered neighbor: " + uriString + 
-                        " (max-peers ="+ String.valueOf(maxPeersAllowed) + ")");
+            else {                
+                if ( rejectedAddresses.size() > 20 ) {
+                    // Avoid ever growing list in case of an attack.
+                    rejectedAddresses.clear();
+                }
+                else if ( rejectedAddresses.add(uriString) ) {
+                    log.info("Refused non-tethered neighbor: " + uriString + 
+                        " (max-peers = "+ String.valueOf(maxPeersAllowed) + ")");
+                }
             }
         }
     }
@@ -315,9 +333,6 @@ public class Node {
     }
 
     public void processReceivedData(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
-
-        TransactionViewModel transactionViewModel = null;
-        Hash transactionPointer;
 
         boolean cached = false;
         boolean stored = false;

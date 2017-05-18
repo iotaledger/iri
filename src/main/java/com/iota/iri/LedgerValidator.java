@@ -59,7 +59,7 @@ public class LedgerValidator {
             if (analyzedTips.add(transactionPointer) && keepScanning) {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
-                if (transactionViewModel.snapshotIndex() > latestSnapshotIndex) {
+                if (transactionViewModel.snapshotIndex() == 0 || transactionViewModel.snapshotIndex() > latestSnapshotIndex) {
                     numberOfAnalyzedTransactions++;
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         TransactionRequester.instance().requestTransaction(transactionViewModel.getHash(), milestone);

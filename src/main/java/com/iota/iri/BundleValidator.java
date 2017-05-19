@@ -12,22 +12,11 @@ import com.iota.iri.utils.Converter;
 import java.util.*;
 
 public class BundleValidator {
-    private final List<List<TransactionViewModel>> transactions = new LinkedList<>();
-    private final BundleViewModel bundle;
 
-    BundleValidator(BundleViewModel bundleHashes) throws Exception {
-        this.bundle = bundleHashes;
-    }
-
-    public static BundleValidator load(Tangle tangle, BundleViewModel bundleHashes) throws Exception {
-        BundleValidator bundleValidator = new BundleValidator(bundleHashes);
-        bundleValidator.init(tangle);
-        return bundleValidator;
-    }
-
-    private void init(Tangle tangle) throws Exception {
-
-        final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(tangle);
+    public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash hash) throws Exception {
+        BundleViewModel bundleViewModel = BundleViewModel.load(tangle, hash);
+        List<List<TransactionViewModel>> transactions = new LinkedList<>();
+        final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(tangle, bundleViewModel);
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
@@ -117,41 +106,28 @@ public class BundleValidator {
                 }
             }
         }
+        return transactions;
     }
 
-    public boolean isInconsistent() {
+    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels) {
         long value = 0;
-        for (final List<TransactionViewModel> bundleTransactionViewModels : getTransactions()) {
-            for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
-                if (bundleTransactionViewModel.value() != 0) {
-                    value += bundleTransactionViewModel.value();
-                }
+        for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {
+            if (bundleTransactionViewModel.value() != 0) {
+                value += bundleTransactionViewModel.value();
             }
         }
-        return (value != 0 || getTransactions().size() == 0);
+        return (value != 0 || transactionViewModels.size() == 0);
     }
 
-    private Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle) {
+    private static Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle, BundleViewModel bundle) {
         final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();
         try {
-            for (final Hash transactionViewModel : this.bundle.getHashes()) {
+            for (final Hash transactionViewModel : bundle.getHashes()) {
                 bundleTransactions.put(transactionViewModel, TransactionViewModel.fromHash(tangle, transactionViewModel));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return bundleTransactions;
-    }
-
-    public List<List<TransactionViewModel>> getTransactions() {
-        return transactions;
-    }
-
-    Set<TransactionViewModel> getTransactionViewModels(Tangle tangle) throws Exception {
-        Set<TransactionViewModel> transactionViewModelSet = new HashSet<>();
-        for(Hash hash: bundle.getHashes()) {
-            transactionViewModelSet.add(TransactionViewModel.fromHash(tangle, hash));
-        }
-        return transactionViewModelSet;
     }
 }

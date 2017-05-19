@@ -244,13 +244,6 @@ public class TransactionViewModel {
         return TagViewModel.load(tangle, getTagValue());
     }
 
-    public BundleViewModel getBundle(Tangle tangle) throws Exception {
-        if(bundle == null) {
-            bundle = BundleViewModel.load(tangle, getBundleHash());
-        }
-        return bundle;
-    }
-
     public Hash getAddressHash() {
         if(transaction.address == null) {
             transaction.address = new Hash(trits(), ADDRESS_TRINARY_OFFSET);

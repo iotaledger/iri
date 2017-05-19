@@ -82,9 +82,12 @@ public class LedgerValidator {
 
                             boolean validBundle = false;
 
-                            final BundleValidator bundleValidator = BundleValidator.load(tangle, (BundleViewModel) transactionViewModel.getBundle(tangle));
-                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
+                            final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getBundleHash());
+                            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
+                                if(BundleValidator.isInconsistent(bundleTransactionViewModels)) {
+                                    break;
+                                }
                                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
                                     validBundle = true;
@@ -103,8 +106,7 @@ public class LedgerValidator {
                                     break;
                                 }
                             }
-
-                            if (!validBundle || bundleValidator.isInconsistent()) {
+                            if (!validBundle) {
                                 return null;
                             }
                         }

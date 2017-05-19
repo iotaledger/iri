@@ -132,12 +132,12 @@ public class Milestone {
             // Already validated.
             return true;
         }
-        final BundleValidator bundleValidator = BundleValidator.load(tangle, BundleViewModel.load(tangle, transactionViewModel.getBundleHash()));
-        if (bundleValidator.getTransactions().size() == 0) {
+        final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getBundleHash());
+        if (bundleTransactions.size() == 0) {
             return false;
         }
         else {
-            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
+            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
                 //if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(),transactionViewModel.getHash())) {
                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {

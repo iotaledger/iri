@@ -791,8 +791,9 @@ public class API {
                         exchange.endExchange();
                     }
                 } catch (IOException e) {
-                    log.error("Error writing response",e);
+                    log.error("Lost connection to client - cannot send response");
                     exchange.endExchange();
+                    sinkChannel.getWriteSetter().set(null);
                 }
             else {
                 exchange.endExchange();

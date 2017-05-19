@@ -79,15 +79,14 @@ public class Iota {
     public void init() throws Exception {
         initializeTangle();
         tangle.init();
-        ledgerValidator.init();
+        milestone.init(ledgerValidator);
         transactionValidator.init(testnet);
         tipsManager.init();
-        milestone.init(ledgerValidator);
         transactionRequester.init(configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
-        node.init();
         udpReceiver.init();
-        api.init();
         replicator.init();
+        node.init();
+        api.init();
         ixi.init(configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
     }
 

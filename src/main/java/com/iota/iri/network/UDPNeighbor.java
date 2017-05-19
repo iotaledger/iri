@@ -11,7 +11,7 @@ import java.net.InetSocketAddress;
  * Created by paul on 4/15/17.
  */
 public class UDPNeighbor extends Neighbor {
-    private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
+    private static final Logger log = LoggerFactory.getLogger(UDPNeighbor.class);
 
     private DatagramSocket socket;
 

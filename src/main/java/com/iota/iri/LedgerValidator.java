@@ -2,6 +2,8 @@ package com.iota.iri;
 
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,11 +16,20 @@ import static com.iota.iri.Snapshot.latestSnapshotSyncObject;
  */
 public class LedgerValidator {
 
-    private static final Logger log = LoggerFactory.getLogger(LedgerValidator.class);
-    private static final Object approvalsSyncObject = new Object();
-    private static final Snapshot stateSinceMilestone = new Snapshot(Snapshot.latestSnapshot);
-    private static final Set<Hash> approvedHashes = new HashSet<>();
-    private static volatile int numberOfConfirmedTransactions;
+    private final Logger log = LoggerFactory.getLogger(LedgerValidator.class);
+    private final Object approvalsSyncObject = new Object();
+    private final Snapshot stateSinceMilestone = new Snapshot(Snapshot.latestSnapshot);
+    private final Set<Hash> approvedHashes = new HashSet<>();
+    private final Tangle tangle;
+    private final Milestone milestone;
+    private final TransactionRequester transactionRequester;
+    private volatile int numberOfConfirmedTransactions;
+
+    public LedgerValidator(Tangle tangle, Milestone milestone, TransactionRequester transactionRequester) {
+        this.tangle = tangle;
+        this.milestone = milestone;
+        this.transactionRequester = transactionRequester;
+    }
 
     /**
      * Returns a Map of Address and change in balance that can be used to build a new Snapshot state.
@@ -39,7 +50,7 @@ public class LedgerValidator {
      * @return {state}  the addresses that have a balance changed since the last diff check
      * @throws Exception
      */
-    private static Map<Hash,Long> getLatestDiff(Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
+    private Map<Hash,Long> getLatestDiff(Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>();
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -58,11 +69,11 @@ public class LedgerValidator {
             }
             if (analyzedTips.add(transactionPointer) && keepScanning) {
 
-                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(transactionPointer);
+                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, transactionPointer);
                 if (transactionViewModel.snapshotIndex() == 0 || transactionViewModel.snapshotIndex() > latestSnapshotIndex) {
                     numberOfAnalyzedTransactions++;
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-                        TransactionRequester.instance().requestTransaction(transactionViewModel.getHash(), milestone);
+                        transactionRequester.requestTransaction(transactionViewModel.getHash(), milestone);
                         return null;
 
                     } else {
@@ -71,7 +82,7 @@ public class LedgerValidator {
 
                             boolean validBundle = false;
 
-                            final BundleValidator bundleValidator = BundleValidator.load((BundleViewModel) transactionViewModel.getBundle());
+                            final BundleValidator bundleValidator = BundleValidator.load(tangle, (BundleViewModel) transactionViewModel.getBundle(tangle));
                             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleValidator.getTransactions()) {
 
                                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
@@ -120,16 +131,16 @@ public class LedgerValidator {
      * @param milestone milestone to traverse from
      * @throws Exception
      */
-    private static void updateSnapshotMilestone(MilestoneViewModel milestone) throws Exception {
+    private void updateSnapshotMilestone(MilestoneViewModel milestone) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>();
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone.getHash()));
         int index = milestone.index();
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
-                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
+                final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(tangle, hashPointer);
                 if(transactionViewModel2.snapshotIndex() == 0) {
-                    transactionViewModel2.setSnapshot(index);
+                    transactionViewModel2.setSnapshot(tangle, index);
                     nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
                 }
@@ -143,12 +154,12 @@ public class LedgerValidator {
      * @param tip
      * @throws Exception
      */
-    private static void updateConsistentHashes(Hash tip, int index) throws Exception {
+    private void updateConsistentHashes(Hash tip, int index) throws Exception {
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash hashPointer;
         boolean keepTraversing;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
-            final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(hashPointer);
+            final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(tangle, hashPointer);
             if((transactionViewModel2.snapshotIndex() == 0 || transactionViewModel2.snapshotIndex() > index) ) {
                 synchronized (approvalsSyncObject) {
                     keepTraversing = approvedHashes.add(hashPointer);
@@ -169,37 +180,37 @@ public class LedgerValidator {
      * either reaches the latest solid subtangle milestone, or until it reaches an inconsistent milestone.
      * @throws Exception
      */
-    protected static void init() throws Exception {
+    protected void init() throws Exception {
         int separator = 1;
         long start, duration;
         final long expected = 5000;
-        Milestone.instance().updateLatestMilestone();
-        log.info("Latest Milestone index: " + Milestone.latestMilestoneIndex);
-        Milestone.updateLatestSolidSubtangleMilestone();
-        log.info("Latest SOLID Milestone index:" + Milestone.latestSolidSubtangleMilestoneIndex);
+        milestone.updateLatestMilestone();
+        log.info("Latest Milestone index: " + milestone.latestMilestoneIndex);
+        milestone.updateLatestSolidSubtangleMilestone();
+        log.info("Latest SOLID Milestone index:" + milestone.latestSolidSubtangleMilestoneIndex);
         MilestoneViewModel latestConsistentMilestone = buildSnapshot();
         if(latestConsistentMilestone != null) {
             updateSnapshotMilestone(latestConsistentMilestone);
         }
         int i = latestConsistentMilestone == null? Milestone.MILESTONE_START_INDEX: latestConsistentMilestone.index();
         MilestoneViewModel milestoneViewModel;
-        while(i++ < Milestone.latestSolidSubtangleMilestoneIndex) {
+        while(i++ < milestone.latestSolidSubtangleMilestoneIndex) {
             start = System.currentTimeMillis();
-            milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(i-1);
+            milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, i-1);
             if(updateSnapshot(milestoneViewModel)) {
                 log.info("Snapshot created at Milestone: " + i);
             } else {
                 break;
             }
             duration = System.currentTimeMillis() - start;
-            separator = getSeparator(duration, expected, separator, i, Milestone.latestSolidSubtangleMilestoneIndex);
-            if(i < Milestone.latestSolidSubtangleMilestoneIndex - separator) {
+            separator = getSeparator(duration, expected, separator, i, milestone.latestSolidSubtangleMilestoneIndex);
+            if(i < milestone.latestSolidSubtangleMilestoneIndex - separator) {
                 i += separator;
             }
         }
     }
 
-    private static int getSeparator(long duration, long expected, int separator, int currentIndex, int max) {
+    private int getSeparator(long duration, long expected, int separator, int currentIndex, int max) {
         int difference = max - currentIndex;
 
         separator *= (double)(((double) expected) / ((double) duration));
@@ -209,7 +220,7 @@ public class LedgerValidator {
         return separator;
     }
 
-    public static boolean isApproved(Hash hash) {
+    public boolean isApproved(Hash hash) {
         synchronized (approvalsSyncObject) {
             return approvedHashes.contains(hash);
         }
@@ -223,22 +234,25 @@ public class LedgerValidator {
      * @return              the most recent consistent milestone with a confirmed.
      * @throws Exception
      */
-    private static MilestoneViewModel buildSnapshot() throws Exception {
+    private MilestoneViewModel buildSnapshot() throws Exception {
         MilestoneViewModel consistentMilestone = null;
         synchronized (latestSnapshotSyncObject) {
             Snapshot updatedSnapshot = Snapshot.latestSnapshot;
-            MilestoneViewModel snapshotMilestone = MilestoneViewModel.firstWithSnapshot();
+            StateDiffViewModel stateDiffViewModel;
+            MilestoneViewModel snapshotMilestone = MilestoneViewModel.firstWithSnapshot(tangle);
             while (snapshotMilestone != null) {
-                updatedSnapshot = updatedSnapshot.patch(StateDiffViewModel.load(snapshotMilestone.getHash()).getDiff(), snapshotMilestone.index());
+                stateDiffViewModel = StateDiffViewModel.load(tangle, snapshotMilestone.getHash());
+                updatedSnapshot = updatedSnapshot.patch(stateDiffViewModel.getDiff(), snapshotMilestone.index());
                 if (updatedSnapshot.isConsistent()) {
                     consistentMilestone = snapshotMilestone;
                     Snapshot.latestSnapshot.merge(updatedSnapshot);
-                    snapshotMilestone = snapshotMilestone.nextWithSnapshot();
+                    snapshotMilestone = snapshotMilestone.nextWithSnapshot(tangle);
                 } else {
                     while (snapshotMilestone != null) {
                         updateSnapshotMilestone(snapshotMilestone);
-                        snapshotMilestone.delete();
-                        snapshotMilestone = snapshotMilestone.nextWithSnapshot();
+                        //snapshotMilestone.delete(tangle);
+                        stateDiffViewModel.delete(tangle);
+                        snapshotMilestone = snapshotMilestone.nextWithSnapshot(tangle);
                     }
                 }
             }
@@ -246,8 +260,8 @@ public class LedgerValidator {
         return consistentMilestone;
     }
 
-    public static boolean updateSnapshot(MilestoneViewModel milestone) throws Exception {
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(milestone.getHash());
+    public boolean updateSnapshot(MilestoneViewModel milestone) throws Exception {
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestone.getHash());
         synchronized (latestSnapshotSyncObject) {
             final int lastSnapshotIndex = Snapshot.latestSnapshot.index();
             final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
@@ -262,7 +276,7 @@ public class LedgerValidator {
                         approvedHashes.clear();
                     }
                     StateDiffViewModel stateDiffViewModel = new StateDiffViewModel(currentState, milestone.getHash());
-                    stateDiffViewModel.store();
+                    stateDiffViewModel.store(tangle);
                     Snapshot.latestSnapshot.merge(Snapshot.latestSnapshot.patch(stateDiffViewModel.getDiff(), milestone.index()));
                     stateSinceMilestone.merge(Snapshot.latestSnapshot);
                 }
@@ -271,8 +285,8 @@ public class LedgerValidator {
         }
     }
 
-    public static boolean updateFromSnapshot(Hash tip) throws Exception {
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tip);
+    public boolean updateFromSnapshot(Hash tip) throws Exception {
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
         boolean isConsistent;
         synchronized (latestSnapshotSyncObject) {
             synchronized (approvalsSyncObject) {

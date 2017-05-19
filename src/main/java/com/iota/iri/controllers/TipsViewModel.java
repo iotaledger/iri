@@ -18,20 +18,20 @@ import java.util.stream.Collectors;
  * Created by paul on 3/14/17 for iri-testnet.
  */
 public class TipsViewModel {
-    static final Logger log = LoggerFactory.getLogger(TipsViewModel.class);
+    final Logger log = LoggerFactory.getLogger(TipsViewModel.class);
 
-    private static Set<Hash> tips = new HashSet<>();
-    private static Set<Hash> solidTips = new HashSet<>();
-    private static SecureRandom seed = new SecureRandom();
-    public static final Object sync = new Object();
+    private Set<Hash> tips = new HashSet<>();
+    private Set<Hash> solidTips = new HashSet<>();
+    private SecureRandom seed = new SecureRandom();
+    public final Object sync = new Object();
 
-    public static boolean addTipHash (Hash hash) throws ExecutionException, InterruptedException {
+    public boolean addTipHash (Hash hash) throws ExecutionException, InterruptedException {
         synchronized (sync) {
             return tips.add(hash);
         }
     }
 
-    public static boolean removeTipHash (Hash hash) throws ExecutionException, InterruptedException {
+    public boolean removeTipHash (Hash hash) throws ExecutionException, InterruptedException {
         synchronized (sync) {
             if(!tips.remove(hash)) {
                 return solidTips.remove(hash);
@@ -40,7 +40,7 @@ public class TipsViewModel {
         return true;
     }
 
-    public static void setSolid(Hash tip) {
+    public void setSolid(Hash tip) {
         synchronized (sync) {
             if(!tips.remove(tip)) {
                 solidTips.add(tip);
@@ -48,7 +48,7 @@ public class TipsViewModel {
         }
     }
 
-    public static Set<Hash> getTips() {
+    public Set<Hash> getTips() {
         Set<Hash> hashes = new HashSet<>();
         synchronized (sync) {
             hashes.addAll(tips);
@@ -56,7 +56,7 @@ public class TipsViewModel {
         }
         return hashes;
     }
-    public static Hash getRandomSolidTipHash() {
+    public Hash getRandomSolidTipHash() {
         synchronized (sync) {
             int size = solidTips.size();
             if(size == 0) {
@@ -72,7 +72,7 @@ public class TipsViewModel {
         }
     }
 
-    public static Hash getRandomNonSolidTipHash() {
+    public Hash getRandomNonSolidTipHash() {
         synchronized (sync) {
             int size = tips.size();
             if(size == 0) {
@@ -88,7 +88,7 @@ public class TipsViewModel {
         }
     }
 
-    public static Hash getRandomTipHash() throws ExecutionException, InterruptedException {
+    public Hash getRandomTipHash() throws ExecutionException, InterruptedException {
         synchronized (sync) {
             if(size() == 0) {
                 return null;
@@ -102,19 +102,18 @@ public class TipsViewModel {
         }
     }
 
-    public static int nonSolidSize() {
+    public int nonSolidSize() {
         synchronized (sync) {
             return tips.size();
         }
     }
 
-    public static int size() {
+    public int size() {
         return tips.size() + solidTips.size();
     }
 
-    public static void loadTipHashes() throws Exception {
-        Set<Indexable> hashes = Tangle.instance()
-                .keysWithMissingReferences(Transaction.class, Approvee.class);
+    public void loadTipHashes(Tangle tangle) throws Exception {
+        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
         if(hashes != null) {
             tips.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
         }

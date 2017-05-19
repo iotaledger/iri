@@ -16,13 +16,13 @@ import java.util.prefs.Preferences;
  * but for most of them the node needs to be restarted.
  */
 public class Configuration {
-    private static Ini ini;
-    private static Preferences prefs;
+    private Ini ini;
+    private Preferences prefs;
 
 
-    private static final Logger log = LoggerFactory.getLogger(Configuration.class);
+    private final Logger log = LoggerFactory.getLogger(Configuration.class);
 
-    private static final Map<String, String> conf = new ConcurrentHashMap<>();
+    private final Map<String, String> conf = new ConcurrentHashMap<>();
 
     public enum DefaultConfSettings {
         CONFIG,
@@ -44,10 +44,10 @@ public class Configuration {
         P_SEND_MILESTONE,
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
-        MAX_PEERS,
+        MAX_PEERS, COORDINATOR,
     }
 
-    static {
+    {
         // defaults
         conf.put(DefaultConfSettings.PORT.name(), "14600");
         conf.put(DefaultConfSettings.API_HOST.name(), "localhost");
@@ -72,8 +72,8 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
     }
 
-    public static boolean init() throws IOException {
-        File confFile = new File(Configuration.string(Configuration.DefaultConfSettings.CONFIG));
+    public boolean init() throws IOException {
+        File confFile = new File(string(Configuration.DefaultConfSettings.CONFIG));
         if(confFile.exists()) {
             ini = new Ini(confFile);
             prefs = new IniPreferences(ini);
@@ -82,63 +82,63 @@ public class Configuration {
         return false;
     }
 
-    public static String getIniValue(String k) {
+    public String getIniValue(String k) {
         if(ini != null) {
             return prefs.node("IRI").get(k, null);
         }
         return null;
     }
 
-    private static String getConfValue(String k) {
+    private String getConfValue(String k) {
         String value = getIniValue(k);
         return value == null? conf.get(k): value;
     }
 
-    public static String allSettings() {
+    public String allSettings() {
         final StringBuilder settings = new StringBuilder();
         conf.keySet().forEach(t -> settings.append("Set '").append(t).append("'\t -> ").append(getConfValue(t)).append("\n"));
         return settings.toString();
     }
 
-    public static void put(final String k, final String v) {
+    public void put(final String k, final String v) {
         log.debug("Setting {} with {}", k, v);
         conf.put(k, v);
     }
 
-    public static void put(final DefaultConfSettings d, String v) {
+    public void put(final DefaultConfSettings d, String v) {
         log.debug("Setting {} with {}", d.name(), v);
         conf.put(d.name(), v);
     }
 
-    private static String string(String k) {
+    private String string(String k) {
         return getConfValue(k);
     }
 
-    public static float floating(String k) {
+    public float floating(String k) {
         return Float.parseFloat(getConfValue(k));
     }
 
-    public static double doubling(String k) {
+    public double doubling(String k) {
         return Double.parseDouble(getConfValue(k));
     }
 
-    private static int integer(String k) {
+    private int integer(String k) {
         return Integer.parseInt(getConfValue(k));
     }
 
-    private static boolean booling(String k) {
+    private boolean booling(String k) {
         return Boolean.parseBoolean(getConfValue(k));
     }
 
-    public static String string(final DefaultConfSettings d) {
+    public String string(final DefaultConfSettings d) {
         return string(d.name());
     }
 
-    public static int integer(final DefaultConfSettings d) {
+    public int integer(final DefaultConfSettings d) {
         return integer(d.name());
     }
 
-    public static boolean booling(final DefaultConfSettings d) {
+    public boolean booling(final DefaultConfSettings d) {
         return booling(d.name());
     }
 }

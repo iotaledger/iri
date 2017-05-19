@@ -1,9 +1,7 @@
-package com.iota.iri.controllers;
+package com.iota.iri.network;
 
-import com.iota.iri.TransactionValidator;
-import com.iota.iri.model.Approvee;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
@@ -28,17 +26,22 @@ public class TransactionRequester {
     private static double P_REMOVE_REQUEST;
     private static int RESCAN_SLEEP_NANOS = 20000;
     private static boolean initialized = false;
-    private static final TransactionRequester instance = new TransactionRequester();
     private final SecureRandom random = new SecureRandom();
 
     private final Object syncObj = new Object();
     private static Thread rescanThread;
+    private final Tangle tangle;
 
-    public static void init(double p_REMOVE_REQUEST) {
+    public TransactionRequester(Tangle tangle) {
+        this.tangle = tangle;
+    }
+
+    public void init(double p_REMOVE_REQUEST) {
         if(!initialized) {
             initialized = true;
             P_REMOVE_REQUEST = p_REMOVE_REQUEST;
 
+            /*
             rescanThread = new Thread(() -> {
                 try {
                     rescanTransactionsToRequest();
@@ -46,12 +49,12 @@ public class TransactionRequester {
                     log.error("Could rescan transactions", e);
                 }
             }, "Rescan Transactions Thread");
-            TransactionRequester.instance();
             rescanThread.start();
+            */
         }
     }
 
-    public static void shutdown() {
+    public void shutdown() {
         if(rescanThread != null) {
             try {
                 rescanThread.join();
@@ -61,16 +64,16 @@ public class TransactionRequester {
     }
 
 
-    private static void rescanTransactionsToRequest() throws Exception {
+    /*
+    private void rescanTransactionsToRequest() throws Exception {
 
-        Set<Indexable> missingTransactions = Tangle.instance().keysWithMissingReferences(Approvee.class, Transaction.class);
+        Set<Indexable> missingTransactions = TransactionViewModel.getMissingTransactions();
         if(missingTransactions != null) {
             for(Indexable hash : missingTransactions) {
-                instance().requestTransaction((Hash) hash, false);
+                requestTransaction((Hash) hash, false);
 
             }
         }
-        /*
         TransactionViewModel transaction = TransactionViewModel.first();
         if(transaction != null) {
             transaction.quickSetSolid();
@@ -79,8 +82,8 @@ public class TransactionRequester {
                 Thread.sleep(0, RESCAN_SLEEP_NANOS);
             }
         }
-        */
     }
+        */
 
     public Hash[] getRequestedTransactions() {
         synchronized (syncObj) {
@@ -110,7 +113,7 @@ public class TransactionRequester {
     }
 
     public void requestTransaction(Hash hash, boolean milestone) throws Exception {
-        if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(hash)) {
+        if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(tangle, hash)) {
             synchronized (syncObj) {
                 if(milestone) {
                     transactionsToRequest.remove(hash);
@@ -145,7 +148,7 @@ public class TransactionRequester {
                 Iterator<Hash> iterator = requestSet.iterator();
                 hash = iterator.next();
                 iterator.remove();
-                if (TransactionViewModel.exists(hash)) {
+                if (TransactionViewModel.exists(tangle, hash)) {
                     log.info("Removed existing tx from request list: " + hash);
                 } else {
                     requestSet.add(hash);
@@ -166,10 +169,6 @@ public class TransactionRequester {
             //log.info("Transactions to request = {}", numberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
         }
         return hash;
-    }
-
-    public static TransactionRequester instance() {
-        return instance;
     }
 
 }

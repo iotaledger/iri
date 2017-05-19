@@ -26,8 +26,8 @@ public class BundleViewModel implements HashesViewModel {
         this.hash = hash;
     }
 
-    public static BundleViewModel load(Indexable hash) throws Exception {
-        return new BundleViewModel((Bundle) Tangle.instance().load(Bundle.class, hash), hash);
+    public static BundleViewModel load(Tangle tangle, Indexable hash) throws Exception {
+        return new BundleViewModel((Bundle) tangle.load(Bundle.class, hash), hash);
     }
 
     public static Map.Entry<Indexable, Persistable> getEntry(Hash hash, Hash hashToMerge) throws Exception {
@@ -44,8 +44,8 @@ public class BundleViewModel implements HashesViewModel {
     }
     */
 
-    public boolean store() throws Exception {
-        return Tangle.instance().save(self, hash);
+    public boolean store(Tangle tangle) throws Exception {
+        return tangle.save(self, hash);
     }
 
     public int size() {

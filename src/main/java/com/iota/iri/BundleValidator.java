@@ -6,6 +6,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
 import java.util.*;
@@ -18,15 +19,15 @@ public class BundleValidator {
         this.bundle = bundleHashes;
     }
 
-    public static BundleValidator load(BundleViewModel bundleHashes) throws Exception {
+    public static BundleValidator load(Tangle tangle, BundleViewModel bundleHashes) throws Exception {
         BundleValidator bundleValidator = new BundleValidator(bundleHashes);
-        bundleValidator.init();
+        bundleValidator.init(tangle);
         return bundleValidator;
     }
 
-    private void init() throws Exception {
+    private void init(Tangle tangle) throws Exception {
 
-        final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle();
+        final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(tangle);
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
@@ -44,7 +45,7 @@ public class BundleValidator {
 
                     if (transactionViewModel.getCurrentIndex() != i || transactionViewModel.lastIndex() != lastIndex
                             || ((bundleValue += transactionViewModel.value()) < -TransactionViewModel.SUPPLY || bundleValue > TransactionViewModel.SUPPLY)) {
-                        instanceTransactionViewModels.get(0).setValidity(-1);
+                        instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         break;
                     }
 
@@ -86,7 +87,7 @@ public class BundleValidator {
                                             address.squeeze(addressTrits, 0, addressTrits.length);
                                             //if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
                                             if (! transactionViewModel.getAddressHash().equals(new Hash(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE)))) {
-                                                instanceTransactionViewModels.get(0).setValidity(-1);
+                                                instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                                                 break MAIN_LOOP;
                                             }
                                         } else {
@@ -94,16 +95,16 @@ public class BundleValidator {
                                         }
                                     }
 
-                                    instanceTransactionViewModels.get(0).setValidity(1);
+                                    instanceTransactionViewModels.get(0).setValidity(tangle, 1);
                                     transactions.add(instanceTransactionViewModels);
                                 } else {
-                                    instanceTransactionViewModels.get(0).setValidity(-1);
+                                    instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                                 }
                             } else {
                                 transactions.add(instanceTransactionViewModels);
                             }
                         } else {
-                            instanceTransactionViewModels.get(0).setValidity(-1);
+                            instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         }
                         break;
 
@@ -130,11 +131,11 @@ public class BundleValidator {
         return (value != 0 || getTransactions().size() == 0);
     }
 
-    private Map<Hash, TransactionViewModel> loadTransactionsFromTangle() {
+    private Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle) {
         final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();
         try {
             for (final Hash transactionViewModel : this.bundle.getHashes()) {
-                bundleTransactions.put(transactionViewModel, TransactionViewModel.fromHash(transactionViewModel));
+                bundleTransactions.put(transactionViewModel, TransactionViewModel.fromHash(tangle, transactionViewModel));
             }
         } catch (Exception e) {
             e.printStackTrace();
@@ -146,10 +147,10 @@ public class BundleValidator {
         return transactions;
     }
 
-    Set<TransactionViewModel> getTransactionViewModels() throws Exception {
+    Set<TransactionViewModel> getTransactionViewModels(Tangle tangle) throws Exception {
         Set<TransactionViewModel> transactionViewModelSet = new HashSet<>();
         for(Hash hash: bundle.getHashes()) {
-            transactionViewModelSet.add(TransactionViewModel.fromHash(hash));
+            transactionViewModelSet.add(TransactionViewModel.fromHash(tangle, hash));
         }
         return transactionViewModelSet;
     }

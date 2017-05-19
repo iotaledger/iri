@@ -26,12 +26,12 @@ public class AddressViewModel implements HashesViewModel {
         this.hash = hash;
     }
 
-    public static AddressViewModel load(Indexable hash) throws Exception {
-        return new AddressViewModel((Address) Tangle.instance().load(Address.class, hash), hash);
+    public static AddressViewModel load(Tangle tangle, Indexable hash) throws Exception {
+        return new AddressViewModel((Address) tangle.load(Address.class, hash), hash);
     }
 
-    public boolean store() throws Exception {
-        return Tangle.instance().save(self, hash);
+    public boolean store(Tangle tangle) throws Exception {
+        return tangle.save(self, hash);
     }
 
     public int size() {

@@ -13,9 +13,9 @@ import java.util.stream.Collectors;
 public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
 
-    public static final Map<
-            Hash, Long> initialState = new HashMap<>();
+    public static final Map<Hash, Long> initialState = new HashMap<>();
     public static final Snapshot latestSnapshot;
+    public static final Snapshot initialSnapshot;
 
     static {
         initialState.put(Hash.NULL_HASH, 908343229829300L);
@@ -177,6 +177,7 @@ public class Snapshot {
 
 
         latestSnapshot = new Snapshot(initialState, 0);
+        initialSnapshot = new Snapshot(latestSnapshot);
     }
 
     public static final Object latestSnapshotSyncObject = new Object();

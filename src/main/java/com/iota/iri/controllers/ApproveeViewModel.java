@@ -26,8 +26,8 @@ public class ApproveeViewModel implements HashesViewModel {
         this.hash = hash;
     }
 
-    public static ApproveeViewModel load(Indexable hash) throws Exception {
-        return new ApproveeViewModel((Approvee) Tangle.instance().load(Approvee.class, hash), hash);
+    public static ApproveeViewModel load(Tangle tangle, Indexable hash) throws Exception {
+        return new ApproveeViewModel((Approvee) tangle.load(Approvee.class, hash), hash);
     }
 
     public static Map.Entry<Indexable, Persistable> getEntry(Hash hash, Hash hashToMerge) throws Exception {
@@ -36,8 +36,8 @@ public class ApproveeViewModel implements HashesViewModel {
         return new HashMap.SimpleEntry<>(hash, hashes);
     }
 
-    public boolean store() throws Exception {
-        return Tangle.instance().save(self, hash);
+    public boolean store(Tangle tangle) throws Exception {
+        return tangle.save(self, hash);
     }
 
     public int size() {

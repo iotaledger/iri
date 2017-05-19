@@ -7,6 +7,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.iota.iri.network.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,11 +16,25 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 
 public class ReplicatorSourcePool implements Runnable {
 
+    private final ReplicatorSinkPool replicatorSinkPool;
+    private final Node node;
+    private final int maxPeers;
+    private final boolean testnet;
     private volatile boolean shutdown = false;
 
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSourcePool.class);
     private ExecutorService pool;
     private int port;
+
+    public ReplicatorSourcePool(final ReplicatorSinkPool replicatorSinkPool,
+                                final Node node,
+                                final int maxPeers,
+                                final boolean testnet) {
+        this.replicatorSinkPool = replicatorSinkPool;
+        this.node = node;
+        this.maxPeers = maxPeers;
+        this.testnet = testnet;
+    }
 
     @Override
     public void run() {
@@ -34,7 +49,7 @@ public class ReplicatorSourcePool implements Runnable {
                 try {
                     Socket request = server.accept();
                     request.setSoLinger(true, 0);
-                    Runnable proc = new ReplicatorSourceProcessor( request );
+                    Runnable proc = new ReplicatorSourceProcessor( replicatorSinkPool, request, node, maxPeers, testnet );
                     pool.submit(proc);
                 } catch (IOException ex) {
                     log.error("Error accepting connection", ex);
@@ -42,7 +57,7 @@ public class ReplicatorSourcePool implements Runnable {
             }
             log.info("ReplicatorSinkPool shutting down");
         } catch (IOException e) {
-            log.error("***** NETWORK ALERT ***** Cannot create server socket on port {}, {}", Configuration.integer(DefaultConfSettings.TCP_RECEIVER_PORT), e.getMessage());
+            log.error("***** NETWORK ALERT ***** Cannot create server socket on port {}, {}", port, e.getMessage());
         } finally {
             if (server != null) {
                 try {
@@ -62,18 +77,9 @@ public class ReplicatorSourcePool implements Runnable {
         pool.awaitTermination(6, TimeUnit.SECONDS);
     }
 
-    private static final ReplicatorSourcePool instance = new ReplicatorSourcePool();
-
-    private ReplicatorSourcePool() {
-    }
-
-    public static ReplicatorSourcePool instance() {
-        return instance;
-    }
-
-    public static ReplicatorSourcePool init(int port) {
-        instance.port = port;
-        return instance;
+    public ReplicatorSourcePool init(int port) {
+        this.port = port;
+        return this;
     }
 
 }

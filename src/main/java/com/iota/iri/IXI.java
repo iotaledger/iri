@@ -226,10 +226,4 @@ public class IXI {
             ixiLifetime.clear();
         }
     }
-
-    private static final IXI instance = new IXI();
-
-    public static IXI instance() {
-        return instance;
-    }
 }

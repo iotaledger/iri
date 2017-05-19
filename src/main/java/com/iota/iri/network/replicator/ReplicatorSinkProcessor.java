@@ -22,10 +22,16 @@ class ReplicatorSinkProcessor implements Runnable {
     private final TCPNeighbor neighbor;
     
     public final static int CRC32_BYTES = 16;
+    private final ReplicatorSinkPool replicatorSinkPool;
+    private final int port;
 
-    public ReplicatorSinkProcessor(TCPNeighbor neighbor) {
+    public ReplicatorSinkProcessor(final TCPNeighbor neighbor,
+                                   final ReplicatorSinkPool replicatorSinkPool,
+                                   final int port) {
         this.neighbor = neighbor;
-    }    
+        this.replicatorSinkPool = replicatorSinkPool;
+        this.port = port;
+    }
 
     @Override
     public void run() {
@@ -66,12 +72,11 @@ class ReplicatorSinkProcessor implements Runnable {
                     // Let neighbor know our tcp listener port
                     String fmt = "%0"+String.valueOf(ReplicatorSinkPool.PORT_BYTES)+"d";
                     byte [] portAsByteArray = new byte [10];
-                    System.arraycopy(String.format(fmt, 
-                            Configuration.integer(DefaultConfSettings.TCP_RECEIVER_PORT)).getBytes(), 0, 
+                    System.arraycopy(String.format(fmt, port).getBytes(), 0,
                             portAsByteArray, 0, ReplicatorSinkPool.PORT_BYTES);
                     out.write(portAsByteArray);
                     
-                    while (!ReplicatorSinkPool.instance().shutdown) {
+                    while (!replicatorSinkPool.shutdown) {
                         try {
                             ByteBuffer message = neighbor.getNextMessage();
                             if (neighbor.getSink() != null) { 

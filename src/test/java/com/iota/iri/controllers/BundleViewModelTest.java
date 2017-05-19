@@ -2,6 +2,7 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProviderTest;
 import org.junit.After;
 import org.junit.Before;
@@ -14,21 +15,23 @@ import org.junit.rules.TemporaryFolder;
 public class BundleViewModelTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
+    private static Tangle tangle = new Tangle();
 
     @Before
     public void setUp() throws Exception {
         dbFolder.create();
         logFolder.create();
-        Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
-        Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, logFolder.getRoot().getAbsolutePath());
-        Tangle.instance().addPersistenceProvider(RocksDBPersistenceProviderTest.rocksDBPersistenceProvider);
-        Tangle.instance().init();
+        RocksDBPersistenceProvider rocksDBPersistenceProvider;
+        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
+                logFolder.getRoot().getAbsolutePath());
+        tangle.addPersistenceProvider(rocksDBPersistenceProvider);
+        tangle.init();
 
     }
 
     @After
     public void tearDown() throws Exception {
-        Tangle.instance().shutdown();
+        tangle.shutdown();
         dbFolder.delete();
         logFolder.delete();
     }

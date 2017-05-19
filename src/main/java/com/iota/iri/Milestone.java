@@ -14,6 +14,7 @@ import java.util.Set;
 import javax.net.ssl.HttpsURLConnection;
 
 import com.iota.iri.controllers.*;
+import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,53 +24,54 @@ import com.iota.iri.utils.Converter;
 
 public class Milestone {
 
-    private static final Logger log = LoggerFactory.getLogger(Milestone.class);
+    private final Logger log = LoggerFactory.getLogger(Milestone.class);
+    private final Tangle tangle;
+    private final Hash coordinator;
+    private final TransactionValidator transactionValidator;
+    private final boolean testnet;
 
-    public static Hash latestMilestone = Hash.NULL_HASH;
-    public static Hash latestSolidSubtangleMilestone = latestMilestone;
-    
+    private LedgerValidator ledgerValidator;
+    public Hash latestMilestone = Hash.NULL_HASH;
+    public Hash latestSolidSubtangleMilestone = latestMilestone;
+
     public static final int MILESTONE_START_INDEX = 0;
     private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 20;
 
-    public static int latestMilestoneIndex = MILESTONE_START_INDEX;
-    public static int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
+    public int latestMilestoneIndex = MILESTONE_START_INDEX;
+    public int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
 
-    private static final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
-    private static final Set<Hash> analyzedMilestoneRetryCandidates = new HashSet<>();
+    private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
+    private final Set<Hash> analyzedMilestoneRetryCandidates = new HashSet<>();
 
-    private final Hash coordinatorHash;
-    private final boolean testnet;
-
-    private Milestone(Hash coordinator, boolean isTestnet) {
-        coordinatorHash = coordinator;
-        testnet = isTestnet;
+    public Milestone(final Tangle tangle,
+              final Hash coordinator,
+              final TransactionValidator transactionValidator,
+              final boolean testnet
+              ) {
+        this.tangle = tangle;
+        this.coordinator = coordinator;
+        this.transactionValidator = transactionValidator;
+        this.testnet = testnet;
     }
-    private static Milestone instance = null;
 
-    private static boolean shuttingDown;
+    private boolean shuttingDown;
     private static int RESCAN_INTERVAL = 5000;
 
-
-    public static void init(final Hash coordinator, boolean testnet) {
-        if (instance == null) {
-            instance = new Milestone(coordinator, testnet);
-        }
-    }
-
-    public void init() {
+    public void init(final LedgerValidator ledgerValidator) {
+        this.ledgerValidator = ledgerValidator;
         (new Thread(() -> {
             while (!shuttingDown) {
                 long scanTime = System.currentTimeMillis();
 
                 try {
-                    final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
+                    final int previousLatestMilestoneIndex = latestMilestoneIndex;
 
                     updateLatestMilestone();
 
-                    if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
+                    if (previousLatestMilestoneIndex != latestMilestoneIndex) {
 
                         log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex
-                                + " to #" + Milestone.latestMilestoneIndex);
+                                + " to #" + latestMilestoneIndex);
                     }
 
                     Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
@@ -83,7 +85,7 @@ public class Milestone {
         (new Thread(() -> {
 
             try {
-                LedgerValidator.init();
+                ledgerValidator.init();
             } catch (Exception e) {
                 log.error("Error initializing snapshots. Skipping.", e);
             }
@@ -91,17 +93,17 @@ public class Milestone {
                 long scanTime = System.currentTimeMillis();
 
                 try {
-                    final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
+                    final int previousSolidSubtangleLatestMilestoneIndex = latestSolidSubtangleMilestoneIndex;
 
-                    if(Milestone.latestSolidSubtangleMilestoneIndex < Milestone.latestMilestoneIndex) {
-                        Milestone.updateLatestSolidSubtangleMilestone();
+                    if(latestSolidSubtangleMilestoneIndex < latestMilestoneIndex) {
+                        updateLatestSolidSubtangleMilestone();
                     }
 
-                    if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
+                    if (previousSolidSubtangleLatestMilestoneIndex != latestSolidSubtangleMilestoneIndex) {
 
                         log.info("Latest SOLID SUBTANGLE milestone has changed from #"
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"
-                                + Milestone.latestSolidSubtangleMilestoneIndex);
+                                + latestSolidSubtangleMilestoneIndex);
                     }
 
                     Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
@@ -115,17 +117,9 @@ public class Milestone {
 
     }
 
-    public static Milestone instance() {
-        return instance;
-    }
-
-    public Hash coordinator() {
-        return coordinatorHash;
-    }
-
     void updateLatestMilestone() throws Exception { // refactor
         findNewMilestones();
-        MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest();
+        MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
         if(milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
             latestMilestone = milestoneViewModel.getHash();
             latestMilestoneIndex = milestoneViewModel.index();
@@ -134,11 +128,11 @@ public class Milestone {
 
     private boolean validateMilestone(TransactionViewModel transactionViewModel, int index) throws Exception {
 
-        if (MilestoneViewModel.get(index) != null) {
+        if (MilestoneViewModel.get(tangle, index) != null) {
             // Already validated.
             return true;
         }
-        final BundleValidator bundleValidator = BundleValidator.load(BundleViewModel.load(transactionViewModel.getBundleHash()));
+        final BundleValidator bundleValidator = BundleValidator.load(tangle, BundleViewModel.load(tangle, transactionViewModel.getBundleHash()));
         if (bundleValidator.getTransactions().size() == 0) {
             return false;
         }
@@ -149,7 +143,7 @@ public class Milestone {
                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
                     //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
-                    final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction();
+                    final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction(tangle);
                     if (transactionViewModel2.getType() == TransactionViewModel.FILLED_SLOT
                             && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
 
@@ -161,8 +155,8 @@ public class Milestone {
                                         ISS.NUMBER_OF_FRAGMENT_CHUNKS),
                                 signatureFragmentTrits)),
                                 transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
-                        if (testnet || (new Hash(merkleRoot)).equals(coordinatorHash)) {
-                            new MilestoneViewModel(index, transactionViewModel.getHash()).store();
+                        if (testnet || (new Hash(merkleRoot)).equals(coordinator)) {
+                            new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
                             return true;
                         }
                     }
@@ -172,17 +166,17 @@ public class Milestone {
         return false;
     }
 
-    static void updateLatestSolidSubtangleMilestone() throws Exception {
+    void updateLatestSolidSubtangleMilestone() throws Exception {
         MilestoneViewModel milestoneViewModel;
-        MilestoneViewModel latest = MilestoneViewModel.latest();
+        MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
         if (latest != null) {
-            for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(latestSolidSubtangleMilestoneIndex);
+            for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
-                 milestoneViewModel = milestoneViewModel.next()) {
-                if (TransactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&
+                 milestoneViewModel = milestoneViewModel.next(tangle)) {
+                if (transactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&
                 //if (TransactionViewModel.fromHash(milestoneViewModel.getHash()).isSolid() &&
                         milestoneViewModel.index() >= latestSolidSubtangleMilestoneIndex &&
-                        LedgerValidator.updateSnapshot(milestoneViewModel)) {
+                        ledgerValidator.updateSnapshot(milestoneViewModel)) {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();
                     latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
                 } else {
@@ -197,9 +191,9 @@ public class Milestone {
     }
 
     private void findNewMilestones() throws Exception {
-        AddressViewModel.load(Milestone.instance.coordinatorHash).getHashes().stream()
+        AddressViewModel.load(tangle, coordinator).getHashes().stream()
                 .filter(analyzedMilestoneCandidates::add)
-                .map(TransactionViewModel::quietFromHash)
+                .map(hash -> TransactionViewModel.quietFromHash(tangle, hash))
                 .filter(t -> t.getCurrentIndex() == 0)
                 .forEach(t -> {
                     try {
@@ -217,7 +211,7 @@ public class Milestone {
         shuttingDown = true;
     }
 
-    public static void reportToSlack(final int milestoneIndex, final int depth, final int nextDepth) {
+    public void reportToSlack(final int milestoneIndex, final int depth, final int nextDepth) {
 
         try {
 

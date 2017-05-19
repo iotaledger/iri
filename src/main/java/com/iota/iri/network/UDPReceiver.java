@@ -22,11 +22,12 @@ import static com.iota.iri.network.Node.TRANSACTION_PACKET_SIZE;
 public class UDPReceiver {
     private static final Logger log = LoggerFactory.getLogger(UDPReceiver.class);
 
-    private static final UDPReceiver instance = new UDPReceiver();
     private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
             TRANSACTION_PACKET_SIZE);
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
+    private final int port;
+    private final Node node;
 
     private DatagramSocket socket;
 
@@ -38,9 +39,15 @@ public class UDPReceiver {
 
     private Thread receivingThread;
 
-    public void init(int port) throws Exception {
+    public UDPReceiver(final int port, final Node node) {
+        this.port = port;
+        this.node = node;
+    }
+
+    public void init() throws Exception {
 
         socket = new DatagramSocket(port);
+        node.setUDPSocket(socket);
         log.info("UDP replicator is accepting connections on udp port " + port);
 
         receivingThread = new Thread(spawnReceiverThread(), "UDP receiving thread");
@@ -74,7 +81,7 @@ public class UDPReceiver {
                         byte[] bytes = Arrays.copyOf(receivingPacket.getData(), receivingPacket.getLength());
                         SocketAddress address = receivingPacket.getSocketAddress();
 
-                        processor.submit(() -> Node.instance().preProcessReceivedData(bytes, address, "udp"));
+                        processor.submit(() -> node.preProcessReceivedData(bytes, address, "udp"));
                         processed++;
 
                         Thread.yield();
@@ -113,7 +120,4 @@ public class UDPReceiver {
 
     }
 
-    public static UDPReceiver instance() {
-        return instance;
-    }
 }

@@ -23,23 +23,25 @@ import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransac
  * Created by paul on 3/3/17 for iri.
  */
 public class TangleTest {
+    private final TemporaryFolder dbFolder = new TemporaryFolder();
+    private final TemporaryFolder logFolder = new TemporaryFolder();
+    private Tangle tangle = new Tangle();
 
     @Before
     public void setUp() throws Exception {
-        Tangle instance;
         TemporaryFolder dbFolder = new TemporaryFolder(), logFolder = new TemporaryFolder();
         dbFolder.create();
         logFolder.create();
-        Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
-        Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, logFolder.getRoot().getAbsolutePath());
-        instance = Tangle.instance();
-        instance.addPersistenceProvider(new RocksDBPersistenceProvider());
-        instance.init();
+        RocksDBPersistenceProvider rocksDBPersistenceProvider;
+        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
+                logFolder.getRoot().getAbsolutePath());
+        tangle.addPersistenceProvider(rocksDBPersistenceProvider);
+        tangle.init();
     }
 
     @After
     public void tearDown() throws Exception {
-        Tangle.instance().shutdown();
+        tangle.shutdown();
     }
 
     @Test
@@ -61,8 +63,8 @@ public class TangleTest {
     public void getKeysStartingWithValue() throws Exception {
         int[] trits = getRandomTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
-        transactionViewModel.store();
-        Set<Indexable> tag = Tangle.instance().keysStartingWith(Transaction.class, Arrays.copyOf(transactionViewModel.getTagValue().bytes(), 15));
+        transactionViewModel.store(tangle);
+        Set<Indexable> tag = tangle.keysStartingWith(Transaction.class, Arrays.copyOf(transactionViewModel.getTagValue().bytes(), 15));
         //Assert.assertNotEquals(tag.length, 0);
     }
 

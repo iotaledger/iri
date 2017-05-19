@@ -1,9 +1,11 @@
 package com.iota.iri;
 
-import com.iota.iri.controllers.TransactionRequester;
+import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
+import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
 import org.slf4j.Logger;
@@ -19,35 +21,44 @@ import static com.iota.iri.controllers.TransactionViewModel.*;
  * Created by paul on 4/17/17.
  */
 public class TransactionValidator {
-    private static final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
+    private final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
     private static final int TESTNET_MIN_WEIGHT_MAGNITUDE = 13;
     private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 18;
-    private static int MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
+    private final Tangle tangle;
+    private final TipsViewModel tipsViewModel;
+    private final TransactionRequester transactionRequester;
+    private int MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
 
-    private static Thread newSolidThread;
+    private Thread newSolidThread;
 
-    private static final AtomicBoolean useFirst = new AtomicBoolean(true);
-    private static final AtomicBoolean shuttingDown = new AtomicBoolean(false);
-    private static final Object cascadeSync = new Object();
-    private static final Set<Hash> newSolidTransactionsOne = new LinkedHashSet<>();
-    private static final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
+    private final AtomicBoolean useFirst = new AtomicBoolean(true);
+    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
+    private final Object cascadeSync = new Object();
+    private final Set<Hash> newSolidTransactionsOne = new LinkedHashSet<>();
+    private final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
 
-    public static void init(boolean testnet) {
+    public TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
+        this.tangle = tangle;
+        this.tipsViewModel = tipsViewModel;
+        this.transactionRequester = transactionRequester;
+    }
+
+    public void init(boolean testnet) {
         if(testnet) {
             MIN_WEIGHT_MAGNITUDE = TESTNET_MIN_WEIGHT_MAGNITUDE;
         } else {
             MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
         }
-        newSolidThread = new Thread(spawnSolidTransactionsCascader(), "Solid TX cascader");
+        newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
         newSolidThread.start();
     }
 
-    public static void shutdown() throws InterruptedException {
+    public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
         newSolidThread.join();
     }
 
-    private static void runValidation(TransactionViewModel transactionViewModel) {
+    private void runValidation(TransactionViewModel transactionViewModel) {
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
                 log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));
@@ -63,26 +74,26 @@ public class TransactionValidator {
         }
     }
 
-    public static TransactionViewModel validate(final int[] trits) {
+    public TransactionViewModel validate(final int[] trits) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, new Curl()));
         runValidation(transactionViewModel);
         return transactionViewModel;
     }
-    public static TransactionViewModel validate(final byte[] bytes) {
+    public TransactionViewModel validate(final byte[] bytes) {
         return validate(bytes, new Curl());
 
     }
 
-    public static TransactionViewModel validate(final byte[] bytes, Curl curl) {
+    public TransactionViewModel validate(final byte[] bytes, Curl curl) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel);
         return transactionViewModel;
     }
 
-    private static final AtomicInteger nextSubSolidGroup = new AtomicInteger(1);
+    private final AtomicInteger nextSubSolidGroup = new AtomicInteger(1);
 
-    public static boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
-        if(TransactionViewModel.fromHash(hash).isSolid()) {
+    public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
+        if(TransactionViewModel.fromHash(tangle, hash).isSolid()) {
             return true;
         }
         Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -91,10 +102,10 @@ public class TransactionValidator {
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (analyzedHashes.add(hashPointer)) {
-                final TransactionViewModel transaction = TransactionViewModel.fromHash(hashPointer);
+                final TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hashPointer);
                 if(!transaction.isSolid()) {
                     if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                        TransactionRequester.instance().requestTransaction(hashPointer, milestone);
+                        transactionRequester.requestTransaction(hashPointer, milestone);
                         solid = false;
                         break;
                     } else {
@@ -107,13 +118,13 @@ public class TransactionValidator {
             }
         }
         if (solid) {
-            TransactionViewModel.updateSolidTransactions(analyzedHashes);
+            TransactionViewModel.updateSolidTransactions(tangle, analyzedHashes);
         }
         analyzedHashes.clear();
         return solid;
     }
 
-    public static void addSolidTransaction(Hash hash) {
+    public void addSolidTransaction(Hash hash) {
         synchronized (cascadeSync) {
             if (useFirst.get()) {
                 newSolidTransactionsOne.add(hash);
@@ -123,7 +134,7 @@ public class TransactionValidator {
         }
     }
 
-    private static Runnable spawnSolidTransactionsCascader() {
+    private Runnable spawnSolidTransactionsPropagation() {
         return () -> {
             while(!shuttingDown.get()) {
                 Set<Hash> newSolidHashes = new HashSet<>();
@@ -140,13 +151,13 @@ public class TransactionValidator {
                 while(cascadeIterator.hasNext() && !shuttingDown.get()) {
                     try {
                         Hash hash = cascadeIterator.next();
-                        TransactionViewModel transaction = TransactionViewModel.fromHash(hash);
-                        transaction.getApprovers().getHashes().stream()
-                                .map(TransactionViewModel::quietFromHash)
+                        TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
+                        transaction.getApprovers(tangle).getHashes().stream()
+                                .map(h -> TransactionViewModel.quietFromHash(tangle, h))
                                 .forEach(tx -> {
-                                    if(tx.quietQuickSetSolid() ) {
+                                    if(quietQuickSetSolid(tx)) {
                                         try {
-                                            tx.update("solid");
+                                            tx.update(tangle, "solid");
                                         } catch (Exception e) {
                                             e.printStackTrace();
                                         }
@@ -176,4 +187,54 @@ public class TransactionValidator {
             }
         };
     }
+
+    public void updateStatus(TransactionViewModel transactionViewModel) throws Exception {
+        transactionRequester.clearTransactionRequest(transactionViewModel.getHash());
+        if(transactionViewModel.getApprovers(tangle).size() == 0) {
+            tipsViewModel.addTipHash(transactionViewModel.getHash());
+        }
+        if(quickSetSolid(transactionViewModel)) {
+            addSolidTransaction(transactionViewModel.getHash());
+        }
+    }
+
+    public boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
+        try {
+            return quickSetSolid(transactionViewModel);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    private boolean quickSetSolid(final TransactionViewModel transactionViewModel) throws Exception {
+        if(!transactionViewModel.isSolid()) {
+            boolean solid = true;
+            if (!checkApproovee(transactionViewModel.getTrunkTransaction(tangle))) {
+                solid = false;
+            }
+            if (!checkApproovee(transactionViewModel.getBranchTransaction(tangle))) {
+                solid = false;
+            }
+            if(solid) {
+                transactionViewModel.updateSolid();
+                transactionViewModel.updateHeights(tangle);
+                return true;
+            }
+        }
+        //return isSolid();
+        return false;
+    }
+
+    private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
+        if(approovee.getType() == PREFILLED_SLOT) {
+            transactionRequester.requestTransaction(approovee.getHash(), false);
+            return false;
+        }
+        if(approovee.getHash().equals(Hash.NULL_HASH)) {
+            return true;
+        }
+        return approovee.isSolid();
+    }
+
 }

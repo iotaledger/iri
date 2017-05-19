@@ -63,7 +63,14 @@ public class TipsManager {
 
     public void shutdown() throws InterruptedException {
         shuttingDown = true;
-        solidityRescanHandle.join();
+        try {
+            if (solidityRescanHandle != null && solidityRescanHandle.isAlive())
+                solidityRescanHandle.join();
+        }
+        catch (Exception e) {
+            log.error("Error in shutdown",e);
+        }
+            
     }
 
     static Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {

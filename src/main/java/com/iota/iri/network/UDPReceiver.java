@@ -108,9 +108,12 @@ public class UDPReceiver {
         shuttingDown.set(true);
         processor.shutdown();
         processor.awaitTermination(6, TimeUnit.SECONDS);
-        receivingThread.join(6000L);
-
-
+        try {
+            receivingThread.join(6000L);
+        }
+        catch (Exception e) {
+            // ignore
+        }
     }
 
     public static UDPReceiver instance() {

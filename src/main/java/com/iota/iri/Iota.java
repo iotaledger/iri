@@ -86,13 +86,11 @@ public class Iota {
         udpReceiver.init();
         replicator.init();
         node.init();
-        api.init();
         ixi.init(configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
     }
 
     public void shutdown() throws Exception {
         ixi.shutdown();
-        api.shutDown();
         milestone.shutDown();
         tipsManager.shutdown();
         node.shutdown();

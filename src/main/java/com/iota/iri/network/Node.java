@@ -34,8 +34,6 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 
-import javax.xml.crypto.Data;
-
 /**
  * The class node is responsible for managing Thread's connection.
  */
@@ -173,7 +171,8 @@ public class Node {
                                         removeNeighbor(uri, n.isFlagged());
 
                                         uri("udp://" + ip).ifPresent(nuri -> {
-                                            addNeighbor(nuri, n.isFlagged());
+                                            Neighbor neighbor = newNeighbor(nuri, n.isFlagged());
+                                            addNeighbor(neighbor);
                                             neighborIpCache.put(hostname, ip);
                                         });
                                     });
@@ -650,14 +649,18 @@ public class Node {
         return neighbors.remove(neighbor);
     }
 
-    public boolean addNeighbor(final URI uri, boolean isConfigured) {
+    public boolean addNeighbor(Neighbor neighbor) {
+        return !getNeighbors().contains(neighbor) && getNeighbors().add(neighbor);
+    }
+
+    public Neighbor newNeighbor(final URI uri, boolean isConfigured) {
         final Neighbor neighbor;
         if (uri.toString().contains("tcp:")) {
             neighbor =  new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured);
         } else {
             neighbor =  new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, isConfigured);
         }
-        return !getNeighbors().contains(neighbor) && getNeighbors().add(neighbor);
+        return neighbor;
     }
     
     public static Optional<URI> uri(final String uri) {

@@ -22,21 +22,21 @@ import java.util.Random;
  * Created by paul on 3/5/17 for iri.
  */
 public class BundleValidatorTest {
+    private static Tangle tangle = new Tangle();
+
     @BeforeClass
     public static void setUp() throws Exception {
         TemporaryFolder dbFolder = new TemporaryFolder();
         TemporaryFolder logFolder = new TemporaryFolder();
         dbFolder.create();
         logFolder.create();
-        Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
-        Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, logFolder.getRoot().getAbsolutePath());
-        Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-        Tangle.instance().init();
+        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath()));
+        tangle.init();
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
-        Tangle.instance().shutdown();
+        tangle.shutdown();
     }
 
     @Test

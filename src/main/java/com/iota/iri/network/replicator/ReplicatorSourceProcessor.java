@@ -27,13 +27,25 @@ class ReplicatorSourceProcessor implements Runnable {
 
     private final static int TRANSACTION_PACKET_SIZE = Node.TRANSACTION_PACKET_SIZE;
     private final boolean shutdown = false;
-    
+    private final Node node;
+    private final int maxPeers;
+    private final boolean testnet;
+    private final ReplicatorSinkPool replicatorSinkPool;
+
     private boolean existingNeighbor;
     
     private TCPNeighbor neighbor;
 
-    public ReplicatorSourceProcessor(Socket connection) {
+    public ReplicatorSourceProcessor(final ReplicatorSinkPool replicatorSinkPool,
+                                     final Socket connection,
+                                     final Node node,
+                                     final int maxPeers,
+                                     final boolean testnet) {
         this.connection = connection;
+        this.node = node;
+        this.maxPeers = maxPeers;
+        this.testnet = testnet;
+        this.replicatorSinkPool = replicatorSinkPool;
     }
 
     @Override
@@ -50,7 +62,7 @@ class ReplicatorSourceProcessor implements Runnable {
             InetSocketAddress inet_socket_address = (InetSocketAddress) address;
 
             existingNeighbor = false;
-            List<Neighbor> neighbors = Node.instance().getNeighbors();            
+            List<Neighbor> neighbors = node.getNeighbors();
             neighbors.stream().filter(n -> n instanceof TCPNeighbor)
                     .map(n -> ((TCPNeighbor) n))
                     .forEach(n -> {
@@ -62,15 +74,14 @@ class ReplicatorSourceProcessor implements Runnable {
                     });
             
             if (!existingNeighbor) {
-                int maxPeersAllowed = Configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
-                boolean isTestnet = Configuration.booling(Configuration.DefaultConfSettings.TESTNET);
-                if (!isTestnet || Neighbor.getNumPeers() >= maxPeersAllowed) {
+                int maxPeersAllowed = maxPeers;
+                if (!testnet || Neighbor.getNumPeers() >= maxPeersAllowed) {
                     String hostAndPort = inet_socket_address.getHostName() + ":" + String.valueOf(inet_socket_address.getPort());
                     if (Node.rejectedAddresses.add(inet_socket_address.getHostName())) {
                         String sb = "***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://"
                             + hostAndPort
                             + " (" + inet_socket_address.getAddress().getHostAddress() + ") - closing connection";                    
-                        if (isTestnet && Neighbor.getNumPeers() >= maxPeersAllowed) {
+                        if (testnet && Neighbor.getNumPeers() >= maxPeersAllowed) {
                             sb = sb + (" (max-peers allowed is "+String.valueOf(maxPeersAllowed)+")");
                         }
                         log.info(sb);
@@ -82,7 +93,7 @@ class ReplicatorSourceProcessor implements Runnable {
                     return;
                 } else {
                     final TCPNeighbor fresh_neighbor = new TCPNeighbor(inet_socket_address, false);
-                    Node.instance().getNeighbors().add(fresh_neighbor);
+                    node.getNeighbors().add(fresh_neighbor);
                     neighbor = fresh_neighbor;
                     Neighbor.incNumPeers();
                 }
@@ -113,7 +124,7 @@ class ReplicatorSourceProcessor implements Runnable {
             
             if (neighbor.getSink() == null) {
                 log.info("Creating sink for {}", neighbor.getHostAddress());
-                ReplicatorSinkPool.instance().createSink(neighbor);
+                replicatorSinkPool.createSink(neighbor);
             }           
             
             if (connection.isConnected()) {
@@ -153,7 +164,7 @@ class ReplicatorSourceProcessor implements Runnable {
                         }
                     }
                     if (!crcError) {
-                        Node.instance().preProcessReceivedData(data, address, "tcp");
+                        node.preProcessReceivedData(data, address, "tcp");
                     }
                 }
                   catch (IllegalStateException e) {
@@ -168,11 +179,11 @@ class ReplicatorSourceProcessor implements Runnable {
             }
         } catch (IOException e) {
             log.error("***** NETWORK ALERT ***** TCP connection reset by neighbor {}, source closed, {}", neighbor.getHostAddress(), e.getMessage());
-            ReplicatorSinkPool.instance().shutdownSink(neighbor);
+            replicatorSinkPool.shutdownSink(neighbor);
         } finally {
             if (neighbor != null) {
                 if (finallyClose) {
-                    ReplicatorSinkPool.instance().shutdownSink(neighbor);
+                    replicatorSinkPool.shutdownSink(neighbor);
                     neighbor.setSource(null);
                     neighbor.setSink(null);
                     //if (!neighbor.isFlagged() ) {

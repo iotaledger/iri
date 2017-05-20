@@ -18,10 +18,13 @@ public class PearlDiver {
     private static final int COMPLETED = 2;
 
     private volatile int state;
+    private final Object syncObj = new Object();
 
-    public synchronized void cancel() {
-        state = CANCELLED;
-        notifyAll();
+    public void cancel() {
+        synchronized (syncObj){
+            state = CANCELLED;
+            syncObj.notifyAll();            
+        }
     }
 
     public synchronized boolean search(final int[] transactionTrits, final int minWeightMagnitude, int numberOfThreads) {
@@ -33,7 +36,9 @@ public class PearlDiver {
             throw new RuntimeException("Invalid min weight magnitude: " + minWeightMagnitude);
         }
 
-        state = RUNNING;
+        synchronized (syncObj) {
+            state = RUNNING;
+        }
 
         final long[] midCurlStateLow = new long[CURL_STATE_LENGTH], midCurlStateHigh = new long[CURL_STATE_LENGTH];
 
@@ -95,7 +100,6 @@ public class PearlDiver {
         }
 
         Thread[] workers = new Thread[numberOfThreads];
-        Object syncObj = new Object();
         
         while (numberOfThreads-- > 0) {
 
@@ -154,14 +158,18 @@ public class PearlDiver {
                 }
             }
         } catch (final InterruptedException e) {
-            state = CANCELLED;
+            synchronized (syncObj) {
+                state = CANCELLED;
+            }
         }
 
         for (Thread worker : workers) {
             try {
                 worker.join();
             } catch (final InterruptedException e) {
-                state = CANCELLED;
+                synchronized (syncObj) {
+                    state = CANCELLED;
+                }
             }
         }
         

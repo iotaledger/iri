@@ -3,7 +3,7 @@ package com.iota.iri;
 import java.io.File;
 import java.io.IOException;
 
-import com.iota.iri.controllers.TransactionRequester;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.storage.FileExportProvider;
 import org.apache.commons.lang3.NotImplementedException;
@@ -41,18 +41,25 @@ public class IRI {
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
     public static final String VERSION = "1.1.3.9";
+    public static Iota iota;
+    public static API api;
+    public static IXI ixi;
+    public static Configuration configuration;
 
     public static void main(final String[] args) throws IOException {
-
-        validateParams(args);
-        log.info("Welcome to {} {}", Configuration.booling(DefaultConfSettings.TESTNET) ? TESTNET_NAME : MAINNET_NAME, VERSION);
+        configuration = new Configuration();
+        validateParams(configuration, args);
+        log.info("Welcome to {} {}", configuration.booling(DefaultConfSettings.TESTNET) ? TESTNET_NAME : MAINNET_NAME, VERSION);
+        iota = new Iota(configuration);
+        ixi = new IXI(iota);
+        api = new API(iota, ixi);
         shutdownHook();
-        
-        if (Configuration.booling(DefaultConfSettings.DEBUG)) {
+
+        if (configuration.booling(DefaultConfSettings.DEBUG)) {
             log.info("You have set the debug flag. To enable debug output, you need to uncomment the DEBUG appender in the source tree at iri/src/main/resources/logback.xml and re-package iri.jar");
         }
-        
-        if (Configuration.booling(DefaultConfSettings.EXPORT)) {
+
+        if (configuration.booling(DefaultConfSettings.EXPORT)) {
             File exportDir = new File("export");
             // if the directory does not exist, create it
             if (!exportDir.exists()) {
@@ -76,22 +83,9 @@ public class IRI {
         }
 
         try {
-            initializeTangle();
-            Tangle.instance().init();
-            TransactionValidator.init(Configuration.booling(Configuration.DefaultConfSettings.TESTNET));
-            Milestone.instance().init();
-            TipsManager.instance.init();
-            TransactionRequester.init(Configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
-            Node.instance().init(Configuration.doubling(DefaultConfSettings.P_DROP_TRANSACTION.name()),
-                    Configuration.doubling(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name()),
-                    Configuration.doubling(DefaultConfSettings.P_SEND_MILESTONE.name()),
-                    Configuration.string(DefaultConfSettings.NEIGHBORS),
-                    Configuration.doubling(DefaultConfSettings.SEND_LIMIT.name()));
-            UDPReceiver.instance().init(Configuration.integer(DefaultConfSettings.UDP_RECEIVER_PORT));
-            API.instance().init();
-            Replicator.instance().init(Configuration.integer(DefaultConfSettings.TCP_RECEIVER_PORT));
-            IXI.instance().init(Configuration.string(DefaultConfSettings.IXI_DIR));
-
+            iota.init();
+            api.init();
+            ixi.init(configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
         } catch (final Exception e) {
             log.error("Exception during IOTA node initialisation: ", e);
             System.exit(-1);
@@ -99,40 +93,9 @@ public class IRI {
         log.info("IOTA Node initialised correctly.");
     }
 
-    private static void initializeTangle() {
-        String dbPath = Configuration.string(Configuration.DefaultConfSettings.DB_PATH);
-        if (Configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
-            Milestone.init(TESTNET_COORDINATOR, true);
-            if (dbPath.isEmpty() || dbPath.equals("mainnetdb")) {
-                // testnetusers must not use mainnetdb, overwrite it unless an explicit name is set.
-                Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
-                Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
-            }
-        } else {
-            Milestone.init(MAINNET_COORDINATOR, false);
-            if (dbPath.isEmpty() || dbPath.equals("testnetdb")) {
-                // mainnetusers must not use testnetdb, overwrite it unless an explicit name is set.
-                Configuration.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
-                Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnetdb.log");
-            }
-        }
-        switch (Configuration.string(DefaultConfSettings.MAIN_DB)) {
-            case "rocksdb": {
-                Tangle.instance().addPersistenceProvider(new RocksDBPersistenceProvider());
-                break;
-            }
-            default: {
-                throw new NotImplementedException("No such database type.");
-            }
-        }
-        if (Configuration.booling(DefaultConfSettings.EXPORT)) {
-            Tangle.instance().addPersistenceProvider(new FileExportProvider());
-        }
-    }
+    private static void validateParams(final Configuration configuration, final String[] args) throws IOException {
 
-    private static void validateParams(final String[] args) throws IOException {
-
-        boolean configurationInit = Configuration.init();
+        boolean configurationInit = configuration.init();
         
         if (args == null || (args.length < 2 && !configurationInit)) {
             log.error("Invalid arguments list. Provide ini-file 'iota.ini' or API port number (i.e. '-p 14600').");
@@ -168,19 +131,19 @@ public class IRI {
         // optional config file path
         String confFilePath = parser.getOptionValue(config);
         if(confFilePath != null ) {
-            Configuration.put(DefaultConfSettings.CONFIG, confFilePath);
-            Configuration.init();
+            configuration.put(DefaultConfSettings.CONFIG, confFilePath);
+            configuration.init();
         }
 
         // mandatory args
-        String inicport = Configuration.getIniValue(DefaultConfSettings.PORT.name());
+        String inicport = configuration.getIniValue(DefaultConfSettings.PORT.name());
         final String cport = inicport == null ? parser.getOptionValue(port) : inicport;
         if (cport == null) {
             log.error("Invalid arguments list. Provide at least the PORT in iota.ini or with -p option");
             printUsage();
         }
         else {
-            Configuration.put(DefaultConfSettings.PORT, cport);
+            configuration.put(DefaultConfSettings.PORT, cport);
         }
 
         // optional flags
@@ -193,38 +156,38 @@ public class IRI {
             log.warn("No neighbor has been specified. Server starting nodeless.");
             cns = StringUtils.EMPTY;
         }
-        Configuration.put(DefaultConfSettings.NEIGHBORS, cns);
+        configuration.put(DefaultConfSettings.NEIGHBORS, cns);
 
         final String vremoteapilimit = parser.getOptionValue(remoteLimitApi);
         if (vremoteapilimit != null) {
             log.debug("The following api calls are not allowed : {} ", vremoteapilimit);
-            Configuration.put(DefaultConfSettings.REMOTE_LIMIT_API, vremoteapilimit);
+            configuration.put(DefaultConfSettings.REMOTE_LIMIT_API, vremoteapilimit);
         }
         
         final String vremoteauth = parser.getOptionValue(remoteAuth);
         if (vremoteauth != null) {
             log.debug("Remote access requires basic authentication");
-            Configuration.put(DefaultConfSettings.REMOTE_AUTH, vremoteauth);
+            configuration.put(DefaultConfSettings.REMOTE_AUTH, vremoteauth);
         }
 
         final String vrportudp = parser.getOptionValue(rportudp);
         if (vrportudp != null) {
-            Configuration.put(DefaultConfSettings.UDP_RECEIVER_PORT, vrportudp);
+            configuration.put(DefaultConfSettings.UDP_RECEIVER_PORT, vrportudp);
         }
         
         final String vrporttcp = parser.getOptionValue(rporttcp);
         if (vrporttcp != null) {
-            Configuration.put(DefaultConfSettings.TCP_RECEIVER_PORT, vrporttcp);
+            configuration.put(DefaultConfSettings.TCP_RECEIVER_PORT, vrporttcp);
         }
 
         if (parser.getOptionValue(remote) != null) {
             log.info("Remote access enabled. Binding API socket to listen any interface.");
-            Configuration.put(DefaultConfSettings.API_HOST, "0.0.0.0");
+            configuration.put(DefaultConfSettings.API_HOST, "0.0.0.0");
         }
 
         if (parser.getOptionValue(export) != null) {
             log.info("Export transaction trytes turned on.");
-            Configuration.put(DefaultConfSettings.EXPORT, "true");
+            configuration.put(DefaultConfSettings.EXPORT, "true");
         }
 
         if (Integer.parseInt(cport) < 1024) {
@@ -232,25 +195,25 @@ public class IRI {
         }
 
         if (parser.getOptionValue(debug) != null) {
-            Configuration.put(DefaultConfSettings.DEBUG, "true");
-            log.info(Configuration.allSettings());
+            configuration.put(DefaultConfSettings.DEBUG, "true");
+            log.info(configuration.allSettings());
             StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
         }
         
         if (parser.getOptionValue(testnet) != null) {
-            Configuration.put(DefaultConfSettings.TESTNET, "true");
-            Configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
-            Configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+            configuration.put(DefaultConfSettings.TESTNET, "true");
+            configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
+            configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
         }
 
         final String vsendLimit = parser.getOptionValue(sendLimit);
         if (vsendLimit != null) {
-            Configuration.put(DefaultConfSettings.SEND_LIMIT, vsendLimit);
+            configuration.put(DefaultConfSettings.SEND_LIMIT, vsendLimit);
         }
         
         final String vmaxPeers = parser.getOptionValue(maxPeers);
         if (vmaxPeers != null) {
-            Configuration.put(DefaultConfSettings.MAX_PEERS, vmaxPeers);
+            configuration.put(DefaultConfSettings.MAX_PEERS, vmaxPeers);
         }
     }
 
@@ -275,16 +238,9 @@ public class IRI {
 
             log.info("Shutting down IOTA node, please hold tight...");
             try {
-                IXI.instance().shutdown();
-                API.instance().shutDown();
-                Milestone.instance().shutDown();
-                TipsManager.instance.shutdown();
-                Node.instance().shutdown();
-                UDPReceiver.instance().shutdown();
-                ReplicatorSourcePool.instance().shutdown();
-                ReplicatorSinkPool.instance().shutdown();
-                TransactionValidator.shutdown();
-                Tangle.instance().shutdown();
+                ixi.shutdown();
+                api.shutDown();
+                iota.shutdown();
             } catch (final Exception e) {
                 log.error("Exception occurred shutting down IOTA node: ", e);
             }

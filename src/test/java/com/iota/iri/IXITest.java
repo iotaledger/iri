@@ -25,17 +25,18 @@ import static org.junit.Assert.*;
  */
 public class IXITest {
     static TemporaryFolder ixiDir = new TemporaryFolder();
+    static IXI ixi;
 
     @BeforeClass
     public static void setUp() throws Exception {
         ixiDir.create();
-        Configuration.put(Configuration.DefaultConfSettings.IXI_DIR, ixiDir.getRoot().getAbsolutePath());
-        IXI.instance().init(Configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
+        ixi = new IXI();
+        ixi.init(ixiDir.getRoot().getAbsolutePath().toString());
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
-        IXI.instance().shutdown();
+        ixi.shutdown();
         ixiDir.delete();
     }
 

@@ -6,27 +6,17 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
 import java.util.*;
 
 public class BundleValidator {
-    private final List<List<TransactionViewModel>> transactions = new LinkedList<>();
-    private final BundleViewModel bundle;
 
-    BundleValidator(BundleViewModel bundleHashes) throws Exception {
-        this.bundle = bundleHashes;
-    }
-
-    public static BundleValidator load(BundleViewModel bundleHashes) throws Exception {
-        BundleValidator bundleValidator = new BundleValidator(bundleHashes);
-        bundleValidator.init();
-        return bundleValidator;
-    }
-
-    private void init() throws Exception {
-
-        final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle();
+    public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash hash) throws Exception {
+        BundleViewModel bundleViewModel = BundleViewModel.load(tangle, hash);
+        List<List<TransactionViewModel>> transactions = new LinkedList<>();
+        final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(tangle, bundleViewModel);
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
@@ -44,7 +34,7 @@ public class BundleValidator {
 
                     if (transactionViewModel.getCurrentIndex() != i || transactionViewModel.lastIndex() != lastIndex
                             || ((bundleValue += transactionViewModel.value()) < -TransactionViewModel.SUPPLY || bundleValue > TransactionViewModel.SUPPLY)) {
-                        instanceTransactionViewModels.get(0).setValidity(-1);
+                        instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         break;
                     }
 
@@ -86,7 +76,7 @@ public class BundleValidator {
                                             address.squeeze(addressTrits, 0, addressTrits.length);
                                             //if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
                                             if (! transactionViewModel.getAddressHash().equals(new Hash(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE)))) {
-                                                instanceTransactionViewModels.get(0).setValidity(-1);
+                                                instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                                                 break MAIN_LOOP;
                                             }
                                         } else {
@@ -94,16 +84,16 @@ public class BundleValidator {
                                         }
                                     }
 
-                                    instanceTransactionViewModels.get(0).setValidity(1);
+                                    instanceTransactionViewModels.get(0).setValidity(tangle, 1);
                                     transactions.add(instanceTransactionViewModels);
                                 } else {
-                                    instanceTransactionViewModels.get(0).setValidity(-1);
+                                    instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                                 }
                             } else {
                                 transactions.add(instanceTransactionViewModels);
                             }
                         } else {
-                            instanceTransactionViewModels.get(0).setValidity(-1);
+                            instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         }
                         break;
 
@@ -116,41 +106,28 @@ public class BundleValidator {
                 }
             }
         }
+        return transactions;
     }
 
-    public boolean isInconsistent() {
+    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels) {
         long value = 0;
-        for (final List<TransactionViewModel> bundleTransactionViewModels : getTransactions()) {
-            for (final TransactionViewModel bundleTransactionViewModel : bundleTransactionViewModels) {
-                if (bundleTransactionViewModel.value() != 0) {
-                    value += bundleTransactionViewModel.value();
-                }
+        for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {
+            if (bundleTransactionViewModel.value() != 0) {
+                value += bundleTransactionViewModel.value();
             }
         }
-        return (value != 0 || getTransactions().size() == 0);
+        return (value != 0 || transactionViewModels.size() == 0);
     }
 
-    private Map<Hash, TransactionViewModel> loadTransactionsFromTangle() {
+    private static Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle, BundleViewModel bundle) {
         final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();
         try {
-            for (final Hash transactionViewModel : this.bundle.getHashes()) {
-                bundleTransactions.put(transactionViewModel, TransactionViewModel.fromHash(transactionViewModel));
+            for (final Hash transactionViewModel : bundle.getHashes()) {
+                bundleTransactions.put(transactionViewModel, TransactionViewModel.fromHash(tangle, transactionViewModel));
             }
         } catch (Exception e) {
             e.printStackTrace();
         }
         return bundleTransactions;
-    }
-
-    public List<List<TransactionViewModel>> getTransactions() {
-        return transactions;
-    }
-
-    Set<TransactionViewModel> getTransactionViewModels() throws Exception {
-        Set<TransactionViewModel> transactionViewModelSet = new HashSet<>();
-        for(Hash hash: bundle.getHashes()) {
-            transactionViewModelSet.add(TransactionViewModel.fromHash(hash));
-        }
-        return transactionViewModelSet;
     }
 }

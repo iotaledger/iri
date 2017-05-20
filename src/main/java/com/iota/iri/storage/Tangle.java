@@ -16,7 +16,6 @@ import java.util.concurrent.*;
 public class Tangle {
     private static final Logger log = LoggerFactory.getLogger(Tangle.class);
 
-    private static final Tangle instance = new Tangle();
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
 
     public void addPersistenceProvider(PersistenceProvider provider) {
@@ -95,10 +94,6 @@ public class Tangle {
                 }
             }
             return success;
-    }
-
-    public static Tangle instance() {
-        return instance;
     }
 
     public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> referencedClass) throws Exception {

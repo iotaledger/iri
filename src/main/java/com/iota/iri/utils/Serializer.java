@@ -21,21 +21,27 @@ public class Serializer {
     }
     public static long getLong(byte[] bytes, int start) {
         if(bytes == null) return 0;
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-        buffer.put(bytes, start, Long.BYTES);
-        buffer.flip();
-        return buffer.getLong();
+        int length = Long.BYTES;
+        long res = 0;
+        for (int i=0; i< length;i++) {
+            res |= (bytes[start + i] & 0xFFL) << ((length-i-1) * 8);
+        }
+        return res;
     }
+
     public static int getInteger(byte[] bytes) {
         return getInteger(bytes, 0);
     }
     public static int getInteger(byte[] bytes, int start) {
         if(bytes == null) return 0;
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
-        buffer.put(bytes, start, Integer.BYTES);
-        buffer.flip();
-        return buffer.getInt();
+        int length = Integer.BYTES;
+        int res = 0;
+        for (int i=0; i< length;i++) {
+            res |= (bytes[start + i] & 0xFFL) << ((length-i-1) * 8);
+        }
+        return res;
     }
+
     public static byte[] serialize(byte value) {
         return new byte[]{value};
     }

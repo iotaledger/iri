@@ -3,25 +3,25 @@ package com.iota.iri.network.replicator;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.Socket;
-import java.security.SecureRandom;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import com.iota.iri.Iota;
 import com.iota.iri.network.TCPNeighbor;
-import com.iota.iri.controllers.TransactionRequester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.network.Node;
-import com.iota.iri.controllers.TransactionViewModel;
 
 public class ReplicatorSinkPool  implements Runnable {
     
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSinkPool.class);
-    
+    private final int port;
+    private final Node node;
+
     private ExecutorService sinkPool;
     
     public boolean shutdown = false;
@@ -29,13 +29,18 @@ public class ReplicatorSinkPool  implements Runnable {
     public final static int PORT_BYTES = 10;
 
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[Node.TRANSACTION_PACKET_SIZE], Node.TRANSACTION_PACKET_SIZE);
-    
+
+    public ReplicatorSinkPool(Node node, int port) {
+        this.node = node;
+        this.port = port;
+    }
+
     @Override
     public void run() {
         
         sinkPool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
         {           
-            List<Neighbor> neighbors = Node.instance().getNeighbors();
+            List<Neighbor> neighbors = node.getNeighbors();
             // wait until list is populated
             int loopcnt = 10;
             while ((loopcnt-- > 0) && neighbors.size() == 0) {
@@ -57,7 +62,7 @@ public class ReplicatorSinkPool  implements Runnable {
             } catch (InterruptedException e) {
                 log.debug("Interrupted: ", e);
             }
-            List<Neighbor> neighbors = Node.instance().getNeighbors();
+            List<Neighbor> neighbors = node.getNeighbors();
             neighbors.stream()
                     .filter(n -> n instanceof TCPNeighbor && n.isFlagged())
                     .map(n -> ((TCPNeighbor) n))
@@ -67,7 +72,7 @@ public class ReplicatorSinkPool  implements Runnable {
     }
     
     public void createSink(TCPNeighbor neighbor) {
-        Runnable proc = new ReplicatorSinkProcessor( neighbor );
+        Runnable proc = new ReplicatorSinkProcessor( neighbor, this, port);
         sinkPool.submit(proc);
     }
     
@@ -85,10 +90,11 @@ public class ReplicatorSinkPool  implements Runnable {
         }
         neighbor.setSink(null);
     }
-    
+
+    /*
     public void broadcast(TransactionViewModel transaction) {
         if (transaction != null) {
-            List<Neighbor> neighbors = Node.instance().getNeighbors();
+            List<Neighbor> neighbors = instance.node.getNeighbors();
             if (neighbors != null) {
                 neighbors.stream().filter(n -> n instanceof TCPNeighbor)
                         .map(n -> ((TCPNeighbor) n))
@@ -103,20 +109,11 @@ public class ReplicatorSinkPool  implements Runnable {
             }
         }
     }
-    
+    */
+
     public void shutdown() throws InterruptedException {
         shutdown = true;
         sinkPool.shutdown();
         sinkPool.awaitTermination(6, TimeUnit.SECONDS);
     }
-
-    private static final ReplicatorSinkPool instance = new ReplicatorSinkPool();
-
-    private ReplicatorSinkPool() {
-    }
-
-    public static ReplicatorSinkPool instance() {
-        return instance;
-    }
-
 }

@@ -30,6 +30,9 @@ public class Curl {
     private final long[] stateLow;
     private final long[] stateHigh;
 
+    private final int[] scratchpad = new int[STATE_LENGTH];
+
+
     public Curl() {
         state = new int[STATE_LENGTH];
         stateHigh = null;
@@ -70,7 +73,7 @@ public class Curl {
 
     private void transform() {
 
-        final int[] scratchpad = new int[STATE_LENGTH];
+        //final int[] scratchpad = new int[STATE_LENGTH];
         int scratchpadIndex = 0;
         int prev_scratchpadIndex = 0;
         for (int round = 0; round < NUMBER_OF_ROUNDS; round++) {

@@ -1,10 +1,14 @@
 package com.iota.iri.service;
 
-import com.iota.iri.conf.Configuration;
+import com.iota.iri.LedgerValidator;
+import com.iota.iri.Milestone;
+import com.iota.iri.TransactionValidator;
+import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProviderTest;
+import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -24,6 +28,8 @@ public class TipsManagerTest {
 
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
+    private static Tangle tangle;
+    private static TipsManager tipsManager;
 
     @Test
     public void capSum() throws Exception {
@@ -36,17 +42,22 @@ public class TipsManagerTest {
 
     @BeforeClass
     public static void setUp() throws Exception {
+        tangle = new Tangle();
         dbFolder.create();
         logFolder.create();
-        Configuration.put(Configuration.DefaultConfSettings.DB_PATH, dbFolder.getRoot().getAbsolutePath());
-        Configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH, logFolder.getRoot().getAbsolutePath());
-        Tangle.instance().addPersistenceProvider(RocksDBPersistenceProviderTest.rocksDBPersistenceProvider);
-        Tangle.instance().init();
+        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath()));
+        tangle.init();
+        TipsViewModel tipsViewModel = new TipsViewModel();
+        TransactionRequester transactionRequester = new TransactionRequester(tangle);
+        TransactionValidator transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester);
+        Milestone milestone = new Milestone(tangle, Hash.NULL_HASH, transactionValidator, true);
+        LedgerValidator ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester);
+        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone);
     }
 
     @AfterClass
     public static void tearDown() throws Exception {
-        Tangle.instance().shutdown();
+        tangle.shutdown();
         dbFolder.delete();
     }
 
@@ -56,11 +67,11 @@ public class TipsManagerTest {
         transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
         transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
         transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction1.getHash(), transaction1.getHash()), getRandomTransactionHash());
-        transaction.store();
-        transaction1.store();
-        transaction2.store();
+        transaction.store(tangle);
+        transaction1.store(tangle);
+        transaction2.store(tangle);
         Map<Hash, Set<Hash>> ratings = new HashMap<>();
-        TipsManager.updateHashRatings(transaction.getHash(), ratings, new HashSet<>());
+        tipsManager.updateHashRatings(transaction.getHash(), ratings, new HashSet<>());
         Assert.assertEquals(ratings.get(transaction.getHash()).size(), 3);
         Assert.assertEquals(ratings.get(transaction1.getHash()).size(), 2);
         Assert.assertEquals(ratings.get(transaction2.getHash()).size(), 1);
@@ -74,13 +85,13 @@ public class TipsManagerTest {
         transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction1.getHash(), transaction1.getHash()), getRandomTransactionHash());
         transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction2.getHash(), transaction1.getHash()), getRandomTransactionHash());
         transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction2.getHash(), transaction3.getHash()), getRandomTransactionHash());
-        transaction.store();
-        transaction1.store();
-        transaction2.store();
-        transaction3.store();
-        transaction4.store();
+        transaction.store(tangle);
+        transaction1.store(tangle);
+        transaction2.store(tangle);
+        transaction3.store(tangle);
+        transaction4.store(tangle);
         Map<Hash, Set<Hash>> ratings = new HashMap<>();
-        TipsManager.updateHashRatings(transaction.getHash(), ratings, new HashSet<>());
+        tipsManager.updateHashRatings(transaction.getHash(), ratings, new HashSet<>());
         Assert.assertEquals(ratings.get(transaction.getHash()).size(), 5);
         Assert.assertEquals(ratings.get(transaction1.getHash()).size(),4);
         Assert.assertEquals(ratings.get(transaction2.getHash()).size(), 3);
@@ -94,13 +105,13 @@ public class TipsManagerTest {
         transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction1.getHash(), transaction1.getHash()), getRandomTransactionHash());
         transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction2.getHash(), transaction2.getHash()), getRandomTransactionHash());
         transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction3.getHash(), transaction3.getHash()), getRandomTransactionHash());
-        transaction.store();
-        transaction1.store();
-        transaction2.store();
-        transaction3.store();
-        transaction4.store();
+        transaction.store(tangle);
+        transaction1.store(tangle);
+        transaction2.store(tangle);
+        transaction3.store(tangle);
+        transaction4.store(tangle);
         Map<Hash, Long> ratings = new HashMap<>();
-        TipsManager.recursiveUpdateRatings(transaction.getHash(), ratings, new HashSet<>());
+        tipsManager.recursiveUpdateRatings(transaction.getHash(), ratings, new HashSet<>());
         Assert.assertTrue(ratings.get(transaction.getHash()).equals(5L));
     }
 
@@ -108,13 +119,13 @@ public class TipsManagerTest {
     public void updateRatingsSerialWorks() throws Exception {
         Hash[] hashes = new Hash[5];
         hashes[0] = getRandomTransactionHash();
-        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store();
+        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store(tangle);
         for(int i = 1; i < hashes.length; i ++) {
             hashes[i] = getRandomTransactionHash();
-            new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i-1], hashes[i-1]), hashes[i]).store();
+            new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i-1], hashes[i-1]), hashes[i]).store(tangle);
         }
         Map<Hash, Long> ratings = new HashMap<>();
-        TipsManager.recursiveUpdateRatings(hashes[0], ratings, new HashSet<>());
+        tipsManager.recursiveUpdateRatings(hashes[0], ratings, new HashSet<>());
         Assert.assertTrue(ratings.get(hashes[0]).equals(5L));
     }
 
@@ -122,13 +133,13 @@ public class TipsManagerTest {
     public void updateRatingsSerialWorks2() throws Exception {
         Hash[] hashes = new Hash[5];
         hashes[0] = getRandomTransactionHash();
-        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store();
+        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store(tangle);
         for(int i = 1; i < hashes.length; i ++) {
             hashes[i] = getRandomTransactionHash();
-            new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i-1], hashes[i-(i > 1 ?2:1)]), hashes[i]).store();
+            new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i-1], hashes[i-(i > 1 ?2:1)]), hashes[i]).store(tangle);
         }
         Map<Hash, Long> ratings = new HashMap<>();
-        TipsManager.recursiveUpdateRatings(hashes[0], ratings, new HashSet<>());
+        tipsManager.recursiveUpdateRatings(hashes[0], ratings, new HashSet<>());
         Assert.assertTrue(ratings.get(hashes[0]).equals(12L));
     }
 
@@ -147,15 +158,15 @@ public class TipsManagerTest {
     public long ratingTime(int size) throws Exception {
         Hash[] hashes = new Hash[size];
         hashes[0] = getRandomTransactionHash();
-        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store();
+        new TransactionViewModel(getRandomTransactionTrits(), hashes[0]).store(tangle);
         Random random = new Random();
         for(int i = 1; i < hashes.length; i ++) {
             hashes[i] = getRandomTransactionHash();
-            new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i-random.nextInt(i)-1], hashes[i-random.nextInt(i)-1]), hashes[i]).store();
+            new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i-random.nextInt(i)-1], hashes[i-random.nextInt(i)-1]), hashes[i]).store(tangle);
         }
         Map<Hash, Long> ratings = new HashMap<>();
         long start = System.currentTimeMillis();
-        TipsManager.serialUpdateRatings(hashes[0], ratings, new HashSet<>(), null);
+        tipsManager.serialUpdateRatings(hashes[0], ratings, new HashSet<>(), null);
         return System.currentTimeMillis() - start;
     }
 }

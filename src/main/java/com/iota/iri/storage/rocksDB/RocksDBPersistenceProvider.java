@@ -1,6 +1,5 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -37,6 +36,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             "bundle",
             "tag"
     );
+    private final String dbPath;
+    private final String logPath;
 
     private ColumnFamilyHandle transactionHandle;
     private ColumnFamilyHandle transactionMetadataHandle;
@@ -59,13 +60,15 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private BloomFilter bloomFilter;
     private boolean available;
 
+    public RocksDBPersistenceProvider(String dbPath, String logPath) {
+        this.dbPath = dbPath;
+        this.logPath = logPath;
+    }
+
     @Override
     public void init() throws Exception {
         log.info("Initializing Database Backend... ");
-        initDB(
-                Configuration.string(Configuration.DefaultConfSettings.DB_PATH),
-                Configuration.string(Configuration.DefaultConfSettings.DB_LOG_PATH)
-        );
+        initDB(dbPath, logPath);
         initClassTreeMap();
         available = true;
         log.info("RocksDB persistence provider initialized.");

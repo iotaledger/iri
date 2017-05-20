@@ -86,7 +86,7 @@ public class LedgerValidator {
                             for(List<TransactionViewModel> transactions: bundleTransactions) {
                                 if(transactions.size() > 0) {
                                     int index = transactions.get(0).snapshotIndex();
-                                    if(index > 0 || index <= latestSnapshotIndex) {
+                                    if(index > 0 && index <= latestSnapshotIndex) {
                                         return null;
                                     }
                                 }

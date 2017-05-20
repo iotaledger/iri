@@ -280,12 +280,10 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final int depth = ((Double) request.get("depth")).intValue();
-                    /*
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    */
                     Hash[] tips = getTransactionToApproveStatement(depth);
                     if(tips == null) {
                         return ErrorResponse.create("The subtangle is not solid");

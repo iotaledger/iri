@@ -25,7 +25,7 @@ import java.util.stream.Collectors;
  */
 public class NodeIntegrationTests {
 
-    Object waitObj = new Object();
+    final Object waitObj = new Object();
     AtomicBoolean shutdown = new AtomicBoolean(false);
 
     @Before
@@ -44,13 +44,17 @@ public class NodeIntegrationTests {
         long spacing = 5000;
         Iota iotaNodes[] = new Iota[count];
         API api[] = new API[count];
+        IXI ixi[] = new IXI[count];
         Thread cooThread, master;
         TemporaryFolder[] folders = new TemporaryFolder[count*2];
         for(int i = 0; i < count; i++) {
             folders[i*2] = new TemporaryFolder();
             folders[i*2 + 1] = new TemporaryFolder();
             iotaNodes[i] = newNode(i, folders[i*2], folders[i*2+1]);
-            api[i] = new API(iotaNodes[i]);
+            ixi[i] = new IXI(iotaNodes[i]);
+            ixi[i].init(iotaNodes[i].configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
+            api[i] = new API(iotaNodes[i], ixi[i]);
+            api[i].init();
         }
         Node.uri("udp://localhost:14701").ifPresent(uri -> iotaNodes[0].node.addNeighbor(iotaNodes[0].node.newNeighbor(uri, true)));
         //Node.uri("udp://localhost:14700").ifPresent(uri -> iotaNodes[1].node.addNeighbor(iotaNodes[1].node.newNeighbor(uri, true)));
@@ -67,6 +71,7 @@ public class NodeIntegrationTests {
             waitObj.wait();
         }
         for(int i = 0; i < count; i++) {
+            ixi[i].shutdown();
             api[i].shutDown();
             iotaNodes[i].shutdown();
         }
@@ -75,7 +80,7 @@ public class NodeIntegrationTests {
         }
     }
 
-    Iota newNode(int index, TemporaryFolder db, TemporaryFolder log) throws Exception {
+    private Iota newNode(int index, TemporaryFolder db, TemporaryFolder log) throws Exception {
         db.create();
         log.create();
         Configuration conf = new Configuration();
@@ -91,7 +96,7 @@ public class NodeIntegrationTests {
         return iota;
     }
 
-    Runnable spawnMaster () {
+    private Runnable spawnMaster() {
         return () -> {
             try {
                 Thread.sleep(20000);

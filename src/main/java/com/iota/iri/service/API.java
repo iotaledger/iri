@@ -81,6 +81,7 @@ import io.undertow.util.StatusCodes;
 public class API {
 
     private static final Logger log = LoggerFactory.getLogger(API.class);
+    private final IXI ixi;
 
     private Undertow server;
 
@@ -98,8 +99,9 @@ public class API {
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
 
-    public API(Iota instance) {
+    public API(Iota instance, IXI ixi) {
         this.instance = instance;
+        this.ixi = ixi;
     }
 
     public void init() throws IOException {
@@ -341,7 +343,7 @@ public class API {
                     }
                 }
                 default: {
-                    AbstractResponse response = instance.ixi.processCommand(command, request);
+                    AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?
                             ErrorResponse.create("Command [" + command + "] is unknown") :
                             response;

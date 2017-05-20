@@ -35,6 +35,14 @@ public class IXI {
     private Thread dirWatchThread;
     private Path extensionDirectory;
     private boolean shutdown = false;
+    private final Iota iota;
+
+    public IXI() {
+        iota = null;
+    }
+    public IXI(Iota iota) {
+        this.iota = iota;
+    }
 
     public void init(String extensionDirName) throws Exception {
         if(extensionDirName.length() > 0) {
@@ -203,6 +211,7 @@ public class IXI {
 
             bindings.put("API", ixiMap);
             bindings.put("IXICycle", startStop);
+            bindings.put("IOTA", iota);
             ixiAPI.put(name, ixiMap);
             ixiLifetime.put(name, startStop);
             scriptEngine.eval(ixi, bindings);

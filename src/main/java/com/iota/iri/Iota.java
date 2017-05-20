@@ -26,7 +26,6 @@ public class Iota {
 
     public final LedgerValidator ledgerValidator;
     public final Milestone milestone;
-    public final IXI ixi;
     public final Snapshot latestSnapshot;
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
@@ -61,7 +60,6 @@ public class Iota {
             coordinator = MAINNET_COORDINATOR;
         }
         tangle = new Tangle();
-        ixi = new IXI();
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle);
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester);
@@ -84,11 +82,9 @@ public class Iota {
         udpReceiver.init();
         replicator.init();
         node.init();
-        ixi.init(configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
     }
 
     public void shutdown() throws Exception {
-        ixi.shutdown();
         milestone.shutDown();
         tipsManager.shutdown();
         node.shutdown();

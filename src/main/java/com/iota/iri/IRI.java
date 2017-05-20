@@ -43,6 +43,7 @@ public class IRI {
     public static final String VERSION = "1.1.3.9";
     public static Iota iota;
     public static API api;
+    public static IXI ixi;
     public static Configuration configuration;
 
     public static void main(final String[] args) throws IOException {
@@ -50,7 +51,8 @@ public class IRI {
         validateParams(configuration, args);
         log.info("Welcome to {} {}", configuration.booling(DefaultConfSettings.TESTNET) ? TESTNET_NAME : MAINNET_NAME, VERSION);
         iota = new Iota(configuration);
-        api = new API(iota);
+        ixi = new IXI(iota);
+        api = new API(iota, ixi);
         shutdownHook();
 
         if (configuration.booling(DefaultConfSettings.DEBUG)) {
@@ -83,6 +85,7 @@ public class IRI {
         try {
             iota.init();
             api.init();
+            ixi.init(configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
         } catch (final Exception e) {
             log.error("Exception during IOTA node initialisation: ", e);
             System.exit(-1);
@@ -235,8 +238,9 @@ public class IRI {
 
             log.info("Shutting down IOTA node, please hold tight...");
             try {
-                iota.shutdown();
+                ixi.shutdown();
                 api.shutDown();
+                iota.shutdown();
             } catch (final Exception e) {
                 log.error("Exception occurred shutting down IOTA node: ", e);
             }

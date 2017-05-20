@@ -24,7 +24,7 @@ public class TipsManager {
 
     private int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
-    private int RESCAN_TX_TO_REQUEST_INTERVAL = 1000;
+    private int RESCAN_TX_TO_REQUEST_INTERVAL = 750;
     private Thread solidityRescanHandle;
 
     public void setRATING_THRESHOLD(int value) {
@@ -65,8 +65,8 @@ public class TipsManager {
     }
 
     private void scanTipsForSolidity() throws Exception {
-        int end = tipsViewModel.nonSolidSize();
-        for(int i = 0; i++ < end && !shuttingDown;) {
+        int size = tipsViewModel.nonSolidSize();
+        if(size != 0) {
             Hash hash = tipsViewModel.getRandomNonSolidTipHash();
             boolean isTip = true;
             if(hash != null && TransactionViewModel.fromHash(tangle, hash).getApprovers(tangle).size() != 0) {
@@ -74,10 +74,9 @@ public class TipsManager {
                 isTip = false;
             }
             if(hash != null && transactionValidator.checkSolidity(hash, false) && isTip) {
-            //if(hash != null && TransactionViewModel.fromHash(hash).isSolid() && isTip) {
+                //if(hash != null && TransactionViewModel.fromHash(hash).isSolid() && isTip) {
                 tipsViewModel.setSolid(hash);
             }
-            Thread.sleep(10);
         }
     }
 

@@ -1,3 +1,8 @@
+1.1.3.10
+    - Fixed memory allocation
+    - Refactored classes away from static instances to allow for greater integration testing
+    - Added check to prevent confirmed bundles from being re-confirmed on replay
+
 1.1.3.9
     - Vastly refactored persistency and solidity functions.
 	

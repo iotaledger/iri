@@ -20,7 +20,7 @@ public class TransactionRequester {
     private final Set<Hash> milestoneTransactionsToRequest = new LinkedHashSet<>();
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
     private static volatile long lastTime = System.currentTimeMillis();
-    public  static final int REQUEST_HASH_SIZE = 49;
+    public  static final int REQUEST_HASH_SIZE = 46;
     private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUEST_HASH_SIZE];
 
     private static double P_REMOVE_REQUEST;

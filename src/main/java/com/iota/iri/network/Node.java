@@ -47,7 +47,7 @@ public class Node {
     private static final int RECV_QUEUE_SIZE = 1000;
     private static final int REPLY_QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
-    public  static final int REQUEST_HASH_SIZE = 49;
+    public  static final int REQUEST_HASH_SIZE = 46;
     private static double P_SELECT_MILESTONE;
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);

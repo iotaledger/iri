@@ -436,12 +436,14 @@ public class API {
             if (!validTrytes(trytes, TRYTES_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                 return false;
             }
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(trytes), instance.transactionValidator.getMinWeightMagnitude());
-            transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
-            transactionViewModel.store(instance.tangle);
-            instance.transactionValidator.updateStatus(transactionViewModel);
-            transactionViewModel.updateSender("local");
-            transactionViewModel.update(instance.tangle, "sender");
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(trytes),
+                    instance.transactionValidator.getMinWeightMagnitude());
+            if(transactionViewModel.store(instance.tangle)) {
+                transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
+                instance.transactionValidator.updateStatus(transactionViewModel);
+                transactionViewModel.updateSender("local");
+                transactionViewModel.update(instance.tangle, "sender");
+            }
         }
         return true;
     }

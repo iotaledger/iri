@@ -83,6 +83,14 @@ public class LedgerValidator {
                             boolean validBundle = false;
 
                             final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getBundleHash());
+                            for(List<TransactionViewModel> transactions: bundleTransactions) {
+                                if(transactions.size() > 0) {
+                                    int index = transactions.get(0).snapshotIndex();
+                                    if(index > 0 || index <= latestSnapshotIndex) {
+                                        return null;
+                                    }
+                                }
+                            }
                             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
                                 if(BundleValidator.isInconsistent(bundleTransactionViewModels)) {

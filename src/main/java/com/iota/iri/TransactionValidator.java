@@ -58,35 +58,41 @@ public class TransactionValidator {
         newSolidThread.join();
     }
 
-    private void runValidation(TransactionViewModel transactionViewModel) {
+    public int getMinWeightMagnitude() {
+        return MIN_WEIGHT_MAGNITUDE;
+    }
+
+    private static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
-                log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));
+                //log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));
                 throw new RuntimeException("Invalid transaction value");
             }
         }
 
         int weightMagnitude = transactionViewModel.getHash().trailingZeros();
-        if(weightMagnitude < MIN_WEIGHT_MAGNITUDE) {
+        if(weightMagnitude < minWeightMagnitude) {
+            /*
             log.error("Hash found: {}", transactionViewModel.getHash());
             log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));
+            */
             throw new RuntimeException("Invalid transaction hash");
         }
     }
 
-    public TransactionViewModel validate(final int[] trits) {
+    public static TransactionViewModel validate(final int[] trits, int minWeightMagnitude) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, new Curl()));
-        runValidation(transactionViewModel);
+        runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
-    public TransactionViewModel validate(final byte[] bytes) {
-        return validate(bytes, new Curl());
+    public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude) {
+        return validate(bytes, minWeightMagnitude, new Curl());
 
     }
 
-    public TransactionViewModel validate(final byte[] bytes, Curl curl) {
+    public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude, Curl curl) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
-        runValidation(transactionViewModel);
+        runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
 

@@ -247,7 +247,7 @@ public class Node {
 
                     if (receivedTransactionViewModel == null) {
                         //if not, then validate
-                        receivedTransactionViewModel = transactionValidator.validate(receivedData);
+                        receivedTransactionViewModel = TransactionValidator.validate(receivedData, transactionValidator.getMinWeightMagnitude());
 
                         //if valid - add to receive queue (receivedTransactionViewModel, neighbor)
                         addReceivedDataToReceiveQueue(receivedTransactionViewModel, neighbor);

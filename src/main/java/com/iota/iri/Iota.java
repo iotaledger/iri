@@ -34,7 +34,6 @@ public class Iota {
     public final TransactionRequester transactionRequester;
     public final Node node;
     public final UDPReceiver udpReceiver;
-    public final API api;
     public final Replicator replicator;
     public final Configuration configuration;
     public final Hash coordinator;
@@ -73,7 +72,6 @@ public class Iota {
         udpReceiver = new UDPReceiver(udpPort, node);
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone);
-        api = new API(this);
     }
 
     public void init() throws Exception {

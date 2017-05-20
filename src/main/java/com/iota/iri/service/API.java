@@ -200,7 +200,8 @@ public class API {
                             return ErrorResponse.create("Invalid trytes input");
                         }
                     }
-                    return attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
+                    List<String> elements = attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
+                    return AttachToTangleResponse.create(elements);
                 }
                 case "broadcastTransactions": {
                     if (!request.containsKey("trytes")) {
@@ -212,7 +213,8 @@ public class API {
                             return ErrorResponse.create("Invalid trytes input");
                         }
                     }
-                    return broadcastTransactionStatement(trytes);
+                    broadcastTransactionStatement(trytes);
+                    return AbstractResponse.createEmptyResponse();
                 }
                 case "findTransactions": {
                     if (!request.containsKey("bundles") &&
@@ -278,11 +280,17 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final int depth = ((Double) request.get("depth")).intValue();
+                    /*
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    return getTransactionToApproveStatement(depth);
+                    */
+                    Hash[] tips = getTransactionToApproveStatement(depth);
+                    if(tips == null) {
+                        return ErrorResponse.create("The subtangle is not solid");
+                    }
+                    return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
                 }
                 case "getTrytes": {
                     if (!request.containsKey("hashes")) {
@@ -319,7 +327,11 @@ public class API {
                     }
                     List<String> trytes = (List<String>) request.get("trytes");
                     log.debug("Invoking 'storeTransactions' with {}", trytes);
-                    return storeTransactionStatement(trytes);
+                    if(storeTransactionStatement(trytes)) {
+                        return AbstractResponse.createEmptyResponse();
+                    } else {
+                        return ErrorResponse.create("Invalid trytes input");
+                    }
                 }
                 case "getMissingTransactions": {
                     //TransactionRequester.instance().rescanTransactionsToRequest();
@@ -394,15 +406,15 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
    
-    private synchronized AbstractResponse getTransactionToApproveStatement(final int depth) throws Exception {
+    public synchronized Hash[] getTransactionToApproveStatement(final int depth) throws Exception {
+        int tipsToApprove = 2;
+        Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
-        final Hash trunkTransactionToApprove = instance.tipsManager.transactionToApprove(null, depth, random);
-        if (trunkTransactionToApprove == null) {
-            return ErrorResponse.create("The subtangle is not solid");
-        }
-        final Hash branchTransactionToApprove = instance.tipsManager.transactionToApprove(trunkTransactionToApprove, depth, random);
-        if (branchTransactionToApprove == null) {
-            return ErrorResponse.create("The subtangle is not solid");
+        for(int i = 0; i < tipsToApprove; i++) {
+            tips[i] = instance.tipsManager.transactionToApprove(tips[0], depth, random);
+            if (tips[i] == null) {
+                return null;
+            }
         }
         API.incCounter_getTxToApprove();
         if ( ( getCounter_getTxToApprove() % 100) == 0 ) {
@@ -413,27 +425,27 @@ public class API {
             counter_getTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
-        return GetTransactionsToApproveResponse.create(trunkTransactionToApprove, branchTransactionToApprove);
+        return tips;
     }
 
     private AbstractResponse getTipsStatement() throws ExecutionException, InterruptedException {
         return GetTipsResponse.create(instance.tipsViewModel.getTips().stream().map(Hash::toString).collect(Collectors.toList()));
     }
 
-    private AbstractResponse storeTransactionStatement(final List<String> trys) throws Exception {
+    public boolean storeTransactionStatement(final List<String> trys) throws Exception {
         for (final String trytes : trys) {
 
             if (!validTrytes(trytes, TRYTES_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
-                return ErrorResponse.create("Invalid trytes input");
+                return false;
             }
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(trytes));
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(trytes), instance.transactionValidator.getMinWeightMagnitude());
             transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
             transactionViewModel.store(instance.tangle);
             instance.transactionValidator.updateStatus(transactionViewModel);
             transactionViewModel.updateSender("local");
             transactionViewModel.update(instance.tangle, "sender");
         }
-        return AbstractResponse.createEmptyResponse();
+        return true;
     }
 
     private AbstractResponse getNeighborsStatement() {
@@ -601,15 +613,14 @@ public class API {
         return FindTransactionsResponse.create(elements);
     }
 
-    private AbstractResponse broadcastTransactionStatement(final List<String> trytes2) {
+    public void broadcastTransactionStatement(final List<String> trytes2) {
         for (final String tryte : trytes2) {
             //validate PoW - throws exception if invalid
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(tryte));
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(tryte), instance.transactionValidator.getMinWeightMagnitude());
             //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             instance.node.broadcast(transactionViewModel);
         }
-        return AbstractResponse.createEmptyResponse();
     }
 
     private AbstractResponse getBalancesStatement(final List<String> addrss, final int threshold) throws Exception {
@@ -684,7 +695,7 @@ public class API {
         ellapsedTime_PoW += ellapsedTime;
     }
     
-    private synchronized AbstractResponse attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
+    public synchronized List<String> attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
 
@@ -706,7 +717,7 @@ public class API {
                     break;
                 }
                 //validate PoW - throws exception if invalid
-                final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(transactionTrits);
+                final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(transactionTrits, instance.transactionValidator.getMinWeightMagnitude());
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
@@ -728,7 +739,7 @@ public class API {
         for (int i = transactionViewModels.size(); i-- > 0; ) {
             elements.add(Converter.trytes(transactionViewModels.get(i).trits()));
         }
-        return AttachToTangleResponse.create(elements);
+        return elements;
     }
 
     private AbstractResponse addNeighborsStatement(final List<String> uris) throws URISyntaxException {

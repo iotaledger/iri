@@ -194,11 +194,11 @@ public class LedgerValidator {
         int separator = 1;
         long start, duration;
         final long expected = 5000;
+        MilestoneViewModel latestConsistentMilestone = buildSnapshot();
         milestone.updateLatestMilestone();
         log.info("Latest Milestone index: " + milestone.latestMilestoneIndex);
         milestone.updateLatestSolidSubtangleMilestone();
         log.info("Latest SOLID Milestone index:" + milestone.latestSolidSubtangleMilestoneIndex);
-        MilestoneViewModel latestConsistentMilestone = buildSnapshot();
         if(latestConsistentMilestone != null) {
             updateSnapshotMilestone(latestConsistentMilestone);
         }
@@ -260,7 +260,7 @@ public class LedgerValidator {
                 } else {
                     while (snapshotMilestone != null) {
                         updateSnapshotMilestone(snapshotMilestone);
-                        //snapshotMilestone.delete(tangle);
+                        stateDiffViewModel = StateDiffViewModel.load(tangle, snapshotMilestone.getHash());
                         stateDiffViewModel.delete(tangle);
                         snapshotMilestone = snapshotMilestone.nextWithSnapshot(tangle);
                     }

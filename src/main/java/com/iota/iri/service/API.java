@@ -292,6 +292,20 @@ public class API {
                     }
                     return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
                 }
+                case "getTransactionsToApproveWithReference": {
+                    final int depth = ((Double) request.get("depth")).intValue();
+                    final int iterations = ((Double) request.get("iterations")).intValue();
+                    final String reference = (String) request.get("reference");
+                    if (invalidSubtangleStatus()) {
+                        return ErrorResponse
+                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    }
+                    Hash[] tips = getReferenceTransactionToApproveStatement(depth, reference, iterations);
+                    if(tips == null) {
+                        return ErrorResponse.create("The subtangle is not solid");
+                    }
+                    return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
+                }
                 case "getTrytes": {
                     if (!request.containsKey("hashes")) {
                         return ErrorResponse.create("Invalid params");
@@ -405,13 +419,38 @@ public class API {
     public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
-   
+
     public synchronized Hash[] getTransactionToApproveStatement(final int depth) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
         for(int i = 0; i < tipsToApprove; i++) {
             tips[i] = instance.tipsManager.transactionToApprove(tips[0], depth, random);
+            if (tips[i] == null) {
+                return null;
+            }
+        }
+        API.incCounter_getTxToApprove();
+        if ( ( getCounter_getTxToApprove() % 100) == 0 ) {
+            String sb = "Last 100 getTxToApprove consumed " +
+                    API.getEllapsedTime_getTxToApprove() / 1000000000L +
+                    " seconds processing time.";
+            log.info(sb);
+            counter_getTxToApprove = 0;
+            ellapsedTime_getTxToApprove = 0L;
+        }
+        return tips;
+    }
+    public synchronized Hash[] getReferenceTransactionToApproveStatement(final int depth, final String reference, final int iterations) throws Exception {
+        int tipsToApprove = 2;
+        Hash[] tips = new Hash[tipsToApprove];
+        final SecureRandom random = new SecureRandom();
+        Hash referenceHash = null;
+        if(reference != null) {
+            referenceHash = new Hash(reference);
+        }
+        for(int i = 0; i < tipsToApprove; i++) {
+            tips[i] = instance.tipsManager.monteCarloTransactionToApprove(referenceHash, tips[0], depth, iterations, random);
             if (tips[i] == null) {
                 return null;
             }

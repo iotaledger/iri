@@ -267,6 +267,12 @@ public class LedgerValidator {
                 }
             }
         }
+        if(consistentMilestone != null) {
+            milestone.latestMilestoneIndex = consistentMilestone.index();
+            milestone.latestMilestone = consistentMilestone.getHash();
+            milestone.latestSolidSubtangleMilestoneIndex = consistentMilestone.index();
+            milestone.latestSolidSubtangleMilestone = consistentMilestone.getHash();
+        }
         return consistentMilestone;
     }
 

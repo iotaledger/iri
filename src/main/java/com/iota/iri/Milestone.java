@@ -174,7 +174,6 @@ public class Milestone {
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
                  milestoneViewModel = milestoneViewModel.next(tangle)) {
                 if (transactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&
-                //if (TransactionViewModel.fromHash(milestoneViewModel.getHash()).isSolid() &&
                         milestoneViewModel.index() >= latestSolidSubtangleMilestoneIndex &&
                         ledgerValidator.updateSnapshot(milestoneViewModel)) {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();

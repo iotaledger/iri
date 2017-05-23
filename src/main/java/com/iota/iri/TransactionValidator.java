@@ -223,7 +223,7 @@ public class TransactionValidator {
                 solid = false;
             }
             if(solid) {
-                transactionViewModel.updateSolid();
+                transactionViewModel.updateSolid(true);
                 transactionViewModel.updateHeights(tangle);
                 return true;
             }

@@ -18,7 +18,7 @@ public class Curl {
     private static final int HALF_LENGTH = 364;
 
     private static final int NUMBER_OF_ROUNDS = 27;
-    private static final int[] TRUTH_TABLE = {1, 0, -1, 1, -1, 0, -1, 1, 0};
+    private static final int[] TRUTH_TABLE = {1, 0, -1, 2, 1, -1, 0, 2, -1, 1, 0};
     /*
     private static final IntPair[] TRANSFORM_INDICES = IntStream.range(0, STATE_LENGTH)
             .mapToObj(i -> new IntPair(i == 0 ? 0 : (((i - 1) % 2) + 1) * HALF_LENGTH - ((i - 1) >> 1),
@@ -85,7 +85,7 @@ public class Curl {
                 } else {
                     scratchpadIndex += -365;
                 }
-                state[stateIndex] = TRUTH_TABLE[scratchpad[prev_scratchpadIndex] + scratchpad[scratchpadIndex] * 3 + 4];
+                state[stateIndex] = TRUTH_TABLE[scratchpad[prev_scratchpadIndex] + (scratchpad[scratchpadIndex] << 2) + 5];
             }
         }
     }

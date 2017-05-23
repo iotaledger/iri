@@ -188,7 +188,12 @@ public class PearlDiver {
 
                 final long alpha = curlScratchpadLow[curlScratchpadIndex];
                 final long beta = curlScratchpadHigh[curlScratchpadIndex];
-                final long gamma = curlScratchpadHigh[curlScratchpadIndex += (curlScratchpadIndex < 365 ? 364 : -365)];
+                if (curlScratchpadIndex < 365) {
+                    curlScratchpadIndex += 364;
+                } else {
+                    curlScratchpadIndex += -365;
+                }
+                final long gamma = curlScratchpadHigh[curlScratchpadIndex];
                 final long delta = (alpha | (~gamma)) & (curlScratchpadLow[curlScratchpadIndex] ^ beta);
 
                 curlStateLow[curlStateIndex] = ~delta;

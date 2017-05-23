@@ -75,7 +75,7 @@ public class Iota {
     public void init() throws Exception {
         initializeTangle();
         tangle.init();
-        milestone.init(ledgerValidator);
+        milestone.init(ledgerValidator, configuration.booling(Configuration.DefaultConfSettings.REVALIDATE));
         transactionValidator.init(testnet);
         tipsManager.init();
         transactionRequester.init(configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));

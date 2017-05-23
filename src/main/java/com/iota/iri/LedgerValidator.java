@@ -195,6 +195,10 @@ public class LedgerValidator {
         long start, duration;
         final long expected = 5000;
         MilestoneViewModel latestConsistentMilestone = buildSnapshot();
+        milestone.latestMilestoneIndex = latestConsistentMilestone.index();
+        milestone.latestMilestone = latestConsistentMilestone.getHash();
+        milestone.latestSolidSubtangleMilestoneIndex = latestConsistentMilestone.index();
+        milestone.latestSolidSubtangleMilestone = latestConsistentMilestone.getHash();
         milestone.updateLatestMilestone();
         log.info("Latest Milestone index: " + milestone.latestMilestoneIndex);
         milestone.updateLatestSolidSubtangleMilestone();

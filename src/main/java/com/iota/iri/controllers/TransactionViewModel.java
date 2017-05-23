@@ -333,14 +333,14 @@ public class TransactionViewModel {
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
             transactionViewModel.updateHeights(tangle);
-            transactionViewModel.updateSolid();
+            transactionViewModel.updateSolid(true);
             transactionViewModel.update(tangle, "solid|height");
         }
     }
 
-    public boolean updateSolid() throws Exception {
-        if(!transaction.solid) {
-            transaction.solid = true;
+    public boolean updateSolid(boolean solid) throws Exception {
+        if(solid != transaction.solid) {
+            transaction.solid = solid;
             return true;
         }
         return false;

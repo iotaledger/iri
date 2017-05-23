@@ -20,7 +20,7 @@ public class BundleValidator {
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
-            if (transactionViewModel.getCurrentIndex() == 0 && transactionViewModel.getValidity() >= 0) {
+            if (transactionViewModel.getCurrentIndex() == 0) {
 
                 final List<TransactionViewModel> instanceTransactionViewModels = new LinkedList<>();
 

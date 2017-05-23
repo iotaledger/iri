@@ -116,6 +116,7 @@ public class IRI {
         final Option<Boolean> export = parser.addBooleanOption('e', "export");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Boolean> testnet = parser.addBooleanOption("testnet");
+        final Option<Boolean> revalidate = parser.addBooleanOption("revalidate");
         final Option<String> sendLimit = parser.addStringOption("send-limit");
         final Option<String> maxPeers = parser.addStringOption("max-peers");
 
@@ -199,11 +200,15 @@ public class IRI {
             log.info(configuration.allSettings());
             StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
         }
-        
+
         if (parser.getOptionValue(testnet) != null) {
             configuration.put(DefaultConfSettings.TESTNET, "true");
             configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
             configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+        }
+
+        if (parser.getOptionValue(revalidate) != null) {
+            configuration.put(DefaultConfSettings.REVALIDATE, "true");
         }
 
         final String vsendLimit = parser.getOptionValue(sendLimit);

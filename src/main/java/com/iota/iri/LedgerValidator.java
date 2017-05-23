@@ -192,8 +192,8 @@ public class LedgerValidator {
      * either reaches the latest solid subtangle milestone, or until it reaches an inconsistent milestone.
      * @throws Exception
      */
-    protected void init() throws Exception {
-        MilestoneViewModel latestConsistentMilestone = buildSnapshot();
+    protected void init(boolean revalidate) throws Exception {
+        MilestoneViewModel latestConsistentMilestone = buildSnapshot(revalidate);
         if(latestConsistentMilestone != null) {
             milestone.latestSolidSubtangleMilestone = latestConsistentMilestone.getHash();
             milestone.latestSolidSubtangleMilestoneIndex = latestConsistentMilestone.index();
@@ -214,7 +214,7 @@ public class LedgerValidator {
      * @return              the most recent consistent milestone with a confirmed.
      * @throws Exception
      */
-    private MilestoneViewModel buildSnapshot() throws Exception {
+    private MilestoneViewModel buildSnapshot(boolean revalidate) throws Exception {
         MilestoneViewModel consistentMilestone = null;
         synchronized (latestSnapshotSyncObject) {
             Snapshot updatedSnapshot = Snapshot.latestSnapshot.patch(new HashMap<>(), 0);
@@ -223,7 +223,7 @@ public class LedgerValidator {
             while (snapshotMilestone != null) {
                 stateDiffViewModel = StateDiffViewModel.load(tangle, snapshotMilestone.getHash());
                 updatedSnapshot = updatedSnapshot.patch(stateDiffViewModel.getDiff(), snapshotMilestone.index());
-                if (updatedSnapshot.isConsistent()) {
+                if (!revalidate && updatedSnapshot.isConsistent()) {
                     consistentMilestone = snapshotMilestone;
                     Snapshot.latestSnapshot.merge(updatedSnapshot);
                     snapshotMilestone = snapshotMilestone.nextWithSnapshot(tangle);

@@ -57,7 +57,7 @@ public class Milestone {
     private boolean shuttingDown;
     private static int RESCAN_INTERVAL = 5000;
 
-    public void init(final LedgerValidator ledgerValidator) {
+    public void init(final LedgerValidator ledgerValidator, final boolean revalidate) {
         this.ledgerValidator = ledgerValidator;
         (new Thread(() -> {
             while (!shuttingDown) {
@@ -85,7 +85,7 @@ public class Milestone {
         (new Thread(() -> {
 
             try {
-                ledgerValidator.init();
+                ledgerValidator.init(revalidate);
             } catch (Exception e) {
                 log.error("Error initializing snapshots. Skipping.", e);
             }

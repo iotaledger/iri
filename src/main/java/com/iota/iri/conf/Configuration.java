@@ -44,7 +44,9 @@ public class Configuration {
         P_SEND_MILESTONE,
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
-        MAX_PEERS, COORDINATOR,
+        MAX_PEERS,
+        COORDINATOR,
+        REVALIDATE,
     }
 
     {
@@ -70,6 +72,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
+        conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
     }
 
     public boolean init() throws IOException {

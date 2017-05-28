@@ -165,12 +165,14 @@ public class Node {
                                 if (neighborAddress.equals(ip)) {
                                     log.info("{} seems fine.", hostname);
                                 } else {
-                                    log.info("CHANGED IP for {}! Updating...", hostname);
+                                    log.info("IP CHANGED for {}! Updating...", hostname);
+                                    String protocol = (n instanceof TCPNeighbor) ? "tcp://" : "udp://";
+                                    String port = ":" + n.getAddress().getPort();
 
-                                    uri("udp://" + hostname).ifPresent(uri -> {
+                                    uri(protocol + hostname + port).ifPresent(uri -> {
                                         removeNeighbor(uri, n.isFlagged());
 
-                                        uri("udp://" + ip).ifPresent(nuri -> {
+                                        uri(protocol + ip + port).ifPresent(nuri -> {
                                             Neighbor neighbor = newNeighbor(nuri, n.isFlagged());
                                             addNeighbor(neighbor);
                                             neighborIpCache.put(hostname, ip);

@@ -23,7 +23,7 @@ import static com.iota.iri.controllers.TransactionViewModel.*;
 public class TransactionValidator {
     private final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
     private static final int TESTNET_MIN_WEIGHT_MAGNITUDE = 13;
-    private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 18;
+    private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 13;
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;

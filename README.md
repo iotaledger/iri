@@ -40,6 +40,14 @@ $ mvn package
 
 This will create a `target` directory in which you will find the executable jar file that you can use for the 
 
+### How to run IRI 
+
+Running IRI is pretty simple, and you don't even have to run it under admin rights. Below is a list of command line options. Here is an example script:
+
+```
+java -jar iri.jar -p 14265
+```
+
 
 ### Command Line Options 
 

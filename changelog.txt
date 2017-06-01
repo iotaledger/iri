@@ -1,3 +1,6 @@
+1.1.4.1
+    - Fixed claiming issue
+
 1.1.4
     - Mainnet Release with MWM 13
 

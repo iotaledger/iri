@@ -95,7 +95,7 @@ public class LedgerValidator {
                             */
                             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
-                                if(BundleValidator.isInconsistent(bundleTransactionViewModels)) {
+                                if(BundleValidator.isInconsistent(bundleTransactionViewModels, milestone)) {
                                     break;
                                 }
                                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {

@@ -109,11 +109,14 @@ public class BundleValidator {
         return transactions;
     }
 
-    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels) {
+    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels, boolean milestone) {
         long value = 0;
         for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {
             if (bundleTransactionViewModel.value() != 0) {
                 value += bundleTransactionViewModel.value();
+                if(!milestone && bundleTransactionViewModel.getAddressHash().equals(Hash.NULL_HASH) && bundleTransactionViewModel.snapshotIndex() == 0) {
+                    return true;
+                }
             }
         }
         return (value != 0 || transactionViewModels.size() == 0);

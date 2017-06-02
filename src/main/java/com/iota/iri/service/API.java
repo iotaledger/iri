@@ -94,7 +94,8 @@ public class API {
 
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
-    
+
+    private final int maxRandomWalks;
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
@@ -102,6 +103,7 @@ public class API {
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
         this.ixi = ixi;
+        maxRandomWalks = instance.configuration.integer(DefaultConfSettings.MAX_RANDOM_WALKS);
     }
 
     public void init() throws IOException {
@@ -282,11 +284,15 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final int depth = ((Double) request.get("depth")).intValue();
+                    final Object referenceObj = request.get("reference");
+                    final String reference = referenceObj == null? null: (String) referenceObj;
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    Hash[] tips = getTransactionToApproveStatement(depth);
+                    final Object numWalksObj = request.get("numWalks");
+                    final int numWalks = numWalksObj == null? 1 : ((Double) numWalksObj).intValue();
+                    final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
                     if(tips == null) {
                         return ErrorResponse.create("The subtangle is not solid");
                     }
@@ -405,13 +411,21 @@ public class API {
     public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
-   
-    public synchronized Hash[] getTransactionToApproveStatement(final int depth) throws Exception {
+
+    public synchronized Hash[] getTransactionToApproveStatement(final int depth, final String reference, final int numWalks) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
+        final int randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks:numWalks;
+        Hash referenceHash = null;
+        if(reference != null) {
+            referenceHash = new Hash(reference);
+            if(!TransactionViewModel.exists(instance.tangle, referenceHash)) {
+                referenceHash = null;
+            }
+        }
         for(int i = 0; i < tipsToApprove; i++) {
-            tips[i] = instance.tipsManager.transactionToApprove(tips[0], depth, random);
+            tips[i] = instance.tipsManager.transactionToApprove(referenceHash, tips[0], depth, randomWalkCount, random);
             if (tips[i] == null) {
                 return null;
             }

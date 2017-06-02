@@ -94,7 +94,8 @@ public class API {
 
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
-    
+
+    private final int maxRandomWalks;
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
@@ -102,6 +103,7 @@ public class API {
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
         this.ixi = ixi;
+        maxRandomWalks = instance.configuration.integer(DefaultConfSettings.MAX_INTEGRATION);
     }
 
     public void init() throws IOException {
@@ -292,9 +294,9 @@ public class API {
                     if(reference == null) {
                         tips = getTransactionToApproveStatement(depth);
                     } else {
-                        final Object iterationsObject = request.get("iterations");
-                        final int iterations = iterationsObject == null? instance.configuration.integer(DefaultConfSettings.MAX_INTEGRATION): ((Double) iterationsObject).intValue();
-                        tips = getMcmcTransactionToApproveStatement(depth, reference, iterations);
+                        final Object numWalksObj = request.get("numWalks");
+                        final int numWalks = numWalksObj == null? maxRandomWalks: ((Double) numWalksObj).intValue();
+                        tips = getMcmcTransactionToApproveStatement(depth, reference, numWalks);
                     }
                     if(tips == null) {
                         return ErrorResponse.create("The subtangle is not solid");
@@ -436,10 +438,11 @@ public class API {
         }
         return tips;
     }
-    public synchronized Hash[] getMcmcTransactionToApproveStatement(final int depth, final String reference, final int iterations) throws Exception {
+    public synchronized Hash[] getMcmcTransactionToApproveStatement(final int depth, final String reference, final int numWalks) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
+        final int randomWalkCount = numWalks > maxRandomWalks ? maxRandomWalks:numWalks;
         Hash referenceHash = null;
         if(reference != null) {
             referenceHash = new Hash(reference);
@@ -448,7 +451,7 @@ public class API {
             }
         }
         for(int i = 0; i < tipsToApprove; i++) {
-            tips[i] = instance.tipsManager.monteCarloTransactionToApprove(referenceHash, tips[0], depth, iterations, random);
+            tips[i] = instance.tipsManager.monteCarloTransactionToApprove(referenceHash, tips[0], depth, randomWalkCount, random);
             if (tips[i] == null) {
                 return null;
             }

@@ -216,7 +216,7 @@ public class TipsManager {
             } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
                 log.info("Reason to stop: !LedgerValidator");
                 break;
-            } else if (transactionViewModel.getHash().equals(tip)) {
+            } else if (transactionViewModel.getHash().equals(extraTip)) {
                 log.info("Reason to stop: transactionViewModel==extraTip");
                 break;
             } else if (transactionViewModel.getHash().equals(tip)) {

@@ -92,36 +92,7 @@ public class TipsManager {
             
     }
 
-    Hash transactionToApprove(final Hash extraTip, final int depth, Random seed) {
-
-
-        long startTime = System.nanoTime();
-
-        if(milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX ||
-                milestone.latestMilestoneIndex == Milestone.MILESTONE_START_INDEX) {
-            final Hash preferableMilestone = milestone.latestSolidSubtangleMilestone;
-
-            Map<Hash, Long> ratings = new HashMap<>();
-            Set<Hash> analyzedTips = new HashSet<>();
-            try {
-                Hash tip = entryPoint(preferableMilestone, extraTip, depth);
-
-                serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
-                analyzedTips.clear();
-
-                return randomWalk(tip, extraTip, ratings, seed);
-
-            } catch (Exception e) {
-                e.printStackTrace();
-                log.error("Encountered error: " + e.getLocalizedMessage());
-            } finally {
-                API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
-            }
-        }
-        return null;
-    }
-
-    Hash monteCarloTransactionToApprove(final Hash reference, final Hash extraTip, final int depth, final int iterations, Random seed) {
+    Hash transactionToApprove(final Hash reference, final Hash extraTip, final int depth, final int iterations, Random seed) {
 
         long startTime = System.nanoTime();
 

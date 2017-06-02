@@ -47,6 +47,7 @@ public class Configuration {
         MAX_PEERS,
         COORDINATOR,
         REVALIDATE,
+        MAX_INTEGRATION,
     }
 
     {
@@ -73,6 +74,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
+        conf.put(DefaultConfSettings.MAX_INTEGRATION.name(), "100");
     }
 
     public boolean init() throws IOException {

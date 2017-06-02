@@ -282,11 +282,20 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final int depth = ((Double) request.get("depth")).intValue();
+                    final Object referenceObj = request.get("reference");
+                    final String reference = referenceObj == null? null: (String) referenceObj;
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    Hash[] tips = getTransactionToApproveStatement(depth);
+                    final Hash[] tips;
+                    if(reference == null) {
+                        tips = getTransactionToApproveStatement(depth);
+                    } else {
+                        final Object iterationsObject = request.get("iterations");
+                        final int iterations = iterationsObject == null? instance.configuration.integer(DefaultConfSettings.MAX_INTEGRATION): ((Double) iterationsObject).intValue();
+                        tips = getMcmcTransactionToApproveStatement(depth, reference, iterations);
+                    }
                     if(tips == null) {
                         return ErrorResponse.create("The subtangle is not solid");
                     }
@@ -405,13 +414,41 @@ public class API {
     public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
-   
+
     public synchronized Hash[] getTransactionToApproveStatement(final int depth) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
         for(int i = 0; i < tipsToApprove; i++) {
             tips[i] = instance.tipsManager.transactionToApprove(tips[0], depth, random);
+            if (tips[i] == null) {
+                return null;
+            }
+        }
+        API.incCounter_getTxToApprove();
+        if ( ( getCounter_getTxToApprove() % 100) == 0 ) {
+            String sb = "Last 100 getTxToApprove consumed " +
+                    API.getEllapsedTime_getTxToApprove() / 1000000000L +
+                    " seconds processing time.";
+            log.info(sb);
+            counter_getTxToApprove = 0;
+            ellapsedTime_getTxToApprove = 0L;
+        }
+        return tips;
+    }
+    public synchronized Hash[] getMcmcTransactionToApproveStatement(final int depth, final String reference, final int iterations) throws Exception {
+        int tipsToApprove = 2;
+        Hash[] tips = new Hash[tipsToApprove];
+        final SecureRandom random = new SecureRandom();
+        Hash referenceHash = null;
+        if(reference != null) {
+            referenceHash = new Hash(reference);
+            if(!TransactionViewModel.exists(instance.tangle, referenceHash)) {
+                referenceHash = null;
+            }
+        }
+        for(int i = 0; i < tipsToApprove; i++) {
+            tips[i] = instance.tipsManager.monteCarloTransactionToApprove(referenceHash, tips[0], depth, iterations, random);
             if (tips[i] == null) {
                 return null;
             }

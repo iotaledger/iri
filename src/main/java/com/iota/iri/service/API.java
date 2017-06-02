@@ -282,25 +282,20 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final int depth = ((Double) request.get("depth")).intValue();
+                    final Object referenceObj = request.get("reference");
+                    final String reference = referenceObj == null? null: (String) referenceObj;
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    Hash[] tips = getTransactionToApproveStatement(depth);
-                    if(tips == null) {
-                        return ErrorResponse.create("The subtangle is not solid");
+                    final Hash[] tips;
+                    if(reference == null) {
+                        tips = getTransactionToApproveStatement(depth);
+                    } else {
+                        final Object iterationsObject = request.get("iterations");
+                        final int iterations = iterationsObject == null? instance.configuration.integer(DefaultConfSettings.MAX_INTEGRATION): ((Double) iterationsObject).intValue();
+                        tips = getMcmcTransactionToApproveStatement(depth, reference, iterations);
                     }
-                    return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
-                }
-                case "getTransactionsToApproveWithReference": {
-                    final int depth = ((Double) request.get("depth")).intValue();
-                    final int iterations = ((Double) request.get("iterations")).intValue();
-                    final String reference = (String) request.get("reference");
-                    if (invalidSubtangleStatus()) {
-                        return ErrorResponse
-                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
-                    }
-                    Hash[] tips = getReferenceTransactionToApproveStatement(depth, reference, iterations);
                     if(tips == null) {
                         return ErrorResponse.create("The subtangle is not solid");
                     }
@@ -441,13 +436,16 @@ public class API {
         }
         return tips;
     }
-    public synchronized Hash[] getReferenceTransactionToApproveStatement(final int depth, final String reference, final int iterations) throws Exception {
+    public synchronized Hash[] getMcmcTransactionToApproveStatement(final int depth, final String reference, final int iterations) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
         Hash referenceHash = null;
         if(reference != null) {
             referenceHash = new Hash(reference);
+            if(!TransactionViewModel.exists(instance.tangle, referenceHash)) {
+                referenceHash = null;
+            }
         }
         for(int i = 0; i < tipsToApprove; i++) {
             tips[i] = instance.tipsManager.monteCarloTransactionToApprove(referenceHash, tips[0], depth, iterations, random);

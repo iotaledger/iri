@@ -291,7 +291,7 @@ public class API {
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
                     final Object numWalksObj = request.get("numWalks");
-                    final int numWalks = numWalksObj == null? maxRandomWalks: ((Double) numWalksObj).intValue();
+                    final int numWalks = numWalksObj == null? 1 : ((Double) numWalksObj).intValue();
                     final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
                     if(tips == null) {
                         return ErrorResponse.create("The subtangle is not solid");

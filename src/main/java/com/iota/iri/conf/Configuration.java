@@ -75,7 +75,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
         // Pick a number based on best performance
-        conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "1");
+        conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "27");
     }
 
     public boolean init() throws IOException {

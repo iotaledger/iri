@@ -103,7 +103,7 @@ public class API {
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
         this.ixi = ixi;
-        maxRandomWalks = instance.configuration.integer(DefaultConfSettings.MAX_INTEGRATION);
+        maxRandomWalks = instance.configuration.integer(DefaultConfSettings.MAX_RANDOM_WALKS);
     }
 
     public void init() throws IOException {

@@ -442,7 +442,7 @@ public class API {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
-        final int randomWalkCount = numWalks > maxRandomWalks ? maxRandomWalks:numWalks;
+        final int randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks:numWalks;
         Hash referenceHash = null;
         if(reference != null) {
             referenceHash = new Hash(reference);

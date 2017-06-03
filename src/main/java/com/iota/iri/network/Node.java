@@ -129,7 +129,7 @@ public class Node {
         executor.submit(spawnProcessReceivedThread());
         executor.submit(spawnReplyToRequestThread());
 
-        tipsViewModel.loadTipHashes(tangle);
+        //tipsViewModel.loadTipHashes(tangle);
         executor.shutdown();
     }
 

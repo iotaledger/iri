@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class TipsViewModel {
     final Logger log = LoggerFactory.getLogger(TipsViewModel.class);
 
-    private Set<Hash> tips = new HashSet<>();
+    private FifoHashCache tips = new FifoHashCache(5000);
     private Set<Hash> solidTips = new HashSet<>();
     private SecureRandom seed = new SecureRandom();
     public final Object sync = new Object();
@@ -48,14 +48,14 @@ public class TipsViewModel {
         }
     }
 
-    public Set<Hash> getTips() {
-        Set<Hash> hashes = new HashSet<>();
-        synchronized (sync) {
-            hashes.addAll(tips);
-            hashes.addAll(solidTips);
-        }
-        return hashes;
-    }
+//    public Set<Hash> getTips() {
+//        Set<Hash> hashes = new HashSet<>();
+//        synchronized (sync) {
+//            hashes.addAll(tips);
+//            hashes.addAll(solidTips);
+//        }
+//        return hashes;
+//    }
     public Hash getRandomSolidTipHash() {
         synchronized (sync) {
             int size = solidTips.size();
@@ -118,4 +118,46 @@ public class TipsViewModel {
             tips.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
         }
     }
+
+    public Set<Hash> getTipsHashesFromDB (Tangle tangle) throws Exception {
+        Set<Hash> tipsFromDB = new HashSet<>();
+        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
+        if(hashes != null) {
+            tipsFromDB.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
+        }
+        return tipsFromDB;
+    }
+
+    public class FifoHashCache {
+
+        private int capacity;
+        private LinkedHashSet<Hash> set;
+
+        public FifoHashCache(int capacity) {
+            this.capacity = capacity;
+            this.set = new LinkedHashSet<>();
+        }
+
+        public boolean add(Hash key) {
+            if (this.set.size() == this.capacity) {
+                Iterator<Hash> it = this.set.iterator();
+                it.next();
+                it.remove();
+            }
+            return set.add(key);
+        }
+        public boolean remove(Hash key) {
+            return this.set.remove(key);
+        }
+        public int size() {
+            return this.set.size();
+        }
+        public boolean addAll(Collection c) {
+            return this.set.addAll(c);
+        }
+        public Iterator<Hash> iterator() {
+            return this.set.iterator();
+        }
+    }
+
 }

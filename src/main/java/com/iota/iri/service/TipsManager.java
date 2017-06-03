@@ -283,15 +283,18 @@ public class TipsManager {
 
     boolean belowMaxDepth(Hash tip, int depth) throws Exception {
         Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
+        Set<Hash> analyzedTranscations = new HashSet<>();
         Hash hash;
         while ((hash = nonAnalyzedTransactions.poll()) != null) {
-            TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-            if(transaction.snapshotIndex() != 0 && transaction.snapshotIndex() < depth) {
-                return true;
-            }
-            if(transaction.snapshotIndex() == 0) {
-                nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
-                nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
+            if(analyzedTranscations.add(hash)) {
+                TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
+                if (transaction.snapshotIndex() != 0 && transaction.snapshotIndex() < depth) {
+                    return true;
+                }
+                if (transaction.snapshotIndex() == 0) {
+                    nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
+                }
             }
         }
         return false;

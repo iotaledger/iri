@@ -113,7 +113,7 @@ public class IRI {
         final Option<String> remoteLimitApi = parser.addStringOption("remote-limit-api");
         final Option<String> remoteAuth = parser.addStringOption("remote-auth");
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
-        final Option<Boolean> export = parser.addBooleanOption('e', "export");
+        final Option<Boolean> export = parser.addBooleanOption("export");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Boolean> testnet = parser.addBooleanOption("testnet");
         final Option<Boolean> revalidate = parser.addBooleanOption("revalidate");

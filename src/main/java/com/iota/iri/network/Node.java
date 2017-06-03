@@ -217,6 +217,8 @@ public class Node {
     }
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
         TransactionViewModel receivedTransactionViewModel = null;
+        Hash receivedTransactionHash = null;
+
 
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
@@ -244,18 +246,19 @@ public class Node {
                     
                     //check if cached
                     synchronized (recentSeenBytes) {
-                        receivedTransactionViewModel = recentSeenBytes.get(byteHash);
+                        receivedTransactionHash = recentSeenBytes.get(byteHash);
                     }
 
-                    if (receivedTransactionViewModel == null) {
+                    if (receivedTransactionHash == null) {
                         //if not, then validate
                         receivedTransactionViewModel = TransactionValidator.validate(receivedData, transactionValidator.getMinWeightMagnitude());
+                        receivedTransactionHash = receivedTransactionViewModel.getHash();
 
                         //if valid - add to receive queue (receivedTransactionViewModel, neighbor)
                         addReceivedDataToReceiveQueue(receivedTransactionViewModel, neighbor);
 
                         synchronized (recentSeenBytes) {
-                            recentSeenBytes.set(byteHash, receivedTransactionViewModel);
+                            recentSeenBytes.set(byteHash, receivedTransactionHash);
                         }
 
                         recentSeenBytesMissCount.getAndIncrement();
@@ -283,7 +286,7 @@ public class Node {
 
                 //add request to reply queue (requestedHash, neighbor)
                 Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
-                if (requestedHash.equals(receivedTransactionViewModel.getHash())) {
+                if (requestedHash.equals(receivedTransactionHash)) {
                     //requesting a random tip
                     requestedHash = Hash.NULL_HASH;
                 }
@@ -737,15 +740,15 @@ public class Node {
     public class LRUByteCache {
 
         private int capacity;
-        private LinkedHashMap<ByteBuffer,TransactionViewModel> map;
+        private LinkedHashMap<ByteBuffer,Hash> map;
 
         public LRUByteCache(int capacity) {
             this.capacity = capacity;
             this.map = new LinkedHashMap<>();
         }
 
-        public TransactionViewModel get(ByteBuffer key) {
-            TransactionViewModel value = this.map.get(key);
+        public Hash get(ByteBuffer key) {
+            Hash value = this.map.get(key);
             if (value == null) {
                 value = null;
             } else {
@@ -754,7 +757,7 @@ public class Node {
             return value;
         }
 
-        public void set(ByteBuffer key, TransactionViewModel value) {
+        public void set(ByteBuffer key, Hash value) {
             if (this.map.containsKey(key)) {
                 this.map.remove(key);
             } else if (this.map.size() == this.capacity) {

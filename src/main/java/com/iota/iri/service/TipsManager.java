@@ -105,7 +105,7 @@ public class TipsManager {
                 Hash tip = entryPoint(reference, extraTip, depth);
                 serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
-                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, seed);
+                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, milestone.latestMilestoneIndex-depth*2, seed);
             } catch (Exception e) {
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());
@@ -132,11 +132,11 @@ public class TipsManager {
         return tip;
     }
 
-    Hash markovChainMonteCarlo(final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final Random seed) throws Exception {
+    Hash markovChainMonteCarlo(final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final int maxDepth, final Random seed) throws Exception {
         Map<Hash, Integer> monteCarloIntegrations = new HashMap<>();
         Hash tail;
         for(int i = iterations; i-- > 0; ) {
-            tail = randomWalk(tip, extraTip, ratings, seed);
+            tail = randomWalk(tip, extraTip, ratings, maxDepth, seed);
             if(monteCarloIntegrations.containsKey(tail)) {
                 monteCarloIntegrations.put(tail, monteCarloIntegrations.get(tail) + 1);
             } else {
@@ -146,7 +146,7 @@ public class TipsManager {
         return monteCarloIntegrations.entrySet().stream().reduce((a, b) -> a.getValue() > b.getValue() ? a : b).map(Map.Entry::getKey).orElse(null);
     }
 
-    Hash randomWalk(final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, Random rnd) throws Exception {
+    Hash randomWalk(final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, Random rnd) throws Exception {
         Hash tip = start, tail = tip;
         Hash[] tips;
         Set<Hash> tipSet;
@@ -183,6 +183,9 @@ public class TipsManager {
             } else if (!transactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
                 //} else if (!transactionViewModel.isSolid()) {
                 log.info("Reason to stop: !checkSolidity");
+                break;
+            } else if (belowMaxDepth(tip, maxDepth)) {
+                log.info("Reason to stop: belowMaxDepth");
                 break;
             } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
                 log.info("Reason to stop: !LedgerValidator");
@@ -278,4 +281,22 @@ public class TipsManager {
         return rating;
     }
 
+    boolean belowMaxDepth(Hash tip, int depth) throws Exception {
+        Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
+        Set<Hash> analyzedTranscations = new HashSet<>();
+        Hash hash;
+        while ((hash = nonAnalyzedTransactions.poll()) != null) {
+            if(analyzedTranscations.add(hash)) {
+                TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
+                if (transaction.snapshotIndex() != 0 && transaction.snapshotIndex() < depth) {
+                    return true;
+                }
+                if (transaction.snapshotIndex() == 0) {
+                    nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
+                    nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
+                }
+            }
+        }
+        return false;
+    }
 }

@@ -1,3 +1,7 @@
+1.1.4.2
+    - Fixed memory leaks
+    - maxDepth added to TipSelection
+
 1.1.4.1
     - Fixed claiming issue
 

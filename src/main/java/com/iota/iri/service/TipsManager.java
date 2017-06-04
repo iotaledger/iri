@@ -282,6 +282,11 @@ public class TipsManager {
     }
 
     boolean belowMaxDepth(Hash tip, int depth) throws Exception {
+        //if tip is confirmed stop
+        if (TransactionViewModel.fromHash(tangle, tip).snapshotIndex() >= depth) {
+            return false;
+        }
+        //if tip unconfirmed, check if any referenced tx is confirmed below maxDepth
         Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Set<Hash> analyzedTranscations = new HashSet<>();
         Hash hash;

@@ -740,7 +740,7 @@ public class Snapshot {
         long stateValue = state.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
         if(stateValue != TransactionViewModel.SUPPLY) {
             long difference = TransactionViewModel.SUPPLY - stateValue;
-            log.error("Ledger balance incorrect: " + difference);
+            log.info("Transaction resolves to incorrect ledger balance: {}", difference);
             return false;
         }
         final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();

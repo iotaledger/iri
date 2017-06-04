@@ -168,6 +168,7 @@ public class Milestone {
     void updateLatestSolidSubtangleMilestone() throws Exception {
         MilestoneViewModel milestoneViewModel;
         MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
+        int lookAhead = 0;
         if (latest != null) {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
@@ -178,7 +179,10 @@ public class Milestone {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();
                     latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
                 } else {
-                    break;
+                    lookAhead++;
+                    if (lookAhead>=10) {
+                        break;
+                    }
                 }
             }
         }

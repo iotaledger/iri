@@ -80,11 +80,7 @@ public class Iota {
         tangle.init();
 
         if (configuration.booling(Configuration.DefaultConfSettings.RESCAN_DB)){
-            try {
-                rescan_db();
-            } catch (Exception e) {
-                e.getStackTrace();
-            }
+            rescan_db();
         }
 
         milestone.init(ledgerValidator, configuration.booling(Configuration.DefaultConfSettings.REVALIDATE));

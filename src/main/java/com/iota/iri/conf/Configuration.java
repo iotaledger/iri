@@ -47,6 +47,7 @@ public class Configuration {
         MAX_PEERS,
         COORDINATOR,
         REVALIDATE,
+        RESCAN_DB,
         MAX_RANDOM_WALKS,
     }
 
@@ -74,6 +75,8 @@ public class Configuration {
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
+        conf.put(DefaultConfSettings.RESCAN_DB.name(), "false");
+
         // Pick a number based on best performance
         conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "27");
     }

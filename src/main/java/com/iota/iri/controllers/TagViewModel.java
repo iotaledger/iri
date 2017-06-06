@@ -1,5 +1,6 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tag;
 import com.iota.iri.storage.Indexable;
@@ -53,5 +54,9 @@ public class TagViewModel implements HashesViewModel {
 
     public Set<Hash> getHashes() {
         return self.set;
+    }
+    @Override
+    public void delete(Tangle tangle) throws Exception {
+        tangle.delete(Tag.class,hash);
     }
 }

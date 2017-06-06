@@ -18,4 +18,5 @@ public interface HashesViewModel {
     boolean addHash(Hash theHash);
     Indexable getIndex();
     Set<Hash> getHashes();
+    void delete(Tangle tangle) throws Exception;
 }

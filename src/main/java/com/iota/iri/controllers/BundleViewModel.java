@@ -63,4 +63,9 @@ public class BundleViewModel implements HashesViewModel {
     public Set<Hash> getHashes() {
         return self.set;
     }
+
+    @Override
+    public void delete(Tangle tangle) throws Exception {
+        tangle.delete(Bundle.class,hash);
+    }
 }

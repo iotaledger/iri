@@ -55,4 +55,8 @@ public class ApproveeViewModel implements HashesViewModel {
     public Set<Hash> getHashes() {
         return self.set;
     }
+    @Override
+    public void delete(Tangle tangle) throws Exception {
+        tangle.delete(Approvee.class,hash);
+    }
 }

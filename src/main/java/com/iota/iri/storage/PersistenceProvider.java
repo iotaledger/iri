@@ -3,6 +3,7 @@ package com.iota.iri.storage;
 import com.iota.iri.model.*;
 import com.iota.iri.utils.Pair;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -40,5 +41,5 @@ public interface PersistenceProvider {
 
     Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) throws Exception;
 
-    boolean saveBatch(Map<Indexable, Persistable> models) throws Exception;
+    boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception;
 }

@@ -321,19 +321,21 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public boolean saveBatch(Map<Indexable, Persistable> models) throws Exception {
+    public boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {
         WriteBatch writeBatch = new WriteBatch();
         WriteOptions writeOptions = new WriteOptions();
-        for(Map.Entry<Indexable, Persistable> entry: models.entrySet()) {
-            ColumnFamilyHandle handle = classTreeMap.get().get(entry.getValue().getClass());
-            ColumnFamilyHandle referenceHandle = metadataReference.get().get(entry.getValue().getClass());
-            if(entry.getValue().merge()) {
-                writeBatch.merge(handle, entry.getKey().bytes(), entry.getValue().bytes());
+        for(Pair<Indexable, Persistable> entry: models) {
+            Indexable key = entry.low;
+            Persistable value = entry.hi;
+            ColumnFamilyHandle handle = classTreeMap.get().get(value.getClass());
+            ColumnFamilyHandle referenceHandle = metadataReference.get().get(value.getClass());
+            if(value.merge()) {
+                writeBatch.merge(handle, key.bytes(), value.bytes());
             } else {
-                writeBatch.put(handle, entry.getKey().bytes(), entry.getValue().bytes());
+                writeBatch.put(handle, key.bytes(), value.bytes());
             }
             if(referenceHandle != null) {
-                writeBatch.put(referenceHandle, entry.getKey().bytes(), entry.getValue().metadata());
+                writeBatch.put(referenceHandle, key.bytes(), value.metadata());
             }
         }
         db.write(writeOptions, writeBatch);

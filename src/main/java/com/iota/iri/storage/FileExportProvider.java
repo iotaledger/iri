@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -143,7 +144,7 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public boolean saveBatch(Map<Indexable, Persistable> models) throws Exception {
+    public boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {
         return false;
     }
 

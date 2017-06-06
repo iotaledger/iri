@@ -1,0 +1,14 @@
+Package: [[name]]
+Version: [[version]]
+Section: misc
+Priority: optional
+Maintainer: Paul Handy <paul@iota.org>
+Build-Depends: maven (>= 3)
+Standards-Version: 3.9.8
+Homepage: https://iota.org
+Vcs-Git: https://github.com/iotaledger/iri.git
+Vcs-Browser: https://github.com/iotaledger/iri.git
+Package: iri-dev
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: [[description]]

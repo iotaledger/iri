@@ -1,11 +1,13 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.model.Address;
 import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tag;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,5 +60,20 @@ public class TagViewModel implements HashesViewModel {
     @Override
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Tag.class,hash);
+    }
+    public HashesViewModel first(Tangle tangle) throws Exception {
+        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Tag.class, Hash.class);
+        if(bundlePair != null && bundlePair.hi != null) {
+            return new TagViewModel((Tag) bundlePair.hi, (Hash) bundlePair.low);
+        }
+        return null;
+    }
+
+    public HashesViewModel next(Tangle tangle) throws Exception {
+        Pair<Indexable, Persistable> bundlePair = tangle.next(Tag.class, hash);
+        if(bundlePair != null && bundlePair.hi != null) {
+            return new TagViewModel((Tag) bundlePair.hi, (Hash) bundlePair.low);
+        }
+        return null;
     }
 }

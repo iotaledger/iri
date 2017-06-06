@@ -1,6 +1,7 @@
 package com.iota.iri;
 
 import com.iota.iri.conf.Configuration;
+import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.TransactionRequester;
@@ -98,7 +99,12 @@ public class Iota {
     }
 
     private void rescan_db() throws Exception {
-        //delete all Address , Bundle , Aprovee & Tag
+        //delete all Address , Bundle , Approvee & Tag
+        AddressViewModel add = AddressViewModel.first(tangle);
+//        while (tx != null) {
+//            tangle.saveBatch(tx.getSaveBatch());
+//            tx = tx.next(tangle);
+//        }
         //rescan all tx & refill the columns
         TransactionViewModel tx = TransactionViewModel.first(tangle);
         int counter = 0;

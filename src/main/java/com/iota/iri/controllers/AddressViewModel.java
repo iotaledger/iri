@@ -6,6 +6,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -53,5 +54,21 @@ public class AddressViewModel implements HashesViewModel {
     @Override
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Address.class,hash);
+    }
+
+    public HashesViewModel first(Tangle tangle) throws Exception {
+        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Address.class, Hash.class);
+        if(bundlePair != null && bundlePair.hi != null) {
+            return new AddressViewModel((Address) bundlePair.hi, (Hash) bundlePair.low);
+        }
+        return null;
+    }
+
+    public HashesViewModel next(Tangle tangle) throws Exception {
+        Pair<Indexable, Persistable> bundlePair = tangle.next(Address.class, hash);
+        if(bundlePair != null && bundlePair.hi != null) {
+            return new AddressViewModel((Address) bundlePair.hi, (Hash) bundlePair.low);
+        }
+        return null;
     }
 }

@@ -12,11 +12,16 @@ import com.iota.iri.network.replicator.ReplicatorSourcePool;
 import com.iota.iri.service.API;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.storage.FileExportProvider;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.utils.Pair;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * Created by paul on 5/19/17.
@@ -142,7 +147,9 @@ public class Iota {
             if (++counter % 10000 == 0) {
                 log.info("Rescanned {} Transactions", counter);
             }
-            tangle.saveBatch(tx.getSaveBatch());
+            List<Pair<Indexable, Persistable>> saveBatch = tx.getSaveBatch();
+            saveBatch.remove(5);
+            tangle.saveBatch(saveBatch);
             tx = tx.next(tangle);
         }
     }

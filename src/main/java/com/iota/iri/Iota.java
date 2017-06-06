@@ -97,27 +97,43 @@ public class Iota {
     }
 
     private void rescan_db() throws Exception {
+        int counter = 0;
         //delete all Address , Bundle , Approvee & Tag
         AddressViewModel add = AddressViewModel.first(tangle);
         while (add != null) {
+            if (++counter % 10000 == 0) {
+                log.info("Clearing cache: {} Addresses", counter);
+            }
             AddressViewModel NextAdd = add.next(tangle);
             add.delete(tangle);
             add = NextAdd;
         }
+        counter = 0;
         BundleViewModel bn = BundleViewModel.first(tangle);
         while (bn != null) {
+            if (++counter % 10000 == 0) {
+                log.info("Clearing cache: {} Bundles", counter);
+            }
             BundleViewModel NextBn = bn.next(tangle);
             bn.delete(tangle);
             bn = NextBn;
         }
+        counter = 0;
         ApproveeViewModel app = ApproveeViewModel.first(tangle);
         while (app != null) {
+            if (++counter % 10000 == 0) {
+                log.info("Clearing cache: {} Approvees", counter);
+            }
             ApproveeViewModel NextApp = app.next(tangle);
             app.delete(tangle);
             app = NextApp;
         }
+        counter = 0;
         TagViewModel tag = TagViewModel.first(tangle);
         while (tag != null) {
+            if (++counter % 10000 == 0) {
+                log.info("Clearing cache: {} Tags", counter);
+            }
             TagViewModel NextTag = tag.next(tangle);
             tag.delete(tangle);
             tag = NextTag;
@@ -125,7 +141,7 @@ public class Iota {
 
         //rescan all tx & refill the columns
         TransactionViewModel tx = TransactionViewModel.first(tangle);
-        int counter = 0;
+        counter = 0;
         while (tx != null) {
             if (++counter % 10000 == 0) {
                 log.info("Rescanned {} Transactions", counter);

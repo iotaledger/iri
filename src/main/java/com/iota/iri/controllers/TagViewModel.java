@@ -61,7 +61,7 @@ public class TagViewModel implements HashesViewModel {
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Tag.class,hash);
     }
-    public HashesViewModel first(Tangle tangle) throws Exception {
+    public static TagViewModel first(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Tag.class, Hash.class);
         if(bundlePair != null && bundlePair.hi != null) {
             return new TagViewModel((Tag) bundlePair.hi, (Hash) bundlePair.low);
@@ -69,7 +69,7 @@ public class TagViewModel implements HashesViewModel {
         return null;
     }
 
-    public HashesViewModel next(Tangle tangle) throws Exception {
+    public TagViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.next(Tag.class, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new TagViewModel((Tag) bundlePair.hi, (Hash) bundlePair.low);

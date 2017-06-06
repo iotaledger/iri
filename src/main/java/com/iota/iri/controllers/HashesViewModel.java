@@ -22,6 +22,5 @@ public interface HashesViewModel {
     Set<Hash> getHashes();
     void delete(Tangle tangle) throws Exception;
 
-    static HashesViewModel first(Tangle tangle) throws Exception;
     HashesViewModel next(Tangle tangle) throws Exception;
 }

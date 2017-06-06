@@ -71,7 +71,7 @@ public class BundleViewModel implements HashesViewModel {
         tangle.delete(Bundle.class,hash);
     }
 
-    public HashesViewModel first(Tangle tangle) throws Exception {
+    public static BundleViewModel first(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Bundle.class, Hash.class);
         if(bundlePair != null && bundlePair.hi != null) {
             return new BundleViewModel((Bundle) bundlePair.hi, (Hash) bundlePair.low);
@@ -79,7 +79,7 @@ public class BundleViewModel implements HashesViewModel {
         return null;
     }
 
-    public HashesViewModel next(Tangle tangle) throws Exception {
+    public BundleViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.next(Bundle.class, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new BundleViewModel((Bundle) bundlePair.hi, (Hash) bundlePair.low);

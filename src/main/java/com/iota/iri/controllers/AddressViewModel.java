@@ -56,7 +56,7 @@ public class AddressViewModel implements HashesViewModel {
         tangle.delete(Address.class,hash);
     }
 
-    public HashesViewModel first(Tangle tangle) throws Exception {
+    public static AddressViewModel first(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Address.class, Hash.class);
         if(bundlePair != null && bundlePair.hi != null) {
             return new AddressViewModel((Address) bundlePair.hi, (Hash) bundlePair.low);
@@ -64,7 +64,7 @@ public class AddressViewModel implements HashesViewModel {
         return null;
     }
 
-    public HashesViewModel next(Tangle tangle) throws Exception {
+    public AddressViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.next(Address.class, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new AddressViewModel((Address) bundlePair.hi, (Hash) bundlePair.low);

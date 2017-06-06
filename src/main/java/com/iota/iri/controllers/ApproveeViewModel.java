@@ -62,7 +62,7 @@ public class ApproveeViewModel implements HashesViewModel {
         tangle.delete(Approvee.class,hash);
     }
 
-    public HashesViewModel first(Tangle tangle) throws Exception {
+    public static ApproveeViewModel first(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Approvee.class, Hash.class);
         if(bundlePair != null && bundlePair.hi != null) {
             return new ApproveeViewModel((Approvee) bundlePair.hi, (Hash) bundlePair.low);
@@ -70,7 +70,7 @@ public class ApproveeViewModel implements HashesViewModel {
         return null;
     }
 
-    public HashesViewModel next(Tangle tangle) throws Exception {
+    public ApproveeViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.next(Approvee.class, hash);
         if(bundlePair != null && bundlePair.hi != null) {
             return new ApproveeViewModel((Approvee) bundlePair.hi, (Hash) bundlePair.low);

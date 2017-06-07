@@ -25,6 +25,7 @@ public class TipsManager {
     private int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
     private int RESCAN_TX_TO_REQUEST_INTERVAL = 750;
+    private final int maxDepth;
     private Thread solidityRescanHandle;
 
     public void setRATING_THRESHOLD(int value) {
@@ -37,12 +38,14 @@ public class TipsManager {
                        final LedgerValidator ledgerValidator,
                        final TransactionValidator transactionValidator,
                        final TipsViewModel tipsViewModel,
-                       final Milestone milestone) {
+                       final Milestone milestone,
+                       final int maxDepth) {
         this.tangle = tangle;
         this.ledgerValidator = ledgerValidator;
         this.transactionValidator = transactionValidator;
         this.tipsViewModel = tipsViewModel;
         this.milestone = milestone;
+        this.maxDepth = maxDepth;
     }
 
     public void init() {
@@ -95,6 +98,12 @@ public class TipsManager {
     Hash transactionToApprove(final Hash reference, final Hash extraTip, final int depth, final int iterations, Random seed) {
 
         long startTime = System.nanoTime();
+        final int msDepth;
+        if(depth > maxDepth) {
+            msDepth = maxDepth;
+        } else {
+            msDepth = depth;
+        }
 
         if(milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX ||
                 milestone.latestMilestoneIndex == Milestone.MILESTONE_START_INDEX) {
@@ -103,7 +112,7 @@ public class TipsManager {
             Set<Hash> analyzedTips = new HashSet<>();
             Set<Hash> maxDepthOk = new HashSet<>();
             try {
-                Hash tip = entryPoint(reference, extraTip, depth);
+                Hash tip = entryPoint(reference, extraTip, msDepth);
                 serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
                 return markovChainMonteCarlo(tip, extraTip, ratings, iterations, milestone.latestMilestoneIndex-depth*2, maxDepthOk, seed);
@@ -185,9 +194,11 @@ public class TipsManager {
                 //} else if (!transactionViewModel.isSolid()) {
                 log.info("Reason to stop: !checkSolidity");
                 break;
+                /*
             } else if (belowMaxDepth(tip, maxDepth, maxDepthOk)) {
                 log.info("Reason to stop: belowMaxDepth");
                 break;
+                */
             } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
                 log.info("Reason to stop: !LedgerValidator");
                 break;

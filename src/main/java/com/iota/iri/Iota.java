@@ -50,6 +50,7 @@ public class Iota {
     public final int maxPeers;
     public final int udpPort;
     public final int tcpPort;
+    public final int maxTipSearchDepth;
 
     public Iota(Configuration configuration) {
         this.configuration = configuration;
@@ -57,6 +58,7 @@ public class Iota {
         maxPeers = configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
         udpPort = configuration.integer(Configuration.DefaultConfSettings.UDP_RECEIVER_PORT);
         tcpPort = configuration.integer(Configuration.DefaultConfSettings.TCP_RECEIVER_PORT);
+        maxTipSearchDepth = configuration.integer(Configuration.DefaultConfSettings.MAX_DEPTH);
         if(testnet) {
             String coordinatorTrytes = configuration.string(Configuration.DefaultConfSettings.COORDINATOR);
             if(coordinatorTrytes != null) {
@@ -77,7 +79,7 @@ public class Iota {
         replicator = new Replicator(node, tcpPort, maxPeers, testnet);
         udpReceiver = new UDPReceiver(udpPort, node);
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester);
-        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone);
+        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth);
     }
 
     public void init() throws Exception {

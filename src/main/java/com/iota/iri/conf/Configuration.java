@@ -49,6 +49,7 @@ public class Configuration {
         REVALIDATE,
         RESCAN_DB,
         MAX_RANDOM_WALKS,
+        MAX_DEPTH,
     }
 
     {
@@ -79,6 +80,8 @@ public class Configuration {
 
         // Pick a number based on best performance
         conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "27");
+        // Pick a milestone depth number depending on risk model
+        conf.put(DefaultConfSettings.MAX_DEPTH.name(), "15");
     }
 
     public boolean init() throws IOException {

@@ -52,7 +52,7 @@ public class TipsManagerTest {
         TransactionValidator transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester);
         Milestone milestone = new Milestone(tangle, Hash.NULL_HASH, transactionValidator, true);
         LedgerValidator ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester);
-        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone);
+        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, 15);
     }
 
     @AfterClass

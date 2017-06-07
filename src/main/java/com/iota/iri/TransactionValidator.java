@@ -23,7 +23,7 @@ import static com.iota.iri.controllers.TransactionViewModel.*;
 public class TransactionValidator {
     private final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
     private static final int TESTNET_MIN_WEIGHT_MAGNITUDE = 13;
-    private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 13;
+    private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 15;
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
@@ -63,6 +63,11 @@ public class TransactionValidator {
     }
 
     private static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
+
+        if(transactionViewModel.getTimestamp() < 1496944800 && !transactionViewModel.getHash().equals(Hash.NULL_HASH)) {
+            throw new RuntimeException("Invalid transaction timestamp.");
+        }
+
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
                 //log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));

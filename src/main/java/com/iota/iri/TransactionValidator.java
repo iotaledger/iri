@@ -22,12 +22,10 @@ import static com.iota.iri.controllers.TransactionViewModel.*;
  */
 public class TransactionValidator {
     private final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
-    private static final int TESTNET_MIN_WEIGHT_MAGNITUDE = 13;
-    private static final int MAINNET_MIN_WEIGHT_MAGNITUDE = 15;
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
-    private int MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
+    private int MIN_WEIGHT_MAGNITUDE = 81;
 
     private Thread newSolidThread;
 
@@ -43,12 +41,17 @@ public class TransactionValidator {
         this.transactionRequester = transactionRequester;
     }
 
-    public void init(boolean testnet) {
+    public void init(boolean testnet,int MAINNET_MWM, int TESTNET_MWM) {
         if(testnet) {
-            MIN_WEIGHT_MAGNITUDE = TESTNET_MIN_WEIGHT_MAGNITUDE;
+            MIN_WEIGHT_MAGNITUDE = TESTNET_MWM;
         } else {
-            MIN_WEIGHT_MAGNITUDE = MAINNET_MIN_WEIGHT_MAGNITUDE;
+            MIN_WEIGHT_MAGNITUDE = MAINNET_MWM;
         }
+        //lowest allowed MWM encoded in 46 bytes.
+        if (MIN_WEIGHT_MAGNITUDE<13){
+            MIN_WEIGHT_MAGNITUDE = 13;
+        }
+
         newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
         newSolidThread.start();
     }

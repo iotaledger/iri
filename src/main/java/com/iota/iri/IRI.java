@@ -40,7 +40,7 @@ public class IRI {
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
-    public static final String VERSION = "1.1.4.2";
+    public static final String VERSION = "1.2.0";
     public static Iota iota;
     public static API api;
     public static IXI ixi;
@@ -117,6 +117,7 @@ public class IRI {
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Boolean> testnet = parser.addBooleanOption("testnet");
         final Option<Boolean> revalidate = parser.addBooleanOption("revalidate");
+        final Option<Boolean> rescan = parser.addBooleanOption("rescan");
         final Option<String> sendLimit = parser.addStringOption("send-limit");
         final Option<String> maxPeers = parser.addStringOption("max-peers");
 
@@ -209,6 +210,10 @@ public class IRI {
 
         if (parser.getOptionValue(revalidate) != null) {
             configuration.put(DefaultConfSettings.REVALIDATE, "true");
+        }
+
+        if (parser.getOptionValue(rescan) != null) {
+            configuration.put(DefaultConfSettings.RESCAN_DB, "true");
         }
 
         final String vsendLimit = parser.getOptionValue(sendLimit);

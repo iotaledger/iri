@@ -167,17 +167,17 @@ public class TransactionViewModel {
         tangle.delete(Transaction.class, getHash());
     }
 
-    public Map<Indexable, Persistable> getSaveBatch() throws Exception {
-        Map<Indexable, Persistable> hashesMap = new HashMap<>();
-        hashesMap.put(getAddressHash(), new Address(getHash()));
-        hashesMap.put(getBundleHash(), new Bundle(getHash()));
-        hashesMap.put(getBranchTransactionHash(), new Approvee(getHash()));
-        hashesMap.put(getTrunkTransactionHash(), new Approvee(getHash()));
-        hashesMap.put(getTagValue(), new Tag(getHash()));
+    public List<Pair<Indexable, Persistable>> getSaveBatch() throws Exception {
+        List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
+        hashesList.add(new Pair<>(getAddressHash(), new Address(getHash())));
+        hashesList.add(new Pair<>(getBundleHash(), new Bundle(getHash())));
+        hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(getHash())));
+        hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(getHash())));
+        hashesList.add(new Pair<>(getTagValue(), new Tag(getHash())));
         getBytes();
         setMetadata();
-        hashesMap.put(getHash(), transaction);
-        return hashesMap;
+        hashesList.add(new Pair<>(getHash(), transaction));
+        return hashesList;
     }
 
     public static TransactionViewModel first(Tangle tangle) throws Exception {

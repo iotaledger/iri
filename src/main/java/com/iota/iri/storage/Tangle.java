@@ -45,7 +45,7 @@ public class Tangle {
             return out;
     }
 
-    public Boolean saveBatch(Map<Indexable, Persistable> models) throws Exception {
+    public Boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {
         boolean exists = false;
         for(PersistenceProvider provider: persistenceProviders) {
             if(exists) {

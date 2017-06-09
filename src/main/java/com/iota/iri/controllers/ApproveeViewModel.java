@@ -1,10 +1,12 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.model.Approvee;
+import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Pair;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -54,5 +56,25 @@ public class ApproveeViewModel implements HashesViewModel {
 
     public Set<Hash> getHashes() {
         return self.set;
+    }
+    @Override
+    public void delete(Tangle tangle) throws Exception {
+        tangle.delete(Approvee.class,hash);
+    }
+
+    public static ApproveeViewModel first(Tangle tangle) throws Exception {
+        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Approvee.class, Hash.class);
+        if(bundlePair != null && bundlePair.hi != null) {
+            return new ApproveeViewModel((Approvee) bundlePair.hi, (Hash) bundlePair.low);
+        }
+        return null;
+    }
+
+    public ApproveeViewModel next(Tangle tangle) throws Exception {
+        Pair<Indexable, Persistable> bundlePair = tangle.next(Approvee.class, hash);
+        if(bundlePair != null && bundlePair.hi != null) {
+            return new ApproveeViewModel((Approvee) bundlePair.hi, (Hash) bundlePair.low);
+        }
+        return null;
     }
 }

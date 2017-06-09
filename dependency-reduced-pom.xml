@@ -4,7 +4,7 @@
   <groupId>groupId</groupId>
   <artifactId>iri</artifactId>
   <name>IRI Testnet</name>
-  <version>1.1.4.2</version>
+  <version>1.2.0</version>
   <description>Testnet IOTA Reference Implementation</description>
   <build>
     <plugins>
@@ -49,6 +49,7 @@
         <plugins>
           <plugin>
             <artifactId>maven-source-plugin</artifactId>
+            <version>3.0.1</version>
             <executions>
               <execution>
                 <id>attach-sources</id>
@@ -67,6 +68,10 @@
                 <goals>
                   <goal>jar</goal>
                 </goals>
+                <configuration>
+                  <show>private</show>
+                  <nohelp>true</nohelp>
+                </configuration>
               </execution>
             </executions>
             <configuration>

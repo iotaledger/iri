@@ -1,7 +1,7 @@
 package com.iota.iri;
 
 import com.iota.iri.conf.Configuration;
-import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.*;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
@@ -12,14 +12,22 @@ import com.iota.iri.network.replicator.ReplicatorSourcePool;
 import com.iota.iri.service.API;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.storage.FileExportProvider;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.utils.Pair;
 import org.apache.commons.lang3.NotImplementedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * Created by paul on 5/19/17.
  */
 public class Iota {
+    private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
     public static final Hash MAINNET_COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
     public static final Hash TESTNET_COORDINATOR = new Hash("XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA");
@@ -42,6 +50,7 @@ public class Iota {
     public final int maxPeers;
     public final int udpPort;
     public final int tcpPort;
+    public final int maxTipSearchDepth;
 
     public Iota(Configuration configuration) {
         this.configuration = configuration;
@@ -49,6 +58,7 @@ public class Iota {
         maxPeers = configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
         udpPort = configuration.integer(Configuration.DefaultConfSettings.UDP_RECEIVER_PORT);
         tcpPort = configuration.integer(Configuration.DefaultConfSettings.TCP_RECEIVER_PORT);
+        maxTipSearchDepth = configuration.integer(Configuration.DefaultConfSettings.MAX_DEPTH);
         if(testnet) {
             String coordinatorTrytes = configuration.string(Configuration.DefaultConfSettings.COORDINATOR);
             if(coordinatorTrytes != null) {
@@ -68,20 +78,82 @@ public class Iota {
         node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone);
         replicator = new Replicator(node, tcpPort, maxPeers, testnet);
         udpReceiver = new UDPReceiver(udpPort, node);
-        ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester);
-        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone);
+        ledgerValidator = new LedgerValidator(tangle, latestSnapshot, milestone, transactionRequester);
+        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth);
     }
 
     public void init() throws Exception {
         initializeTangle();
         tangle.init();
+
+        if (configuration.booling(Configuration.DefaultConfSettings.RESCAN_DB)){
+            rescan_db();
+        }
+
         milestone.init(ledgerValidator, configuration.booling(Configuration.DefaultConfSettings.REVALIDATE));
-        transactionValidator.init(testnet);
+        transactionValidator.init(testnet, configuration.integer(Configuration.DefaultConfSettings.MAINNET_MWM), configuration.integer(Configuration.DefaultConfSettings.TESTNET_MWM));
         tipsManager.init();
         transactionRequester.init(configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
         udpReceiver.init();
         replicator.init();
         node.init();
+    }
+
+    private void rescan_db() throws Exception {
+        int counter = 0;
+        //delete all Address , Bundle , Approvee & Tag
+        AddressViewModel add = AddressViewModel.first(tangle);
+        while (add != null) {
+            if (++counter % 10000 == 0) {
+                log.info("Clearing cache: {} Addresses", counter);
+            }
+            AddressViewModel NextAdd = add.next(tangle);
+            add.delete(tangle);
+            add = NextAdd;
+        }
+        counter = 0;
+        BundleViewModel bn = BundleViewModel.first(tangle);
+        while (bn != null) {
+            if (++counter % 10000 == 0) {
+                log.info("Clearing cache: {} Bundles", counter);
+            }
+            BundleViewModel NextBn = bn.next(tangle);
+            bn.delete(tangle);
+            bn = NextBn;
+        }
+        counter = 0;
+        ApproveeViewModel app = ApproveeViewModel.first(tangle);
+        while (app != null) {
+            if (++counter % 10000 == 0) {
+                log.info("Clearing cache: {} Approvees", counter);
+            }
+            ApproveeViewModel NextApp = app.next(tangle);
+            app.delete(tangle);
+            app = NextApp;
+        }
+        counter = 0;
+        TagViewModel tag = TagViewModel.first(tangle);
+        while (tag != null) {
+            if (++counter % 10000 == 0) {
+                log.info("Clearing cache: {} Tags", counter);
+            }
+            TagViewModel NextTag = tag.next(tangle);
+            tag.delete(tangle);
+            tag = NextTag;
+        }
+
+        //rescan all tx & refill the columns
+        TransactionViewModel tx = TransactionViewModel.first(tangle);
+        counter = 0;
+        while (tx != null) {
+            if (++counter % 10000 == 0) {
+                log.info("Rescanned {} Transactions", counter);
+            }
+            List<Pair<Indexable, Persistable>> saveBatch = tx.getSaveBatch();
+            saveBatch.remove(5);
+            tangle.saveBatch(saveBatch);
+            tx = tx.next(tangle);
+        }
     }
 
     public void shutdown() throws Exception {

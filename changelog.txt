@@ -1,3 +1,13 @@
+1.2.0
+    - Mainnet release with MWM 15
+    - Snapshot
+    - Manual claims
+
+1.1.4.3
+    - support for security 3 txs
+    - fixed db batch saving bug
+    - rescan feature added
+
 1.1.4.2
     - Fixed memory leaks
     - maxDepth added to TipSelection

@@ -64,8 +64,9 @@ public class BundleValidator {
                                             do {
 
                                                 address.absorb(
-                                                        ISS.digest(Arrays.copyOfRange(normalizedBundle, offset, offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE)),
-                                                                Arrays.copyOfRange(instanceTransactionViewModels.get(j).trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE)),
+                                                        ISS.digest(Arrays.copyOfRange(normalizedBundle, offset % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE), offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS - 1) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) + 1),
+                                                                Arrays.copyOfRange(instanceTransactionViewModels.get(j).trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET,
+                                                                        TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE)),
                                                         0, Curl.HASH_LENGTH);
 
                                             } while (++j < instanceTransactionViewModels.size()
@@ -114,9 +115,11 @@ public class BundleValidator {
         for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {
             if (bundleTransactionViewModel.value() != 0) {
                 value += bundleTransactionViewModel.value();
+                /*
                 if(!milestone && bundleTransactionViewModel.getAddressHash().equals(Hash.NULL_HASH) && bundleTransactionViewModel.snapshotIndex() == 0) {
                     return true;
                 }
+                */
             }
         }
         return (value != 0 || transactionViewModels.size() == 0);

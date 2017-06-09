@@ -79,7 +79,7 @@ public class Iota {
         replicator = new Replicator(node, tcpPort, maxPeers, testnet);
         udpReceiver = new UDPReceiver(udpPort, node);
         ledgerValidator = new LedgerValidator(tangle, latestSnapshot, milestone, transactionRequester);
-        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone);
+        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth);
     }
 
     public void init() throws Exception {

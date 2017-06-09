@@ -2,6 +2,7 @@ package com.iota.iri.service;
 
 import com.iota.iri.LedgerValidator;
 import com.iota.iri.Milestone;
+import com.iota.iri.Snapshot;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -51,8 +52,8 @@ public class TipsManagerTest {
         TransactionRequester transactionRequester = new TransactionRequester(tangle);
         TransactionValidator transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester);
         Milestone milestone = new Milestone(tangle, Hash.NULL_HASH, transactionValidator, true);
-        LedgerValidator ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester);
-        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, 15);
+        LedgerValidator ledgerValidator = new LedgerValidator(tangle, new Snapshot(Snapshot.initialSnapshot), milestone, transactionRequester);
+        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone,15);
     }
 
     @AfterClass

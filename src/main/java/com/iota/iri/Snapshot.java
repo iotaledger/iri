@@ -14,7 +14,7 @@ public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
 
     public static final Map<Hash, Long> initialState = new HashMap<>();
-    public static final Snapshot latestSnapshot;
+    //public static final Snapshot latestSnapshot;
     public static final Snapshot initialSnapshot;
 
     static {
@@ -23,8 +23,8 @@ public class Snapshot {
         initializeSnapshot1();
         initializeSnapshot2();
 
-        latestSnapshot = new Snapshot(initialState, 0);
-        initialSnapshot = new Snapshot(latestSnapshot);
+        initialSnapshot = new Snapshot(initialState, 0);
+        //initialSnapshot = new Snapshot(latestSnapshot);
     }
 
     private static void initializeSnapshot0() {

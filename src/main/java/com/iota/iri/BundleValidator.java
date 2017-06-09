@@ -115,9 +115,11 @@ public class BundleValidator {
         for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {
             if (bundleTransactionViewModel.value() != 0) {
                 value += bundleTransactionViewModel.value();
+                /*
                 if(!milestone && bundleTransactionViewModel.getAddressHash().equals(Hash.NULL_HASH) && bundleTransactionViewModel.snapshotIndex() == 0) {
                     return true;
                 }
+                */
             }
         }
         return (value != 0 || transactionViewModels.size() == 0);

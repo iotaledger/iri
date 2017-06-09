@@ -277,6 +277,7 @@ public class Node {
                 } catch (NoSuchAlgorithmException e) {
                     log.error("MessageDigest: "+e);
                 } catch (final RuntimeException e) {
+                    log.error(e.getMessage());
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();
                     break;

@@ -651,11 +651,11 @@ public class API {
         final Map<Hash, Long> balances = new HashMap<>();
         final int index;
         synchronized (Snapshot.latestSnapshotSyncObject) {
-            index = Snapshot.latestSnapshot.index();
+            index = instance.latestSnapshot.index();
             for (final Hash address : addresses) {
                 balances.put(address,
-                        Snapshot.latestSnapshot.getState().containsKey(address) ?
-                                Snapshot.latestSnapshot.getState().get(address) : Long.valueOf(0));
+                        instance.latestSnapshot.getState().containsKey(address) ?
+                                instance.latestSnapshot.getState().get(address) : Long.valueOf(0));
             }
         }
 

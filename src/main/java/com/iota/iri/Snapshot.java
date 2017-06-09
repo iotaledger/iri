@@ -14,7 +14,7 @@ public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
 
     public static final Map<Hash, Long> initialState = new HashMap<>();
-    public static final Snapshot latestSnapshot;
+    //public static final Snapshot latestSnapshot;
     public static final Snapshot initialSnapshot;
 
     static {
@@ -678,8 +678,8 @@ public class Snapshot {
         initialState.put(new Hash("OXXPYWZVNJECHHNCRIKFPBFK9NXCKNEVBCT9S9XLRTTKZIUXQTFY9XHDJIIFUORZXLAMLYI9DHNQFDZZA"), 3405694710205L);
         initialState.put(new Hash("9AIJKARGEUYAJZZWCCHMM9MHRLRSDEBVTPPDJSJLVIJUMVCYXEFVILMWGNYBUNQYFKRLXVLDECIPDQAS9"), 3812798742493L);
 
-        latestSnapshot = new Snapshot(initialState, 0);
-        initialSnapshot = new Snapshot(latestSnapshot);
+        initialSnapshot = new Snapshot(initialState, 0);
+        //initialSnapshot = new Snapshot(latestSnapshot);
     }
 
     public static final Object latestSnapshotSyncObject = new Object();

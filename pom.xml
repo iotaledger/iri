@@ -7,8 +7,8 @@
     <artifactId>iri</artifactId>
     <version>1.2.0</version>
 
-    <name>IRI Testnet</name>
-    <description>Testnet IOTA Reference Implementation</description>
+    <name>IRI</name>
+    <description>IOTA Reference Implementation</description>
 
     <scm>
         <url>https://github.com/iotaledger/iri/</url>
@@ -191,6 +191,10 @@
                         <goal>jdeb</goal>
                     </goals>
                     <configuration>
+                        <!--
+                        <signPackage>true</signPackage>
+                        <keyring>${project.basedir}/codesigning.gpg</keyring>
+                        -->
                         <verbose>true</verbose>
                         <snapshotExpand>true</snapshotExpand>
                         <!-- expand "SNAPSHOT" to what is in the "USER" env variable -->
@@ -204,7 +208,7 @@
                               <type>file</type>
                               <mapper>
                                 <type>perm</type>
-                                <prefix>/usr/share/jdeb/lib</prefix>
+                                <prefix>/usr/share/iota/lib</prefix>
                                 <user>loader</user>
                                 <group>loader</group>
                               </mapper>
@@ -213,8 +217,8 @@
                             <data>
                               <type>link</type>
                               <symlink>true</symlink>
-                              <linkName>/usr/share/java/jdeb.jar</linkName>
-                              <linkTarget>/usr/share/jdeb/lib/${project.build.finalName}.jar</linkTarget>
+                              <linkName>/usr/share/iota/iri.jar</linkName>
+                              <linkTarget>/usr/share/iota/lib/${project.build.finalName}.jar</linkTarget>
                             </data>
 
                             <data>

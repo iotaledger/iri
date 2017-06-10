@@ -191,8 +191,8 @@
                         <goal>jdeb</goal>
                     </goals>
                     <configuration>
-                        <!--
                         <signPackage>true</signPackage>
+                        <!--
                         <keyring>${project.basedir}/codesigning.gpg</keyring>
                         -->
                         <verbose>true</verbose>

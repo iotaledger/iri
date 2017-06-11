@@ -52,7 +52,7 @@ public class BundleValidatorTest {
             }
             return t;
         }).collect(Collectors.toList());
-        Assert.assertTrue(BundleValidator.isInconsistent(transactions, false));
+        Assert.assertFalse(BundleValidator.isInconsistent(transactions, false));
         Assert.assertFalse(BundleValidator.isInconsistent(transactions, true));
     }
 

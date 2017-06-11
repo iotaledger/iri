@@ -49,6 +49,10 @@ public class Configuration {
         REVALIDATE,
         RESCAN_DB,
         MAX_RANDOM_WALKS,
+        MAX_FIND_TRANSACTIONS,
+        MAX_DEPTH,
+        MAINNET_MWM,
+        TESTNET_MWM,
     }
 
     {
@@ -76,9 +80,16 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
         conf.put(DefaultConfSettings.RESCAN_DB.name(), "false");
+        conf.put(DefaultConfSettings.MAINNET_MWM.name(), "15");
+        conf.put(DefaultConfSettings.TESTNET_MWM.name(), "13");
 
         // Pick a number based on best performance
         conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "27");
+        // Pick a milestone depth number depending on risk model
+        conf.put(DefaultConfSettings.MAX_DEPTH.name(), "15");
+
+        conf.put(DefaultConfSettings.MAX_FIND_TRANSACTIONS.name(), "100000");
+
     }
 
     public boolean init() throws IOException {

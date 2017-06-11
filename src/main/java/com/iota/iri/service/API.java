@@ -96,6 +96,8 @@ public class API {
     private final static int TRYTES_SIZE = 2673;
 
     private final int maxRandomWalks;
+    private final int maxFindTxs;
+
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
@@ -104,6 +106,8 @@ public class API {
         this.instance = instance;
         this.ixi = ixi;
         maxRandomWalks = instance.configuration.integer(DefaultConfSettings.MAX_RANDOM_WALKS);
+        maxFindTxs = instance.configuration.integer(DefaultConfSettings.MAX_FIND_TRANSACTIONS);
+
     }
 
     public void init() throws IOException {
@@ -557,7 +561,7 @@ public class API {
         return true;
     }
 
-    private AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {
+    private synchronized AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {
         final Set<Hash> bundlesTransactions = new HashSet<>();
 
         if (request.containsKey("bundles")) {
@@ -621,6 +625,9 @@ public class API {
         if (!approveeTransactions.isEmpty()) {
             foundTransactions.retainAll(approveeTransactions);
         }
+        if (foundTransactions.size() > maxFindTxs){
+            return ErrorResponse.create("Could not complete request");
+        }
 
         final List<String> elements = foundTransactions.stream()
                 .map(Hash::toString)
@@ -651,11 +658,11 @@ public class API {
         final Map<Hash, Long> balances = new HashMap<>();
         final int index;
         synchronized (Snapshot.latestSnapshotSyncObject) {
-            index = Snapshot.latestSnapshot.index();
+            index = instance.latestSnapshot.index();
             for (final Hash address : addresses) {
                 balances.put(address,
-                        Snapshot.latestSnapshot.getState().containsKey(address) ?
-                                Snapshot.latestSnapshot.getState().get(address) : Long.valueOf(0));
+                        instance.latestSnapshot.getState().containsKey(address) ?
+                                instance.latestSnapshot.getState().get(address) : Long.valueOf(0));
             }
         }
 

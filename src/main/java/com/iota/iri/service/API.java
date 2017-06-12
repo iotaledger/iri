@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -97,6 +96,7 @@ public class API {
 
     private final int maxRandomWalks;
     private final int maxFindTxs;
+    private final int maxGetTrytes;
 
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
@@ -107,6 +107,7 @@ public class API {
         this.ixi = ixi;
         maxRandomWalks = instance.configuration.integer(DefaultConfSettings.MAX_RANDOM_WALKS);
         maxFindTxs = instance.configuration.integer(DefaultConfSettings.MAX_FIND_TRANSACTIONS);
+        maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
 
     }
 
@@ -201,7 +202,12 @@ public class API {
                     }
                     final Hash trunkTransaction = new Hash((String) request.get("trunkTransaction"));
                     final Hash branchTransaction = new Hash((String) request.get("branchTransaction"));
-                    final int minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
+                    final int minWeightMagnitude;
+                    try {
+                        minWeightMagnitude = ((Double) request.get("minWeightMagnitude")).intValue();
+                    } catch (ClassCastException e) {
+                        return ErrorResponse.create("Invalid minWeightMagnitude input");
+                    }
                     final List<String> trytes = (List<String>) request.get("trytes");
                     for (final String tryt : trytes) {
                         if (!validTrytes(tryt, TRYTES_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
@@ -287,7 +293,12 @@ public class API {
                     return getTipsStatement();
                 }
                 case "getTransactionsToApprove": {
-                    final int depth = ((Double) request.get("depth")).intValue();
+                    final int depth;
+                    try {
+                        depth = ((Double) request.get("depth")).intValue();
+                    } catch (ClassCastException e) {
+                        return ErrorResponse.create("Invalid depth input");
+                    }
                     final Object referenceObj = request.get("reference");
                     final String reference = referenceObj == null? null: (String) referenceObj;
                     if (invalidSubtangleStatus()) {
@@ -311,7 +322,7 @@ public class API {
                         return ErrorResponse.create("Wrong arguments");
                     }
                     for (final String hash : hashes) {
-                        if (!validTrytes(hash, HASH_SIZE, ZERO_LENGTH_ALLOWED))  {
+                        if (!validTrytes(hash, HASH_SIZE, ZERO_LENGTH_NOT_ALLOWED))  {
                             return ErrorResponse.create("Invalid hash input");
                         }
                     }
@@ -389,13 +400,16 @@ public class API {
         return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
     }
 
-    private AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
+    private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
             final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, new Hash(hash));
             if (transactionViewModel != null) {
                 elements.add(Converter.trytes(transactionViewModel.trits()));
             }
+        }
+        if (elements.size() > maxGetTrytes){
+            return ErrorResponse.create("Could not complete request");
         }
         return GetTrytesResponse.create(elements);
     }
@@ -566,7 +580,7 @@ public class API {
 
         if (request.containsKey("bundles")) {
             for (final String bundle : (List<String>) request.get("bundles")) {
-                if (!validTrytes(bundle, HASH_SIZE, ZERO_LENGTH_ALLOWED)) {
+                if (!validTrytes(bundle, HASH_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                     return ErrorResponse.create("Invalid bundle hash");
                 }
                 bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, new Hash(bundle)).getHashes());
@@ -579,7 +593,7 @@ public class API {
             log.debug("Searching: {}", addresses.stream().reduce((a, b) -> a += ',' + b));
 
             for (final String address : addresses) {
-                if (!validTrytes(address, HASH_SIZE, ZERO_LENGTH_ALLOWED)) {
+                if (!validTrytes(address, HASH_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                     return ErrorResponse.create("Invalid address input");
                 }
                 addressesTransactions.addAll(AddressViewModel.load(instance.tangle, new Hash(address)).getHashes());
@@ -589,7 +603,7 @@ public class API {
         final Set<Hash> tagsTransactions = new HashSet<>();
         if (request.containsKey("tags")) {
             for (String tag : (List<String>) request.get("tags")) {
-                if (!validTrytes(tag,tag.length(), ZERO_LENGTH_ALLOWED)) {
+                if (!validTrytes(tag,tag.length(), ZERO_LENGTH_NOT_ALLOWED)) {
                     return ErrorResponse.create("Invalid tag input");
                 }
                 while (tag.length() < Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) {
@@ -603,7 +617,7 @@ public class API {
 
         if (request.containsKey("approvees")) {
             for (final String approvee : (List<String>) request.get("approvees")) {
-                if (!validTrytes(approvee,HASH_SIZE, ZERO_LENGTH_ALLOWED)) {
+                if (!validTrytes(approvee,HASH_SIZE, ZERO_LENGTH_NOT_ALLOWED)) {
                     return ErrorResponse.create("Invalid approvees hash");
                 }
                 approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, new Hash(approvee)).getApprovers(instance.tangle).getHashes());
@@ -772,6 +786,7 @@ public class API {
             final URI uri = new URI(uriString);
             
             if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
+                log.info("Adding neighbor: "+uriString);
                 // 3rd parameter true if tcp, 4th parameter true (configured tethering)
                 final Neighbor neighbor;
                 switch(uri.getScheme()) {

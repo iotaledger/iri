@@ -1,6 +1,5 @@
 package com.iota.iri.storage;
 
-import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Hashes;
 import com.iota.iri.utils.Pair;

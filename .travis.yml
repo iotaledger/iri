@@ -7,31 +7,34 @@ sudo: required
 
 #services:
 #- docker 000ctGQcXVGUjeURqQeHclLLpst2Td0uR6SgAGLEOxjeQ9ghzQWC/4x9BPW7xf7SkxhESWB2MMTvxma8xaV7hmNSsUK7tHyMLZPGdhDnPuUx2E6eNG4IZzUvcmHI4U=
+
 before_install:
 - openssl aes-256-cbc -K $encrypted_5a15fa813cca_key -iv $encrypted_5a15fa813cca_iv
   -in codesigning.asc.enc -out codesigning.asc -d
+
 before_script: gpg --fast-import codesigning.asc
+
 script: mvn package -P build-extras
+
 #after_success:
 #- openssl aes-256-cbc -K $encrypted_d7986c8d48fc_key -iv $encrypted_d7986c8d48fc_iv
 #  -in .snapcraft/travis_snapcraft.cfg -out .snapcraft/snapcraft.cfg -d
+#
 deploy:
 - provider: releases
   api_key:
-    secure: l80FJQ+9Kk+ZYZxXcfagFGgnrp8BlnSZNCDv9KqbWYWQ4YL83qULlD1xgewUcEZhxbddR4nIo/gB1HxrdUxyjzHQKd1ysQ54BH9ZM51MqAtmzslz1gg6WNIDElugsY484W/ynAOQ286tq/5Y4bsAtmHaNzRLlf0sUfW1evXVBNFTz+0eLinqd/r0cC6bEFVk0TWXtk2+EcfTsowkyA36QNZhA+l0ti7GpJj5ubG4cd7hO7ktY4yQ130zJ4zrvv9aL6OwpFULGPDSV/wWujxcZm8GlLrJc2kWAHPLfQESt1Vr9ze2P/8n2FPyh9G67KemS8ubdp5XQPTZKALv4a7Zw8QBhJoahFptkqofgxQkDreCWlgwQyJvmfIJ7pFYXzGsdKUsd4aop6EhT44e2vJuYQBI+EUmx9HiW5+tQPsRkwWqyPyfchHu7KCpqGnImkDTjIHHJinB9dyEdQUbkGVVDWv3n8jNXas5IijS6YvMH5PVt6bWwcbAmijrY+a6E7kf/siJHNNyK/uBTL6FZIkkL2jcH6USgrt2KI/xIoBng1c1w000ctGQcXVGUjeURqQeHclLLpst2Td0uR6SgAGLEOxjeQ9ghzQWC/4x9BPW7xf7SkxhESWB2MMTvxma8xaV7hmNSsUK7tHyMLZPGdhDnPuUx2E6eNG4IZzUvcmHI4U=
+      #secure: l80FJQ+9Kk+ZYZxXcfagFGgnrp8BlnSZNCDv9KqbWYWQ4YL83qULlD1xgewUcEZhxbddR4nIo/gB1HxrdUxyjzHQKd1ysQ54BH9ZM51MqAtmzslz1gg6WNIDElugsY484W/ynAOQ286tq/5Y4bsAtmHaNzRLlf0sUfW1evXVBNFTz+0eLinqd/r0cC6bEFVk0TWXtk2+EcfTsowkyA36QNZhA+l0ti7GpJj5ubG4cd7hO7ktY4yQ130zJ4zrvv9aL6OwpFULGPDSV/wWujxcZm8GlLrJc2kWAHPLfQESt1Vr9ze2P/8n2FPyh9G67KemS8ubdp5XQPTZKALv4a7Zw8QBhJoahFptkqofgxQkDreCWlgwQyJvmfIJ7pFYXzGsdKUsd4aop6EhT44e2vJuYQBI+EUmx9HiW5+tQPsRkwWqyPyfchHu7KCpqGnImkDTjIHHJinB9dyEdQUbkGVVDWv3n8jNXas5IijS6YvMH5PVt6bWwcbAmijrY+a6E7kf/siJHNNyK/uBTL6FZIkkL2jcH6USgrt2KI/xIoBng1c1w000ctGQcXVGUjeURqQeHclLLpst2Td0uR6SgAGLEOxjeQ9ghzQWC/4x9BPW7xf7SkxhESWB2MMTvxma8xaV7hmNSsUK7tHyMLZPGdhDnPuUx2E6eNG4IZzUvcmHI4U=
+    secure: "j+KolvRrsinh6OTqjli1y5I4gdPdD5MT6RFahVRrznxtcb2t7y6x41PknkI/8BksxLJKKQ1f40L307Aquzih9FmLesWcrYrCOS/B40dlCc3uV8DEZKhZF+QWqvsDpZ0EfiluGFljqGpxwngb/miNObqQzQvzpdUXBpZcuzxgqziynJD6jt3TYbNn544m/i4cWbb++b1h2Bm+jwELzJcf6/CZ1TxUh49vdM4S6yTpvnKwg4NLeH6g8s9oYEN1iwYtQokGKlH/emBZDsqDtF4KH7kXPpEKTcho4nH504XWJpanVAQ02Pha4SAnyVu4rKiLH4e6v99xZOBLVTH/qkvlwzvkNYr2xS5q9T9G7DZBRE+oc2MIbcnuSkhHwrUcmf2Hc0zCIP4RLCXAUuVlNEmIQUKgTezVzaqaEQLsa+EFIoosS+8pT/kVnaLbwxrITUmgM246+gvzMcVg8SmyPvVj6iRxfR6spTd7V2M0ePdqWlCL8P9RY4YrtxR2yJ6/3C0XNf29t+s/r1jat8fwWp8Gf7GiCaJEYG9VO24Chhi+MZCKBJnmx5G/98zvLw3f6a1FsEGZrw9RhF2vJKK6sD3rIvNkUsYmf0OhM7bf0NceFMGTJ/mFzM/JX0OHMtIyAvUfyyPVbQkIHNcGBgQMZasx07K3fjcn2lqv4FbHVi3HbdM="
   file_glob: true
-  file:
-  - "/home/travis/build/iotaledger/iri/target/iri*.jar"
-  - "/home/travis/build/iotaledger/iri/target/iri*.jar.asc"
-  - "/home/travis/build/iotaledger/iri/target/iri*-sources.jar"
-  - "/home/travis/build/iotaledger/iri/target/iri*-sources.jar.asc"
-  - "/home/travis/build/iotaledger/iri/target/iri*-javadoc.jar"
-  - "/home/travis/build/iotaledger/iri/target/iri*-javadoc.jar.asc"
+  file: target/*.jar*
   skip_cleanup: true
   on:
     tags: true
     repo: iotaledger/iri
-    all_branches: true
+    branch:
+    - master
+    - dev
+      #all_branches: true
 #- provider: script
 #script: docker run -v $(pwd):$(pwd) -t ubuntu:xenial sh -c "apt update -qq && apt
 #install snapcraft -y && cd $(pwd) && snapcraft && snapcraft push *.snap --release

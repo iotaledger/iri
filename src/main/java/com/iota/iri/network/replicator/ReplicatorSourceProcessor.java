@@ -170,11 +170,11 @@ class ReplicatorSourceProcessor implements Runnable {
                   catch (IllegalStateException e) {
                     log.error("Queue is full for neighbor IP {}",inet_socket_address.getAddress().getHostAddress());
                 } catch (final RuntimeException e) {
-                    log.error("Transdaction processing runtime exception ",e);
+                    log.error("Transaction processing runtime exception ",e);
                     neighbor.incInvalidTransactions();
                 } catch (Exception e) {
-                    log.info("Transdaction processing exception " + e.getMessage());
-                    log.error("Transdaction processing exception ",e);
+                    log.info("Transaction processing exception " + e.getMessage());
+                    log.error("Transaction processing exception ",e);
                 }
             }
         } catch (IOException e) {

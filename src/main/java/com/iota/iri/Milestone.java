@@ -34,7 +34,7 @@ public class Milestone {
     public Hash latestMilestone = Hash.NULL_HASH;
     public Hash latestSolidSubtangleMilestone = latestMilestone;
 
-    public static final int MILESTONE_START_INDEX = 62000;
+    public static final int MILESTONE_START_INDEX = 0;
     private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 20;
 
     public int latestMilestoneIndex = MILESTONE_START_INDEX;

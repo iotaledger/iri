@@ -2,6 +2,7 @@ package com.iota.iri.network;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.MessageQ;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
@@ -17,6 +18,7 @@ import java.util.*;
 public class TransactionRequester {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
+    private final MessageQ messageQ;
     private final Set<Hash> milestoneTransactionsToRequest = new LinkedHashSet<>();
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
     private static volatile long lastTime = System.currentTimeMillis();
@@ -32,8 +34,9 @@ public class TransactionRequester {
     private static Thread rescanThread;
     private final Tangle tangle;
 
-    public TransactionRequester(Tangle tangle) {
+    public TransactionRequester(Tangle tangle, MessageQ messageQ) {
         this.tangle = tangle;
+        this.messageQ = messageQ;
     }
 
     public void init(double p_REMOVE_REQUEST) {
@@ -150,6 +153,7 @@ public class TransactionRequester {
                 iterator.remove();
                 if (TransactionViewModel.exists(tangle, hash)) {
                     log.info("Removed existing tx from request list: " + hash);
+                    messageQ.publish("Removed {}", hash);
                 } else {
                     requestSet.add(hash);
                     break;

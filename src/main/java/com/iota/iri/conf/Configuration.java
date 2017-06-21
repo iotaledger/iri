@@ -59,6 +59,7 @@ public class Configuration {
         TESTNET_MWM,
         ZMQ_PORT,
         ZMQ_IPC,
+        ZMQ_THREADS,
     }
 
     {
@@ -101,6 +102,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAX_GET_TRYTES.name(), "10000");
         conf.put(DefaultConfSettings.ZMQ_PORT.name(), "5556");
         conf.put(DefaultConfSettings.ZMQ_IPC.name(), "ipc://iri");
+        conf.put(DefaultConfSettings.ZMQ_THREADS.name(), "2");
 
     }
 

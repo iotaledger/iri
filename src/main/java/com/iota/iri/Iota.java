@@ -73,7 +73,9 @@ public class Iota {
         }
         tangle = new Tangle();
         messageQ = new MessageQ(configuration.integer(Configuration.DefaultConfSettings.ZMQ_PORT),
-                configuration.string(Configuration.DefaultConfSettings.ZMQ_IPC));
+                configuration.string(Configuration.DefaultConfSettings.ZMQ_IPC),
+                configuration.integer(Configuration.DefaultConfSettings.ZMQ_THREADS)
+                );
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);

@@ -22,7 +22,7 @@ public class MessageQ {
     }
 
     public void publish(String message, Object... objects) {
-        publisher.send(MessageFormat.format(message, objects));
+        publisher.send(String.format(message, objects));
     }
 
     public void shutdown () {

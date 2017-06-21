@@ -14,6 +14,7 @@ import java.util.Set;
 import javax.net.ssl.HttpsURLConnection;
 
 import com.iota.iri.controllers.*;
+import com.iota.iri.service.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +30,7 @@ public class Milestone {
     private final Hash coordinator;
     private final TransactionValidator transactionValidator;
     private final boolean testnet;
+    private final MessageQ messageQ;
 
     private LedgerValidator ledgerValidator;
     public Hash latestMilestone = Hash.NULL_HASH;
@@ -43,14 +45,16 @@ public class Milestone {
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
 
     public Milestone(final Tangle tangle,
-              final Hash coordinator,
-              final TransactionValidator transactionValidator,
-              final boolean testnet
-              ) {
+                     final Hash coordinator,
+                     final TransactionValidator transactionValidator,
+                     final boolean testnet,
+                     final MessageQ messageQ
+                     ) {
         this.tangle = tangle;
         this.coordinator = coordinator;
         this.transactionValidator = transactionValidator;
         this.testnet = testnet;
+        this.messageQ = messageQ;
     }
 
     private boolean shuttingDown;
@@ -69,6 +73,9 @@ public class Milestone {
 
                     if (previousLatestMilestoneIndex != latestMilestoneIndex) {
 
+                        messageQ.publish("Latest Milestone has changed from {0} to {1}",
+                                previousLatestMilestoneIndex,
+                                latestMilestoneIndex);
                         log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex
                                 + " to #" + latestMilestoneIndex);
                     }
@@ -100,6 +107,9 @@ public class Milestone {
 
                     if (previousSolidSubtangleLatestMilestoneIndex != latestSolidSubtangleMilestoneIndex) {
 
+                        messageQ.publish("Latest SOLID SUBTANGLE milestone has changed from {0} to {1}",
+                                previousSolidSubtangleLatestMilestoneIndex,
+                                latestSolidSubtangleMilestoneIndex);
                         log.info("Latest SOLID SUBTANGLE milestone has changed from #"
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"
                                 + latestSolidSubtangleMilestoneIndex);

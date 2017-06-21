@@ -21,6 +21,7 @@ public class TipsManager {
     private final Milestone milestone;
     private final LedgerValidator ledgerValidator;
     private final TransactionValidator transactionValidator;
+    private final MessageQ messageQ;
 
     private int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
@@ -39,13 +40,15 @@ public class TipsManager {
                        final TransactionValidator transactionValidator,
                        final TipsViewModel tipsViewModel,
                        final Milestone milestone,
-                       final int maxDepth) {
+                       final int maxDepth,
+                       final MessageQ messageQ) {
         this.tangle = tangle;
         this.ledgerValidator = ledgerValidator;
         this.transactionValidator = transactionValidator;
         this.tipsViewModel = tipsViewModel;
         this.milestone = milestone;
         this.maxDepth = maxDepth;
+        this.messageQ = messageQ;
     }
 
     public void init() {
@@ -170,6 +173,7 @@ public class TipsManager {
             tips = tipSet.toArray(new Hash[tipSet.size()]);
             if (tips.length == 0) {
                 log.info("Reason to stop: TransactionViewModel is a tip");
+                messageQ.publish("RTST {0}", tip);
                 break;
             }
             if (!ratings.containsKey(tip)) {
@@ -189,10 +193,12 @@ public class TipsManager {
             transactionViewModel = TransactionViewModel.fromHash(tangle, tips[approverIndex]);
             if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                 log.info("Reason to stop: transactionViewModel == null");
+                messageQ.publish("RTSN {0}", tips[approverIndex]);
                 break;
             } else if (!transactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
                 //} else if (!transactionViewModel.isSolid()) {
                 log.info("Reason to stop: !checkSolidity");
+                messageQ.publish("RTSS {0}", tips[approverIndex]);
                 break;
                 /*
             } else if (belowMaxDepth(tip, maxDepth, maxDepthOk)) {
@@ -201,12 +207,15 @@ public class TipsManager {
                 */
             } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
                 log.info("Reason to stop: !LedgerValidator");
+                messageQ.publish("RTSV {0}", tips[approverIndex]);
                 break;
             } else if (transactionViewModel.getHash().equals(extraTip)) {
                 log.info("Reason to stop: transactionViewModel==extraTip");
+                messageQ.publish("RTSD {0}", tips[approverIndex]);
                 break;
             } else if (transactionViewModel.getHash().equals(tip)) {
                 log.info("Reason to stop: transactionViewModel==itself");
+                messageQ.publish("RTSL {0}", tips[approverIndex]);
                 break;
             } else {
                 traversedTails++;
@@ -217,6 +226,7 @@ public class TipsManager {
             }
         }
         log.info("Tx traversed to find tip: " + traversedTails);
+        messageQ.publish("MCTN {0}", traversedTails);
         return tail;
     }
 

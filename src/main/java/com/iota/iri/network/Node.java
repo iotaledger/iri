@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.utils.Converter;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.StringUtils;
@@ -390,6 +391,17 @@ public class Node {
             } else {
                 //if not, store tx. & update recentSeenHashes
                 stored = receivedTransactionViewModel.store(tangle);
+                messageQ.publish("TX %s %s %d %s %d %s %s %s %s",
+                        receivedTransactionViewModel.getHash(),
+                        receivedTransactionViewModel.getAddressHash(),
+                        receivedTransactionViewModel.value(),
+                        receivedTransactionViewModel.getTagValue(),
+                        receivedTransactionViewModel.getTimestamp(),
+                        receivedTransactionViewModel.getBundleHash(),
+                        receivedTransactionViewModel.getTrunkTransactionHash(),
+                        receivedTransactionViewModel.getBranchTransactionHash(),
+                        Converter.trytes(receivedTransactionViewModel.trits())
+                );
                 synchronized (recentSeenHashes) {
                     recentSeenHashes.set(receivedTransactionViewModel.getHash(), true);
                 }

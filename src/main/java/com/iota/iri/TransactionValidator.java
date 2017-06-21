@@ -5,9 +5,8 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.MessageQ;
+import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Converter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

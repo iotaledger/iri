@@ -2,12 +2,12 @@ package com.iota.iri.service;
 
 import java.util.*;
 
-import com.iota.iri.Iota;
 import com.iota.iri.LedgerValidator;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.*;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

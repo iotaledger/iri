@@ -1,4 +1,4 @@
-package com.iota.iri.service;
+package com.iota.iri.zmq;
 
 import org.zeromq.ZMQ;
 

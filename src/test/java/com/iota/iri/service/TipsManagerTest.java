@@ -10,6 +10,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.zmq.MessageQ;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

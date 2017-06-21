@@ -32,6 +32,8 @@ Other topics currently found in the latest code are
 * `LMSI` for the latest solid milestone index 
 * `LMHS` for the latest solid milestone hash
 * `SN` for newly confirmed transactions ( by solid milestone children measurement )
+* `TN` for newly seen transactions
+
 * `<Address>` to watch for an address to be confirmed
 
 All of these topics are subject to change, and more may be added; this is experimental code.

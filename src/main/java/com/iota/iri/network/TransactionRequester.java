@@ -153,7 +153,7 @@ public class TransactionRequester {
                 iterator.remove();
                 if (TransactionViewModel.exists(tangle, hash)) {
                     log.info("Removed existing tx from request list: " + hash);
-                    messageQ.publish("Removed {}", hash);
+                    messageQ.publish("RTL %s", hash);
                 } else {
                     requestSet.add(hash);
                     break;

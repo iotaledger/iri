@@ -73,9 +73,7 @@ public class Milestone {
 
                     if (previousLatestMilestoneIndex != latestMilestoneIndex) {
 
-                        messageQ.publish("Latest Milestone has changed from {0} to {1}",
-                                previousLatestMilestoneIndex,
-                                latestMilestoneIndex);
+                        messageQ.publish("LMI %d %d", previousLatestMilestoneIndex, latestMilestoneIndex);
                         log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex
                                 + " to #" + latestMilestoneIndex);
                     }
@@ -107,9 +105,8 @@ public class Milestone {
 
                     if (previousSolidSubtangleLatestMilestoneIndex != latestSolidSubtangleMilestoneIndex) {
 
-                        messageQ.publish("Latest SOLID SUBTANGLE milestone has changed from {0} to {1}",
-                                previousSolidSubtangleLatestMilestoneIndex,
-                                latestSolidSubtangleMilestoneIndex);
+                        messageQ.publish("LMIS %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
+                        messageQ.publish("LMHS %s", latestSolidSubtangleMilestone);
                         log.info("Latest SOLID SUBTANGLE milestone has changed from #"
                                 + previousSolidSubtangleLatestMilestoneIndex + " to #"
                                 + latestSolidSubtangleMilestoneIndex);

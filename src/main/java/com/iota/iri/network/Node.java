@@ -130,7 +130,7 @@ public class Node {
                     new UDPNeighbor(new InetSocketAddress(u.getHost(), u.getPort()), udpSocket,true))
                 .peek(u -> {
                 log.info("-> Adding neighbor : {} ", u.getAddress());
-                messageQ.publish("-> Adding Neighbor : {0}",u.getAddress());
+                messageQ.publish("-> Adding Neighbor : %s",u.getAddress());
         }).forEach(neighbors::add);
 
         executor.submit(spawnBroadcasterThread());
@@ -167,7 +167,7 @@ public class Node {
                         final String hostname = n.getAddress().getHostName();
                         checkIp(hostname).ifPresent(ip -> {
                             log.info("DNS Checker: Validating DNS Address '{}' with '{}'", hostname, ip);
-                            messageQ.publish("DNS Checker: Validating DNS Address '{0}' with '{1}'", hostname, ip);
+                            messageQ.publish("DNSCV %s %s", hostname, ip);
                             final String neighborAddress = neighborIpCache.get(hostname);
 
                             if (neighborAddress == null) {
@@ -175,10 +175,10 @@ public class Node {
                             } else {
                                 if (neighborAddress.equals(ip)) {
                                     log.info("{} seems fine.", hostname);
-                                    messageQ.publish("{0} seems fine.", hostname);
+                                    messageQ.publish("DNSCC %s", hostname);
                                 } else {
                                     log.info("IP CHANGED for {}! Updating...", hostname);
-                                    messageQ.publish("IP CHANGED for {0}! Updating...", hostname);
+                                    messageQ.publish("DNSCU %s", hostname);
                                     String protocol = (n instanceof TCPNeighbor) ? "tcp://" : "udp://";
                                     String port = ":" + n.getAddress().getPort();
 
@@ -278,7 +278,7 @@ public class Node {
 
                     if (((recentSeenBytesMissCount.get() + recentSeenBytesHitCount.get()) % 50000L == 0)) {
                         log.info("RecentSeenBytes cache hit/miss ratio: "+recentSeenBytesHitCount.get()+"/"+recentSeenBytesMissCount.get());
-                        messageQ.publish("RecentSeenBytes cache hit/miss ratio: "+recentSeenBytesHitCount.get()+"/"+recentSeenBytesMissCount.get());
+                        messageQ.publish("HMR %d/%d",recentSeenBytesHitCount.get(), recentSeenBytesMissCount.get());
                         recentSeenBytesMissCount.set(0L);
                         recentSeenBytesHitCount.set(0L);
                     }
@@ -312,7 +312,7 @@ public class Node {
             String uriString = uriScheme + ":/" + senderAddress.toString();
             if (Neighbor.getNumPeers() < maxPeersAllowed) {
                 log.info("Adding non-tethered neighbor: " + uriString);
-                messageQ.publish("Adding non-tethered neighbor: {0}", uriString);
+                messageQ.publish("ANTN %s", uriString);
                 try {
                     final URI uri = new URI(uriString);
                     // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
@@ -336,7 +336,7 @@ public class Node {
                     rejectedAddresses.clear();
                 }
                 else if ( rejectedAddresses.add(uriString) ) {
-                    messageQ.publish("Refused non-tethered neighbor: {0} (max-peers = {1})", uriString,  String.valueOf(maxPeersAllowed));
+                    messageQ.publish("RNTN %s %s", uriString,  String.valueOf(maxPeersAllowed));
                     log.info("Refused non-tethered neighbor: " + uriString +
                         " (max-peers = "+ String.valueOf(maxPeersAllowed) + ")");
                 }
@@ -549,7 +549,7 @@ public class Node {
                     long now = System.currentTimeMillis();
                     if ((now - lastTime) > 10000L) {
                         lastTime = now;
-                        messageQ.publish("toProcess = {0} , toBroadcast = {1} , toRequest = {2} , toReply = {3} / totalTransactions = {4}",
+                        messageQ.publish("RSTAT %d %d %d %d %d",
                                 getReceiveQueueSize(), getBroadcastQueueSize() ,
                                 transactionRequester.numberOfTransactionsToRequest() ,getReplyQueueSize(),
                                 TransactionViewModel.getNumberOfStoredTransactions(tangle));

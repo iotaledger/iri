@@ -159,7 +159,8 @@ public class LedgerValidator {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(tangle, hashPointer);
                 if(transactionViewModel2.snapshotIndex() == 0) {
                     transactionViewModel2.setSnapshot(tangle, index);
-                    messageQ.publish("SN{0}: {1} {2} {3} {4} {5}", index, transactionViewModel2.getHash(),
+                    messageQ.publish("%s %s %d SN", transactionViewModel2.getAddressHash(), transactionViewModel2.getHash(), index);
+                    messageQ.publish("SN %d %s %s %s %s %s", index, transactionViewModel2.getHash(),
                             transactionViewModel2.getAddressHash(),
                             transactionViewModel2.getTrunkTransactionHash(),
                             transactionViewModel2.getBranchTransactionHash(),

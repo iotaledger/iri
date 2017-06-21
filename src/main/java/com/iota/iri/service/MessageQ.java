@@ -12,8 +12,8 @@ public class MessageQ {
     private final ZMQ.Context context;
     private final ZMQ.Socket publisher;
 
-    public MessageQ(int port, String ipc) {
-        context = ZMQ.context(1);
+    public MessageQ(int port, String ipc, int nthreads) {
+        context = ZMQ.context(nthreads);
         publisher = context.socket(ZMQ.PUB);
         publisher.bind(String.format("tcp://*:%d", port));
         if(ipc != null) {

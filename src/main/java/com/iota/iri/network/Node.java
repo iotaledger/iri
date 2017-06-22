@@ -163,7 +163,7 @@ public class Node {
                         final String hostname = n.getAddress().getHostName();
                         checkIp(hostname).ifPresent(ip -> {
                             log.info("DNS Checker: Validating DNS Address '{}' with '{}'", hostname, ip);
-                            messageQ.publish("DNSCV %s %s", hostname, ip);
+                            messageQ.publish("dnscv %s %s", hostname, ip);
                             final String neighborAddress = neighborIpCache.get(hostname);
 
                             if (neighborAddress == null) {
@@ -171,10 +171,10 @@ public class Node {
                             } else {
                                 if (neighborAddress.equals(ip)) {
                                     log.info("{} seems fine.", hostname);
-                                    messageQ.publish("DNSCC %s", hostname);
+                                    messageQ.publish("dnscc %s", hostname);
                                 } else {
                                     log.info("IP CHANGED for {}! Updating...", hostname);
-                                    messageQ.publish("DNSCU %s", hostname);
+                                    messageQ.publish("dnscu %s", hostname);
                                     String protocol = (n instanceof TCPNeighbor) ? "tcp://" : "udp://";
                                     String port = ":" + n.getAddress().getPort();
 
@@ -279,7 +279,7 @@ public class Node {
 
                     if (((recentSeenBytesMissCount.get() + recentSeenBytesHitCount.get()) % 50000L == 0)) {
                         log.info("RecentSeenBytes cache hit/miss ratio: "+recentSeenBytesHitCount.get()+"/"+recentSeenBytesMissCount.get());
-                        messageQ.publish("HMR %d/%d",recentSeenBytesHitCount.get(), recentSeenBytesMissCount.get());
+                        messageQ.publish("hmr %d/%d",recentSeenBytesHitCount.get(), recentSeenBytesMissCount.get());
                         recentSeenBytesMissCount.set(0L);
                         recentSeenBytesHitCount.set(0L);
                     }
@@ -313,7 +313,7 @@ public class Node {
             String uriString = uriScheme + ":/" + senderAddress.toString();
             if (Neighbor.getNumPeers() < maxPeersAllowed) {
                 log.info("Adding non-tethered neighbor: " + uriString);
-                messageQ.publish("ANTN %s", uriString);
+                messageQ.publish("antn %s", uriString);
                 try {
                     final URI uri = new URI(uriString);
                     // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
@@ -337,7 +337,7 @@ public class Node {
                     rejectedAddresses.clear();
                 }
                 else if ( rejectedAddresses.add(uriString) ) {
-                    messageQ.publish("RNTN %s %s", uriString,  String.valueOf(maxPeersAllowed));
+                    messageQ.publish("rntn %s %s", uriString,  String.valueOf(maxPeersAllowed));
                     log.info("Refused non-tethered neighbor: " + uriString +
                         " (max-peers = "+ String.valueOf(maxPeersAllowed) + ")");
                 }
@@ -391,7 +391,7 @@ public class Node {
             } else {
                 //if not, store tx. & update recentSeenHashes
                 stored = receivedTransactionViewModel.store(tangle);
-                messageQ.publish("TX %s %s %d %s %d %s %s %s %s",
+                messageQ.publish("tx %s %s %d %s %d %s %s %s %s",
                         receivedTransactionViewModel.getHash(),
                         receivedTransactionViewModel.getAddressHash(),
                         receivedTransactionViewModel.value(),

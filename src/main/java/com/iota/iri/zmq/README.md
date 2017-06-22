@@ -17,23 +17,24 @@ subscribe to a topic which publishes on the update of a state.
 
 #### Topics
 
-A client interested in tip selection metrics may subscribe to `MCTN`, short for
-"Monte Carlo Transaction Number", a metric that indicates how many transactions
-were traversed in a random walk simulation. It may subscribe to `RTS`, for 
-"Reason To Stop", to see information about walk terminations.
+A client interested in tip selection metrics may subscribe to `mctn`, short for
+"monte carlo transaction number", a metric that indicates how many transactions
+were traversed in a random walk simulation. It may subscribe to `rts`, for
+"reason to stop", to see information about walk terminations.
 
 Other topics currently found in the latest code are 
-* `DNS` for information related to neighbors
-* `HMR` for the hit to miss ratio
-* `ANTN` for added non-tethered neighbors ( testnet only )
-* `RNTN` for refused non-tethered neighbors
-* `RTL` for transactions randomly removed from the request list
-* `LMI` for the latest milestone index
-* `LMSI` for the latest solid milestone index 
-* `LMHS` for the latest solid milestone hash
-* `SN` for newly confirmed transactions ( by solid milestone children measurement )
-* `TX` for newly seen transactions
+* `dns` for information related to neighbors
+* `hmr` for the hit to miss ratio
+* `antn` for added non-tethered neighbors ( testnet only )
+* `rntn` for refused non-tethered neighbors
+* `rtl` for transactions randomly removed from the request list
+* `lmi` for the latest milestone index
+* `lmsi` for the latest solid milestone index
+* `lmhs` for the latest solid milestone hash
+* `sn` for newly confirmed transactions ( by solid milestone children measurement )
+* `tx` for newly seen transactions
 
 * `<Address>` to watch for an address to be confirmed
 
+All topic must be lowercase (to not clash with `<Address>` containing the topic title - like `TXCR9...` & `TX`)
 All of these topics are subject to change, and more may be added; this is experimental code.

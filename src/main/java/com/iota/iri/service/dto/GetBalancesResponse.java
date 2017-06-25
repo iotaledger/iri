@@ -17,7 +17,8 @@ public class GetBalancesResponse extends AbstractResponse {
 		res.milestoneIndex = milestoneIndex;
 		return res;
 	}
-	
+
+	@SuppressWarnings("unused") // used in the API
 	public String getMilestone() {
 		return milestone;
 	}

@@ -1,21 +1,28 @@
 package com.iota.iri;
 
 import com.iota.iri.controllers.TipsViewModel;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Converter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.iota.iri.controllers.TransactionViewModel.*;
+import static com.iota.iri.controllers.TransactionViewModel.PREFILLED_SLOT;
+import static com.iota.iri.controllers.TransactionViewModel.VALUE_TRINARY_OFFSET;
+import static com.iota.iri.controllers.TransactionViewModel.VALUE_TRINARY_SIZE;
+import static com.iota.iri.controllers.TransactionViewModel.VALUE_USABLE_TRINARY_SIZE;
 
 /**
  * Created by paul on 4/17/17.
@@ -103,8 +110,6 @@ public class TransactionValidator {
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
-
-    private final AtomicInteger nextSubSolidGroup = new AtomicInteger(1);
 
     public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
         if(TransactionViewModel.fromHash(tangle, hash).isSolid()) {

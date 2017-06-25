@@ -1,17 +1,20 @@
 package com.iota.iri.network;
 
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.SocketAddress;
 import java.util.Arrays;
-import java.util.concurrent.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.iota.iri.network.Node.TRANSACTION_PACKET_SIZE;
@@ -99,16 +102,6 @@ public class UDPReceiver {
             }
             log.info("Shutting down spawning Receiver Thread");
         };
-    }
-
-    public void send(final DatagramPacket packet) {
-        try {
-            if (socket != null) {
-                socket.send(packet);
-            }
-        } catch (IOException e) {
-            // ignore
-        }
     }
 
     public void shutdown() throws InterruptedException {

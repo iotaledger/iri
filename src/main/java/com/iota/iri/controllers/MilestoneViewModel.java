@@ -10,7 +10,6 @@ import com.iota.iri.utils.Pair;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 4/11/17.
@@ -121,14 +120,6 @@ public class MilestoneViewModel {
         return null;
     }
 
-    public static MilestoneViewModel latestWithSnapshot(Tangle tangle) throws Exception {
-        MilestoneViewModel milestoneViewModel = latest(tangle);
-        while(milestoneViewModel !=null && !StateDiffViewModel.exists(tangle, milestoneViewModel.getHash())) {
-            milestoneViewModel = milestoneViewModel.previous(tangle);
-        }
-        return milestoneViewModel;
-    }
-
     public boolean store(Tangle tangle) throws Exception {
         return tangle.save(milestone, milestone.index);
     }
@@ -138,10 +129,6 @@ public class MilestoneViewModel {
     }
     public Integer index() {
         return milestone.index.getValue();
-    }
-
-    public void delete(Tangle tangle) throws Exception {
-        tangle.delete(Milestone.class, milestone.index);
     }
 
 }

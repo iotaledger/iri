@@ -1,20 +1,18 @@
 package com.iota.iri.network.replicator;
 
+import com.iota.iri.network.Neighbor;
+import com.iota.iri.network.Node;
+import com.iota.iri.network.TCPNeighbor;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import com.iota.iri.Iota;
-import com.iota.iri.network.TCPNeighbor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.network.Neighbor;
-import com.iota.iri.network.Node;
 
 public class ReplicatorSinkPool  implements Runnable {
     
@@ -27,8 +25,6 @@ public class ReplicatorSinkPool  implements Runnable {
     public boolean shutdown = false;
 
     public final static int PORT_BYTES = 10;
-
-    private final DatagramPacket sendingPacket = new DatagramPacket(new byte[Node.TRANSACTION_PACKET_SIZE], Node.TRANSACTION_PACKET_SIZE);
 
     public ReplicatorSinkPool(Node node, int port) {
         this.node = node;

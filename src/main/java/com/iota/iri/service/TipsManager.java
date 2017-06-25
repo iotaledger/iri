@@ -1,17 +1,25 @@
 package com.iota.iri.service;
 
-import java.util.*;
-
-import com.iota.iri.Iota;
 import com.iota.iri.LedgerValidator;
+import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.controllers.*;
 import com.iota.iri.storage.Tangle;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Milestone;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Random;
+import java.util.Set;
+import java.util.Stack;
 
 public class TipsManager {
 
@@ -22,17 +30,10 @@ public class TipsManager {
     private final LedgerValidator ledgerValidator;
     private final TransactionValidator transactionValidator;
 
-    private int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
     private int RESCAN_TX_TO_REQUEST_INTERVAL = 750;
     private final int maxDepth;
     private Thread solidityRescanHandle;
-
-    public void setRATING_THRESHOLD(int value) {
-        if (value < 0) value = 0;
-        if (value > 100) value = 100;
-        RATING_THRESHOLD = value;
-    }
 
     public TipsManager(final Tangle tangle,
                        final LedgerValidator ledgerValidator,
@@ -110,12 +111,11 @@ public class TipsManager {
 
             Map<Hash, Long> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
-            Set<Hash> maxDepthOk = new HashSet<>();
             try {
                 Hash tip = entryPoint(reference, extraTip, msDepth);
                 serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
-                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, milestone.latestMilestoneIndex-depth*2, maxDepthOk, seed);
+                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, seed);
             } catch (Exception e) {
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());
@@ -142,11 +142,11 @@ public class TipsManager {
         return tip;
     }
 
-    Hash markovChainMonteCarlo(final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final int maxDepth, final Set<Hash> maxDepthOk, final Random seed) throws Exception {
+    Hash markovChainMonteCarlo(final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final Random seed) throws Exception {
         Map<Hash, Integer> monteCarloIntegrations = new HashMap<>();
         Hash tail;
         for(int i = iterations; i-- > 0; ) {
-            tail = randomWalk(tip, extraTip, ratings, maxDepth, maxDepthOk, seed);
+            tail = randomWalk(tip, extraTip, ratings, seed);
             if(monteCarloIntegrations.containsKey(tail)) {
                 monteCarloIntegrations.put(tail, monteCarloIntegrations.get(tail) + 1);
             } else {
@@ -156,7 +156,7 @@ public class TipsManager {
         return monteCarloIntegrations.entrySet().stream().reduce((a, b) -> a.getValue() > b.getValue() ? a : b).map(Map.Entry::getKey).orElse(null);
     }
 
-    Hash randomWalk(final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
+    Hash randomWalk(final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, Random rnd) throws Exception {
         Hash tip = start, tail = tip;
         Hash[] tips;
         Set<Hash> tipSet;
@@ -194,11 +194,6 @@ public class TipsManager {
                 //} else if (!transactionViewModel.isSolid()) {
                 log.info("Reason to stop: !checkSolidity");
                 break;
-                /*
-            } else if (belowMaxDepth(tip, maxDepth, maxDepthOk)) {
-                log.info("Reason to stop: belowMaxDepth");
-                break;
-                */
             } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
                 log.info("Reason to stop: !LedgerValidator");
                 break;
@@ -293,32 +288,4 @@ public class TipsManager {
         return rating;
     }
 
-    boolean belowMaxDepth(Hash tip, int depth, Set<Hash> maxDepthOk) throws Exception {
-        //if tip is confirmed stop
-        if (TransactionViewModel.fromHash(tangle, tip).snapshotIndex() >= depth) {
-            return false;
-        }
-        //if tip unconfirmed, check if any referenced tx is confirmed below maxDepth
-        Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
-        Set<Hash> analyzedTranscations = new HashSet<>();
-        Hash hash;
-        while ((hash = nonAnalyzedTransactions.poll()) != null) {
-            if(analyzedTranscations.add(hash)) {
-                TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-                if (transaction.snapshotIndex() != 0 && transaction.snapshotIndex() < depth) {
-                    return true;
-                }
-                if (transaction.snapshotIndex() == 0) {
-                    if (maxDepthOk.contains(hash)) {
-                        //log.info("Memoization!");
-                    } else {
-                        nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
-                        nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
-                    }
-                }
-            }
-        }
-        maxDepthOk.add(tip);
-        return false;
-    }
 }

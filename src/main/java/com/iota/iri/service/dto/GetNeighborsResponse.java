@@ -17,6 +17,7 @@ public class GetNeighborsResponse extends AbstractResponse {
         public long numberOfAllTransactions, numberOfRandomTransactionRequests, numberOfNewTransactions, numberOfInvalidTransactions, numberOfSentTransactions;
         public String connectionType;
 
+        @SuppressWarnings("unused") // used in the API
         public String getAddress() {
             return address;
         }

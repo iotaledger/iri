@@ -18,20 +18,13 @@ public abstract class Neighbor {
     public boolean isFlagged() {
         return flagged;
     }
-    public void setFlagged(boolean flagged) {
-        this.flagged = flagged;
-    }
-    
+
     private final static AtomicInteger numPeers = new AtomicInteger(0);
     public static int getNumPeers() {
         return numPeers.get();
     }
     public static void incNumPeers() {
         numPeers.incrementAndGet();
-    }
-    public static void decNumPeers() {
-        int v = numPeers.decrementAndGet();
-        if (v < 0) numPeers.set(0);;
     }
 
     private final String hostAddress;

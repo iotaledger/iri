@@ -1,15 +1,12 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.model.Address;
-import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -18,10 +15,6 @@ import java.util.Set;
 public class AddressViewModel implements HashesViewModel {
     private Address self;
     private Indexable hash;
-
-    public AddressViewModel(Hash hash) {
-        this.hash = hash;
-    }
 
     private AddressViewModel(Address hashes, Indexable hash) {
         self = hashes == null || hashes.set == null ? new Address(): hashes;
@@ -32,20 +25,8 @@ public class AddressViewModel implements HashesViewModel {
         return new AddressViewModel((Address) tangle.load(Address.class, hash), hash);
     }
 
-    public boolean store(Tangle tangle) throws Exception {
-        return tangle.save(self, hash);
-    }
-
     public int size() {
         return self.set.size();
-    }
-
-    public boolean addHash(Hash theHash) {
-        return getHashes().add(theHash);
-    }
-
-    public Indexable getIndex() {
-        return hash;
     }
 
     public Set<Hash> getHashes() {

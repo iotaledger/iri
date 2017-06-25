@@ -2,20 +2,45 @@ package com.iota.iri;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
 import com.iota.iri.service.CallableRequest;
 import com.iota.iri.service.dto.AbstractResponse;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.script.*;
-import java.io.*;
-import java.nio.file.*;
-import java.util.*;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.nio.file.WatchService;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+
+import javax.script.Bindings;
+import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptException;
 
 import static com.sun.jmx.mbeanserver.Util.cast;
 import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
-import static java.nio.file.StandardWatchEventKinds.*;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_DELETE;
+import static java.nio.file.StandardWatchEventKinds.ENTRY_MODIFY;
+import static java.nio.file.StandardWatchEventKinds.OVERFLOW;
 
 public class IXI {
     private static final Logger log = LoggerFactory.getLogger(IXI.class);
@@ -129,7 +154,6 @@ public class IXI {
     }
 
     private void processEvents() {
-        int i = 0;
         WatchKey key = null;
         while(!shutdown) {
             try {

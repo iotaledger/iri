@@ -6,12 +6,14 @@ package com.iota.iri.service.dto;
 public class IXIResponse extends AbstractResponse {
     private Object ixi;
 
+    @SuppressWarnings("unused") // used in the API
     public static IXIResponse create(Object myixi) {
         IXIResponse ixiResponse = new IXIResponse();
         ixiResponse.ixi = myixi;
         return ixiResponse;
     }
 
+    @SuppressWarnings("unused") // used in the API
     public Object getResponse() {
         return ixi;
     }

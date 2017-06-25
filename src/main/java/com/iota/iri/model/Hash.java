@@ -128,16 +128,6 @@ public class Hash implements Serializable, Indexable {
     }
 
     @Override
-    public Indexable incremented() {
-        return null;
-    }
-
-    @Override
-    public Indexable decremented() {
-        return null;
-    }
-
-    @Override
     public int compareTo(Indexable indexable) {
         Hash hash = new Hash(indexable.bytes());
         if (this.equals(hash)) {

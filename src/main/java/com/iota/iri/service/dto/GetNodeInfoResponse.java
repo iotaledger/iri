@@ -52,66 +52,82 @@ public class GetNodeInfoResponse extends AbstractResponse {
 		return res;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public String getAppName() {
 		return appName;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public String getAppVersion() {
 		return appVersion;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public int getJreAvailableProcessors() {
 		return jreAvailableProcessors;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public long getJreFreeMemory() {
 		return jreFreeMemory;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public long getJreMaxMemory() {
 		return jreMaxMemory;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public long getJreTotalMemory() {
 		return jreTotalMemory;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public String getJreVersion() {
 		return jreVersion;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public String getLatestMilestone() {
 		return latestMilestone;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public int getLatestMilestoneIndex() {
 		return latestMilestoneIndex;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public String getLatestSolidSubtangleMilestone() {
 		return latestSolidSubtangleMilestone;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public int getLatestSolidSubtangleMilestoneIndex() {
 		return latestSolidSubtangleMilestoneIndex;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public int getNeighbors() {
 		return neighbors;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public int getPacketsQueueSize() {
 		return packetsQueueSize;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public long getTime() {
 		return time;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public int getTips() {
 		return tips;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public int getTransactionsToRequest() {
 		return transactionsToRequest;
 	}

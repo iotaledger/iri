@@ -29,18 +29,7 @@ public class IntegerIndex implements Indexable{
     }
 
     @Override
-    public Indexable incremented() {
-        return new IntegerIndex(value + 1);
-    }
-
-    @Override
-    public Indexable decremented() {
-        return new IntegerIndex(value - 1);
-    }
-
-    @Override
     public int compareTo(Indexable o) {
-        IntegerIndex i = new IntegerIndex(Serializer.getInteger(o.bytes()));
         return value - ((IntegerIndex) o).value;
     }
 }

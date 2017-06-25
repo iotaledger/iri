@@ -136,10 +136,6 @@ public class Configuration {
         return getConfValue(k);
     }
 
-    public float floating(String k) {
-        return Float.parseFloat(getConfValue(k));
-    }
-
     public double doubling(String k) {
         return Double.parseDouble(getConfValue(k));
     }

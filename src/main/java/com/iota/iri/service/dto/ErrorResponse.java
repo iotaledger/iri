@@ -10,6 +10,7 @@ public class ErrorResponse extends AbstractResponse {
 		return res;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public String getError() {
 		return error;
 	}

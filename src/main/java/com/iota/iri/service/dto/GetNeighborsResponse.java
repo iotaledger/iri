@@ -6,6 +6,7 @@ public class GetNeighborsResponse extends AbstractResponse {
 
     private Neighbor[] neighbors;
 
+    @SuppressWarnings("unused") // used in the API
     public Neighbor[] getNeighbors() {
         return neighbors;
     }
@@ -16,26 +17,32 @@ public class GetNeighborsResponse extends AbstractResponse {
         public long numberOfAllTransactions, numberOfRandomTransactionRequests, numberOfNewTransactions, numberOfInvalidTransactions, numberOfSentTransactions;
         public String connectionType;
 
+        @SuppressWarnings("unused") // used in the API
         public String getAddress() {
             return address;
         }
 
+        @SuppressWarnings("unused") // used in the API
         public long getNumberOfAllTransactions() {
             return numberOfAllTransactions;
         }
 
+        @SuppressWarnings("unused") // used in the API
         public long getNumberOfNewTransactions() {
             return numberOfNewTransactions;
         }
 
+        @SuppressWarnings("unused") // used in the API
         public long getNumberOfInvalidTransactions() {
             return numberOfInvalidTransactions;
         }
-        
+
+        @SuppressWarnings("unused") // used in the API
         public long getNumberOfSentTransactions() {
             return numberOfSentTransactions;
         }
 
+        @SuppressWarnings("unused") // used in the API
         public String getConnectionType() {
             return connectionType;
         }

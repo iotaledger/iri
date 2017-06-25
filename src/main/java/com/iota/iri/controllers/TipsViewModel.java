@@ -5,12 +5,12 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
-import org.apache.commons.lang3.ArrayUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
  * Created by paul on 3/14/17 for iri-testnet.
  */
 public class TipsViewModel {
-    final Logger log = LoggerFactory.getLogger(TipsViewModel.class);
 
     private FifoHashCache tips = new FifoHashCache(5000);
     private Set<Hash> solidTips = new HashSet<>();
@@ -84,21 +83,6 @@ public class TipsViewModel {
             Hash hash = null;
             while(index-- > 1 && hashIterator.hasNext()){ hash = hashIterator.next();}
             return hash;
-            //return tips.size() != 0 ? tips.get(seed.nextInt(tips.size())) : null;
-        }
-    }
-
-    public Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-        synchronized (sync) {
-            if(size() == 0) {
-                return null;
-            }
-            int index = seed.nextInt(size());
-            if(index >= tips.size()) {
-                return getRandomSolidTipHash();
-            } else {
-                return getRandomNonSolidTipHash();
-            }
         }
     }
 
@@ -110,13 +94,6 @@ public class TipsViewModel {
 
     public int size() {
         return tips.size() + solidTips.size();
-    }
-
-    public void loadTipHashes(Tangle tangle) throws Exception {
-        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
-        if(hashes != null) {
-            tips.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
-        }
     }
 
     public Set<Hash> getTipsHashesFromDB (Tangle tangle) throws Exception {
@@ -151,9 +128,6 @@ public class TipsViewModel {
         }
         public int size() {
             return this.set.size();
-        }
-        public boolean addAll(Collection c) {
-            return this.set.addAll(c);
         }
         public Iterator<Hash> iterator() {
             return this.set.iterator();

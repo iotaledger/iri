@@ -15,16 +15,9 @@ public class Curl {
 
     public static final int HASH_LENGTH = 243;
     private static final int STATE_LENGTH = 3 * HASH_LENGTH;
-    private static final int HALF_LENGTH = 364;
 
     private static final int NUMBER_OF_ROUNDS = 27;
     private static final int[] TRUTH_TABLE = {1, 0, -1, 2, 1, -1, 0, 2, -1, 1, 0};
-    /*
-    private static final IntPair[] TRANSFORM_INDICES = IntStream.range(0, STATE_LENGTH)
-            .mapToObj(i -> new IntPair(i == 0 ? 0 : (((i - 1) % 2) + 1) * HALF_LENGTH - ((i - 1) >> 1),
-                    ((i % 2) + 1) * HALF_LENGTH - ((i) >> 1)))
-            .toArray(IntPair[]::new);
-            */
 
     private final int[] state;
     private final long[] stateLow;
@@ -125,7 +118,7 @@ public class Curl {
     }
 
     public void absorb(final Pair<long[], long[]> pair, int offset, int length) {
-        int o = offset, l = length, i = 0;
+        int o = offset, l = length;
         do {
             System.arraycopy(pair.low, o, stateLow, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
             System.arraycopy(pair.hi, o, stateHigh, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
@@ -135,7 +128,7 @@ public class Curl {
     }
 
     public Pair<long[], long[]> squeeze(Pair<long[], long[]> pair, int offset, int length) {
-        int o = offset, l = length, i = 0;
+        int o = offset, l = length;
         long[] low = pair.low;
         long[] hi = pair.hi;
         do {

@@ -13,11 +13,13 @@ public class GetTransactionsToApproveResponse extends AbstractResponse {
 		res.branchTransaction = branchTransactionToApprove.toString();
 		return res;
 	}
-	
+
+	@SuppressWarnings("unused") // used in the API
 	public String getBranchTransaction() {
 		return branchTransaction;
 	}
-	
+
+	@SuppressWarnings("unused") // used in the API
 	public String getTrunkTransaction() {
 		return trunkTransaction;
 	}

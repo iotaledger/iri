@@ -58,7 +58,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private RocksDB db;
     private DBOptions options;
     private BloomFilter bloomFilter;
-    private boolean available;
 
     public RocksDBPersistenceProvider(String dbPath, String logPath) {
         this.dbPath = dbPath;
@@ -70,15 +69,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         log.info("Initializing Database Backend... ");
         initDB(dbPath, logPath);
         initClassTreeMap();
-        available = true;
         log.info("RocksDB persistence provider initialized.");
     }
-
-    @Override
-    public boolean isAvailable() {
-        return this.available;
-    }
-
 
     private void initClassTreeMap() throws RocksDBException {
         Map<Class<?>, ColumnFamilyHandle> classMap = new HashMap<>();
@@ -318,12 +310,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         return new Pair<>(indexable, object);
     }
 
-    public boolean merge(Persistable model, Indexable index) throws Exception {
-        boolean exists = mayExist(model.getClass(), index);
-        db.merge(classTreeMap.get().get(model.getClass()), index.bytes(), model.bytes());
-        return exists;
-    }
-
     @Override
     public boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {
         WriteBatch writeBatch = new WriteBatch();
@@ -348,22 +334,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         return true;
     }
 
-    private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
-        List<byte[]> itemsToDelete = new ArrayList<>();
-        RocksIterator iterator = db.newIterator(handle);
-        for(iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
-            itemsToDelete.add(iterator.key());
-        }
-        iterator.close();
-        if(itemsToDelete.size() > 0) {
-            log.info("Flushing flags. Amount to delete: " + itemsToDelete.size());
-        }
-        for(byte[] itemToDelete: itemsToDelete) {
-            db.delete(handle, itemToDelete);
-        }
-    }
-
-
     @Override
     public boolean update(Persistable thing, Indexable index, String item) throws Exception {
         ColumnFamilyHandle referenceHandle = metadataReference.get().get(thing.getClass());
@@ -371,40 +341,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             db.put(referenceHandle, index.bytes(), thing.metadata());
         }
         return false;
-    }
-
-    public void createBackup(String path) throws RocksDBException {
-        Env env;
-        BackupableDBOptions backupableDBOptions;
-        BackupEngine backupEngine;
-        env = Env.getDefault();
-        backupableDBOptions = new BackupableDBOptions(path);
-        try {
-            backupEngine = BackupEngine.open(env, backupableDBOptions);
-            backupEngine.createNewBackup(db, true);
-            backupEngine.close();
-        } finally {
-            env.close();
-            backupableDBOptions.close();
-        }
-    }
-
-    public void restoreBackup(String path, String logPath) throws Exception {
-        Env env;
-        BackupableDBOptions backupableDBOptions;
-        BackupEngine backupEngine;
-        env = Env.getDefault();
-        backupableDBOptions = new BackupableDBOptions(path);
-        backupEngine = BackupEngine.open(env, backupableDBOptions);
-        shutdown();
-        try(final RestoreOptions restoreOptions = new RestoreOptions(false)){
-            backupEngine.restoreDbFromLatestBackup(path, logPath, restoreOptions);
-        } finally {
-            backupEngine.close();
-        }
-        backupableDBOptions.close();
-        env.close();
-        initDB(path, logPath);
     }
 
     private void initDB(String path, String logPath) throws Exception {
@@ -450,7 +386,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         options.setMaxSubcompactions(Runtime.getRuntime().availableProcessors());
 
         bloomFilter = new BloomFilter(BLOOM_FILTER_BITS_PER_KEY);
-        PlainTableConfig plainTableConfig = new PlainTableConfig();
         BlockBasedTableConfig blockBasedTableConfig = new BlockBasedTableConfig().setFilter(bloomFilter);
         blockBasedTableConfig
                 .setFilter(bloomFilter)
@@ -459,42 +394,19 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setBlockRestartInterval(16)
                 .setBlockCacheSize(200 * SizeUnit.KB)
                 .setBlockCacheCompressedNumShardBits(10)
-                .setBlockCacheCompressedSize(32 * SizeUnit.KB)
-                /*
-                .setHashIndexAllowCollision(true)
-                .setCacheIndexAndFilterBlocks(true)
-                */
-                ;
+                .setBlockCacheCompressedSize(32 * SizeUnit.KB);
         options.setAllowConcurrentMemtableWrite(true);
-
-        MemTableConfig hashSkipListMemTableConfig = new HashSkipListMemTableConfig()
-                .setHeight(9)
-                .setBranchingFactor(9)
-                .setBucketCount(2 * SizeUnit.MB);
-        MemTableConfig hashLinkedListMemTableConfig = new HashLinkedListMemTableConfig().setBucketCount(100000);
-        MemTableConfig vectorTableConfig = new VectorMemTableConfig().setReservedSize(10000);
-        MemTableConfig skipListMemTableConfig = new SkipListMemTableConfig();
-
 
         MergeOperator mergeOperator = new StringAppendOperator();
         ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions()
                 .setMergeOperator(mergeOperator)
                 .setTableFormatConfig(blockBasedTableConfig)
                 .setMaxWriteBufferNumber(2)
-                .setWriteBufferSize(2 * SizeUnit.MB)
-                /*
-                .setCompactionStyle(CompactionStyle.UNIVERSAL)
-                .setCompressionType(CompressionType.SNAPPY_COMPRESSION)
-                */
-                ;
-        //columnFamilyOptions.setMemTableConfig(hashSkipListMemTableConfig);
+                .setWriteBufferSize(2 * SizeUnit.MB);
 
         List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
-        //List<ColumnFamilyDescriptor> familyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
-        //familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
 
         List<ColumnFamilyDescriptor> columnFamilyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
-        //fillMissingColumns(columnFamilyDescriptors, familyHandles, path);
         db = RocksDB.open(options, path, columnFamilyDescriptors, familyHandles);
         db.enableFileDeletions(true);
 
@@ -522,53 +434,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         for(i = 1; i < 5; i ++) {
             transactionGetList.add(familyHandles.get(i));
         }
-    }
-
-    @FunctionalInterface
-    private interface MyFunction<T, R> {
-        R apply(T t) throws Exception;
-    }
-
-    @FunctionalInterface
-    private interface IndexFunction<T> {
-        void apply(T t) throws Exception;
-    }
-
-    @FunctionalInterface
-    private interface DoubleFunction<T, I> {
-        void apply(T t, I i) throws Exception;
-    }
-
-    @FunctionalInterface
-    private interface MyRunnable<R> {
-        R run() throws Exception;
-    }
-    private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles, String path) throws Exception {
-        List<ColumnFamilyDescriptor> columnFamilies = RocksDB.listColumnFamilies(new Options().setCreateIfMissing(true), path)
-                .stream()
-                .map(b -> new ColumnFamilyDescriptor(b, new ColumnFamilyOptions()))
-                .collect(Collectors.toList());
-        columnFamilies.add(0, familyDescriptors.get(0));
-        List<ColumnFamilyDescriptor> missingFromDatabase = familyDescriptors.stream().filter(d -> columnFamilies.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
-        List<ColumnFamilyDescriptor> missingFromDescription = columnFamilies.stream().filter(d -> familyDescriptors.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
-        if (missingFromDatabase.size() != 0) {
-            missingFromDatabase.remove(familyDescriptors.get(0));
-            db = RocksDB.open(options, path, columnFamilies, familyHandles);
-            for (ColumnFamilyDescriptor description : missingFromDatabase) {
-                addColumnFamily(description.columnFamilyName(), db);
-            }
-            db.close();
-        }
-        if (missingFromDescription.size() != 0) {
-            missingFromDescription.forEach(familyDescriptors::add);
-        }
-    }
-
-    private void addColumnFamily(byte[] familyName, RocksDB db) throws RocksDBException {
-        final ColumnFamilyHandle columnFamilyHandle = db.createColumnFamily(
-                new ColumnFamilyDescriptor(familyName,
-                        new ColumnFamilyOptions()));
-        assert (columnFamilyHandle != null);
     }
 
 }

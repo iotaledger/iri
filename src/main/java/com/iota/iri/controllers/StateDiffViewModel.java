@@ -5,7 +5,6 @@ import com.iota.iri.model.StateDiff;
 import com.iota.iri.storage.Tangle;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 5/6/17.
@@ -31,10 +30,6 @@ public class StateDiffViewModel {
     StateDiffViewModel(final StateDiff diff, final Hash hash) {
         this.hash = hash;
         this.stateDiff = diff == null || diff.state == null ? new StateDiff(): diff;
-    }
-
-    public Hash getHash() {
-        return hash;
     }
 
     public Map<Hash, Long> getDiff() {

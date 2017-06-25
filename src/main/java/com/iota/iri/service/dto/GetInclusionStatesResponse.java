@@ -9,7 +9,8 @@ public class GetInclusionStatesResponse extends AbstractResponse {
 		res.states = inclusionStates;
 		return res;
 	}
-	
+
+	@SuppressWarnings("unused") // used in the API
 	public boolean[] getStates() {
 		return states;
 	}

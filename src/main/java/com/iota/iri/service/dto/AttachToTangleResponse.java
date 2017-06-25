@@ -11,7 +11,8 @@ public class AttachToTangleResponse extends AbstractResponse {
 		res.trytes = elements;
 		return res;
 	}
-	
+
+	@SuppressWarnings("unused") // used in the API
 	public List<String> getTrytes() {
 		return trytes;
 	}

@@ -21,11 +21,13 @@ public class GetBalancesResponse extends AbstractResponse {
 	public String getMilestone() {
 		return milestone;
 	}
-	
+
+	@SuppressWarnings("unused") // used in the API
 	public int getMilestoneIndex() {
 		return milestoneIndex;
 	}
-	
+
+	@SuppressWarnings("unused") // used in the API
 	public List<String> getBalances() {
 		return balances;
 	}

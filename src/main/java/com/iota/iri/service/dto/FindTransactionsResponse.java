@@ -11,7 +11,8 @@ public class FindTransactionsResponse extends AbstractResponse {
 		res.hashes = elements.toArray(new String[] {});
 		return res;
 	}
-	
+
+	@SuppressWarnings("unused") // used in the API
 	public String[] getHashes() {
 		return hashes;
 	}

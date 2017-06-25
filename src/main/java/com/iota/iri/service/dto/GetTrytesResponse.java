@@ -12,6 +12,7 @@ public class GetTrytesResponse extends AbstractResponse {
 		return res;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public String [] getTrytes() {
 		return trytes;
 	}

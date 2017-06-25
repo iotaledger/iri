@@ -12,6 +12,7 @@ public class IXIResponse extends AbstractResponse {
         return ixiResponse;
     }
 
+    @SuppressWarnings("unused") // used in the API
     public Object getResponse() {
         return ixi;
     }

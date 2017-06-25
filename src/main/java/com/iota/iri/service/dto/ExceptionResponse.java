@@ -10,6 +10,7 @@ public class ExceptionResponse extends AbstractResponse {
 		return res;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public String getException() {
 		return exception;
 	}

@@ -10,6 +10,7 @@ public class AddedNeighborsResponse extends AbstractResponse {
 		return res;
 	}
 
+	@SuppressWarnings("unused") // used in the API
 	public int getAddedNeighbors() {
 		return addedNeighbors;
 	}

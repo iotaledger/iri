@@ -26,6 +26,7 @@ public abstract class AbstractResponse {
         return EqualsBuilder.reflectionEquals(this, obj, false);
     }
 
+    @SuppressWarnings("unused") // used in the API
     public Integer getDuration() {
         return duration;
     }

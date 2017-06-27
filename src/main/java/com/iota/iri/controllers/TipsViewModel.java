@@ -42,7 +42,7 @@ public class TipsViewModel {
 
     public void setSolid(Hash tip) {
         synchronized (sync) {
-            if(!tips.remove(tip)) {
+            if(tips.remove(tip)) {
                 solidTips.add(tip);
             }
         }

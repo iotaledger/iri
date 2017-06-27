@@ -76,7 +76,7 @@ public class TipsManager {
                 tipsViewModel.removeTipHash(hash);
                 isTip = false;
             }
-            if(hash != null && transactionValidator.checkSolidity(hash, false) && isTip) {
+            if(hash != null  && isTip && transactionValidator.checkSolidity(hash, false)) {
                 //if(hash != null && TransactionViewModel.fromHash(hash).isSolid() && isTip) {
                 tipsViewModel.setSolid(hash);
             }

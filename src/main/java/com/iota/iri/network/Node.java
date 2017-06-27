@@ -74,6 +74,8 @@ public class Node {
     private double P_DROP_TRANSACTION;
     private static final SecureRandom rnd = new SecureRandom();
     private double P_SEND_MILESTONE;
+    private double P_REPLY_RANDOM_TIP;
+
 
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
     private LRUByteCache recentSeenBytes = new LRUByteCache(15000);
@@ -108,6 +110,7 @@ public class Node {
         P_DROP_TRANSACTION = configuration.doubling(Configuration.DefaultConfSettings.P_DROP_TRANSACTION.name());
         P_SELECT_MILESTONE = configuration.doubling(Configuration.DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name());
         P_SEND_MILESTONE = configuration.doubling(Configuration.DefaultConfSettings.P_SEND_MILESTONE.name());
+        P_REPLY_RANDOM_TIP = configuration.doubling(Configuration.DefaultConfSettings.P_REPLY_RANDOM_TIP.name());
 
         sendLimit = (long) ( (configuration.doubling(Configuration.DefaultConfSettings.SEND_LIMIT.name()) * 1000000) / (TRANSACTION_PACKET_SIZE * 8) );
 
@@ -414,7 +417,7 @@ public class Node {
         if (requestedHash.equals(Hash.NULL_HASH)) {
             //Random Tip Request
             try {
-                if (transactionRequester.numberOfTransactionsToRequest() > 0) {
+                if (transactionRequester.numberOfTransactionsToRequest() > 0 && rnd.nextDouble() < P_REPLY_RANDOM_TIP) {
                     neighbor.incRandomTransactionRequests();
                     transactionPointer = getRandomTipPointer();
                     transactionViewModel = TransactionViewModel.fromHash(tangle, transactionPointer);
@@ -452,10 +455,6 @@ public class Node {
 
     private Hash getRandomTipPointer() throws Exception {
         Hash tip = rnd.nextDouble() < P_SEND_MILESTONE? milestone.latestMilestone: tipsViewModel.getRandomSolidTipHash();
-        if (rnd.nextDouble() < 0.5) {
-            // for better compatibility with old mainnet nodes. Can be removed once all nodes are migrated.
-            tip = null;
-        }
         return tip == null ? Hash.NULL_HASH: tip;
     }
 

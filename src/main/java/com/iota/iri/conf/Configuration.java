@@ -43,6 +43,7 @@ public class Configuration {
         P_SELECT_MILESTONE_CHILD,
         P_SEND_MILESTONE,
         P_REPLY_RANDOM_TIP,
+        P_PROPAGATE_REQUEST,
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
         MAX_PEERS,
@@ -77,6 +78,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name(), "0.7");
         conf.put(DefaultConfSettings.P_SEND_MILESTONE.name(), "0.02");
         conf.put(DefaultConfSettings.P_REPLY_RANDOM_TIP.name(), "0.66");
+        conf.put(DefaultConfSettings.P_PROPAGATE_REQUEST.name(), "0.01");
         conf.put(DefaultConfSettings.MAIN_DB.name(), "rocksdb");
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");

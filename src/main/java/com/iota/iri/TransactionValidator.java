@@ -207,6 +207,9 @@ public class TransactionValidator {
         if(transactionViewModel.getApprovers(tangle).size() == 0) {
             tipsViewModel.addTipHash(transactionViewModel.getHash());
         }
+        tipsViewModel.removeTipHash(transactionViewModel.getTrunkTransactionHash());
+        tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
+
         if(quickSetSolid(transactionViewModel)) {
             addSolidTransaction(transactionViewModel.getHash());
         }

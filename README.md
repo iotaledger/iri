@@ -4,14 +4,8 @@ This is the testnet branch of the main IRI repository, as this is a IOTA referen
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](http://learn.iota.org/).
 
-* **Latest release:** 1.2.0 Testnet Release
+* **Latest release:** 1.2.0 Release
 * **License:** GPLv3
-
-# Purpose of this repository
-
-Because the IOTA Testnet runs under different condtions than the main network, we have had to create a specific client just for the testnet. For one, there is no `snapshot` with the original holder's balances (see below for how to get tokens), and for another we have lowered the `minWeightMagnitude` minimum from 18 to `15`. This means that doing Proof of Work in this environment is executed much faster.
-
-The IOTA Foundation will also utilize this testnet to thoroughly review and test more experimental features (automated snapshotting and IXI for example will be tested soon). As such, you shouldn't just treat the testnet as an environment where you can roam freely without having to worry, you should also see it as a testbed, for the core team to improve the protocols, libraries and tools.
 
 # How to get started
 

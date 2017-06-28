@@ -75,6 +75,8 @@ public class Node {
     private static final SecureRandom rnd = new SecureRandom();
     private double P_SEND_MILESTONE;
     private double P_REPLY_RANDOM_TIP;
+    private double P_PROPAGATE_REQUEST;
+
 
 
     private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
@@ -111,7 +113,7 @@ public class Node {
         P_SELECT_MILESTONE = configuration.doubling(Configuration.DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name());
         P_SEND_MILESTONE = configuration.doubling(Configuration.DefaultConfSettings.P_SEND_MILESTONE.name());
         P_REPLY_RANDOM_TIP = configuration.doubling(Configuration.DefaultConfSettings.P_REPLY_RANDOM_TIP.name());
-
+        P_PROPAGATE_REQUEST = configuration.doubling(Configuration.DefaultConfSettings.P_PROPAGATE_REQUEST.name());
         sendLimit = (long) ( (configuration.doubling(Configuration.DefaultConfSettings.SEND_LIMIT.name()) * 1000000) / (TRANSACTION_PACKET_SIZE * 8) );
 
         Arrays.stream(configuration.string(Configuration.DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
@@ -449,6 +451,16 @@ public class Node {
             }
         } else {
             //trytes not found
+            if (!requestedHash.equals(Hash.NULL_HASH) && rnd.nextDouble() < P_PROPAGATE_REQUEST) {
+                //request is an actual transaction and missing in request queue add it.
+                try {
+                    transactionRequester.requestTransaction(requestedHash,false);
+
+                } catch (Exception e) {
+                    log.error("Error adding transaction to request.", e);
+                }
+
+            }
         }
 
     }

@@ -4,7 +4,7 @@
   <groupId>com.iota</groupId>
   <artifactId>iri</artifactId>
   <name>IRI</name>
-  <version>1.2.1</version>
+  <version>1.2.2</version>
   <description>IOTA Reference Implementation</description>
   <scm>
     <connection>scm:git:git://github.com/iotaledger/iri.git</connection>

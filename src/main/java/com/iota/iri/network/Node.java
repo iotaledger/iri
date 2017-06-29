@@ -22,6 +22,8 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.utils.Converter;
+import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -70,6 +72,7 @@ public class Node {
     private final TransactionValidator transactionValidator;
     private final Milestone milestone;
     private final TransactionRequester transactionRequester;
+    private final MessageQ messageQ;
 
     private double P_DROP_TRANSACTION;
     private static final SecureRandom rnd = new SecureRandom();
@@ -95,7 +98,8 @@ public class Node {
                 final TransactionValidator transactionValidator,
                 final TransactionRequester transactionRequester,
                 final TipsViewModel tipsViewModel,
-                final Milestone milestone
+                final Milestone milestone,
+                final MessageQ messageQ
                 ) {
         this.configuration = configuration;
         this.tangle = tangle;
@@ -103,6 +107,7 @@ public class Node {
         this.transactionRequester = transactionRequester;
         this.tipsViewModel = tipsViewModel;
         this.milestone = milestone;
+        this.messageQ = messageQ;
     }
 
     public void init() throws Exception {
@@ -124,6 +129,7 @@ public class Node {
                     new UDPNeighbor(new InetSocketAddress(u.getHost(), u.getPort()), udpSocket,true))
                 .peek(u -> {
                 log.info("-> Adding neighbor : {} ", u.getAddress());
+                messageQ.publish("-> Adding Neighbor : %s",u.getAddress());
         }).forEach(neighbors::add);
 
         executor.submit(spawnBroadcasterThread());
@@ -160,6 +166,7 @@ public class Node {
                         final String hostname = n.getAddress().getHostName();
                         checkIp(hostname).ifPresent(ip -> {
                             log.info("DNS Checker: Validating DNS Address '{}' with '{}'", hostname, ip);
+                            messageQ.publish("dnscv %s %s", hostname, ip);
                             final String neighborAddress = neighborIpCache.get(hostname);
 
                             if (neighborAddress == null) {
@@ -167,8 +174,10 @@ public class Node {
                             } else {
                                 if (neighborAddress.equals(ip)) {
                                     log.info("{} seems fine.", hostname);
+                                    messageQ.publish("dnscc %s", hostname);
                                 } else {
                                     log.info("IP CHANGED for {}! Updating...", hostname);
+                                    messageQ.publish("dnscu %s", hostname);
                                     String protocol = (n instanceof TCPNeighbor) ? "tcp://" : "udp://";
                                     String port = ":" + n.getAddress().getPort();
 
@@ -273,6 +282,7 @@ public class Node {
 
                     if (((recentSeenBytesMissCount.get() + recentSeenBytesHitCount.get()) % 50000L == 0)) {
                         log.info("RecentSeenBytes cache hit/miss ratio: "+recentSeenBytesHitCount.get()+"/"+recentSeenBytesMissCount.get());
+                        messageQ.publish("hmr %d/%d",recentSeenBytesHitCount.get(), recentSeenBytesMissCount.get());
                         recentSeenBytesMissCount.set(0L);
                         recentSeenBytesHitCount.set(0L);
                     }
@@ -306,6 +316,7 @@ public class Node {
             String uriString = uriScheme + ":/" + senderAddress.toString();
             if (Neighbor.getNumPeers() < maxPeersAllowed) {
                 log.info("Adding non-tethered neighbor: " + uriString);
+                messageQ.publish("antn %s", uriString);
                 try {
                     final URI uri = new URI(uriString);
                     // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
@@ -329,7 +340,8 @@ public class Node {
                     rejectedAddresses.clear();
                 }
                 else if ( rejectedAddresses.add(uriString) ) {
-                    log.info("Refused non-tethered neighbor: " + uriString + 
+                    messageQ.publish("rntn %s %s", uriString,  String.valueOf(maxPeersAllowed));
+                    log.info("Refused non-tethered neighbor: " + uriString +
                         " (max-peers = "+ String.valueOf(maxPeersAllowed) + ")");
                 }
             }
@@ -382,6 +394,17 @@ public class Node {
             } else {
                 //if not, store tx. & update recentSeenHashes
                 stored = receivedTransactionViewModel.store(tangle);
+                messageQ.publish("tx %s %s %d %s %d %s %s %s %s",
+                        receivedTransactionViewModel.getHash(),
+                        receivedTransactionViewModel.getAddressHash(),
+                        receivedTransactionViewModel.value(),
+                        receivedTransactionViewModel.getTagValue(),
+                        receivedTransactionViewModel.getTimestamp(),
+                        receivedTransactionViewModel.getBundleHash(),
+                        receivedTransactionViewModel.getTrunkTransactionHash(),
+                        receivedTransactionViewModel.getBranchTransactionHash(),
+                        Converter.trytes(receivedTransactionViewModel.trits())
+                );
                 synchronized (recentSeenHashes) {
                     recentSeenHashes.set(receivedTransactionViewModel.getHash(), true);
                 }
@@ -531,6 +554,10 @@ public class Node {
                     long now = System.currentTimeMillis();
                     if ((now - lastTime) > 10000L) {
                         lastTime = now;
+                        messageQ.publish("RSTAT %d %d %d %d %d",
+                                getReceiveQueueSize(), getBroadcastQueueSize() ,
+                                transactionRequester.numberOfTransactionsToRequest() ,getReplyQueueSize(),
+                                TransactionViewModel.getNumberOfStoredTransactions(tangle));
                         log.info("toProcess = {} , toBroadcast = {} , toRequest = {} , toReply = {} / totalTransactions = {}",
                                 getReceiveQueueSize(), getBroadcastQueueSize() ,
                                 transactionRequester.numberOfTransactionsToRequest() ,getReplyQueueSize(),

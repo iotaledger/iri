@@ -3,6 +3,7 @@ package com.iota.iri;
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,14 +25,16 @@ public class LedgerValidator {
     private final Tangle tangle;
     private final Milestone milestone;
     private final TransactionRequester transactionRequester;
+    private final MessageQ messageQ;
     private volatile int numberOfConfirmedTransactions;
 
-    public LedgerValidator(Tangle tangle, final Snapshot latestSnapshot, Milestone milestone, TransactionRequester transactionRequester) {
+    public LedgerValidator(Tangle tangle, final Snapshot latestSnapshot, Milestone milestone, TransactionRequester transactionRequester, MessageQ messageQ) {
         this.tangle = tangle;
         this.milestone = milestone;
         this.transactionRequester = transactionRequester;
         stateSinceMilestone = new Snapshot(latestSnapshot);
         this.latestSnapshot = latestSnapshot;
+        this.messageQ = messageQ;
     }
 
     /**
@@ -156,6 +159,12 @@ public class LedgerValidator {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(tangle, hashPointer);
                 if(transactionViewModel2.snapshotIndex() == 0) {
                     transactionViewModel2.setSnapshot(tangle, index);
+                    messageQ.publish("%s %s %d sn", transactionViewModel2.getAddressHash(), transactionViewModel2.getHash(), index);
+                    messageQ.publish("sn %d %s %s %s %s %s", index, transactionViewModel2.getHash(),
+                            transactionViewModel2.getAddressHash(),
+                            transactionViewModel2.getTrunkTransactionHash(),
+                            transactionViewModel2.getBranchTransactionHash(),
+                            transactionViewModel2.getBundleHash());
                     nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
                 }

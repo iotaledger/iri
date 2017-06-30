@@ -90,9 +90,7 @@ public class Curl {
         }
     }
     public void reset() {
-        for (int stateIndex = 0; stateIndex < STATE_LENGTH; stateIndex++) {
-            state[stateIndex] = 0;
-        }
+        Arrays.fill(state, 0);
     }
     public void reset(boolean pair) {
         if(pair) {

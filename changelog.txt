@@ -1,3 +1,10 @@
+1.2.2
+    - fixed random tip requests
+    - added tests and cleaned some code
+
+1.2.1
+    - cleaner API messaging
+
 1.2.0
     - Mainnet release with MWM 15
     - Snapshot

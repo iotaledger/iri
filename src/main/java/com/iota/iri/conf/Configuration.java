@@ -42,6 +42,7 @@ public class Configuration {
         P_DROP_TRANSACTION,
         P_SELECT_MILESTONE_CHILD,
         P_SEND_MILESTONE,
+        P_REPLY_RANDOM_TIP,
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
         MAX_PEERS,
@@ -50,6 +51,7 @@ public class Configuration {
         RESCAN_DB,
         MAX_RANDOM_WALKS,
         MAX_FIND_TRANSACTIONS,
+        MAX_GET_TRYTES,
         MAX_DEPTH,
         MAINNET_MWM,
         TESTNET_MWM,
@@ -74,6 +76,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.0");
         conf.put(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name(), "0.7");
         conf.put(DefaultConfSettings.P_SEND_MILESTONE.name(), "0.02");
+        conf.put(DefaultConfSettings.P_REPLY_RANDOM_TIP.name(), "0.66");
         conf.put(DefaultConfSettings.MAIN_DB.name(), "rocksdb");
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
@@ -89,6 +92,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAX_DEPTH.name(), "15");
 
         conf.put(DefaultConfSettings.MAX_FIND_TRANSACTIONS.name(), "100000");
+        conf.put(DefaultConfSettings.MAX_GET_TRYTES.name(), "10000");
 
     }
 

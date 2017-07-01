@@ -179,7 +179,6 @@ public class IXI {
     private void executeEvents(Map.Entry<Path, List<WatchEvent.Kind>> pathListEntry) {
         try {
             if (Files.exists(pathListEntry.getKey(), NOFOLLOW_LINKS) && wasModifiedRecently(pathListEntry.getKey())) {
-                log.info("*********** ICH GEH RAUS");
                 return;
             }
         } catch (IOException e) {

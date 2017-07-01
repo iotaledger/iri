@@ -1,3 +1,7 @@
+1.2.3
+    - fixed IXI script reload
+    - added optional request propagation
+
 1.2.2
     - fixed random tip requests
     - added tests and cleaned some code

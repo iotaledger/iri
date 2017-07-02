@@ -153,7 +153,17 @@ public class TipsManager {
                 monteCarloIntegrations.put(tail,1);
             }
         }
-        return monteCarloIntegrations.entrySet().stream().reduce((a, b) -> a.getValue() > b.getValue() ? a : b).map(Map.Entry::getKey).orElse(null);
+        return monteCarloIntegrations.entrySet().stream().reduce((a, b) -> {
+            if (a.getValue() > b.getValue()) {
+                return a;
+            } else if (a.getValue() < b.getValue()) {
+                return b;
+            } else if (seed.nextBoolean()) {
+                return a;
+            } else {
+                return b;
+            }
+        }).map(Map.Entry::getKey).orElse(null);
     }
 
     Hash randomWalk(final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {

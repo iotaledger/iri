@@ -50,6 +50,7 @@ public class Configuration {
         COORDINATOR,
         REVALIDATE,
         RESCAN_DB,
+        MIN_RANDOM_WALKS,
         MAX_RANDOM_WALKS,
         MAX_FIND_TRANSACTIONS,
         MAX_GET_TRYTES,
@@ -89,6 +90,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.TESTNET_MWM.name(), "13");
 
         // Pick a number based on best performance
+        conf.put(DefaultConfSettings.MIN_RANDOM_WALKS.name(), "5");
         conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "27");
         // Pick a milestone depth number depending on risk model
         conf.put(DefaultConfSettings.MAX_DEPTH.name(), "15");

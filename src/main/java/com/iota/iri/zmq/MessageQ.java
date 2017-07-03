@@ -28,15 +28,6 @@ public class MessageQ {
         }
     }
 
-    public void enable() {
-        enabled = true;
-    }
-
-    public void disable() {
-        enabled = false;
-    }
-
-
     public void publish(String message, Object... objects) {
         if(enabled) {
             publisher.send(String.format(message, objects));

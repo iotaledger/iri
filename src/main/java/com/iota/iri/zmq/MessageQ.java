@@ -13,12 +13,18 @@ public class MessageQ {
     private final ZMQ.Socket publisher;
     private boolean enabled = false;
 
-    public MessageQ(int port, String ipc, int nthreads) {
-        context = ZMQ.context(nthreads);
-        publisher = context.socket(ZMQ.PUB);
-        publisher.bind(String.format("tcp://*:%d", port));
-        if(ipc != null) {
-            publisher.bind(ipc);
+    public MessageQ(int port, String ipc, int nthreads, boolean enabled) {
+        if(enabled) {
+            context = ZMQ.context(nthreads);
+            publisher = context.socket(ZMQ.PUB);
+            publisher.bind(String.format("tcp://*:%d", port));
+            if (ipc != null) {
+                publisher.bind(ipc);
+            }
+            this.enabled = true;
+        } else {
+            context = null;
+            publisher = null;
         }
     }
 

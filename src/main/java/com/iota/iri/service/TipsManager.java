@@ -257,11 +257,8 @@ public class TipsManager {
                 }
             }
             if(!addedBack && analyzedTips.add(currentHash)) {
-                long rating = 0;
-                if (transactionViewModel.isSolid() || true) {
-                    rating = ((extraTip != null && ledgerValidator.isApproved(currentHash))? 0: 1) + approvers.stream().map(ratings::get).filter(Objects::nonNull)
-                            .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L);
-                }
+                long rating = (extraTip != null && ledgerValidator.isApproved(currentHash)? 0: 1) + approvers.stream().map(ratings::get).filter(Objects::nonNull)
+                        .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L);
                 ratings.put(currentHash, rating);
             }
         }

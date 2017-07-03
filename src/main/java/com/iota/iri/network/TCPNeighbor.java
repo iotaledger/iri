@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -94,5 +95,16 @@ public class TCPNeighbor extends Neighbor {
 
     public ByteBuffer getNextMessage() throws InterruptedException {
         return (this.sendQueue.poll(10000, TimeUnit.MILLISECONDS));
+    }
+
+    @Override
+    public boolean matches(SocketAddress address) {
+        if (address.toString().contains(this.getHostAddress())) {
+            int port = this.getSource().getPort();
+            if (address.toString().contains(Integer.toString(port))) {
+                return true;
+            }
+        }
+        return false;
     }
 }

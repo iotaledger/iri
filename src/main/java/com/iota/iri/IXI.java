@@ -30,6 +30,7 @@ public class IXI {
     private final Map<String, Map<String, Runnable>> ixiLifetime = new HashMap<>();
     private final Map<WatchKey, Path> watchKeys = new HashMap<>();
     private final Map<Path, List<Path>> extensions = new HashMap<>();
+    private final Map<Path, Long> lastModifiedTimes = new HashMap<>();
     private final Set<Path> visitedPaths = new TreeSet<>();
     private WatchService watcher;
     private Thread dirWatchThread;
@@ -176,6 +177,13 @@ public class IXI {
 
     //private void executeEvents(WatchEvent.Kind kind, Path child) throws IOException, ScriptException {
     private void executeEvents(Map.Entry<Path, List<WatchEvent.Kind>> pathListEntry) {
+        try {
+            if (Files.exists(pathListEntry.getKey(), NOFOLLOW_LINKS) && wasModifiedRecently(pathListEntry.getKey())) {
+                return;
+            }
+        } catch (IOException e) {
+            log.error("Error checking last file modification time.");
+        }
         if(pathListEntry.getValue().contains(ENTRY_DELETE) || pathListEntry.getValue().contains(ENTRY_MODIFY)) {
             unloadExtension(pathListEntry.getKey());
         }
@@ -202,6 +210,17 @@ public class IXI {
                 log.debug("Done.");
             }
         }
+    }
+
+    private boolean wasModifiedRecently(Path path) throws IOException {
+        boolean modifiedRecently = false;
+        long lastModified = Files.getLastModifiedTime(path.toAbsolutePath(), NOFOLLOW_LINKS).toMillis();
+        if (lastModified - lastModifiedTimes.getOrDefault(path, 0L) < 50L) {
+            modifiedRecently = true;
+        } else {
+            lastModifiedTimes.put(path, lastModified);
+        }
+        return modifiedRecently;
     }
 
     private void attach(final Reader ixi, String name) throws ScriptException {

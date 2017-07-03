@@ -10,6 +10,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.zmq.MessageQ;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -49,11 +50,12 @@ public class TipsManagerTest {
         tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath()));
         tangle.init();
         TipsViewModel tipsViewModel = new TipsViewModel();
-        TransactionRequester transactionRequester = new TransactionRequester(tangle);
-        TransactionValidator transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester);
-        Milestone milestone = new Milestone(tangle, Hash.NULL_HASH, transactionValidator, true);
-        LedgerValidator ledgerValidator = new LedgerValidator(tangle, new Snapshot(Snapshot.initialSnapshot), milestone, transactionRequester);
-        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, 15);
+        MessageQ messageQ = new MessageQ(0, null, 1, false);
+        TransactionRequester transactionRequester = new TransactionRequester(tangle, messageQ);
+        TransactionValidator transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
+        Milestone milestone = new Milestone(tangle, Hash.NULL_HASH, transactionValidator, true, messageQ);
+        LedgerValidator ledgerValidator = new LedgerValidator(tangle, new Snapshot(Snapshot.initialSnapshot), milestone, transactionRequester, messageQ);
+        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, 15, messageQ);
     }
 
     @AfterClass

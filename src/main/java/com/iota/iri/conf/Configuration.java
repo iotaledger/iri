@@ -43,18 +43,24 @@ public class Configuration {
         P_SELECT_MILESTONE_CHILD,
         P_SEND_MILESTONE,
         P_REPLY_RANDOM_TIP,
+        P_PROPAGATE_REQUEST,
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
         MAX_PEERS,
         COORDINATOR,
         REVALIDATE,
         RESCAN_DB,
+        MIN_RANDOM_WALKS,
         MAX_RANDOM_WALKS,
         MAX_FIND_TRANSACTIONS,
         MAX_GET_TRYTES,
         MAX_DEPTH,
         MAINNET_MWM,
         TESTNET_MWM,
+        ZMQ_ENABLED,
+        ZMQ_PORT,
+        ZMQ_IPC,
+        ZMQ_THREADS,
     }
 
     {
@@ -77,6 +83,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name(), "0.7");
         conf.put(DefaultConfSettings.P_SEND_MILESTONE.name(), "0.02");
         conf.put(DefaultConfSettings.P_REPLY_RANDOM_TIP.name(), "0.66");
+        conf.put(DefaultConfSettings.P_PROPAGATE_REQUEST.name(), "0.01");
         conf.put(DefaultConfSettings.MAIN_DB.name(), "rocksdb");
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
@@ -87,12 +94,17 @@ public class Configuration {
         conf.put(DefaultConfSettings.TESTNET_MWM.name(), "13");
 
         // Pick a number based on best performance
+        conf.put(DefaultConfSettings.MIN_RANDOM_WALKS.name(), "5");
         conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "27");
         // Pick a milestone depth number depending on risk model
         conf.put(DefaultConfSettings.MAX_DEPTH.name(), "15");
 
         conf.put(DefaultConfSettings.MAX_FIND_TRANSACTIONS.name(), "100000");
         conf.put(DefaultConfSettings.MAX_GET_TRYTES.name(), "10000");
+        conf.put(DefaultConfSettings.ZMQ_ENABLED.name(), "false");
+        conf.put(DefaultConfSettings.ZMQ_PORT.name(), "5556");
+        conf.put(DefaultConfSettings.ZMQ_IPC.name(), "ipc://iri");
+        conf.put(DefaultConfSettings.ZMQ_THREADS.name(), "2");
 
     }
 

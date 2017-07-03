@@ -227,8 +227,7 @@ public class Node {
 
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
-
-            if (neighbor.matches(senderAddress)) addressMatch = true;
+            addressMatch = neighbor.matches(senderAddress);
             if (addressMatch) {
                 //Validate transaction
                 neighbor.incAllTransactions();

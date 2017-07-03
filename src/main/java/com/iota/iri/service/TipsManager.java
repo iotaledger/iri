@@ -115,7 +115,7 @@ public class TipsManager {
                 Hash tip = entryPoint(reference, extraTip, msDepth);
                 serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
-                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, milestone.latestMilestoneIndex-depth*2, maxDepthOk, seed);
+                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex-depth*2, maxDepthOk, seed);
             } catch (Exception e) {
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());
@@ -204,11 +204,11 @@ public class TipsManager {
                 //} else if (!transactionViewModel.isSolid()) {
                 log.info("Reason to stop: !checkSolidity");
                 break;
-                /*
-            } else if (belowMaxDepth(tip, maxDepth, maxDepthOk)) {
+
+            } else if (belowMaxDepth(transactionViewModel.getHash(), maxDepth, maxDepthOk)) {
                 log.info("Reason to stop: belowMaxDepth");
                 break;
-                */
+
             } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
                 log.info("Reason to stop: !LedgerValidator");
                 break;

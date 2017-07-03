@@ -6,16 +6,24 @@ import java.nio.ByteBuffer;
  * Created by paul on 3/13/17 for iri-testnet.
  */
 public class Serializer {
-    public static byte[] serialize(Long value) {
-        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
-        buffer.putLong(value);
-        return buffer.array();
+    public static byte[] serialize(long value) {
+    	byte[] result = new byte[Long.BYTES];
+        for (int i = Long.BYTES - 1; i >= 0; i--) {
+            result[i] = (byte)(value & 0xFF);
+            value >>= 8;
+        }
+        return result;
     }
+    
     public static byte[] serialize(int integer) {
-        ByteBuffer buffer = ByteBuffer.allocate(Integer.BYTES);
-        buffer.putInt(integer);
-        return buffer.array();
+    	byte[] result = new byte[Integer.BYTES];
+        for (int i = Integer.BYTES - 1; i >= 0; i--) {
+            result[i] = (byte)(integer & 0xFF);
+            integer >>= 8;
+        }
+        return result;
     }
+    
     public static long getLong(byte[] bytes) {
         return getLong(bytes, 0);
     }

@@ -229,9 +229,19 @@ public class Node {
         for (final Neighbor neighbor : getNeighbors()) {
 
             if (neighbor instanceof TCPNeighbor) {
-                if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
+                if (senderAddress.toString().contains(neighbor.getHostAddress())) {
+                    int port = ((TCPNeighbor) neighbor).getSource().getPort();
+                    if (senderAddress.toString().contains(Integer.toString(port))) {
+                        addressMatch = true;
+                    }
+                }
             } else {
-                if (neighbor.getAddress().toString().contains(senderAddress.toString())) addressMatch = true;
+                if (neighbor.getAddress().toString().contains(senderAddress.toString())) {
+                    int port = neighbor.getAddress().getPort();
+                    if (senderAddress.toString().contains(Integer.toString(port))) {
+                        addressMatch = true;
+                    }
+                }
             }
             if (addressMatch) {
                 //Validate transaction

@@ -115,7 +115,9 @@ public class TipsViewModel {
     public void loadTipHashes(Tangle tangle) throws Exception {
         Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
         if(hashes != null) {
-            tips.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
+            for (Indexable h: hashes) {
+                tips.add((Hash) h);
+            }
         }
     }
 

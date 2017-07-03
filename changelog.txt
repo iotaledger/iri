@@ -1,3 +1,8 @@
+1.2.4
+    - optimized tip selection - added maxDepth
+    - match address and *ports* of TCP/UDP neighbors
+    - load tips on IRI start-up
+
 1.2.3
     - fixed IXI script reload
     - added optional request propagation

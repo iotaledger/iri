@@ -99,9 +99,9 @@ public class TCPNeighbor extends Neighbor {
 
     @Override
     public boolean matches(SocketAddress address) {
-            if (address.toString().contains(this.getHostAddress())) {
-                int port = this.getSource().getPort();
-                if (address.toString().contains(Integer.toString(port))) {
+        if (address.toString().contains(this.getHostAddress())) {
+            int port = this.getSource().getPort();
+            if (address.toString().contains(Integer.toString(port))) {
                     return true;
             }
         }

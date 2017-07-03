@@ -2,6 +2,7 @@ package com.iota.iri.network;
 
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public abstract class Neighbor {
@@ -49,6 +50,7 @@ public abstract class Neighbor {
     public abstract void send(final DatagramPacket packet);
     public abstract int getPort();
     public abstract String connectionType();
+    public abstract boolean matches(SocketAddress address);
 
     @Override
     public boolean equals(final Object obj) {

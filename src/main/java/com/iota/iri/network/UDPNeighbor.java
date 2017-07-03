@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 /**
  * Created by paul on 4/15/17.
@@ -40,4 +41,16 @@ public class UDPNeighbor extends Neighbor {
     public String connectionType() {
         return "udp";
     }
+
+    @Override
+    public boolean matches(SocketAddress address) {
+        if (this.getAddress().toString().contains(address.toString())) {
+            int port = this.getAddress().getPort();
+            if (address.toString().contains(Integer.toString(port))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 }

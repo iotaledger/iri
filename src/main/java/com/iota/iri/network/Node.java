@@ -228,11 +228,7 @@ public class Node {
         boolean addressMatch = false;
         for (final Neighbor neighbor : getNeighbors()) {
 
-            if (neighbor instanceof TCPNeighbor) {
-                if (senderAddress.toString().contains(neighbor.getHostAddress())) addressMatch = true;
-            } else {
-                if (neighbor.getAddress().toString().contains(senderAddress.toString())) addressMatch = true;
-            }
+            if (neighbor.matches(senderAddress)) addressMatch = true;
             if (addressMatch) {
                 //Validate transaction
                 neighbor.incAllTransactions();

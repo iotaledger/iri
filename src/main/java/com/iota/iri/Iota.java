@@ -73,6 +73,9 @@ public class Iota {
                 configuration.string(Configuration.DefaultConfSettings.ZMQ_IPC),
                 configuration.integer(Configuration.DefaultConfSettings.ZMQ_THREADS)
                 );
+        if(configuration.booling(Configuration.DefaultConfSettings.ZMQ_ENABLED)) {
+            messageQ.enable();
+        }
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);

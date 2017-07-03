@@ -5,8 +5,8 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
+import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Converter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +25,7 @@ public class TransactionValidator {
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
+    private final MessageQ messageQ;
     private int MIN_WEIGHT_MAGNITUDE = 81;
 
     private Thread newSolidThread;
@@ -35,10 +36,11 @@ public class TransactionValidator {
     private final Set<Hash> newSolidTransactionsOne = new LinkedHashSet<>();
     private final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
 
-    public TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
+    public TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, MessageQ messageQ) {
         this.tangle = tangle;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
+        this.messageQ = messageQ;
     }
 
     public void init(boolean testnet,int MAINNET_MWM, int TESTNET_MWM) {

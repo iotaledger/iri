@@ -82,8 +82,8 @@ public class Node {
 
 
 
-    private LRUHashCache recentSeenHashes = new LRUHashCache(5000);
-    private LRUByteCache recentSeenBytes = new LRUByteCache(15000);
+    private final LRUHashCache recentSeenHashes = new LRUHashCache(5000);
+    private final LRUByteCache recentSeenBytes = new LRUByteCache(15000);
 
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
     private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);
@@ -391,16 +391,17 @@ public class Node {
             } else {
                 //if not, store tx. & update recentSeenHashes
                 stored = receivedTransactionViewModel.store(tangle);
-                messageQ.publish("tx %s %s %d %s %d %s %s %s %s",
+                messageQ.publish("tx %s %s %d %s %d %d %d %s %s %s",
                         receivedTransactionViewModel.getHash(),
                         receivedTransactionViewModel.getAddressHash(),
                         receivedTransactionViewModel.value(),
                         receivedTransactionViewModel.getTagValue(),
                         receivedTransactionViewModel.getTimestamp(),
+                        receivedTransactionViewModel.getCurrentIndex(),
+                        receivedTransactionViewModel.lastIndex(),
                         receivedTransactionViewModel.getBundleHash(),
                         receivedTransactionViewModel.getTrunkTransactionHash(),
-                        receivedTransactionViewModel.getBranchTransactionHash(),
-                        Converter.trytes(receivedTransactionViewModel.trits())
+                        receivedTransactionViewModel.getBranchTransactionHash()
                 );
                 synchronized (recentSeenHashes) {
                     recentSeenHashes.set(receivedTransactionViewModel.getHash(), true);

@@ -102,7 +102,7 @@ public class TCPNeighbor extends Neighbor {
         if (address.toString().contains(this.getHostAddress())) {
             int port = this.getSource().getPort();
             if (address.toString().contains(Integer.toString(port))) {
-                    return true;
+                return true;
             }
         }
         return false;

@@ -11,6 +11,7 @@ import java.util.Objects;
 public class MessageQ {
     private final ZMQ.Context context;
     private final ZMQ.Socket publisher;
+    private boolean enabled = false;
 
     public MessageQ(int port, String ipc, int nthreads) {
         context = ZMQ.context(nthreads);
@@ -21,8 +22,19 @@ public class MessageQ {
         }
     }
 
+    public void enable() {
+        enabled = true;
+    }
+
+    public void disable() {
+        enabled = false;
+    }
+
+
     public void publish(String message, Object... objects) {
-        publisher.send(String.format(message, objects));
+        if(enabled) {
+            publisher.send(String.format(message, objects));
+        }
     }
 
     public void shutdown () {

@@ -50,7 +50,7 @@ public class TipsManagerTest {
         tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath()));
         tangle.init();
         TipsViewModel tipsViewModel = new TipsViewModel();
-        MessageQ messageQ = new MessageQ(0, null, 1);
+        MessageQ messageQ = new MessageQ(0, null, 1, false);
         TransactionRequester transactionRequester = new TransactionRequester(tangle, messageQ);
         TransactionValidator transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
         Milestone milestone = new Milestone(tangle, Hash.NULL_HASH, transactionValidator, true, messageQ);

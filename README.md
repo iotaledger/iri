@@ -1,38 +1,38 @@
 ## IOTA
 
-This is the testnet branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for the testnet we have setup. It is a complete [[IOTA]](http://iota.org/) Node with a JSON-REST HTTP interface.
+This is the main IRI repository, for both the mainnet and testnet. It is a complete [[IOTA]](http://iota.org/) Node with a JSON-REST HTTP interface.
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](http://learn.iota.org/).
 
-* **Latest release:** 1.2.0 Release
+* **Latest release:** 1.2.4 Release
 * **License:** GPLv3
 
 # How to get started
 
-Obviously, because this is its own, independent network, you have to go through the same process as in the main network: **find neighbors**. You can find neighbors in the `#testnet` Slack channel[[Slack Invite]](http://slack.iota.org), or on our forum. Community members are usually very happy to help you out and get you connected. If you want to get tokens for your testcase, please just ask in one of the communication channels as well.
+To get started, you need to find neighbors. You can find neighbors in the `#nodesharing` or `#testnet-nodesharing` Slack channels [[Slack Invite]](http://slack.iota.org), or on our forum. Community members are usually very happy to help you out and get you connected. If you want to get tokens for your testcase, please just ask in one of the communication channels as well.
 
 ## Reporting Issues
 
-If you notice any issues or irregularities in this release. Please make sure to submit an issue on github.
+If you notice any issues or irregularities in this release, please make sure to submit an issue on github.
 
 
 # Installing
 
-You have two options, the preferred option is that you compile yourself. The second option is that you utilize the provided jar, which is released regularly (when new updates occur) here: [Github Releases](https://github.com/iotaledger/iri/releases). Make sure to utilize the `testnet` versions!
+You have two options, the preferred option is that you compile yourself. The second option is that you utilize the provided jar, which is released regularly (when new updates occur) here: [Github Releases](https://github.com/iotaledger/iri/releases). 
 
 
 ### Compiling yourself  
 
-Make sure to have Maven and Java 8 installed on your computer. When cloning the project from github, also make sure to get the `testnet` branch.
+Make sure to have Maven and Java 8 installed on your computer. When cloning the project from github, use the `master` branch for stable code and the `dev` branch for cutting edge features. 
 
 #### To compile & package
 ```
-$ git clone https://github.com/iotaledger/iri -b testnet
+$ git clone https://github.com/iotaledger/iri
 $ mvn clean compile
 $ mvn package
 ```
 
-This will create a `target` directory in which you will find the executable jar file that you can use for the 
+This will create a `target` directory in which you will find the executable jar file. 
 
 ### How to run IRI 
 
@@ -70,6 +70,6 @@ NEIGHBORS = udp://my.favorite.com:15600
 IXI_DIR = ixi
 HEADLESS = true
 DEBUG = true
-TESTNET = true
+TESTNET = false
 DB_PATH = db
 ```

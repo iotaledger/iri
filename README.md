@@ -1,6 +1,6 @@
 ## IOTA
 
-This is the branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for the we have setup. It is a complete [[IOTA]](http://iota.org/) Node with a JSON-REST HTTP interface.
+This is the main branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for the we have setup. It is a complete [[IOTA]](http://iota.org/) Node with a JSON-REST HTTP interface.
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](http://learn.iota.org/).
 

@@ -94,6 +94,7 @@ public class API {
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
 
+    private final int minRandomWalks;
     private final int maxRandomWalks;
     private final int maxFindTxs;
     private final int maxGetTrytes;
@@ -105,6 +106,7 @@ public class API {
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
         this.ixi = ixi;
+        minRandomWalks = instance.configuration.integer(DefaultConfSettings.MIN_RANDOM_WALKS);
         maxRandomWalks = instance.configuration.integer(DefaultConfSettings.MAX_RANDOM_WALKS);
         maxFindTxs = instance.configuration.integer(DefaultConfSettings.MAX_FIND_TRANSACTIONS);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
@@ -306,7 +308,10 @@ public class API {
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
                     final Object numWalksObj = request.get("numWalks");
-                    final int numWalks = numWalksObj == null? 1 : ((Double) numWalksObj).intValue();
+                    int numWalks = numWalksObj == null? 1 : ((Double) numWalksObj).intValue();
+                    if(numWalks < minRandomWalks) {
+                        numWalks = minRandomWalks;
+                    }
                     final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
                     if(tips == null) {
                         return ErrorResponse.create("The subtangle is not solid");

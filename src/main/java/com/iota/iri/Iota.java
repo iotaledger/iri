@@ -7,9 +7,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.network.replicator.ReplicatorSinkPool;
-import com.iota.iri.network.replicator.ReplicatorSourcePool;
-import com.iota.iri.service.API;
+import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.storage.FileExportProvider;
 import com.iota.iri.storage.Indexable;
@@ -45,6 +43,7 @@ public class Iota {
     public final Configuration configuration;
     public final Hash coordinator;
     public final TipsViewModel tipsViewModel;
+    public final MessageQ messageQ;
 
     public final boolean testnet;
     public final int maxPeers;
@@ -70,16 +69,21 @@ public class Iota {
             coordinator = MAINNET_COORDINATOR;
         }
         tangle = new Tangle();
+        messageQ = new MessageQ(configuration.integer(Configuration.DefaultConfSettings.ZMQ_PORT),
+                configuration.string(Configuration.DefaultConfSettings.ZMQ_IPC),
+                configuration.integer(Configuration.DefaultConfSettings.ZMQ_THREADS),
+                configuration.booling(Configuration.DefaultConfSettings.ZMQ_ENABLED)
+                );
         tipsViewModel = new TipsViewModel();
-        transactionRequester = new TransactionRequester(tangle);
-        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester);
+        transactionRequester = new TransactionRequester(tangle, messageQ);
+        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
         latestSnapshot = new Snapshot(Snapshot.initialSnapshot);
-        milestone =  new Milestone(tangle, coordinator, transactionValidator, testnet);
-        node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone);
+        milestone =  new Milestone(tangle, coordinator, transactionValidator, testnet, messageQ);
+        node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
         replicator = new Replicator(node, tcpPort, maxPeers, testnet);
         udpReceiver = new UDPReceiver(udpPort, node);
-        ledgerValidator = new LedgerValidator(tangle, latestSnapshot, milestone, transactionRequester);
-        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth);
+        ledgerValidator = new LedgerValidator(tangle, latestSnapshot, milestone, transactionRequester, messageQ);
+        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth, messageQ);
     }
 
     public void init() throws Exception {

@@ -41,6 +41,7 @@ public class IXI {
     private final Map<String, Map<String, CallableRequest<AbstractResponse>>> ixiAPI = new HashMap<>();
     private final Map<String, Map<String, Runnable>> ixiLifetime = new HashMap<>();
     private final Map<WatchKey, Path> watchKeys = new HashMap<>();
+    private final Map<Path, Long> loadedLastTime = new HashMap<>();
 
     private WatchService watcher;
     private Thread dirWatchThread;
@@ -134,10 +135,14 @@ public class IXI {
                 }
                 break;
             case MODIFY_MODULE:
-                if (ixiLifetime.containsKey(getModuleName(changedPath, true))) {
-                    unloadModule(changedPath);
+                Long lastModification = loadedLastTime.get(getRealPath(changedPath));
+                if (lastModification == null || Instant.now().toEpochMilli() - lastModification > 50L) {
+                    if (ixiLifetime.containsKey(getModuleName(changedPath, true))) {
+                        unloadModule(changedPath);
+                    }
+                    loadedLastTime.put(getRealPath(changedPath), Instant.now().toEpochMilli());
+                    loadModule(getRealPath(changedPath));
                 }
-                loadModule(changedPath);
                 break;
             case DELETE_MODULE:
                 Path realPath = getRealPath(changedPath);

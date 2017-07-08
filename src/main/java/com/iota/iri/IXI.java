@@ -6,6 +6,7 @@ import com.iota.iri.hash.ISS;
 import com.iota.iri.service.CallableRequest;
 import com.iota.iri.service.dto.AbstractResponse;
 import com.sun.nio.file.SensitivityWatchEventModifier;
+import org.codehaus.plexus.util.Os;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +41,6 @@ public class IXI {
     private final Map<String, Map<String, CallableRequest<AbstractResponse>>> ixiAPI = new HashMap<>();
     private final Map<String, Map<String, Runnable>> ixiLifetime = new HashMap<>();
     private final Map<WatchKey, Path> watchKeys = new HashMap<>();
-    private final Set<Path> watchedDirs = new HashSet<>();
 
     private WatchService watcher;
     private Thread dirWatchThread;
@@ -128,10 +128,10 @@ public class IXI {
     private void handlePathEvent(IxiEvent ixiEvent, Path changedPath) {
         switch(ixiEvent) {
             case CREATE_MODULE:
-/*
-                watch(changedPath);
-                loadModule(changedPath);
-*/
+                if (checkOs() == OsVariants.Unix) {
+                    watch(changedPath);
+                    loadModule(changedPath);
+                }
                 break;
             case MODIFY_MODULE:
                 if (ixiLifetime.containsKey(getModuleName(changedPath, true))) {
@@ -150,11 +150,19 @@ public class IXI {
         }
     }
 
+    private static OsVariants checkOs() {
+        String os = System.getProperty("os.name");
+        if (os.startsWith("Windows")) {
+            return OsVariants.Windows;
+        } else {
+            return OsVariants.Unix;
+        }
+    }
+
     private void watch(Path dir) {
         try {
             WatchKey watchKey = dir.register(watcher, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY}, SensitivityWatchEventModifier.HIGH);
             watchKeys.put(watchKey, dir);
-            watchedDirs.add(dir);
         } catch (IOException e) {
             log.error("Could not create watcher for path '" + dir + "'.");
         }
@@ -165,7 +173,6 @@ public class IXI {
         Optional<WatchKey> dirKey = watchKeys.keySet().stream().filter(watchKey -> watchKeys.get(watchKey).equals(dir)).findFirst();
         if (dirKey.isPresent()) {
             watchKeys.remove(dirKey.get());
-            watchedDirs.remove(dir);
             dirKey.get().cancel();
         }
     }

@@ -2,12 +2,12 @@ package com.iota.iri.service;
 
 import java.util.*;
 
-import com.iota.iri.Iota;
 import com.iota.iri.LedgerValidator;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.*;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,6 +21,7 @@ public class TipsManager {
     private final Milestone milestone;
     private final LedgerValidator ledgerValidator;
     private final TransactionValidator transactionValidator;
+    private final MessageQ messageQ;
 
     private int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
@@ -39,13 +40,15 @@ public class TipsManager {
                        final TransactionValidator transactionValidator,
                        final TipsViewModel tipsViewModel,
                        final Milestone milestone,
-                       final int maxDepth) {
+                       final int maxDepth,
+                       final MessageQ messageQ) {
         this.tangle = tangle;
         this.ledgerValidator = ledgerValidator;
         this.transactionValidator = transactionValidator;
         this.tipsViewModel = tipsViewModel;
         this.milestone = milestone;
         this.maxDepth = maxDepth;
+        this.messageQ = messageQ;
     }
 
     public void init() {
@@ -115,7 +118,7 @@ public class TipsManager {
                 Hash tip = entryPoint(reference, extraTip, msDepth);
                 serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
-                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, milestone.latestMilestoneIndex-depth*2, maxDepthOk, seed);
+                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex-depth*2, maxDepthOk, seed);
             } catch (Exception e) {
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());
@@ -180,6 +183,7 @@ public class TipsManager {
             tips = tipSet.toArray(new Hash[tipSet.size()]);
             if (tips.length == 0) {
                 log.info("Reason to stop: TransactionViewModel is a tip");
+                messageQ.publish("rtst %s", tip);
                 break;
             }
             if (!ratings.containsKey(tip)) {
@@ -199,24 +203,29 @@ public class TipsManager {
             transactionViewModel = TransactionViewModel.fromHash(tangle, tips[approverIndex]);
             if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                 log.info("Reason to stop: transactionViewModel == null");
+                messageQ.publish("rtsn %s", tips[approverIndex]);
                 break;
             } else if (!transactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
                 //} else if (!transactionViewModel.isSolid()) {
                 log.info("Reason to stop: !checkSolidity");
+                messageQ.publish("rtss %s", tips[approverIndex]);
                 break;
-                /*
-            } else if (belowMaxDepth(tip, maxDepth, maxDepthOk)) {
+
+            } else if (belowMaxDepth(transactionViewModel.getHash(), maxDepth, maxDepthOk)) {
                 log.info("Reason to stop: belowMaxDepth");
                 break;
-                */
+
             } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
                 log.info("Reason to stop: !LedgerValidator");
+                messageQ.publish("rtsv %s", tips[approverIndex]);
                 break;
             } else if (transactionViewModel.getHash().equals(extraTip)) {
                 log.info("Reason to stop: transactionViewModel==extraTip");
+                messageQ.publish("rtsd %s", tips[approverIndex]);
                 break;
             } else if (transactionViewModel.getHash().equals(tip)) {
                 log.info("Reason to stop: transactionViewModel==itself");
+                messageQ.publish("rtsl %s", tips[approverIndex]);
                 break;
             } else {
                 traversedTails++;
@@ -227,6 +236,7 @@ public class TipsManager {
             }
         }
         log.info("Tx traversed to find tip: " + traversedTails);
+        messageQ.publish("mctn %d", traversedTails);
         return tail;
     }
 

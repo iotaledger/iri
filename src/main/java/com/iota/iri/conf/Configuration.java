@@ -57,6 +57,10 @@ public class Configuration {
         MAX_DEPTH,
         MAINNET_MWM,
         TESTNET_MWM,
+        ZMQ_ENABLED,
+        ZMQ_PORT,
+        ZMQ_IPC,
+        ZMQ_THREADS,
     }
 
     {
@@ -97,6 +101,10 @@ public class Configuration {
 
         conf.put(DefaultConfSettings.MAX_FIND_TRANSACTIONS.name(), "100000");
         conf.put(DefaultConfSettings.MAX_GET_TRYTES.name(), "10000");
+        conf.put(DefaultConfSettings.ZMQ_ENABLED.name(), "false");
+        conf.put(DefaultConfSettings.ZMQ_PORT.name(), "5556");
+        conf.put(DefaultConfSettings.ZMQ_IPC.name(), "ipc://iri");
+        conf.put(DefaultConfSettings.ZMQ_THREADS.name(), "2");
 
     }
 

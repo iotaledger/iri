@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.4</version>
 
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
@@ -141,6 +141,12 @@
     <groupId>org.ini4j</groupId>
     <artifactId>ini4j</artifactId>
     <version>0.5.4</version>
+</dependency>
+
+<dependency>
+  <groupId>org.zeromq</groupId>
+  <artifactId>jeromq</artifactId>
+  <version>0.4.0</version>
 </dependency>
 </dependencies>
 

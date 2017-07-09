@@ -8,7 +8,6 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.zmq.MessageQ;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -39,9 +38,8 @@ public class TransactionValidatorTest {
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath()));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
-    MessageQ messageQ = new MessageQ(0, "", 0, false);
-    TransactionRequester txRequester = new TransactionRequester(tangle, messageQ);
-    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ);
+    TransactionRequester txRequester = new TransactionRequester(tangle);
+    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester);
     txValidator.init(false, MAINNET_MWM, TESTNET_MWM);
   }
 

@@ -87,7 +87,7 @@ public class IXI {
         while(!shutdown) {
             WatchKey key = null;
             try {
-                key = watcher.take();
+                key = watcher.poll(1000, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 log.error("Watcher interrupted: ", e);
             }
@@ -130,8 +130,8 @@ public class IXI {
         switch(ixiEvent) {
             case CREATE_MODULE:
                 if (checkOs() == OsVariants.Unix) {
-                    watch(changedPath);
-                    loadModule(changedPath);
+                    watch(getRealPath(changedPath));
+                    loadModule(getRealPath(changedPath));
                 }
                 break;
             case MODIFY_MODULE:

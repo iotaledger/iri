@@ -60,6 +60,13 @@ public class Milestone {
     private boolean shuttingDown;
     private static int RESCAN_INTERVAL = 5000;
 
+    private enum MilestoneValidation {
+        VALID,
+        SIGNATURE_INVALID,
+        BUNDLE_INVALID,
+        TAIL_BRANCH_INVALID,
+    }
+
     public void init(final LedgerValidator ledgerValidator, final boolean revalidate) {
         this.ledgerValidator = ledgerValidator;
         (new Thread(() -> {
@@ -132,24 +139,25 @@ public class Milestone {
         }
     }
 
-    private boolean validateMilestone(TransactionViewModel transactionViewModel, int index) throws Exception {
+    private MilestoneValidation validateMilestone(TransactionViewModel transactionViewModel, int index) throws Exception {
 
         if (MilestoneViewModel.get(tangle, index) != null) {
             // Already validated.
-            return true;
+            return MilestoneValidation.VALID;
         }
         final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getBundleHash());
         if (bundleTransactions.size() == 0) {
-            return false;
+            return MilestoneValidation.BUNDLE_INVALID;
         }
         else {
             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
-                //if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(),transactionViewModel.getHash())) {
                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
 
-                    //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
                     final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction(tangle);
+                    if(!transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
+                        return MilestoneValidation.TAIL_BRANCH_INVALID;
+                    }
                     if (transactionViewModel2.getType() == TransactionViewModel.FILLED_SLOT
                             && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
 
@@ -163,13 +171,13 @@ public class Milestone {
                                 transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
                         if (testnet || (new Hash(merkleRoot)).equals(coordinator)) {
                             new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
-                            return true;
+                            return MilestoneValidation.VALID;
                         }
                     }
                 }
             }
         }
-        return false;
+        return MilestoneValidation.SIGNATURE_INVALID;
     }
 
     void updateLatestSolidSubtangleMilestone() throws Exception {
@@ -206,7 +214,7 @@ public class Milestone {
                 .filter(t -> t.getCurrentIndex() == 0)
                 .forEach(t -> {
                     try {
-                        if(!validateMilestone(t, getIndex(t))) {
+                        if(validateMilestone(t, getIndex(t)) != MilestoneValidation.VALID) {
                             analyzedMilestoneCandidates.remove(t.getHash());
                         }
                     } catch (Exception e) {

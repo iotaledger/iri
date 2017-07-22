@@ -562,7 +562,7 @@ public class Node {
                     long now = System.currentTimeMillis();
                     if ((now - lastTime) > 10000L) {
                         lastTime = now;
-                        messageQ.publish("RSTAT %d %d %d %d %d",
+                        messageQ.publish("rstat %d %d %d %d %d",
                                 getReceiveQueueSize(), getBroadcastQueueSize() ,
                                 transactionRequester.numberOfTransactionsToRequest() ,getReplyQueueSize(),
                                 TransactionViewModel.getNumberOfStoredTransactions(tangle));

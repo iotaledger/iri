@@ -1,6 +1,13 @@
 package com.iota.iri.network;
 
-import java.net.*;
+import java.net.DatagramPacket;
+import java.net.DatagramSocket;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -20,21 +27,20 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.iota.iri.Milestone;
-import com.iota.iri.TransactionValidator;
-import com.iota.iri.utils.Converter;
-import com.iota.iri.zmq.MessageQ;
-import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.iota.iri.Milestone;
+import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.zmq.MessageQ;
 
 /**
  * The class node is responsible for managing Thread's connection.
@@ -391,18 +397,6 @@ public class Node {
             } else {
                 //if not, store tx. & update recentSeenHashes
                 stored = receivedTransactionViewModel.store(tangle);
-                messageQ.publish("tx %s %s %d %s %d %d %d %s %s %s",
-                        receivedTransactionViewModel.getHash(),
-                        receivedTransactionViewModel.getAddressHash(),
-                        receivedTransactionViewModel.value(),
-                        receivedTransactionViewModel.getTagValue(),
-                        receivedTransactionViewModel.getTimestamp(),
-                        receivedTransactionViewModel.getCurrentIndex(),
-                        receivedTransactionViewModel.lastIndex(),
-                        receivedTransactionViewModel.getBundleHash(),
-                        receivedTransactionViewModel.getTrunkTransactionHash(),
-                        receivedTransactionViewModel.getBranchTransactionHash()
-                );
                 synchronized (recentSeenHashes) {
                     recentSeenHashes.set(receivedTransactionViewModel.getHash(), true);
                 }

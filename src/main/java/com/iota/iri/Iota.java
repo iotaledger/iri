@@ -13,6 +13,7 @@ import com.iota.iri.storage.FileExportProvider;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.ZmqPublishProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.lang3.NotImplementedException;
@@ -198,6 +199,9 @@ public class Iota {
         }
         if (configuration.booling(Configuration.DefaultConfSettings.EXPORT)) {
             tangle.addPersistenceProvider(new FileExportProvider());
+        }
+        if (configuration.booling(Configuration.DefaultConfSettings.ZMQ_ENABLED)) {
+            tangle.addPersistenceProvider(new ZmqPublishProvider(messageQ));
         }
     }
 }

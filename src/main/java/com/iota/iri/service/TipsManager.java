@@ -201,7 +201,8 @@ public class TipsManager {
                     double maxRating = 0;
                     for(int i = 0; i < tips.length; i++) {
                         if (ratings.containsKey(tips[i])) {
-                            maxRating += Math.sqrt(ratings.get(tips[i]));
+                            walkRatings[i] = Math.sqrt(ratings.get(tips[i]));
+                            maxRating += walkRatings[i];
                         }
                     }
                     ratingWeight = rnd.nextDouble() * maxRating;

@@ -246,7 +246,6 @@ public class TipsManager {
                             tail = tip;
                         }
                     }
-                    break;
             }
         }
         log.info("Tx traversed to find tip: " + traversedTails);

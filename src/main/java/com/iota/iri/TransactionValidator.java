@@ -80,7 +80,7 @@ public class TransactionValidator {
             }
         }
 
-        int weightMagnitude = transactionViewModel.getHash().trailingZeros();
+        int weightMagnitude = transactionViewModel.weightMagnitude;
         if(weightMagnitude < minWeightMagnitude) {
             /*
             log.error("Hash found: {}", transactionViewModel.getHash());

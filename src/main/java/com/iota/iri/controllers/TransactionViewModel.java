@@ -96,6 +96,7 @@ public class TransactionViewModel {
     public TransactionViewModel(final Transaction transaction, final Hash hash) {
         this.transaction = transaction == null || transaction.bytes == null ? new Transaction(): transaction;
         this.hash = hash == null? Hash.NULL_HASH: hash;
+        weightMagnitude = this.hash.trailingZeros();
     }
 
     public TransactionViewModel(final int[] trits, Hash hash) {
@@ -107,6 +108,7 @@ public class TransactionViewModel {
 
         transaction.type = FILLED_SLOT;
 
+        weightMagnitude = this.hash.trailingZeros();
         transaction.validity = 0;
         transaction.arrivalTime = 0;
     }
@@ -117,6 +119,7 @@ public class TransactionViewModel {
         transaction.bytes = new byte[SIZE];
         System.arraycopy(bytes, 0, transaction.bytes, 0, SIZE);
         this.hash = hash;
+        weightMagnitude = this.hash.trailingZeros();
         transaction.type = FILLED_SLOT;
     }
 

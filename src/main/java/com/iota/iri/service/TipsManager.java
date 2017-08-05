@@ -187,7 +187,7 @@ public class TipsManager {
                 break;
             } else if (tipSet.size() == 1) {
                 tip = tipSet.iterator().next();
-                break;
+                continue;
             }
             tips = tipSet.toArray(new Hash[tipSet.size()]);
             if (!ratings.containsKey(tip)) {

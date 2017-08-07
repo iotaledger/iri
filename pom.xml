@@ -98,6 +98,13 @@
     <version>${undertow.version}</version>
 </dependency>
 
+<!-- https://mvnrepository.com/artifact/org.bouncycastle/bcprov-ext-jdk15on -->
+<dependency>
+    <groupId>org.bouncycastle</groupId>
+    <artifactId>bcprov-ext-jdk15on</artifactId>
+    <version>1.57</version>
+</dependency>
+
 <!-- CLI -->
 <dependency>
     <groupId>com.sanityinc</groupId>
@@ -161,6 +168,9 @@
                 <target>${java-version}</target>
                 <testSource>${java-version}</testSource>
                 <testTarget>${java-version}</testTarget>
+		<compilerArgs>
+                    <arg>${compiler.args}</arg>
+                </compilerArgs>
             </configuration>
         </plugin>
         <plugin>

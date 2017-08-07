@@ -169,7 +169,7 @@ public class TipsViewModel {
         public int size() {
             return this.set.size();
         }
-        public boolean addAll(Collection c) {
+        public boolean addAll(Collection<Hash> c) {
             return this.set.addAll(c);
         }
         public Iterator<Hash> iterator() {

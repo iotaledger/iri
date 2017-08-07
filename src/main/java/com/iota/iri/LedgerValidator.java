@@ -57,7 +57,7 @@ public class LedgerValidator {
      * @return {state}  the addresses that have a balance changed since the last diff check
      * @throws Exception
      */
-    private Map<Hash,Long> getLatestDiff(Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
+    private Map<Hash,Long> getLatestDiff(Hash tip, long latestSnapshotIndex, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>();
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -153,7 +153,7 @@ public class LedgerValidator {
     private void updateSnapshotMilestone(MilestoneViewModel milestone) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>();
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone.getHash()));
-        int index = milestone.index();
+        long index = milestone.index();
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
@@ -179,7 +179,7 @@ public class LedgerValidator {
      * @param tip
      * @throws Exception
      */
-    private void updateConsistentHashes(Hash tip, int index) throws Exception {
+    private void updateConsistentHashes(Hash tip, long index) throws Exception {
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash hashPointer;
         boolean keepTraversing;
@@ -261,8 +261,8 @@ public class LedgerValidator {
     public boolean updateSnapshot(MilestoneViewModel milestone) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestone.getHash());
         synchronized (latestSnapshotSyncObject) {
-            final int lastSnapshotIndex = latestSnapshot.index();
-            final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
+            final long lastSnapshotIndex = latestSnapshot.index();
+            final long transactionSnapshotIndex = transactionViewModel.snapshotIndex();
             boolean hasSnapshot = transactionSnapshotIndex != 0;
             if(!hasSnapshot) {
                 Hash tail = transactionViewModel.getHash();
@@ -296,7 +296,7 @@ public class LedgerValidator {
             isConsistent = approvedHashes.contains(tip);
             if (!isConsistent) {
                 Hash tail = transactionViewModel.getHash();
-                    int latestSyncIndex = latestSnapshot.index();
+                    long latestSyncIndex = latestSnapshot.index();
                     Map<Hash, Long> currentState = getLatestDiff(tail, latestSyncIndex, false);
                     isConsistent = currentState != null && stateSinceMilestone.patch(currentState, latestSyncIndex).isConsistent();
                     if (isConsistent) {

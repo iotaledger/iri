@@ -497,13 +497,13 @@ public class API {
         int numberOfNonMetTransactions = transactions.size();
         final int[] inclusionStates = new int[numberOfNonMetTransactions];
 
-        int[] tipsIndex = tips.stream().map(hash -> TransactionViewModel.quietFromHash(instance.tangle, hash))
+        long[] tipsIndex = tips.stream().map(hash -> TransactionViewModel.quietFromHash(instance.tangle, hash))
                 .filter(tx -> tx.getType() != TransactionViewModel.PREFILLED_SLOT)
-                .mapToInt(TransactionViewModel::snapshotIndex)
+                .mapToLong(TransactionViewModel::snapshotIndex)
                 .toArray();
-        int minTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a < b ? a : b).orElse(0);
+        long minTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a < b ? a : b).orElse(0);
         if(minTipsIndex > 0) {
-            int maxTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a > b ? a : b).orElse(0);
+            long maxTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a > b ? a : b).orElse(0);
             transactions.stream().map(hash -> TransactionViewModel.quietFromHash(instance.tangle, hash)).forEach(transaction -> {
                 if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
                     inclusionStates[transactions.indexOf(transaction.getHash())] = -1;
@@ -516,9 +516,9 @@ public class API {
         }
 
         Set<Hash> analyzedTips = new HashSet<>();
-        Map<Integer, Set<Hash>> sameIndexTips = new HashMap<>();
-        Map<Integer, Set<Hash>> sameIndexTransactions = new HashMap<>();
-        Map<Integer, Queue<Hash>> nonAnalyzedTransactionsMap = new HashMap<>();
+        Map<Long, Set<Hash>> sameIndexTips = new HashMap<>();
+        Map<Long, Set<Hash>> sameIndexTransactions = new HashMap<>();
+        Map<Long, Queue<Hash>> nonAnalyzedTransactionsMap = new HashMap<>();
         for (final Hash tip : tips) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, tip);
             if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
@@ -536,7 +536,7 @@ public class API {
                 sameIndexTransactions.get(transactionViewModel.snapshotIndex()).add(transactionViewModel.getHash());
             }
         }
-        for(Map.Entry<Integer, Set<Hash>> entry: sameIndexTransactions.entrySet()) {
+        for(Map.Entry<Long, Set<Hash>> entry: sameIndexTransactions.entrySet()) {
             if(!exhaustiveSearchWithinIndex(nonAnalyzedTransactionsMap.get(entry.getKey()), analyzedTips, transactions, inclusionStates, entry.getValue().size(), entry.getKey())) {
                 return ErrorResponse.create("The subtangle is not solid");
             }
@@ -549,7 +549,7 @@ public class API {
             return GetInclusionStatesResponse.create(inclusionStatesBoolean);
         }
     }
-    private boolean exhaustiveSearchWithinIndex(Queue<Hash> nonAnalyzedTransactions, Set<Hash> analyzedTips, List<Hash> transactions, int[] inclusionStates, int count, int index) throws Exception {
+    private boolean exhaustiveSearchWithinIndex(Queue<Hash> nonAnalyzedTransactions, Set<Hash> analyzedTips, List<Hash> transactions, int[] inclusionStates, int count, long index) throws Exception {
         Hash pointer;
         MAIN_LOOP:
         while ((pointer = nonAnalyzedTransactions.poll()) != null) {
@@ -675,7 +675,7 @@ public class API {
                 .collect(Collectors.toCollection(LinkedList::new));
 
         final Map<Hash, Long> balances = new HashMap<>();
-        final int index;
+        final long index;
         synchronized (Snapshot.latestSnapshotSyncObject) {
             index = instance.latestSnapshot.index();
             for (final Hash address : addresses) {
@@ -686,7 +686,7 @@ public class API {
         }
 
         final Hash milestone = instance.milestone.latestSolidSubtangleMilestone;
-        final int milestoneIndex = instance.milestone.latestSolidSubtangleMilestoneIndex;
+        final long milestoneIndex = instance.milestone.latestSolidSubtangleMilestoneIndex;
 
 
             Set<Hash> analyzedTips = new HashSet<>();

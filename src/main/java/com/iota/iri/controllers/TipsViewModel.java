@@ -2,6 +2,7 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
@@ -108,6 +109,45 @@ public class TipsViewModel {
         synchronized (sync) {
             return tips.size() + solidTips.size();
         }
+    }
+
+    public Set<Hash> getTipsAtHeight(Tangle tangle, long height) throws Exception {
+        Set<Hash> hashes = new HashSet<>(); //tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
+        for(Hash hash: HeightViewModel.load(tangle, new IntegerIndex(height)).getHashes()) {
+            if(TransactionViewModel.fromHash(tangle, hash).getApprovers(tangle).size() == 0) {
+                hashes.add(hash);
+            }
+        }
+        return hashes;
+    }
+
+    public Set<Hash> getTipsAboveHeight(Tangle tangle, long height) throws Exception {
+        Set<Hash> hashes = new HashSet<>(); //tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
+        HeightViewModel hashesViewModel = HeightViewModel.load(tangle, new IntegerIndex(height));
+        while(hashesViewModel != null) {
+            for (Hash hash : hashesViewModel.getHashes()) {
+                if (TransactionViewModel.fromHash(tangle, hash).getApprovers(tangle).size() == 0) {
+                    hashes.add(hash);
+                }
+            }
+            hashesViewModel = hashesViewModel.next(tangle);
+        }
+        return hashes;
+    }
+
+    public Set<Hash> getTipsInWindow(Tangle tangle, long height, long numHeights) throws Exception {
+        Set<Hash> hashes = new HashSet<>(); //tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
+        HeightViewModel heightViewModel = HeightViewModel.load(tangle, new IntegerIndex(height));
+        final long maxHeight = height + numHeights;
+        while(heightViewModel != null && ((IntegerIndex) heightViewModel.getIndex()).getValue() <= maxHeight ) {
+            for (Hash hash : heightViewModel.getHashes()) {
+                if (TransactionViewModel.fromHash(tangle, hash).getApprovers(tangle).size() == 0) {
+                    hashes.add(hash);
+                }
+            }
+            heightViewModel = heightViewModel.next(tangle);
+        }
+        return hashes;
     }
 
 //    public Hash getRandomTipHash() throws ExecutionException, InterruptedException {

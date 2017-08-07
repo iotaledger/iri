@@ -32,7 +32,7 @@ public class Transaction implements Persistable {
     public boolean solid = false;
     public long height = 0;
     public String sender = "";
-    public int snapshot;
+    public long snapshot;
 
     public byte[] bytes() {
         return bytes;

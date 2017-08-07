@@ -8,9 +8,9 @@ public class GetBalancesResponse extends AbstractResponse {
 	
 	private List<String> balances;
 	private String milestone;
-	private int milestoneIndex;
+	private long milestoneIndex;
 
-	public static AbstractResponse create(List<String> elements, Hash milestone, int milestoneIndex) {
+	public static AbstractResponse create(List<String> elements, Hash milestone, long milestoneIndex) {
 		GetBalancesResponse res = new GetBalancesResponse();
 		res.balances = elements;
 		res.milestone = milestone.toString();
@@ -22,7 +22,7 @@ public class GetBalancesResponse extends AbstractResponse {
 		return milestone;
 	}
 	
-	public int getMilestoneIndex() {
+	public long getMilestoneIndex() {
 		return milestoneIndex;
 	}
 	

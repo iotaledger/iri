@@ -354,11 +354,11 @@ public class TransactionViewModel {
         return transaction.solid;
     }
 
-    public int snapshotIndex() {
+    public long snapshotIndex() {
         return transaction.snapshot;
     }
 
-    public void setSnapshot(final Tangle tangle, final int index) throws Exception {
+    public void setSnapshot(final Tangle tangle, final long index) throws Exception {
         if ( index != transaction.snapshot ) {
             transaction.snapshot = index;
             update(tangle, "snapshot");
@@ -369,8 +369,15 @@ public class TransactionViewModel {
         return transaction.height;
     }
 
-    private void updateHeight(long height) throws Exception {
+    public HeightViewModel getHeightViewModel(final Tangle tangle) throws Exception {
+        return HeightViewModel.load(tangle, new IntegerIndex(getHeight()));
+    }
+
+    private void updateHeight(final Tangle tangle, long height) throws Exception {
         transaction.height = height;
+        HeightViewModel heightViewModel = HeightViewModel.load(tangle, new IntegerIndex(height));
+        heightViewModel.addHash(getHash());
+        heightViewModel.store(tangle);
     }
 
     public void updateHeights(final Tangle tangle) throws Exception {
@@ -385,10 +392,10 @@ public class TransactionViewModel {
         while(transactionViewModels.size() != 0) {
             transaction = TransactionViewModel.fromHash(tangle, transactionViewModels.pop());
             if(trunk.getHash().equals(Hash.NULL_HASH) && trunk.getHeight() == 0 && !transaction.getHash().equals(Hash.NULL_HASH)) {
-                transaction.updateHeight(1L);
+                transaction.updateHeight(tangle, 1L);
                 transaction.update(tangle, "height");
             } else if ( trunk.getType() != PREFILLED_SLOT && transaction.getHeight() == 0){
-                transaction.updateHeight(1 + trunk.getHeight());
+                transaction.updateHeight(tangle, 1 + trunk.getHeight());
                 transaction.update(tangle, "height");
             } else {
                 break;

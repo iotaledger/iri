@@ -132,8 +132,8 @@ public class TipsManager {
     Hash entryPoint(final Hash reference, final Hash extraTip, final int depth) throws Exception {
         Hash tip = reference == null ? milestone.latestSolidSubtangleMilestone : reference;
         if (extraTip != null) {
-            int depositIndex = TransactionViewModel.fromHash(tangle, reference).snapshotIndex();
-            int milestoneIndex = (depositIndex > 0 ? depositIndex : milestone.latestSolidSubtangleMilestoneIndex) - depth;
+            long depositIndex = TransactionViewModel.fromHash(tangle, reference).snapshotIndex();
+            long milestoneIndex = (depositIndex > 0 ? depositIndex : milestone.latestSolidSubtangleMilestoneIndex) - depth;
             if(milestoneIndex < 0) {
                 milestoneIndex = 0;
             }
@@ -145,7 +145,7 @@ public class TipsManager {
         return tip;
     }
 
-    Hash markovChainMonteCarlo(final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final int maxDepth, final Set<Hash> maxDepthOk, final Random seed) throws Exception {
+    Hash markovChainMonteCarlo(final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final long maxDepth, final Set<Hash> maxDepthOk, final Random seed) throws Exception {
         Map<Hash, Integer> monteCarloIntegrations = new HashMap<>();
         Hash tail;
         for(int i = iterations; i-- > 0; ) {
@@ -169,7 +169,7 @@ public class TipsManager {
         }).map(Map.Entry::getKey).orElse(null);
     }
 
-    Hash randomWalk(final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
+    Hash randomWalk(final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final long maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
         Hash tip = start, tail = tip;
         Hash[] tips;
         Set<Hash> tipSet;
@@ -329,7 +329,7 @@ public class TipsManager {
         return rating;
     }
 
-    boolean belowMaxDepth(Hash tip, int depth, Set<Hash> maxDepthOk) throws Exception {
+    boolean belowMaxDepth(Hash tip, long depth, Set<Hash> maxDepthOk) throws Exception {
         //if tip is confirmed stop
         if (TransactionViewModel.fromHash(tangle, tip).snapshotIndex() >= depth) {
             return false;

@@ -7,14 +7,14 @@ import com.iota.iri.utils.Serializer;
  * Created by paul on 5/6/17.
  */
 public class IntegerIndex implements Indexable{
-    int value;
-    public IntegerIndex(int value) {
+    long value;
+    public IntegerIndex(long value) {
         this.value = value;
     }
 
     public IntegerIndex() {}
 
-    public int getValue() {
+    public long getValue() {
         return value;
     }
 
@@ -40,7 +40,6 @@ public class IntegerIndex implements Indexable{
 
     @Override
     public int compareTo(Indexable o) {
-        IntegerIndex i = new IntegerIndex(Serializer.getInteger(o.bytes()));
-        return value - ((IntegerIndex) o).value;
+        return ((Long) value).compareTo(new IntegerIndex(Serializer.getInteger(o.bytes())).getValue());
     }
 }

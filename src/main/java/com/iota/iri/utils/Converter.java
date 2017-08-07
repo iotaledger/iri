@@ -1,10 +1,12 @@
 package com.iota.iri.utils;
 
+import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Converter {
 
 	public static final int RADIX = 3;
+    public static final int BYTE_RADIX = 256;
 	public static final int MAX_TRIT_VALUE = (RADIX - 1) / 2, MIN_TRIT_VALUE = -MAX_TRIT_VALUE;
 
     public static final int NUMBER_OF_TRITS_IN_A_BYTE = 5;
@@ -105,6 +107,7 @@ public class Converter {
             }
         }
     }
+
 
     public static String trytes(final int[] trits, final int offset, final int size) {
 

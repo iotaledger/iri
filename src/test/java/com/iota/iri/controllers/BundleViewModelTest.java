@@ -23,7 +23,7 @@ public class BundleViewModelTest {
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
         rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath());
+                logFolder.getRoot().getAbsolutePath(),1000);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
 

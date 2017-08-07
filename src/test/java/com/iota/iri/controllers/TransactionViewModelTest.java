@@ -1,6 +1,7 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.conf.Configuration;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.network.TransactionRequester;
@@ -35,7 +36,7 @@ public class TransactionViewModelTest {
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
         rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath());
+                logFolder.getRoot().getAbsolutePath(),1000);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
     }
@@ -65,19 +66,19 @@ public class TransactionViewModelTest {
 
 
         int[] trits = getRandomTransactionTrits();
-        trunkTx = new TransactionViewModel(trits, Hash.calculate(trits));
+        trunkTx = new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURL, trits));
 
-        branchTx = new TransactionViewModel(trits, Hash.calculate(trits));
+        branchTx = new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURL, trits));
 
         int[] childTx = getRandomTransactionTrits();
         System.arraycopy(trunkTx.getHash().trits(), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branchTx.getHash().trits(), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
-        transactionViewModel = new TransactionViewModel(childTx, Hash.calculate(childTx));
+        transactionViewModel = new TransactionViewModel(childTx, Hash.calculate(SpongeFactory.Mode.CURL, childTx));
 
         childTx = getRandomTransactionTrits();
         System.arraycopy(trunkTx.getHash().trits(), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branchTx.getHash().trits(), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
-        otherTxVM = new TransactionViewModel(childTx, Hash.calculate(childTx));
+        otherTxVM = new TransactionViewModel(childTx, Hash.calculate(SpongeFactory.Mode.CURL, childTx));
 
         otherTxVM.store(tangle);
         transactionViewModel.store(tangle);
@@ -322,7 +323,7 @@ public class TransactionViewModelTest {
     @Test
     public void findShouldBeSuccessful() throws Exception {
         int[] trits = getRandomTransactionTrits();
-        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURL, trits));
         transactionViewModel.store(tangle);
         Hash hash = transactionViewModel.getHash();
         Assert.assertArrayEquals(TransactionViewModel.find(tangle, Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)).getBytes(), transactionViewModel.getBytes());
@@ -331,9 +332,9 @@ public class TransactionViewModelTest {
     @Test
     public void findShouldReturnNull() throws Exception {
         int[] trits = getRandomTransactionTrits();
-        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits));
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURL, trits));
         trits = getRandomTransactionTrits();
-        TransactionViewModel transactionViewModelNoSave = new TransactionViewModel(trits, Hash.calculate(trits));
+        TransactionViewModel transactionViewModelNoSave = new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURL, trits));
         transactionViewModel.store(tangle);
         Hash hash = transactionViewModelNoSave.getHash();
         Assert.assertFalse(Arrays.equals(TransactionViewModel.find(tangle, Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)).getBytes(), transactionViewModel.getBytes()));

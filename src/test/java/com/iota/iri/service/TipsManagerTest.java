@@ -47,7 +47,7 @@ public class TipsManagerTest {
         tangle = new Tangle();
         dbFolder.create();
         logFolder.create();
-        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath()));
+        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000));
         tangle.init();
         TipsViewModel tipsViewModel = new TipsViewModel();
         MessageQ messageQ = new MessageQ(0, null, 1, false);

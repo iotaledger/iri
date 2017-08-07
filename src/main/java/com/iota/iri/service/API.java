@@ -466,7 +466,7 @@ public class API {
     }
 
     private synchronized AbstractResponse getTipsStatement() throws Exception {
-        return GetTipsResponse.create(instance.tipsViewModel.getTipsHashesFromDB(instance.tangle).stream().map(Hash::toString).collect(Collectors.toList()));
+        return GetTipsResponse.create(instance.tipsViewModel.getTips().stream().map(Hash::toString).collect(Collectors.toList()));
     }
 
     public boolean storeTransactionStatement(final List<String> trys) throws Exception {

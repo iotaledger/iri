@@ -33,7 +33,7 @@ public class Curl {
     private final int[] scratchpad = new int[STATE_LENGTH];
 
 
-    public Curl() {
+    protected Curl() {
         state = new int[STATE_LENGTH];
         stateHigh = null;
         stateLow = null;

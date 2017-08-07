@@ -15,7 +15,7 @@ public class TransactionViewModel {
     private final com.iota.iri.model.Transaction transaction;
 
     public static final int SIZE = 1604;
-    private static final int TAG_SIZE = 17;
+    private static final int TAG_SIZE = 27;
     //public static final int HASH_SIZE = 46;
 
     /*
@@ -96,6 +96,7 @@ public class TransactionViewModel {
     public TransactionViewModel(final Transaction transaction, final Hash hash) {
         this.transaction = transaction == null || transaction.bytes == null ? new Transaction(): transaction;
         this.hash = hash == null? Hash.NULL_HASH: hash;
+        weightMagnitude = this.hash.trailingZeros();
     }
 
     public TransactionViewModel(final int[] trits, Hash hash) {
@@ -107,6 +108,7 @@ public class TransactionViewModel {
 
         transaction.type = FILLED_SLOT;
 
+        weightMagnitude = this.hash.trailingZeros();
         transaction.validity = 0;
         transaction.arrivalTime = 0;
     }
@@ -117,6 +119,7 @@ public class TransactionViewModel {
         transaction.bytes = new byte[SIZE];
         System.arraycopy(bytes, 0, transaction.bytes, 0, SIZE);
         this.hash = hash;
+        weightMagnitude = this.hash.trailingZeros();
         transaction.type = FILLED_SLOT;
     }
 
@@ -315,6 +318,7 @@ public class TransactionViewModel {
     public void setMetadata() {
         transaction.value = Converter.longValue(trits(), VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
         transaction.timestamp = Converter.longValue(trits(), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
+        if (transaction.timestamp > 1262304000000L ) transaction.timestamp /= 1000L;  // if > 01.01.2010 in milliseconds
         transaction.currentIndex = Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
         transaction.lastIndex = Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
     }

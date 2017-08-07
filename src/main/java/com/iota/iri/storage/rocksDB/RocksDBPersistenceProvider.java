@@ -38,6 +38,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     );
     private final String dbPath;
     private final String logPath;
+    private final int cacheSize;
 
     private ColumnFamilyHandle transactionHandle;
     private ColumnFamilyHandle transactionMetadataHandle;
@@ -60,9 +61,11 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private BloomFilter bloomFilter;
     private boolean available;
 
-    public RocksDBPersistenceProvider(String dbPath, String logPath) {
+    public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize) {
         this.dbPath = dbPath;
         this.logPath = logPath;
+        this.cacheSize = cacheSize;
+
     }
 
     @Override
@@ -457,14 +460,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setCacheNumShardBits(2)
                 .setBlockSizeDeviation(10)
                 .setBlockRestartInterval(16)
-                .setBlockCacheSize(200 * SizeUnit.KB)
+                .setBlockCacheSize(cacheSize * SizeUnit.KB)
                 .setBlockCacheCompressedNumShardBits(10)
                 .setBlockCacheCompressedSize(32 * SizeUnit.KB)
                 /*
                 .setHashIndexAllowCollision(true)
                 .setCacheIndexAndFilterBlocks(true)
                 */
-                ;
+        ;
         options.setAllowConcurrentMemtableWrite(true);
 
         MemTableConfig hashSkipListMemTableConfig = new HashSkipListMemTableConfig()

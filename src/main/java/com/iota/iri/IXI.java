@@ -6,7 +6,6 @@ import com.iota.iri.hash.ISS;
 import com.iota.iri.service.CallableRequest;
 import com.iota.iri.service.dto.AbstractResponse;
 import com.sun.nio.file.SensitivityWatchEventModifier;
-import org.codehaus.plexus.util.Os;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,11 +23,7 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
-import static com.iota.iri.IxiEvent.CREATE_MODULE;
-import static com.iota.iri.IxiEvent.DELETE_MODULE;
-import static com.iota.iri.IxiEvent.MODIFY_MODULE;
 import static com.sun.jmx.mbeanserver.Util.cast;
-import static java.nio.file.LinkOption.NOFOLLOW_LINKS;
 import static java.nio.file.StandardWatchEventKinds.*;
 
 public class IXI {

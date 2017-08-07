@@ -14,6 +14,7 @@ import java.util.Set;
 import javax.net.ssl.HttpsURLConnection;
 
 import com.iota.iri.controllers.*;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
@@ -60,7 +61,7 @@ public class Milestone {
     private boolean shuttingDown;
     private static int RESCAN_INTERVAL = 5000;
 
-    public void init(final LedgerValidator ledgerValidator, final boolean revalidate) {
+    public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) {
         this.ledgerValidator = ledgerValidator;
         (new Thread(() -> {
             while (!shuttingDown) {
@@ -69,7 +70,29 @@ public class Milestone {
                 try {
                     final int previousLatestMilestoneIndex = latestMilestoneIndex;
 
-                    updateLatestMilestone();
+                    { // Update Milestone
+                        { // find new milestones
+                            AddressViewModel.load(tangle, coordinator).getHashes().stream()
+                                    .filter(analyzedMilestoneCandidates::add)
+                                    .map(hash -> TransactionViewModel.quietFromHash(tangle, hash))
+                                    .filter(t -> t.getCurrentIndex() == 0)
+                                    .forEach(t -> {
+                                        try {
+                                            if(!validateMilestone(mode, t, getIndex(t))) {
+                                                analyzedMilestoneCandidates.remove(t.getHash());
+                                            }
+                                        } catch (Exception e) {
+                                            analyzedMilestoneCandidates.remove(t.getHash());
+                                            log.error("Could not validate milestone: ", t.getHash());
+                                        }
+                                    });
+                        }
+                        MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
+                        if (milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
+                            latestMilestone = milestoneViewModel.getHash();
+                            latestMilestoneIndex = milestoneViewModel.index();
+                        }
+                    }
 
                     if (previousLatestMilestoneIndex != latestMilestoneIndex) {
 
@@ -123,16 +146,7 @@ public class Milestone {
 
     }
 
-    void updateLatestMilestone() throws Exception { // refactor
-        findNewMilestones();
-        MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
-        if(milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
-            latestMilestone = milestoneViewModel.getHash();
-            latestMilestoneIndex = milestoneViewModel.index();
-        }
-    }
-
-    private boolean validateMilestone(TransactionViewModel transactionViewModel, int index) throws Exception {
+    private boolean validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {
 
         if (MilestoneViewModel.get(tangle, index) != null) {
             // Already validated.
@@ -156,7 +170,7 @@ public class Milestone {
                         final int[] trunkTransactionTrits = transactionViewModel.getTrunkTransactionHash().trits();
                         final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
-                        final int[] merkleRoot = ISS.getMerkleRoot(ISS.address(ISS.digest(
+                        final int[] merkleRoot = ISS.getMerkleRoot(mode, ISS.address(mode, ISS.digest(mode,
                                 Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits),
                                         ISS.NUMBER_OF_FRAGMENT_CHUNKS),
                                 signatureFragmentTrits)),
@@ -197,23 +211,6 @@ public class Milestone {
 
     static int getIndex(TransactionViewModel transactionViewModel) {
         return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
-    }
-
-    private void findNewMilestones() throws Exception {
-        AddressViewModel.load(tangle, coordinator).getHashes().stream()
-                .filter(analyzedMilestoneCandidates::add)
-                .map(hash -> TransactionViewModel.quietFromHash(tangle, hash))
-                .filter(t -> t.getCurrentIndex() == 0)
-                .forEach(t -> {
-                    try {
-                        if(!validateMilestone(t, getIndex(t))) {
-                            analyzedMilestoneCandidates.remove(t.getHash());
-                        }
-                    } catch (Exception e) {
-                        analyzedMilestoneCandidates.remove(t.getHash());
-                        log.error("Could not validate milestone: ", t.getHash());
-                    }
-                });
     }
 
     void shutDown() {

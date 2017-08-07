@@ -2,6 +2,7 @@ package com.iota.iri.network;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,7 +61,7 @@ public class UDPReceiver {
 
             log.info("Spawning Receiver Thread");
 
-            final Curl curl = new Curl();
+            final Curl curl = SpongeFactory.create(SpongeFactory.Mode.CURL);
             final byte[] requestedTransaction = new byte[Hash.SIZE_IN_BYTES];
 
             int processed = 0, dropped = 0;

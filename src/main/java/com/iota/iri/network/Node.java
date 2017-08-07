@@ -140,7 +140,6 @@ public class Node {
         executor.submit(spawnProcessReceivedThread());
         executor.submit(spawnReplyToRequestThread());
 
-        tipsViewModel.loadTipHashes(tangle);
         executor.shutdown();
     }
 
@@ -178,20 +177,24 @@ public class Node {
                                     log.info("{} seems fine.", hostname);
                                     messageQ.publish("dnscc %s", hostname);
                                 } else {
-                                    log.info("IP CHANGED for {}! Updating...", hostname);
-                                    messageQ.publish("dnscu %s", hostname);
-                                    String protocol = (n instanceof TCPNeighbor) ? "tcp://" : "udp://";
-                                    String port = ":" + n.getAddress().getPort();
+                                    if (configuration.booling(Configuration.DefaultConfSettings.DNS_REFRESHER_ENABLED)) {
+                                        log.info("IP CHANGED for {}! Updating...", hostname);
+                                        messageQ.publish("dnscu %s", hostname);
+                                        String protocol = (n instanceof TCPNeighbor) ? "tcp://" : "udp://";
+                                        String port = ":" + n.getAddress().getPort();
 
-                                    uri(protocol + hostname + port).ifPresent(uri -> {
-                                        removeNeighbor(uri, n.isFlagged());
+                                        uri(protocol + hostname + port).ifPresent(uri -> {
+                                            removeNeighbor(uri, n.isFlagged());
 
-                                        uri(protocol + ip + port).ifPresent(nuri -> {
-                                            Neighbor neighbor = newNeighbor(nuri, n.isFlagged());
-                                            addNeighbor(neighbor);
-                                            neighborIpCache.put(hostname, ip);
+                                            uri(protocol + ip + port).ifPresent(nuri -> {
+                                                Neighbor neighbor = newNeighbor(nuri, n.isFlagged());
+                                                addNeighbor(neighbor);
+                                                neighborIpCache.put(hostname, ip);
+                                            });
                                         });
-                                    });
+                                    } else {
+                                        log.info("IP CHANGED for {}! Skipping... DNS_REFRESHER_ENABLED is false.", hostname);
+                                    }
                                 }
                             }
                         });
@@ -204,7 +207,7 @@ public class Node {
                     log.error("Neighbor DNS Refresher Thread Exception:", e);
                 }
             }
-            log.info("Shutting down Neighbor DNS Resolver Thread");
+            log.info("Shutting down Neighbor DNS Refresher Thread");
         };
     }
 
@@ -391,18 +394,6 @@ public class Node {
             } else {
                 //if not, store tx. & update recentSeenHashes
                 stored = receivedTransactionViewModel.store(tangle);
-                messageQ.publish("tx %s %s %d %s %d %d %d %s %s %s",
-                        receivedTransactionViewModel.getHash(),
-                        receivedTransactionViewModel.getAddressHash(),
-                        receivedTransactionViewModel.value(),
-                        receivedTransactionViewModel.getTagValue(),
-                        receivedTransactionViewModel.getTimestamp(),
-                        receivedTransactionViewModel.getCurrentIndex(),
-                        receivedTransactionViewModel.lastIndex(),
-                        receivedTransactionViewModel.getBundleHash(),
-                        receivedTransactionViewModel.getTrunkTransactionHash(),
-                        receivedTransactionViewModel.getBranchTransactionHash()
-                );
                 synchronized (recentSeenHashes) {
                     recentSeenHashes.set(receivedTransactionViewModel.getHash(), true);
                 }
@@ -562,7 +553,7 @@ public class Node {
                     long now = System.currentTimeMillis();
                     if ((now - lastTime) > 10000L) {
                         lastTime = now;
-                        messageQ.publish("RSTAT %d %d %d %d %d",
+                        messageQ.publish("rstat %d %d %d %d %d",
                                 getReceiveQueueSize(), getBroadcastQueueSize() ,
                                 transactionRequester.numberOfTransactionsToRequest() ,getReplyQueueSize(),
                                 TransactionViewModel.getNumberOfStoredTransactions(tangle));

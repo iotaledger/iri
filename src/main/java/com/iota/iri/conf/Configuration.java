@@ -38,6 +38,7 @@ public class Configuration {
         IXI_DIR,
         DB_PATH,
         DB_LOG_PATH,
+        DB_CACHE_SIZE,
         P_REMOVE_REQUEST,
         P_DROP_TRANSACTION,
         P_SELECT_MILESTONE_CHILD,
@@ -47,6 +48,7 @@ public class Configuration {
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
         MAX_PEERS,
+        DNS_REFRESHER_ENABLED,
         COORDINATOR,
         REVALIDATE,
         RESCAN_DB,
@@ -77,6 +79,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
         conf.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
         conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnet.log");
+        conf.put(DefaultConfSettings.DB_CACHE_SIZE.name(), "100000"); //KB
         conf.put(DefaultConfSettings.CONFIG.name(), "iota.ini");
         conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.01");
         conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.0");
@@ -88,6 +91,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
+        conf.put(DefaultConfSettings.DNS_REFRESHER_ENABLED.name(), "true");
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
         conf.put(DefaultConfSettings.RESCAN_DB.name(), "false");
         conf.put(DefaultConfSettings.MAINNET_MWM.name(), "15");

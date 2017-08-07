@@ -15,7 +15,7 @@ public class ISS {
     private static final int TRYTE_WIDTH = 3;
     private static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
 
-    public static int[] subseed(final int[] seed, int index) {
+    public static int[] subseed(SpongeFactory.Mode mode, final int[] seed, int index) {
 
         if (index < 0) {
             throw new RuntimeException("Invalid subseed index: " + index);
@@ -37,13 +37,13 @@ public class ISS {
 
         final int[] subseed = new int[Curl.HASH_LENGTH];
 
-        final Curl hash = new Curl();
+        final Curl hash = SpongeFactory.create(mode);
         hash.absorb(subseedPreimage, 0, subseedPreimage.length);
         hash.squeeze(subseed, 0, subseed.length);
         return subseed;
     }
 
-    public static int[] key(final int[] subseed, final int numberOfFragments) {
+    public static int[] key(SpongeFactory.Mode mode, final int[] subseed, final int numberOfFragments) {
 
         if (subseed.length != Curl.HASH_LENGTH) {
             throw new RuntimeException("Invalid subseed length: " + subseed.length);
@@ -54,13 +54,13 @@ public class ISS {
 
         final int[] key = new int[FRAGMENT_LENGTH * numberOfFragments];
 
-        final Curl hash = new Curl();
+        final Curl hash = SpongeFactory.create(mode);
         hash.absorb(subseed, 0, subseed.length);
         hash.squeeze(key, 0, key.length);
         return key;
     }
 
-    public static int[] digests(final int[] key) {
+    public static int[] digests(SpongeFactory.Mode mode, final int[] key) {
 
         if (key.length == 0 || key.length % FRAGMENT_LENGTH != 0) {
 
@@ -75,12 +75,12 @@ public class ISS {
             for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
 
                 for (int k = MAX_TRYTE_VALUE - MIN_TRYTE_VALUE; k-- > 0; ) {
-                    final Curl hash = new Curl();
+                    final Curl hash = SpongeFactory.create(mode);
                     hash.absorb(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                     hash.squeeze(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                 }
             }
-            final Curl hash = new Curl();
+            final Curl hash = SpongeFactory.create(mode);
             hash.absorb(buffer, 0, buffer.length);
             hash.squeeze(digests, i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
         }
@@ -88,7 +88,7 @@ public class ISS {
         return digests;
     }
 
-    public static int[] address(final int[] digests) {
+    public static int[] address(SpongeFactory.Mode mode, final int[] digests) {
 
         if (digests.length == 0 || digests.length % Curl.HASH_LENGTH != 0) {
             throw new RuntimeException("Invalid digests length: " + digests.length);
@@ -96,7 +96,7 @@ public class ISS {
 
         final int[] address = new int[Curl.HASH_LENGTH];
 
-        final Curl hash = new Curl();
+        final Curl hash = SpongeFactory.create(mode);
         hash.absorb(digests, 0, digests.length);
         hash.squeeze(address, 0, address.length);
 
@@ -150,7 +150,7 @@ public class ISS {
         return normalizedBundle;
     }
 
-    public static int[] signatureFragment(final int[] normalizedBundleFragment, final int[] keyFragment) {
+    public static int[] signatureFragment(SpongeFactory.Mode mode, final int[] normalizedBundleFragment, final int[] keyFragment) {
 
         if (normalizedBundleFragment.length != Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS) {
             throw new RuntimeException("Invalid normalized bundleValidator fragment length: " + normalizedBundleFragment.length);
@@ -165,7 +165,7 @@ public class ISS {
 
             for (int k = MAX_TRYTE_VALUE - normalizedBundleFragment[j]; k-- > 0; ) {
 
-                final Curl hash = new Curl();
+                final Curl hash = SpongeFactory.create(mode);
                 hash.absorb(signatureFragment, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                 hash.squeeze(signatureFragment, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
             }
@@ -174,7 +174,7 @@ public class ISS {
         return signatureFragment;
     }
 
-    public static int[] digest(final int[] normalizedBundleFragment, final int[] signatureFragment) {
+    public static int[] digest(SpongeFactory.Mode mode, final int[] normalizedBundleFragment, final int[] signatureFragment) {
 
         if (normalizedBundleFragment.length != Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS) {
             throw new RuntimeException("Invalid normalized bundleValidator fragment length: " + normalizedBundleFragment.length);
@@ -190,21 +190,21 @@ public class ISS {
 
             for (int k = normalizedBundleFragment[j] - MIN_TRYTE_VALUE; k-- > 0; ) {
 
-                final Curl hash = new Curl();
+                final Curl hash = SpongeFactory.create(mode);
                 hash.absorb(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                 hash.squeeze(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
             }
         }
-        final Curl hash = new Curl();
+        final Curl hash = SpongeFactory.create(mode);
         hash.absorb(buffer, 0, buffer.length);
         hash.squeeze(digest, 0, digest.length);
 
         return digest;
     }
 
-    public static int[] getMerkleRoot(int[] hash, int[] trits, int offset, int index, int size) {
+    public static int[] getMerkleRoot(SpongeFactory.Mode mode, int[] hash, int[] trits, int offset, int index, int size) {
         for (int i = 0; i < size; i++) {
-            final Curl curl = new Curl();
+            final Curl curl = SpongeFactory.create(mode);
             if ((index & 1) == 0) {
                 curl.absorb(hash, 0, hash.length);
                 curl.absorb(trits, offset + i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);

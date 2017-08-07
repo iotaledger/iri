@@ -21,7 +21,8 @@ public class TipsViewModel {
     final Logger log = LoggerFactory.getLogger(TipsViewModel.class);
 
     private FifoHashCache tips = new FifoHashCache(5000);
-    private Set<Hash> solidTips = new HashSet<>();
+    private FifoHashCache solidTips = new FifoHashCache(5000);
+
     private SecureRandom seed = new SecureRandom();
     public final Object sync = new Object();
 
@@ -48,25 +49,34 @@ public class TipsViewModel {
         }
     }
 
-//    public Set<Hash> getTips() {
-//        Set<Hash> hashes = new HashSet<>();
-//        synchronized (sync) {
-//            hashes.addAll(tips);
-//            hashes.addAll(solidTips);
-//        }
-//        return hashes;
-//    }
+    public Set<Hash> getTips() {
+        Set<Hash> hashes = new HashSet<>();
+        synchronized (sync) {
+            Iterator<Hash> hashIterator;
+            hashIterator = tips.iterator();
+            while (hashIterator.hasNext()) {
+                hashes.add(hashIterator.next());
+            }
+
+            hashIterator = solidTips.iterator();
+            while (hashIterator.hasNext()) {
+                hashes.add(hashIterator.next());
+            }
+        }
+        return hashes;
+    }
+
     public Hash getRandomSolidTipHash() {
         synchronized (sync) {
             int size = solidTips.size();
             if(size == 0) {
-                return null;
+                return getRandomNonSolidTipHash();
             }
             int index = seed.nextInt(size);
             Iterator<Hash> hashIterator;
             hashIterator = solidTips.iterator();
             Hash hash = null;
-            while(index-- > 1 && hashIterator.hasNext()){ hash = hashIterator.next();}
+            while(index-- >= 0 && hashIterator.hasNext()){ hash = hashIterator.next();}
             return hash;
             //return solidTips.size() != 0 ? solidTips.get(seed.nextInt(solidTips.size())) : getRandomNonSolidTipHash();
         }
@@ -82,23 +92,9 @@ public class TipsViewModel {
             Iterator<Hash> hashIterator;
             hashIterator = tips.iterator();
             Hash hash = null;
-            while(index-- > 1 && hashIterator.hasNext()){ hash = hashIterator.next();}
+            while(index-- >= 0 && hashIterator.hasNext()){ hash = hashIterator.next();}
             return hash;
             //return tips.size() != 0 ? tips.get(seed.nextInt(tips.size())) : null;
-        }
-    }
-
-    public Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-        synchronized (sync) {
-            if(size() == 0) {
-                return null;
-            }
-            int index = seed.nextInt(size());
-            if(index >= tips.size()) {
-                return getRandomSolidTipHash();
-            } else {
-                return getRandomNonSolidTipHash();
-            }
         }
     }
 
@@ -109,28 +105,45 @@ public class TipsViewModel {
     }
 
     public int size() {
-        return tips.size() + solidTips.size();
-    }
-
-    public void loadTipHashes(Tangle tangle) throws Exception {
-        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
-        if(hashes != null) {
-            synchronized (sync) {
-                for (Indexable h: hashes) {
-                    tips.add((Hash) h);
-                }
-            }
+        synchronized (sync) {
+            return tips.size() + solidTips.size();
         }
     }
 
-    public Set<Hash> getTipsHashesFromDB (Tangle tangle) throws Exception {
-        Set<Hash> tipsFromDB = new HashSet<>();
-        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
-        if(hashes != null) {
-            tipsFromDB.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
-        }
-        return tipsFromDB;
-    }
+//    public Hash getRandomTipHash() throws ExecutionException, InterruptedException {
+//        synchronized (sync) {
+//            if(size() == 0) {
+//                return null;
+//            }
+//            int index = seed.nextInt(size());
+//            if(index >= tips.size()) {
+//                return getRandomSolidTipHash();
+//            } else {
+//                return getRandomNonSolidTipHash();
+//            }
+//        }
+//    }
+
+
+//    public void loadTipHashes(Tangle tangle) throws Exception {
+//        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
+//        if(hashes != null) {
+//            synchronized (sync) {
+//                for (Indexable h: hashes) {
+//                    tips.add((Hash) h);
+//                }
+//            }
+//        }
+//    }
+//
+//    public Set<Hash> getTipsHashesFromDB (Tangle tangle) throws Exception {
+//        Set<Hash> tipsFromDB = new HashSet<>();
+//        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
+//        if(hashes != null) {
+//            tipsFromDB.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
+//        }
+//        return tipsFromDB;
+//    }
 
     public class FifoHashCache {
 

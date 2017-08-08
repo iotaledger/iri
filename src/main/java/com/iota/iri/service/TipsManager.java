@@ -186,7 +186,12 @@ public class TipsManager {
                 traversedTails++;
                 tail = tip;
             } else {
-                tip = tipSet.iterator().next();
+                Iterator<Hash> hashIterator = tipSet.iterator();
+                if(hashIterator.hasNext()) {
+                    tip = tipSet.iterator().next();
+                } else {
+                    tip = null;
+                }
                 continue;
             }
             if(tipSet.size() == 0) {

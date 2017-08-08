@@ -104,8 +104,8 @@ public class Transaction implements Persistable {
             */
             solid = bytes[i] == 1;
             i++;
-            snapshot = Serializer.getInteger(bytes, i);
-            i += Integer.BYTES;
+            snapshot = Serializer.getLong(bytes, i);
+            i += Long.BYTES;
             byte[] senderBytes = new byte[bytes.length - i];
             if (senderBytes.length != 0) {
                 System.arraycopy(bytes, i, senderBytes, 0, senderBytes.length);

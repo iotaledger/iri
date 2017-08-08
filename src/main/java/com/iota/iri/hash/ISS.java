@@ -8,12 +8,13 @@ import java.util.Arrays;
 public class ISS {
 
     public static final int NUMBER_OF_FRAGMENT_CHUNKS = 27;
-    private static final int FRAGMENT_LENGTH = Curl.HASH_LENGTH * NUMBER_OF_FRAGMENT_CHUNKS;
+    public static final int FRAGMENT_LENGTH = Curl.HASH_LENGTH * NUMBER_OF_FRAGMENT_CHUNKS;
     private static final int NUMBER_OF_SECURITY_LEVELS = 3;
 
     private static final int MIN_TRIT_VALUE = -1, MAX_TRIT_VALUE = 1;
-    private static final int TRYTE_WIDTH = 3;
+    public static final int TRYTE_WIDTH = 3;
     private static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
+    public static final int NORMALIZED_FRAGMENT_LENGTH = Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS;
 
     public static int[] subseed(SpongeFactory.Mode mode, final int[] seed, int index) {
 
@@ -152,7 +153,7 @@ public class ISS {
 
     public static int[] signatureFragment(SpongeFactory.Mode mode, final int[] normalizedBundleFragment, final int[] keyFragment) {
 
-        if (normalizedBundleFragment.length != Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS) {
+        if (normalizedBundleFragment.length != NORMALIZED_FRAGMENT_LENGTH) {
             throw new RuntimeException("Invalid normalized bundleValidator fragment length: " + normalizedBundleFragment.length);
         }
         if (keyFragment.length != FRAGMENT_LENGTH) {

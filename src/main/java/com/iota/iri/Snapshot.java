@@ -1,6 +1,11 @@
 package com.iota.iri;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.ISS;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.utils.Converter;
+import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -8,14 +13,13 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 
 public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
+    private static String snapshotPubKey = "BRUTUMFFJVCXEPKHZBKBHWDKARQEYCUVSCUUESJWBSSAMHAWRVHZZGROIIOETMWDKRFODD9NMC9TPOWGD";
 
     public static final Map<Hash, Long> initialState = new HashMap<>();
     public static final Snapshot initialSnapshot;
@@ -25,14 +29,38 @@ public class Snapshot {
         InputStream in = Snapshot.class.getResourceAsStream("/Snapshot.txt");
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
+        Curl curl = SpongeFactory.create(SpongeFactory.Mode.KERL);
+        int[] trit_value;
+        int[] trits = new int[Curl.HASH_LENGTH*3];
         try {
             while((line = reader.readLine()) != null) {
+                trit_value = Converter.trits(Converter.asciiToTrytes(line));
+                System.arraycopy(trit_value, 0, trits, 0, trit_value.length);
+                curl.absorb(trits, 0, trits.length);
+                Arrays.fill(trits, 0);
                 String[] parts = line.split(":", 2);
                 if (parts.length >= 2)
                 {
                     String key = parts[0];
                     String value = parts[1];
                     initialState.put(new Hash(key), Long.valueOf(value));
+                }
+            }
+            { // Check snapshot signature
+                trits = new int[Curl.HASH_LENGTH];
+                curl.squeeze(trits, 0, Curl.HASH_LENGTH);
+                int[] digests = new int[0];
+                int[] bundle = ISS.normalizedBundle(trits);
+                int i = 0;
+                in = Snapshot.class.getResourceAsStream("/Snapshot.sig");
+                reader = new BufferedReader(new InputStreamReader(in));
+                while((line = reader.readLine()) != null) {
+                    digests = ArrayUtils.addAll(digests, ISS.digest(SpongeFactory.Mode.KERL, Arrays.copyOfRange(bundle, i*ISS.NORMALIZED_FRAGMENT_LENGTH, (i+1)*ISS.NORMALIZED_FRAGMENT_LENGTH), Converter.trits(line)));
+                    i++;
+                }
+
+                if(!Arrays.equals(Converter.trits(snapshotPubKey), ISS.address(SpongeFactory.Mode.KERL, digests))) {
+                    throw new RuntimeException("Snapshot signature failed.");
                 }
             }
         } catch (IOException e) {

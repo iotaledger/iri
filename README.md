@@ -70,6 +70,5 @@ NEIGHBORS = udp://my.favorite.com:15600
 IXI_DIR = ixi
 HEADLESS = true
 DEBUG = true
-#TESTNET = false
 DB_PATH = db
 ```

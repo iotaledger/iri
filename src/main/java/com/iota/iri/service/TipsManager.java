@@ -188,7 +188,7 @@ public class TipsManager {
             } else {
                 Iterator<Hash> hashIterator = tipSet.iterator();
                 if(hashIterator.hasNext()) {
-                    tip = tipSet.iterator().next();
+                    tip = hashIterator.next();
                 } else {
                     tip = null;
                 }

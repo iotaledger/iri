@@ -150,41 +150,6 @@ public class TipsViewModel {
         return hashes;
     }
 
-//    public Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-//        synchronized (sync) {
-//            if(size() == 0) {
-//                return null;
-//            }
-//            int index = seed.nextInt(size());
-//            if(index >= tips.size()) {
-//                return getRandomSolidTipHash();
-//            } else {
-//                return getRandomNonSolidTipHash();
-//            }
-//        }
-//    }
-
-
-//    public void loadTipHashes(Tangle tangle) throws Exception {
-//        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
-//        if(hashes != null) {
-//            synchronized (sync) {
-//                for (Indexable h: hashes) {
-//                    tips.add((Hash) h);
-//                }
-//            }
-//        }
-//    }
-//
-//    public Set<Hash> getTipsHashesFromDB (Tangle tangle) throws Exception {
-//        Set<Hash> tipsFromDB = new HashSet<>();
-//        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
-//        if(hashes != null) {
-//            tipsFromDB.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
-//        }
-//        return tipsFromDB;
-//    }
-
     public class FifoHashCache {
 
         private int capacity;

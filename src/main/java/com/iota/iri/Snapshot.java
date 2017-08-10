@@ -3,6 +3,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
@@ -46,7 +47,9 @@ public class Snapshot {
                     initialState.put(new Hash(key), Long.valueOf(value));
                 }
             }
-            { // Check snapshot signature
+            /*
+            {
+                // Check snapshot signature
                 trits = new int[Curl.HASH_LENGTH];
                 curl.squeeze(trits, 0, Curl.HASH_LENGTH);
                 int[] digests = new int[0];
@@ -63,6 +66,8 @@ public class Snapshot {
                     throw new RuntimeException("Snapshot signature failed.");
                 }
             }
+            */
+            
         } catch (IOException e) {
             System.out.println("Failed to load snapshot.");
             System.exit(-1);

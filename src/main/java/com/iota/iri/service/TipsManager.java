@@ -205,10 +205,6 @@ public class TipsManager {
                     log.info("Reason to stop: transactionViewModel==extraTip");
                     messageQ.publish("rtsd %s", transactionViewModel.getHash());
                     break;
-                } else if (transactionViewModel.getHash().equals(tip)) {
-                    log.info("Reason to stop: transactionViewModel==itself");
-                    messageQ.publish("rtsl %s", transactionViewModel.getHash());
-                    break;
                 }
                 // set the tail here!
                 tail = tip;
@@ -249,6 +245,11 @@ public class TipsManager {
                     }
                 }
                 tip = tips[approverIndex];
+                if (transactionViewModel.getHash().equals(tip)) {
+                    log.info("Reason to stop: transactionViewModel==itself");
+                    messageQ.publish("rtsl %s", transactionViewModel.getHash());
+                    break;
+                }
             }
         }
         log.info("Tx traversed to find tip: " + traversedTails);

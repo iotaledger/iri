@@ -10,6 +10,7 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class BundleValidator {
 
@@ -66,24 +67,13 @@ public class BundleValidator {
                                                 addressMode = SpongeFactory.Mode.KERL;
                                             }
 
-                                            final Curl address = SpongeFactory.create(addressMode);
-                                            int offset = 0;
-                                            do {
-
-                                                address.absorb(
-                                                        ISS.digest(addressMode, Arrays.copyOfRange(normalizedBundle, offset % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE), offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS - 1) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) + 1),
-                                                                Arrays.copyOfRange(instanceTransactionViewModels.get(j).trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET,
-                                                                        TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE)),
-                                                        0, Curl.HASH_LENGTH);
-
-                                            } while (++j < instanceTransactionViewModels.size()
-                                                    && instanceTransactionViewModels.get(j).getAddressHash().equals(transactionViewModel.getAddressHash())
-                                                    && instanceTransactionViewModels.get(j).value() == 0);
-
-                                            final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
-                                            address.squeeze(addressTrits, 0, addressTrits.length);
-                                            //if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
-                                            if (! transactionViewModel.getAddressHash().equals(new Hash(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE)))) {
+                                            int k = j;
+                                            Hash computedAddress = getAddress(addressMode, normalizedBundle, instanceTransactionViewModels, new AtomicInteger(j), transactionViewModel);
+                                            if(addressMode.equals(SpongeFactory.Mode.KERL) && !computedAddress.equals(transactionViewModel.getAddressHash())) {
+                                                j = k;
+                                                computedAddress = getAddress(SpongeFactory.Mode.CURL, normalizedBundle, instanceTransactionViewModels, new AtomicInteger(j), transactionViewModel);
+                                            }
+                                            if (! transactionViewModel.getAddressHash().equals(computedAddress)) {
                                                 instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                                                 break MAIN_LOOP;
                                             }
@@ -115,6 +105,27 @@ public class BundleValidator {
             }
         }
         return transactions;
+    }
+
+    public static Hash getAddress(SpongeFactory.Mode mode, int[] normalizedBundle, List<TransactionViewModel> transactions, AtomicInteger j, TransactionViewModel transaction) {
+        final Curl address = SpongeFactory.create(mode);
+        int offset = 0;
+        do {
+
+            address.absorb(
+                    ISS.digest(mode, Arrays.copyOfRange(normalizedBundle, offset % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE), offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS - 1) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) + 1),
+                            Arrays.copyOfRange(transactions.get(j.get()).trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET,
+                                    TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE)),
+                    0, Curl.HASH_LENGTH);
+
+
+        } while (j.incrementAndGet() < transactions.size()
+                && transactions.get(j.get()).getAddressHash().equals(transaction.getAddressHash())
+                && transactions.get(j.get()).value() == 0);
+
+        final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
+        address.squeeze(addressTrits, 0, addressTrits.length);
+        return new Hash(addressTrits);
     }
 
     public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels, boolean milestone) {

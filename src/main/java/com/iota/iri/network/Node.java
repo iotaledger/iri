@@ -44,12 +44,12 @@ public class Node {
     private static final Logger log = LoggerFactory.getLogger(Node.class);
 
 
-    public  static final int TRANSACTION_PACKET_SIZE = 1650;
+    public  static final int TRANSACTION_PACKET_SIZE = 1653;
     private static final int QUEUE_SIZE = 1000;
     private static final int RECV_QUEUE_SIZE = 1000;
     private static final int REPLY_QUEUE_SIZE = 1000;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
-    public  static final int REQUEST_HASH_SIZE = 46;
+    public  static final int REQUEST_HASH_SIZE = 49;
     private static double P_SELECT_MILESTONE;
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);

@@ -77,9 +77,9 @@ public class Snapshot {
 
     public static final Object latestSnapshotSyncObject = new Object();
     private final Map<Hash, Long> state;
-    private int index;
+    private long index;
 
-    public int index() {
+    public long index() {
         return index;
     }
 
@@ -88,7 +88,7 @@ public class Snapshot {
         this.index = snapshot.index;
     }
 
-    private Snapshot(Map<Hash, Long> initialState, int index) {
+    private Snapshot(Map<Hash, Long> initialState, long index) {
         state = new HashMap<>(initialState);
         this.index = index;
     }
@@ -108,7 +108,7 @@ public class Snapshot {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
-    public Snapshot patch(Map<Hash, Long> diff, int index) {
+    public Snapshot patch(Map<Hash, Long> diff, long index) {
         Map<Hash, Long> patchedState = state.entrySet().parallelStream()
                 .map( hashLongEntry ->
                         new HashMap.SimpleEntry<>(hashLongEntry.getKey(),

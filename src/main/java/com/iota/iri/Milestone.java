@@ -40,8 +40,8 @@ public class Milestone {
     public static final int MILESTONE_START_INDEX = 151000;
     private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 20;
 
-    public int latestMilestoneIndex = MILESTONE_START_INDEX;
-    public int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
+    public long latestMilestoneIndex = MILESTONE_START_INDEX;
+    public long latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
 
@@ -68,7 +68,7 @@ public class Milestone {
                 long scanTime = System.currentTimeMillis();
 
                 try {
-                    final int previousLatestMilestoneIndex = latestMilestoneIndex;
+                    final long previousLatestMilestoneIndex = latestMilestoneIndex;
 
                     { // Update Milestone
                         { // find new milestones
@@ -120,7 +120,7 @@ public class Milestone {
                 long scanTime = System.currentTimeMillis();
 
                 try {
-                    final int previousSolidSubtangleLatestMilestoneIndex = latestSolidSubtangleMilestoneIndex;
+                    final long previousSolidSubtangleLatestMilestoneIndex = latestSolidSubtangleMilestoneIndex;
 
                     if(latestSolidSubtangleMilestoneIndex < latestMilestoneIndex) {
                         updateLatestSolidSubtangleMilestone();

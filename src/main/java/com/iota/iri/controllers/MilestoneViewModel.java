@@ -110,7 +110,7 @@ public class MilestoneViewModel {
         return null;
     }
 
-    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index) throws Exception {
+    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, long index) throws Exception {
         if(index <= com.iota.iri.Milestone.MILESTONE_START_INDEX) {
             return first(tangle);
         }
@@ -136,7 +136,7 @@ public class MilestoneViewModel {
     public Hash getHash() {
         return milestone.hash;
     }
-    public Integer index() {
+    public Long index() {
         return milestone.index.getValue();
     }
 

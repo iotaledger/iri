@@ -2,6 +2,7 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
@@ -110,40 +111,44 @@ public class TipsViewModel {
         }
     }
 
-//    public Hash getRandomTipHash() throws ExecutionException, InterruptedException {
-//        synchronized (sync) {
-//            if(size() == 0) {
-//                return null;
-//            }
-//            int index = seed.nextInt(size());
-//            if(index >= tips.size()) {
-//                return getRandomSolidTipHash();
-//            } else {
-//                return getRandomNonSolidTipHash();
-//            }
-//        }
-//    }
+    public Set<Hash> getTipsAtHeight(Tangle tangle, long height) throws Exception {
+        Set<Hash> hashes = new HashSet<>(); //tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
+        for(Hash hash: HeightViewModel.load(tangle, new IntegerIndex(height)).getHashes()) {
+            if(TransactionViewModel.fromHash(tangle, hash).getApprovers(tangle).size() == 0) {
+                hashes.add(hash);
+            }
+        }
+        return hashes;
+    }
 
+    public Set<Hash> getTipsAboveHeight(Tangle tangle, long height) throws Exception {
+        Set<Hash> hashes = new HashSet<>(); //tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
+        HeightViewModel hashesViewModel = HeightViewModel.load(tangle, new IntegerIndex(height));
+        while(hashesViewModel != null) {
+            for (Hash hash : hashesViewModel.getHashes()) {
+                if (TransactionViewModel.fromHash(tangle, hash).getApprovers(tangle).size() == 0) {
+                    hashes.add(hash);
+                }
+            }
+            hashesViewModel = hashesViewModel.next(tangle);
+        }
+        return hashes;
+    }
 
-//    public void loadTipHashes(Tangle tangle) throws Exception {
-//        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
-//        if(hashes != null) {
-//            synchronized (sync) {
-//                for (Indexable h: hashes) {
-//                    tips.add((Hash) h);
-//                }
-//            }
-//        }
-//    }
-//
-//    public Set<Hash> getTipsHashesFromDB (Tangle tangle) throws Exception {
-//        Set<Hash> tipsFromDB = new HashSet<>();
-//        Set<Indexable> hashes = tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
-//        if(hashes != null) {
-//            tipsFromDB.addAll(hashes.stream().map(h -> (Hash) h).collect(Collectors.toList()));
-//        }
-//        return tipsFromDB;
-//    }
+    public Set<Hash> getTipsInWindow(Tangle tangle, long height, long numHeights) throws Exception {
+        Set<Hash> hashes = new HashSet<>(); //tangle.keysWithMissingReferences(Transaction.class, Approvee.class);
+        HeightViewModel heightViewModel = HeightViewModel.load(tangle, new IntegerIndex(height));
+        final long maxHeight = height + numHeights;
+        while(heightViewModel != null && ((IntegerIndex) heightViewModel.getIndex()).getValue() <= maxHeight ) {
+            for (Hash hash : heightViewModel.getHashes()) {
+                if (TransactionViewModel.fromHash(tangle, hash).getApprovers(tangle).size() == 0) {
+                    hashes.add(hash);
+                }
+            }
+            heightViewModel = heightViewModel.next(tangle);
+        }
+        return hashes;
+    }
 
     public class FifoHashCache {
 

@@ -210,7 +210,7 @@ public class Milestone {
     }
 
     static int getIndex(TransactionViewModel transactionViewModel) {
-        return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
+        return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET, 15);
     }
 
     void shutDown() {

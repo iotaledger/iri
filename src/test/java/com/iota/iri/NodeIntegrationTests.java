@@ -141,7 +141,7 @@ public class NodeIntegrationTests {
     private void newMilestone(API api, Hash[] tips, long index) throws Exception {
         List<int[]> transactions = new ArrayList<>();
         transactions.add(new int[TRINARY_SIZE]);
-        Converter.copyTrits(index, transactions.get(0), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE);
+        Converter.copyTrits(index, transactions.get(0), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE);
         transactions.add(Arrays.copyOf(transactions.get(0), TRINARY_SIZE));
         System.arraycopy(Iota.TESTNET_COORDINATOR.trits(), 0, transactions.get(0), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         setBundleHash(transactions, null);
@@ -163,7 +163,7 @@ public class NodeIntegrationTests {
             int[] valueTrits = Arrays.copyOfRange(transactions.get(i), VALUE_TRINARY_OFFSET, VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE);
             t = ArrayUtils.addAll(t, valueTrits);
 
-            int[] tagTrits = Arrays.copyOfRange(transactions.get(i), TAG_TRINARY_OFFSET, TAG_TRINARY_OFFSET + TAG_TRINARY_SIZE);
+            int[] tagTrits = Arrays.copyOfRange(transactions.get(i), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_OFFSET + OBSOLETE_TAG_TRINARY_SIZE);
             t = ArrayUtils.addAll(t, tagTrits);
 
             int[] timestampTrits  = Arrays.copyOfRange(transactions.get(i), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_OFFSET + TIMESTAMP_TRINARY_SIZE);

@@ -238,11 +238,11 @@ public class TransactionViewModel {
         return transaction.address;
     }
 
-    public Hash getTagValue() {
-        if(transaction.tag == null) {
-            transaction.tag = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
+    public Hash getObsoleteTagValue() {
+        if(transaction.obsoleteTag == null) {
+            transaction.obsoleteTag = new Hash(Converter.bytes(trits(), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE), 0, TAG_SIZE);
         }
-        return transaction.tag;
+        return transaction.obsoleteTag;
     }
 
     public Hash getBundleHash() {
@@ -265,6 +265,22 @@ public class TransactionViewModel {
         }
         return transaction.branch;
     }
+
+    public Hash getTagValue() {
+        if(transaction.tag == null) {
+            transaction.tag = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
+        }
+        return transaction.tag;
+    }
+
+    public long getAttachmentTimestamp() { return transaction.attachmentTimestamp; }
+    public long getAttachmentTimestampLowerBound() {
+        return transaction.attachmentTimestampLowerBound;
+    }
+    public long getAttachmentTimestampUpperBound() {
+        return transaction.attachmentTimestampUpperBound;
+    }
+
 
     public long value() {
         return transaction.value;
@@ -295,7 +311,7 @@ public class TransactionViewModel {
         return Converter.bytes(trits(), NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
     }
 
-        public long lastIndex() {
+    public long lastIndex() {
         return transaction.lastIndex;
     }
 

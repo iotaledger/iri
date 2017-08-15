@@ -52,7 +52,13 @@ public class Transaction implements Persistable {
 
     @Override
     public byte[] metadata() {
-        ByteBuffer buffer = ByteBuffer.allocate(Hash.SIZE_IN_BYTES * 5 + Long.BYTES * 6 + Integer.BYTES * 3 + 1 + sender.getBytes().length);
+        int allocateSize =
+                Hash.SIZE_IN_BYTES * 6 + //address,bundle,trunk,branch,obsoleteTag,tag
+                        Long.BYTES * 9 + //value,currentIndex,lastIndex,timestamp,attachmentTimestampLowerBound,attachmentTimestampUpperBound,arrivalTime,height
+                        Integer.BYTES * 3 + //validity,type,snapshot
+                        1 + //solid
+                        sender.getBytes().length; //sender
+        ByteBuffer buffer = ByteBuffer.allocate(allocateSize);
         buffer.put(address.bytes());
         buffer.put(bundle.bytes());
         buffer.put(trunk.bytes());

@@ -746,14 +746,30 @@ public class API {
 
         for (final String tryte : trytes) {
             long startTime = System.nanoTime();
+            long timestamp = System.currentTimeMillis();
             try {
                 final int[] transactionTrits = Converter.trits(tryte);
+                //branch and trunk
                 System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
                         transactionTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
                         TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
                 System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
                         transactionTrits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
                         TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
+
+                //attachment fields: tag and timestamps
+                //tag - copy the obsolete tag to the attachment tag field
+                System.arraycopy(transactionTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
+                        transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
+                        TransactionViewModel.TAG_TRINARY_SIZE);
+
+                Converter.copyTrits(timestamp,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
+                        TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_SIZE);
+                Converter.copyTrits(0,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
+                        TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE);
+                Converter.copyTrits(Long.MAX_VALUE,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
+                        TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
+
                 if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
                     transactionViewModels.clear();
                     break;

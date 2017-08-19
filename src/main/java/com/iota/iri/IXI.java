@@ -22,6 +22,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static com.sun.jmx.mbeanserver.Util.cast;
 import static java.nio.file.StandardWatchEventKinds.*;
@@ -182,16 +184,13 @@ public class IXI {
     }
 
     public AbstractResponse processCommand(final String command, Map<String, Object> request) {
-        Map<String, CallableRequest<AbstractResponse>> ixiMap;
-        AbstractResponse res;
-        String substring;
-        for (String key: ixiAPI.keySet()) {
-            substring = command.substring(0, key.length());
-            if(substring.equals(key)) {
-                String subCmd = command.substring(key.length()+1);
-                ixiMap = ixiAPI.get(key);
-                res = ixiMap.get(subCmd).call(request);
-                if(res != null) return res;
+        Pattern pattern = Pattern.compile("^(.*)\\.(.*)$");
+        Matcher matcher = pattern.matcher(command);
+
+        if (matcher.find()) {
+            Map<String, CallableRequest<AbstractResponse>> ixiMap = ixiAPI.get(matcher.group(1));
+            if (ixiMap != null) {
+                return ixiMap.get(matcher.group(2)).call(request);
             }
         }
         return null;

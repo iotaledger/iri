@@ -36,12 +36,21 @@ This will create a `target` directory in which you will find the executable jar 
 
 ### How to run IRI 
 
+#### Locally
+
 Running IRI is pretty simple, and you don't even have to run it under admin rights. Below is a list of command line options. Here is an example script:
 
 ```
 java -jar iri.jar -p 14265
 ```
 
+### Docker
+
+Create an iota.ini file with all of your configuration variables set in it. 
+Any that you don't provide in here will be assumed to be default or taken from 
+command line arguments.
+
+`docker run -d --net=host --name iota-node -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
 
 ### Command Line Options 
 
@@ -72,3 +81,4 @@ HEADLESS = true
 DEBUG = true
 DB_PATH = db
 ```
+

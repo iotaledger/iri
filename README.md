@@ -1,10 +1,10 @@
 ## IOTA
 
-This is the branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for the we have setup. It is a complete [[IOTA]](http://iota.org/) Node with a JSON-REST HTTP interface.
+This is the main branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for the we have setup. It is a complete [[IOTA]](http://iota.org/) Node with a JSON-REST HTTP interface.
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](http://learn.iota.org/).
 
-* **Latest release:** 1.2.0 Release
+* **Latest release:** 1.3.1 Release
 * **License:** GPLv3
 
 # How to get started
@@ -36,12 +36,21 @@ This will create a `target` directory in which you will find the executable jar 
 
 ### How to run IRI 
 
+#### Locally
+
 Running IRI is pretty simple, and you don't even have to run it under admin rights. Below is a list of command line options. Here is an example script:
 
 ```
 java -jar iri.jar -p 14265
 ```
 
+### Docker
+
+Create an iota.ini file with all of your configuration variables set in it.
+Any that you don't provide in here will be assumed to be default or taken from
+command line arguments.
+
+`docker run -d --net=host --name iota-node -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
 
 ### Command Line Options 
 
@@ -70,6 +79,6 @@ NEIGHBORS = udp://my.favorite.com:15600
 IXI_DIR = ixi
 HEADLESS = true
 DEBUG = true
-#TESTNET = false
 DB_PATH = db
 ```
+

@@ -12,10 +12,10 @@ import static com.jayway.restassured.RestAssured.*;
 
 public class APIIntegrationTests {
 
-    private static Gson gson = new GsonBuilder().create();
+    private static final Gson gson = new GsonBuilder().create();
 
     static {
-        RestAssured.port = 14265;
+        RestAssured.port = 14700;
     }
 
     /**
@@ -186,7 +186,7 @@ public class APIIntegrationTests {
 
         final Map<String, Object> request = new HashMap<>();
         request.put("command", "getTrytes");
-        request.put("addresses", new String [] {"OAATQS9VQLSXCLDJVJJVYUGONXAXOFMJOZNSYWRZSWECMXAQQURHQBJNLD9IOFEPGZEPEMPXCIVRX9999"});
+        request.put("hashes", new String [] {"OAATQS9VQLSXCLDJVJJVYUGONXAXOFMJOZNSYWRZSWECMXAQQURHQBJNLD9IOFEPGZEPEMPXCIVRX9999"});
         given().
                 contentType("application/json").
                 body(gson.toJson(request)).
@@ -209,7 +209,8 @@ public class APIIntegrationTests {
 
         final Map<String, Object> request = new HashMap<>();
         request.put("command", "getInclusionStates");
-        request.put("addresses", new String [] {"QHBYXQWRAHQJZEIARWSQGZJTAIITOZRMBFICIPAVD9YRJMXFXBDPFDTRAHHHP9YPDUVTNOFWZGFGWMYHEKNAGNJHMW"});
+        request.put("transactions", new String [] {"999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"});
+        request.put("tips", new String [] {"999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999"});
         given().
                 contentType("application/json").
                 body(gson.toJson(request)).

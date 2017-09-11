@@ -1,285 +1,387 @@
 package com.iota.iri.service;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
+import com.iota.iri.BundleValidator;
+import com.iota.iri.LedgerValidator;
+import com.iota.iri.TransactionValidator;
+import com.iota.iri.model.Hash;
+import com.iota.iri.controllers.*;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Bundle;
 import com.iota.iri.Milestone;
-import com.iota.iri.Snapshot;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
-import com.iota.iri.service.storage.Storage;
-import com.iota.iri.service.storage.StorageApprovers;
-import com.iota.iri.service.storage.StorageScratchpad;
-import com.iota.iri.service.storage.StorageTransactions;
 
 public class TipsManager {
 
-    private static final Logger log = LoggerFactory.getLogger(TipsManager.class);
+    private final Logger log = LoggerFactory.getLogger(TipsManager.class);
+    private final Tangle tangle;
+    private final TipsViewModel tipsViewModel;
+    private final Milestone milestone;
+    private final LedgerValidator ledgerValidator;
+    private final TransactionValidator transactionValidator;
+    private final MessageQ messageQ;
 
-    private volatile boolean shuttingDown;
+    private int RATING_THRESHOLD = 75; // Must be in [0..100] range
+    private boolean shuttingDown = false;
+    private int RESCAN_TX_TO_REQUEST_INTERVAL = 750;
+    private final int maxDepth;
+    private Thread solidityRescanHandle;
+
+    public void setRATING_THRESHOLD(int value) {
+        if (value < 0) value = 0;
+        if (value > 100) value = 100;
+        RATING_THRESHOLD = value;
+    }
+
+    public TipsManager(final Tangle tangle,
+                       final LedgerValidator ledgerValidator,
+                       final TransactionValidator transactionValidator,
+                       final TipsViewModel tipsViewModel,
+                       final Milestone milestone,
+                       final int maxDepth,
+                       final MessageQ messageQ) {
+        this.tangle = tangle;
+        this.ledgerValidator = ledgerValidator;
+        this.transactionValidator = transactionValidator;
+        this.tipsViewModel = tipsViewModel;
+        this.milestone = milestone;
+        this.maxDepth = maxDepth;
+        this.messageQ = messageQ;
+    }
 
     public void init() {
+        solidityRescanHandle = new Thread(() -> {
 
-        (new Thread(() -> {
-        	
-            while (!shuttingDown) {
-
+            while(!shuttingDown) {
                 try {
-                    final int previousLatestMilestoneIndex = Milestone.latestMilestoneIndex;
-                    final int previousSolidSubtangleLatestMilestoneIndex = Milestone.latestSolidSubtangleMilestoneIndex;
-
-                    Milestone.updateLatestMilestone();
-                    Milestone.updateLatestSolidSubtangleMilestone();
-
-                    if (previousLatestMilestoneIndex != Milestone.latestMilestoneIndex) {
-                        log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex + " to #" + Milestone.latestMilestoneIndex);
-                    }
-                    if (previousSolidSubtangleLatestMilestoneIndex != Milestone.latestSolidSubtangleMilestoneIndex) {
-                    	log.info("Latest SOLID SUBTANGLE milestone has changed from #" + previousSolidSubtangleLatestMilestoneIndex + " to #" + Milestone.latestSolidSubtangleMilestoneIndex);
-                    }
-                    Thread.sleep(5000);
-
-                } catch (final Exception e) {
-                	log.error("Error during TipsManager Milestone updating", e);
+                    scanTipsForSolidity();
+                } catch (Exception e) {
+                    log.error("Error during solidity scan : {}", e);
+                }
+                try {
+                    Thread.sleep(RESCAN_TX_TO_REQUEST_INTERVAL);
+                } catch (InterruptedException e) {
+                    log.error("Solidity rescan interrupted.");
                 }
             }
-        }, "Latest Milestone Tracker")).start();
+        }, "Tip Solidity Rescan");
+        solidityRescanHandle.start();
     }
 
-    public void shutDown() {
-        shuttingDown = true;
-    }
-
-    static synchronized Hash transactionToApprove(final Hash extraTip, int depth) {
-
-        final Hash preferableMilestone = Milestone.latestSolidSubtangleMilestone;
-
-        synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
-
-        	StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
-
-            Map<Hash, Long> state = new HashMap<>(Snapshot.initialState);
-
-            {
-                int numberOfAnalyzedTransactions = 0;
-
-                final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions.instance().transactionPointer((extraTip == null ? preferableMilestone : extraTip).bytes())));
-                Long pointer;
-                while ((pointer = nonAnalyzedTransactions.poll()) != null) {
-
-                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
-
-                        numberOfAnalyzedTransactions++;
-
-                        final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                        if (transaction.type == Storage.PREFILLED_SLOT) {
-                            return null;
-                        } else {
-
-                            if (transaction.currentIndex == 0) {
-
-                                boolean validBundle = false;
-
-                                final Bundle bundle = new Bundle(transaction.bundle);
-                                for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
-
-                                    if (bundleTransactions.get(0).pointer == transaction.pointer) {
-
-                                        validBundle = true;
-
-                                        bundleTransactions.stream().filter(bundleTransaction -> bundleTransaction.value != 0).forEach(bundleTransaction -> {
-                                            final Hash address = new Hash(bundleTransaction.address);
-                                            final Long value = state.get(address);
-                                            state.put(address, value == null ? bundleTransaction.value : (value + bundleTransaction.value));
-                                        });
-                                        break;
-                                    }
-                                }
-
-                                if (!validBundle) {
-                                    return null;
-                                }
-                            }
-
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
-                        }
-                    }
-                }
-
-                log.info("Confirmed transactions = {}", numberOfAnalyzedTransactions);
+    private void scanTipsForSolidity() throws Exception {
+        int size = tipsViewModel.nonSolidSize();
+        if(size != 0) {
+            Hash hash = tipsViewModel.getRandomNonSolidTipHash();
+            boolean isTip = true;
+            if(hash != null && TransactionViewModel.fromHash(tangle, hash).getApprovers(tangle).size() != 0) {
+                tipsViewModel.removeTipHash(hash);
+                isTip = false;
             }
-
-            final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
-            while (stateIterator.hasNext()) {
-
-                final Map.Entry<Hash, Long> entry = stateIterator.next();
-                if (entry.getValue() <= 0) {
-
-                    if (entry.getValue() < 0) {
-                    	log.error("Ledger inconsistency detected");
-                        return null;
-                    }
-                    stateIterator.remove();
-                }
+            if(hash != null  && isTip && transactionValidator.checkSolidity(hash, false)) {
+                //if(hash != null && TransactionViewModel.fromHash(hash).isSolid() && isTip) {
+                tipsViewModel.setSolid(hash);
             }
-
-            StorageScratchpad.instance().saveAnalyzedTransactionsFlags();
-            StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
-
-            final Set<Hash> tailsToAnalyze = new HashSet<>();
-
-            Hash tip = preferableMilestone;
-            if (extraTip != null) {
-
-                Transaction transaction = StorageTransactions.instance().loadTransaction(StorageTransactions.instance().transactionPointer(tip.bytes()));
-                while (depth-- > 0 && !tip.equals(Hash.NULL_HASH)) {
-
-                    tip = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
-                    do {
-                        transaction = StorageTransactions.instance().loadTransaction(transaction.trunkTransactionPointer);
-                    } while (transaction.currentIndex != 0);
-                }
-            }
-            final Queue<Long> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(StorageTransactions.instance().transactionPointer(tip.bytes())));
-            Long pointer;
-            while ((pointer = nonAnalyzedTransactions.poll()) != null) {
-
-                if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
-
-                    final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-
-                    if (transaction.currentIndex == 0) {
-                        tailsToAnalyze.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
-                    }
-
-                    StorageApprovers.instance().approveeTransactions(StorageApprovers.instance().approveePointer(transaction.hash)).forEach(nonAnalyzedTransactions::offer);
-                }
-            }
-
-            if (extraTip != null) {
-
-                StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
-
-                final Iterator<Hash> tailsToAnalyzeIterator = tailsToAnalyze.iterator();
-                while (tailsToAnalyzeIterator.hasNext()) {
-
-                    final Transaction tail = StorageTransactions.instance().loadTransaction(tailsToAnalyzeIterator.next().bytes());
-                    if (StorageScratchpad.instance().analyzedTransactionFlag(tail.pointer)) {
-                        tailsToAnalyzeIterator.remove();
-                    }
-                }
-            }
-
-            log.info(tailsToAnalyze.size() + " tails need to be analyzed");
-            Hash bestTip = preferableMilestone;
-            int bestRating = 0;
-            for (final Hash tail : tailsToAnalyze) {
-
-            	StorageScratchpad.instance().loadAnalyzedTransactionsFlags();
-
-                Set<Hash> extraTransactions = new HashSet<>();
-
-                nonAnalyzedTransactions.clear();
-                nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(tail.bytes()));
-                while ((pointer = nonAnalyzedTransactions.poll()) != null) {
-
-                    if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
-
-                        final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                        if (transaction.type == Storage.PREFILLED_SLOT) {
-                            extraTransactions = null;
-                            break;
-                        } else {
-                            extraTransactions.add(new Hash(transaction.hash, 0, Transaction.HASH_SIZE));
-                            nonAnalyzedTransactions.offer(transaction.trunkTransactionPointer);
-                            nonAnalyzedTransactions.offer(transaction.branchTransactionPointer);
-                        }
-                    }
-                }
-
-                if (extraTransactions != null) {
-
-                    Set<Hash> extraTransactionsCopy = new HashSet<>(extraTransactions);
-
-                    for (final Hash extraTransaction : extraTransactions) {
-
-                        final Transaction transaction = StorageTransactions.instance().loadTransaction(extraTransaction.bytes());
-                        if (transaction != null && transaction.currentIndex == 0) {
-
-                            final Bundle bundle = new Bundle(transaction.bundle);
-                            for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
-
-                                if (Arrays.equals(bundleTransactions.get(0).hash, transaction.hash)) {
-
-                                    for (final Transaction bundleTransaction : bundleTransactions) {
-
-                                        if (!extraTransactionsCopy.remove(new Hash(bundleTransaction.hash, 0, Transaction.HASH_SIZE))) {
-                                            extraTransactionsCopy = null;
-                                            break;
-                                        }
-                                    }
-                                    break;
-                                }
-                            }
-                        }
-                        if (extraTransactionsCopy == null) {
-                            break;
-                        }
-                    }
-
-                    if (extraTransactionsCopy != null && extraTransactionsCopy.isEmpty()) {
-
-                        final Map<Hash, Long> stateCopy = new HashMap<>(state);
-
-                        for (final Hash extraTransaction : extraTransactions) {
-
-                            final Transaction transaction = StorageTransactions.instance().loadTransaction(extraTransaction.bytes());
-                            if (transaction.value != 0) {
-                                final Hash address = new Hash(transaction.address);
-                                final Long value = stateCopy.get(address);
-                                stateCopy.put(address, value == null ? transaction.value : (value + transaction.value));
-                            }
-                        }
-
-                        for (final long value : stateCopy.values()) {
-                            if (value < 0) {
-                                extraTransactions = null;
-                                break;
-                            }
-                        }
-
-                        if (extraTransactions != null) {
-                            if (extraTransactions.size() > bestRating) {
-                                bestTip = tail;
-                                bestRating = extraTransactions.size();
-                            }
-                        }
-                    }
-                }
-            }
-            log.info("{} extra transactions approved", bestRating);
-            return bestTip;
         }
     }
-    
-    private static TipsManager instance = new TipsManager();
 
-    private TipsManager() {}
+    public void shutdown() throws InterruptedException {
+        shuttingDown = true;
+        try {
+            if (solidityRescanHandle != null && solidityRescanHandle.isAlive())
+                solidityRescanHandle.join();
+        }
+        catch (Exception e) {
+            log.error("Error in shutdown",e);
+        }
 
-    public static TipsManager instance() {
-        return instance;
+    }
+
+    Hash transactionToApprove(final Hash reference, final Hash extraTip, final int depth, final int iterations, Random seed) {
+
+        long startTime = System.nanoTime();
+        final int msDepth;
+        if(depth > maxDepth) {
+            msDepth = maxDepth;
+        } else {
+            msDepth = depth;
+        }
+
+        if(milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX ||
+                milestone.latestMilestoneIndex == Milestone.MILESTONE_START_INDEX) {
+
+            Map<Hash, Long> ratings = new HashMap<>();
+            Set<Hash> analyzedTips = new HashSet<>();
+            Set<Hash> maxDepthOk = new HashSet<>();
+            try {
+                Hash tip = entryPoint(reference, extraTip, msDepth);
+                serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
+                analyzedTips.clear();
+                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex-depth*2, maxDepthOk, seed);
+            } catch (Exception e) {
+                e.printStackTrace();
+                log.error("Encountered error: " + e.getLocalizedMessage());
+            } finally {
+                API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
+            }
+        }
+        return null;
+    }
+
+    Hash entryPoint(final Hash reference, final Hash extraTip, final int depth) throws Exception {
+        Hash tip = reference == null ? milestone.latestSolidSubtangleMilestone : reference;
+        if (extraTip != null) {
+            int depositIndex = TransactionViewModel.fromHash(tangle, reference).snapshotIndex();
+            int milestoneIndex = (depositIndex > 0 ? depositIndex : milestone.latestSolidSubtangleMilestoneIndex) - depth;
+            if(milestoneIndex < 0) {
+                milestoneIndex = 0;
+            }
+            MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex);
+            if(milestoneViewModel != null && milestoneViewModel.getHash() != null) {
+                tip = milestoneViewModel.getHash();
+            }
+        }
+        return tip;
+    }
+
+    Hash markovChainMonteCarlo(final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final int maxDepth, final Set<Hash> maxDepthOk, final Random seed) throws Exception {
+        Map<Hash, Integer> monteCarloIntegrations = new HashMap<>();
+        Hash tail;
+        for(int i = iterations; i-- > 0; ) {
+            tail = randomWalk(tip, extraTip, ratings, maxDepth, maxDepthOk, seed);
+            if(monteCarloIntegrations.containsKey(tail)) {
+                monteCarloIntegrations.put(tail, monteCarloIntegrations.get(tail) + 1);
+            } else {
+                monteCarloIntegrations.put(tail,1);
+            }
+        }
+        return monteCarloIntegrations.entrySet().stream().reduce((a, b) -> {
+            if (a.getValue() > b.getValue()) {
+                return a;
+            } else if (a.getValue() < b.getValue()) {
+                return b;
+            } else if (seed.nextBoolean()) {
+                return a;
+            } else {
+                return b;
+            }
+        }).map(Map.Entry::getKey).orElse(null);
+    }
+
+    Hash randomWalk(final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
+        Hash tip = start, tail = tip;
+        Hash[] tips;
+        Set<Hash> tipSet;
+        Set<Hash> analyzedTips = new HashSet<>();
+        int traversedTails = 0;
+        TransactionViewModel transactionViewModel;
+        int approverIndex;
+        double ratingWeight;
+        double[] walkRatings;
+        while (tip != null) {
+            transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
+            tipSet = transactionViewModel.getApprovers(tangle).getHashes();
+            if(transactionViewModel.getCurrentIndex() == 0) {
+                if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                    log.info("Reason to stop: transactionViewModel == null");
+                    messageQ.publish("rtsn %s", transactionViewModel.getHash());
+                    break;
+                } else if (!transactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
+                    //} else if (!transactionViewModel.isSolid()) {
+                    log.info("Reason to stop: !checkSolidity");
+                    messageQ.publish("rtss %s", transactionViewModel.getHash());
+                    break;
+
+                } else if (belowMaxDepth(transactionViewModel.getHash(), maxDepth, maxDepthOk)) {
+                    log.info("Reason to stop: belowMaxDepth");
+                    break;
+
+                } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
+                    log.info("Reason to stop: !LedgerValidator");
+                    messageQ.publish("rtsv %s", transactionViewModel.getHash());
+                    break;
+                } else if (transactionViewModel.getHash().equals(extraTip)) {
+                    log.info("Reason to stop: transactionViewModel==extraTip");
+                    messageQ.publish("rtsd %s", transactionViewModel.getHash());
+                    break;
+                } else if (isBundleReusingKey(transactionViewModel)) {
+                    log.info("Reason to stop: key reuse");
+                    messageQ.publish("rtsk %s", transactionViewModel.getHash());
+                    break;
+                }
+                // set the tail here!
+                tail = tip;
+                traversedTails++;
+            }
+            if(tipSet.size() == 0) {
+                log.info("Reason to stop: TransactionViewModel is a tip");
+                messageQ.publish("rtst %s", tip);
+                break;
+            } else if (tipSet.size() == 1) {
+                Iterator<Hash> hashIterator = tipSet.iterator();
+                if(hashIterator.hasNext()) {
+                    tip = hashIterator.next();
+                } else {
+                    tip = null;
+                }
+            } else {
+                // walk to the next approver
+                tips = tipSet.toArray(new Hash[tipSet.size()]);
+                if (!ratings.containsKey(tip)) {
+                    serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
+                    analyzedTips.clear();
+                }
+
+                walkRatings = new double[tips.length];
+                double maxRating = 0;
+                for (int i = 0; i < tips.length; i++) {
+                    if (ratings.containsKey(tips[i])) {
+                        walkRatings[i] = Math.sqrt(ratings.get(tips[i]));
+                        maxRating += walkRatings[i];
+                    }
+                }
+                ratingWeight = rnd.nextDouble() * maxRating;
+                for (approverIndex = tips.length; approverIndex-- > 1; ) {
+                    ratingWeight -= walkRatings[approverIndex];
+                    if (ratingWeight <= 0) {
+                        break;
+                    }
+                }
+                tip = tips[approverIndex];
+                if (transactionViewModel.getHash().equals(tip)) {
+                    log.info("Reason to stop: transactionViewModel==itself");
+                    messageQ.publish("rtsl %s", transactionViewModel.getHash());
+                    break;
+                }
+            }
+        }
+        log.info("Tx traversed to find tip: " + traversedTails);
+        messageQ.publish("mctn %d", traversedTails);
+        return tail;
+    }
+
+    private boolean isBundleReusingKey(TransactionViewModel tailTransaction) throws Exception {
+        //skip milestones and NULL_HASH
+        if (TransactionViewModel.dsHashes.contains(tailTransaction.getAddressHash().toString())) {
+            return false;
+        }
+        if (tailTransaction.lastIndex() == 0){
+            //single transaction bundle, doesn't spend.
+            return false;
+        }
+
+        for(
+                TransactionViewModel transactionViewModel = tailTransaction;
+                transactionViewModel.getCurrentIndex() != transactionViewModel.lastIndex();
+                transactionViewModel = transactionViewModel.getTrunkTransaction(tangle)) {
+            if(transactionViewModel.value() < 0 && transactionViewModel.isDoubleSpend(tangle)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static long capSum(long a, long b, long max) {
+        if(a + b < 0 || a + b > max) {
+            return max;
+        }
+        return a+b;
+    }
+
+    void serialUpdateRatings(final Hash txHash, final Map<Hash, Long> ratings, final Set<Hash> analyzedTips, final Hash extraTip) throws Exception {
+        Stack<Hash> hashesToRate = new Stack<>();
+        hashesToRate.push(txHash);
+        Hash currentHash;
+        boolean addedBack;
+        while(!hashesToRate.empty()) {
+            currentHash = hashesToRate.pop();
+            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, currentHash);
+            addedBack = false;
+            Set<Hash> approvers = transactionViewModel.getApprovers(tangle).getHashes();
+            for(Hash approver : approvers) {
+                if(ratings.get(approver) == null && !approver.equals(currentHash)) {
+                    if(!addedBack) {
+                        addedBack = true;
+                        hashesToRate.push(currentHash);
+                    }
+                    hashesToRate.push(approver);
+                }
+            }
+            if(!addedBack && analyzedTips.add(currentHash)) {
+                long rating = (extraTip != null && ledgerValidator.isApproved(currentHash)? 0: 1) + approvers.stream().map(ratings::get).filter(Objects::nonNull)
+                        .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L);
+                ratings.put(currentHash, rating);
+            }
+        }
+    }
+
+    Set<Hash> updateHashRatings(Hash txHash, Map<Hash, Set<Hash>> ratings, Set<Hash> analyzedTips) throws Exception {
+        Set<Hash> rating;
+        if(analyzedTips.add(txHash)) {
+            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
+            rating = new HashSet<>(Collections.singleton(txHash));
+            Set<Hash> approverHashes = transactionViewModel.getApprovers(tangle).getHashes();
+            for(Hash approver : approverHashes) {
+                rating.addAll(updateHashRatings(approver, ratings, analyzedTips));
+            }
+            ratings.put(txHash, rating);
+        } else {
+            if(ratings.containsKey(txHash)) {
+                rating = ratings.get(txHash);
+            } else {
+                rating = new HashSet<>();
+            }
+        }
+        return rating;
+    }
+
+    long recursiveUpdateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
+        long rating = 1;
+        if(analyzedTips.add(txHash)) {
+            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
+            Set<Hash> approverHashes = transactionViewModel.getApprovers(tangle).getHashes();
+            for(Hash approver : approverHashes) {
+                rating = capSum(rating, recursiveUpdateRatings(approver, ratings, analyzedTips), Long.MAX_VALUE/2);
+            }
+            ratings.put(txHash, rating);
+        } else {
+            if(ratings.containsKey(txHash)) {
+                rating = ratings.get(txHash);
+            } else {
+                rating = 0;
+            }
+        }
+        return rating;
+    }
+
+    boolean belowMaxDepth(Hash tip, int depth, Set<Hash> maxDepthOk) throws Exception {
+        //if tip is confirmed stop
+        if (TransactionViewModel.fromHash(tangle, tip).snapshotIndex() >= depth) {
+            return false;
+        }
+        //if tip unconfirmed, check if any referenced tx is confirmed below maxDepth
+        Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
+        Set<Hash> analyzedTranscations = new HashSet<>();
+        Hash hash;
+        while ((hash = nonAnalyzedTransactions.poll()) != null) {
+            if(analyzedTranscations.add(hash)) {
+                TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
+                if (transaction.snapshotIndex() != 0 && transaction.snapshotIndex() < depth) {
+                    return true;
+                }
+                if (transaction.snapshotIndex() == 0) {
+                    if (maxDepthOk.contains(hash)) {
+                        //log.info("Memoization!");
+                    } else {
+                        nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
+                        nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
+                    }
+                }
+            }
+        }
+        maxDepthOk.add(tip);
+        return false;
     }
 }

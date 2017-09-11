@@ -1,139 +1,249 @@
 package com.iota.iri;
 
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
-import com.iota.iri.hash.Curl;
+import javax.net.ssl.HttpsURLConnection;
+
+import com.iota.iri.controllers.*;
+import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.zmq.MessageQ;
+import com.iota.iri.storage.Tangle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
-import com.iota.iri.service.storage.Storage;
-import com.iota.iri.service.storage.StorageAddresses;
-import com.iota.iri.service.storage.StorageScratchpad;
-import com.iota.iri.service.storage.AbstractStorage;
-import com.iota.iri.service.storage.StorageTransactions;
 import com.iota.iri.utils.Converter;
 
 public class Milestone {
 
-    public static final Hash COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
+    private final Logger log = LoggerFactory.getLogger(Milestone.class);
+    private final Tangle tangle;
+    private final Hash coordinator;
+    private final TransactionValidator transactionValidator;
+    private final boolean testnet;
+    private final MessageQ messageQ;
 
-    public static Hash latestMilestone = Hash.NULL_HASH;
-    public static Hash latestSolidSubtangleMilestone = Hash.NULL_HASH;
+    private LedgerValidator ledgerValidator;
+    public Hash latestMilestone = Hash.NULL_HASH;
+    public Hash latestSolidSubtangleMilestone = latestMilestone;
 
-    public static final int MILESTONE_START_INDEX = 13250;
+    public static final int MILESTONE_START_INDEX = 151000;
+    private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 20;
 
-    public static int latestMilestoneIndex = MILESTONE_START_INDEX;
-    public static int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
+    public int latestMilestoneIndex = MILESTONE_START_INDEX;
+    public int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
 
-    private static final Set<Long> analyzedMilestoneCandidates = new HashSet<>();
-    private static final Map<Integer, Hash> milestones = new ConcurrentHashMap<>();
+    private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
 
-    public static void updateLatestMilestone() { // refactor
+    public Milestone(final Tangle tangle,
+                     final Hash coordinator,
+                     final TransactionValidator transactionValidator,
+                     final boolean testnet,
+                     final MessageQ messageQ
+                     ) {
+        this.tangle = tangle;
+        this.coordinator = coordinator;
+        this.transactionValidator = transactionValidator;
+        this.testnet = testnet;
+        this.messageQ = messageQ;
+    }
 
-        for (final Long pointer : StorageAddresses.instance().addressesOf(COORDINATOR)) {
+    private boolean shuttingDown;
+    private static int RESCAN_INTERVAL = 5000;
 
-            if (analyzedMilestoneCandidates.add(pointer)) {
+    public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) {
+        this.ledgerValidator = ledgerValidator;
+        (new Thread(() -> {
+            while (!shuttingDown) {
+                long scanTime = System.currentTimeMillis();
 
-                final Transaction transaction = StorageTransactions.instance().loadTransaction(pointer);
-                if (transaction.currentIndex == 0) {
+                try {
+                    final int previousLatestMilestoneIndex = latestMilestoneIndex;
 
-                    final int index = (int) Converter.longValue(transaction.trits(), Transaction.TAG_TRINARY_OFFSET, 15);
-                    if (index > latestMilestoneIndex) {
-
-                        final Bundle bundle = new Bundle(transaction.bundle);
-                        for (final List<Transaction> bundleTransactions : bundle.getTransactions()) {
-
-                            if (bundleTransactions.get(0).pointer == transaction.pointer) {
-
-                                final Transaction transaction2 = StorageTransactions.instance().loadTransaction(transaction.trunkTransactionPointer);
-                                if (transaction2.type == AbstractStorage.FILLED_SLOT
-                                        && transaction.branchTransactionPointer == transaction2.trunkTransactionPointer) {
-
-                                    final int[] trunkTransactionTrits = new int[Transaction.TRUNK_TRANSACTION_TRINARY_SIZE];
-                                    Converter.getTrits(transaction.trunkTransaction, trunkTransactionTrits);
-                                    final int[] signatureFragmentTrits = Arrays.copyOfRange(transaction.trits(), Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + Transaction.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
-
-                                    final int[] hash = ISS.address(ISS.digest(Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits), ISS.NUMBER_OF_FRAGMENT_CHUNKS), signatureFragmentTrits));
-
-                                    int indexCopy = index;
-                                    for (int i = 0; i < 20; i++) {
-
-                                        final Curl curl = new Curl();
-                                        if ((indexCopy & 1) == 0) {
-                                            curl.absorb(hash, 0, hash.length);
-                                            curl.absorb(transaction2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
-                                        } else {
-                                            curl.absorb(transaction2.trits(), i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
-                                            curl.absorb(hash, 0, hash.length);
+                    { // Update Milestone
+                        { // find new milestones
+                            AddressViewModel.load(tangle, coordinator).getHashes().stream()
+                                    .filter(analyzedMilestoneCandidates::add)
+                                    .map(hash -> TransactionViewModel.quietFromHash(tangle, hash))
+                                    .filter(t -> t.getCurrentIndex() == 0)
+                                    .forEach(t -> {
+                                        try {
+                                            if(!validateMilestone(mode, t, getIndex(t))) {
+                                                analyzedMilestoneCandidates.remove(t.getHash());
+                                            }
+                                        } catch (Exception e) {
+                                            analyzedMilestoneCandidates.remove(t.getHash());
+                                            log.error("Could not validate milestone: ", t.getHash());
                                         }
-                                        curl.squeeze(hash, 0, hash.length);
-
-                                        indexCopy >>= 1;
-                                    }
-
-                                    if ((new Hash(hash)).equals(COORDINATOR)) {
-
-                                        latestMilestone = new Hash(transaction.hash, 0, Transaction.HASH_SIZE);
-                                        latestMilestoneIndex = index;
-
-                                        milestones.put(latestMilestoneIndex, latestMilestone);
-                                    }
-                                }
-                                break;
-                            }
+                                    });
                         }
+                        MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
+                        if (milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
+                            latestMilestone = milestoneViewModel.getHash();
+                            latestMilestoneIndex = milestoneViewModel.index();
+                        }
+                    }
+
+                    if (previousLatestMilestoneIndex != latestMilestoneIndex) {
+
+                        messageQ.publish("lmi %d %d", previousLatestMilestoneIndex, latestMilestoneIndex);
+                        log.info("Latest milestone has changed from #" + previousLatestMilestoneIndex
+                                + " to #" + latestMilestoneIndex);
+                    }
+
+                    Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
+
+                } catch (final Exception e) {
+                    log.error("Error during Latest Milestone updating", e);
+                }
+            }
+        }, "Latest Milestone Tracker")).start();
+
+        (new Thread(() -> {
+
+            try {
+                ledgerValidator.init(revalidate);
+            } catch (Exception e) {
+                log.error("Error initializing snapshots. Skipping.", e);
+            }
+            while (!shuttingDown) {
+                long scanTime = System.currentTimeMillis();
+
+                try {
+                    final int previousSolidSubtangleLatestMilestoneIndex = latestSolidSubtangleMilestoneIndex;
+
+                    if(latestSolidSubtangleMilestoneIndex < latestMilestoneIndex) {
+                        updateLatestSolidSubtangleMilestone();
+                    }
+
+                    if (previousSolidSubtangleLatestMilestoneIndex != latestSolidSubtangleMilestoneIndex) {
+
+                        messageQ.publish("lmsi %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
+                        messageQ.publish("lmhs %s", latestSolidSubtangleMilestone);
+                        log.info("Latest SOLID SUBTANGLE milestone has changed from #"
+                                + previousSolidSubtangleLatestMilestoneIndex + " to #"
+                                + latestSolidSubtangleMilestoneIndex);
+                    }
+
+                    Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
+
+                } catch (final Exception e) {
+                    log.error("Error during Solid Milestone updating", e);
+                }
+            }
+        }, "Solid Milestone Tracker")).start();
+
+
+    }
+
+    private boolean validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {
+
+        if (MilestoneViewModel.get(tangle, index) != null) {
+            // Already validated.
+            return true;
+        }
+        final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getBundleHash());
+        if (bundleTransactions.size() == 0) {
+            return false;
+        }
+        else {
+            for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
+
+                //if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(),transactionViewModel.getHash())) {
+                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+
+                    //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
+                    final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction(tangle);
+                    if (transactionViewModel2.getType() == TransactionViewModel.FILLED_SLOT
+                            && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
+
+                        final int[] trunkTransactionTrits = transactionViewModel.getTrunkTransactionHash().trits();
+                        final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
+
+                        final int[] merkleRoot = ISS.getMerkleRoot(mode, ISS.address(mode, ISS.digest(mode,
+                                Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits),
+                                        ISS.NUMBER_OF_FRAGMENT_CHUNKS),
+                                signatureFragmentTrits)),
+                                transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
+                        if (testnet || (new Hash(merkleRoot)).equals(coordinator)) {
+                            new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    void updateLatestSolidSubtangleMilestone() throws Exception {
+        MilestoneViewModel milestoneViewModel;
+        MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
+        int lookAhead = 0;
+        if (latest != null) {
+            for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
+                 milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
+                 milestoneViewModel = milestoneViewModel.next(tangle)) {
+                if (transactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&
+                        milestoneViewModel.index() >= latestSolidSubtangleMilestoneIndex &&
+                        ledgerValidator.updateSnapshot(milestoneViewModel)) {
+                    latestSolidSubtangleMilestone = milestoneViewModel.getHash();
+                    latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
+                } else {
+                    lookAhead++;
+                    if (lookAhead>=10) {
+                        break;
                     }
                 }
             }
         }
     }
 
-    public static void updateLatestSolidSubtangleMilestone() {
+    static int getIndex(TransactionViewModel transactionViewModel) {
+        return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
+    }
 
-        for (int milestoneIndex = latestMilestoneIndex; milestoneIndex > latestSolidSubtangleMilestoneIndex; milestoneIndex--) {
+    void shutDown() {
+        shuttingDown = true;
+    }
 
-            final Hash milestone = milestones.get(milestoneIndex);
-            if (milestone != null) {
+    public void reportToSlack(final int milestoneIndex, final int depth, final int nextDepth) {
 
-                boolean solid = true;
+        try {
 
-                synchronized (StorageScratchpad.instance().getAnalyzedTransactionsFlags()) {
+            final String request = "token=" + URLEncoder.encode("<botToken>", "UTF-8") + "&channel=" + URLEncoder.encode("#botbox", "UTF-8") + "&text=" + URLEncoder.encode("TESTNET: ", "UTF-8") + "&as_user=true";
 
-                	StorageScratchpad.instance().clearAnalyzedTransactionsFlags();
+            final HttpURLConnection connection = (HttpsURLConnection) (new URL("https://slack.com/api/chat.postMessage")).openConnection();
+            ((HttpsURLConnection)connection).setHostnameVerifier((hostname, session) -> true);
+            connection.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            OutputStream out = connection.getOutputStream();
+            out.write(request.getBytes("UTF-8"));
+            out.close();
+            ByteArrayOutputStream result = new ByteArrayOutputStream();
+            InputStream inputStream = connection.getInputStream();
+            byte[] buffer = new byte[1024];
+            int length;
+            while ((length = inputStream.read(buffer)) != -1) {
 
-                    final Queue<Long> nonAnalyzedTransactions = new LinkedList<>();
-                    nonAnalyzedTransactions.offer(StorageTransactions.instance().transactionPointer(milestone.bytes()));
-                    Long pointer;
-                    while ((pointer = nonAnalyzedTransactions.poll()) != null) {
-
-                        if (StorageScratchpad.instance().setAnalyzedTransactionFlag(pointer)) {
-
-                            final Transaction transaction2 = StorageTransactions.instance().loadTransaction(pointer);
-                            if (transaction2.type == AbstractStorage.PREFILLED_SLOT) {
-                                solid = false;
-                                break;
-
-                            } else {
-                                nonAnalyzedTransactions.offer(transaction2.trunkTransactionPointer);
-                                nonAnalyzedTransactions.offer(transaction2.branchTransactionPointer);
-                            }
-                        }
-                    }
-                }
-
-                if (solid) {
-                    latestSolidSubtangleMilestone = milestone;
-                    latestSolidSubtangleMilestoneIndex = milestoneIndex;
-                    return;
-                }
+                result.write(buffer, 0, length);
             }
+            log.info(result.toString("UTF-8"));
+
+        } catch (final Exception e) {
+
+            e.printStackTrace();
         }
     }
 }

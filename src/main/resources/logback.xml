@@ -11,10 +11,26 @@
         
 	   <target>System.out</target>
 		<encoder>
-			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+			<pattern>%d{MM/dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
 			</pattern>
 		</encoder>
 	</appender>
+
+    <!-- 	
+	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+	   <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>DEBUG</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+        
+	   <target>System.out</target>
+		<encoder>
+			<pattern>%d{MM/dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+			</pattern>
+		</encoder>
+	</appender>
+	-->
 
 	<appender name="STDERR" class="ch.qos.logback.core.ConsoleAppender">
 	   <filter class="ch.qos.logback.classic.filter.LevelFilter">
@@ -24,12 +40,16 @@
         </filter>
 		<target>System.err</target>
 		<encoder>
-			<pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
+			<pattern>%d{MM/dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n
 			</pattern>
 		</encoder>
 	</appender>
 
 	<logger name="com" level="INFO">
+		<appender-ref ref="STDOUT" />
+	</logger>
+
+	<logger name="com" level="DEBUG">
 		<appender-ref ref="STDOUT" />
 	</logger>
 

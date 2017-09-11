@@ -1,5 +1,7 @@
 package com.iota.iri.hash;
 
+import com.iota.iri.model.Hash;
+
 import java.util.Arrays;
 
 /**
@@ -203,7 +205,8 @@ public class ISS {
         return digest;
     }
 
-    public static int[] getMerkleRoot(SpongeFactory.Mode mode, int[] hash, int[] trits, int offset, int index, int size) {
+    public static int[] getMerkleRoot(SpongeFactory.Mode mode, int[] hash, int[] trits, int offset, final int indexIn, int size) {
+        int index = indexIn;
         for (int i = 0; i < size; i++) {
             final Curl curl = SpongeFactory.create(mode);
             if ((index & 1) == 0) {
@@ -216,6 +219,9 @@ public class ISS {
             curl.squeeze(hash, 0, hash.length);
 
             index >>= 1;
+        }
+        if(index != 0) {
+            return Hash.NULL_HASH.trits();
         }
         return hash;
     }

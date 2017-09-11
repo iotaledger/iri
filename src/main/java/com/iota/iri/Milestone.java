@@ -147,6 +147,9 @@ public class Milestone {
     }
 
     private boolean validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {
+        if (index < 0 || index >= 0x200000) {
+            return false;
+        }
 
         if (MilestoneViewModel.get(tangle, index) != null) {
             // Already validated.
@@ -165,7 +168,8 @@ public class Milestone {
                     //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
                     final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction(tangle);
                     if (transactionViewModel2.getType() == TransactionViewModel.FILLED_SLOT
-                            && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())) {
+                            && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())
+                            && transactionViewModel.getBundleHash().equals(transactionViewModel2.getBundleHash())) {
 
                         final int[] trunkTransactionTrits = transactionViewModel.getTrunkTransactionHash().trits();
                         final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);

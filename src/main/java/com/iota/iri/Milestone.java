@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -61,36 +62,44 @@ public class Milestone {
     private boolean shuttingDown;
     private static int RESCAN_INTERVAL = 5000;
 
-    public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) {
+    public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) throws Exception {
         this.ledgerValidator = ledgerValidator;
+        AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
+        if (revalidate) {
+            tangle.clearColumn(com.iota.iri.model.Milestone.class);
+            tangle.clearColumn(com.iota.iri.model.StateDiff.class);
+        }
         (new Thread(() -> {
+            while(!ledgerValidatorInitialized.get()) {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                }
+            }
             while (!shuttingDown) {
                 long scanTime = System.currentTimeMillis();
 
                 try {
                     final int previousLatestMilestoneIndex = latestMilestoneIndex;
-
+                    Set<Hash> hashes = AddressViewModel.load(tangle, coordinator).getHashes();
                     { // Update Milestone
                         { // find new milestones
-                            AddressViewModel.load(tangle, coordinator).getHashes().stream()
-                                    .filter(analyzedMilestoneCandidates::add)
-                                    .map(hash -> TransactionViewModel.quietFromHash(tangle, hash))
-                                    .filter(t -> t.getCurrentIndex() == 0)
-                                    .forEach(t -> {
-                                        try {
-                                            if(!validateMilestone(mode, t, getIndex(t))) {
-                                                analyzedMilestoneCandidates.remove(t.getHash());
+                            for(Hash hash: hashes) {
+                                if(analyzedMilestoneCandidates.add(hash)) {
+                                    TransactionViewModel t = TransactionViewModel.fromHash(tangle, hash);
+                                    if (t.getCurrentIndex() == 0) {
+                                        if (validateMilestone(mode, t, getIndex(t))) {
+                                            MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
+                                            if (milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
+                                                latestMilestone = milestoneViewModel.getHash();
+                                                latestMilestoneIndex = milestoneViewModel.index();
                                             }
-                                        } catch (Exception e) {
+                                        } else {
                                             analyzedMilestoneCandidates.remove(t.getHash());
-                                            log.error("Could not validate milestone: ", t.getHash());
                                         }
-                                    });
-                        }
-                        MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
-                        if (milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
-                            latestMilestone = milestoneViewModel.getHash();
-                            latestMilestoneIndex = milestoneViewModel.index();
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -113,6 +122,7 @@ public class Milestone {
 
             try {
                 ledgerValidator.init(revalidate);
+                ledgerValidatorInitialized.set(true);
             } catch (Exception e) {
                 log.error("Error initializing snapshots. Skipping.", e);
             }

@@ -254,6 +254,7 @@ public class LedgerValidator {
                     }
                 }
             }
+            /*
             if (revalidate) {
                 MilestoneViewModel milestoneViewModel = MilestoneViewModel.first(tangle);
                 milestoneViewModel.delete(tangle);
@@ -261,6 +262,7 @@ public class LedgerValidator {
                     milestoneViewModel.delete(tangle);
                 }
             }
+            */
         }
         return consistentMilestone;
     }

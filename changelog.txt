@@ -16,7 +16,7 @@
     - Tips: improved memory consumption and IRI loading time.
     - ZMQ:  tx topic only publishes newly stored transactions
             tx arrival time added.
-            timestamps normalized to seconds.
+            timestamps normalized to seconds.r
     - DB: cache size increase, to reduce flushes to disk (user-configurable)
     - Node: faster broadcast priority queue
             DNS refresher is now user-configurable, for troubleshooting reverse-DNS issues.

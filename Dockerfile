@@ -1,16 +1,12 @@
-FROM maven:3.5-jdk-8
-
+FROM maven:3.5-jdk-8 as builder
 WORKDIR /iri
 COPY . /iri
-
-#RUN git clone https://github.com/iotaledger/iri.git /iri/
 RUN mvn clean package
-RUN mv /iri/target/iri-1.3.2.2.jar /tmp
-RUN rm -rf *
-RUN rm -rf /tmp/junit*
-RUN mv /tmp/iri*.jar iri.jar
-COPY logback.xml /iri
 
+From java:jre-alpine
+WORKDIR /iri
+COPY --from=builder /iri/target/iri-1.3.2.2.jar .
+COPY logback.xml /iri
 VOLUME /iri
 
 EXPOSE 14265

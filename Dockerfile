@@ -3,7 +3,7 @@ WORKDIR /iri
 COPY . /iri
 RUN mvn clean package
 
-From java:jre-alpine
+FROM java:jre-alpine
 WORKDIR /iri
 COPY --from=builder /iri/target/iri-1.3.2.2.jar iri.jar
 COPY logback.xml /iri

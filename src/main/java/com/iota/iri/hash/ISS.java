@@ -66,11 +66,11 @@ public class ISS {
     public static int[] digests(SpongeFactory.Mode mode, final int[] key) {
 
         if (key.length == 0 || key.length % FRAGMENT_LENGTH != 0) {
-
             throw new RuntimeException("Invalid key length: " + key.length);
         }
 
         final int[] digests = new int[key.length / FRAGMENT_LENGTH * Curl.HASH_LENGTH];
+        final Curl hash = SpongeFactory.create(mode);
 
         for (int i = 0; i < key.length / FRAGMENT_LENGTH; i++) {
 
@@ -78,12 +78,12 @@ public class ISS {
             for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
 
                 for (int k = MAX_TRYTE_VALUE - MIN_TRYTE_VALUE; k-- > 0; ) {
-                    final Curl hash = SpongeFactory.create(mode);
+                    hash.reset();
                     hash.absorb(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                     hash.squeeze(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                 }
             }
-            final Curl hash = SpongeFactory.create(mode);
+            hash.reset();
             hash.absorb(buffer, 0, buffer.length);
             hash.squeeze(digests, i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
         }
@@ -163,12 +163,12 @@ public class ISS {
         }
 
         final int[] signatureFragment = Arrays.copyOf(keyFragment, keyFragment.length);
+        final Curl hash = SpongeFactory.create(mode);
 
         for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
 
             for (int k = MAX_TRYTE_VALUE - normalizedBundleFragment[j]; k-- > 0; ) {
-
-                final Curl hash = SpongeFactory.create(mode);
+                hash.reset();
                 hash.absorb(signatureFragment, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                 hash.squeeze(signatureFragment, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
             }
@@ -187,18 +187,17 @@ public class ISS {
         }
 
         final int[] digest = new int[Curl.HASH_LENGTH];
-
         final int[] buffer = Arrays.copyOf(signatureFragment, FRAGMENT_LENGTH);
+        final Curl hash = SpongeFactory.create(mode);
         for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
 
             for (int k = normalizedBundleFragment[j] - MIN_TRYTE_VALUE; k-- > 0; ) {
-
-                final Curl hash = SpongeFactory.create(mode);
+                hash.reset();
                 hash.absorb(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
                 hash.squeeze(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
             }
         }
-        final Curl hash = SpongeFactory.create(mode);
+        hash.reset();
         hash.absorb(buffer, 0, buffer.length);
         hash.squeeze(digest, 0, digest.length);
 
@@ -207,8 +206,9 @@ public class ISS {
 
     public static int[] getMerkleRoot(SpongeFactory.Mode mode, int[] hash, int[] trits, int offset, final int indexIn, int size) {
         int index = indexIn;
+        final Curl curl = SpongeFactory.create(mode);
         for (int i = 0; i < size; i++) {
-            final Curl curl = SpongeFactory.create(mode);
+            curl.reset();
             if ((index & 1) == 0) {
                 curl.absorb(hash, 0, hash.length);
                 curl.absorb(trits, offset + i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);

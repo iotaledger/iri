@@ -23,7 +23,7 @@ import static org.junit.Assert.assertTrue;
 /** Created by paul on 5/14/17. */
 public class TransactionValidatorTest {
 
-  private static final int MAINNET_MWM = 15;
+  private static final int MAINNET_MWM = 14;
   private static final int TESTNET_MWM = 13;
   private static final TemporaryFolder dbFolder = new TemporaryFolder();
   private static final TemporaryFolder logFolder = new TemporaryFolder();

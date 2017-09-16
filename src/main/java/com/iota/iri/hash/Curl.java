@@ -14,10 +14,10 @@ import java.util.Arrays;
 public class Curl {
 
     public static final int HASH_LENGTH = 243;
+    public static final int NUMBER_OF_ROUNDS = 81;
     private static final int STATE_LENGTH = 3 * HASH_LENGTH;
     private static final int HALF_LENGTH = 364;
 
-    private static final int NUMBER_OF_ROUNDS = 27;
     private static final int[] TRUTH_TABLE = {1, 0, -1, 2, 1, -1, 0, 2, -1, 1, 0};
     /*
     private static final IntPair[] TRANSFORM_INDICES = IntStream.range(0, STATE_LENGTH)
@@ -108,7 +108,7 @@ public class Curl {
         final long[] curlScratchpadLow = new long[STATE_LENGTH];
         final long[] curlScratchpadHigh = new long[STATE_LENGTH];
         int curlScratchpadIndex = 0;
-        for (int round = 27; round-- > 0; ) {
+        for (int round = NUMBER_OF_ROUNDS; round-- > 0; ) {
             System.arraycopy(stateLow, 0, curlScratchpadLow, 0, STATE_LENGTH);
             System.arraycopy(stateHigh, 0, curlScratchpadHigh, 0, STATE_LENGTH);
             for (int curlStateIndex = 0; curlStateIndex < STATE_LENGTH; curlStateIndex++) {

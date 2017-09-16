@@ -56,7 +56,7 @@ public class ISSTest {
         int index = 0;
         int nof = 2;
         SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURL, SpongeFactory.Mode.KERL};
-        Hash[] hashes = {new Hash("FS9KT9CLDAADRVMCEIPVTVUSCBORRKUOBEDKUZJUQUFLRRJUWIMFCTBDOTX9PPGRQNXRGERJSY9FBTAWM"),
+        Hash[] hashes = {new Hash("D9XCNSCCAJGLWSQOQAQNFWANPYKYMCQ9VCOMROLDVLONPPLDFVPIZNAPVZLQMPFYJPAHUKIAEKNCQIYJZ"),
                          new Hash("MDWYEJJHJDIUVPKDY9EACGDJUOP9TLYDWETUBOYCBLYXYYYJYUXYUTCTPTDGJYFKMQMCNZDQPTBE9AFIW")};
         for (int i=0;i<modes.length;i++) {
             SpongeFactory.Mode mode = modes[i];
@@ -65,7 +65,7 @@ public class ISSTest {
             int[] digest = ISS.digests(mode, key);
             int[] address = ISS.address(mode, digest);
             Hash addressTrytes = new Hash(address);
-            assertTrue(addressTrytes.equals(hashes[i]));
+            assertEquals(hashes[i].toString(), addressTrytes.toString());
         }
     }
 

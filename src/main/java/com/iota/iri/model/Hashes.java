@@ -5,13 +5,14 @@ import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.Serializable;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
  * Created by paul on 3/8/17 for iri.
  */
 public class Hashes implements Persistable {
-    public Set<Hash> set = new HashSet<>();
+    public Set<Hash> set = new LinkedHashSet<>();
     private static final byte delimiter = ",".getBytes()[0];
 
     public byte[] bytes() {
@@ -23,7 +24,7 @@ public class Hashes implements Persistable {
 
     public void read(byte[] bytes) {
         if(bytes != null) {
-            set = new HashSet<>(bytes.length / (1 + Hash.SIZE_IN_BYTES) + 1);
+            set = new LinkedHashSet<>(bytes.length / (1 + Hash.SIZE_IN_BYTES) + 1);
             for (int i = 0; i < bytes.length; i += 1 + Hash.SIZE_IN_BYTES) {
                 set.add(new Hash(bytes, i, Hash.SIZE_IN_BYTES));
             }

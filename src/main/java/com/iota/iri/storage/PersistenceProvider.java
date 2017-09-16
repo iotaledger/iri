@@ -42,4 +42,6 @@ public interface PersistenceProvider {
     Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) throws Exception;
 
     boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception;
+
+    void clear(Class<?> column) throws Exception;
 }

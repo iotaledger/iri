@@ -138,4 +138,9 @@ public class ZmqPublishProvider implements PersistenceProvider {
         return false;
     }
 
+    @Override
+    public void clear(Class<?> column) throws Exception {
+
+    }
+
 }

@@ -181,6 +181,12 @@ public class Tangle {
             return latest;
     }
 
+    public void clearColumn(Class<?> column) throws Exception {
+        for(PersistenceProvider provider: persistenceProviders) {
+            provider.clear(column);
+        }
+    }
+
     /*
     public boolean merge(Persistable model, Indexable index) throws Exception {
         boolean exists = false;

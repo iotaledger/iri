@@ -28,6 +28,10 @@ public class BundleValidator {
                 long bundleValue = 0;
                 int i = 0;
                 final Curl curlInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
+                final Curl curlAddressInstance = SpongeFactory.create(SpongeFactory.Mode.CURL);
+                final Curl kerlAddressInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
+                Curl addressInstance;
+
                 final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
                 final int[] bundleHashTrits = new int[TransactionViewModel.BUNDLE_TRINARY_SIZE];
 
@@ -63,14 +67,16 @@ public class BundleValidator {
                                             final SpongeFactory.Mode addressMode;
                                             if(Snapshot.initialState.containsKey(transactionViewModel.getAddressHash())) {
                                                 addressMode = SpongeFactory.Mode.CURL;
+                                                addressInstance = curlAddressInstance;
                                             } else {
                                                 addressMode = SpongeFactory.Mode.KERL;
+                                                addressInstance = kerlAddressInstance;
                                             }
 
-                                            curlInstance.reset();
+                                            addressInstance.reset();
                                             int offset = 0;
                                             do {
-                                                curlInstance.absorb(
+                                                addressInstance.absorb(
                                                         ISS.digest(addressMode, Arrays.copyOfRange(normalizedBundle, offset % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE), offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS - 1) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) + 1),
                                                                 Arrays.copyOfRange(instanceTransactionViewModels.get(j).trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET,
                                                                         TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE)),
@@ -79,7 +85,7 @@ public class BundleValidator {
                                                     && instanceTransactionViewModels.get(j).getAddressHash().equals(transactionViewModel.getAddressHash())
                                                     && instanceTransactionViewModels.get(j).value() == 0);
 
-                                            curlInstance.squeeze(addressTrits, 0, addressTrits.length);
+                                            addressInstance.squeeze(addressTrits, 0, addressTrits.length);
                                             //if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
                                             if (! transactionViewModel.getAddressHash().equals(new Hash(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE)))) {
                                                 instanceTransactionViewModels.get(0).setValidity(tangle, -1);

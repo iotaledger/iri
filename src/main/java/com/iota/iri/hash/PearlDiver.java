@@ -217,7 +217,7 @@ public class PearlDiver {
         final long[] curlScratchpadLow, final long[] curlScratchpadHigh) {
 
         int curlScratchpadIndex = 0;
-        for (int round = 0; round < Curl.NUMBER_OF_ROUNDS; round++) {
+        for (int round = 0; round < Curl.NUMBER_OF_ROUNDSP81; round++) {
             System.arraycopy(curlStateLow, 0, curlScratchpadLow, 0, CURL_STATE_LENGTH);
             System.arraycopy(curlStateHigh, 0, curlScratchpadHigh, 0, CURL_STATE_LENGTH);
 

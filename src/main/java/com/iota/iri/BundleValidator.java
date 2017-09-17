@@ -3,6 +3,7 @@ package com.iota.iri;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -27,8 +28,8 @@ public class BundleValidator {
                 final long lastIndex = transactionViewModel.lastIndex();
                 long bundleValue = 0;
                 int i = 0;
-                final Curl curlInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
-                final Curl addressInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
+                final Sponge curlInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
+                final Sponge addressInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
 
                 final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
                 final int[] bundleHashTrits = new int[TransactionViewModel.BUNDLE_TRINARY_SIZE];

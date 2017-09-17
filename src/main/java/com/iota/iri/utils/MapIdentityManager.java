@@ -1,5 +1,6 @@
 package com.iota.iri.utils;
 
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import io.undertow.security.idm.IdentityManager;
 
@@ -50,8 +51,8 @@ public class MapIdentityManager implements IdentityManager {
             String trytes = Converter.asciiToTrytes(new String(givenPassword));
             int[] in_trits = Converter.trits(trytes);
             int[] hash_trits = new int[Curl.HASH_LENGTH];
-            Curl curl;
-            curl = SpongeFactory.create(SpongeFactory.Mode.CURL);
+            Sponge curl;
+            curl = SpongeFactory.create(SpongeFactory.Mode.CURLP81);
             curl.absorb(in_trits, 0, in_trits.length);
             curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
             String out_trytes = Converter.trytes(hash_trits);

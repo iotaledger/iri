@@ -5,15 +5,17 @@ package com.iota.iri.hash;
  */
 public abstract class SpongeFactory {
     public enum Mode {
-        CURL,
+        CURLP81,
+        CURLP27,
         KERL,
-        BCURLT
+        //BCURLT
     }
-    public static Curl create(Mode mode){
+    public static Sponge create(Mode mode){
         switch (mode) {
-            case CURL: return new Curl();
+            case CURLP81: return new Curl(mode);
+            case CURLP27: return new Curl(mode);
             case KERL: return new Kerl();
-            case BCURLT: return new Curl(true);
+            //case BCURLT: return new Curl(true, mode);
             default: return null;
         }
     }

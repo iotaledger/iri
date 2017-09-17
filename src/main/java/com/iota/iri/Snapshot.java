@@ -1,6 +1,7 @@
 package com.iota.iri;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -29,7 +30,7 @@ public class Snapshot {
         InputStream in = Snapshot.class.getResourceAsStream("/Snapshot.txt");
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
-        Curl curl = SpongeFactory.create(SpongeFactory.Mode.KERL);
+        Sponge curl = SpongeFactory.create(SpongeFactory.Mode.KERL);
         int[] trit_value;
         int[] trits = new int[Curl.HASH_LENGTH*3];
         try {

@@ -1,13 +1,12 @@
 package com.iota.iri.hash;
 
-import com.iota.iri.hash.Curl;
 import com.iota.iri.utils.Converter;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
 
 import java.math.BigInteger;
 import java.util.Arrays;
 
-public class Kerl extends Curl {
+public class Kerl implements Sponge {
 
     public static final int HASH_LENGTH = 243;
     public static final int BIT_HASH_LENGTH = 384;

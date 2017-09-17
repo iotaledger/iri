@@ -24,8 +24,8 @@ public class CurlTest {
         int size = 8019;
         int[] in_trits = Converter.trits(trytes);
         int[] hash_trits = new int[Curl.HASH_LENGTH];
-        Curl curl;
-        curl = new Curl();
+        Sponge curl;
+        curl = new Curl(SpongeFactory.Mode.CURLP81);
         curl.absorb(in_trits, 0, in_trits.length);
         curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
         String out_trytes = Converter.trytes(hash_trits);
@@ -38,7 +38,7 @@ public class CurlTest {
         int[] in_trits = Converter.trits(trytes);
         Pair<long[], long[]> hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         Curl curl;
-        curl = new Curl(true);
+        curl = new Curl(true, SpongeFactory.Mode.CURLP81);
         curl.absorb(Converter.longPair(in_trits), 0, in_trits.length);
         curl.squeeze(hashPair, 0, Curl.HASH_LENGTH);
         int[] hash_trits = Converter.trits(hashPair.low, hashPair.hi);
@@ -53,8 +53,8 @@ public class CurlTest {
         int[] in_trits = Converter.trits(trytes);
         final int[] hash_trits = new int[Curl.HASH_LENGTH];
         Curl curl, curl1;
-        curl = new Curl(true);
-        curl1 = new Curl();
+        curl = new Curl(true, SpongeFactory.Mode.CURLP81);
+        curl1 = new Curl(SpongeFactory.Mode.CURLP81);
         Pair<long[], long[]> in_pair = Converter.longPair(in_trits);
         Pair<long[], long[]> hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         int iteration = 0;

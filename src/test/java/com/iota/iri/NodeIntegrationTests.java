@@ -4,6 +4,7 @@ import com.iota.iri.conf.Configuration;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;
 import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
@@ -12,7 +13,6 @@ import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.ArrayList;
@@ -154,7 +154,7 @@ public class NodeIntegrationTests {
 
         int[] hash = new int[Curl.HASH_LENGTH];
 
-        Curl curl = customCurl == null ? SpongeFactory.create(SpongeFactory.Mode.CURL) : customCurl;
+        Sponge curl = customCurl == null ? SpongeFactory.create(SpongeFactory.Mode.CURLP81) : customCurl;
         curl.reset();
 
         for (int i = 0; i < transactions.size(); i++) {

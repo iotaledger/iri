@@ -1,10 +1,10 @@
 package com.iota.iri;
 
 import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
@@ -92,16 +92,16 @@ public class TransactionValidator {
     }
 
     public static TransactionViewModel validate(final int[] trits, int minWeightMagnitude) {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURL)));
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
     public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude) {
-        return validate(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURL));
+        return validate(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
 
     }
 
-    public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude, Curl curl) {
+    public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;

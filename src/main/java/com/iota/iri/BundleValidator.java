@@ -28,9 +28,7 @@ public class BundleValidator {
                 long bundleValue = 0;
                 int i = 0;
                 final Curl curlInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
-                final Curl curlAddressInstance = SpongeFactory.create(SpongeFactory.Mode.CURL);
-                final Curl kerlAddressInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
-                Curl addressInstance;
+                final Curl addressInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
 
                 final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
                 final int[] bundleHashTrits = new int[TransactionViewModel.BUNDLE_TRINARY_SIZE];
@@ -64,20 +62,11 @@ public class BundleValidator {
 
                                         transactionViewModel = instanceTransactionViewModels.get(j);
                                         if (transactionViewModel.value() < 0) { // let's recreate the address of the transactionViewModel.
-                                            final SpongeFactory.Mode addressMode;
-                                            if(Snapshot.initialState.containsKey(transactionViewModel.getAddressHash())) {
-                                                addressMode = SpongeFactory.Mode.CURL;
-                                                addressInstance = curlAddressInstance;
-                                            } else {
-                                                addressMode = SpongeFactory.Mode.KERL;
-                                                addressInstance = kerlAddressInstance;
-                                            }
-
                                             addressInstance.reset();
                                             int offset = 0;
                                             do {
                                                 addressInstance.absorb(
-                                                        ISS.digest(addressMode, Arrays.copyOfRange(normalizedBundle, offset % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE), offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS - 1) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) + 1),
+                                                        ISS.digest(SpongeFactory.Mode.KERL, Arrays.copyOfRange(normalizedBundle, offset % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE), offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS - 1) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) + 1),
                                                                 Arrays.copyOfRange(instanceTransactionViewModels.get(j).trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET,
                                                                         TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE)),
                                                         0, Curl.HASH_LENGTH);

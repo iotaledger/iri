@@ -94,6 +94,8 @@ public class API {
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
 
+    private final static long MAX_TIMESTAMP_VALUE = (3^27 - 1) / 2;
+
     private final int minRandomWalks;
     private final int maxRandomWalks;
     private final int maxFindTxs;
@@ -737,8 +739,6 @@ public class API {
         ellapsedTime_PoW += ellapsedTime;
     }
 
-    public static long maxTimestampValue = (3^27 -1)/2;
-
     public synchronized List<String> attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
@@ -769,7 +769,7 @@ public class API {
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_SIZE);
                 Converter.copyTrits(0,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE);
-                Converter.copyTrits(maxTimestampValue,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
+                Converter.copyTrits(MAX_TIMESTAMP_VALUE,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
 
                 if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {

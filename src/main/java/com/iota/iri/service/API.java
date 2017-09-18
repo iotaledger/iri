@@ -736,7 +736,9 @@ public class API {
     public static void incEllapsedTime_PoW(long ellapsedTime) {
         ellapsedTime_PoW += ellapsedTime;
     }
-    
+
+    public static long maxTimestampValue = (3^27 -1)/2;
+
     public synchronized List<String> attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
@@ -767,7 +769,7 @@ public class API {
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_SIZE);
                 Converter.copyTrits(0,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE);
-                Converter.copyTrits(Long.MAX_VALUE,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
+                Converter.copyTrits(maxTimestampValue,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
 
                 if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {

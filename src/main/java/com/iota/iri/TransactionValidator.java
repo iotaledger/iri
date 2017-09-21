@@ -169,21 +169,17 @@ public class TransactionValidator {
                     try {
                         Hash hash = cascadeIterator.next();
                         TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-                        transaction.getApprovers(tangle).getHashes().stream()
-                                .map(h -> TransactionViewModel.quietFromHash(tangle, h))
-                                .forEach(tx -> {
-                                    if(quietQuickSetSolid(tx)) {
-                                        try {
-                                            tx.update(tangle, "solid");
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                    } else {
-                                        if (transaction.isSolid()) {
-                                            addSolidTransaction(hash);
-                                        }
-                                    }
-                                });
+                        Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
+                        for(Hash h: approvers) {
+                            TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
+                            if(quietQuickSetSolid(tx)) {
+                                    tx.update(tangle, "solid");
+                            } else {
+                                if (transaction.isSolid()) {
+                                    addSolidTransaction(hash);
+                                }
+                            }
+                        }
                     } catch (Exception e) {
                         log.error("Some error", e);
                         // TODO: Do something, maybe, or do nothing.

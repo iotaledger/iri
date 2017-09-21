@@ -497,14 +497,20 @@ public class API {
         int numberOfNonMetTransactions = transactions.size();
         final int[] inclusionStates = new int[numberOfNonMetTransactions];
 
-        int[] tipsIndex = tips.stream().map(hash -> TransactionViewModel.quietFromHash(instance.tangle, hash))
-                .filter(tx -> tx.getType() != TransactionViewModel.PREFILLED_SLOT)
-                .mapToInt(TransactionViewModel::snapshotIndex)
-                .toArray();
-        int minTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a < b ? a : b).orElse(0);
+        List<Integer> tipsIndex = new LinkedList<>();
+        {
+            for(Hash hash: tips) {
+                TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
+                if (tx.getType() != TransactionViewModel.PREFILLED_SLOT) {
+                    tipsIndex.add(tx.snapshotIndex());
+                }
+            }
+        }
+        int minTipsIndex = tipsIndex.stream().reduce((a,b) -> a < b ? a : b).orElse(0);
         if(minTipsIndex > 0) {
-            int maxTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a > b ? a : b).orElse(0);
-            transactions.stream().map(hash -> TransactionViewModel.quietFromHash(instance.tangle, hash)).forEach(transaction -> {
+            int maxTipsIndex = tipsIndex.stream().reduce((a,b) -> a > b ? a : b).orElse(0);
+            for(Hash hash: transactions) {
+                TransactionViewModel transaction = TransactionViewModel.fromHash(instance.tangle, hash);
                 if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
                     inclusionStates[transactions.indexOf(transaction.getHash())] = -1;
                 } else if(transaction.snapshotIndex() > maxTipsIndex) {
@@ -512,7 +518,7 @@ public class API {
                 } else if(transaction.snapshotIndex() < maxTipsIndex) {
                     inclusionStates[transactions.indexOf(transaction.getHash())] = 1;
                 }
-            });
+            }
         }
 
         Set<Hash> analyzedTips = new HashSet<>();

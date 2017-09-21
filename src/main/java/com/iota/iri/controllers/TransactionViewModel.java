@@ -42,7 +42,6 @@ public class TransactionViewModel {
 
 
     private AddressViewModel address;
-    private BundleViewModel bundle;
     private ApproveeViewModel approovers;
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
@@ -53,24 +52,23 @@ public class TransactionViewModel {
     public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only another tx references that hash
     public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
 
-    private int[] hashTrits;
-
     private int[] trits;
     public int weightMagnitude;
 
     public static TransactionViewModel find(final Tangle tangle, byte[] hash) throws Exception {
-        return new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), new Hash(hash));
+        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), new Hash(hash));
+        if(!transactionViewModel.getHash().equals(Hash.NULL_HASH) && !transactionViewModel.transaction.parsed) {
+            tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
+        }
+        return transactionViewModel;
     }
 
-    public static TransactionViewModel quietFromHash(final Tangle tangle, final Hash hash) {
-        try {
-            return fromHash(tangle, hash);
-        } catch (Exception e) {
-            return new TransactionViewModel(new Transaction(), hash);
-        }
-    }
     public static TransactionViewModel fromHash(final Tangle tangle, final Hash hash) throws Exception {
-        return new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
+        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
+        if(!transactionViewModel.getHash().equals(Hash.NULL_HASH) && !transactionViewModel.transaction.parsed) {
+            tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
+        }
+        return transactionViewModel;
     }
 
     public static boolean mightExist(final Tangle tangle, Hash hash) throws Exception {
@@ -154,19 +152,26 @@ public class TransactionViewModel {
         tangle.delete(Transaction.class, getHash());
     }
 
-    public List<Pair<Indexable, Persistable>> getSaveBatch() throws Exception {
+    public List<Pair<Indexable, Persistable>> getMetadataSaveBatch() throws Exception {
         List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
         hashesList.add(new Pair<>(getAddressHash(), new Address(getHash())));
         hashesList.add(new Pair<>(getBundleHash(), new Bundle(getHash())));
         hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(getHash())));
         hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(getHash())));
         hashesList.add(new Pair<>(getObsoleteTagValue(), new Tag(getHash())));
-        getBytes();
         setAttachmentData();
         setMetadata();
+        return hashesList;
+    }
+
+    public List<Pair<Indexable, Persistable>> getSaveBatch() throws Exception {
+        List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
+        hashesList.addAll(getMetadataSaveBatch());
+        getBytes();
         hashesList.add(new Pair<>(getHash(), transaction));
         return hashesList;
     }
+
 
     public static TransactionViewModel first(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> transactionPair = tangle.getFirst(Transaction.class, Hash.class);
@@ -329,6 +334,7 @@ public class TransactionViewModel {
         //if (transaction.timestamp > 1262304000000L ) transaction.timestamp /= 1000L;  // if > 01.01.2010 in milliseconds
         transaction.currentIndex = Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
         transaction.lastIndex = Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
+        transaction.type = transaction.bytes == null ? TransactionViewModel.PREFILLED_SLOT : TransactionViewModel.FILLED_SLOT;
     }
 
     public static boolean exists(Tangle tangle, Hash hash) throws Exception {

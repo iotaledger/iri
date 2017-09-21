@@ -187,6 +187,12 @@ public class Tangle {
         }
     }
 
+    public void clearMetadata(Class<?> column) throws Exception {
+        for(PersistenceProvider provider: persistenceProviders) {
+            provider.clearMetadata(column);
+        }
+    }
+
     /*
     public boolean merge(Persistable model, Indexable index) throws Exception {
         boolean exists = false;

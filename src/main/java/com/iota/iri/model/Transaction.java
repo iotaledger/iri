@@ -34,6 +34,7 @@ public class Transaction implements Persistable {
     public long arrivalTime = 0;
 
     //public boolean confirmed = false;
+    public boolean parsed = false;
     public boolean solid = false;
     public long height = 0;
     public String sender = "";
@@ -138,6 +139,7 @@ public class Transaction implements Persistable {
                 System.arraycopy(bytes, i, senderBytes, 0, senderBytes.length);
             }
             sender = new String(senderBytes);
+            parsed = true;
         }
     }
 

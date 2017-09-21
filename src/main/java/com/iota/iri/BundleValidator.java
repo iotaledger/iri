@@ -45,6 +45,11 @@ public class BundleValidator {
                         break;
                     }
 
+                    if (transactionViewModel.value() != 0 && transactionViewModel.getAddressHash().trits()[Curl.HASH_LENGTH - 1] != 0) {
+                        instanceTransactionViewModels.get(0).setValidity(tangle, -1);
+                        break;
+                    }
+
                     if (i++ == lastIndex) { // It's supposed to become -3812798742493 after 3812798742493 and to go "down" to -1 but we hope that noone will create such long bundles
 
                         if (bundleValue == 0) {

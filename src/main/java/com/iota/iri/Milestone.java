@@ -65,10 +65,6 @@ public class Milestone {
     public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) throws Exception {
         this.ledgerValidator = ledgerValidator;
         AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
-        if (revalidate) {
-            tangle.clearColumn(com.iota.iri.model.Milestone.class);
-            tangle.clearColumn(com.iota.iri.model.StateDiff.class);
-        }
         (new Thread(() -> {
             while(!ledgerValidatorInitialized.get()) {
                 try {
@@ -121,7 +117,7 @@ public class Milestone {
         (new Thread(() -> {
 
             try {
-                ledgerValidator.init(revalidate);
+                ledgerValidator.init();
                 ledgerValidatorInitialized.set(true);
             } catch (Exception e) {
                 log.error("Error initializing snapshots. Skipping.", e);

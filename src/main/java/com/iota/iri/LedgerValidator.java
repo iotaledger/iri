@@ -205,8 +205,8 @@ public class LedgerValidator {
      * either reaches the latest solid subtangle milestone, or until it reaches an inconsistent milestone.
      * @throws Exception
      */
-    protected void init(boolean revalidate) throws Exception {
-        MilestoneViewModel latestConsistentMilestone = buildSnapshot(revalidate);
+    protected void init() throws Exception {
+        MilestoneViewModel latestConsistentMilestone = buildSnapshot();
         if(latestConsistentMilestone != null) {
             milestone.latestSolidSubtangleMilestone = latestConsistentMilestone.getHash();
             milestone.latestSolidSubtangleMilestoneIndex = latestConsistentMilestone.index();
@@ -227,7 +227,7 @@ public class LedgerValidator {
      * @return              the most recent consistent milestone with a confirmed.
      * @throws Exception
      */
-    private MilestoneViewModel buildSnapshot(boolean revalidate) throws Exception {
+    private MilestoneViewModel buildSnapshot() throws Exception {
         MilestoneViewModel consistentMilestone = null;
         synchronized (latestSnapshotSyncObject) {
             Snapshot updatedSnapshot = latestSnapshot.patch(new HashMap<>(), 0);
@@ -236,22 +236,10 @@ public class LedgerValidator {
             while (snapshotMilestone != null) {
                 stateDiffViewModel = StateDiffViewModel.load(tangle, snapshotMilestone.getHash());
                 updatedSnapshot = updatedSnapshot.patch(stateDiffViewModel.getDiff(), snapshotMilestone.index());
-                if (!revalidate && updatedSnapshot.isConsistent()) {
+                if (updatedSnapshot.isConsistent()) {
                     consistentMilestone = snapshotMilestone;
                     latestSnapshot.merge(updatedSnapshot);
                     snapshotMilestone = snapshotMilestone.nextWithSnapshot(tangle);
-                } else {
-                    snapshotMilestone = MilestoneViewModel.first(tangle);
-                    do {
-                        StateDiffViewModel.load(tangle, snapshotMilestone.getHash()).delete(tangle);
-                    } while ((snapshotMilestone = snapshotMilestone.nextWithSnapshot(tangle)) != null);
-                    TransactionViewModel transactionViewModel = TransactionViewModel.first(tangle);
-                    transactionViewModel.updateSolid(false);
-                    transactionViewModel.setSnapshot(tangle, 0);
-                    while((transactionViewModel = transactionViewModel.next(tangle)) != null) {
-                        transactionViewModel.updateSolid(false);
-                        transactionViewModel.setSnapshot(tangle, 0);
-                    }
                 }
             }
         }

@@ -97,8 +97,14 @@ public class Iota {
         if (configuration.booling(Configuration.DefaultConfSettings.RESCAN_DB)){
             rescan_db();
         }
+        boolean revalidate = configuration.booling(Configuration.DefaultConfSettings.REVALIDATE);
 
-        milestone.init(SpongeFactory.Mode.CURLP27, ledgerValidator, configuration.booling(Configuration.DefaultConfSettings.REVALIDATE));
+        if (revalidate) {
+            tangle.clearColumn(com.iota.iri.model.Milestone.class);
+            tangle.clearColumn(com.iota.iri.model.StateDiff.class);
+            tangle.clearMetadata(com.iota.iri.model.Transaction.class);
+        }
+        milestone.init(SpongeFactory.Mode.CURLP27, ledgerValidator, revalidate);
         transactionValidator.init(testnet, configuration.integer(Configuration.DefaultConfSettings.MAINNET_MWM), configuration.integer(Configuration.DefaultConfSettings.TESTNET_MWM));
         tipsManager.init();
         transactionRequester.init(configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));

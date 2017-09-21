@@ -143,4 +143,9 @@ public class ZmqPublishProvider implements PersistenceProvider {
 
     }
 
+    @Override
+    public void clearMetadata(Class<?> column) throws Exception {
+
+    }
+
 }

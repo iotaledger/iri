@@ -206,10 +206,6 @@ public class TipsManager {
                     log.info("Reason to stop: transactionViewModel==extraTip");
                     messageQ.publish("rtsd %s", transactionViewModel.getHash());
                     break;
-                } else if (isBundleReusingKey(transactionViewModel)) {
-                    log.info("Reason to stop: key reuse");
-                    messageQ.publish("rtsk %s", transactionViewModel.getHash());
-                    break;
                 }
                 // set the tail here!
                 tail = tip;
@@ -260,27 +256,6 @@ public class TipsManager {
         log.info("Tx traversed to find tip: " + traversedTails);
         messageQ.publish("mctn %d", traversedTails);
         return tail;
-    }
-
-    private boolean isBundleReusingKey(TransactionViewModel tailTransaction) throws Exception {
-        //skip milestones and NULL_HASH
-        if (TransactionViewModel.dsHashes.contains(tailTransaction.getAddressHash().toString())) {
-            return false;
-        }
-        if (tailTransaction.lastIndex() == 0){
-            //single transaction bundle, doesn't spend.
-            return false;
-        }
-
-        for(
-                TransactionViewModel transactionViewModel = tailTransaction;
-                transactionViewModel.getCurrentIndex() != transactionViewModel.lastIndex();
-                transactionViewModel = transactionViewModel.getTrunkTransaction(tangle)) {
-            if(transactionViewModel.value() < 0 && transactionViewModel.isDoubleSpend(tangle)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     static long capSum(long a, long b, long max) {

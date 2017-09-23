@@ -411,55 +411,6 @@ public class TransactionViewModel {
         }
     }
 
-    public static Set<String> dsHashes = new HashSet<>();
-    static {
-        dsHashes.add(Iota.MAINNET_COORDINATOR_ADDRESS);
-        dsHashes.add(Iota.TESTNET_COORDINATOR_ADDRESS);
-        dsHashes.add(Hash.NULL_HASH.toString());
-    }
-
-
-    private static final int firstBundlesSeenAllowed = 2;
-
-    public boolean isDoubleSpend(Tangle tangle) throws Exception {
-        {
-            String addy = getAddressHash().toString();
-            if (dsHashes.contains(addy)) {
-                return false;
-            }
-        }
-        Set<Hash> hashes;
-        {
-            AddressViewModel addressViewModel = this.getAddress(tangle);
-            hashes = addressViewModel.getHashes();
-        }
-        if(hashes.size() < 2) {
-            return false;
-        }
-        Set<Hash> bundleViewModels = new HashSet<>();
-        Set<Hash> firstBundlesSeen = new HashSet<>(firstBundlesSeenAllowed);
-        for(Hash txHash: hashes) {
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
-            if(transactionViewModel.value() < 0) {
-                Hash bundleHash = transactionViewModel.getBundleHash();
-                bundleViewModels.add(bundleHash);
-
-                if( firstBundlesSeen.size() < firstBundlesSeenAllowed){
-                    firstBundlesSeen.add(bundleHash);
-                }
-                if(firstBundlesSeen.contains(this.getBundleHash())) {
-                    //allow re-attachment of first seen bundles.
-                    return false;
-                }
-            }
-
-            if(bundleViewModels.size() > firstBundlesSeenAllowed) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public void updateSender(String sender) throws Exception {
         transaction.sender = sender;
     }

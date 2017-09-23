@@ -3,6 +3,7 @@ package com.iota.iri;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -27,13 +28,29 @@ public class BundleValidator {
                 final long lastIndex = transactionViewModel.lastIndex();
                 long bundleValue = 0;
                 int i = 0;
+                final Sponge curlInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
+                final Sponge addressInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
+
+                final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
+                final int[] bundleHashTrits = new int[TransactionViewModel.BUNDLE_TRINARY_SIZE];
+
                 MAIN_LOOP:
                 while (true) {
 
                     instanceTransactionViewModels.add(transactionViewModel);
 
-                    if (transactionViewModel.getCurrentIndex() != i || transactionViewModel.lastIndex() != lastIndex
-                            || ((bundleValue += transactionViewModel.value()) < -TransactionViewModel.SUPPLY || bundleValue > TransactionViewModel.SUPPLY)) {
+
+                    if (
+                            transactionViewModel.getCurrentIndex() != i
+                            || transactionViewModel.lastIndex() != lastIndex
+                            || ((bundleValue = Math.addExact(bundleValue, transactionViewModel.value())) < -TransactionViewModel.SUPPLY
+                            || bundleValue > TransactionViewModel.SUPPLY)
+                            ) {
+                        instanceTransactionViewModels.get(0).setValidity(tangle, -1);
+                        break;
+                    }
+
+                    if (transactionViewModel.value() != 0 && transactionViewModel.getAddressHash().trits()[Curl.HASH_LENGTH - 1] != 0) {
                         instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         break;
                     }
@@ -43,14 +60,11 @@ public class BundleValidator {
                         if (bundleValue == 0) {
 
                             if (instanceTransactionViewModels.get(0).getValidity() == 0) {
-
-                                final Curl bundleHash = SpongeFactory.create(SpongeFactory.Mode.KERL);
+                                curlInstance.reset();
                                 for (final TransactionViewModel transactionViewModel2 : instanceTransactionViewModels) {
-                                    bundleHash.absorb(transactionViewModel2.trits(), TransactionViewModel.ESSENCE_TRINARY_OFFSET, TransactionViewModel.ESSENCE_TRINARY_SIZE);
+                                    curlInstance.absorb(transactionViewModel2.trits(), TransactionViewModel.ESSENCE_TRINARY_OFFSET, TransactionViewModel.ESSENCE_TRINARY_SIZE);
                                 }
-                                final int[] bundleHashTrits = new int[TransactionViewModel.BUNDLE_TRINARY_SIZE];
-                                bundleHash.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
-                                Hash h = new Hash(bundleHashTrits);
+                                curlInstance.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
                                 if (instanceTransactionViewModels.get(0).getBundleHash().equals(new Hash(Converter.bytes(bundleHashTrits, 0, TransactionViewModel.BUNDLE_TRINARY_SIZE)))) {
 
                                     final int[] normalizedBundle = ISS.normalizedBundle(bundleHashTrits);
@@ -59,29 +73,19 @@ public class BundleValidator {
 
                                         transactionViewModel = instanceTransactionViewModels.get(j);
                                         if (transactionViewModel.value() < 0) { // let's recreate the address of the transactionViewModel.
-                                            final SpongeFactory.Mode addressMode;
-                                            if(Snapshot.initialState.containsKey(transactionViewModel.getAddressHash())) {
-                                                addressMode = SpongeFactory.Mode.CURL;
-                                            } else {
-                                                addressMode = SpongeFactory.Mode.KERL;
-                                            }
-
-                                            final Curl address = SpongeFactory.create(addressMode);
+                                            addressInstance.reset();
                                             int offset = 0;
                                             do {
-
-                                                address.absorb(
-                                                        ISS.digest(addressMode, Arrays.copyOfRange(normalizedBundle, offset % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE), offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS - 1) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) + 1),
+                                                addressInstance.absorb(
+                                                        ISS.digest(SpongeFactory.Mode.KERL, Arrays.copyOfRange(normalizedBundle, offset % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE), offset = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS - 1) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) + 1),
                                                                 Arrays.copyOfRange(instanceTransactionViewModels.get(j).trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET,
                                                                         TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE)),
                                                         0, Curl.HASH_LENGTH);
-
                                             } while (++j < instanceTransactionViewModels.size()
                                                     && instanceTransactionViewModels.get(j).getAddressHash().equals(transactionViewModel.getAddressHash())
                                                     && instanceTransactionViewModels.get(j).value() == 0);
 
-                                            final int[] addressTrits = new int[TransactionViewModel.ADDRESS_TRINARY_SIZE];
-                                            address.squeeze(addressTrits, 0, addressTrits.length);
+                                            addressInstance.squeeze(addressTrits, 0, addressTrits.length);
                                             //if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
                                             if (! transactionViewModel.getAddressHash().equals(new Hash(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE)))) {
                                                 instanceTransactionViewModels.get(0).setValidity(tangle, -1);

@@ -58,7 +58,7 @@ public class ZmqPublishProvider implements PersistenceProvider {
                     sb.append(transactionViewModel.getHash()); sb.append(" ");
                     sb.append(transactionViewModel.getAddressHash()); sb.append(" ");
                     sb.append(String.valueOf(transactionViewModel.value())); sb.append(" ");
-                    sb.append(transactionViewModel.getTagValue().toString().substring(0,27)); sb.append(" ");
+                    sb.append(transactionViewModel.getObsoleteTagValue().toString().substring(0,27)); sb.append(" ");
                     sb.append(String.valueOf(transactionViewModel.getTimestamp())); sb.append(" ");
                     sb.append(String.valueOf(transactionViewModel.getCurrentIndex())); sb.append(" ");
                     sb.append(String.valueOf(transactionViewModel.lastIndex())); sb.append(" ");
@@ -140,6 +140,11 @@ public class ZmqPublishProvider implements PersistenceProvider {
 
     @Override
     public void clear(Class<?> column) throws Exception {
+
+    }
+
+    @Override
+    public void clearMetadata(Class<?> column) throws Exception {
 
     }
 

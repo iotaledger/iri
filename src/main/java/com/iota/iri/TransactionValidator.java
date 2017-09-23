@@ -1,10 +1,10 @@
 package com.iota.iri;
 
 import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.hash.Curl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
@@ -70,10 +70,6 @@ public class TransactionValidator {
 
     private static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
-        if(transactionViewModel.getTimestamp() < 1502226000 && !transactionViewModel.getHash().equals(Hash.NULL_HASH)) {
-            throw new RuntimeException("Invalid transaction timestamp.");
-        }
-
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
                 //log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));
@@ -92,16 +88,16 @@ public class TransactionValidator {
     }
 
     public static TransactionViewModel validate(final int[] trits, int minWeightMagnitude) {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURL)));
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
     public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude) {
-        return validate(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURL));
+        return validate(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
 
     }
 
-    public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude, Curl curl) {
+    public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
@@ -169,21 +165,17 @@ public class TransactionValidator {
                     try {
                         Hash hash = cascadeIterator.next();
                         TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-                        transaction.getApprovers(tangle).getHashes().stream()
-                                .map(h -> TransactionViewModel.quietFromHash(tangle, h))
-                                .forEach(tx -> {
-                                    if(quietQuickSetSolid(tx)) {
-                                        try {
-                                            tx.update(tangle, "solid");
-                                        } catch (Exception e) {
-                                            e.printStackTrace();
-                                        }
-                                    } else {
-                                        if (transaction.isSolid()) {
-                                            addSolidTransaction(hash);
-                                        }
-                                    }
-                                });
+                        Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
+                        for(Hash h: approvers) {
+                            TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
+                            if(quietQuickSetSolid(tx)) {
+                                    tx.update(tangle, "solid");
+                            } else {
+                                if (transaction.isSolid()) {
+                                    addSolidTransaction(hash);
+                                }
+                            }
+                        }
                     } catch (Exception e) {
                         log.error("Some error", e);
                         // TODO: Do something, maybe, or do nothing.

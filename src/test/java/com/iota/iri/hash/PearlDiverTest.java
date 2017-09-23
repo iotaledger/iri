@@ -55,7 +55,7 @@ public class PearlDiverTest {
         for (int i = 0; i < 10000; i++) {
             int[] trits = TransactionViewModelTest.getRandomTransactionTrits();
             pearlDiver.search(trits, MIN_WEIGHT_MAGNITUDE, NUM_CORES);
-            Hash hash = Hash.calculate(SpongeFactory.Mode.CURL, trits);
+            Hash hash = Hash.calculate(SpongeFactory.Mode.CURLP81, trits);
             for (int j = Hash.SIZE_IN_TRITS - 1; j > Hash.SIZE_IN_TRITS - MIN_WEIGHT_MAGNITUDE; j--) {
                 assertEquals(hash.trits()[j], 0);
             }
@@ -66,7 +66,7 @@ public class PearlDiverTest {
     }
 
     private String getHashFor(String trytes) {
-        Curl curl = new Curl();
+        Sponge curl = new Curl(SpongeFactory.Mode.CURLP81);
         int[] myTrits = Converter.trits(trytes);
         pearlDiver.search(myTrits, MIN_WEIGHT_MAGNITUDE, NUM_CORES);
         curl.absorb(myTrits, 0, myTrits.length);

@@ -4,6 +4,7 @@ import com.iota.iri.conf.Configuration;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;
 import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
@@ -12,7 +13,6 @@ import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
 import java.util.ArrayList;
@@ -141,7 +141,7 @@ public class NodeIntegrationTests {
     private void newMilestone(API api, Hash[] tips, long index) throws Exception {
         List<int[]> transactions = new ArrayList<>();
         transactions.add(new int[TRINARY_SIZE]);
-        Converter.copyTrits(index, transactions.get(0), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE);
+        Converter.copyTrits(index, transactions.get(0), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE);
         transactions.add(Arrays.copyOf(transactions.get(0), TRINARY_SIZE));
         System.arraycopy(Iota.TESTNET_COORDINATOR.trits(), 0, transactions.get(0), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         setBundleHash(transactions, null);
@@ -154,7 +154,7 @@ public class NodeIntegrationTests {
 
         int[] hash = new int[Curl.HASH_LENGTH];
 
-        Curl curl = customCurl == null ? SpongeFactory.create(SpongeFactory.Mode.CURL) : customCurl;
+        Sponge curl = customCurl == null ? SpongeFactory.create(SpongeFactory.Mode.CURLP81) : customCurl;
         curl.reset();
 
         for (int i = 0; i < transactions.size(); i++) {
@@ -163,7 +163,7 @@ public class NodeIntegrationTests {
             int[] valueTrits = Arrays.copyOfRange(transactions.get(i), VALUE_TRINARY_OFFSET, VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE);
             t = ArrayUtils.addAll(t, valueTrits);
 
-            int[] tagTrits = Arrays.copyOfRange(transactions.get(i), TAG_TRINARY_OFFSET, TAG_TRINARY_OFFSET + TAG_TRINARY_SIZE);
+            int[] tagTrits = Arrays.copyOfRange(transactions.get(i), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_OFFSET + OBSOLETE_TAG_TRINARY_SIZE);
             t = ArrayUtils.addAll(t, tagTrits);
 
             int[] timestampTrits  = Arrays.copyOfRange(transactions.get(i), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_OFFSET + TIMESTAMP_TRINARY_SIZE);

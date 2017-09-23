@@ -94,6 +94,8 @@ public class API {
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
 
+    private final static long MAX_TIMESTAMP_VALUE = (3^27 - 1) / 2;
+
     private final int minRandomWalks;
     private final int maxRandomWalks;
     private final int maxFindTxs;
@@ -497,14 +499,20 @@ public class API {
         int numberOfNonMetTransactions = transactions.size();
         final int[] inclusionStates = new int[numberOfNonMetTransactions];
 
-        int[] tipsIndex = tips.stream().map(hash -> TransactionViewModel.quietFromHash(instance.tangle, hash))
-                .filter(tx -> tx.getType() != TransactionViewModel.PREFILLED_SLOT)
-                .mapToInt(TransactionViewModel::snapshotIndex)
-                .toArray();
-        int minTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a < b ? a : b).orElse(0);
+        List<Integer> tipsIndex = new LinkedList<>();
+        {
+            for(Hash hash: tips) {
+                TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
+                if (tx.getType() != TransactionViewModel.PREFILLED_SLOT) {
+                    tipsIndex.add(tx.snapshotIndex());
+                }
+            }
+        }
+        int minTipsIndex = tipsIndex.stream().reduce((a,b) -> a < b ? a : b).orElse(0);
         if(minTipsIndex > 0) {
-            int maxTipsIndex = Arrays.stream(tipsIndex).reduce((a,b) -> a > b ? a : b).orElse(0);
-            transactions.stream().map(hash -> TransactionViewModel.quietFromHash(instance.tangle, hash)).forEach(transaction -> {
+            int maxTipsIndex = tipsIndex.stream().reduce((a,b) -> a > b ? a : b).orElse(0);
+            for(Hash hash: transactions) {
+                TransactionViewModel transaction = TransactionViewModel.fromHash(instance.tangle, hash);
                 if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
                     inclusionStates[transactions.indexOf(transaction.getHash())] = -1;
                 } else if(transaction.snapshotIndex() > maxTipsIndex) {
@@ -512,7 +520,7 @@ public class API {
                 } else if(transaction.snapshotIndex() < maxTipsIndex) {
                     inclusionStates[transactions.indexOf(transaction.getHash())] = 1;
                 }
-            });
+            }
         }
 
         Set<Hash> analyzedTips = new HashSet<>();
@@ -736,7 +744,7 @@ public class API {
     public static void incEllapsedTime_PoW(long ellapsedTime) {
         ellapsedTime_PoW += ellapsedTime;
     }
-    
+
     public synchronized List<String> attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
@@ -746,14 +754,30 @@ public class API {
 
         for (final String tryte : trytes) {
             long startTime = System.nanoTime();
+            long timestamp = System.currentTimeMillis();
             try {
                 final int[] transactionTrits = Converter.trits(tryte);
+                //branch and trunk
                 System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
                         transactionTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
                         TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
                 System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
                         transactionTrits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
                         TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
+
+                //attachment fields: tag and timestamps
+                //tag - copy the obsolete tag to the attachment tag field
+                System.arraycopy(transactionTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
+                        transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
+                        TransactionViewModel.TAG_TRINARY_SIZE);
+
+                Converter.copyTrits(timestamp,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
+                        TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_SIZE);
+                Converter.copyTrits(0,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
+                        TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE);
+                Converter.copyTrits(MAX_TIMESTAMP_VALUE,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
+                        TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
+
                 if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
                     transactionViewModels.clear();
                     break;

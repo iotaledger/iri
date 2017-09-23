@@ -38,7 +38,7 @@ public class Milestone {
     public Hash latestMilestone = Hash.NULL_HASH;
     public Hash latestSolidSubtangleMilestone = latestMilestone;
 
-    public static final int MILESTONE_START_INDEX = 151000;
+    public static final int MILESTONE_START_INDEX = 217000;
     private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 20;
 
     public int latestMilestoneIndex = MILESTONE_START_INDEX;
@@ -65,10 +65,6 @@ public class Milestone {
     public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) throws Exception {
         this.ledgerValidator = ledgerValidator;
         AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
-        if (revalidate) {
-            tangle.clearColumn(com.iota.iri.model.Milestone.class);
-            tangle.clearColumn(com.iota.iri.model.StateDiff.class);
-        }
         (new Thread(() -> {
             while(!ledgerValidatorInitialized.get()) {
                 try {
@@ -121,7 +117,7 @@ public class Milestone {
         (new Thread(() -> {
 
             try {
-                ledgerValidator.init(revalidate);
+                ledgerValidator.init();
                 ledgerValidatorInitialized.set(true);
             } catch (Exception e) {
                 log.error("Error initializing snapshots. Skipping.", e);
@@ -224,7 +220,7 @@ public class Milestone {
     }
 
     static int getIndex(TransactionViewModel transactionViewModel) {
-        return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.TAG_TRINARY_OFFSET, 15);
+        return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET, 15);
     }
 
     void shutDown() {

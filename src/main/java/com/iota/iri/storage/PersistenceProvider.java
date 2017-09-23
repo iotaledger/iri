@@ -44,4 +44,5 @@ public interface PersistenceProvider {
     boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception;
 
     void clear(Class<?> column) throws Exception;
+    void clearMetadata(Class<?> column) throws Exception;
 }

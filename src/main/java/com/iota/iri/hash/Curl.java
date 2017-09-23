@@ -4,6 +4,7 @@ import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 
 import java.util.Arrays;
+import java.util.NoSuchElementException;
 
 /**
  * (c) 2016 Come-from-Beyond and Paul Handy
@@ -11,13 +12,15 @@ import java.util.Arrays;
  * Curl belongs to the sponge function family.
  *
  */
-public class Curl {
+public class Curl implements Sponge {
 
     public static final int HASH_LENGTH = 243;
+    public static final int NUMBER_OF_ROUNDSP81 = 81;
+    public static final int NUMBER_OF_ROUNDSP27 = 27;
+    private final int numberOfRounds;
     private static final int STATE_LENGTH = 3 * HASH_LENGTH;
     private static final int HALF_LENGTH = 364;
 
-    private static final int NUMBER_OF_ROUNDS = 27;
     private static final int[] TRUTH_TABLE = {1, 0, -1, 2, 1, -1, 0, 2, -1, 1, 0};
     /*
     private static final IntPair[] TRANSFORM_INDICES = IntStream.range(0, STATE_LENGTH)
@@ -33,13 +36,31 @@ public class Curl {
     private final int[] scratchpad = new int[STATE_LENGTH];
 
 
-    protected Curl() {
+    protected Curl(SpongeFactory.Mode mode) {
+        switch(mode) {
+            case CURLP27: {
+                numberOfRounds = NUMBER_OF_ROUNDSP27;
+            } break;
+            case CURLP81: {
+                numberOfRounds = NUMBER_OF_ROUNDSP81;
+            } break;
+            default: throw new NoSuchElementException("Only Curl-P-27 and Curl-P-81 are supported.");
+        }
         state = new int[STATE_LENGTH];
         stateHigh = null;
         stateLow = null;
     }
 
-    public Curl(boolean pair) {
+    public Curl(boolean pair, SpongeFactory.Mode mode) {
+        switch(mode) {
+            case CURLP27: {
+                numberOfRounds = NUMBER_OF_ROUNDSP27;
+            } break;
+            case CURLP81: {
+                numberOfRounds = NUMBER_OF_ROUNDSP81;
+            } break;
+            default: throw new NoSuchElementException("Only Curl-P-27 and Curl-P-81 are supported.");
+        }
         if(pair) {
             stateHigh = new long[STATE_LENGTH];
             stateLow = new long[STATE_LENGTH];
@@ -50,6 +71,10 @@ public class Curl {
             stateHigh = null;
             stateLow = null;
         }
+    }
+
+    private void setMode(SpongeFactory.Mode mode) {
+
     }
 
     public void absorb(final int[] trits, int offset, int length) {
@@ -76,7 +101,7 @@ public class Curl {
         //final int[] scratchpad = new int[STATE_LENGTH];
         int scratchpadIndex = 0;
         int prev_scratchpadIndex = 0;
-        for (int round = 0; round < NUMBER_OF_ROUNDS; round++) {
+        for (int round = 0; round < numberOfRounds; round++) {
             System.arraycopy(state, 0, scratchpad, 0, STATE_LENGTH);
             for (int stateIndex = 0; stateIndex < STATE_LENGTH; stateIndex++) {
                 prev_scratchpadIndex = scratchpadIndex;
@@ -108,7 +133,7 @@ public class Curl {
         final long[] curlScratchpadLow = new long[STATE_LENGTH];
         final long[] curlScratchpadHigh = new long[STATE_LENGTH];
         int curlScratchpadIndex = 0;
-        for (int round = 27; round-- > 0; ) {
+        for (int round = numberOfRounds; round-- > 0; ) {
             System.arraycopy(stateLow, 0, curlScratchpadLow, 0, STATE_LENGTH);
             System.arraycopy(stateHigh, 0, curlScratchpadHigh, 0, STATE_LENGTH);
             for (int curlStateIndex = 0; curlStateIndex < STATE_LENGTH; curlStateIndex++) {

@@ -153,6 +153,11 @@ public class FileExportProvider implements PersistenceProvider {
 
     }
 
+    @Override
+    public void clearMetadata(Class<?> column) throws Exception {
+
+    }
+
     private static long lastFileNumber = 0L;
     private static Object lock = new Object();
 

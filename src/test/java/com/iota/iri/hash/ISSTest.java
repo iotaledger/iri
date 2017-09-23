@@ -28,7 +28,7 @@ public class ISSTest {
     public void testSignatureResolvesToAddressISS() throws Exception {
         int index = 10;
         int nof = 1;
-        SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURL, SpongeFactory.Mode.KERL};
+        SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
         for (SpongeFactory.Mode mode: modes) {
             int[] subseed = ISS.subseed(mode, Converter.trits(seed), index);
             int[] key = ISS.key(mode, subseed, nof);
@@ -55,8 +55,8 @@ public class ISSTest {
     public void addressGenerationISS() throws Exception {
         int index = 0;
         int nof = 2;
-        SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURL, SpongeFactory.Mode.KERL};
-        Hash[] hashes = {new Hash("FS9KT9CLDAADRVMCEIPVTVUSCBORRKUOBEDKUZJUQUFLRRJUWIMFCTBDOTX9PPGRQNXRGERJSY9FBTAWM"),
+        SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
+        Hash[] hashes = {new Hash("D9XCNSCCAJGLWSQOQAQNFWANPYKYMCQ9VCOMROLDVLONPPLDFVPIZNAPVZLQMPFYJPAHUKIAEKNCQIYJZ"),
                          new Hash("MDWYEJJHJDIUVPKDY9EACGDJUOP9TLYDWETUBOYCBLYXYYYJYUXYUTCTPTDGJYFKMQMCNZDQPTBE9AFIW")};
         for (int i=0;i<modes.length;i++) {
             SpongeFactory.Mode mode = modes[i];
@@ -65,7 +65,7 @@ public class ISSTest {
             int[] digest = ISS.digests(mode, key);
             int[] address = ISS.address(mode, digest);
             Hash addressTrytes = new Hash(address);
-            assertTrue(addressTrytes.equals(hashes[i]));
+            assertEquals(hashes[i].toString(), addressTrytes.toString());
         }
     }
 

@@ -94,7 +94,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.DNS_REFRESHER_ENABLED.name(), "true");
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
         conf.put(DefaultConfSettings.RESCAN_DB.name(), "false");
-        conf.put(DefaultConfSettings.MAINNET_MWM.name(), "15");
+        conf.put(DefaultConfSettings.MAINNET_MWM.name(), "14");
         conf.put(DefaultConfSettings.TESTNET_MWM.name(), "13");
 
         // Pick a number based on best performance

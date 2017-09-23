@@ -16,49 +16,32 @@ public class TransactionViewModel {
 
     public static final int SIZE = 1604;
     private static final int TAG_SIZE = 27;
-    //public static final int HASH_SIZE = 46;
-
-    /*
-    public static final int TYPE_OFFSET = 0, TYPE_SIZE = Byte.BYTES;
-    public static final int HASH_OFFSET = TYPE_OFFSET + TYPE_SIZE + ((Long.BYTES - (TYPE_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), HASH_SIZE = 46;
-
-    public static final int BYTES_OFFSET = HASH_OFFSET + HASH_SIZE + ((Long.BYTES - (HASH_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), BYTES_SIZE = SIZE;
-
-    public static final int ADDRESS_OFFSET = BYTES_OFFSET + BYTES_SIZE + ((Long.BYTES - (BYTES_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), ADDRESS_SIZE = 49;
-    public static final int VALUE_OFFSET = ADDRESS_OFFSET + ADDRESS_SIZE + ((Long.BYTES - (ADDRESS_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), VALUE_SIZE = Long.BYTES;
-    public static final int TAG_OFFSET = VALUE_OFFSET + VALUE_SIZE + ((Long.BYTES - (VALUE_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), TAG_SIZE = 17;
-    private static final int CURRENT_INDEX_OFFSET = TAG_OFFSET + TAG_SIZE + ((Long.BYTES - (TAG_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), CURRENT_INDEX_SIZE = Long.BYTES;
-    private static final int LAST_INDEX_OFFSET = CURRENT_INDEX_OFFSET + CURRENT_INDEX_SIZE + ((Long.BYTES - (CURRENT_INDEX_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), LAST_INDEX_SIZE = Long.BYTES;
-    public static final int BUNDLE_OFFSET = LAST_INDEX_OFFSET + LAST_INDEX_SIZE + ((Long.BYTES - (LAST_INDEX_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), BUNDLE_SIZE = 49;
-    private static final int TRUNK_TRANSACTION_OFFSET = BUNDLE_OFFSET + BUNDLE_SIZE + ((Long.BYTES - (BUNDLE_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), TRUNK_TRANSACTION_SIZE = HASH_SIZE;
-    private static final int BRANCH_TRANSACTION_OFFSET = TRUNK_TRANSACTION_OFFSET + TRUNK_TRANSACTION_SIZE + ((Long.BYTES - (TRUNK_TRANSACTION_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), BRANCH_TRANSACTION_SIZE = HASH_SIZE;
-    public static final int VALIDITY_OFFSET = BRANCH_TRANSACTION_OFFSET + BRANCH_TRANSACTION_SIZE + ((Long.BYTES - (BRANCH_TRANSACTION_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), VALIDITY_SIZE = 1;
-    public static final int ARRIVAL_TIME_OFFSET = VALIDITY_OFFSET + VALIDITY_SIZE + ((Long.BYTES - (VALIDITY_SIZE & (Long.BYTES - 1))) & (Long.BYTES - 1)), ARIVAL_TIME_SIZE = Long.BYTES;
-    */
 
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2
 
     public static final int SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET = 0, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE = 6561;
     public static final int ADDRESS_TRINARY_OFFSET = SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE, ADDRESS_TRINARY_SIZE = 243;
     public static final int VALUE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET + ADDRESS_TRINARY_SIZE, VALUE_TRINARY_SIZE = 81, VALUE_USABLE_TRINARY_SIZE = 33;
-    public static final int TAG_TRINARY_OFFSET = VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE, TAG_TRINARY_SIZE = 81;
-    public static final int TIMESTAMP_TRINARY_OFFSET = TAG_TRINARY_OFFSET + TAG_TRINARY_SIZE, TIMESTAMP_TRINARY_SIZE = 27;
+    public static final int OBSOLETE_TAG_TRINARY_OFFSET = VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE, OBSOLETE_TAG_TRINARY_SIZE = 81;
+    public static final int TIMESTAMP_TRINARY_OFFSET = OBSOLETE_TAG_TRINARY_OFFSET + OBSOLETE_TAG_TRINARY_SIZE, TIMESTAMP_TRINARY_SIZE = 27;
     public static final int CURRENT_INDEX_TRINARY_OFFSET = TIMESTAMP_TRINARY_OFFSET + TIMESTAMP_TRINARY_SIZE, CURRENT_INDEX_TRINARY_SIZE = 27;
     public static final int LAST_INDEX_TRINARY_OFFSET = CURRENT_INDEX_TRINARY_OFFSET + CURRENT_INDEX_TRINARY_SIZE, LAST_INDEX_TRINARY_SIZE = 27;
     public static final int BUNDLE_TRINARY_OFFSET = LAST_INDEX_TRINARY_OFFSET + LAST_INDEX_TRINARY_SIZE, BUNDLE_TRINARY_SIZE = 243;
     public static final int TRUNK_TRANSACTION_TRINARY_OFFSET = BUNDLE_TRINARY_OFFSET + BUNDLE_TRINARY_SIZE, TRUNK_TRANSACTION_TRINARY_SIZE = 243;
     public static final int BRANCH_TRANSACTION_TRINARY_OFFSET = TRUNK_TRANSACTION_TRINARY_OFFSET + TRUNK_TRANSACTION_TRINARY_SIZE, BRANCH_TRANSACTION_TRINARY_SIZE = 243;
-    private static final int NONCE_TRINARY_OFFSET = BRANCH_TRANSACTION_TRINARY_OFFSET + BRANCH_TRANSACTION_TRINARY_SIZE, NONCE_TRINARY_SIZE = 243;
+
+    public static final int TAG_TRINARY_OFFSET = BRANCH_TRANSACTION_TRINARY_OFFSET + BRANCH_TRANSACTION_TRINARY_SIZE, TAG_TRINARY_SIZE = 81;
+    public static final int ATTACHMENT_TIMESTAMP_TRINARY_OFFSET = TAG_TRINARY_OFFSET + TAG_TRINARY_SIZE, ATTACHMENT_TIMESTAMP_TRINARY_SIZE = 27;
+    public static final int ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET = ATTACHMENT_TIMESTAMP_TRINARY_OFFSET + ATTACHMENT_TIMESTAMP_TRINARY_SIZE, ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE = 27;
+    public static final int ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET = ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET + ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE, ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE = 27;
+    private static final int NONCE_TRINARY_OFFSET = ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET + ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE, NONCE_TRINARY_SIZE = 81;
 
     public static final int TRINARY_SIZE = NONCE_TRINARY_OFFSET + NONCE_TRINARY_SIZE;
 
-    public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
+    public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + OBSOLETE_TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
-    public static final byte[] NULL_TRANSACTION_HASH_BYTES = new byte[Hash.SIZE_IN_BYTES];
-    public static final byte[] NULL_TRANSACTION_BYTES = new byte[SIZE];
 
     private AddressViewModel address;
-    private BundleViewModel bundle;
     private ApproveeViewModel approovers;
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
@@ -69,24 +52,23 @@ public class TransactionViewModel {
     public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only another tx references that hash
     public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
 
-    private int[] hashTrits;
-
     private int[] trits;
     public int weightMagnitude;
 
     public static TransactionViewModel find(final Tangle tangle, byte[] hash) throws Exception {
-        return new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), new Hash(hash));
+        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), new Hash(hash));
+        if(!transactionViewModel.getHash().equals(Hash.NULL_HASH) && !transactionViewModel.transaction.parsed) {
+            tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
+        }
+        return transactionViewModel;
     }
 
-    public static TransactionViewModel quietFromHash(final Tangle tangle, final Hash hash) {
-        try {
-            return fromHash(tangle, hash);
-        } catch (Exception e) {
-            return new TransactionViewModel(new Transaction(), hash);
-        }
-    }
     public static TransactionViewModel fromHash(final Tangle tangle, final Hash hash) throws Exception {
-        return new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
+        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
+        if(!transactionViewModel.getHash().equals(Hash.NULL_HASH) && !transactionViewModel.transaction.parsed) {
+            tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
+        }
+        return transactionViewModel;
     }
 
     public static boolean mightExist(final Tangle tangle, Hash hash) throws Exception {
@@ -170,18 +152,26 @@ public class TransactionViewModel {
         tangle.delete(Transaction.class, getHash());
     }
 
-    public List<Pair<Indexable, Persistable>> getSaveBatch() throws Exception {
+    public List<Pair<Indexable, Persistable>> getMetadataSaveBatch() throws Exception {
         List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
         hashesList.add(new Pair<>(getAddressHash(), new Address(getHash())));
         hashesList.add(new Pair<>(getBundleHash(), new Bundle(getHash())));
         hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(getHash())));
         hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(getHash())));
-        hashesList.add(new Pair<>(getTagValue(), new Tag(getHash())));
-        getBytes();
+        hashesList.add(new Pair<>(getObsoleteTagValue(), new Tag(getHash())));
+        setAttachmentData();
         setMetadata();
+        return hashesList;
+    }
+
+    public List<Pair<Indexable, Persistable>> getSaveBatch() throws Exception {
+        List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
+        hashesList.addAll(getMetadataSaveBatch());
+        getBytes();
         hashesList.add(new Pair<>(getHash(), transaction));
         return hashesList;
     }
+
 
     public static TransactionViewModel first(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> transactionPair = tangle.getFirst(Transaction.class, Hash.class);
@@ -254,11 +244,11 @@ public class TransactionViewModel {
         return transaction.address;
     }
 
-    public Hash getTagValue() {
-        if(transaction.tag == null) {
-            transaction.tag = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
+    public Hash getObsoleteTagValue() {
+        if(transaction.obsoleteTag == null) {
+            transaction.obsoleteTag = new Hash(Converter.bytes(trits(), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE), 0, TAG_SIZE);
         }
-        return transaction.tag;
+        return transaction.obsoleteTag;
     }
 
     public Hash getBundleHash() {
@@ -281,6 +271,22 @@ public class TransactionViewModel {
         }
         return transaction.branch;
     }
+
+    public Hash getTagValue() {
+        if(transaction.tag == null) {
+            transaction.tag = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
+        }
+        return transaction.tag;
+    }
+
+    public long getAttachmentTimestamp() { return transaction.attachmentTimestamp; }
+    public long getAttachmentTimestampLowerBound() {
+        return transaction.attachmentTimestampLowerBound;
+    }
+    public long getAttachmentTimestampUpperBound() {
+        return transaction.attachmentTimestampUpperBound;
+    }
+
 
     public long value() {
         return transaction.value;
@@ -311,16 +317,24 @@ public class TransactionViewModel {
         return Converter.bytes(trits(), NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
     }
 
-        public long lastIndex() {
+    public long lastIndex() {
         return transaction.lastIndex;
     }
 
+    public void setAttachmentData() {
+        getTagValue();
+        transaction.attachmentTimestamp = Converter.longValue(trits(), ATTACHMENT_TIMESTAMP_TRINARY_OFFSET, ATTACHMENT_TIMESTAMP_TRINARY_SIZE);
+        transaction.attachmentTimestampLowerBound = Converter.longValue(trits(), ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET, ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE);
+        transaction.attachmentTimestampUpperBound = Converter.longValue(trits(), ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET, ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
+
+    }
     public void setMetadata() {
         transaction.value = Converter.longValue(trits(), VALUE_TRINARY_OFFSET, VALUE_USABLE_TRINARY_SIZE);
         transaction.timestamp = Converter.longValue(trits(), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_SIZE);
-        if (transaction.timestamp > 1262304000000L ) transaction.timestamp /= 1000L;  // if > 01.01.2010 in milliseconds
+        //if (transaction.timestamp > 1262304000000L ) transaction.timestamp /= 1000L;  // if > 01.01.2010 in milliseconds
         transaction.currentIndex = Converter.longValue(trits(), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
         transaction.lastIndex = Converter.longValue(trits(), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
+        transaction.type = transaction.bytes == null ? TransactionViewModel.PREFILLED_SLOT : TransactionViewModel.FILLED_SLOT;
     }
 
     public static boolean exists(Tangle tangle, Hash hash) throws Exception {
@@ -395,55 +409,6 @@ public class TransactionViewModel {
             }
             trunk = transaction;
         }
-    }
-
-    public static Set<String> dsHashes = new HashSet<>();
-    static {
-        dsHashes.add(Iota.MAINNET_COORDINATOR_ADDRESS);
-        dsHashes.add(Iota.TESTNET_COORDINATOR_ADDRESS);
-        dsHashes.add(Hash.NULL_HASH.toString());
-    }
-
-
-    private static final int firstBundlesSeenAllowed = 2;
-
-    public boolean isDoubleSpend(Tangle tangle) throws Exception {
-        {
-            String addy = getAddressHash().toString();
-            if (dsHashes.contains(addy)) {
-                return false;
-            }
-        }
-        Set<Hash> hashes;
-        {
-            AddressViewModel addressViewModel = this.getAddress(tangle);
-            hashes = addressViewModel.getHashes();
-        }
-        if(hashes.size() < 2) {
-            return false;
-        }
-        Set<Hash> bundleViewModels = new HashSet<>();
-        Set<Hash> firstBundlesSeen = new HashSet<>(firstBundlesSeenAllowed);
-        for(Hash txHash: hashes) {
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
-            if(transactionViewModel.value() < 0) {
-                Hash bundleHash = transactionViewModel.getBundleHash();
-                bundleViewModels.add(bundleHash);
-
-                if( firstBundlesSeen.size() < firstBundlesSeenAllowed){
-                    firstBundlesSeen.add(bundleHash);
-                }
-                if(firstBundlesSeen.contains(this.getBundleHash())) {
-                    //allow re-attachment of first seen bundles.
-                    return false;
-                }
-            }
-
-            if(bundleViewModels.size() > firstBundlesSeenAllowed) {
-                return true;
-            }
-        }
-        return false;
     }
 
     public void updateSender(String sender) throws Exception {

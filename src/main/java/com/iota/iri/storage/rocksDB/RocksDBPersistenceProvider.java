@@ -356,6 +356,11 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         flushHandle(classTreeMap.get().get(column));
     }
 
+    @Override
+    public void clearMetadata(Class<?> column) throws Exception {
+        flushHandle(metadataReference.get().get(column));
+    }
+
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
         List<byte[]> itemsToDelete = new ArrayList<>();
         RocksIterator iterator = db.newIterator(handle);

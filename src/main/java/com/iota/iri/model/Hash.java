@@ -1,6 +1,7 @@
 package com.iota.iri.model;
 
 import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Converter;
@@ -55,12 +56,12 @@ public class Hash implements Serializable, Indexable {
         return calculate(trits, 0, trits.length, SpongeFactory.create(mode));
     }
 
-    public static Hash calculate(byte[] bytes, int tritsLength, final Curl curl) {
+    public static Hash calculate(byte[] bytes, int tritsLength, final Sponge curl) {
         int[] trits = new int[tritsLength];
         Converter.getTrits(bytes, trits);
         return calculate(trits, 0, tritsLength, curl);
     }
-    public static Hash calculate(final int[] tritsToCalculate, int offset, int length, final Curl curl) {
+    public static Hash calculate(final int[] tritsToCalculate, int offset, int length, final Sponge curl) {
         int[] hashTrits = new int[SIZE_IN_TRITS];
         curl.reset();
         curl.absorb(tritsToCalculate, offset, length);

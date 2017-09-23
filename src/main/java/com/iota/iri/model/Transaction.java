@@ -18,17 +18,23 @@ public class Transaction implements Persistable {
     public Hash bundle;
     public Hash trunk;
     public Hash branch;
-    public Hash tag;
+    public Hash obsoleteTag;
     public long value;
     public long currentIndex;
     public long lastIndex;
     public long timestamp;
+
+    public Hash tag;
+    public long attachmentTimestamp;
+    public long attachmentTimestampLowerBound;
+    public long attachmentTimestampUpperBound;
 
     public int validity = 0;
     public int type = 1;
     public long arrivalTime = 0;
 
     //public boolean confirmed = false;
+    public boolean parsed = false;
     public boolean solid = false;
     public long height = 0;
     public String sender = "";
@@ -47,16 +53,28 @@ public class Transaction implements Persistable {
 
     @Override
     public byte[] metadata() {
-        ByteBuffer buffer = ByteBuffer.allocate(Hash.SIZE_IN_BYTES * 5 + Long.BYTES * 6 + Integer.BYTES * 3 + 1 + sender.getBytes().length);
+        int allocateSize =
+                Hash.SIZE_IN_BYTES * 6 + //address,bundle,trunk,branch,obsoleteTag,tag
+                        Long.BYTES * 9 + //value,currentIndex,lastIndex,timestamp,attachmentTimestampLowerBound,attachmentTimestampUpperBound,arrivalTime,height
+                        Integer.BYTES * 3 + //validity,type,snapshot
+                        1 + //solid
+                        sender.getBytes().length; //sender
+        ByteBuffer buffer = ByteBuffer.allocate(allocateSize);
         buffer.put(address.bytes());
         buffer.put(bundle.bytes());
         buffer.put(trunk.bytes());
         buffer.put(branch.bytes());
-        buffer.put(tag.bytes());
+        buffer.put(obsoleteTag.bytes());
         buffer.put(Serializer.serialize(value));
         buffer.put(Serializer.serialize(currentIndex));
         buffer.put(Serializer.serialize(lastIndex));
         buffer.put(Serializer.serialize(timestamp));
+
+        buffer.put(tag.bytes());
+        buffer.put(Serializer.serialize(attachmentTimestamp));
+        buffer.put(Serializer.serialize(attachmentTimestampLowerBound));
+        buffer.put(Serializer.serialize(attachmentTimestampUpperBound));
+
         buffer.put(Serializer.serialize(validity));
         buffer.put(Serializer.serialize(type));
         buffer.put(Serializer.serialize(arrivalTime));
@@ -80,7 +98,7 @@ public class Transaction implements Persistable {
             i += Hash.SIZE_IN_BYTES;
             branch = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
-            tag = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
+            obsoleteTag = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
             value = Serializer.getLong(bytes, i);
             i += Long.BYTES;
@@ -90,6 +108,16 @@ public class Transaction implements Persistable {
             i += Long.BYTES;
             timestamp = Serializer.getLong(bytes, i);
             i += Long.BYTES;
+
+            tag = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
+            i += Hash.SIZE_IN_BYTES;
+            attachmentTimestamp = Serializer.getLong(bytes, i);
+            i += Long.BYTES;
+            attachmentTimestampLowerBound = Serializer.getLong(bytes, i);
+            i += Long.BYTES;
+            attachmentTimestampUpperBound = Serializer.getLong(bytes, i);
+            i += Long.BYTES;
+
             validity = Serializer.getInteger(bytes, i);
             i += Integer.BYTES;
             type = Serializer.getInteger(bytes, i);
@@ -111,6 +139,7 @@ public class Transaction implements Persistable {
                 System.arraycopy(bytes, i, senderBytes, 0, senderBytes.length);
             }
             sender = new String(senderBytes);
+            parsed = true;
         }
     }
 

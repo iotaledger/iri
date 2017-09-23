@@ -116,7 +116,7 @@ public class LedgerValidator {
                                             final Hash address = bundleTransactionViewModel.getAddressHash();
                                             final Long value = state.get(address);
                                             state.put(address, value == null ? bundleTransactionViewModel.value()
-                                                    : (value + bundleTransactionViewModel.value()));
+                                                    : Math.addExact(value, bundleTransactionViewModel.value()));
                                         }
                                     }
 

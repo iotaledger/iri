@@ -39,8 +39,13 @@ public class BundleValidator {
 
                     instanceTransactionViewModels.add(transactionViewModel);
 
-                    if (transactionViewModel.getCurrentIndex() != i || transactionViewModel.lastIndex() != lastIndex
-                            || ((bundleValue += transactionViewModel.value()) < -TransactionViewModel.SUPPLY || bundleValue > TransactionViewModel.SUPPLY)) {
+
+                    if (
+                            transactionViewModel.getCurrentIndex() != i
+                            || transactionViewModel.lastIndex() != lastIndex
+                            || ((bundleValue = Math.addExact(bundleValue, transactionViewModel.value())) < -TransactionViewModel.SUPPLY
+                            || bundleValue > TransactionViewModel.SUPPLY)
+                            ) {
                         instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         break;
                     }

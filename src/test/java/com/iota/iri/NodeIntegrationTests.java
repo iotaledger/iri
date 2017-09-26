@@ -8,7 +8,7 @@ import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
-import com.iota.iri.service.API;
+import com.iota.iri.service.ABI;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.After;
@@ -44,7 +44,7 @@ public class NodeIntegrationTests {
         int count = 1;
         long spacing = 5000;
         Iota iotaNodes[] = new Iota[count];
-        API api[] = new API[count];
+        ABI api[] = new ABI[count];
         IXI ixi[] = new IXI[count];
         Thread cooThread, master;
         TemporaryFolder[] folders = new TemporaryFolder[count*2];
@@ -54,8 +54,7 @@ public class NodeIntegrationTests {
             iotaNodes[i] = newNode(i, folders[i*2], folders[i*2+1]);
             ixi[i] = new IXI(iotaNodes[i]);
             ixi[i].init(iotaNodes[i].configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
-            api[i] = new API(iotaNodes[i], ixi[i]);
-            api[i].init();
+            api[i] = new ABI(iotaNodes[i]);
         }
         Node.uri("udp://localhost:14701").ifPresent(uri -> iotaNodes[0].node.addNeighbor(iotaNodes[0].node.newNeighbor(uri, true)));
         //Node.uri("udp://localhost:14700").ifPresent(uri -> iotaNodes[1].node.addNeighbor(iotaNodes[1].node.newNeighbor(uri, true)));
@@ -73,7 +72,6 @@ public class NodeIntegrationTests {
         }
         for(int i = 0; i < count; i++) {
             ixi[i].shutdown();
-            api[i].shutDown();
             iotaNodes[i].shutdown();
         }
         for(TemporaryFolder folder: folders) {
@@ -111,7 +109,7 @@ public class NodeIntegrationTests {
         };
     }
 
-    Runnable spawnCoordinator(API api, long spacing) {
+    Runnable spawnCoordinator(ABI api, long spacing) {
         return () -> {
             long index = 0;
             try {
@@ -134,11 +132,11 @@ public class NodeIntegrationTests {
         };
     }
 
-    private void sendMilestone(API api, long index) throws Exception {
+    private void sendMilestone(ABI api, long index) throws Exception {
         newMilestone(api, api.getTransactionToApproveStatement(10, null, 1), index);
     }
 
-    private void newMilestone(API api, Hash[] tips, long index) throws Exception {
+    private void newMilestone(ABI api, Hash[] tips, long index) throws Exception {
         List<int[]> transactions = new ArrayList<>();
         transactions.add(new int[TRINARY_SIZE]);
         Converter.copyTrits(index, transactions.get(0), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE);

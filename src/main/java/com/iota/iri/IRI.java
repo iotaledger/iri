@@ -182,7 +182,8 @@ public class IRI {
             configuration.put(DefaultConfSettings.TCP_RECEIVER_PORT, vrporttcp);
         }
 
-        if (parser.getOptionValue(remote) != null) {
+	final Boolean remoteBinding = configuration.getBooling(DefaultConfSetting.REMOTE);
+        if (parser.getOptionValue(remote) != null || remoteBinding ) {
             log.info("Remote access enabled. Binding API socket to listen any interface.");
             configuration.put(DefaultConfSettings.API_HOST, "0.0.0.0");
         }

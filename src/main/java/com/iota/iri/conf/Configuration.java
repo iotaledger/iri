@@ -32,7 +32,7 @@ public class Configuration {
         TCP_RECEIVER_PORT,
         TESTNET,
         DEBUG,
-	REMOTE,
+        REMOTE,
         REMOTE_LIMIT_API,
         REMOTE_AUTH,
         NEIGHBORS,        

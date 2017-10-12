@@ -33,6 +33,7 @@ public class Configuration {
         TESTNET,
         DEBUG,
         REMOTE_LIMIT_API,
+        REMOTE_LIMIT_API_MODE,
         REMOTE_AUTH,
         NEIGHBORS,        
         IXI_DIR,
@@ -74,6 +75,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.TESTNET.name(), "false");
         conf.put(DefaultConfSettings.DEBUG.name(), "false");
         conf.put(DefaultConfSettings.REMOTE_LIMIT_API.name(), "");
+        conf.put(DefaultConfSettings.REMOTE_LIMIT_API_MODE.name(), "INCLUDE");
         conf.put(DefaultConfSettings.REMOTE_AUTH.name(), "");
         conf.put(DefaultConfSettings.NEIGHBORS.name(), "");
         conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");

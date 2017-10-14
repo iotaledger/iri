@@ -818,12 +818,19 @@ public class API {
                 log.info("Adding neighbor: "+uriString);
                 // 3rd parameter true if tcp, 4th parameter true (configured tethering)
                 final Neighbor neighbor;
+                final InetSocketAddress address = new InetSocketAddress(uri.getHost(),uri.getPort());
+
+                if(address.isUnresolved()){
+                    log.info("ERROR!!! Skipping unresolveable neighbor: "+uriString);
+                    continue;
+                }
+
                 switch(uri.getScheme()) {
                     case "tcp":
-                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true);
+                        neighbor = new TCPNeighbor(address,true);
                         break;
                     case "udp":
-                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true);
+                        neighbor = new UDPNeighbor(address, instance.node.getUdpSocket(), true);
                         break;
                     default:
                         return ErrorResponse.create("Invalid uri scheme");

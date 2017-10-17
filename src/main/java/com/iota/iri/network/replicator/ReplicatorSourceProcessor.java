@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
-import java.util.List;
+import java.util.Collection;
 import java.util.zip.CRC32;
 
 import com.iota.iri.network.TCPNeighbor;
@@ -62,7 +62,7 @@ class ReplicatorSourceProcessor implements Runnable {
             InetSocketAddress inet_socket_address = (InetSocketAddress) address;
 
             existingNeighbor = false;
-            List<Neighbor> neighbors = node.getNeighbors();
+            Collection<Neighbor> neighbors = node.getNeighbors();
             neighbors.stream().filter(n -> n instanceof TCPNeighbor)
                     .map(n -> ((TCPNeighbor) n))
                     .forEach(n -> {

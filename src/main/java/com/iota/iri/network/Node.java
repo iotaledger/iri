@@ -6,14 +6,16 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentSkipListSet;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -54,7 +56,7 @@ public class Node {
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
-    private final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
+    private final Collection<Neighbor> neighbors = Collections.synchronizedSet(new HashSet<Neighbor>());
     private final ConcurrentSkipListSet<TransactionViewModel> broadcastQueue = weightQueue();
     private final ConcurrentSkipListSet<Pair<TransactionViewModel,Neighbor>> receiveQueue = weightQueueTxPair();
     private final ConcurrentSkipListSet<Pair<Hash,Neighbor>> replyQueue = weightQueueHashPair();
@@ -238,7 +240,7 @@ public class Node {
 
 
         boolean addressMatch = false;
-        for (final Neighbor neighbor : getNeighbors()) {
+        for (final Neighbor neighbor : neighbors) {
             addressMatch = neighbor.matches(senderAddress);
             if (addressMatch) {
                 //Validate transaction
@@ -320,14 +322,13 @@ public class Node {
                 try {
                     final URI uri = new URI(uriString);
                     // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
-                    final Neighbor newneighbor;
+                    final Neighbor newNeighbor;
                     if (uriScheme.equals("tcp")) {
-                        newneighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
+                        newNeighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
                     } else {
-                        newneighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, false);
+                        newNeighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, false);
                     }
-                    if (!getNeighbors().contains(newneighbor)) {
-                        getNeighbors().add(newneighbor);
+                    if (addNeighbor(newNeighbor)) {
                         Neighbor.incNumPeers();
                     }
                 } catch (URISyntaxException e) {
@@ -685,7 +686,7 @@ public class Node {
     }
 
     public boolean addNeighbor(Neighbor neighbor) {
-        return !getNeighbors().contains(neighbor) && getNeighbors().add(neighbor);
+        return neighbors.add(neighbor);
     }
 
     public Neighbor newNeighbor(final URI uri, boolean isConfigured) {
@@ -712,10 +713,10 @@ public class Node {
     }
 
     public int howManyNeighbors() {
-        return getNeighbors().size();
+        return neighbors.size();
     }
 
-    public List<Neighbor> getNeighbors() {
+    public Collection<Neighbor> getNeighbors() {
         return neighbors;
     }
 

@@ -3,7 +3,7 @@ package com.iota.iri.network.replicator;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.Socket;
-import java.util.List;
+import java.util.Collection;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -40,7 +40,7 @@ public class ReplicatorSinkPool  implements Runnable {
         
         sinkPool = Executors.newFixedThreadPool(Replicator.NUM_THREADS);
         {           
-            List<Neighbor> neighbors = node.getNeighbors();
+            Collection<Neighbor> neighbors = node.getNeighbors();
             // wait until list is populated
             int loopcnt = 10;
             while ((loopcnt-- > 0) && neighbors.size() == 0) {
@@ -62,7 +62,7 @@ public class ReplicatorSinkPool  implements Runnable {
             } catch (InterruptedException e) {
                 log.debug("Interrupted: ", e);
             }
-            List<Neighbor> neighbors = node.getNeighbors();
+            Collection<Neighbor> neighbors = node.getNeighbors();
             neighbors.stream()
                     .filter(n -> n instanceof TCPNeighbor && n.isFlagged())
                     .map(n -> ((TCPNeighbor) n))

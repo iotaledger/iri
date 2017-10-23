@@ -8,6 +8,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
+import com.iota.iri.service.ABI;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.service.TipsManager;
 import com.iota.iri.storage.FileExportProvider;
@@ -34,6 +35,7 @@ public class Iota {
     public static final String TESTNET_COORDINATOR_ADDRESS = "XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA";
     public static final Hash TESTNET_COORDINATOR = new Hash(TESTNET_COORDINATOR_ADDRESS);
 
+    public final ABI abi;
     public final LedgerValidator ledgerValidator;
     public final Milestone milestone;
     public final Snapshot latestSnapshot;
@@ -50,6 +52,7 @@ public class Iota {
     public final MessageQ messageQ;
 
     public final boolean testnet;
+
     public final int maxPeers;
     public final int udpPort;
     public final int tcpPort;
@@ -88,6 +91,7 @@ public class Iota {
         udpReceiver = new UDPReceiver(udpPort, node);
         ledgerValidator = new LedgerValidator(tangle, latestSnapshot, milestone, transactionRequester, messageQ);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth, messageQ);
+        abi = new ABI(this);
     }
 
     public void init() throws Exception {

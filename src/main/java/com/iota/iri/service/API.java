@@ -180,6 +180,9 @@ public class API {
 
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
+            if (!request.containsKey("apiVersion")) {
+                return ErrorResponse.create("Invalid API Version");
+            }
             switch (command) {
 
                 case "addNeighbors": {

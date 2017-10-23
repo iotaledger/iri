@@ -20,9 +20,9 @@ import java.util.stream.Collectors;
 
 public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
-    private static String SNAPSHOT_PUBKEY = "ETSYRXPKSCTJAZIJZDVJTQOILVEPHGV9PHPFLJVUFQRPXGNWPDBAKHCWPPEXPCZDIGPJDQGHVIQHQYQDW";
+    private static String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
     private static int SNAPSHOT_PUBKEY_DEPTH = 6;
-    private static int SNAPSHOT_INDEX = 0;
+    private static int SNAPSHOT_INDEX = 1;
 
     public static final Map<Hash, Long> initialState = new HashMap<>();
     public static final Snapshot initialSnapshot;
@@ -41,7 +41,7 @@ public class Snapshot {
                 System.arraycopy(trit_value, 0, trits, 0, trit_value.length);
                 curl.absorb(trits, 0, trits.length);
                 Arrays.fill(trits, 0);
-                String[] parts = line.split(":", 2);
+                String[] parts = line.split(";", 2);
                 if (parts.length >= 2)
                 {
                     String key = parts[0];
@@ -52,6 +52,7 @@ public class Snapshot {
             { // Check snapshot signature
                 trits = new int[Curl.HASH_LENGTH];
                 curl.squeeze(trits, 0, Curl.HASH_LENGTH);
+                SpongeFactory.Mode mode = SpongeFactory.Mode.CURLP81;
                 int[] digests = new int[0];
                 int[] bundle = ISS.normalizedBundle(trits);
                 int[] root = null;
@@ -59,12 +60,16 @@ public class Snapshot {
                 in = Snapshot.class.getResourceAsStream("/Snapshot.sig");
                 reader = new BufferedReader(new InputStreamReader(in));
                 for(i = 0; i < 3 && (line = reader.readLine()) != null; i++) {
-                    digests = ArrayUtils.addAll(digests, ISS.digest(SpongeFactory.Mode.KERL, Arrays.copyOfRange(bundle, i*ISS.NORMALIZED_FRAGMENT_LENGTH, (i+1)*ISS.NORMALIZED_FRAGMENT_LENGTH), Converter.trits(line)));
+                    digests = ArrayUtils.addAll(
+                            digests,
+                            ISS.digest(mode
+                                    , Arrays.copyOfRange(bundle, i*ISS.NORMALIZED_FRAGMENT_LENGTH, (i+1)*ISS.NORMALIZED_FRAGMENT_LENGTH)
+                                    , Converter.trits(line)));
                 }
                 if((line = reader.readLine()) != null) {
-                    root = ISS.getMerkleRoot(SpongeFactory.Mode.CURLP81, ISS.address(SpongeFactory.Mode.KERL, digests), Converter.trits(line), 0, SNAPSHOT_INDEX, SNAPSHOT_PUBKEY_DEPTH);
+                    root = ISS.getMerkleRoot(mode, ISS.address(mode, digests), Converter.trits(line), 0, SNAPSHOT_INDEX, SNAPSHOT_PUBKEY_DEPTH);
                 } else {
-                    root = ISS.address(SpongeFactory.Mode.KERL, digests);
+                    root = ISS.address(mode, digests);
                 }
                 if(!Arrays.equals(Converter.trits(SNAPSHOT_PUBKEY), root)) {
                     throw new RuntimeException("Snapshot signature failed.");

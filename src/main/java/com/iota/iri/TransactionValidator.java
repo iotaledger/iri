@@ -70,6 +70,9 @@ public class TransactionValidator {
 
     private static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
+        if(transactionViewModel.getTimestamp() < 1508760000 && !transactionViewModel.getHash().equals(Hash.NULL_HASH)) {
+            throw new RuntimeException("Invalid transaction timestamp.");
+        }
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
                 //log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));

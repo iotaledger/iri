@@ -1,3 +1,7 @@
+1.4.1
+    - Updated IXI
+    - Updated Snapshot & Milestone
+
 1.4.0
     - Snapshot at milestone 217000
     - Added Curl-P-81 and moved most operations to it (see https://github.com/iotaledger/kerl)

@@ -134,7 +134,7 @@ public class API {
                             exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, 0);
                             exchange.getResponseHeaders().put(Headers.ALLOW, allowedMethods);
                             exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Origin"), "*");
-                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Headers"), "Origin, X-Requested-With, Content-Type, Accept");
+                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Headers"), "Origin, X-Requested-With, Content-Type, Accept, X-IOTA-API-Version");
                             exchange.getResponseSender().close();
                             return;
                         }

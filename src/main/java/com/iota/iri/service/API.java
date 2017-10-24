@@ -771,10 +771,12 @@ public class API {
                         TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
 
                 //attachment fields: tag and timestamps
-                //tag - copy the obsolete tag to the attachment tag field
-                System.arraycopy(transactionTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
+                //tag - copy the obsolete tag to the attachment tag field only if tag isn't set.
+                if(Arrays.stream(transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET, TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE).allMatch(s -> s == 0)) {
+                    System.arraycopy(transactionTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
                         transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
                         TransactionViewModel.TAG_TRINARY_SIZE);
+                }
 
                 Converter.copyTrits(timestamp,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_SIZE);

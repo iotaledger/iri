@@ -1,6 +1,6 @@
 package com.iota.iri.service.dto;
 
-import java.util.List;
+import java.util.Collection;
 
 public class GetNeighborsResponse extends AbstractResponse {
 
@@ -54,7 +54,7 @@ public class GetNeighborsResponse extends AbstractResponse {
         }
     }
 
-    public static AbstractResponse create(final List<com.iota.iri.network.Neighbor> elements) {
+    public static AbstractResponse create(final Collection<com.iota.iri.network.Neighbor> elements) {
         GetNeighborsResponse res = new GetNeighborsResponse();
         res.neighbors = new Neighbor[elements.size()];
         int i = 0;

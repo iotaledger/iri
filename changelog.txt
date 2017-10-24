@@ -1,3 +1,7 @@
+1.4.1.1
+    - Fixes CORS issue introduced with last release
+    - attachToTangle no longer overwrites tag field unconditionally
+
 1.4.1
     - Updated IXI
     - Updated Snapshot & Milestone

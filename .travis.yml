@@ -20,11 +20,8 @@ deploy:
   file_glob: true
   file: target/*.jar*
   skip_cleanup: true
-  before_deploy:
-    - openssl aes-256-cbc -K $encrypted_5a15fa813cca_key -iv $encrypted_5a15fa813cca_iv -in codesigning.asc.enc -out codesigning.asc -d
-    - gpg --fast-import codesigning.asc
-  deploy:
-    - mvn package -P build-extras
+  before_deploy: openssl aes-256-cbc -K $encrypted_5a15fa813cca_key -iv $encrypted_5a15fa813cca_iv -in codesigning.asc.enc -out codesigning.asc -d && gpg --fast-import codesigning.asc
+  deploy: mvn package -P build-extras
   on:
     tags: true
     repo: iotaledger/iri

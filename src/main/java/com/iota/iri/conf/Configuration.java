@@ -77,15 +77,15 @@ public class Configuration {
         conf.put(DefaultConfSettings.REMOTE_AUTH.name(), "");
         conf.put(DefaultConfSettings.NEIGHBORS.name(), "");
         conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
-        conf.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
-        conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnet.log");
+        conf.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
+        conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnet.log");
         conf.put(DefaultConfSettings.DB_CACHE_SIZE.name(), "100000"); //KB
         conf.put(DefaultConfSettings.CONFIG.name(), "iota.ini");
         conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.01");
         conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.0");
         conf.put(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name(), "0.7");
         conf.put(DefaultConfSettings.P_SEND_MILESTONE.name(), "0.02");
-        conf.put(DefaultConfSettings.P_REPLY_RANDOM_TIP.name(), "0.66");
+        conf.put(DefaultConfSettings.P_REPLY_RANDOM_TIP.name(), "1.00");
         conf.put(DefaultConfSettings.P_PROPAGATE_REQUEST.name(), "0.01");
         conf.put(DefaultConfSettings.MAIN_DB.name(), "rocksdb");
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
@@ -95,7 +95,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
         conf.put(DefaultConfSettings.RESCAN_DB.name(), "false");
         conf.put(DefaultConfSettings.MAINNET_MWM.name(), "14");
-        conf.put(DefaultConfSettings.TESTNET_MWM.name(), "13");
+        conf.put(DefaultConfSettings.TESTNET_MWM.name(), "9");
 
         // Pick a number based on best performance
         conf.put(DefaultConfSettings.MIN_RANDOM_WALKS.name(), "5");

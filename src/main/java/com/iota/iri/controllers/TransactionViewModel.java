@@ -161,7 +161,7 @@ public class TransactionViewModel {
         hashesList.add(new Pair<>(getBundleHash(), new Bundle(hash)));
         hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(hash)));
         hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(hash)));
-        hashesList.add(new Pair<>(getObsoleteTagValue(), new Tag(hash)));
+        hashesList.add(new Pair<>(getTagValue(), new Tag(hash)));
         setAttachmentData();
         setMetadata();
         return hashesList;
@@ -330,7 +330,7 @@ public class TransactionViewModel {
     }
 
     public void setAttachmentData() {
-        getTagValue();
+        getObsoleteTagValue();
         transaction.attachmentTimestamp = Converter.longValue(trits(), ATTACHMENT_TIMESTAMP_TRINARY_OFFSET, ATTACHMENT_TIMESTAMP_TRINARY_SIZE);
         transaction.attachmentTimestampLowerBound = Converter.longValue(trits(), ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET, ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE);
         transaction.attachmentTimestampUpperBound = Converter.longValue(trits(), ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET, ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);

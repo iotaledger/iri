@@ -1,3 +1,9 @@
+1.4.1.2
+    - Fixes DB over-storing transactions due to concurrency
+    - Upgrade to RocksDB 5.7.3
+    - Upgrades findTransaction logic to match spec (Multi-field intersection, Input field limits)
+    - Unified API input validation
+
 1.4.1.1
     - Fixes CORS issue introduced with last release
     - attachToTangle no longer overwrites tag field unconditionally

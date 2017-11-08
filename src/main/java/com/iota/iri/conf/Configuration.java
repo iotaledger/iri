@@ -55,7 +55,9 @@ public class Configuration {
         MIN_RANDOM_WALKS,
         MAX_RANDOM_WALKS,
         MAX_FIND_TRANSACTIONS,
+        MAX_REQUESTS_LIST,
         MAX_GET_TRYTES,
+        MAX_BODY_LENGTH,
         MAX_DEPTH,
         MAINNET_MWM,
         TESTNET_MWM,
@@ -104,7 +106,9 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAX_DEPTH.name(), "15");
 
         conf.put(DefaultConfSettings.MAX_FIND_TRANSACTIONS.name(), "100000");
+        conf.put(DefaultConfSettings.MAX_REQUESTS_LIST.name(), "1000");
         conf.put(DefaultConfSettings.MAX_GET_TRYTES.name(), "10000");
+        conf.put(DefaultConfSettings.MAX_BODY_LENGTH.name(), "1000000");
         conf.put(DefaultConfSettings.ZMQ_ENABLED.name(), "false");
         conf.put(DefaultConfSettings.ZMQ_PORT.name(), "5556");
         conf.put(DefaultConfSettings.ZMQ_IPC.name(), "ipc://iri");

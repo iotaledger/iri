@@ -197,11 +197,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     @Override
     public boolean mayExist(Class<?> model, Indexable index) throws Exception {
-        /* for version 5.4.5
         ColumnFamilyHandle handle = classTreeMap.get().get(model);
         return db.keyMayExist(handle, index.bytes(), new StringBuilder());
-        */
-        return db.keyMayExist(classTreeMap.get().get(model), index.bytes(), new StringBuffer());
     }
 
     @Override

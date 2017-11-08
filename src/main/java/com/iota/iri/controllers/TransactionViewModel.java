@@ -55,19 +55,22 @@ public class TransactionViewModel {
     private int[] trits;
     public int weightMagnitude;
 
-    public static TransactionViewModel find(final Tangle tangle, byte[] hash) throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), new Hash(hash));
-        if(!transactionViewModel.getHash().equals(Hash.NULL_HASH) && !transactionViewModel.transaction.parsed) {
+    public static void fillMetadata(final Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
+        if (transactionViewModel.getHash().equals(Hash.NULL_HASH)) { return; }
+        if(transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
             tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
         }
+    }
+
+    public static TransactionViewModel find(final Tangle tangle, byte[] hash) throws Exception {
+        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), new Hash(hash));
+        fillMetadata(tangle, transactionViewModel);
         return transactionViewModel;
     }
 
     public static TransactionViewModel fromHash(final Tangle tangle, final Hash hash) throws Exception {
         TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
-        if(!transactionViewModel.getHash().equals(Hash.NULL_HASH) && !transactionViewModel.transaction.parsed) {
-            tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
-        }
+        fillMetadata(tangle, transactionViewModel);
         return transactionViewModel;
     }
 
@@ -118,7 +121,7 @@ public class TransactionViewModel {
         if(hash.equals(Hash.NULL_HASH)) {
             return false;
         }
-        return tangle.update(transaction, getHash(), item);
+        return tangle.update(transaction, hash, item);
     }
 
     public TransactionViewModel getBranchTransaction(final Tangle tangle) throws Exception {
@@ -149,16 +152,16 @@ public class TransactionViewModel {
     }
 
     public void delete(Tangle tangle) throws Exception {
-        tangle.delete(Transaction.class, getHash());
+        tangle.delete(Transaction.class, hash);
     }
 
     public List<Pair<Indexable, Persistable>> getMetadataSaveBatch() throws Exception {
         List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
-        hashesList.add(new Pair<>(getAddressHash(), new Address(getHash())));
-        hashesList.add(new Pair<>(getBundleHash(), new Bundle(getHash())));
-        hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(getHash())));
-        hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(getHash())));
-        hashesList.add(new Pair<>(getObsoleteTagValue(), new Tag(getHash())));
+        hashesList.add(new Pair<>(getAddressHash(), new Address(hash)));
+        hashesList.add(new Pair<>(getBundleHash(), new Bundle(hash)));
+        hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(hash)));
+        hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(hash)));
+        hashesList.add(new Pair<>(getObsoleteTagValue(), new Tag(hash)));
         setAttachmentData();
         setMetadata();
         return hashesList;
@@ -168,7 +171,7 @@ public class TransactionViewModel {
         List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
         hashesList.addAll(getMetadataSaveBatch());
         getBytes();
-        hashesList.add(new Pair<>(getHash(), transaction));
+        hashesList.add(new Pair<>(hash, transaction));
         return hashesList;
     }
 
@@ -182,7 +185,7 @@ public class TransactionViewModel {
     }
 
     public TransactionViewModel next(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> transactionPair = tangle.next(Transaction.class, getHash());
+        Pair<Indexable, Persistable> transactionPair = tangle.next(Transaction.class, hash);
         if(transactionPair != null && transactionPair.hi != null) {
             return new TransactionViewModel((Transaction) transactionPair.hi, (Hash) transactionPair.low);
         }
@@ -190,10 +193,15 @@ public class TransactionViewModel {
     }
 
     public boolean store(Tangle tangle) throws Exception {
-        if(!exists(tangle, getHash()) && !getHash().equals(Hash.NULL_HASH)) {
-            return tangle.saveBatch(getSaveBatch());
+        if (hash.equals(Hash.NULL_HASH) || exists(tangle, hash)) {
+            return false;
         }
-        return false;
+
+        List<Pair<Indexable, Persistable>> batch = getSaveBatch();
+        if (exists(tangle, hash)) {
+            return false;
+        }
+        return tangle.saveBatch(batch);
     }
 
     public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
@@ -388,26 +396,26 @@ public class TransactionViewModel {
     }
 
     public void updateHeights(final Tangle tangle) throws Exception {
-        TransactionViewModel transaction = this, trunk = this.getTrunkTransaction(tangle);
+        TransactionViewModel transactionVM = this, trunk = this.getTrunkTransaction(tangle);
         Stack<Hash> transactionViewModels = new Stack<>();
-        transactionViewModels.push(transaction.getHash());
+        transactionViewModels.push(transactionVM.getHash());
         while(trunk.getHeight() == 0 && trunk.getType() != PREFILLED_SLOT && !trunk.getHash().equals(Hash.NULL_HASH)) {
-            transaction = trunk;
-            trunk = transaction.getTrunkTransaction(tangle);
-            transactionViewModels.push(transaction.getHash());
+            transactionVM = trunk;
+            trunk = transactionVM.getTrunkTransaction(tangle);
+            transactionViewModels.push(transactionVM.getHash());
         }
         while(transactionViewModels.size() != 0) {
-            transaction = TransactionViewModel.fromHash(tangle, transactionViewModels.pop());
-            if(trunk.getHash().equals(Hash.NULL_HASH) && trunk.getHeight() == 0 && !transaction.getHash().equals(Hash.NULL_HASH)) {
-                transaction.updateHeight(1L);
-                transaction.update(tangle, "height");
-            } else if ( trunk.getType() != PREFILLED_SLOT && transaction.getHeight() == 0){
-                transaction.updateHeight(1 + trunk.getHeight());
-                transaction.update(tangle, "height");
+            transactionVM = TransactionViewModel.fromHash(tangle, transactionViewModels.pop());
+            if(trunk.getHash().equals(Hash.NULL_HASH) && trunk.getHeight() == 0 && !transactionVM.getHash().equals(Hash.NULL_HASH)) {
+                transactionVM.updateHeight(1L);
+                transactionVM.update(tangle, "height");
+            } else if ( trunk.getType() != PREFILLED_SLOT && transactionVM.getHeight() == 0){
+                transactionVM.updateHeight(1 + trunk.getHeight());
+                transactionVM.update(tangle, "height");
             } else {
                 break;
             }
-            trunk = transaction;
+            trunk = transactionVM;
         }
     }
 

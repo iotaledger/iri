@@ -4,7 +4,7 @@
   <groupId>com.iota</groupId>
   <artifactId>iri</artifactId>
   <name>IRI</name>
-  <version>1.4.1</version>
+  <version>1.4.1.2</version>
   <description>IOTA Reference Implementation</description>
   <scm>
     <connection>scm:git:git://github.com/iotaledger/iri.git</connection>
@@ -61,7 +61,7 @@
         <executions>
           <execution>
             <id>enforce</id>
-            <phase>verify</phase>
+            <phase>package</phase>
             <goals>
               <goal>enforce</goal>
             </goals>
@@ -74,7 +74,7 @@
                     <urn>org.slf4j:slf4j-api:1.7.25:jar:null:compile:da76ca59f6a57ee3102f8f9bd9cee742973efa8a</urn>
                     <urn>ch.qos.logback:logback-classic:1.2.3:jar:null:compile:7c4f3c474fb2c041d8028740440937705ebb473a</urn>
                     <urn>commons-io:commons-io:2.5:jar:null:compile:2852e6e05fbb95076fc091f6d1780f1f8fe35e0f</urn>
-                    <urn>org.rocksdb:rocksdbjni:5.1.4:jar:null:compile:1924f10f010ddf724a41d2ce6903a706bda7f1b6</urn>
+                    <urn>org.rocksdb:rocksdbjni:5.7.3:jar:null:compile:421b44ad957a2b6cce5adedc204db551831b553d</urn>
                     <urn>com.google.code.gson:gson:2.8.1:jar:null:compile:02a8e0aa38a2e21cb39e2f5a7d6704cbdc941da0</urn>
                     <urn>io.undertow:undertow-core:${undertow.version}:jar:null:compile:e5764e5017bfe8c2dd421dc80035e5165501bfda</urn>
                     <urn>io.undertow:undertow-servlet:${undertow.version}:jar:null:compile:0e2850a558e70a2d72d9a3e782c7b6fde2d9f1c7</urn>

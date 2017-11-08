@@ -82,9 +82,10 @@ public class Node {
 
 
 
-    private final LRUHashCache recentSeenHashes = new LRUHashCache(5000);
-    private final LRUByteCache recentSeenBytes = new LRUByteCache(15000);
+    private final LRUCache<Hash,Boolean> recentSeenHashes = new LRUCache<>(5000);
+    private final LRUCache<ByteBuffer,Hash> recentSeenBytes = new LRUCache<>(15000);
 
+    private boolean debug;
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
     private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);
 
@@ -120,6 +121,7 @@ public class Node {
         P_REPLY_RANDOM_TIP = configuration.doubling(Configuration.DefaultConfSettings.P_REPLY_RANDOM_TIP.name());
         P_PROPAGATE_REQUEST = configuration.doubling(Configuration.DefaultConfSettings.P_PROPAGATE_REQUEST.name());
         sendLimit = (long) ( (configuration.doubling(Configuration.DefaultConfSettings.SEND_LIMIT.name()) * 1000000) / (TRANSACTION_PACKET_SIZE * 8) );
+        debug = configuration.booling(Configuration.DefaultConfSettings.DEBUG);
 
         Arrays.stream(configuration.string(Configuration.DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
                 .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get).peek(u -> {
@@ -152,7 +154,7 @@ public class Node {
     }
 
     private final Map<String, String> neighborIpCache = new HashMap<>();
-    
+
     private Runnable spawnNeighborDNSRefresherThread() {
         return () -> {
 
@@ -212,32 +214,33 @@ public class Node {
     }
 
     private Optional<String> checkIp(final String dnsName) {
-        
+
         if (StringUtils.isEmpty(dnsName)) {
             return Optional.empty();
         }
-        
+
         InetAddress inetAddress;
         try {
             inetAddress = java.net.InetAddress.getByName(dnsName);
         } catch (UnknownHostException e) {
             return Optional.empty();
         }
-        
+
         final String hostAddress = inetAddress.getHostAddress();
-        
+
         if (StringUtils.equals(dnsName, hostAddress)) { // not a DNS...
             return Optional.empty();
         }
-        
+
         return Optional.of(hostAddress);
     }
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
         TransactionViewModel receivedTransactionViewModel = null;
         Hash receivedTransactionHash = null;
 
-
         boolean addressMatch = false;
+        boolean cached = false;
+
         for (final Neighbor neighbor : getNeighbors()) {
             addressMatch = neighbor.matches(senderAddress);
             if (addressMatch) {
@@ -251,42 +254,29 @@ public class Node {
 
                     //Transaction bytes
 
-                    //final int byteHash = ByteBuffer.wrap(receivedData, 0, TransactionViewModel.SIZE).hashCode();
                     MessageDigest digest = MessageDigest.getInstance("SHA-256");
                     digest.update(receivedData, 0, TransactionViewModel.SIZE);
                     ByteBuffer byteHash = ByteBuffer.wrap(digest.digest());
-                    
+
                     //check if cached
                     synchronized (recentSeenBytes) {
-                        receivedTransactionHash = recentSeenBytes.get(byteHash);
+                        cached = (receivedTransactionHash = recentSeenBytes.get(byteHash)) != null;
                     }
 
-                    if (receivedTransactionHash == null) {
+                    if (!cached) {
                         //if not, then validate
                         receivedTransactionViewModel = TransactionValidator.validate(receivedData, transactionValidator.getMinWeightMagnitude());
                         receivedTransactionHash = receivedTransactionViewModel.getHash();
 
+                        synchronized (recentSeenBytes) {
+                            recentSeenBytes.put(byteHash, receivedTransactionHash);
+                        }
+
                         //if valid - add to receive queue (receivedTransactionViewModel, neighbor)
                         addReceivedDataToReceiveQueue(receivedTransactionViewModel, neighbor);
 
-                        synchronized (recentSeenBytes) {
-                            recentSeenBytes.set(byteHash, receivedTransactionHash);
-                        }
-
-                        recentSeenBytesMissCount.getAndIncrement();
-
-                    }
-                    else {
-                        recentSeenBytesHitCount.getAndIncrement();
                     }
 
-                    if (((recentSeenBytesMissCount.get() + recentSeenBytesHitCount.get()) % 50000L == 0)) {
-                        log.info("RecentSeenBytes cache hit/miss ratio: "+recentSeenBytesHitCount.get()+"/"+recentSeenBytesMissCount.get());
-                        messageQ.publish("hmr %d/%d",recentSeenBytesHitCount.get(), recentSeenBytesMissCount.get());
-                        recentSeenBytesMissCount.set(0L);
-                        recentSeenBytesHitCount.set(0L);
-                    }
-                    
                 } catch (NoSuchAlgorithmException e) {
                     log.error("MessageDigest: "+e);
                 } catch (final RuntimeException e) {
@@ -306,6 +296,25 @@ public class Node {
                 }
 
                 addReceivedDataToReplyQueue(requestedHash, neighbor);
+
+                //recentSeenBytes statistics
+
+                if (debug) {
+                    long hitCount, missCount;
+                    if(cached) {
+                        hitCount = recentSeenBytesHitCount.incrementAndGet();
+                        missCount = recentSeenBytesMissCount.get();
+                    } else {
+                        hitCount = recentSeenBytesHitCount.get();
+                        missCount = recentSeenBytesMissCount.getAndIncrement();
+                    }
+                    if (((hitCount + missCount) % 50000L == 0)) {
+                        log.info("RecentSeenBytes cache hit/miss ratio: " + hitCount + "/" + missCount);
+                        messageQ.publish("hmr %d/%d", hitCount, missCount);
+                        recentSeenBytesMissCount.set(0L);
+                        recentSeenBytesHitCount.set(0L);
+                    }
+                }
 
                 break;
             }
@@ -334,7 +343,7 @@ public class Node {
                     log.error("Invalid URI string: " + uriString);
                 }
             }
-            else {                
+            else {
                 if ( rejectedAddresses.size() > 20 ) {
                     // Avoid ever growing list in case of an attack.
                     rejectedAddresses.clear();
@@ -342,7 +351,7 @@ public class Node {
                 else if ( rejectedAddresses.add(uriString) ) {
                     messageQ.publish("rntn %s %s", uriString,  String.valueOf(maxPeersAllowed));
                     log.info("Refused non-tethered neighbor: " + uriString +
-                        " (max-peers = "+ String.valueOf(maxPeersAllowed) + ")");
+                            " (max-peers = "+ String.valueOf(maxPeersAllowed) + ")");
                 }
             }
         }
@@ -385,18 +394,14 @@ public class Node {
 
         //store new transaction
         try {
-            //first check if Hash seen recently
+            //first check if Hash seen recently & update seen.
             synchronized (recentSeenHashes) {
-                cached = recentSeenHashes.get(receivedTransactionViewModel.getHash());
+                cached = (recentSeenHashes.put(receivedTransactionViewModel.getHash(), true)) != null;
+
             }
-            if (cached) {
-                stored = false;
-            } else {
-                //if not, store tx. & update recentSeenHashes
+            if (!cached) {
+                //if not, store tx.
                 stored = receivedTransactionViewModel.store(tangle);
-                synchronized (recentSeenHashes) {
-                    recentSeenHashes.set(receivedTransactionViewModel.getHash(), true);
-                }
             }
         } catch (Exception e) {
             log.error("Error accessing persistence store.", e);
@@ -410,7 +415,6 @@ public class Node {
                 transactionValidator.updateStatus(receivedTransactionViewModel);
                 receivedTransactionViewModel.updateSender(neighbor.getAddress().toString());
                 receivedTransactionViewModel.update(tangle, "arrivalTime|sender");
-
             } catch (Exception e) {
                 log.error("Error updating transactions.", e);
             }
@@ -546,7 +550,7 @@ public class Node {
                     System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
                     System.arraycopy(transactionViewModel.getHash().bytes(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
                             TransactionRequester.REQUEST_HASH_SIZE);
-                            //Hash.SIZE_IN_BYTES);
+                    //Hash.SIZE_IN_BYTES);
 
                     neighbors.forEach(n -> n.send(tipRequestingPacket));
 
@@ -697,7 +701,7 @@ public class Node {
         }
         return neighbor;
     }
-    
+
     public static Optional<URI> uri(final String uri) {
         try {
             return Optional.of(new URI(uri));
@@ -731,67 +735,35 @@ public class Node {
         return replyQueue.size();
     }
 
-    public class LRUHashCache {
+    public class LRUCache<K,V> {
 
         private int capacity;
-        private LinkedHashMap<Hash,Boolean> map;
+        private LinkedHashMap<K,V> map;
 
-        public LRUHashCache(int capacity) {
+        public LRUCache(int capacity) {
             this.capacity = capacity;
             this.map = new LinkedHashMap<>();
         }
 
-        public Boolean get(Hash key) {
-            Boolean value = this.map.get(key);
-            if (value == null) {
-                value = false;
-            } else {
-                this.set(key, value);
-            }
-            return value;
-        }
-
-        public void set(Hash key, Boolean value) {
-            if (this.map.containsKey(key)) {
-                this.map.remove(key);
-            } else if (this.map.size() == this.capacity) {
-                Iterator<Hash> it = this.map.keySet().iterator();
-                it.next();
-                it.remove();
-            }
-            map.put(key, value);
-        }
-    }
-
-    public class LRUByteCache {
-
-        private int capacity;
-        private LinkedHashMap<ByteBuffer,Hash> map;
-
-        public LRUByteCache(int capacity) {
-            this.capacity = capacity;
-            this.map = new LinkedHashMap<>();
-        }
-
-        public Hash get(ByteBuffer key) {
-            Hash value = this.map.get(key);
+        public V get(K key) {
+            V value = this.map.get(key);
             if (value == null) {
                 value = null;
             } else {
-                this.set(key, value);
+                this.put(key, value);
             }
             return value;
         }
 
-        public void set(ByteBuffer key, Hash value) {
+        public V put(K key, V value) {
             if (this.map.containsKey(key)) {
                 this.map.remove(key);
             } else if (this.map.size() == this.capacity) {
-                Iterator<ByteBuffer> it = this.map.keySet().iterator();
+                Iterator<K> it = this.map.keySet().iterator();
                 it.next();
                 it.remove();
             }
-            map.put(key, value);
+            return map.put(key, value);
         }
     }
 

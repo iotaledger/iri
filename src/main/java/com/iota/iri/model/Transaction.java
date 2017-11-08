@@ -30,7 +30,7 @@ public class Transaction implements Persistable {
     public long attachmentTimestampUpperBound;
 
     public int validity = 0;
-    public int type = 1;
+    public int type = TransactionViewModel.PREFILLED_SLOT;
     public long arrivalTime = 0;
 
     //public boolean confirmed = false;
@@ -48,6 +48,7 @@ public class Transaction implements Persistable {
         if(bytes != null) {
             this.bytes = new byte[SIZE];
             System.arraycopy(bytes, 0, this.bytes, 0, SIZE);
+            this.type = TransactionViewModel.FILLED_SLOT;
         }
     }
 

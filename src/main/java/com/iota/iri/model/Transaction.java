@@ -4,7 +4,9 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 
+import javax.naming.OperationNotSupportedException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 /**
  * Created by paul on 3/2/17 for iri.
@@ -45,7 +47,7 @@ public class Transaction implements Persistable {
     }
 
     public void read(byte[] bytes) {
-        if(bytes != null) {
+        if (bytes != null) {
             this.bytes = new byte[SIZE];
             System.arraycopy(bytes, 0, this.bytes, 0, SIZE);
             this.type = TransactionViewModel.FILLED_SLOT;
@@ -90,7 +92,7 @@ public class Transaction implements Persistable {
     @Override
     public void readMetadata(byte[] bytes) {
         int i = 0;
-        if(bytes != null) {
+        if (bytes != null) {
             address = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
             bundle = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
@@ -147,5 +149,15 @@ public class Transaction implements Persistable {
     @Override
     public boolean merge() {
         return false;
+    }
+
+    @Override
+    public boolean isSplittable() {
+        return false;
+    }
+
+    @Override
+    public List<byte[]> splitBytes(int maxByteLength) throws OperationNotSupportedException {
+        throw new OperationNotSupportedException();
     }
 }

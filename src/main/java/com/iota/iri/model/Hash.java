@@ -119,9 +119,8 @@ public class Hash implements Serializable, Indexable {
 
 	private void fullRead(byte[] bytes, int offset, int size) {
         this.bytes = new byte[SIZE_IN_BYTES];
-        System.arraycopy(bytes, offset, this.bytes, 0, size - offset > bytes.length ? bytes.length-offset: size);
+        System.arraycopy(bytes, offset, this.bytes, 0, bytes.length - offset < size ? bytes.length-offset: size);
         hashCode = Arrays.hashCode(this.bytes);
-
     }
 
     @Override
@@ -139,7 +138,6 @@ public class Hash implements Serializable, Indexable {
         return null;
     }
 
-    @Override
     public int compareTo(Indexable indexable) {
         Hash hash = new Hash(indexable.bytes());
         if (this.equals(hash)) {

@@ -1,63 +1,23 @@
 package com.iota.iri.service;
 
-import static io.undertow.Handlers.path;
-
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import com.iota.iri.*;
-import com.iota.iri.controllers.*;
-import com.iota.iri.network.*;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.channels.StreamSinkChannel;
-import org.xnio.streams.ChannelInputStream;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.iota.iri.*;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
+import com.iota.iri.controllers.AddressViewModel;
+import com.iota.iri.controllers.BundleViewModel;
+import com.iota.iri.controllers.TagViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.AccessLimitedResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
-import com.iota.iri.service.dto.AttachToTangleResponse;
-import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.ExceptionResponse;
-import com.iota.iri.service.dto.FindTransactionsResponse;
-import com.iota.iri.service.dto.GetBalancesResponse;
-import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
-import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.dto.GetTipsResponse;
-import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
-import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
+import com.iota.iri.network.Neighbor;
+import com.iota.iri.network.TCPNeighbor;
+import com.iota.iri.network.UDPNeighbor;
+import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.MapIdentityManager;
-
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -69,19 +29,40 @@ import io.undertow.security.idm.IdentityManager;
 import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
-import io.undertow.util.Methods;
-import io.undertow.util.MimeMappings;
-import io.undertow.util.StatusCodes;
+import io.undertow.util.*;
+import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.channels.StreamSinkChannel;
+import org.xnio.streams.ChannelInputStream;
 
 import javax.xml.bind.ValidationException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static io.undertow.Handlers.path;
 
 @SuppressWarnings("unchecked")
 public class API {
 
     private static final Logger log = LoggerFactory.getLogger(API.class);
+
+    private static int counter_getTxToApprove = 0;
+    private static long elapsedTime_getTxToApprove = 0L;
+    private static int counter_PoW = 0;
+    private static long elapsedTime_PoW = 0L;
+
     private final IXI ixi;
 
     private Undertow server;
@@ -366,7 +347,7 @@ public class API {
 
     }
 
-    public boolean invalidSubtangleStatus() {
+    private boolean invalidSubtangleStatus() {
         return (instance.milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
     }
 
@@ -403,20 +384,20 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    private static int counter_getTxToApprove = 0;
-    public static int getCounter_getTxToApprove() {
+    private static int getCounter_getTxToApprove() {
         return counter_getTxToApprove;
     }
-    public static void incCounter_getTxToApprove() {
+
+    private static void incCounter_getTxToApprove() {
         counter_getTxToApprove++;
     }
 
-    private static long ellapsedTime_getTxToApprove = 0L;
-    public static long getEllapsedTime_getTxToApprove() {
-        return ellapsedTime_getTxToApprove;
+    private static long getElapsedTime_getTxToApprove() {
+        return elapsedTime_getTxToApprove;
     }
-    public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
-        ellapsedTime_getTxToApprove += ellapsedTime;
+
+    static void incElapsedTime_getTxToApprove(long elapsedTime) {
+        elapsedTime_getTxToApprove += elapsedTime;
     }
 
     public synchronized Hash[] getTransactionToApproveStatement(final int depth, final String reference, final int numWalks) throws Exception {
@@ -440,11 +421,11 @@ public class API {
         API.incCounter_getTxToApprove();
         if ( ( getCounter_getTxToApprove() % 100) == 0 ) {
             String sb = "Last 100 getTxToApprove consumed " +
-                    API.getEllapsedTime_getTxToApprove() / 1000000000L +
+                    API.getElapsedTime_getTxToApprove() / 1000000000L +
                     " seconds processing time.";
             log.info(sb);
             counter_getTxToApprove = 0;
-            ellapsedTime_getTxToApprove = 0L;
+            elapsedTime_getTxToApprove = 0L;
         }
         return tips;
     }
@@ -534,6 +515,7 @@ public class API {
             return GetInclusionStatesResponse.create(inclusionStatesBoolean);
         }
     }
+
     private boolean exhaustiveSearchWithinIndex(Queue<Hash> nonAnalyzedTransactions, Set<Hash> analyzedTips, List<Hash> transactions, int[] inclusionStates, int count, int index) throws Exception {
         Hash pointer;
         MAIN_LOOP:
@@ -640,9 +622,11 @@ public class API {
     }
 
     private String padTag(String tag) throws ValidationException {
-        while (tag.length() < HASH_SIZE) {
-            tag += Converter.TRYTE_ALPHABET.charAt(0);
+        StringBuilder tagBuilder = new StringBuilder(tag);
+        while (tagBuilder.length() < HASH_SIZE) {
+            tagBuilder.append(Converter.TRYTE_ALPHABET.charAt(0));
         }
+        tag = tagBuilder.toString();
         if (tag.equals(Hash.NULL_HASH.toString())) {
             throw new ValidationException("Invalid tag input");
         }
@@ -651,7 +635,7 @@ public class API {
 
     private HashSet<String> getParameterAsSet(Map<String, Object> request, String paramName, int size) throws ValidationException {
 
-        HashSet<String> result = getParameterAsList(request,paramName,size).stream().collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> result = new HashSet<>(getParameterAsList(request, paramName, size));
         if (result.contains(Hash.NULL_HASH.toString())) {
             throw new ValidationException("Invalid " + paramName + " input");
         }
@@ -723,20 +707,21 @@ public class API {
         return GetBalancesResponse.create(elements, milestone, milestoneIndex);
     }
 
-    private static int counter_PoW = 0;
-    public static int getCounter_PoW() {
+
+    private static int getCounter_PoW() {
         return counter_PoW;
     }
-    public static void incCounter_PoW() {
+
+    private static void incCounter_PoW() {
         API.counter_PoW++;
     }
 
-    private static long ellapsedTime_PoW = 0L;
-    public static long getEllapsedTime_PoW() {
-        return ellapsedTime_PoW;
+    private static long getElapsedTime_PoW() {
+        return elapsedTime_PoW;
     }
-    public static void incEllapsedTime_PoW(long ellapsedTime) {
-        ellapsedTime_PoW += ellapsedTime;
+
+    private static void incElapsedTime_PoW(long elapsedTime) {
+        elapsedTime_PoW += elapsedTime;
     }
 
     public synchronized List<String> attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
@@ -784,15 +769,15 @@ public class API {
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {
-                API.incEllapsedTime_PoW(System.nanoTime() - startTime);
+                API.incElapsedTime_PoW(System.nanoTime() - startTime);
                 API.incCounter_PoW();
                 if ( ( API.getCounter_PoW() % 100) == 0 ) {
                     String sb = "Last 100 PoW consumed " +
-                            API.getEllapsedTime_PoW() / 1000000000L +
+                            API.getElapsedTime_PoW() / 1000000000L +
                             " seconds processing time.";
                     log.info(sb);
                     counter_PoW = 0;
-                    ellapsedTime_PoW = 0L;
+                    elapsedTime_PoW = 0L;
                 }
             }
         }

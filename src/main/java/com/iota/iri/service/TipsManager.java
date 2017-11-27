@@ -2,7 +2,6 @@ package com.iota.iri.service;
 
 import java.util.*;
 
-import com.iota.iri.BundleValidator;
 import com.iota.iri.LedgerValidator;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
@@ -124,7 +123,7 @@ public class TipsManager {
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());
             } finally {
-                API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
+                API.incElapsedTime_getTxToApprove(System.nanoTime() - startTime);
             }
         }
         return null;

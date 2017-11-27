@@ -33,9 +33,9 @@ $ mvn clean compile
 $ mvn package
 ```
 
-This will create a `target` directory in which you will find the executable jar file that you can use for the 
+This will create a `target` directory in which you will find the executable jar file that you can use for the
 
-### How to run IRI 
+### How to run IRI
 
 #### Locally
 
@@ -53,10 +53,10 @@ command line arguments.
 
 `docker run -d --net=host --name iota-node -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
 
-### Command Line Options 
+### Command Line Options
 
 Option | Shortened version | Description | Example Input
---- | --- | --- | --- 
+--- | --- | --- | ---
 `--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14800`
 `--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14265 udp://[2001:db8:a0b:12f0::1]:14265"`
 `--config` | `-c` | Config INI file that can be used instead of CLI options. See more below | `-c iri.ini`
@@ -74,12 +74,11 @@ Option | Shortened version | Description | Example Input
 You can also provide an ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` flag. Here is an example INI file:
 ```
 [IRI]
-PORT = 14700
-UDP_RECEIVER_PORT = 14700
-NEIGHBORS = udp://my.favorite.com:15600
+PORT = 14265
+UDP_RECEIVER_PORT = 14600
+NEIGHBORS = udp://my.favorite.com:14600
 IXI_DIR = ixi
 HEADLESS = true
 DEBUG = true
-DB_PATH = db
+DB_PATH = mainnetdb
 ```
-

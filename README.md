@@ -57,11 +57,11 @@ command line arguments.
 
 Option | Shortened version | Description | Example Input
 --- | --- | --- | ---
-`--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14800`
-`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14265 udp://[2001:db8:a0b:12f0::1]:14265"`
+`--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14265`
+`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14600 udp://[2001:db8:a0b:12f0::1]:14600"`
 `--config` | `-c` | Config INI file that can be used instead of CLI options. See more below | `-c iri.ini`
-`--udp-receiver-port` | `-u` | UDP receiver port | `-u 14800`
-`--tcp-receiver-port` | `-t` | TCP receiver port | `-t 14800`
+`--udp-receiver-port` | `-u` | UDP receiver port | `-u 14600`
+`--tcp-receiver-port` | `-t` | TCP receiver port | `-t 15600`
 `--testnet` | | Makes it possible to run IRI with the IOTA testnet | `--testnet`
 `--remote` | | Remotely access your node and send API commands | `--remote`
 `--remote-auth` | | Require authentication password for accessing remotely. Requires a correct `username:hashedpassword` combination | `--remote-auth iotatoken:LL9EZFNCHZCMLJLVUBCKJSWKFEXNYRHHMYS9XQLUZRDEKUUDOCMBMRBWJEMEDDXSDPHIGQULENCRVEYMO`

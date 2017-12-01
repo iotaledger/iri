@@ -189,7 +189,6 @@ public class TipsManager {
                     messageQ.publish("rtsn %s", transactionViewModel.getHash());
                     break;
                 } else if (!transactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
-                    //} else if (!transactionViewModel.isSolid()) {
                     log.info("Reason to stop: !checkSolidity");
                     messageQ.publish("rtss %s", transactionViewModel.getHash());
                     break;
@@ -255,6 +254,11 @@ public class TipsManager {
         }
         log.info("Tx traversed to find tip: " + traversedTails);
         messageQ.publish("mctn %d", traversedTails);
+
+        if (traversedTails == 0) {
+            throw new RuntimeException("starting tip failed consistency checks: " + tail.toString());
+        }
+
         return tail;
     }
 

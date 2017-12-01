@@ -38,8 +38,8 @@ public class Milestone {
     public Hash latestMilestone = Hash.NULL_HASH;
     public Hash latestSolidSubtangleMilestone = latestMilestone;
 
-    public static final int MILESTONE_START_INDEX = 320300;
-    private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 20;
+    public static final int MILESTONE_START_INDEX = 200;
+    private final int NUMBER_OF_KEYS_IN_A_MILESTONE;
 
     public int latestMilestoneIndex = MILESTONE_START_INDEX;
     public int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
@@ -56,6 +56,8 @@ public class Milestone {
         this.coordinator = coordinator;
         this.transactionValidator = transactionValidator;
         this.testnet = testnet;
+
+        NUMBER_OF_KEYS_IN_A_MILESTONE = testnet ? 22 : 20;
         this.messageQ = messageQ;
     }
 
@@ -185,7 +187,7 @@ public class Milestone {
                                         ISS.NUMBER_OF_FRAGMENT_CHUNKS),
                                 signatureFragmentTrits)),
                                 transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
-                        if (testnet || (new Hash(merkleRoot)).equals(coordinator)) {
+                        if ((new Hash(merkleRoot)).equals(coordinator)) {
                             new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
                             return true;
                         }
@@ -199,7 +201,6 @@ public class Milestone {
     void updateLatestSolidSubtangleMilestone() throws Exception {
         MilestoneViewModel milestoneViewModel;
         MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
-        int lookAhead = 0;
         if (latest != null) {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
@@ -210,10 +211,7 @@ public class Milestone {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();
                     latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
                 } else {
-                    lookAhead++;
-                    if (lookAhead>=10) {
-                        break;
-                    }
+                    break;
                 }
             }
         }

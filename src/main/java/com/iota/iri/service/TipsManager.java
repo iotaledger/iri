@@ -232,11 +232,11 @@ public class TipsManager {
 
                 walkRatings = new double[tips.length];
                 double maxRating = 0;
+                long tipRating = ratings.get(tip);
                 for (int i = 0; i < tips.length; i++) {
-                    if (ratings.containsKey(tips[i])) {
-                        walkRatings[i] = Math.sqrt(ratings.get(tips[i]));
-                        maxRating += walkRatings[i];
-                    }
+                    //transition probability = ((Hx-Hy)^-3)/maxRating
+                    walkRatings[i] = Math.pow(tipRating - ratings.getOrDefault(tips[i],0L), -3);
+                    maxRating += walkRatings[i];
                 }
                 ratingWeight = rnd.nextDouble() * maxRating;
                 for (approverIndex = tips.length; approverIndex-- > 1; ) {

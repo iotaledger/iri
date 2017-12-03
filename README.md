@@ -74,8 +74,9 @@ Option | Shortened version | Description | Example Input
 You can also provide an ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` flag. Here is an example INI file:
 ```
 [IRI]
-PORT = 14700
+PORT = 14200
 UDP_RECEIVER_PORT = 14700
+;TCP_RECEIVER_PORT = 14700
 NEIGHBORS = udp://my.favorite.com:15600
 IXI_DIR = ixi
 HEADLESS = true

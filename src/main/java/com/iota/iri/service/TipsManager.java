@@ -99,7 +99,7 @@ public class TipsManager {
 
     }
 
-    Hash transactionToApprove(final Hash reference, final Hash extraTip, final int depth, final int iterations, Random seed) {
+    Hash transactionToApprove(final Hash reference, final Hash extraTip, final int depth, final int iterations, Random seed) throws Exception {
 
         long startTime = System.nanoTime();
         final int msDepth;
@@ -123,6 +123,7 @@ public class TipsManager {
             } catch (Exception e) {
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());
+                throw e;
             } finally {
                 API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
             }

@@ -47,11 +47,13 @@ java -DPORT=14265 -jar iri.jar
 
 ### Docker
 
-Create an iota.ini file with all of your configuration variables set in it.
+Create an application.conf file with all of your configuration variables set in it.
 Any that you don't provide in here will be assumed to be default or taken from
-command line arguments.
+environment variables. You can find some of the possible environment variables in the next section.
 
-`docker run -d --net=host --name iota-node -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v application.conf:/iri/application.conf iotaledger/iri:latest`
+Example:
+
+`docker run -d --net=host --name iota-node -e TESTNET=true -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v application.conf:/iri/application.conf iotaledger/iri:latest`
 
 ### Command Line Options 
 

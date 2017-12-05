@@ -57,13 +57,17 @@ public class LedgerValidator {
      * @return {state}  the addresses that have a balance changed since the last diff check
      * @throws Exception
      */
-    private Map<Hash,Long> getLatestDiff(Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
+    private Map<Hash,Long> getLatestDiff(Hash tip, Hash extraTip, int latestSnapshotIndex, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>();
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
         Set<Hash> countedTx = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
 
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
+        if (extraTip != null) {
+            nonAnalyzedTransactions.add(extraTip);
+        }
+
         Hash transactionPointer;
         boolean keepScanning;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
@@ -254,7 +258,7 @@ public class LedgerValidator {
             boolean hasSnapshot = transactionSnapshotIndex != 0;
             if(!hasSnapshot) {
                 Hash tail = transactionViewModel.getHash();
-                Map<Hash, Long> currentState = getLatestDiff(tail, lastSnapshotIndex, true);
+                Map<Hash, Long> currentState = getLatestDiff(tail, null, lastSnapshotIndex, true);
                 hasSnapshot = currentState != null && latestSnapshot.patch(currentState, milestone.index()).isConsistent();
                 if (hasSnapshot) {
                     updateSnapshotMilestone(milestone);
@@ -276,21 +280,19 @@ public class LedgerValidator {
         }
     }
 
-    public boolean updateFromSnapshot(Hash tip) throws Exception {
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
+    public boolean updateFromSnapshot(Hash tip, Hash extraTip) throws Exception {
         boolean isConsistent;
         synchronized (latestSnapshotSyncObject) {
             synchronized (approvalsSyncObject) {
             isConsistent = approvedHashes.contains(tip);
             if (!isConsistent) {
-                Hash tail = transactionViewModel.getHash();
-                    int latestSyncIndex = latestSnapshot.index();
-                    Map<Hash, Long> currentState = getLatestDiff(tail, latestSyncIndex, false);
-                    isConsistent = currentState != null && stateSinceMilestone.patch(currentState, latestSyncIndex).isConsistent();
-                    if (isConsistent) {
-                        updateConsistentHashes(tip, latestSyncIndex);
-                        stateSinceMilestone.merge(stateSinceMilestone.patch(currentState, latestSyncIndex));
-                    }
+                int latestSyncIndex = latestSnapshot.index();
+                Map<Hash, Long> currentState = getLatestDiff(tip, extraTip, latestSyncIndex, false);
+                isConsistent = currentState != null && stateSinceMilestone.patch(currentState, latestSyncIndex).isConsistent();
+                if (isConsistent) {
+                    updateConsistentHashes(tip, latestSyncIndex);
+                    stateSinceMilestone.merge(stateSinceMilestone.patch(currentState, latestSyncIndex));
+                }
                 }
             }
         }

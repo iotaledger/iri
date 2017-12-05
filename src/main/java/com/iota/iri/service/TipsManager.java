@@ -131,19 +131,25 @@ public class TipsManager {
     }
 
     Hash entryPoint(final Hash reference, final Hash extraTip, final int depth) throws Exception {
-        Hash tip = reference == null ? milestone.latestSolidSubtangleMilestone : reference;
-        if (extraTip != null) {
-            int depositIndex = TransactionViewModel.fromHash(tangle, reference).snapshotIndex();
-            int milestoneIndex = (depositIndex > 0 ? depositIndex : milestone.latestSolidSubtangleMilestoneIndex) - depth;
-            if(milestoneIndex < 0) {
-                milestoneIndex = 0;
-            }
-            MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex);
-            if(milestoneViewModel != null && milestoneViewModel.getHash() != null) {
-                tip = milestoneViewModel.getHash();
-            }
+
+        if (extraTip == null) {
+            //trunk
+            return milestone.latestSolidSubtangleMilestone;
         }
-        return tip;
+
+        //branch (extraTip)
+
+        if (reference != null) {
+            return reference;
+        }
+
+        int milestoneIndex = Math.max(milestone.latestSolidSubtangleMilestoneIndex - depth - 1, 0);
+        MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex);
+        if(milestoneViewModel != null && milestoneViewModel.getHash() != null) {
+            return milestoneViewModel.getHash();
+        }
+
+        return milestone.latestSolidSubtangleMilestone;
     }
 
     Hash markovChainMonteCarlo(final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final int maxDepth, final Set<Hash> maxDepthOk, final Random seed) throws Exception {
@@ -189,7 +195,6 @@ public class TipsManager {
                     messageQ.publish("rtsn %s", transactionViewModel.getHash());
                     break;
                 } else if (!transactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
-                    //} else if (!transactionViewModel.isSolid()) {
                     log.info("Reason to stop: !checkSolidity");
                     messageQ.publish("rtss %s", transactionViewModel.getHash());
                     break;
@@ -198,7 +203,7 @@ public class TipsManager {
                     log.info("Reason to stop: belowMaxDepth");
                     break;
 
-                } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash())) {
+                } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash(), extraTip)) {
                     log.info("Reason to stop: !LedgerValidator");
                     messageQ.publish("rtsv %s", transactionViewModel.getHash());
                     break;
@@ -232,11 +237,11 @@ public class TipsManager {
 
                 walkRatings = new double[tips.length];
                 double maxRating = 0;
+                long tipRating = ratings.get(tip);
                 for (int i = 0; i < tips.length; i++) {
-                    if (ratings.containsKey(tips[i])) {
-                        walkRatings[i] = Math.sqrt(ratings.get(tips[i]));
-                        maxRating += walkRatings[i];
-                    }
+                    //transition probability = ((Hx-Hy)^-3)/maxRating
+                    walkRatings[i] = Math.pow(tipRating - ratings.getOrDefault(tips[i],0L), -3);
+                    maxRating += walkRatings[i];
                 }
                 ratingWeight = rnd.nextDouble() * maxRating;
                 for (approverIndex = tips.length; approverIndex-- > 1; ) {
@@ -255,6 +260,11 @@ public class TipsManager {
         }
         log.info("Tx traversed to find tip: " + traversedTails);
         messageQ.publish("mctn %d", traversedTails);
+
+        if (traversedTails == 0) {
+            throw new RuntimeException("starting tip failed consistency checks: " + tail.toString());
+        }
+
         return tail;
     }
 

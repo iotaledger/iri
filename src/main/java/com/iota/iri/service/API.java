@@ -76,8 +76,6 @@ import io.undertow.util.Methods;
 import io.undertow.util.MimeMappings;
 import io.undertow.util.StatusCodes;
 
-import javax.xml.bind.ValidationException;
-
 @SuppressWarnings("unchecked")
 public class API {
 
@@ -257,6 +255,9 @@ public class API {
                     }
 
                     final int depth = getParameterAsInt(request, "depth");
+                    if(depth <= 0) {
+                        return ErrorResponse.create("Invalid depth input");
+                    }
                     final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
                     int numWalks = request.containsKey("numWalks") ? getParameterAsInt(request,"numWalks") : 1;
                     if(numWalks < minRandomWalks) {

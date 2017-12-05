@@ -84,14 +84,18 @@ public class Milestone {
                                 if(analyzedMilestoneCandidates.add(hash)) {
                                     TransactionViewModel t = TransactionViewModel.fromHash(tangle, hash);
                                     if (t.getCurrentIndex() == 0) {
-                                        if (validateMilestone(mode, t, getIndex(t))) {
-                                            MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
-                                            if (milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
-                                                latestMilestone = milestoneViewModel.getHash();
-                                                latestMilestoneIndex = milestoneViewModel.index();
-                                            }
-                                        } else {
-                                            analyzedMilestoneCandidates.remove(t.getHash());
+                                        final int valid = validateMilestone(mode, t, getIndex(t));
+                                        switch (valid) {
+                                            case 1:
+                                                MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
+                                                if (milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
+                                                    latestMilestone = milestoneViewModel.getHash();
+                                                    latestMilestoneIndex = milestoneViewModel.index();
+                                                }
+                                            case 0:
+                                                analyzedMilestoneCandidates.remove(t.getHash());
+                                            case -1:
+                                                //Do nothing
                                         }
                                     }
                                 }
@@ -152,18 +156,18 @@ public class Milestone {
 
     }
 
-    private boolean validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {
+    private int validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {
         if (index < 0 || index >= 0x200000) {
-            return false;
+            return -1;
         }
 
         if (MilestoneViewModel.get(tangle, index) != null) {
             // Already validated.
-            return true;
+            return 1;
         }
         final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getBundleHash());
         if (bundleTransactions.size() == 0) {
-            return false;
+            return 0;
         }
         else {
             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
@@ -187,19 +191,21 @@ public class Milestone {
                                 transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
                         if (testnet || (new Hash(merkleRoot)).equals(coordinator)) {
                             new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
-                            return true;
+                            return 1;
+                        } else {
+                            //invalid Milestone
+                            return -1;
                         }
                     }
                 }
             }
         }
-        return false;
+        return -1;
     }
 
     void updateLatestSolidSubtangleMilestone() throws Exception {
         MilestoneViewModel milestoneViewModel;
         MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
-        int lookAhead = 0;
         if (latest != null) {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
@@ -210,10 +216,7 @@ public class Milestone {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();
                     latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
                 } else {
-                    lookAhead++;
-                    if (lookAhead>=10) {
-                        break;
-                    }
+                    break;
                 }
             }
         }

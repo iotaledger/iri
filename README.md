@@ -51,7 +51,7 @@ Create an iota.ini file with all of your configuration variables set in it.
 Any that you don't provide in here will be assumed to be default or taken from
 command line arguments.
 
-`docker run -d --net=host --name iota-node -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
+`docker run -d --net=host --name iota-node -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v application.conf:/iri/application.conf iotaledger/iri:latest`
 
 ### Command Line Options 
 

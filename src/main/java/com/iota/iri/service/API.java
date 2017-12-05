@@ -332,10 +332,10 @@ public class API {
         String info = null;
         if (!instance.transactionValidator.checkSolidity(txVM.getHash(), false)) {
             state = false;
-            info = "Reason to stop: !checkSolidity";
+            info = "tail is not solid (missing a referenced tx)";
         } else if (!instance.ledgerValidator.updateFromSnapshot(txVM.getHash(), null)) {
             state = false;
-            info = "Reason to stop: !LedgerValidator";
+            info = "tail is not consistent (would lead to inconsistent ledger state)";
         }
 
         return isTransactionConsistentResponse.create(state,info);

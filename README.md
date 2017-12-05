@@ -42,7 +42,7 @@ This will create a `target` directory in which you will find the executable jar 
 Running IRI is pretty simple, and you don't even have to run it under admin rights. Below is a list of command line options. Here is an example script:
 
 ```
-java -jar iri.jar -p 14265
+java -DPORT=14265 -jar iri.jar
 ```
 
 ### Docker
@@ -55,25 +55,26 @@ command line arguments.
 
 ### Command Line Options 
 
-Option | Shortened version | Description | Example Input
---- | --- | --- | --- 
-`--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14800`
-`--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14265 udp://[2001:db8:a0b:12f0::1]:14265"`
-`--config` | `-c` | Config INI file that can be used instead of CLI options. See more below | `-c iri.ini`
-`--udp-receiver-port` | `-u` | UDP receiver port | `-u 14800`
-`--tcp-receiver-port` | `-t` | TCP receiver port | `-t 14800`
-`--testnet` | | Makes it possible to run IRI with the IOTA testnet | `--testnet`
-`--remote` | | Remotely access your node and send API commands | `--remote`
-`--remote-auth` | | Require authentication password for accessing remotely. Requires a correct `username:hashedpassword` combination | `--remote-auth iotatoken:LL9EZFNCHZCMLJLVUBCKJSWKFEXNYRHHMYS9XQLUZRDEKUUDOCMBMRBWJEMEDDXSDPHIGQULENCRVEYMO`
-`--remote-limit-api` | | Exclude certain API calls from being able to be accessed remotely | `--remote-limit-api "attachToTangle, addNeighbors"`
-`--send-limit`| | Limit the outbound bandwidth consumption. Limit is set to mbit/s | `--send-limit 1.0`
-`--max-peers` | | Limit the number of max accepted peers. Default is set to 0 (mutual tethering) | `--max-peers 8`
+All configuration variables can be set by java property, as system environment variable or via configuration file.
 
-### INI File
+Java system property | Description | Example Input
+--- | --- | ---
+`-DPORT` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-DPORT=14800`
+`-DNEIGHBOURS` | Neighbors that you are connected with will be added via this option. | `-DNEIGHBOURS="udp://148.148.148.148:14265 udp://[2001:db8:a0b:12f0::1]:14265"`
+`-Dconfig.file` | Config .conf file that can be used instead of CLI options. See more below | `-Dconfig.file=application.conf`
+`-DUDP_RECEIVER_PORT` | UDP receiver port | `-DUDP_RECEIVER_PORT=14800`
+`-DTCP_RECEIVER_PORT` | TCP receiver port | `-DTCP_RECEIVER_PORT=14800`
+`-DTESTNET` | Makes it possible to run IRI with the IOTA testnet | `-DTESTNET=true`
+`-DREMOTE` | Remotely access your node and send API commands | `-DREMOTE=true`
+`-DREMOTE_AUTH` | Require authentication password for accessing remotely. Requires a correct `username:hashedpassword` combination | `-DREMOTE_AUTH="iotatoken:LL9EZFNCHZCMLJLVUBCKJSWKFEXNYRHHMYS9XQLUZRDEKUUDOCMBMRBWJEMEDDXSDPHIGQULENCRVEYMO"`
+`-DREMOTE_LIMIT_API` | Exclude certain API calls from being able to be accessed remotely | `-DREMOTE_LIMIT_API="attachToTangle, addNeighbors"`
+`-DSEND_LIMIT`| Limit the outbound bandwidth consumption. Limit is set to mbit/s | `-DSEND_LIMIT=1.0`
+`-DMAX_PEERS` | Limit the number of max accepted peers. Default is set to 0 (mutual tethering) | `-DMAX_PEERS=8`
 
-You can also provide an ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` flag. Here is an example INI file:
+### CONF File
+
+You can also provide a conf file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `-Dconfig.file=/path/to/config.conf` flag. Here is an example CONF file:
 ```
-[IRI]
 PORT = 14700
 UDP_RECEIVER_PORT = 14700
 NEIGHBORS = udp://my.favorite.com:15600

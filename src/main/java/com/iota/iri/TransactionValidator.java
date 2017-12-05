@@ -50,9 +50,9 @@ public class TransactionValidator {
         } else {
             MIN_WEIGHT_MAGNITUDE = MAINNET_MWM;
         }
-        //lowest allowed MWM encoded in 46 bytes.
-        if (MIN_WEIGHT_MAGNITUDE<13){
-            MIN_WEIGHT_MAGNITUDE = 13;
+        //lowest allowed MWM encoded in 49 bytes.
+        if (MIN_WEIGHT_MAGNITUDE<9){
+            MIN_WEIGHT_MAGNITUDE = 9;
         }
 
         newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
@@ -70,7 +70,7 @@ public class TransactionValidator {
 
     private static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
-        if(transactionViewModel.getTimestamp() < 1508760000 && !transactionViewModel.getHash().equals(Hash.NULL_HASH)) {
+        if(transactionViewModel.getTimestamp() < 1509195600 && !transactionViewModel.getHash().equals(Hash.NULL_HASH)) {
             throw new RuntimeException("Invalid transaction timestamp.");
         }
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {

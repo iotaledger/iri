@@ -36,11 +36,11 @@ public class IRI {
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
     public static final Hash MAINNET_COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
-    public static final Hash TESTNET_COORDINATOR = new Hash("XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA");
+    public static final Hash TESTNET_COORDINATOR = new Hash("EKSWROOKCRYOKRKOJMXGJGJFGJVKQCFFZALCBSTZQSU9HLTBFTW9OSCJJIN9PWVBRHUZ9SEIQDOYBENOT");
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
-    public static final String VERSION = "1.4.1.2";
+    public static final String VERSION = "1.4.1.3";
     public static Iota iota;
     public static API api;
     public static IXI ixi;

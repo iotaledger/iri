@@ -189,7 +189,6 @@ public class TipsManager {
                     messageQ.publish("rtsn %s", transactionViewModel.getHash());
                     break;
                 } else if (!transactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
-                    //} else if (!transactionViewModel.isSolid()) {
                     log.info("Reason to stop: !checkSolidity");
                     messageQ.publish("rtss %s", transactionViewModel.getHash());
                     break;
@@ -232,11 +231,11 @@ public class TipsManager {
 
                 walkRatings = new double[tips.length];
                 double maxRating = 0;
+                long tipRating = ratings.get(tip);
                 for (int i = 0; i < tips.length; i++) {
-                    if (ratings.containsKey(tips[i])) {
-                        walkRatings[i] = Math.sqrt(ratings.get(tips[i]));
-                        maxRating += walkRatings[i];
-                    }
+                    //transition probability = ((Hx-Hy)^-3)/maxRating
+                    walkRatings[i] = Math.pow(tipRating - ratings.getOrDefault(tips[i],0L), -3);
+                    maxRating += walkRatings[i];
                 }
                 ratingWeight = rnd.nextDouble() * maxRating;
                 for (approverIndex = tips.length; approverIndex-- > 1; ) {
@@ -255,6 +254,11 @@ public class TipsManager {
         }
         log.info("Tx traversed to find tip: " + traversedTails);
         messageQ.publish("mctn %d", traversedTails);
+
+        if (traversedTails == 0) {
+            throw new RuntimeException("starting tip failed consistency checks: " + tail.toString());
+        }
+
         return tail;
     }
 

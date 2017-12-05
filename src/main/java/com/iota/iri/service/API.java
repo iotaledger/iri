@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import com.iota.iri.*;
 import com.iota.iri.controllers.*;
 import com.iota.iri.network.*;
+import com.iota.iri.service.dto.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,21 +41,6 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.AccessLimitedResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
-import com.iota.iri.service.dto.AttachToTangleResponse;
-import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.ExceptionResponse;
-import com.iota.iri.service.dto.FindTransactionsResponse;
-import com.iota.iri.service.dto.GetBalancesResponse;
-import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
-import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.dto.GetTipsResponse;
-import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
-import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.MapIdentityManager;
 
@@ -258,17 +244,22 @@ public class API {
                     if(depth <= 0) {
                         return ErrorResponse.create("Invalid depth input");
                     }
+
                     final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
                     int numWalks = request.containsKey("numWalks") ? getParameterAsInt(request,"numWalks") : 1;
                     if(numWalks < minRandomWalks) {
                         numWalks = minRandomWalks;
                     }
-
-                    final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
-                    if(tips == null) {
-                        return ErrorResponse.create("The subtangle is not solid");
+                    try {
+                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
+                        if(tips == null) {
+                            return ErrorResponse.create("The subtangle is not solid");
+                        }
+                        return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
+                    } catch (RuntimeException e) {
+                        log.info("Tip selection failed: " + e.getLocalizedMessage());
+                        return ErrorResponse.create(e.getLocalizedMessage());
                     }
-                    return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
                 }
                 case "getTrytes": {
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
@@ -302,6 +293,14 @@ public class API {
                         return GetTipsResponse.create(missingTx);
                     }
                 }
+                case "isTailConsistent": {
+                    if (invalidSubtangleStatus()) {
+                        return ErrorResponse
+                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    }
+                    final Hash transaction  = new Hash(getParameterAsStringAndValidate(request,"tail", HASH_SIZE));
+                    return isTailConsistentStatement(transaction);
+                }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?
@@ -317,6 +316,29 @@ public class API {
             log.error("API Exception: ", e);
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
+    }
+
+    private AbstractResponse isTailConsistentStatement(Hash transaction) throws Exception {
+
+        TransactionViewModel txVM = TransactionViewModel.fromHash(instance.tangle, transaction);
+        if(txVM == null) {
+            return ErrorResponse.create("Invalid transaction, missing.");
+        }
+        if (txVM.getCurrentIndex() != 0) {
+            return ErrorResponse.create("Invalid transaction, not a tail.");
+        }
+
+        boolean state = true;
+        String info = null;
+        if (!instance.transactionValidator.checkSolidity(txVM.getHash(), false)) {
+            state = false;
+            info = "Reason to stop: !checkSolidity";
+        } else if (!instance.ledgerValidator.updateFromSnapshot(txVM.getHash(), null)) {
+            state = false;
+            info = "Reason to stop: !LedgerValidator";
+        }
+
+        return isTransactionConsistentResponse.create(state,info);
     }
 
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {

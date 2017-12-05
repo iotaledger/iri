@@ -262,7 +262,9 @@ public class TipsManager {
         messageQ.publish("mctn %d", traversedTails);
 
         if (traversedTails == 0) {
-            throw new RuntimeException("starting tip failed consistency checks: " + tail.toString());
+            if (!ledgerValidator.updateFromSnapshot(tail, extraTip)) {
+                throw new RuntimeException("starting tip failed consistency check: " + tail.toString());
+            }
         }
 
         return tail;

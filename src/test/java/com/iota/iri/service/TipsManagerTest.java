@@ -53,8 +53,8 @@ public class TipsManagerTest {
         MessageQ messageQ = new MessageQ(0, null, 1, false);
         TransactionRequester transactionRequester = new TransactionRequester(tangle, messageQ);
         TransactionValidator transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
-        Milestone milestone = new Milestone(tangle, Hash.NULL_HASH, transactionValidator, true, messageQ);
-        LedgerValidator ledgerValidator = new LedgerValidator(tangle, new Snapshot(Snapshot.initialSnapshot), milestone, transactionRequester, messageQ);
+        Milestone milestone = new Milestone(tangle, Hash.NULL_HASH, new Snapshot(Snapshot.initialSnapshot), transactionValidator, true, messageQ);
+        LedgerValidator ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, 15, messageQ);
     }
 
@@ -169,7 +169,7 @@ public class TipsManagerTest {
         }
         Map<Hash, Long> ratings = new HashMap<>();
         long start = System.currentTimeMillis();
-        tipsManager.serialUpdateRatings(hashes[0], ratings, new HashSet<>(), null);
+        tipsManager.serialUpdateRatings(new Snapshot(Snapshot.initialSnapshot), hashes[0], ratings, new HashSet<>(), null);
         return System.currentTimeMillis() - start;
     }
 }

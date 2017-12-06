@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
 import com.iota.iri.*;
 import com.iota.iri.controllers.*;
 import com.iota.iri.network.*;
+import com.iota.iri.service.dto.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,21 +41,6 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.AccessLimitedResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
-import com.iota.iri.service.dto.AttachToTangleResponse;
-import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.ExceptionResponse;
-import com.iota.iri.service.dto.FindTransactionsResponse;
-import com.iota.iri.service.dto.GetBalancesResponse;
-import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
-import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.dto.GetTipsResponse;
-import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
-import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.MapIdentityManager;
 
@@ -301,6 +287,13 @@ public class API {
                         return GetTipsResponse.create(missingTx);
                     }
                 }
+
+                case "checkConsistency": {
+                    return BooleanResponse.create(
+                            instance.ledgerValidator.checkConsistency(
+                                    instance.milestone.latestSnapshot,
+                                    getParameterAsList(request,"hashes", HASH_SIZE)));
+                }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?
@@ -419,7 +412,7 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
-    public synchronized Hash[] getTransactionToApproveStatement(final int depth, final String reference, final int numWalks) throws Exception {
+    public Hash[] getTransactionToApproveStatement(final int depth, final String reference, final int numWalks) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
@@ -431,8 +424,12 @@ public class API {
                 referenceHash = null;
             }
         }
+        Snapshot referenceSnapshot;
+        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
+            referenceSnapshot = new Snapshot(instance.milestone.latestSnapshot);
+        }
         for(int i = 0; i < tipsToApprove; i++) {
-            tips[i] = instance.tipsManager.transactionToApprove(referenceHash, tips[0], depth, randomWalkCount, random);
+            tips[i] = instance.tipsManager.transactionToApprove(referenceSnapshot, referenceHash, tips[0], depth, randomWalkCount, random);
             if (tips[i] == null) {
                 return null;
             }
@@ -679,12 +676,12 @@ public class API {
 
         final Map<Hash, Long> balances = new HashMap<>();
         final int index;
-        synchronized (Snapshot.latestSnapshotSyncObject) {
-            index = instance.latestSnapshot.index();
+        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
+            index = instance.milestone.latestSnapshot.index();
             for (final Hash address : addresses) {
                 balances.put(address,
-                        instance.latestSnapshot.getState().containsKey(address) ?
-                                instance.latestSnapshot.getState().get(address) : Long.valueOf(0));
+                        instance.milestone.latestSnapshot.getState().containsKey(address) ?
+                                instance.milestone.latestSnapshot.getState().get(address) : Long.valueOf(0));
             }
         }
 

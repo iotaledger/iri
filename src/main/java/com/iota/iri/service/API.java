@@ -375,22 +375,13 @@ public class API {
         final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
 
         for (final String uriString : uris) {
-            try {
-                final URI uri = new URI(uriString);
-
-                if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                    log.info("Removing neighbor: "+uriString);
-                    if (instance.node.removeNeighbor(uri,true)) {
-                        numberOfRemovedNeighbors.incrementAndGet();
-                    }
-                }
-                else {
-                    return ErrorResponse.create("Invalid uri scheme");
-                }
-            } catch (URISyntaxException e) {
-                return ErrorResponse.create("Invalid uri syntax");
+            final URI uri = getValidUri(uriString);
+            log.info("Removing neighbor: "+uriString);
+            if (instance.node.removeNeighbor(uri,true)) {
+                numberOfRemovedNeighbors.incrementAndGet();
             }
         }
+
         return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
     }
 
@@ -810,38 +801,25 @@ public class API {
     }
 
     private AbstractResponse addNeighborsStatement(final List<String> uris) {
-
         int numberOfAddedNeighbors = 0;
-        for (final String uriString : uris) {
-            try {
-                final URI uri = new URI(uriString);
 
-                if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                    log.info("Adding neighbor: "+uriString);
-                    // 3rd parameter true if tcp, 4th parameter true (configured tethering)
-                    final Neighbor neighbor;
-                    switch(uri.getScheme()) {
-                        case "tcp":
-                            neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true);
-                            break;
-                        case "udp":
-                            neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true);
-                            break;
-                        default:
-                            return ErrorResponse.create("Invalid uri scheme");
-                    }
-                    if (!instance.node.getNeighbors().contains(neighbor)) {
-                        instance.node.getNeighbors().add(neighbor);
-                        numberOfAddedNeighbors++;
-                    }
-                }
-                else {
-                    return ErrorResponse.create("Invalid uri scheme");
-                }
-            } catch (URISyntaxException e) {
-                return ErrorResponse.create("Invalid uri syntax");
+        for (final String uriString : uris) {
+            final URI uri = getValidUri(uriString);
+            log.info("Adding neighbor: "+uriString);
+            // 3rd parameter true if tcp, 4th parameter true (configured tethering)
+            final Neighbor neighbor;
+            if ("tcp".equals(uri.getScheme())) {
+                neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), true);
+            } else {
+                neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true);
+            }
+
+            if (!instance.node.getNeighbors().contains(neighbor)) {
+                instance.node.getNeighbors().add(neighbor);
+                numberOfAddedNeighbors++;
             }
         }
+
         return AddedNeighborsResponse.create(numberOfAddedNeighbors);
     }
 
@@ -968,6 +946,26 @@ public class API {
             return TagViewModel.load(tangle, indexable);
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage());
+        }
+    }
+
+    /**
+     * Gets a valid uri{@link URI} from an uri String
+     *
+     * @param uriString uri String
+     * @return valid uri
+     * @throws IllegalArgumentException if scheme is not udp or tcp
+     * @throws IllegalArgumentException if uriString has invalid sintax
+     */
+    private URI getValidUri(final String uriString) {
+        try {
+            final URI uri = new URI(uriString);
+            if (!"udp".equals(uri.getScheme()) && !"tcp".equals(uri.getScheme())) {
+                throw new IllegalArgumentException("Invalid uri scheme");
+            }
+            return uri;
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid uri syntax");
         }
     }
 }

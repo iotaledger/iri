@@ -79,7 +79,7 @@ You can also provide a conf file to store all of your command line options and e
 ```
 PORT = 14700
 UDP_RECEIVER_PORT = 14700
-NEIGHBORS = udp://my.favorite.com:15600
+NEIGHBORS = "udp://my.favorite.com:15600"
 IXI_DIR = ixi
 HEADLESS = true
 DEBUG = true

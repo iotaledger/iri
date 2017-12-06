@@ -30,7 +30,7 @@ docker-build:
 docker-build-staging:
   stage: package
   only:
-    - staging
+    - dev
   script:
     - docker build -t $CI_REGISTRY_IMAGE:staging .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY

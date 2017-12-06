@@ -87,7 +87,9 @@ public class Snapshot {
         }
     }
 
-    public static final Object latestSnapshotSyncObject = new Object();
+    public final Object snapshotSyncObject = new Object();
+    public final Object approvalsSyncObject = new Object();
+    public final Set<Hash> approvedHashes = new HashSet<>();
     private final Map<Hash, Long> state;
     private int index;
 

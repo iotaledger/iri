@@ -419,7 +419,7 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
-    public synchronized Hash[] getTransactionToApproveStatement(final int depth, final String reference, final int numWalks) throws Exception {
+    public Hash[] getTransactionToApproveStatement(final int depth, final String reference, final int numWalks) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
@@ -431,8 +431,12 @@ public class API {
                 referenceHash = null;
             }
         }
+        Snapshot referenceSnapshot;
+        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
+            referenceSnapshot = new Snapshot(instance.milestone.latestSnapshot);
+        }
         for(int i = 0; i < tipsToApprove; i++) {
-            tips[i] = instance.tipsManager.transactionToApprove(referenceHash, tips[0], depth, randomWalkCount, random);
+            tips[i] = instance.tipsManager.transactionToApprove(referenceSnapshot, referenceHash, tips[0], depth, randomWalkCount, random);
             if (tips[i] == null) {
                 return null;
             }
@@ -679,12 +683,12 @@ public class API {
 
         final Map<Hash, Long> balances = new HashMap<>();
         final int index;
-        synchronized (Snapshot.latestSnapshotSyncObject) {
-            index = instance.latestSnapshot.index();
+        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
+            index = instance.milestone.latestSnapshot.index();
             for (final Hash address : addresses) {
                 balances.put(address,
-                        instance.latestSnapshot.getState().containsKey(address) ?
-                                instance.latestSnapshot.getState().get(address) : Long.valueOf(0));
+                        instance.milestone.latestSnapshot.getState().containsKey(address) ?
+                                instance.milestone.latestSnapshot.getState().get(address) : Long.valueOf(0));
             }
         }
 

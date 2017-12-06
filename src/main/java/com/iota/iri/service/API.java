@@ -162,25 +162,28 @@ public class API {
 
         final long beginningTime = System.currentTimeMillis();
         final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
-        final AbstractResponse response;
 
+        final AbstractResponse response;
         if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
             response = ErrorResponse.create("Invalid API Version");
-        } else if (body.length() > maxBodyLength) {
-            response = ErrorResponse.create("Request too long");
         } else {
             response = process(body, exchange.getSourceAddress());
         }
+
         sendResponse(exchange, response, beginningTime);
     }
 
-    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress) throws UnsupportedEncodingException {
+    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress) {
 
         try {
 
+            if (requestString.length() > maxBodyLength) {
+                return ErrorResponse.create("Request too long");
+            }
+
             final Map<String, Object> request = gson.fromJson(requestString, Map.class);
             if (request == null) {
-                return ExceptionResponse.create("Invalid request payload: '" + requestString + "'");
+                return ErrorResponse.create("Invalid request payload: '" + requestString + "'");
             }
 
             final String command = (String) request.get("command");

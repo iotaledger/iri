@@ -10,7 +10,7 @@ stages:
   - package
   - docs
 
-gradle-build:
+maven-build:
   image: maven:3.5-jdk-8
   stage: build
   script: "mvn clean package"

@@ -289,7 +289,10 @@ public class API {
                 }
 
                 case "checkConsistency": {
-                    return BooleanResponse.create(checkConsistency(getParameterAsList(request,"hashes", HASH_SIZE)));
+                    return BooleanResponse.create(
+                            instance.ledgerValidator.checkConsistency(
+                                    instance.milestone.latestSnapshot,
+                                    getParameterAsList(request,"hashes", HASH_SIZE)));
                 }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
@@ -317,19 +320,6 @@ public class API {
             throw new ValidationException("Invalid " + paramName + " input");
         }
         return result;
-    }
-
-    private boolean checkConsistency(List<String> hashes) throws Exception {
-        Snapshot snapshot;
-        Hash hash;
-        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
-            snapshot = new Snapshot(instance.milestone.latestSnapshot);
-        }
-        for(String hashString: hashes) {
-            hash = new Hash(hashString);
-            if (!instance.ledgerValidator.isTipConsistent(snapshot, hash)) return false;
-        }
-        return true;
     }
 
     private String getParameterAsStringAndValidate(Map<String, Object> request, String paramName, int size) throws ValidationException {

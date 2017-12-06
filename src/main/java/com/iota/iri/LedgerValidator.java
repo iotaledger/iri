@@ -264,6 +264,20 @@ public class LedgerValidator {
         }
     }
 
+    public boolean checkConsistency(final Snapshot snapshotReference, List<String> hashes) throws Exception {
+        Snapshot snapshot;
+        Hash hash;
+        synchronized (snapshotReference.snapshotSyncObject) {
+            snapshot = new Snapshot(snapshotReference);
+        }
+        for(String hashString: hashes) {
+            hash = new Hash(hashString);
+            if (!isTipConsistent(snapshot, hash)) return false;
+        }
+        return true;
+    }
+
+
     public boolean isTipConsistent(Snapshot snapshot, Hash tip) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
         boolean isConsistent;

@@ -27,11 +27,11 @@ docker-build:
   - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
   - docker push $CI_REGISTRY_IMAGE
 
-docker-build-staging:
+docker-build-dev:
   stage: package
   only:
     - dev
   script:
-    - docker build -t $CI_REGISTRY_IMAGE:staging .
+    - docker build -t $CI_REGISTRY_IMAGE:dev .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-    - docker push $CI_REGISTRY_IMAGE:staging
+    - docker push $CI_REGISTRY_IMAGE:dev

@@ -14,9 +14,9 @@ EXPOSE 14777/udp
 EXPOSE 15777
 
 ENV REMOTE=true
-    REMOTE_LIMIT_API="addNeighbors, removeNeighbors, getNeighbors"
-    PORT=14265
-    UDP_RECEIVER_PORT=14777
-    TCP_RECEIVER_PORT=15777
+ENV REMOTE_LIMIT_API="addNeighbors, removeNeighbors, getNeighbors"
+ENV PORT=14265
+ENV UDP_RECEIVER_PORT=14777
+ENV TCP_RECEIVER_PORT=15777
 
 ENTRYPOINT ["/usr/bin/java", "-XX:+DisableAttachMechanism", "-Xmx8g", "-Xms256m", "-Dlogback.configurationFile=/iri/conf/logback.xml", "-Djava.net.preferIPv4Stack=true", "-jar", "iri.jar"]

@@ -1,0 +1,37 @@
+image: docker:dind
+services:
+  - docker:dind
+
+variables:
+  DOCKER_DRIVER: overlay
+
+stages:
+  - build
+  - package
+  - docs
+
+gradle-build:
+  image: maven:3.5-jdk-8
+  stage: build
+  script: "mvn clean package"
+  artifacts:
+    paths:
+      - target/*.jar
+
+docker-build:
+  stage: package
+  only:
+    - master
+  script:
+  - docker build -t $CI_REGISTRY_IMAGE .
+  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+  - docker push $CI_REGISTRY_IMAGE
+
+docker-build-staging:
+  stage: package
+  only:
+    - staging
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:staging .
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:staging

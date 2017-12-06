@@ -15,6 +15,11 @@ public abstract class Neighbor {
     private long randomTransactionRequests;
     private long numberOfSentTransactions;
 
+    private int newTransactionsCounter;
+    private long newTransactionsTimer;
+    private final double limit;
+    private static final long newTransactionsWindow = 10 * 1000L;
+
     private boolean flagged = false;
     public boolean isFlagged() {
         return flagged;
@@ -32,7 +37,7 @@ public abstract class Neighbor {
     }
     public static void decNumPeers() {
         int v = numPeers.decrementAndGet();
-        if (v < 0) numPeers.set(0);;
+        if (v < 0) numPeers.set(0);
     }
 
     private final String hostAddress;
@@ -41,10 +46,19 @@ public abstract class Neighbor {
         return hostAddress;
     }
 
+
     public Neighbor(final InetSocketAddress address, boolean isConfigured) {
         this.address = address;
         this.hostAddress = address.getAddress().getHostAddress();
         this.flagged = isConfigured;
+        this.limit = 0;
+    }
+
+    public Neighbor(final InetSocketAddress address, boolean isConfigured, double limit) {
+        this.address = address;
+        this.hostAddress = address.getAddress().getHostAddress();
+        this.flagged = isConfigured;
+        this.limit = (limit * newTransactionsWindow) / 1000;
     }
 
     public abstract void send(final DatagramPacket packet);
@@ -72,7 +86,18 @@ public abstract class Neighbor {
     
     void incNewTransactions() {
     	numberOfNewTransactions++;
+        long now = System.currentTimeMillis();
+        if ((now - newTransactionsTimer) > newTransactionsWindow) {
+            //reset counter every second
+            newTransactionsCounter = 0;
+            newTransactionsTimer = now;
+        }
     }
+
+    public boolean isBelowNewTransactionLimit() {
+        return (limit != 0 && newTransactionsCounter < limit);
+    }
+
 
     void incRandomTransactionRequests() {
         randomTransactionRequests++;

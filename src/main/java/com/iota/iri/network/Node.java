@@ -93,6 +93,8 @@ public class Node {
     private static AtomicLong sendPacketsCounter = new AtomicLong(0L);
     private static AtomicLong sendPacketsTimer = new AtomicLong(0L);
 
+    private static double newTxLimit;
+
     public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
     private DatagramSocket udpSocket;
 
@@ -121,6 +123,7 @@ public class Node {
         P_REPLY_RANDOM_TIP = configuration.doubling(Configuration.DefaultConfSettings.P_REPLY_RANDOM_TIP.name());
         P_PROPAGATE_REQUEST = configuration.doubling(Configuration.DefaultConfSettings.P_PROPAGATE_REQUEST.name());
         sendLimit = (long) ( (configuration.doubling(Configuration.DefaultConfSettings.SEND_LIMIT.name()) * 1000000) / (TRANSACTION_PACKET_SIZE * 8) );
+        newTxLimit = configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
         debug = configuration.booling(Configuration.DefaultConfSettings.DEBUG);
 
         Arrays.stream(configuration.string(Configuration.DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
@@ -129,8 +132,8 @@ public class Node {
                         log.error("CONFIGURATION ERROR: '{}' is not a valid uri schema or resolvable address.", u);
                     }})
                 .filter(u -> ("udp".equals(u.getScheme()) || "tcp".equals(u.getScheme())) && (new InetSocketAddress(u.getHost(), u.getPort()).getAddress()) != null)
-                .map(u -> "tcp".equals(u.getScheme())? new TCPNeighbor(new InetSocketAddress(u.getHost(), u.getPort()),true):
-                    new UDPNeighbor(new InetSocketAddress(u.getHost(), u.getPort()), udpSocket,true))
+                .map(u -> "tcp".equals(u.getScheme())? new TCPNeighbor(new InetSocketAddress(u.getHost(), u.getPort()),true, newTxLimit):
+                    new UDPNeighbor(new InetSocketAddress(u.getHost(), u.getPort()), udpSocket,true, newTxLimit))
                 .peek(u -> {
                 log.info("-> Adding neighbor : {} ", u.getAddress());
                 messageQ.publish("-> Adding Neighbor : %s",u.getAddress());
@@ -331,9 +334,9 @@ public class Node {
                     // 3rd parameter false (not tcp), 4th parameter true (configured tethering)
                     final Neighbor newneighbor;
                     if (uriScheme.equals("tcp")) {
-                        newneighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false);
+                        newneighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), false, 0);
                     } else {
-                        newneighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, false);
+                        newneighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, false, 0);
                     }
                     if (!getNeighbors().contains(newneighbor)) {
                         getNeighbors().add(newneighbor);
@@ -401,7 +404,9 @@ public class Node {
             }
             if (!cached) {
                 //if not, store tx.
-                stored = receivedTransactionViewModel.store(tangle);
+                if (neighbor.isBelowNewTransactionLimit()) {
+                    stored = receivedTransactionViewModel.store(tangle);
+                }
             }
         } catch (Exception e) {
             log.error("Error accessing persistence store.", e);
@@ -677,13 +682,13 @@ public class Node {
     public boolean removeNeighbor(final URI uri, boolean isConfigured) {
         Neighbor neighbor;
         if (uri.toString().contains("tcp:")) {
-            neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured);
+            neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured, newTxLimit);
             neighbors.stream().filter(n -> n instanceof TCPNeighbor)
                     .map(n -> ((TCPNeighbor) n))
                     .filter(n -> n.equals(neighbor))
                     .forEach(TCPNeighbor::clear);
         } else {
-            neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, isConfigured);
+            neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, isConfigured, newTxLimit);
         }
         return neighbors.remove(neighbor);
     }
@@ -695,9 +700,9 @@ public class Node {
     public Neighbor newNeighbor(final URI uri, boolean isConfigured) {
         final Neighbor neighbor;
         if (uri.toString().contains("tcp:")) {
-            neighbor =  new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured);
+            neighbor =  new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured, newTxLimit);
         } else {
-            neighbor =  new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, isConfigured);
+            neighbor =  new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, isConfigured, newTxLimit);
         }
         return neighbor;
     }

@@ -104,6 +104,7 @@ public class API {
     private final int maxRequestList;
     private final int maxGetTrytes;
     private final int maxBodyLength;
+    private final double newTxLimit;
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
@@ -120,6 +121,8 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
+        newTxLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
+
     }
 
     public void init() throws IOException {
@@ -816,10 +819,10 @@ public class API {
                 final Neighbor neighbor;
                 switch(uri.getScheme()) {
                     case "tcp":
-                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true);
+                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true, newTxLimit);
                         break;
                     case "udp":
-                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true);
+                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true, newTxLimit);
                         break;
                     default:
                         return ErrorResponse.create("Invalid uri scheme");

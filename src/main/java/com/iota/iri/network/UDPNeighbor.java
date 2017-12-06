@@ -16,8 +16,8 @@ public class UDPNeighbor extends Neighbor {
 
     private DatagramSocket socket;
 
-    public UDPNeighbor(final InetSocketAddress address, final DatagramSocket socket, final boolean isConfigured) {
-        super(address, isConfigured);
+    public UDPNeighbor(final InetSocketAddress address, final DatagramSocket socket, final boolean isConfigured, final double limit) {
+        super(address, isConfigured, limit);
         this.socket = socket;
     }
 

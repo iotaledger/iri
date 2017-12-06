@@ -47,6 +47,7 @@ public class Configuration {
         P_PROPAGATE_REQUEST,
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
+        NEW_TX_LIMIT,
         MAX_PEERS,
         DNS_REFRESHER_ENABLED,
         COORDINATOR,
@@ -92,6 +93,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAIN_DB.name(), "rocksdb");
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
+        conf.put(DefaultConfSettings.NEW_TX_LIMIT.name(), "9.0");
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
         conf.put(DefaultConfSettings.DNS_REFRESHER_ENABLED.name(), "true");
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");

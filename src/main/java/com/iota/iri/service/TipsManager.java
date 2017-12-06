@@ -120,7 +120,7 @@ public class TipsManager {
                 Hash tip = entryPoint(reference, extraTip, msDepth);
                 serialUpdateRatings(snapshot, tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
-                if (ledgerValidator.isTipConsistent(referenceSnapshot, snapshot, tip)) {
+                if (ledgerValidator.isTipConsistent(snapshot, tip)) {
                     return randomWalk(snapshot, tip, extraTip, ratings, maxDepth, maxDepthOk, iterations, seed);
                 }
                 return null;
@@ -220,7 +220,7 @@ public class TipsManager {
                     messageQ.publish("rtss %s", transactionViewModel.getHash());
                 } else if (belowMaxDepth(transactionViewModel.getHash(), maxDepth, maxDepthOk)) {
                     log.info("Reason to stop: belowMaxDepth");
-                } else if (!ledgerValidator.isTipConsistent(referenceSnapshot, snapshot, transactionViewModel.getHash())) {
+                } else if (!ledgerValidator.isTipConsistent(snapshot, transactionViewModel.getHash())) {
                     log.info("Reason to stop: !LedgerValidator");
                     messageQ.publish("rtsv %s", transactionViewModel.getHash());
                 } else if (transactionViewModel.getHash().equals(extraTip)) {

@@ -4,6 +4,7 @@ import static io.undertow.Handlers.path;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -108,6 +110,9 @@ public class API {
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
+    private HashMap<InetAddress,AtomicInteger> broadcastStoreCounters;
+    private AtomicLong broadcastStoreTimer;
+
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
@@ -123,6 +128,8 @@ public class API {
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
         newTxLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
 
+        broadcastStoreCounters = new HashMap<>();
+        broadcastStoreTimer = new AtomicLong(0);
     }
 
     public void init() throws IOException {
@@ -216,8 +223,14 @@ public class API {
                     return AttachToTangleResponse.create(elements);
                 }
                 case "broadcastTransactions": {
-                    broadcastTransactionStatement(getParameterAsList(request,"trytes", TRYTES_SIZE));
-                    return AbstractResponse.createEmptyResponse();
+                    final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                    if (isBelowNewTransactionLimit(sourceAddress.getAddress(), trytes.size())) {
+                        broadcastTransactionStatement(trytes);
+                        return AbstractResponse.createEmptyResponse();
+                    }
+                    return ErrorResponse.create("This operations cannot be executed: Exceeded new transaction limit");
+
+
                 }
                 case "findTransactions": {
                     return findTransactionStatement(request);
@@ -289,7 +302,12 @@ public class API {
 
                 case "storeTransactions": {
                     try {
-                        storeTransactionStatement(getParameterAsList(request,"trytes", TRYTES_SIZE));
+                        final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                        if (isBelowNewTransactionLimit(sourceAddress.getAddress(), trytes.size())) {
+                            storeTransactionStatement(trytes);
+                            return AbstractResponse.createEmptyResponse();
+                        }
+                        return ErrorResponse.create("This operations cannot be executed: Exceeded new transaction limit");
                     } catch (RuntimeException e) {
                         //transaction not valid
                         return ErrorResponse.create("Invalid trytes input");
@@ -319,6 +337,17 @@ public class API {
             log.error("API Exception: ", e);
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
+    }
+
+    private boolean isBelowNewTransactionLimit(InetAddress sourceAddress, int size) {
+        long now = System.currentTimeMillis();
+        if ((now - broadcastStoreTimer.get()) >  10 * 1000L) {
+            //reset counter every second
+            broadcastStoreCounters.clear();
+            broadcastStoreTimer.set(now);
+        }
+        broadcastStoreCounters.putIfAbsent(sourceAddress, new AtomicInteger(0));
+        return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < 10 * newTxLimit;
     }
 
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {

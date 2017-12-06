@@ -298,8 +298,8 @@ public class API {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    final Hash transaction  = new Hash(getParameterAsStringAndValidate(request,"tail", HASH_SIZE));
-                    return isTailConsistentStatement(transaction);
+                    final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
+                    return isTailConsistentStatement(transactions);
                 }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
@@ -318,24 +318,38 @@ public class API {
         }
     }
 
-    private AbstractResponse isTailConsistentStatement(Hash transaction) throws Exception {
-
-        TransactionViewModel txVM = TransactionViewModel.fromHash(instance.tangle, transaction);
-        if(txVM == null) {
-            return ErrorResponse.create("Invalid transaction, missing.");
-        }
-        if (txVM.getCurrentIndex() != 0) {
-            return ErrorResponse.create("Invalid transaction, not a tail.");
-        }
-
+    private AbstractResponse isTailConsistentStatement(List<String> transactionsList) throws Exception {
+        final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
         boolean state = true;
         String info = null;
-        if (!instance.transactionValidator.checkSolidity(txVM.getHash(), false)) {
-            state = false;
-            info = "tail is not solid (missing a referenced tx)";
-        } else if (!instance.ledgerValidator.updateFromSnapshot(txVM.getHash(), null)) {
-            state = false;
-            info = "tail is not consistent (would lead to inconsistent ledger state)";
+
+        //check transactions themselves are valid
+        for (Hash transaction :transactions) {
+            TransactionViewModel txVM = TransactionViewModel.fromHash(instance.tangle, transaction);
+            if (txVM.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                return ErrorResponse.create("Invalid transaction, missing: " + transaction);
+            }
+            if (txVM.getCurrentIndex() != 0) {
+                return ErrorResponse.create("Invalid transaction, not a tail: " + transaction);
+            }
+
+
+            if (!instance.transactionValidator.checkSolidity(txVM.getHash(), false)) {
+                state = false;
+                info = "tail is not solid (missing a referenced tx): " + transaction;
+                break;
+            } else if (BundleValidator.validate(instance.tangle, txVM.getBundleHash()).size() == 0) {
+                state = false;
+                info = "tail is not consistent (bundle is invalid): " + transaction;
+                break;
+            }
+        }
+
+        if (state = true) {
+            if (!instance.ledgerValidator.updateFromSnapshot(transactions.get(0), transactions)) {
+                state = false;
+                info = "tails is not consistent (would lead to inconsistent ledger state)";
+            }
         }
 
         return isTransactionConsistentResponse.create(state,info);

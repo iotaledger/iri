@@ -57,15 +57,15 @@ public class LedgerValidator {
      * @return {state}  the addresses that have a balance changed since the last diff check
      * @throws Exception
      */
-    private Map<Hash,Long> getLatestDiff(Hash tip, Hash extraTip, int latestSnapshotIndex, boolean milestone) throws Exception {
+    private Map<Hash,Long> getLatestDiff(Hash tip, List<Hash> extraTips, int latestSnapshotIndex, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>();
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
         Set<Hash> countedTx = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
 
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
-        if (extraTip != null) {
-            nonAnalyzedTransactions.add(extraTip);
+        if (extraTips != null) {
+            nonAnalyzedTransactions.addAll(extraTips);
         }
 
         Hash transactionPointer;
@@ -280,14 +280,14 @@ public class LedgerValidator {
         }
     }
 
-    public boolean updateFromSnapshot(Hash tip, Hash extraTip) throws Exception {
+    public boolean updateFromSnapshot(Hash tip, List<Hash> extraTips) throws Exception {
         boolean isConsistent;
         synchronized (latestSnapshotSyncObject) {
             synchronized (approvalsSyncObject) {
             isConsistent = approvedHashes.contains(tip);
             if (!isConsistent) {
                 int latestSyncIndex = latestSnapshot.index();
-                Map<Hash, Long> currentState = getLatestDiff(tip, extraTip, latestSyncIndex, false);
+                Map<Hash, Long> currentState = getLatestDiff(tip, extraTips, latestSyncIndex, false);
                 isConsistent = currentState != null && stateSinceMilestone.patch(currentState, latestSyncIndex).isConsistent();
                 if (isConsistent) {
                     updateConsistentHashes(tip, latestSyncIndex);

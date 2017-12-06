@@ -187,6 +187,11 @@ public class TipsManager {
         int approverIndex;
         double ratingWeight;
         double[] walkRatings;
+        List<Hash> extraTipList = null;
+        if (extraTip != null) {
+            extraTipList = Collections.singletonList(extraTip);
+        }
+
         while (tip != null) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
             tipSet = transactionViewModel.getApprovers(tangle).getHashes();
@@ -204,7 +209,7 @@ public class TipsManager {
                     log.info("Reason to stop: belowMaxDepth");
                     break;
 
-                } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash(), extraTip)) {
+                } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash(), extraTipList)) {
                     log.info("Reason to stop: !LedgerValidator");
                     messageQ.publish("rtsv %s", transactionViewModel.getHash());
                     break;
@@ -263,7 +268,7 @@ public class TipsManager {
         messageQ.publish("mctn %d", traversedTails);
 
         if (traversedTails == 0) {
-            if (!ledgerValidator.updateFromSnapshot(tail, extraTip)) {
+            if (!ledgerValidator.updateFromSnapshot(tail, extraTipList)) {
                 throw new RuntimeException("starting tip failed consistency check: " + tail.toString());
             }
         }

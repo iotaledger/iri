@@ -4,6 +4,7 @@ import static io.undertow.Handlers.path;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -104,8 +106,13 @@ public class API {
     private final int maxRequestList;
     private final int maxGetTrytes;
     private final int maxBodyLength;
+    private final double newTransactionsRateLimit;
+    private final double newTransactionsLimit;
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
+
+    private HashMap<InetAddress,AtomicInteger> broadcastStoreCounters;
+    private AtomicLong broadcastStoreTimer;
 
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
@@ -120,6 +127,11 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
+        newTransactionsRateLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
+
+        newTransactionsLimit = (newTransactionsRateLimit * Neighbor.newTransactionsWindow) / 1000;
+        broadcastStoreCounters = new HashMap<>();
+        broadcastStoreTimer = new AtomicLong(0);
     }
 
     public void init() throws IOException {
@@ -213,8 +225,14 @@ public class API {
                     return AttachToTangleResponse.create(elements);
                 }
                 case "broadcastTransactions": {
-                    broadcastTransactionStatement(getParameterAsList(request,"trytes", TRYTES_SIZE));
-                    return AbstractResponse.createEmptyResponse();
+                    final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                    if (isBelowNewTransactionLimit(sourceAddress.getAddress(), trytes.size())) {
+                        broadcastTransactionStatement(trytes);
+                        return AbstractResponse.createEmptyResponse();
+                    }
+                    return ErrorResponse.create("This operations cannot be executed: Exceeded new transaction limit");
+
+
                 }
                 case "findTransactions": {
                     return findTransactionStatement(request);
@@ -286,7 +304,12 @@ public class API {
 
                 case "storeTransactions": {
                     try {
-                        storeTransactionStatement(getParameterAsList(request,"trytes", TRYTES_SIZE));
+                        final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                        if (isBelowNewTransactionLimit(sourceAddress.getAddress(), trytes.size())) {
+                            storeTransactionStatement(trytes);
+                            return AbstractResponse.createEmptyResponse();
+                        }
+                        return ErrorResponse.create("This operations cannot be executed: Exceeded new transaction limit");
                     } catch (RuntimeException e) {
                         //transaction not valid
                         return ErrorResponse.create("Invalid trytes input");
@@ -316,6 +339,17 @@ public class API {
             log.error("API Exception: ", e);
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
+    }
+
+    private boolean isBelowNewTransactionLimit(InetAddress sourceAddress, int size) {
+        long now = System.currentTimeMillis();
+        if ((now - broadcastStoreTimer.get()) >  Neighbor.newTransactionsWindow) {
+            broadcastStoreCounters.clear();
+            broadcastStoreTimer.set(now);
+        }
+        if(broadcastStoreCounters.putIfAbsent(sourceAddress, new AtomicInteger(size)) != null) {
+            return size < newTransactionsLimit;
+        } else return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < newTransactionsLimit;
     }
 
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {
@@ -370,23 +404,19 @@ public class API {
         return (instance.milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
     }
 
-    private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
-        final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
-
-        for (final String uriString : uris) {
-            final URI uri = new URI(uriString);
-
-            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                log.info("Removing neighbor: "+uriString);
-                if (instance.node.removeNeighbor(uri,true)) {
-                    numberOfRemovedNeighbors.incrementAndGet();
+    private AbstractResponse removeNeighborsStatement(List<String> uris) {
+        int numberOfRemovedNeighbors = 0;
+        try {
+            for (final String uriString : uris) {
+                log.info("Removing neighbor: " + uriString);
+                if (instance.node.removeNeighbor(new URI(uriString),true)) {
+                    numberOfRemovedNeighbors++;
                 }
             }
-            else {
-                return ErrorResponse.create("Invalid uri scheme");
-            }
+        } catch (URISyntaxException|RuntimeException e) {
+            return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
         }
-        return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
+        return RemoveNeighborsResponse.create(numberOfRemovedNeighbors);
     }
 
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
@@ -804,34 +834,19 @@ public class API {
         return elements;
     }
 
-    private AbstractResponse addNeighborsStatement(final List<String> uris) throws URISyntaxException {
-
+    private AbstractResponse addNeighborsStatement(final List<String> uris) {
         int numberOfAddedNeighbors = 0;
-        for (final String uriString : uris) {
-            final URI uri = new URI(uriString);
-
-            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                log.info("Adding neighbor: "+uriString);
-                // 3rd parameter true if tcp, 4th parameter true (configured tethering)
-                final Neighbor neighbor;
-                switch(uri.getScheme()) {
-                    case "tcp":
-                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true);
-                        break;
-                    case "udp":
-                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true);
-                        break;
-                    default:
-                        return ErrorResponse.create("Invalid uri scheme");
-                }
+        try {
+            for (final String uriString : uris) {
+                log.info("Adding neighbor: " + uriString);
+                final Neighbor neighbor = instance.node.newNeighbor(new URI(uriString), true);
                 if (!instance.node.getNeighbors().contains(neighbor)) {
                     instance.node.getNeighbors().add(neighbor);
                     numberOfAddedNeighbors++;
                 }
             }
-            else {
-                return ErrorResponse.create("Invalid uri scheme");
-            }
+        } catch (URISyntaxException|RuntimeException e) {
+            return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
         }
         return AddedNeighborsResponse.create(numberOfAddedNeighbors);
     }

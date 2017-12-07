@@ -484,9 +484,15 @@ public class API {
     }
 
     public void storeTransactionStatement(final List<String> trys) throws Exception {
+        final List<TransactionViewModel> elements = new LinkedList<>();
         for (final String trytes : trys) {
+            //validate all trytes
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(trytes),
                     instance.transactionValidator.getMinWeightMagnitude());
+            elements.add(transactionViewModel);
+        }
+        for (final TransactionViewModel transactionViewModel : elements) {
+            //store transactions
             if(transactionViewModel.store(instance.tangle)) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
@@ -689,9 +695,13 @@ public class API {
     }
 
     public void broadcastTransactionStatement(final List<String> trytes2) {
+        final List<TransactionViewModel> elements = new LinkedList<>();
         for (final String tryte : trytes2) {
-            //validate PoW - throws exception if invalid
+            //validate all trytes
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(tryte), instance.transactionValidator.getMinWeightMagnitude());
+            elements.add(transactionViewModel);
+        }
+        for (final TransactionViewModel transactionViewModel : elements) {
             //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             instance.node.broadcast(transactionViewModel);

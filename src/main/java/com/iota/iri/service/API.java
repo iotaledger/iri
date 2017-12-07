@@ -352,7 +352,7 @@ public class API {
             }
         }
 
-        return isTransactionConsistentResponse.create(state,info);
+        return IsTransactionConsistentResponse.create(state,info);
     }
 
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {

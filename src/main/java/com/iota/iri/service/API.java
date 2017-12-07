@@ -404,23 +404,19 @@ public class API {
         return (instance.milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
     }
 
-    private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
-        final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
-
-        for (final String uriString : uris) {
-            final URI uri = new URI(uriString);
-
-            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                log.info("Removing neighbor: "+uriString);
-                if (instance.node.removeNeighbor(uri,true)) {
-                    numberOfRemovedNeighbors.incrementAndGet();
+    private AbstractResponse removeNeighborsStatement(List<String> uris) {
+        int numberOfRemovedNeighbors = 0;
+        try {
+            for (final String uriString : uris) {
+                log.info("Removing neighbor: " + uriString);
+                if (instance.node.removeNeighbor(new URI(uriString),true)) {
+                    numberOfRemovedNeighbors++;
                 }
             }
-            else {
-                return ErrorResponse.create("Invalid uri scheme");
-            }
+        } catch (URISyntaxException|RuntimeException e) {
+            return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
         }
-        return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
+        return RemoveNeighborsResponse.create(numberOfRemovedNeighbors);
     }
 
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
@@ -838,34 +834,19 @@ public class API {
         return elements;
     }
 
-    private AbstractResponse addNeighborsStatement(final List<String> uris) throws URISyntaxException {
-
+    private AbstractResponse addNeighborsStatement(final List<String> uris) {
         int numberOfAddedNeighbors = 0;
-        for (final String uriString : uris) {
-            final URI uri = new URI(uriString);
-
-            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                log.info("Adding neighbor: "+uriString);
-                // 3rd parameter true if tcp, 4th parameter true (configured tethering)
-                final Neighbor neighbor;
-                switch(uri.getScheme()) {
-                    case "tcp":
-                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true, newTransactionsRateLimit);
-                        break;
-                    case "udp":
-                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true, newTransactionsRateLimit);
-                        break;
-                    default:
-                        return ErrorResponse.create("Invalid uri scheme");
-                }
+        try {
+            for (final String uriString : uris) {
+                log.info("Adding neighbor: " + uriString);
+                final Neighbor neighbor = instance.node.newNeighbor(new URI(uriString), true);
                 if (!instance.node.getNeighbors().contains(neighbor)) {
                     instance.node.getNeighbors().add(neighbor);
                     numberOfAddedNeighbors++;
                 }
             }
-            else {
-                return ErrorResponse.create("Invalid uri scheme");
-            }
+        } catch (URISyntaxException|RuntimeException e) {
+            return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
         }
         return AddedNeighborsResponse.create(numberOfAddedNeighbors);
     }

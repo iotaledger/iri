@@ -106,7 +106,8 @@ public class API {
     private final int maxRequestList;
     private final int maxGetTrytes;
     private final int maxBodyLength;
-    private final double newTxLimit;
+    private final double newTransactionsRateLimit;
+    private final double newTransactionsLimit;
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
@@ -126,8 +127,9 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
-        newTxLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
+        newTransactionsRateLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
 
+        newTransactionsLimit = (newTransactionsRateLimit * Neighbor.newTransactionsWindow) / 1000;
         broadcastStoreCounters = new HashMap<>();
         broadcastStoreTimer = new AtomicLong(0);
     }
@@ -341,13 +343,13 @@ public class API {
 
     private boolean isBelowNewTransactionLimit(InetAddress sourceAddress, int size) {
         long now = System.currentTimeMillis();
-        if ((now - broadcastStoreTimer.get()) >  10 * 1000L) {
-            //reset counter every second
+        if ((now - broadcastStoreTimer.get()) >  Neighbor.newTransactionsWindow) {
             broadcastStoreCounters.clear();
             broadcastStoreTimer.set(now);
         }
-        broadcastStoreCounters.putIfAbsent(sourceAddress, new AtomicInteger(0));
-        return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < 10 * newTxLimit;
+        if(broadcastStoreCounters.putIfAbsent(sourceAddress, new AtomicInteger(size)) != null) {
+            return size < newTransactionsLimit;
+        } else return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < newTransactionsLimit;
     }
 
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {
@@ -848,10 +850,10 @@ public class API {
                 final Neighbor neighbor;
                 switch(uri.getScheme()) {
                     case "tcp":
-                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true, newTxLimit);
+                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true, newTransactionsRateLimit);
                         break;
                     case "udp":
-                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true, newTxLimit);
+                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true, newTransactionsRateLimit);
                         break;
                     default:
                         return ErrorResponse.create("Invalid uri scheme");

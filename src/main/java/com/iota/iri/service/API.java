@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 import com.iota.iri.*;
 import com.iota.iri.controllers.*;
 import com.iota.iri.network.*;
+import com.iota.iri.service.dto.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,21 +43,6 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.AccessLimitedResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
-import com.iota.iri.service.dto.AttachToTangleResponse;
-import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.ExceptionResponse;
-import com.iota.iri.service.dto.FindTransactionsResponse;
-import com.iota.iri.service.dto.GetBalancesResponse;
-import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
-import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.dto.GetTipsResponse;
-import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
-import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.MapIdentityManager;
 
@@ -77,8 +63,6 @@ import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 import io.undertow.util.MimeMappings;
 import io.undertow.util.StatusCodes;
-
-import javax.xml.bind.ValidationException;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -274,18 +258,25 @@ public class API {
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
 
-                    final int depth = getParameterAsInt(request, "depth");
                     final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
+                    final int depth = getParameterAsInt(request, "depth");
+                    if(depth < 0 || (reference == null && depth == 0)) {
+                        return ErrorResponse.create("Invalid depth input");
+                    }
                     int numWalks = request.containsKey("numWalks") ? getParameterAsInt(request,"numWalks") : 1;
                     if(numWalks < minRandomWalks) {
                         numWalks = minRandomWalks;
                     }
-
-                    final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
-                    if(tips == null) {
-                        return ErrorResponse.create("The subtangle is not solid");
+                    try {
+                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
+                        if(tips == null) {
+                            return ErrorResponse.create("The subtangle is not solid");
+                        }
+                        return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
+                    } catch (RuntimeException e) {
+                        log.info("Tip selection failed: " + e.getLocalizedMessage());
+                        return ErrorResponse.create(e.getLocalizedMessage());
                     }
-                    return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
                 }
                 case "getTrytes": {
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
@@ -324,6 +315,14 @@ public class API {
                         return GetTipsResponse.create(missingTx);
                     }
                 }
+                case "isTailConsistent": {
+                    if (invalidSubtangleStatus()) {
+                        return ErrorResponse
+                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    }
+                    final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
+                    return isTailConsistentStatement(transactions);
+                }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?
@@ -350,6 +349,42 @@ public class API {
         if(broadcastStoreCounters.putIfAbsent(sourceAddress, new AtomicInteger(size)) != null) {
             return size < newTransactionsLimit;
         } else return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < newTransactionsLimit;
+    }
+    private AbstractResponse isTailConsistentStatement(List<String> transactionsList) throws Exception {
+        final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
+        boolean state = true;
+        String info = null;
+
+        //check transactions themselves are valid
+        for (Hash transaction :transactions) {
+            TransactionViewModel txVM = TransactionViewModel.fromHash(instance.tangle, transaction);
+            if (txVM.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                return ErrorResponse.create("Invalid transaction, missing: " + transaction);
+            }
+            if (txVM.getCurrentIndex() != 0) {
+                return ErrorResponse.create("Invalid transaction, not a tail: " + transaction);
+            }
+
+
+            if (!instance.transactionValidator.checkSolidity(txVM.getHash(), false)) {
+                state = false;
+                info = "tail is not solid (missing a referenced tx): " + transaction;
+                break;
+            } else if (BundleValidator.validate(instance.tangle, txVM.getBundleHash()).size() == 0) {
+                state = false;
+                info = "tail is not consistent (bundle is invalid): " + transaction;
+                break;
+            }
+        }
+
+        if (state = true) {
+            if (!instance.ledgerValidator.updateFromSnapshot(transactions.get(0), transactions)) {
+                state = false;
+                info = "tails is not consistent (would lead to inconsistent ledger state)";
+            }
+        }
+
+        return IsTransactionConsistentResponse.create(state,info);
     }
 
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {

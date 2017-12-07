@@ -240,12 +240,11 @@ public class API {
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
 
+                    final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
                     final int depth = getParameterAsInt(request, "depth");
-                    if(depth <= 0) {
+                    if(depth < 0 || (reference == null && depth == 0)) {
                         return ErrorResponse.create("Invalid depth input");
                     }
-
-                    final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
                     int numWalks = request.containsKey("numWalks") ? getParameterAsInt(request,"numWalks") : 1;
                     if(numWalks < minRandomWalks) {
                         numWalks = minRandomWalks;

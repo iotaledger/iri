@@ -135,15 +135,10 @@ public class TipsManager {
 
         if (extraTip == null) {
             //trunk
-            return milestone.latestSolidSubtangleMilestone;
+            return reference != null ? reference : milestone.latestSolidSubtangleMilestone;
         }
 
         //branch (extraTip)
-
-        if (reference != null) {
-            return reference;
-        }
-
         int milestoneIndex = Math.max(milestone.latestSolidSubtangleMilestoneIndex - depth - 1, 0);
         MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex);
         if(milestoneViewModel != null && milestoneViewModel.getHash() != null) {

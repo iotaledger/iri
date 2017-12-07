@@ -151,14 +151,15 @@ public class TipsViewModel {
         }
 
         public boolean add(K key) {
-            if (this.set.size() >= this.capacity) {
+            final int vacancy = this.capacity - this.set.size();
+            if (vacancy <= 0) {
                 Iterator<K> it = this.set.iterator();
-                for (int i = 0 ; i <= this.set.size() - this.capacity ; i++) {
+                for (int i = vacancy; i <= 0 ; i++) {
                     it.next();
                     it.remove();
                 }
             }
-            return set.add(key);
+            return this.set.add(key);
         }
 
         public boolean remove(K key) {

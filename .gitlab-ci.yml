@@ -2,9 +2,6 @@ image: docker:dind
 services:
   - docker:dind
 
-variables:
-  DOCKER_DRIVER: overlay
-
 stages:
   - build
   - package
@@ -23,15 +20,17 @@ docker-build:
   only:
     - master
   script:
-  - docker build -t $CI_REGISTRY_IMAGE .
-  - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
-  - docker push $CI_REGISTRY_IMAGE
+    - export DOCKER_HOST="tcp://localhost:2375"
+    - docker build -t $CI_REGISTRY_IMAGE .
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE
 
 docker-build-dev:
   stage: package
   only:
     - dev
   script:
+    - export DOCKER_HOST="tcp://localhost:2375"
     - docker build -t $CI_REGISTRY_IMAGE:dev .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE:dev

@@ -315,13 +315,13 @@ public class API {
                         return GetTipsResponse.create(missingTx);
                     }
                 }
-                case "isTailConsistent": {
+                case "checkConsistency": {
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
                     final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
-                    return isTailConsistentStatement(transactions);
+                    return checkConsistencyStatement(transactions);
                 }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
@@ -354,7 +354,7 @@ public class API {
             return size < newTransactionsLimit;
         } else return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < newTransactionsLimit;
     }
-    private AbstractResponse isTailConsistentStatement(List<String> transactionsList) throws Exception {
+    private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
         boolean state = true;
         String info = null;
@@ -382,13 +382,13 @@ public class API {
         }
 
         if (state = true) {
-            if (!instance.ledgerValidator.updateFromSnapshot(transactions.get(0), transactions)) {
+            if (!instance.ledgerValidator.checkConsistency(instance.milestone.latestSnapshot, transactions)) {
                 state = false;
                 info = "tails is not consistent (would lead to inconsistent ledger state)";
             }
         }
 
-        return IsTransactionConsistentResponse.create(state,info);
+        return CheckConsistency.create(state,info);
     }
 
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {
@@ -500,8 +500,12 @@ public class API {
                 referenceHash = null;
             }
         }
+        Snapshot referenceSnapshot;
+        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
+            referenceSnapshot = new Snapshot(instance.milestone.latestSnapshot);
+        }
         for(int i = 0; i < tipsToApprove; i++) {
-            tips[i] = instance.tipsManager.transactionToApprove(referenceHash, tips[0], depth, randomWalkCount, random);
+            tips[i] = instance.tipsManager.transactionToApprove(referenceSnapshot, referenceHash, tips[0], depth, randomWalkCount, random);
             if (tips[i] == null) {
                 return null;
             }
@@ -515,7 +519,11 @@ public class API {
             counter_getTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
-        return tips;
+
+        if (instance.ledgerValidator.checkConsistency(instance.milestone.latestSnapshot, Arrays.asList(tips))) {
+            return tips;
+        }
+        throw new RuntimeException("inconsistent tips pair selected");
     }
 
     private synchronized AbstractResponse getTipsStatement() throws Exception {
@@ -758,12 +766,12 @@ public class API {
 
         final Map<Hash, Long> balances = new HashMap<>();
         final int index;
-        synchronized (Snapshot.latestSnapshotSyncObject) {
-            index = instance.latestSnapshot.index();
+        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
+            index = instance.milestone.latestSnapshot.index();
             for (final Hash address : addresses) {
                 balances.put(address,
-                        instance.latestSnapshot.getState().containsKey(address) ?
-                                instance.latestSnapshot.getState().get(address) : Long.valueOf(0));
+                        instance.milestone.latestSnapshot.getState().containsKey(address) ?
+                                instance.milestone.latestSnapshot.getState().get(address) : Long.valueOf(0));
             }
         }
 

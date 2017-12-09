@@ -2,8 +2,8 @@ package com.iota.iri.service;
 
 import java.util.*;
 
-import com.iota.iri.BundleValidator;
 import com.iota.iri.LedgerValidator;
+import com.iota.iri.Snapshot;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.*;
@@ -99,7 +99,7 @@ public class TipsManager {
 
     }
 
-    Hash transactionToApprove(final Hash reference, final Hash extraTip, final int depth, final int iterations, Random seed) throws Exception {
+    Hash transactionToApprove(final Snapshot referenceSnapshot, final Hash reference, final Hash extraTip, final int depth, final int iterations, Random seed) throws Exception {
 
         long startTime = System.nanoTime();
         final int msDepth;
@@ -115,11 +115,16 @@ public class TipsManager {
             Map<Hash, Long> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
             Set<Hash> maxDepthOk = new HashSet<>();
+            Snapshot snapshot = new Snapshot(referenceSnapshot);
             try {
                 Hash tip = entryPoint(reference, extraTip, msDepth);
-                serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
+                serialUpdateRatings(snapshot, tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
-                return markovChainMonteCarlo(tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex-depth*2, maxDepthOk, seed);
+                if (ledgerValidator.isTipConsistent(snapshot, tip)) {
+                    return markovChainMonteCarlo(snapshot, tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex - depth * 2, maxDepthOk, seed);
+                } else {
+                    throw new RuntimeException("starting tip failed consistency check: " + tip.toString());
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());
@@ -148,11 +153,11 @@ public class TipsManager {
         return milestone.latestSolidSubtangleMilestone;
     }
 
-    Hash markovChainMonteCarlo(final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final int maxDepth, final Set<Hash> maxDepthOk, final Random seed) throws Exception {
+    Hash markovChainMonteCarlo(final Snapshot referenceSnapshot, final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final int maxDepth, final Set<Hash> maxDepthOk, final Random seed) throws Exception {
         Map<Hash, Integer> monteCarloIntegrations = new HashMap<>();
         Hash tail;
         for(int i = iterations; i-- > 0; ) {
-            tail = randomWalk(tip, extraTip, ratings, maxDepth, maxDepthOk, seed);
+            tail = randomWalk(new Snapshot(referenceSnapshot), tip, extraTip, ratings, maxDepth, maxDepthOk, seed);
             if(monteCarloIntegrations.containsKey(tail)) {
                 monteCarloIntegrations.put(tail, monteCarloIntegrations.get(tail) + 1);
             } else {
@@ -172,7 +177,7 @@ public class TipsManager {
         }).map(Map.Entry::getKey).orElse(null);
     }
 
-    Hash randomWalk(final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
+    Hash randomWalk(final Snapshot snapshot, final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
         Hash tip = start, tail = tip;
         Hash[] tips;
         Set<Hash> tipSet;
@@ -199,12 +204,10 @@ public class TipsManager {
                     log.info("Reason to stop: !checkSolidity");
                     messageQ.publish("rtss %s", transactionViewModel.getHash());
                     break;
-
                 } else if (belowMaxDepth(transactionViewModel.getHash(), maxDepth, maxDepthOk)) {
                     log.info("Reason to stop: belowMaxDepth");
                     break;
-
-                } else if (!ledgerValidator.updateFromSnapshot(transactionViewModel.getHash(), extraTipList)) {
+                } else if (!ledgerValidator.isTipConsistent(snapshot, transactionViewModel.getHash())) {
                     log.info("Reason to stop: !LedgerValidator");
                     messageQ.publish("rtsv %s", transactionViewModel.getHash());
                     break;
@@ -232,7 +235,7 @@ public class TipsManager {
                 // walk to the next approver
                 tips = tipSet.toArray(new Hash[tipSet.size()]);
                 if (!ratings.containsKey(tip)) {
-                    serialUpdateRatings(tip, ratings, analyzedTips, extraTip);
+                    serialUpdateRatings(snapshot, tip, ratings, analyzedTips, extraTip);
                     analyzedTips.clear();
                 }
 
@@ -261,13 +264,6 @@ public class TipsManager {
         }
         log.info("Tx traversed to find tip: " + traversedTails);
         messageQ.publish("mctn %d", traversedTails);
-
-        if (traversedTails == 0) {
-            if (!ledgerValidator.updateFromSnapshot(tail, extraTipList)) {
-                throw new RuntimeException("starting tip failed consistency check: " + tail.toString());
-            }
-        }
-
         return tail;
     }
 
@@ -278,7 +274,7 @@ public class TipsManager {
         return a+b;
     }
 
-    void serialUpdateRatings(final Hash txHash, final Map<Hash, Long> ratings, final Set<Hash> analyzedTips, final Hash extraTip) throws Exception {
+    void serialUpdateRatings(final Snapshot snapshot, final Hash txHash, final Map<Hash, Long> ratings, final Set<Hash> analyzedTips, final Hash extraTip) throws Exception {
         Stack<Hash> hashesToRate = new Stack<>();
         hashesToRate.push(txHash);
         Hash currentHash;
@@ -298,7 +294,7 @@ public class TipsManager {
                 }
             }
             if(!addedBack && analyzedTips.add(currentHash)) {
-                long rating = (extraTip != null && ledgerValidator.isApproved(currentHash)? 0: 1) + approvers.stream().map(ratings::get).filter(Objects::nonNull)
+                long rating = (extraTip != null && LedgerValidator.isApproved(snapshot, currentHash)? 0: 1) + approvers.stream().map(ratings::get).filter(Objects::nonNull)
                         .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L);
                 ratings.put(currentHash, rating);
             }

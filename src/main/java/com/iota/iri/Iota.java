@@ -36,7 +36,6 @@ public class Iota {
 
     public final LedgerValidator ledgerValidator;
     public final Milestone milestone;
-    public final Snapshot latestSnapshot;
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
     public final TipsManager tipsManager;
@@ -81,12 +80,11 @@ public class Iota {
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
-        latestSnapshot = new Snapshot(Snapshot.initialSnapshot);
-        milestone =  new Milestone(tangle, coordinator, transactionValidator, testnet, messageQ);
+        milestone =  new Milestone(tangle, coordinator, new Snapshot(Snapshot.initialSnapshot), transactionValidator, testnet, messageQ);
         node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
         replicator = new Replicator(node, tcpPort, maxPeers, testnet);
         udpReceiver = new UDPReceiver(udpPort, node);
-        ledgerValidator = new LedgerValidator(tangle, latestSnapshot, milestone, transactionRequester, messageQ);
+        ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth, messageQ);
     }
 

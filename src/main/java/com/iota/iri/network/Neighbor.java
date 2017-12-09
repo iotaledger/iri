@@ -86,16 +86,20 @@ public abstract class Neighbor {
     
     void incNewTransactions() {
     	numberOfNewTransactions++;
+        newTransactionsCounter++;
+    }
+
+    public boolean isBelowNewTransactionLimit() {
+        if (newTransactionsLimit == 0) {
+            return true;
+        }
+
         long now = System.currentTimeMillis();
         if ((now - newTransactionsTimer) > newTransactionsWindow) {
             newTransactionsCounter = 0;
             newTransactionsTimer = now;
         }
-        newTransactionsCounter++;
-    }
-
-    public boolean isBelowNewTransactionLimit() {
-        return (newTransactionsLimit != 0 && newTransactionsCounter < newTransactionsLimit);
+        return (newTransactionsCounter < newTransactionsLimit);
     }
 
 

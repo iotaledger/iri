@@ -341,6 +341,10 @@ public class API {
     }
 
     private boolean isBelowNewTransactionLimit(InetAddress sourceAddress, int size) {
+        if (newTransactionsLimit == 0) {
+            return true;
+        }
+
         long now = System.currentTimeMillis();
         if ((now - broadcastStoreTimer.get()) >  Neighbor.newTransactionsWindow) {
             broadcastStoreCounters.clear();

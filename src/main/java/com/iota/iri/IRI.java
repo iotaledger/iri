@@ -119,6 +119,8 @@ public class IRI {
         final Option<Boolean> revalidate = parser.addBooleanOption("revalidate");
         final Option<Boolean> rescan = parser.addBooleanOption("rescan");
         final Option<String> sendLimit = parser.addStringOption("send-limit");
+        final Option<Boolean> sync = parser.addBooleanOption("sync");
+
         final Option<String> maxPeers = parser.addStringOption("max-peers");
 
         try {
@@ -220,6 +222,10 @@ public class IRI {
         if (vsendLimit != null) {
             configuration.put(DefaultConfSettings.SEND_LIMIT, vsendLimit);
         }
+        if (parser.getOptionValue(sync) != null) {
+            configuration.put(DefaultConfSettings.NEW_TX_LIMIT, "0.0");
+        }
+
         
         final String vmaxPeers = parser.getOptionValue(maxPeers);
         if (vmaxPeers != null) {

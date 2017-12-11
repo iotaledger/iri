@@ -98,7 +98,6 @@ public class Curl implements Sponge {
 
     private void transform() {
 
-        //final int[] scratchpad = new int[STATE_LENGTH];
         int scratchpadIndex = 0;
         int prev_scratchpadIndex = 0;
         for (int round = 0; round < numberOfRounds; round++) {

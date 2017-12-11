@@ -9,7 +9,6 @@ variables:
 stages:
   - build
   - package
-  - docs
 
 maven-build:
   image: maven:3.5-jdk-8

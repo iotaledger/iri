@@ -1,7 +1,6 @@
 FROM openjdk:8u111-jdk-alpine
 VOLUME /tmp
-VOLUME /iri
-ADD logback.xml /iri
+ADD logback.xml /iri/conf/
 ADD /target/iri-*.jar iri.jar
 EXPOSE 14265
 EXPOSE 14777/udp

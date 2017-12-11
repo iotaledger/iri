@@ -103,10 +103,13 @@ public class Milestone {
                                                     latestMilestone = milestoneViewModel.getHash();
                                                     latestMilestoneIndex = milestoneViewModel.index();
                                                 }
+                                                break;
                                             case INCOMPLETE:
                                                 analyzedMilestoneCandidates.remove(t.getHash());
+                                                break;
                                             case INVALID:
                                                 //Do nothing
+                                                break;
                                         }
                                     }
                                 }

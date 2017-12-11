@@ -350,9 +350,12 @@ public class API {
             broadcastStoreCounters.clear();
             broadcastStoreTimer.set(now);
         }
+
         if(broadcastStoreCounters.putIfAbsent(sourceAddress, new AtomicInteger(size)) != null) {
             return size < newTransactionsLimit;
-        } else return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < newTransactionsLimit;
+        } else {
+            return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < newTransactionsLimit;
+        }
     }
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
@@ -360,7 +363,7 @@ public class API {
         String info = null;
 
         //check transactions themselves are valid
-        for (Hash transaction :transactions) {
+        for (Hash transaction : transactions) {
             TransactionViewModel txVM = TransactionViewModel.fromHash(instance.tangle, transaction);
             if (txVM.getType() == TransactionViewModel.PREFILLED_SLOT) {
                 return ErrorResponse.create("Invalid transaction, missing: " + transaction);

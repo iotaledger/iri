@@ -54,7 +54,8 @@ public class TangleTest {
         Sponge curl = SpongeFactory.create(SpongeFactory.Mode.CURLP81);
         curl.absorb(trits, 0, trits.length);
         curl.squeeze(hash, 0, Curl.HASH_LENGTH);
-        transaction.bytes = Converter.bytes(trits);
+        transaction.bytes = Converter.allocateBytesForTrits(trits.length);
+        Converter.bytes(trits, transaction.bytes);
 
         //assertTrue("Should be a new, unique transaction", !Tangle.instance().save(transaction).get());
     }

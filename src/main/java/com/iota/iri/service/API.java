@@ -532,9 +532,11 @@ public class API {
 
     public void storeTransactionStatement(final List<String> trys) throws Exception {
         final List<TransactionViewModel> elements = new LinkedList<>();
+        int[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String trytes : trys) {
             //validate all trytes
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(trytes),
+            Converter.trits(trytes, txTrits, 0);
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
@@ -743,9 +745,11 @@ public class API {
 
     public void broadcastTransactionStatement(final List<String> trytes2) {
         final List<TransactionViewModel> elements = new LinkedList<>();
+        int[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String tryte : trytes2) {
             //validate all trytes
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(tryte), instance.transactionValidator.getMinWeightMagnitude());
+            Converter.trits(tryte, txTrits, 0);
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(txTrits, instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
         for (final TransactionViewModel transactionViewModel : elements) {
@@ -833,11 +837,13 @@ public class API {
         Hash prevTransaction = null;
         pearlDiver = new PearlDiver();
 
+        int[] transactionTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+
         for (final String tryte : trytes) {
             long startTime = System.nanoTime();
             long timestamp = System.currentTimeMillis();
             try {
-                final int[] transactionTrits = Converter.trits(tryte);
+                Converter.trits(tryte, transactionTrits, 0);
                 //branch and trunk
                 System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
                         transactionTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,

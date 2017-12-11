@@ -1,11 +1,11 @@
-image: docker:dind
+image: docker
+
 services:
   - docker:dind
 
 stages:
   - build
   - package
-  - docs
 
 maven-build:
   image: maven:3.5-jdk-8
@@ -20,7 +20,6 @@ docker-build:
   only:
     - master
   script:
-    - export DOCKER_HOST="tcp://localhost:2375"
     - docker build -t $CI_REGISTRY_IMAGE .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE
@@ -30,7 +29,6 @@ docker-build-dev:
   only:
     - dev
   script:
-    - export DOCKER_HOST="tcp://localhost:2375"
     - docker build -t $CI_REGISTRY_IMAGE:dev .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
     - docker push $CI_REGISTRY_IMAGE:dev

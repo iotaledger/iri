@@ -1,7 +1,8 @@
-FROM openjdk:8u111-jdk-alpine
+FROM openjdk:8-jdk
 VOLUME /tmp
 ADD logback.xml /iri/conf/
 ADD /target/iri-*.jar iri.jar
+RUN touch /iri/conf/application.conf
 EXPOSE 14265
 EXPOSE 14777/udp
 EXPOSE 15777
@@ -12,4 +13,4 @@ ENV PORT=14265
 ENV UDP_RECEIVER_PORT=14777
 ENV TCP_RECEIVER_PORT=15777
 
-ENTRYPOINT ["java", "-XX:+DisableAttachMechanism", "-Dlogback.configurationFile=/iri/conf/logback.xml", "-Djava.net.preferIPv4Stack=true", "-jar", "iri.jar"]
+ENTRYPOINT ["java", "-XX:+DisableAttachMechanism", "-Dconfig.file=/iri/conf/application.conf","-Dlogback.configurationFile=/iri/conf/logback.xml", "-Djava.net.preferIPv4Stack=true", "-jar", "iri.jar"]

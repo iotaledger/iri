@@ -31,7 +31,10 @@ public class HashTest {
 
     @Test
     public void calculate2() throws Exception {
-        Hash hash = Hash.calculate(Converter.bytes(TransactionViewModelTest.getRandomTransactionTrits()), TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
+        int[] trits = TransactionViewModelTest.getRandomTransactionTrits();
+        byte[] bytes = Converter.allocateBytesForTrits(trits.length);
+        Converter.bytes(trits, bytes);
+        Hash hash = Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
         Assert.assertNotEquals(0, hash.hashCode());
         Assert.assertNotEquals(null, hash.bytes());
         Assert.assertNotEquals(null, hash.trits());

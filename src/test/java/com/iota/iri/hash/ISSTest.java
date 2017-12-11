@@ -30,7 +30,7 @@ public class ISSTest {
         int nof = 1;
         SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
 
-        int[] seedTrits = new int[243];
+        int[] seedTrits = new int[Sponge.HASH_LENGTH];
 
         for (SpongeFactory.Mode mode: modes) {
             Converter.trits(seed, seedTrits, 0);

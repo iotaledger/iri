@@ -8,8 +8,6 @@ import java.security.DigestException;
 import java.util.Arrays;
 
 public class Kerl implements Sponge {
-
-    public static final int HASH_LENGTH = 243;
     public static final int BIT_HASH_LENGTH = 384;
     public static final int BYTE_HASH_LENGTH = BIT_HASH_LENGTH / 8;
 
@@ -21,7 +19,7 @@ public class Kerl implements Sponge {
 
         this.keccak = new Keccak.Digest384();
         this.byte_state = new byte[BYTE_HASH_LENGTH];
-        this.trit_state = new int[HASH_LENGTH];
+        this.trit_state = new int[Sponge.HASH_LENGTH];
     }
 
     @Override
@@ -59,7 +57,7 @@ public class Kerl implements Sponge {
           do {
               this.keccak.digest(byte_state, 0, BYTE_HASH_LENGTH);
               //convert to trits
-              tritsFromBigInt(bigIntFromBytes(byte_state, 0, BYTE_HASH_LENGTH), trit_state, 0, HASH_LENGTH);
+              tritsFromBigInt(bigIntFromBytes(byte_state, 0, BYTE_HASH_LENGTH), trit_state, 0, Sponge.HASH_LENGTH);
 
               //copy with offset
               trit_state[HASH_LENGTH - 1] = 0;
@@ -99,7 +97,9 @@ public class Kerl implements Sponge {
 
     public static void tritsFromBigInt(final BigInteger value, int[] destination, int offset, int size) {
 
-        if(destination.length - offset < size) throw new IllegalArgumentException("Destination array has invalid size");
+        if(destination.length - offset < size) {
+            throw new IllegalArgumentException("Destination array has invalid size");
+        }
 
         BigInteger absoluteValue = value.compareTo(BigInteger.ZERO) < 0 ? value.negate() : value;
         for (int i = 0; i < size; i++) {

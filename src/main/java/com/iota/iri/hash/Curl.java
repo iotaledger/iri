@@ -14,7 +14,6 @@ import java.util.NoSuchElementException;
  */
 public class Curl implements Sponge {
 
-    public static final int HASH_LENGTH = 243;
     public static final int NUMBER_OF_ROUNDSP81 = 81;
     public static final int NUMBER_OF_ROUNDSP27 = 27;
     private final int numberOfRounds;

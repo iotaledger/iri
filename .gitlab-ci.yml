@@ -3,9 +3,6 @@ image: docker
 services:
   - docker:dind
 
-variables:
-  DOCKER_DRIVER: overlay
-
 stages:
   - build
   - package

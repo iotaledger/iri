@@ -53,7 +53,7 @@ environment variables. You can find some of the possible environment variables i
 
 Example:
 
-`docker run -d --net=host --name iota-node -e TESTNET=true -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v application.conf:/iri/application.conf iotaledger/iri:latest`
+`docker run -d --net=host --name iota-node -e TESTNET=true -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v application.conf:/iri/conf/application.conf iotaledger/iri:latest`
 
 ### Command Line Options 
 

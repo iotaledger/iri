@@ -115,13 +115,12 @@ public class TipsManager {
             Map<Hash, Long> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
             Set<Hash> maxDepthOk = new HashSet<>();
-            Snapshot snapshot = new Snapshot(referenceSnapshot);
             try {
                 Hash tip = entryPoint(reference, extraTip, msDepth);
-                serialUpdateRatings(snapshot, tip, ratings, analyzedTips, extraTip);
+                serialUpdateRatings(referenceSnapshot, tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
-                if (ledgerValidator.isTipConsistent(snapshot, tip)) {
-                    return markovChainMonteCarlo(snapshot, tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex - depth * 2, maxDepthOk, seed);
+                if (ledgerValidator.isTipConsistent(referenceSnapshot, tip)) {
+                    return markovChainMonteCarlo(referenceSnapshot, tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex - depth * 2, maxDepthOk, seed);
                 } else {
                     throw new RuntimeException("starting tip failed consistency check: " + tip.toString());
                 }

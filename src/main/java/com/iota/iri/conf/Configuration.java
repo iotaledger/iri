@@ -56,6 +56,13 @@ public class Configuration {
         ZMQ_THREADS,
     }
 
+    public Configuration() {
+
+        // this is needed to put system env variables into the configuration
+        // until https://github.com/lightbend/config/issues/488 got fixed
+        System.getenv().forEach(this::put);
+    }
+
     public void put(final String k, final String v) {
         log.debug("Setting {} with {}", k, v);
         config = config.withValue(k,
@@ -75,7 +82,7 @@ public class Configuration {
         return this.has(d.name());
     }
 
-    private String string(String k) {
+    public String string(String k) {
         return config.getString(k);
     }
 

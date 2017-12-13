@@ -1,5 +1,6 @@
 FROM openjdk:8-jdk
 VOLUME /tmp
+VOLUME /iri/db
 ADD logback.xml /iri/conf/
 ADD /target/iri-*.jar iri.jar
 RUN touch /iri/conf/application.conf
@@ -12,5 +13,6 @@ ENV REMOTE_LIMIT_API="addNeighbors, removeNeighbors, getNeighbors"
 ENV PORT=14265
 ENV UDP_RECEIVER_PORT=14777
 ENV TCP_RECEIVER_PORT=15777
+ENV DB_PATH=/iri/db
 
 ENTRYPOINT ["java", "-XX:+DisableAttachMechanism", "-Dconfig.file=/iri/conf/application.conf","-Dlogback.configurationFile=/iri/conf/logback.xml", "-Djava.net.preferIPv4Stack=true", "-jar", "iri.jar"]

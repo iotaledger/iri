@@ -4,9 +4,8 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.util.Map;
+import javax.naming.OperationNotSupportedException;
+import java.util.List;
 
 /**
  * Created by paul on 4/11/17.
@@ -39,5 +38,15 @@ public class Milestone implements Persistable {
     @Override
     public boolean merge() {
         return false;
+    }
+
+    @Override
+    public boolean isSplittable() {
+        return false;
+    }
+
+    @Override
+    public List<byte[]> splitBytes(int maxByteLength) throws OperationNotSupportedException {
+        throw new OperationNotSupportedException();
     }
 }

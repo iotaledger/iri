@@ -4,9 +4,10 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.Serializable;
+import javax.naming.OperationNotSupportedException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -44,5 +45,15 @@ public class StateDiff implements Persistable {
     @Override
     public boolean merge() {
         return false;
+    }
+
+    @Override
+    public boolean isSplittable() {
+        return false;
+    }
+
+    @Override
+    public List<byte[]> splitBytes(int maxByteLength) throws OperationNotSupportedException {
+        throw new OperationNotSupportedException();
     }
 }

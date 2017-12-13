@@ -7,6 +7,7 @@ RUN touch /iri/conf/application.conf
 EXPOSE 14600
 EXPOSE 14600/udp
 EXPOSE 15600
+EXPOSE 14265
 ENV _JAVA_OPTIONS="-Xms256m -Xmx8g"
 ENV REMOTE=true
 ENV REMOTE_LIMIT_API="addNeighbors, removeNeighbors, getNeighbors"

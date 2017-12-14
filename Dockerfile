@@ -4,7 +4,6 @@ VOLUME /iri/db
 ADD logback.xml /iri/conf/
 ADD /target/iri-*.jar iri.jar
 RUN touch /iri/conf/application.conf
-EXPOSE 14600
 EXPOSE 14600/udp
 EXPOSE 15600
 EXPOSE 14265

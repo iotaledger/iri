@@ -2,7 +2,6 @@ package com.iota.iri;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.iota.iri.hash.ISS;
 import com.iota.iri.service.CallableRequest;
 import com.iota.iri.service.dto.AbstractResponse;
 import com.sun.nio.file.SensitivityWatchEventModifier;
@@ -20,7 +19,10 @@ import java.io.Reader;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Instant;
-import java.util.*;
+import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -87,6 +89,7 @@ public class IXI {
                 key = watcher.poll(1000, TimeUnit.MILLISECONDS);
             } catch (InterruptedException e) {
                 log.error("Watcher interrupted: ", e);
+                Thread.currentThread().interrupt();
             }
             if (key == null) {
                 continue;

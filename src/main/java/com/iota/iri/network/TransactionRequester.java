@@ -61,6 +61,7 @@ public class TransactionRequester {
             try {
                 rescanThread.join();
             } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
     }

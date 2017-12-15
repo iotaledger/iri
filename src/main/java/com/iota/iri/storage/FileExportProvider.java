@@ -1,7 +1,5 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
@@ -14,7 +12,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static com.iota.iri.controllers.TransactionViewModel.TRINARY_SIZE;
@@ -53,17 +50,17 @@ public class FileExportProvider implements PersistenceProvider {
     @Override
     public boolean update(Persistable model, Indexable index, String item) throws Exception {
 
-        if(model instanceof Transaction) {
+        if (model instanceof Transaction) {
             Transaction transaction = ((Transaction) model);
-            if(item.contains("sender")) {
+            if (item.contains("sender")) {
+                PrintWriter writer = null;
                 try {
-                    PrintWriter writer;
                     Path path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
                     writer = new PrintWriter(path.toString(), "UTF-8");
                     writer.println(index.toString());
                     writer.println(Converter.trytes(trits(transaction)));
                     writer.println(transaction.sender);
-                    if(item.equals("height")) {
+                    if (item.equals("height")) {
                         writer.println("Height: " + String.valueOf(transaction.height));
                     } else {
                         writer.println("Height: ");
@@ -75,7 +72,9 @@ public class FileExportProvider implements PersistenceProvider {
                 } catch (Exception e) {
                     log.error("Transaction load failed. ", e);
                 } finally {
-
+                    if (writer != null) {
+                        writer.close();
+                    }
                 }
             }
         }
@@ -91,7 +90,6 @@ public class FileExportProvider implements PersistenceProvider {
     public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception {
         return null;
     }
-
 
 
     @Override
@@ -171,9 +169,10 @@ public class FileExportProvider implements PersistenceProvider {
         }
         return now;
     }
+
     int[] trits(Transaction transaction) {
         int[] trits = new int[TRINARY_SIZE];
-        if(transaction.bytes != null) {
+        if (transaction.bytes != null) {
             Converter.getTrits(transaction.bytes, trits);
         }
         return trits;

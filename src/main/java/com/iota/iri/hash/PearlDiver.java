@@ -197,6 +197,7 @@ public class PearlDiver {
         } catch (final InterruptedException e) {
             synchronized (syncObj) {
                 state = CANCELLED;
+                Thread.currentThread().interrupt();
             }
         }
 
@@ -206,6 +207,7 @@ public class PearlDiver {
             } catch (final InterruptedException e) {
                 synchronized (syncObj) {
                     state = CANCELLED;
+                    Thread.currentThread().interrupt();
                 }
             }
         }

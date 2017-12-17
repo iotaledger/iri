@@ -66,6 +66,9 @@ public class Configuration {
         ZMQ_PORT,
         ZMQ_IPC,
         ZMQ_THREADS,
+        Q_SIZE_NODE,
+        LRU_SIZE_HASHES,
+        LRU_SIZE_BYTES,
     }
 
     {
@@ -115,6 +118,10 @@ public class Configuration {
         conf.put(DefaultConfSettings.ZMQ_PORT.name(), "5556");
         conf.put(DefaultConfSettings.ZMQ_IPC.name(), "ipc://iri");
         conf.put(DefaultConfSettings.ZMQ_THREADS.name(), "2");
+
+        conf.put(DefaultConfSettings.Q_SIZE_NODE.name(), "1000");
+        conf.put(DefaultConfSettings.LRU_SIZE_HASHES.name(), "5000");
+        conf.put(DefaultConfSettings.LRU_SIZE_BYTES.name(), "15000");
 
     }
 

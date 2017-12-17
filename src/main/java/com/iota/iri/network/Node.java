@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
-import com.iota.iri.utils.Converter;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.StringUtils;
@@ -45,9 +44,9 @@ public class Node {
 
 
     public  static final int TRANSACTION_PACKET_SIZE = 1650;
-    private static final int QUEUE_SIZE = 1000;
-    private static final int RECV_QUEUE_SIZE = 1000;
-    private static final int REPLY_QUEUE_SIZE = 1000;
+    private int BROADCAST_QUEUE_SIZE;
+    private int RECV_QUEUE_SIZE;
+    private int REPLY_QUEUE_SIZE;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
     public  static final int REQUEST_HASH_SIZE = 46;
     private static double P_SELECT_MILESTONE;
@@ -82,8 +81,8 @@ public class Node {
 
 
 
-    private final LRUCache<Hash,Boolean> recentSeenHashes = new LRUCache<>(5000);
-    private final LRUCache<ByteBuffer,Hash> recentSeenBytes = new LRUCache<>(15000);
+    private LRUCache<Hash,Boolean> recentSeenHashes;
+    private LRUCache<ByteBuffer,Hash> recentSeenBytes;
 
     private boolean debug;
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
@@ -126,6 +125,10 @@ public class Node {
         newTxLimit = configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
         debug = configuration.booling(Configuration.DefaultConfSettings.DEBUG);
 
+        BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.integer(Configuration.DefaultConfSettings.Q_SIZE_NODE);
+        recentSeenHashes = new LRUCache<>(configuration.integer(Configuration.DefaultConfSettings.LRU_SIZE_HASHES));
+        recentSeenBytes = new LRUCache<>(configuration.integer(Configuration.DefaultConfSettings.LRU_SIZE_BYTES));
+
         parseNeighborsConfig();
 
         executor.submit(spawnBroadcasterThread());
@@ -136,8 +139,6 @@ public class Node {
 
         executor.shutdown();
     }
-
-
 
     public void setUDPSocket(final DatagramSocket socket) {
         this.udpSocket = socket;
@@ -653,7 +654,7 @@ public class Node {
 
     public void broadcast(final TransactionViewModel transactionViewModel) {
         broadcastQueue.add(transactionViewModel);
-        if (broadcastQueue.size() > QUEUE_SIZE) {
+        if (broadcastQueue.size() > BROADCAST_QUEUE_SIZE) {
             broadcastQueue.pollLast();
         }
     }
@@ -666,7 +667,7 @@ public class Node {
     // helpers methods
 
     public boolean removeNeighbor(final URI uri, boolean isConfigured) {
-        final Neighbor neighbor = newNeighbor(uri,isConfigured);
+        final Neighbor neighbor = newNeighbor(uri, isConfigured);
         if (uri.getScheme().equals("tcp")) {
             neighbors.stream().filter(n -> n instanceof TCPNeighbor)
                     .map(n -> ((TCPNeighbor) n))

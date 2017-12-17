@@ -207,7 +207,6 @@ public class Milestone {
                             new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
                             return VALID;
                         } else {
-                            //invalid Milestone
                             return INVALID;
                         }
                     }

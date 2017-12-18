@@ -33,9 +33,9 @@ $ mvn clean compile
 $ mvn package
 ```
 
-This will create a `target` directory in which you will find the executable jar file that you can use for the 
+This will create a `target` directory in which you will find the executable jar file that you can use for the
 
-### How to run IRI 
+### How to run IRI
 
 #### Locally
 
@@ -47,16 +47,61 @@ java -jar iri.jar -p 14265
 
 ### Docker
 
-Create an iota.ini file with all of your configuration variables set in it.
-Any that you don't provide in here will be assumed to be default or taken from
-command line arguments.
+No need to create a config file, everything can be configured with environment variables.
 
-`docker run -d --net=host --name iota-node -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
+```
+$ docker run --net=host -d --name iota-node -v iota_data:/opt/iri/data -e "NEIGHBORS=udp://neighbor1:14600 tcp://neighbor1:15600 udp://neighbor3:14600" iotaledger/iri
+```
 
-### Command Line Options 
+To rescan the database or revalidate, you can do this:
+
+```
+$ docker run --net=host --rm --name iota-node -v iota_data:/opt/iri/data -e "NEIGHBORS=udp://neighbor1:14600 tcp://neighbor1:15600 udp://neighbor3:14600" iotaledger/iri --rescan
+$ docker run --net=host --rm --name iota-node -v iota_data:/opt/iri/data -e "NEIGHBORS=udp://neighbor1:14600 tcp://neighbor1:15600 udp://neighbor3:14600" iotaledger/iri --revalidate
+```
+
+#### Environment variables
+
+You can configure different things with environment variables:
+
+| Name             | Description                                                                                         |
+| ---------------- | --------------------------------------------------------------------------------------------------- |
+| NEIGHBORS        | List of your neighbors (space delimited).                                                           |
+| REMOTE_API_LIMIT | List of things that are forbidden via api (Default: attachToTangle, addNeighbors, removeNeighbors). |
+| API_PORT         | Port for API listener (Default: 14265).                                                             |
+| UDP_PORT         | Port for UDP listener (Default: 14600).                                                             |
+| TCP_PORT         | Port for TCP listener (Default: 15600).                                                             |
+| DB_PATH          | Path of database (Default: data/db [in the docker container]).                                      |
+| IXI_DIR          | IXI directory (Default: data/ixi [in the docker container]).                                        |           
+| DEBUG            | Debug mode (Default: false)                                                                         |
+| TESTNET          | Run on testnet (Default: false)                                                                     |
+| JAVA_OPTIONS     | Java options (Default: -XX:+DisableAttachMechanism -XX:+HeapDumpOnOutOfMemoryError -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap) |
+
+#### Run with docker-compose
+
+You can also run IRI with docker-compose. See this example:
+
+```
+version: '2'
+
+services:
+  iota-node:
+    container_name: iota-node
+    restart: always
+    image: iotaledger/iri:latest
+    mem_limit: 8G
+    network_mode: host
+    environment:
+      - TZ=Europe/Berlin
+      - NEIGHBORS=udp://neighbor1:14600 tcp://neighbor1:15600 udp://neighbor3:14600
+    volumes:
+      - /opt/iri-data:/opt/iri/data
+```
+
+### Command Line Options
 
 Option | Shortened version | Description | Example Input
---- | --- | --- | --- 
+--- | --- | --- | ---
 `--port` | `-p` | This is a *mandatory* option that defines the port to be used to send API commands to your node | `-p 14800`
 `--neighbors` | `-n` | Neighbors that you are connected with will be added via this option. | `-n "udp://148.148.148.148:14265 udp://[2001:db8:a0b:12f0::1]:14265"`
 `--config` | `-c` | Config INI file that can be used instead of CLI options. See more below | `-c iri.ini`
@@ -82,4 +127,3 @@ HEADLESS = true
 DEBUG = true
 DB_PATH = db
 ```
-

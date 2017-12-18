@@ -1,16 +1,41 @@
 FROM maven:3.5-jdk-8 as builder
-WORKDIR /iri
-COPY . /iri
+
+COPY . /usr/local/src/iri
+WORKDIR /usr/local/src/iri
+
 RUN mvn clean package
 
-FROM openjdk:jre-slim
-WORKDIR /iri
-COPY --from=builder /iri/target/iri-1.4.1.2.jar iri.jar
-COPY logback.xml /iri
-VOLUME /iri
+FROM openjdk:8-jre-slim
 
-EXPOSE 14265
-EXPOSE 14777/udp
-EXPOSE 15777
+ARG UID=1600
+ARG GID=1600
+ARG TINI_VERSION=v0.16.1
 
-CMD ["/usr/bin/java", "-XX:+DisableAttachMechanism", "-Xmx8g", "-Xms256m", "-Dlogback.configurationFile=/iri/conf/logback.xml", "-Djava.net.preferIPv4Stack=true", "-jar", "iri.jar", "-p", "14265", "-u", "14777", "-t", "15777", "--remote", "--remote-limit-api", "\"addNeighbors, removeNeighbors, getNeighbors\"", "$@"]
+ENV NEIGHBORS="" \
+  REMOTE_API_LIMIT="attachToTangle, addNeighbors, removeNeighbors" \
+  API_PORT=14265 \
+  UDP_PORT=14600 \
+  TCP_PORT=15600 \
+  DB_PATH="data/db" \
+  IXI_DIR="data/ixi" \
+  DEBUG=false \
+  TESTNET=false \
+  JAVA_OPTIONS="-XX:+DisableAttachMechanism -XX:+HeapDumpOnOutOfMemoryError -XX:+UnlockExperimentalVMOptions -XX:+UseCGroupMemoryLimitForHeap"
+
+ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /usr/bin/tini
+
+COPY docker_root /
+
+RUN chmod +x /usr/bin/tini \
+  && addgroup --gid ${GID} iota \
+  && adduser --home /opt/iri --no-create-home --uid ${UID} --gecos "IOTA user" --gid ${GID} --disabled-password iota
+
+COPY --from=builder /usr/local/src/iri/target/iri-*.jar /opt/iri/iri.jar
+
+VOLUME /opt/iri/data
+
+EXPOSE ${API_PORT}
+EXPOSE ${UDP_PORT}/UDP
+EXPOSE ${TCP_PORT}
+
+ENTRYPOINT ["/usr/bin/tini","/docker-entrypoint.sh"]

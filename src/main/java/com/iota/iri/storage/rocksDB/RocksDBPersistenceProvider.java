@@ -36,6 +36,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             "bundle",
             "tag"
     );
+    private List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
     private final String dbPath;
     private final String logPath;
     private final int cacheSize;
@@ -108,6 +109,9 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     @Override
     public void shutdown() {
+        for (final ColumnFamilyHandle columnFamilyHandle : columnFamilyHandles) {
+            columnFamilyHandle.close();
+        }
         if (db != null) db.close();
         options.close();
         bloomFilter.close();
@@ -499,38 +503,36 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 ;
         //columnFamilyOptions.setMemTableConfig(hashSkipListMemTableConfig);
 
-        List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
         //List<ColumnFamilyDescriptor> familyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
         //familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
 
         List<ColumnFamilyDescriptor> columnFamilyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
-        //fillMissingColumns(columnFamilyDescriptors, familyHandles, path);
-        db = RocksDB.open(options, path, columnFamilyDescriptors, familyHandles);
+        db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
         db.enableFileDeletions(true);
 
-        fillmodelColumnHandles(familyHandles);
+        fillmodelColumnHandles();
     }
 
 
-    private void fillmodelColumnHandles(List<ColumnFamilyHandle> familyHandles) throws Exception {
+    private void fillmodelColumnHandles() throws Exception {
         int i = 0;
-        transactionHandle = familyHandles.get(++i);
-        transactionMetadataHandle = familyHandles.get(++i);
-        milestoneHandle = familyHandles.get(++i);
-        stateDiffHandle = familyHandles.get(++i);
-        addressHandle = familyHandles.get(++i);
-        approveeHandle = familyHandles.get(++i);
-        bundleHandle = familyHandles.get(++i);
-        tagHandle = familyHandles.get(++i);
+        transactionHandle = columnFamilyHandles.get(++i);
+        transactionMetadataHandle = columnFamilyHandles.get(++i);
+        milestoneHandle = columnFamilyHandles.get(++i);
+        stateDiffHandle = columnFamilyHandles.get(++i);
+        addressHandle = columnFamilyHandles.get(++i);
+        approveeHandle = columnFamilyHandles.get(++i);
+        bundleHandle = columnFamilyHandles.get(++i);
+        tagHandle = columnFamilyHandles.get(++i);
         //hashesHandle = familyHandles.get(++i);
 
-        for(; ++i < familyHandles.size();) {
-            db.dropColumnFamily(familyHandles.get(i));
+        for(; ++i < columnFamilyHandles.size();) {
+            db.dropColumnFamily(columnFamilyHandles.get(i));
         }
 
         transactionGetList = new ArrayList<>();
         for(i = 1; i < 5; i ++) {
-            transactionGetList.add(familyHandles.get(i));
+            transactionGetList.add(columnFamilyHandles.get(i));
         }
     }
 
@@ -553,7 +555,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private interface MyRunnable<R> {
         R run() throws Exception;
     }
-    private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, List<ColumnFamilyHandle> familyHandles, String path) throws Exception {
+    private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, String path) throws Exception {
         List<ColumnFamilyDescriptor> columnFamilies = RocksDB.listColumnFamilies(new Options().setCreateIfMissing(true), path)
                 .stream()
                 .map(b -> new ColumnFamilyDescriptor(b, new ColumnFamilyOptions()))
@@ -563,7 +565,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         List<ColumnFamilyDescriptor> missingFromDescription = columnFamilies.stream().filter(d -> familyDescriptors.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
         if (missingFromDatabase.size() != 0) {
             missingFromDatabase.remove(familyDescriptors.get(0));
-            db = RocksDB.open(options, path, columnFamilies, familyHandles);
+            db = RocksDB.open(options, path, columnFamilies, columnFamilyHandles);
             for (ColumnFamilyDescriptor description : missingFromDatabase) {
                 addColumnFamily(description.columnFamilyName(), db);
             }

@@ -20,17 +20,17 @@ public class TransactionRequester {
     private final MessageQ messageQ;
     private final Set<Hash> milestoneTransactionsToRequest = new LinkedHashSet<>();
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
+
+    public static final int MAX_TX_REQ_QUEUE_SIZE = 10000;
+
     private static volatile long lastTime = System.currentTimeMillis();
     public  static final int REQUEST_HASH_SIZE = 46;
-    private static final byte[] NULL_REQUEST_HASH_BYTES = new byte[REQUEST_HASH_SIZE];
 
     private static double P_REMOVE_REQUEST;
-    private static int RESCAN_SLEEP_NANOS = 20000;
     private static boolean initialized = false;
     private final SecureRandom random = new SecureRandom();
 
     private final Object syncObj = new Object();
-    private static Thread rescanThread;
     private final Tangle tangle;
 
     public TransactionRequester(Tangle tangle, MessageQ messageQ) {
@@ -42,50 +42,8 @@ public class TransactionRequester {
         if(!initialized) {
             initialized = true;
             P_REMOVE_REQUEST = p_REMOVE_REQUEST;
-
-            /*
-            rescanThread = new Thread(() -> {
-                try {
-                    rescanTransactionsToRequest();
-                } catch (Exception e) {
-                    log.error("Could rescan transactions", e);
-                }
-            }, "Rescan Transactions Thread");
-            rescanThread.start();
-            */
         }
     }
-
-    public void shutdown() {
-        if(rescanThread != null) {
-            try {
-                rescanThread.join();
-            } catch (InterruptedException e) {
-            }
-        }
-    }
-
-
-    /*
-    private void rescanTransactionsToRequest() throws Exception {
-
-        Set<Indexable> missingTransactions = TransactionViewModel.getMissingTransactions();
-        if(missingTransactions != null) {
-            for(Indexable hash : missingTransactions) {
-                requestTransaction((Hash) hash, false);
-
-            }
-        }
-        TransactionViewModel transaction = TransactionViewModel.first();
-        if(transaction != null) {
-            transaction.quickSetSolid();
-            while (!(transaction = transaction.next()).getHash().equals(Hash.NULL_HASH)) {
-                transaction.quickSetSolid();
-                Thread.sleep(0, RESCAN_SLEEP_NANOS);
-            }
-        }
-    }
-        */
 
     public Hash[] getRequestedTransactions() {
         synchronized (syncObj) {
@@ -106,14 +64,6 @@ public class TransactionRequester {
         }
     }
 
-    public void requestTransactions(Set<Hash> hashes, boolean milestone) throws Exception {
-        synchronized (syncObj) {
-            for(Hash hash: hashes) {
-                requestTransaction(hash, milestone);
-            }
-        }
-    }
-
     public void requestTransaction(Hash hash, boolean milestone) throws Exception {
         if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(tangle, hash)) {
             synchronized (syncObj) {
@@ -121,12 +71,16 @@ public class TransactionRequester {
                     transactionsToRequest.remove(hash);
                     milestoneTransactionsToRequest.add(hash);
                 } else {
-                    if(!milestoneTransactionsToRequest.contains(hash)) {
+                    if(!milestoneTransactionsToRequest.contains(hash) && !transactionsToRequestIsFull()) {
                         transactionsToRequest.add(hash);
                     }
                 }
             }
         }
+    }
+
+    private boolean transactionsToRequestIsFull() {
+        return transactionsToRequest.size() >= TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
     }
 
 
@@ -154,7 +108,9 @@ public class TransactionRequester {
                     log.info("Removed existing tx from request list: " + hash);
                     messageQ.publish("rtl %s", hash);
                 } else {
-                    requestSet.add(hash);
+                    if (!transactionsToRequestIsFull()) {
+                        requestSet.add(hash);
+                    }
                     break;
                 }
             }

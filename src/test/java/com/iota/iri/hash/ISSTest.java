@@ -29,13 +29,18 @@ public class ISSTest {
         int index = 10;
         int nof = 1;
         SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
+
+        int[] seedTrits = new int[Sponge.HASH_LENGTH];
+
         for (SpongeFactory.Mode mode: modes) {
-            int[] subseed = ISS.subseed(mode, Converter.trits(seed), index);
+            Converter.trits(seed, seedTrits, 0);
+            int[] subseed = ISS.subseed(mode, seedTrits, index);
             int[] key = ISS.key(mode, subseed, nof);
 
 
             Kerl curl = new Kerl();
-            int[] messageTrits = Converter.trits(message);
+            int[] messageTrits = Converter.allocateTritsForTrytes(message.length());
+            Converter.trits(message, messageTrits, 0);
             curl.absorb(messageTrits, 0, messageTrits.length);
             int[] messageHash = new int[Curl.HASH_LENGTH];
             curl.squeeze(messageHash, 0, Curl.HASH_LENGTH);
@@ -60,7 +65,10 @@ public class ISSTest {
                          new Hash("MDWYEJJHJDIUVPKDY9EACGDJUOP9TLYDWETUBOYCBLYXYYYJYUXYUTCTPTDGJYFKMQMCNZDQPTBE9AFIW")};
         for (int i=0;i<modes.length;i++) {
             SpongeFactory.Mode mode = modes[i];
-            int[] subseed = ISS.subseed(mode, Converter.trits(seed), index);
+            int[] seedTrits = Converter.allocateTritsForTrytes(seed.length());
+            Converter.trits(seed, seedTrits, 0);
+
+            int[] subseed = ISS.subseed(mode, seedTrits, index);
             int[] key = ISS.key(mode, subseed, nof);
             int[] digest = ISS.digests(mode, key);
             int[] address = ISS.address(mode, digest);

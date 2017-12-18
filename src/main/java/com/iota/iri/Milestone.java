@@ -25,7 +25,15 @@ import com.iota.iri.hash.ISS;
 import com.iota.iri.model.Hash;
 import com.iota.iri.utils.Converter;
 
+import static com.iota.iri.Milestone.Validity.*;
+
 public class Milestone {
+
+    enum Validity {
+        VALID,
+        INVALID,
+        INCOMPLETE
+    }
 
     private final Logger log = LoggerFactory.getLogger(Milestone.class);
     private final Tangle tangle;
@@ -33,6 +41,7 @@ public class Milestone {
     private final TransactionValidator transactionValidator;
     private final boolean testnet;
     private final MessageQ messageQ;
+    public Snapshot latestSnapshot;
 
     private LedgerValidator ledgerValidator;
     public Hash latestMilestone = Hash.NULL_HASH;
@@ -48,12 +57,14 @@ public class Milestone {
 
     public Milestone(final Tangle tangle,
                      final Hash coordinator,
+                     final Snapshot initialSnapshot,
                      final TransactionValidator transactionValidator,
                      final boolean testnet,
                      final MessageQ messageQ
                      ) {
         this.tangle = tangle;
         this.coordinator = coordinator;
+        this.latestSnapshot = initialSnapshot;
         this.transactionValidator = transactionValidator;
         this.testnet = testnet;
         this.messageQ = messageQ;
@@ -84,14 +95,21 @@ public class Milestone {
                                 if(analyzedMilestoneCandidates.add(hash)) {
                                     TransactionViewModel t = TransactionViewModel.fromHash(tangle, hash);
                                     if (t.getCurrentIndex() == 0) {
-                                        if (validateMilestone(mode, t, getIndex(t))) {
-                                            MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
-                                            if (milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
-                                                latestMilestone = milestoneViewModel.getHash();
-                                                latestMilestoneIndex = milestoneViewModel.index();
-                                            }
-                                        } else {
-                                            analyzedMilestoneCandidates.remove(t.getHash());
+                                        final Validity valid = validateMilestone(mode, t, getIndex(t));
+                                        switch (valid) {
+                                            case VALID:
+                                                MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
+                                                if (milestoneViewModel != null && milestoneViewModel.index() > latestMilestoneIndex) {
+                                                    latestMilestone = milestoneViewModel.getHash();
+                                                    latestMilestoneIndex = milestoneViewModel.index();
+                                                }
+                                                break;
+                                            case INCOMPLETE:
+                                                analyzedMilestoneCandidates.remove(t.getHash());
+                                                break;
+                                            case INVALID:
+                                                //Do nothing
+                                                break;
                                         }
                                     }
                                 }
@@ -152,18 +170,18 @@ public class Milestone {
 
     }
 
-    private boolean validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {
+    private Validity validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {
         if (index < 0 || index >= 0x200000) {
-            return false;
+            return INVALID;
         }
 
         if (MilestoneViewModel.get(tangle, index) != null) {
             // Already validated.
-            return true;
+            return VALID;
         }
         final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getBundleHash());
         if (bundleTransactions.size() == 0) {
-            return false;
+            return INCOMPLETE;
         }
         else {
             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
@@ -187,33 +205,31 @@ public class Milestone {
                                 transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
                         if (testnet || (new Hash(merkleRoot)).equals(coordinator)) {
                             new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
-                            return true;
+                            return VALID;
+                        } else {
+                            return INVALID;
                         }
                     }
                 }
             }
         }
-        return false;
+        return INVALID;
     }
 
     void updateLatestSolidSubtangleMilestone() throws Exception {
         MilestoneViewModel milestoneViewModel;
         MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
-        int lookAhead = 0;
         if (latest != null) {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
                  milestoneViewModel = milestoneViewModel.next(tangle)) {
                 if (transactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&
                         milestoneViewModel.index() >= latestSolidSubtangleMilestoneIndex &&
-                        ledgerValidator.updateSnapshot(milestoneViewModel)) {
+                        ledgerValidator.updateSnapshot(latestSnapshot, milestoneViewModel)) {
                     latestSolidSubtangleMilestone = milestoneViewModel.getHash();
                     latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
                 } else {
-                    lookAhead++;
-                    if (lookAhead>=10) {
-                        break;
-                    }
+                    break;
                 }
             }
         }

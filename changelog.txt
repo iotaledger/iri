@@ -1,3 +1,9 @@
+1.4.1.4
+    - Improved memory allocation
+    - add checkConsistency API call for transaction promotion
+    - Upgrade to BouncyCastle 1.58
+    - limit inflow of new transactions from single neighbor/user
+
 1.4.1.2
     - Fixes DB over-storing transactions due to concurrency
     - Upgrade to RocksDB 5.7.3

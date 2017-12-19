@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.4.1.2</version>
+    <version>1.4.1.4</version>
 
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
@@ -41,7 +41,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
-            <version>1.57</version>
+            <version>1.58</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/org.apache.commons/commons-lang3 -->
@@ -72,25 +72,11 @@
             <version>2.5</version>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/javax.xml.bind/jaxb-api -->
-        <dependency>
-            <groupId>javax.xml.bind</groupId>
-            <artifactId>jaxb-api</artifactId>
-            <version>2.3.0</version>
-        </dependency>
-
         <!-- https://mvnrepository.com/artifact/org.rocksdb/rocksdbjni -->
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
             <version>5.7.3</version>
-        </dependency>
-
-        <!-- configuration system -->
-        <dependency>
-            <groupId>com.typesafe</groupId>
-            <artifactId>config</artifactId>
-            <version>1.3.1</version>
         </dependency>
 
         <!-- json support -->
@@ -124,6 +110,13 @@
             <groupId>com.sanityinc</groupId>
             <artifactId>jargs</artifactId>
             <version>2.0-SNAPSHOT</version>
+        </dependency>
+
+        <!-- configuration system -->
+        <dependency>
+            <groupId>com.typesafe</groupId>
+            <artifactId>config</artifactId>
+            <version>1.3.1</version>
         </dependency>
 
         <!-- test dependencies -->
@@ -286,7 +279,7 @@
                                             org.ini4j:ini4j:0.5.4:jar:null:compile:4a3ee4146a90c619b20977d65951825f5675b560
                                         </urn>
                                         <urn>
-                                            org.bouncycastle:bcprov-jdk15on:1.57:jar:null:compile:f66a135611d42c992e5745788c3f94eb06464537
+                                            org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12
                                         </urn>
                                         <!-- A check for the rules themselves -->
                                         <urn>

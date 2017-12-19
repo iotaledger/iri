@@ -19,8 +19,9 @@ public class Converter {
     public static final long HIGH_LONG_BITS = 0xFFFFFFFFFFFFFFFFL;
 
     public static final String TRYTE_ALPHABET = "9ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    
+
     public static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
+
 
     static {
 
@@ -37,32 +38,43 @@ public class Converter {
         }
     }
 
-    public static long longValue(final int[] trits, final int offset, final int size) {
+    public static long longValue(final int[] trits, final int srcPos, final int size) {
 
         long value = 0;
         for (int i = size; i-- > 0; ) {
-            value = value * RADIX + trits[offset + i];
+            value = value * RADIX + trits[srcPos + i];
         }
         return value;
     }
 
-    public static byte[] bytes(final int[] trits, final int offset, final int size) {
-
-        final byte[] bytes = new byte[(size + NUMBER_OF_TRITS_IN_A_BYTE - 1) / NUMBER_OF_TRITS_IN_A_BYTE];
-        for (int i = 0; i < bytes.length; i++) {
-
-            int value = 0;
-            for (int j = (size - i * NUMBER_OF_TRITS_IN_A_BYTE) < 5 ? (size - i * NUMBER_OF_TRITS_IN_A_BYTE) : NUMBER_OF_TRITS_IN_A_BYTE; j-- > 0; ) {
-                value = value * RADIX + trits[offset + i * NUMBER_OF_TRITS_IN_A_BYTE + j];
-            }
-            bytes[i] = (byte)value;
-        }
-
-        return bytes;
+    public static byte[] allocateBytesForTrits(int tritCount) {
+        final int expectedLength = (tritCount + NUMBER_OF_TRITS_IN_A_BYTE - 1) / NUMBER_OF_TRITS_IN_A_BYTE;
+        return new byte[expectedLength];
     }
 
-    public static byte[] bytes(final int[] trits) {
-        return bytes(trits, 0, trits.length);
+    public static int[] allocateTritsForTrytes(int tryteCount) {
+        return new int[tryteCount * NUMBER_OF_TRITS_IN_A_TRYTE];
+    }
+
+    public static void bytes(final int[] trits, final int srcPos, byte[] dest, int destPos, final int tritsLength) {
+
+        final int expectedLength = (tritsLength + NUMBER_OF_TRITS_IN_A_BYTE - 1) / NUMBER_OF_TRITS_IN_A_BYTE;
+
+        if((dest.length - destPos) < expectedLength) {
+            throw new IllegalArgumentException("Input array not large enough.");
+        }
+
+        for (int i = 0; i < expectedLength; i++) {
+            int value = 0;
+            for (int j = (tritsLength - i * NUMBER_OF_TRITS_IN_A_BYTE) < 5 ? (tritsLength - i * NUMBER_OF_TRITS_IN_A_BYTE) : NUMBER_OF_TRITS_IN_A_BYTE; j-- > 0; ) {
+                value = value * RADIX + trits[srcPos + i * NUMBER_OF_TRITS_IN_A_BYTE + j];
+            }
+            dest[destPos + i] = (byte)value;
+        }
+    }
+
+    public static void bytes(final int[] trits, byte[] dest) {
+        bytes(trits, 0, dest, 0, trits.length);
     }
 
     public static void getTrits(final byte[] bytes, final int[] trits) {
@@ -77,13 +89,15 @@ public class Converter {
         }
     }
 
-    public static int[] trits(final String trytes) {
-
-        final int[] trits = new int[trytes.length() * NUMBER_OF_TRITS_IN_A_TRYTE];
-        for (int i = 0; i < trytes.length(); i++) {
-            System.arraycopy(TRYTE_TO_TRITS_MAPPINGS[TRYTE_ALPHABET.indexOf(trytes.charAt(i))], 0, trits, i * NUMBER_OF_TRITS_IN_A_TRYTE, NUMBER_OF_TRITS_IN_A_TRYTE);
+    public static void trits(final String trytes, int[] dest, int destOffset) {
+        if((dest.length - destOffset) < trytes.length() * NUMBER_OF_TRITS_IN_A_TRYTE) {
+            throw new IllegalArgumentException("Destination array is not large enough.");
         }
-        return trits;
+
+        for (int i = 0; i < trytes.length(); i++) {
+            System.arraycopy(TRYTE_TO_TRITS_MAPPINGS[TRYTE_ALPHABET.indexOf(trytes.charAt(i))], 0, dest,
+                    destOffset + i * NUMBER_OF_TRITS_IN_A_TRYTE, NUMBER_OF_TRITS_IN_A_TRYTE);
+        }
     }
 
     public static void copyTrits(final long value, final int[] destination, final int offset, final int size) {
@@ -213,10 +227,10 @@ public class Converter {
             }
         }
     }
-    
+
     public static String asciiToTrytes(String input) {
-        StringBuilder sb = new StringBuilder(80);               
-        for (int i = 0; i < input.length(); i++) {            
+        StringBuilder sb = new StringBuilder(80);
+        for (int i = 0; i < input.length(); i++) {
             int asciiValue = input.charAt(i);
             // If not recognizable ASCII character, return null
             if (asciiValue > 255) {
@@ -230,4 +244,9 @@ public class Converter {
         return sb.toString();
     }
 
+  public static int[] allocatingTritsFromTrytes(String trytes) {
+        int[] trits = allocateTritsForTrytes(trytes.length());
+        trits(trytes, trits, 0);
+        return trits;
+  }
 }

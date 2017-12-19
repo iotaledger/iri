@@ -114,42 +114,7 @@ public class ISS {
 
         final int[] normalizedBundle = new int[Curl.HASH_LENGTH / TRYTE_WIDTH];
 
-        for (int i = 0; i < NUMBER_OF_SECURITY_LEVELS; i++) {
-
-            int sum = 0;
-            for (int j = i * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j < (i + 1) * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j++) {
-
-                normalizedBundle[j] = bundle[j * TRYTE_WIDTH] + bundle[j * TRYTE_WIDTH + 1] * 3 + bundle[j * TRYTE_WIDTH + 2] * 9;
-                sum += normalizedBundle[j];
-            }
-            if (sum > 0) {
-
-                while (sum-- > 0) {
-
-                    for (int j = i * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j < (i + 1) * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j++) {
-
-                        if (normalizedBundle[j] > MIN_TRYTE_VALUE) {
-                            normalizedBundle[j]--;
-                            break;
-                        }
-                    }
-                }
-
-            } else {
-
-                while (sum++ < 0) {
-
-                    for (int j = i * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j < (i + 1) * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j++) {
-
-                        if (normalizedBundle[j] < MAX_TRYTE_VALUE) {
-                            normalizedBundle[j]++;
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
+        ISSInPlace.normalizedBundle(bundle, normalizedBundle);
         return normalizedBundle;
     }
 
@@ -187,20 +152,7 @@ public class ISS {
         }
 
         final int[] digest = new int[Curl.HASH_LENGTH];
-        final int[] buffer = Arrays.copyOf(signatureFragment, FRAGMENT_LENGTH);
-        final Sponge hash = SpongeFactory.create(mode);
-        for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
-
-            for (int k = normalizedBundleFragment[j] - MIN_TRYTE_VALUE; k-- > 0; ) {
-                hash.reset();
-                hash.absorb(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
-                hash.squeeze(buffer, j * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
-            }
-        }
-        hash.reset();
-        hash.absorb(buffer, 0, buffer.length);
-        hash.squeeze(digest, 0, digest.length);
-
+        ISSInPlace.digest(mode, normalizedBundleFragment, 0, signatureFragment, 0, digest);
         return digest;
     }
 

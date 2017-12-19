@@ -14,7 +14,6 @@ import java.util.NoSuchElementException;
  */
 public class Curl implements Sponge {
 
-    public static final int HASH_LENGTH = 243;
     public static final int NUMBER_OF_ROUNDSP81 = 81;
     public static final int NUMBER_OF_ROUNDSP27 = 27;
     private final int numberOfRounds;
@@ -98,7 +97,6 @@ public class Curl implements Sponge {
 
     private void transform() {
 
-        //final int[] scratchpad = new int[STATE_LENGTH];
         int scratchpadIndex = 0;
         int prev_scratchpadIndex = 0;
         for (int round = 0; round < numberOfRounds; round++) {

@@ -1,18 +1,12 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.model.Approvee;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Tangle;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 /**
  * Created by paul on 3/14/17 for iri-testnet.
@@ -20,8 +14,9 @@ import java.util.stream.Collectors;
 public class TipsViewModel {
     final Logger log = LoggerFactory.getLogger(TipsViewModel.class);
 
-    private FifoHashCache tips = new FifoHashCache(5000);
-    private FifoHashCache solidTips = new FifoHashCache(5000);
+    public static final int MAX_TIPS = 5000;
+    private FifoHashCache<Hash> tips = new FifoHashCache<>(TipsViewModel.MAX_TIPS);
+    private FifoHashCache<Hash> solidTips = new FifoHashCache<>(TipsViewModel.MAX_TIPS);
 
     private SecureRandom seed = new SecureRandom();
     public final Object sync = new Object();
@@ -145,25 +140,29 @@ public class TipsViewModel {
 //        return tipsFromDB;
 //    }
 
-    public class FifoHashCache {
+    public class FifoHashCache<K> {
 
         private int capacity;
-        private LinkedHashSet<Hash> set;
+        private LinkedHashSet<K> set;
 
         public FifoHashCache(int capacity) {
             this.capacity = capacity;
             this.set = new LinkedHashSet<>();
         }
 
-        public boolean add(Hash key) {
-            if (this.set.size() == this.capacity) {
-                Iterator<Hash> it = this.set.iterator();
-                it.next();
-                it.remove();
+        public boolean add(K key) {
+            final int vacancy = this.capacity - this.set.size();
+            if (vacancy <= 0) {
+                Iterator<K> it = this.set.iterator();
+                for (int i = vacancy; i <= 0 ; i++) {
+                    it.next();
+                    it.remove();
+                }
             }
-            return set.add(key);
+            return this.set.add(key);
         }
-        public boolean remove(Hash key) {
+
+        public boolean remove(K key) {
             return this.set.remove(key);
         }
         public int size() {
@@ -172,7 +171,7 @@ public class TipsViewModel {
         public boolean addAll(Collection c) {
             return this.set.addAll(c);
         }
-        public Iterator<Hash> iterator() {
+        public Iterator<K> iterator() {
             return this.set.iterator();
         }
     }

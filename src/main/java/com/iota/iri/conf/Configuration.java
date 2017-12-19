@@ -36,6 +36,7 @@ public class Configuration {
         P_PROPAGATE_REQUEST,
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
+        NEW_TX_LIMIT,
         MAX_PEERS,
         DNS_REFRESHER_ENABLED,
         COORDINATOR,
@@ -54,6 +55,9 @@ public class Configuration {
         ZMQ_PORT,
         ZMQ_IPC,
         ZMQ_THREADS,
+        Q_SIZE_NODE,
+        LRU_SIZE_HASHES,
+        LRU_SIZE_BYTES,
     }
 
     public Configuration() {

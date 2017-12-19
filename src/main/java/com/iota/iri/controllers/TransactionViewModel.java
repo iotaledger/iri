@@ -2,7 +2,6 @@ package com.iota.iri.controllers;
 
 import java.util.*;
 
-import com.iota.iri.Iota;
 import com.iota.iri.model.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -88,7 +87,8 @@ public class TransactionViewModel {
         transaction = new com.iota.iri.model.Transaction();
         this.trits = new int[trits.length];
         System.arraycopy(trits, 0, this.trits, 0, trits.length);
-        transaction.bytes = Converter.bytes(trits);
+        transaction.bytes = Converter.allocateBytesForTrits(trits.length);
+        Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
         this.hash = hash;
 
         transaction.type = FILLED_SLOT;
@@ -225,7 +225,10 @@ public class TransactionViewModel {
 
     public byte[] getBytes() {
         if(transaction.bytes == null || transaction.bytes.length != SIZE) {
-            transaction.bytes = trits == null? new byte[SIZE]: Converter.bytes(trits());
+            transaction.bytes = new byte[SIZE];
+            if(trits != null) {
+                Converter.bytes(trits(), 0, transaction.bytes, 0, trits().length);
+            }
         }
         return transaction.bytes;
     }
@@ -254,7 +257,10 @@ public class TransactionViewModel {
 
     public Hash getObsoleteTagValue() {
         if(transaction.obsoleteTag == null) {
-            transaction.obsoleteTag = new Hash(Converter.bytes(trits(), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE), 0, TAG_SIZE);
+            byte[] tagBytes = Converter.allocateBytesForTrits(OBSOLETE_TAG_TRINARY_SIZE);
+            Converter.bytes(trits(), OBSOLETE_TAG_TRINARY_OFFSET, tagBytes, 0, OBSOLETE_TAG_TRINARY_SIZE);
+
+            transaction.obsoleteTag = new Hash(tagBytes, 0, TAG_SIZE);
         }
         return transaction.obsoleteTag;
     }
@@ -282,7 +288,9 @@ public class TransactionViewModel {
 
     public Hash getTagValue() {
         if(transaction.tag == null) {
-            transaction.tag = new Hash(Converter.bytes(trits(), TAG_TRINARY_OFFSET, TAG_TRINARY_SIZE), 0, TAG_SIZE);
+            byte[] tagBytes = Converter.allocateBytesForTrits(TAG_TRINARY_SIZE);
+            Converter.bytes(trits(), TAG_TRINARY_OFFSET, tagBytes, 0, TAG_TRINARY_SIZE);
+            transaction.tag = new Hash(tagBytes, 0, TAG_SIZE);
         }
         return transaction.tag;
     }
@@ -322,7 +330,9 @@ public class TransactionViewModel {
     }
 
     public byte[] getNonce() {
-        return Converter.bytes(trits(), NONCE_TRINARY_OFFSET, NONCE_TRINARY_SIZE);
+        byte[] nonce = Converter.allocateBytesForTrits(NONCE_TRINARY_SIZE);
+        Converter.bytes(trits(), NONCE_TRINARY_OFFSET, nonce, 0, trits().length);
+        return nonce;
     }
 
     public long lastIndex() {

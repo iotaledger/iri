@@ -4,7 +4,7 @@
   <groupId>com.iota</groupId>
   <artifactId>iri</artifactId>
   <name>IRI</name>
-  <version>1.4.1.2</version>
+  <version>1.4.1.4</version>
   <description>IOTA Reference Implementation</description>
   <scm>
     <connection>scm:git:git://github.com/iotaledger/iri.git</connection>
@@ -83,7 +83,7 @@
                     <urn>com.jayway.jsonpath:json-path:2.2.0:jar:null:test:22290d17944bd239fabf5ac69005a60a7ecbbbcb</urn>
                     <urn>junit:junit:4.12:jar:null:test:2973d150c0dc1fefe998f834810d68f278ea58ec</urn>
                     <urn>org.ini4j:ini4j:0.5.4:jar:null:compile:4a3ee4146a90c619b20977d65951825f5675b560</urn>
-                    <urn>org.bouncycastle:bcprov-jdk15on:1.57:jar:null:compile:f66a135611d42c992e5745788c3f94eb06464537</urn>
+                    <urn>org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12</urn>
                     <urn>uk.co.froot.maven.enforcer:digest-enforcer-rules:0.0.1:jar:null:runtime:16a9e04f3fe4bb143c42782d07d5faf65b32106f</urn>
                   </urns>
                 </digestRule>

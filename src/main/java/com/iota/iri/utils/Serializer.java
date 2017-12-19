@@ -49,11 +49,4 @@ public class Serializer {
         }
         return res;
     }
-
-    public static byte[] serialize(byte value) {
-        return new byte[]{value};
-    }
-    public static byte[] serialize(byte[] bytes) {
-        return bytes;
-    }
 }

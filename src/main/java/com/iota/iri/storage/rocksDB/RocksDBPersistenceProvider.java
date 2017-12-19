@@ -507,7 +507,6 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         //familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
 
         List<ColumnFamilyDescriptor> columnFamilyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
-        //fillMissingColumns(columnFamilyDescriptors, path);
         db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
         db.enableFileDeletions(true);
 
@@ -525,7 +524,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         approveeHandle = columnFamilyHandles.get(++i);
         bundleHandle = columnFamilyHandles.get(++i);
         tagHandle = columnFamilyHandles.get(++i);
-        //hashesHandle = columnFamilyHandles.get(++i);
+        //hashesHandle = familyHandles.get(++i);
 
         for(; ++i < columnFamilyHandles.size();) {
             db.dropColumnFamily(columnFamilyHandles.get(i));

@@ -43,7 +43,8 @@ public class Hash implements Serializable, Indexable {
     }
 
     public Hash(final String trytes) {
-        this(Converter.trits(trytes));
+        this.trits = new int[SIZE_IN_TRITS];
+        Converter.trits(trytes, this.trits, 0);
     }
 
     //
@@ -111,17 +112,17 @@ public class Hash implements Serializable, Indexable {
     
     public byte[] bytes() {
         if(bytes == null) {
-            bytes = Converter.bytes(trits);
+            bytes = new byte[SIZE_IN_BYTES];
+            Converter.bytes(trits, 0, bytes, 0, trits.length);
             hashCode = Arrays.hashCode(this.bytes);
         }
-		return bytes;
-	}
+        return bytes;
+    }
 
-	private void fullRead(byte[] bytes, int offset, int size) {
+    private void fullRead(byte[] bytes, int offset, int size) {
         this.bytes = new byte[SIZE_IN_BYTES];
         System.arraycopy(bytes, offset, this.bytes, 0, size - offset > bytes.length ? bytes.length-offset: size);
         hashCode = Arrays.hashCode(this.bytes);
-
     }
 
     @Override

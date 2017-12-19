@@ -235,8 +235,8 @@ public class IRI {
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " +
+                "{-p,--port} 14600 " +
                 "[{-n,--neighbors} '<list of neighbors>'] " +
-                "[{-p,--port} 14600] " +                
                 "[{-c,--config} 'config-file-name'] " +
                 "[{-u,--udp-receiver-port} 14600] " +
                 "[{-t,--tcp-receiver-port} 15600] " +

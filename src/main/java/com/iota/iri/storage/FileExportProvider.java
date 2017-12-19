@@ -3,6 +3,7 @@ package com.iota.iri.storage;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,9 +73,7 @@ public class FileExportProvider implements PersistenceProvider {
                 } catch (Exception e) {
                     log.error("Transaction load failed. ", e);
                 } finally {
-                    if (writer != null) {
-                        writer.close();
-                    }
+                    IOUtils.closeQuietly(writer);
                 }
             }
         }

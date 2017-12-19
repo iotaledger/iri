@@ -81,7 +81,7 @@ public class Transaction implements Persistable {
         buffer.put(Serializer.serialize(arrivalTime));
         buffer.put(Serializer.serialize(height));
         //buffer.put((byte) (confirmed ? 1:0));
-        buffer.put(new byte[]{(byte) (solid ? 1 : 0)});
+        buffer.put((byte) (solid ? 1 : 0));
         buffer.put(Serializer.serialize(snapshot));
         buffer.put(sender.getBytes());
         return buffer.array();

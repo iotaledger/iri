@@ -1,8 +1,11 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.model.Hash;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
 
@@ -68,6 +71,49 @@ public class TipsViewModelTest {
     @Test
     public void loadTipHashes() throws Exception {
 
+    }
+
+    @Test
+    public void nonsolidCapacityLimited() throws ExecutionException, InterruptedException {
+        TipsViewModel tipsVM = new TipsViewModel();
+        int capacity = TipsViewModel.MAX_TIPS;
+        //fill tips list
+        for (int i = 0; i < capacity * 2 ; i++) {
+            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            tipsVM.addTipHash(hash);
+        }
+        //check that limit wasn't breached
+        assertEquals(capacity, tipsVM.nonSolidSize());
+    }
+
+    @Test
+    public void solidCapacityLimited() throws ExecutionException, InterruptedException {
+        TipsViewModel tipsVM = new TipsViewModel();
+        int capacity = TipsViewModel.MAX_TIPS;
+        //fill tips list
+        for (int i = 0; i < capacity * 2 ; i++) {
+            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            tipsVM.addTipHash(hash);
+            tipsVM.setSolid(hash);
+        }
+        //check that limit wasn't breached
+        assertEquals(capacity, tipsVM.size());
+    }
+
+    @Test
+    public void totalCapacityLimited() throws ExecutionException, InterruptedException {
+        TipsViewModel tipsVM = new TipsViewModel();
+        int capacity = TipsViewModel.MAX_TIPS;
+        //fill tips list
+        for (int i = 0; i <= capacity * 4; i++) {
+            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            tipsVM.addTipHash(hash);
+            if (i % 2 == 1) {
+                tipsVM.setSolid(hash);
+            }
+        }
+        //check that limit wasn't breached
+        assertEquals(capacity * 2, tipsVM.size());
     }
 
 }

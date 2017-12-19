@@ -67,7 +67,8 @@ public class PearlDiverTest {
 
     private String getHashFor(String trytes) {
         Sponge curl = new Curl(SpongeFactory.Mode.CURLP81);
-        int[] myTrits = Converter.trits(trytes);
+        int[] myTrits = Converter.allocateTritsForTrytes(trytes.length());
+        Converter.trits(trytes, myTrits, 0);
         pearlDiver.search(myTrits, MIN_WEIGHT_MAGNITUDE, NUM_CORES);
         curl.absorb(myTrits, 0, myTrits.length);
         curl.squeeze(hashTrits, 0, Curl.HASH_LENGTH);

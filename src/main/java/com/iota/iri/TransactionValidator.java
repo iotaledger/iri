@@ -1,6 +1,7 @@
 package com.iota.iri;
 
 import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.network.TransactionRequester;
@@ -75,18 +76,17 @@ public class TransactionValidator {
         }
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
-                //log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));
                 throw new RuntimeException("Invalid transaction value");
             }
         }
 
         int weightMagnitude = transactionViewModel.weightMagnitude;
         if(weightMagnitude < minWeightMagnitude) {
-            /*
-            log.error("Hash found: {}", transactionViewModel.getHash());
-            log.error("Transaction trytes: "+Converter.trytes(transactionViewModel.trits()));
-            */
             throw new RuntimeException("Invalid transaction hash");
+        }
+
+        if (transactionViewModel.value() != 0 && transactionViewModel.getAddressHash().trits()[Curl.HASH_LENGTH - 1] != 0) {
+            throw new RuntimeException("Invalid transaction address");
         }
     }
 

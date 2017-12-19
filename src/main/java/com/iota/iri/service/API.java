@@ -4,6 +4,7 @@ import static io.undertow.Handlers.path;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -20,6 +21,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 import com.iota.iri.*;
 import com.iota.iri.controllers.*;
 import com.iota.iri.network.*;
+import com.iota.iri.service.dto.*;
 import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,21 +43,6 @@ import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.AccessLimitedResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
-import com.iota.iri.service.dto.AttachToTangleResponse;
-import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.ExceptionResponse;
-import com.iota.iri.service.dto.FindTransactionsResponse;
-import com.iota.iri.service.dto.GetBalancesResponse;
-import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
-import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.dto.GetTipsResponse;
-import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
-import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.MapIdentityManager;
 
@@ -75,8 +63,6 @@ import io.undertow.util.HttpString;
 import io.undertow.util.Methods;
 import io.undertow.util.MimeMappings;
 import io.undertow.util.StatusCodes;
-
-import javax.xml.bind.ValidationException;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -104,8 +90,13 @@ public class API {
     private final int maxRequestList;
     private final int maxGetTrytes;
     private final int maxBodyLength;
+    private final double newTransactionsRateLimit;
+    private final double newTransactionsLimit;
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
+
+    private HashMap<InetAddress,AtomicInteger> broadcastStoreCounters;
+    private AtomicLong broadcastStoreTimer;
 
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
@@ -120,6 +111,11 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
+        newTransactionsRateLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
+
+        newTransactionsLimit = (newTransactionsRateLimit * Neighbor.newTransactionsWindow) / 1000;
+        broadcastStoreCounters = new HashMap<>();
+        broadcastStoreTimer = new AtomicLong(0);
     }
 
     public void init() throws IOException {
@@ -213,8 +209,14 @@ public class API {
                     return AttachToTangleResponse.create(elements);
                 }
                 case "broadcastTransactions": {
-                    broadcastTransactionStatement(getParameterAsList(request,"trytes", TRYTES_SIZE));
-                    return AbstractResponse.createEmptyResponse();
+                    final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                    if (isBelowNewTransactionLimit(sourceAddress.getAddress(), trytes.size())) {
+                        broadcastTransactionStatement(trytes);
+                        return AbstractResponse.createEmptyResponse();
+                    }
+                    return ErrorResponse.create("This operations cannot be executed: Exceeded new transaction limit");
+
+
                 }
                 case "findTransactions": {
                     return findTransactionStatement(request);
@@ -256,18 +258,25 @@ public class API {
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
 
-                    final int depth = getParameterAsInt(request, "depth");
                     final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
+                    final int depth = getParameterAsInt(request, "depth");
+                    if(depth < 0 || (reference == null && depth == 0)) {
+                        return ErrorResponse.create("Invalid depth input");
+                    }
                     int numWalks = request.containsKey("numWalks") ? getParameterAsInt(request,"numWalks") : 1;
                     if(numWalks < minRandomWalks) {
                         numWalks = minRandomWalks;
                     }
-
-                    final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
-                    if(tips == null) {
-                        return ErrorResponse.create("The subtangle is not solid");
+                    try {
+                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
+                        if(tips == null) {
+                            return ErrorResponse.create("The subtangle is not solid");
+                        }
+                        return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
+                    } catch (RuntimeException e) {
+                        log.info("Tip selection failed: " + e.getLocalizedMessage());
+                        return ErrorResponse.create(e.getLocalizedMessage());
                     }
-                    return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
                 }
                 case "getTrytes": {
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
@@ -286,7 +295,12 @@ public class API {
 
                 case "storeTransactions": {
                     try {
-                        storeTransactionStatement(getParameterAsList(request,"trytes", TRYTES_SIZE));
+                        final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                        if (isBelowNewTransactionLimit(sourceAddress.getAddress(), trytes.size())) {
+                            storeTransactionStatement(trytes);
+                            return AbstractResponse.createEmptyResponse();
+                        }
+                        return ErrorResponse.create("This operations cannot be executed: Exceeded new transaction limit");
                     } catch (RuntimeException e) {
                         //transaction not valid
                         return ErrorResponse.create("Invalid trytes input");
@@ -300,6 +314,14 @@ public class API {
                                 .collect(Collectors.toList());
                         return GetTipsResponse.create(missingTx);
                     }
+                }
+                case "checkConsistency": {
+                    if (invalidSubtangleStatus()) {
+                        return ErrorResponse
+                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    }
+                    final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
+                    return checkConsistencyStatement(transactions);
                 }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
@@ -316,6 +338,60 @@ public class API {
             log.error("API Exception: ", e);
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
+    }
+
+    private boolean isBelowNewTransactionLimit(InetAddress sourceAddress, int size) {
+        if (newTransactionsLimit == 0) {
+            return true;
+        }
+
+        long now = System.currentTimeMillis();
+        if ((now - broadcastStoreTimer.get()) >  Neighbor.newTransactionsWindow) {
+            broadcastStoreCounters.clear();
+            broadcastStoreTimer.set(now);
+        }
+
+        if(broadcastStoreCounters.putIfAbsent(sourceAddress, new AtomicInteger(size)) != null) {
+            return size < newTransactionsLimit;
+        } else {
+            return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < newTransactionsLimit;
+        }
+    }
+    private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
+        final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
+        boolean state = true;
+        String info = null;
+
+        //check transactions themselves are valid
+        for (Hash transaction : transactions) {
+            TransactionViewModel txVM = TransactionViewModel.fromHash(instance.tangle, transaction);
+            if (txVM.getType() == TransactionViewModel.PREFILLED_SLOT) {
+                return ErrorResponse.create("Invalid transaction, missing: " + transaction);
+            }
+            if (txVM.getCurrentIndex() != 0) {
+                return ErrorResponse.create("Invalid transaction, not a tail: " + transaction);
+            }
+
+
+            if (!instance.transactionValidator.checkSolidity(txVM.getHash(), false)) {
+                state = false;
+                info = "tail is not solid (missing a referenced tx): " + transaction;
+                break;
+            } else if (BundleValidator.validate(instance.tangle, txVM.getBundleHash()).size() == 0) {
+                state = false;
+                info = "tail is not consistent (bundle is invalid): " + transaction;
+                break;
+            }
+        }
+
+        if (state = true) {
+            if (!instance.ledgerValidator.checkConsistency(instance.milestone.latestSnapshot, transactions)) {
+                state = false;
+                info = "tails is not consistent (would lead to inconsistent ledger state)";
+            }
+        }
+
+        return CheckConsistency.create(state,info);
     }
 
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {
@@ -370,23 +446,19 @@ public class API {
         return (instance.milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
     }
 
-    private AbstractResponse removeNeighborsStatement(List<String> uris) throws URISyntaxException {
-        final AtomicInteger numberOfRemovedNeighbors = new AtomicInteger(0);
-
-        for (final String uriString : uris) {
-            final URI uri = new URI(uriString);
-
-            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                log.info("Removing neighbor: "+uriString);
-                if (instance.node.removeNeighbor(uri,true)) {
-                    numberOfRemovedNeighbors.incrementAndGet();
+    private AbstractResponse removeNeighborsStatement(List<String> uris) {
+        int numberOfRemovedNeighbors = 0;
+        try {
+            for (final String uriString : uris) {
+                log.info("Removing neighbor: " + uriString);
+                if (instance.node.removeNeighbor(new URI(uriString),true)) {
+                    numberOfRemovedNeighbors++;
                 }
             }
-            else {
-                return ErrorResponse.create("Invalid uri scheme");
-            }
+        } catch (URISyntaxException|RuntimeException e) {
+            return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
         }
-        return RemoveNeighborsResponse.create(numberOfRemovedNeighbors.get());
+        return RemoveNeighborsResponse.create(numberOfRemovedNeighbors);
     }
 
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
@@ -431,8 +503,12 @@ public class API {
                 referenceHash = null;
             }
         }
+        Snapshot referenceSnapshot;
+        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
+            referenceSnapshot = new Snapshot(instance.milestone.latestSnapshot);
+        }
         for(int i = 0; i < tipsToApprove; i++) {
-            tips[i] = instance.tipsManager.transactionToApprove(referenceHash, tips[0], depth, randomWalkCount, random);
+            tips[i] = instance.tipsManager.transactionToApprove(referenceSnapshot, referenceHash, tips[0], depth, randomWalkCount, random);
             if (tips[i] == null) {
                 return null;
             }
@@ -446,7 +522,11 @@ public class API {
             counter_getTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
-        return tips;
+
+        if (instance.ledgerValidator.checkConsistency(instance.milestone.latestSnapshot, Arrays.asList(tips))) {
+            return tips;
+        }
+        throw new RuntimeException("inconsistent tips pair selected");
     }
 
     private synchronized AbstractResponse getTipsStatement() throws Exception {
@@ -454,9 +534,17 @@ public class API {
     }
 
     public void storeTransactionStatement(final List<String> trys) throws Exception {
+        final List<TransactionViewModel> elements = new LinkedList<>();
+        int[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String trytes : trys) {
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(trytes),
+            //validate all trytes
+            Converter.trits(trytes, txTrits, 0);
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
+            elements.add(transactionViewModel);
+        }
+        for (final TransactionViewModel transactionViewModel : elements) {
+            //store transactions
             if(transactionViewModel.store(instance.tangle)) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
@@ -659,9 +747,15 @@ public class API {
     }
 
     public void broadcastTransactionStatement(final List<String> trytes2) {
+        final List<TransactionViewModel> elements = new LinkedList<>();
+        int[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String tryte : trytes2) {
-            //validate PoW - throws exception if invalid
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(Converter.trits(tryte), instance.transactionValidator.getMinWeightMagnitude());
+            //validate all trytes
+            Converter.trits(tryte, txTrits, 0);
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(txTrits, instance.transactionValidator.getMinWeightMagnitude());
+            elements.add(transactionViewModel);
+        }
+        for (final TransactionViewModel transactionViewModel : elements) {
             //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             instance.node.broadcast(transactionViewModel);
@@ -679,12 +773,12 @@ public class API {
 
         final Map<Hash, Long> balances = new HashMap<>();
         final int index;
-        synchronized (Snapshot.latestSnapshotSyncObject) {
-            index = instance.latestSnapshot.index();
+        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
+            index = instance.milestone.latestSnapshot.index();
             for (final Hash address : addresses) {
                 balances.put(address,
-                        instance.latestSnapshot.getState().containsKey(address) ?
-                                instance.latestSnapshot.getState().get(address) : Long.valueOf(0));
+                        instance.milestone.latestSnapshot.getState().containsKey(address) ?
+                                instance.milestone.latestSnapshot.getState().get(address) : Long.valueOf(0));
             }
         }
 
@@ -746,11 +840,13 @@ public class API {
         Hash prevTransaction = null;
         pearlDiver = new PearlDiver();
 
+        int[] transactionTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+
         for (final String tryte : trytes) {
             long startTime = System.nanoTime();
             long timestamp = System.currentTimeMillis();
             try {
-                final int[] transactionTrits = Converter.trits(tryte);
+                Converter.trits(tryte, transactionTrits, 0);
                 //branch and trunk
                 System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
                         transactionTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
@@ -804,34 +900,19 @@ public class API {
         return elements;
     }
 
-    private AbstractResponse addNeighborsStatement(final List<String> uris) throws URISyntaxException {
-
+    private AbstractResponse addNeighborsStatement(final List<String> uris) {
         int numberOfAddedNeighbors = 0;
-        for (final String uriString : uris) {
-            final URI uri = new URI(uriString);
-
-            if ("udp".equals(uri.getScheme()) || "tcp".equals(uri.getScheme())) {
-                log.info("Adding neighbor: "+uriString);
-                // 3rd parameter true if tcp, 4th parameter true (configured tethering)
-                final Neighbor neighbor;
-                switch(uri.getScheme()) {
-                    case "tcp":
-                        neighbor = new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()),true);
-                        break;
-                    case "udp":
-                        neighbor = new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), instance.node.getUdpSocket(), true);
-                        break;
-                    default:
-                        return ErrorResponse.create("Invalid uri scheme");
-                }
+        try {
+            for (final String uriString : uris) {
+                log.info("Adding neighbor: " + uriString);
+                final Neighbor neighbor = instance.node.newNeighbor(new URI(uriString), true);
                 if (!instance.node.getNeighbors().contains(neighbor)) {
                     instance.node.getNeighbors().add(neighbor);
                     numberOfAddedNeighbors++;
                 }
             }
-            else {
-                return ErrorResponse.create("Invalid uri scheme");
-            }
+        } catch (URISyntaxException|RuntimeException e) {
+            return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
         }
         return AddedNeighborsResponse.create(numberOfAddedNeighbors);
     }

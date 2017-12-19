@@ -36,6 +36,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             "bundle",
             "tag"
     );
+    private List<ColumnFamilyHandle> columnFamilyHandles = new ArrayList<>();
     private final String dbPath;
     private final String logPath;
     private final int cacheSize;
@@ -108,6 +109,9 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     @Override
     public void shutdown() {
+        for (final ColumnFamilyHandle columnFamilyHandle : columnFamilyHandles) {
+            columnFamilyHandle.close();
+        }
         if (db != null) db.close();
         options.close();
         bloomFilter.close();
@@ -123,7 +127,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         */
         db.put(handle, index.bytes(), thing.bytes());
         ColumnFamilyHandle referenceHandle = metadataReference.get().get(thing.getClass());
-        if (referenceHandle != null) {
+        if(referenceHandle != null) {
             db.put(referenceHandle, index.bytes(), thing.metadata());
         }
         return true;
@@ -186,10 +190,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     @Override
     public Persistable get(Class<?> model, Indexable index) throws Exception {
         Persistable object = (Persistable) model.newInstance();
-        object.read(db.get(classTreeMap.get().get(model), index == null ? new byte[0] : index.bytes()));
+        object.read(db.get(classTreeMap.get().get(model), index == null? new byte[0]: index.bytes()));
         ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
-        if (referenceHandle != null) {
-            object.readMetadata(db.get(referenceHandle, index == null ? new byte[0] : index.bytes()));
+        if(referenceHandle != null) {
+            object.readMetadata(db.get(referenceHandle, index == null? new byte[0]: index.bytes()));
         }
         return object;
     }
@@ -217,13 +221,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         RocksIterator iterator;
         ColumnFamilyHandle handle = classTreeMap.get().get(modelClass);
         Set<Indexable> keys = new HashSet<>();
-        if (handle != null) {
+        if(handle != null) {
             iterator = db.newIterator(handle);
             try {
                 iterator.seek(new Hash(value, 0, value.length).bytes());
-                for (;
-                     iterator.isValid() && Arrays.equals(Arrays.copyOf(iterator.key(), value.length), value);
-                     iterator.next()) {
+                for(;
+                    iterator.isValid() && Arrays.equals(Arrays.copyOf(iterator.key(), value.length), value);
+                    iterator.next()) {
                     keys.add(new Hash(iterator.key()));
                 }
             } finally {
@@ -237,7 +241,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public Persistable seek(Class<?> model, byte[] key) throws Exception {
         Set<Indexable> hashes = keysStartingWith(model, key);
         Indexable out;
-        if (hashes.size() == 1) {
+        if(hashes.size() == 1) {
             out = (Indexable) hashes.toArray()[0];
         } else if (hashes.size() > 1) {
             out = (Indexable) hashes.toArray()[seed.nextInt(hashes.size())];
@@ -328,17 +332,17 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {
         WriteBatch writeBatch = new WriteBatch();
         WriteOptions writeOptions = new WriteOptions();
-        for (Pair<Indexable, Persistable> entry : models) {
+        for(Pair<Indexable, Persistable> entry: models) {
             Indexable key = entry.low;
             Persistable value = entry.hi;
             ColumnFamilyHandle handle = classTreeMap.get().get(value.getClass());
             ColumnFamilyHandle referenceHandle = metadataReference.get().get(value.getClass());
-            if (value.merge()) {
+            if(value.merge()) {
                 writeBatch.merge(handle, key.bytes(), value.bytes());
             } else {
                 writeBatch.put(handle, key.bytes(), value.bytes());
             }
-            if (referenceHandle != null) {
+            if(referenceHandle != null) {
                 writeBatch.put(referenceHandle, key.bytes(), value.metadata());
             }
         }
@@ -361,14 +365,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
         List<byte[]> itemsToDelete = new ArrayList<>();
         RocksIterator iterator = db.newIterator(handle);
-        for (iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
+        for(iterator.seekToLast(); iterator.isValid(); iterator.prev()) {
             itemsToDelete.add(iterator.key());
         }
         iterator.close();
-        if (itemsToDelete.size() > 0) {
+        if(itemsToDelete.size() > 0) {
             log.info("Flushing flags. Amount to delete: " + itemsToDelete.size());
         }
-        for (byte[] itemToDelete : itemsToDelete) {
+        for(byte[] itemToDelete: itemsToDelete) {
             db.delete(handle, itemToDelete);
         }
     }
@@ -377,7 +381,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     @Override
     public boolean update(Persistable thing, Indexable index, String item) throws Exception {
         ColumnFamilyHandle referenceHandle = metadataReference.get().get(thing.getClass());
-        if (referenceHandle != null) {
+        if(referenceHandle != null) {
             db.put(referenceHandle, index.bytes(), thing.metadata());
         }
         return false;
@@ -405,7 +409,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         backupableDBOptions = new BackupableDBOptions(path);
         backupEngine = BackupEngine.open(env, backupableDBOptions);
         shutdown();
-        try (final RestoreOptions restoreOptions = new RestoreOptions(false)) {
+        try(final RestoreOptions restoreOptions = new RestoreOptions(false)){
             backupEngine.restoreDbFromLatestBackup(path, logPath, restoreOptions);
         } finally {
             backupEngine.close();
@@ -418,8 +422,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private void initDB(String path, String logPath) throws Exception {
         try {
             RocksDB.loadLibrary();
-        } catch (Exception e) {
-            if (SystemUtils.IS_OS_WINDOWS) {
+        } catch(Exception e) {
+            if(SystemUtils.IS_OS_WINDOWS) {
                 log.error("Error loading RocksDB library. " +
                         "Please ensure that " +
                         "Microsoft Visual C++ 2015 Redistributable Update 3 " +
@@ -430,13 +434,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         Thread.yield();
 
         File pathToLogDir = Paths.get(logPath).toFile();
-        if (!pathToLogDir.exists() || !pathToLogDir.isDirectory()) {
+        if(!pathToLogDir.exists() || !pathToLogDir.isDirectory()) {
             pathToLogDir.mkdir();
         }
 
         RocksEnv.getDefault()
-                .setBackgroundThreads(Runtime.getRuntime().availableProcessors() / 2, RocksEnv.FLUSH_POOL)
-                .setBackgroundThreads(Runtime.getRuntime().availableProcessors() / 2, RocksEnv.COMPACTION_POOL)
+                .setBackgroundThreads(Runtime.getRuntime().availableProcessors()/2, RocksEnv.FLUSH_POOL)
+                .setBackgroundThreads(Runtime.getRuntime().availableProcessors()/2, RocksEnv.COMPACTION_POOL)
         /*
                 .setBackgroundThreads(Runtime.getRuntime().availableProcessors())
         */
@@ -497,39 +501,36 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         ) {
             //columnFamilyOptions.setMemTableConfig(hashSkipListMemTableConfig);
 
-            List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
-            //List<ColumnFamilyDescriptor> familyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
-            //familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
+        //List<ColumnFamilyDescriptor> familyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
+        //familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
 
-            List<ColumnFamilyDescriptor> columnFamilyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
-            //fillMissingColumns(columnFamilyDescriptors, familyHandles, path);
-            db = RocksDB.open(options, path, columnFamilyDescriptors, familyHandles);
-            db.enableFileDeletions(true);
+        List<ColumnFamilyDescriptor> columnFamilyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
+        db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
+        db.enableFileDeletions(true);
 
-            fillmodelColumnHandles(familyHandles);
-        }
+        fillmodelColumnHandles();
     }
 
 
-    private void fillmodelColumnHandles(List<ColumnFamilyHandle> familyHandles) throws Exception {
+    private void fillmodelColumnHandles() throws Exception {
         int i = 0;
-        transactionHandle = familyHandles.get(++i);
-        transactionMetadataHandle = familyHandles.get(++i);
-        milestoneHandle = familyHandles.get(++i);
-        stateDiffHandle = familyHandles.get(++i);
-        addressHandle = familyHandles.get(++i);
-        approveeHandle = familyHandles.get(++i);
-        bundleHandle = familyHandles.get(++i);
-        tagHandle = familyHandles.get(++i);
+        transactionHandle = columnFamilyHandles.get(++i);
+        transactionMetadataHandle = columnFamilyHandles.get(++i);
+        milestoneHandle = columnFamilyHandles.get(++i);
+        stateDiffHandle = columnFamilyHandles.get(++i);
+        addressHandle = columnFamilyHandles.get(++i);
+        approveeHandle = columnFamilyHandles.get(++i);
+        bundleHandle = columnFamilyHandles.get(++i);
+        tagHandle = columnFamilyHandles.get(++i);
         //hashesHandle = familyHandles.get(++i);
 
-        for (; ++i < familyHandles.size(); ) {
-            db.dropColumnFamily(familyHandles.get(i));
+        for(; ++i < columnFamilyHandles.size();) {
+            db.dropColumnFamily(columnFamilyHandles.get(i));
         }
 
         transactionGetList = new ArrayList<>();
-        for (i = 1; i < 5; i++) {
-            transactionGetList.add(familyHandles.get(i));
+        for(i = 1; i < 5; i ++) {
+            transactionGetList.add(columnFamilyHandles.get(i));
         }
     }
 

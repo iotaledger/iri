@@ -33,12 +33,10 @@ public class Snapshot {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
         Sponge curl = SpongeFactory.create(SpongeFactory.Mode.KERL);
-        int[] trit_value;
         int[] trits = new int[Curl.HASH_LENGTH*3];
         try {
             while((line = reader.readLine()) != null) {
-                trit_value = Converter.trits(Converter.asciiToTrytes(line));
-                System.arraycopy(trit_value, 0, trits, 0, trit_value.length);
+                Converter.trits(Converter.asciiToTrytes(line), trits, 0);
                 curl.absorb(trits, 0, trits.length);
                 Arrays.fill(trits, 0);
                 String[] parts = line.split(";", 2);
@@ -55,23 +53,30 @@ public class Snapshot {
                 SpongeFactory.Mode mode = SpongeFactory.Mode.CURLP81;
                 int[] digests = new int[0];
                 int[] bundle = ISS.normalizedBundle(trits);
-                int[] root = null;
+                int[] root;
                 int i;
                 in = Snapshot.class.getResourceAsStream("/Snapshot.sig");
                 reader = new BufferedReader(new InputStreamReader(in));
                 for(i = 0; i < 3 && (line = reader.readLine()) != null; i++) {
+                    int[] lineTrits = Converter.allocateTritsForTrytes(line.length());
+                    Converter.trits(line, lineTrits, 0);
                     digests = ArrayUtils.addAll(
                             digests,
                             ISS.digest(mode
                                     , Arrays.copyOfRange(bundle, i*ISS.NORMALIZED_FRAGMENT_LENGTH, (i+1)*ISS.NORMALIZED_FRAGMENT_LENGTH)
-                                    , Converter.trits(line)));
+                                    , lineTrits));
                 }
                 if((line = reader.readLine()) != null) {
-                    root = ISS.getMerkleRoot(mode, ISS.address(mode, digests), Converter.trits(line), 0, SNAPSHOT_INDEX, SNAPSHOT_PUBKEY_DEPTH);
+                    int[] lineTrits = Converter.allocateTritsForTrytes(line.length());
+                    Converter.trits(line, lineTrits, 0);
+                    root = ISS.getMerkleRoot(mode, ISS.address(mode, digests), lineTrits, 0, SNAPSHOT_INDEX, SNAPSHOT_PUBKEY_DEPTH);
                 } else {
                     root = ISS.address(mode, digests);
                 }
-                if(!Arrays.equals(Converter.trits(SNAPSHOT_PUBKEY), root)) {
+
+                int[] pubkeyTrits = Converter.allocateTritsForTrytes(SNAPSHOT_PUBKEY.length());
+                Converter.trits(SNAPSHOT_PUBKEY, pubkeyTrits, 0);
+                if(!Arrays.equals(pubkeyTrits, root)) {
                     throw new RuntimeException("Snapshot signature failed.");
                 }
             }
@@ -87,7 +92,9 @@ public class Snapshot {
         }
     }
 
-    public static final Object latestSnapshotSyncObject = new Object();
+    public final Object snapshotSyncObject = new Object();
+    public final Object approvalsSyncObject = new Object();
+    public final Set<Hash> approvedHashes = new HashSet<>();
     private final Map<Hash, Long> state;
     private int index;
 

@@ -34,7 +34,7 @@ public class Configuration {
         DEBUG,
         REMOTE_LIMIT_API,
         REMOTE_AUTH,
-        NEIGHBORS,        
+        NEIGHBORS,
         IXI_DIR,
         DB_PATH,
         DB_LOG_PATH,
@@ -49,6 +49,7 @@ public class Configuration {
         SEND_LIMIT,
         NEW_TX_LIMIT,
         MAX_PEERS,
+        DNS_RESOLUTION_ENABLED,
         DNS_REFRESHER_ENABLED,
         COORDINATOR,
         REVALIDATE,
@@ -99,6 +100,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.NEW_TX_LIMIT.name(), "0.0");
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
         conf.put(DefaultConfSettings.DNS_REFRESHER_ENABLED.name(), "true");
+        conf.put(DefaultConfSettings.DNS_RESOLUTION_ENABLED.name(), "true");
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
         conf.put(DefaultConfSettings.RESCAN_DB.name(), "false");
         conf.put(DefaultConfSettings.MAINNET_MWM.name(), "14");
@@ -127,7 +129,7 @@ public class Configuration {
 
     public boolean init() throws IOException {
         File confFile = new File(string(Configuration.DefaultConfSettings.CONFIG));
-        if(confFile.exists()) {
+        if (confFile.exists()) {
             ini = new Ini(confFile);
             prefs = new IniPreferences(ini);
             return true;
@@ -136,7 +138,7 @@ public class Configuration {
     }
 
     public String getIniValue(String k) {
-        if(ini != null) {
+        if (ini != null) {
             return prefs.node("IRI").get(k, null);
         }
         return null;
@@ -144,7 +146,7 @@ public class Configuration {
 
     private String getConfValue(String k) {
         String value = getIniValue(k);
-        return value == null? conf.get(k): value;
+        return value == null ? conf.get(k) : value;
     }
 
     public String allSettings() {

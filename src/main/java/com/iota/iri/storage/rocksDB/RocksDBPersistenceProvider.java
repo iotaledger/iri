@@ -501,14 +501,12 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         ) {
             //columnFamilyOptions.setMemTableConfig(hashSkipListMemTableConfig);
 
-            List<ColumnFamilyHandle> familyHandles = new ArrayList<>();
-            //List<ColumnFamilyDescriptor> familyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
-            //familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
+        //List<ColumnFamilyDescriptor> familyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
+        //familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
 
-            List<ColumnFamilyDescriptor> columnFamilyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
-            //fillMissingColumns(columnFamilyDescriptors, familyHandles, path);
-            db = RocksDB.open(options, path, columnFamilyDescriptors, familyHandles);
-            db.enableFileDeletions(true);
+        List<ColumnFamilyDescriptor> columnFamilyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
+        db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
+        db.enableFileDeletions(true);
 
             fillmodelColumnHandles();
         }

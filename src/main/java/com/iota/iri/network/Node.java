@@ -682,12 +682,16 @@ public class Node {
     }
 
     public boolean isUriValid(final URI uri) {
-        if (uri.getScheme().equals("tcp") || uri.getScheme().equals("udp")) {
-            if ((new InetSocketAddress(uri.getHost(), uri.getPort()).getAddress() != null)) {
-                return true;
+        if (uri != null) {
+            if (uri.getScheme().equals("tcp") || uri.getScheme().equals("udp")) {
+                if ((new InetSocketAddress(uri.getHost(), uri.getPort()).getAddress() != null)) {
+                    return true;
+                }
             }
+            log.error("'{}' is not a valid uri schema or resolvable address.", uri);
+            return false;
         }
-        log.error("'{}' is not a valid uri schema or resolvable address.", uri);
+        log.error("Cannot read uri schema, please check neighbor config!");
         return false;
     }
 

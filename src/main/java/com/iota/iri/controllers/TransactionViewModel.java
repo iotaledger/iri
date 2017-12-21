@@ -118,6 +118,10 @@ public class TransactionViewModel {
         getBranchTransactionHash();
         getBundleHash();
         getTagValue();
+        getObsoleteTagValue();
+        getAttachmentTimestamp();
+        getAttachmentTimestampUpperBound();
+        getAttachmentTimestampLowerBound();
         if(hash.equals(Hash.NULL_HASH)) {
             return false;
         }

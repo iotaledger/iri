@@ -114,10 +114,14 @@ public class TransactionViewModel {
 
     public boolean update(final Tangle tangle, String item) throws Exception {
         getAddressHash();
+        getObsoleteTagValue();
         getTrunkTransactionHash();
         getBranchTransactionHash();
         getBundleHash();
         getTagValue();
+        getAttachmentTimestamp();
+        getAttachmentTimestampLowerBound();
+        getAttachmentTimestampUpperBound();
         if(hash.equals(Hash.NULL_HASH)) {
             return false;
         }

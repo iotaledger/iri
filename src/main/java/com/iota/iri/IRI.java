@@ -1,32 +1,19 @@
 package com.iota.iri;
 
-import java.io.File;
-import java.io.IOException;
-
-import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.service.TipsManager;
-import com.iota.iri.storage.FileExportProvider;
-import org.apache.commons.lang3.NotImplementedException;
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
+import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.Configuration.DefaultConfSettings;
+import com.iota.iri.model.Hash;
+import com.iota.iri.service.API;
+import com.sanityinc.jargs.CmdLineParser;
+import com.sanityinc.jargs.CmdLineParser.Option;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.model.Hash;
-import com.iota.iri.network.Node;
-import com.iota.iri.network.UDPReceiver;
-import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.network.replicator.ReplicatorSinkPool;
-import com.iota.iri.network.replicator.ReplicatorSourcePool;
-import com.iota.iri.service.API;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.sanityinc.jargs.CmdLineParser;
-import com.sanityinc.jargs.CmdLineParser.Option;
-
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.core.util.StatusPrinter;
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Main IOTA Reference Implementation starting class
@@ -67,7 +54,7 @@ public class IRI {
                 try {
                     exportDir.mkdir();
                 } catch (SecurityException e) {
-                    log.error("Could not create directory",e);
+                    log.error("Could not create directory", e);
                 }
             }
             exportDir = new File("export-solid");
@@ -77,7 +64,7 @@ public class IRI {
                 try {
                     exportDir.mkdir();
                 } catch (SecurityException e) {
-                    log.error("Could not create directory",e);
+                    log.error("Could not create directory", e);
                 }
             }
         }
@@ -96,7 +83,7 @@ public class IRI {
     private static void validateParams(final Configuration configuration, final String[] args) throws IOException {
 
         boolean configurationInit = configuration.init();
-        
+
         if (args == null || (args.length < 2 && !configurationInit)) {
             log.error("Invalid arguments list. Provide ini-file 'iota.ini' or API port number (i.e. '-p 14600').");
             printUsage();
@@ -120,7 +107,7 @@ public class IRI {
         final Option<Boolean> rescan = parser.addBooleanOption("rescan");
         final Option<String> sendLimit = parser.addStringOption("send-limit");
         final Option<Boolean> sync = parser.addBooleanOption("sync");
-
+        final Option<Boolean> dnsResolutionFalse = parser.addBooleanOption("dns-resolution-false");
         final Option<String> maxPeers = parser.addStringOption("max-peers");
 
         try {
@@ -134,7 +121,7 @@ public class IRI {
 
         // optional config file path
         String confFilePath = parser.getOptionValue(config);
-        if(confFilePath != null ) {
+        if (confFilePath != null) {
             configuration.put(DefaultConfSettings.CONFIG, confFilePath);
             configuration.init();
         }
@@ -145,8 +132,7 @@ public class IRI {
         if (cport == null) {
             log.error("Invalid arguments list. Provide at least the PORT in iota.ini or with -p option");
             printUsage();
-        }
-        else {
+        } else {
             configuration.put(DefaultConfSettings.PORT, cport);
         }
 
@@ -154,6 +140,7 @@ public class IRI {
         if (parser.getOptionValue(help) != null) {
             printUsage();
         }
+
 
         String cns = parser.getOptionValue(neighbors);
         if (cns == null) {
@@ -167,7 +154,7 @@ public class IRI {
             log.debug("The following api calls are not allowed : {} ", vremoteapilimit);
             configuration.put(DefaultConfSettings.REMOTE_LIMIT_API, vremoteapilimit);
         }
-        
+
         final String vremoteauth = parser.getOptionValue(remoteAuth);
         if (vremoteauth != null) {
             log.debug("Remote access requires basic authentication");
@@ -178,7 +165,7 @@ public class IRI {
         if (vrportudp != null) {
             configuration.put(DefaultConfSettings.UDP_RECEIVER_PORT, vrportudp);
         }
-        
+
         final String vrporttcp = parser.getOptionValue(rporttcp);
         if (vrporttcp != null) {
             configuration.put(DefaultConfSettings.TCP_RECEIVER_PORT, vrporttcp);
@@ -218,6 +205,11 @@ public class IRI {
             configuration.put(DefaultConfSettings.RESCAN_DB, "true");
         }
 
+        if (parser.getOptionValue(dnsResolutionFalse) != null) {
+            configuration.put(DefaultConfSettings.DNS_RESOLUTION_ENABLED, "false");
+        }
+
+
         final String vsendLimit = parser.getOptionValue(sendLimit);
         if (vsendLimit != null) {
             configuration.put(DefaultConfSettings.SEND_LIMIT, vsendLimit);
@@ -226,7 +218,7 @@ public class IRI {
             configuration.put(DefaultConfSettings.NEW_TX_LIMIT, "0.0");
         }
 
-        
+
         final String vmaxPeers = parser.getOptionValue(maxPeers);
         if (vmaxPeers != null) {
             configuration.put(DefaultConfSettings.MAX_PEERS, vmaxPeers);
@@ -235,16 +227,16 @@ public class IRI {
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " +
-                "[{-n,--neighbors} '<list of neighbors>'] " +
-                "[{-p,--port} 14600] " +                
-                "[{-c,--config} 'config-file-name'] " +
-                "[{-u,--udp-receiver-port} 14600] " +
-                "[{-t,--tcp-receiver-port} 15600] " +
-                "[{-d,--debug} false] " +
-                "[{--testnet} false]" +
-                "[{--remote} false]" +
-                "[{--remote-auth} string]" +
-                "[{--remote-limit-api} string]"
+                        "[{-n,--neighbors} '<list of neighbors>'] " +
+                        "[{-p,--port} 14600] " +
+                        "[{-c,--config} 'config-file-name'] " +
+                        "[{-u,--udp-receiver-port} 14600] " +
+                        "[{-t,--tcp-receiver-port} 15600] " +
+                        "[{-d,--debug} false] " +
+                        "[{--testnet} false]" +
+                        "[{--remote} false]" +
+                        "[{--remote-auth} string]" +
+                        "[{--remote-limit-api} string]"
                 , MAINNET_NAME, VERSION);
         System.exit(0);
     }

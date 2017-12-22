@@ -24,8 +24,6 @@ class ReplicatorSinkProcessor implements Runnable {
     public final static int CRC32_BYTES = 16;
     private final ReplicatorSinkPool replicatorSinkPool;
     private final int port;
-    private boolean isStopped = false;
-
 
     public ReplicatorSinkProcessor(final TCPNeighbor neighbor,
                                    final ReplicatorSinkPool replicatorSinkPool,
@@ -33,10 +31,6 @@ class ReplicatorSinkProcessor implements Runnable {
         this.neighbor = neighbor;
         this.replicatorSinkPool = replicatorSinkPool;
         this.port = port;
-    }
-
-    public void stop() {
-        isStopped = true;
     }
 
     @Override
@@ -81,8 +75,8 @@ class ReplicatorSinkProcessor implements Runnable {
                     System.arraycopy(String.format(fmt, port).getBytes(), 0,
                             portAsByteArray, 0, ReplicatorSinkPool.PORT_BYTES);
                     out.write(portAsByteArray);
-
-                    while (!replicatorSinkPool.shutdown && !isStopped) {
+                    
+                    while (!replicatorSinkPool.shutdown) {
                         try {
                             ByteBuffer message = neighbor.getNextMessage();
                             if (neighbor.getSink() != null) { 

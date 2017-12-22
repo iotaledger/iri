@@ -20,6 +20,7 @@ public class TCPNeighbor extends Neighbor {
     private int tcpPort;
 
     private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(10);
+    private boolean stopped = false;
 
     public TCPNeighbor(InetSocketAddress address, boolean isConfigured, final double limit) {
         super(address, isConfigured, limit);
@@ -35,6 +36,11 @@ public class TCPNeighbor extends Neighbor {
     public void clear() {
         setSource(null);
         setSink(null);
+        this.stopped = true;
+    }
+
+    public boolean isStopped() {
+        return stopped;
     }
 
     public void setSource(Socket source) {

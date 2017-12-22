@@ -117,6 +117,7 @@ public class TransactionViewModel {
         getTrunkTransactionHash();
         getBranchTransactionHash();
         getBundleHash();
+        getObsoleteTagValue();
         getTagValue();
         if(hash.equals(Hash.NULL_HASH)) {
             return false;

@@ -3,7 +3,9 @@ package com.iota.iri.network.replicator;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.Socket;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -29,6 +31,8 @@ public class ReplicatorSinkPool  implements Runnable {
     public final static int PORT_BYTES = 10;
 
     private final DatagramPacket sendingPacket = new DatagramPacket(new byte[Node.TRANSACTION_PACKET_SIZE], Node.TRANSACTION_PACKET_SIZE);
+
+    private final Map<Neighbor, Runnable> runnables = new HashMap<>();
 
     public ReplicatorSinkPool(Node node, int port) {
         this.node = node;
@@ -70,10 +74,14 @@ public class ReplicatorSinkPool  implements Runnable {
                     .forEach(this::createSink);
         }
     }
-    
+
     public void createSink(TCPNeighbor neighbor) {
-        Runnable proc = new ReplicatorSinkProcessor( neighbor, this, port);
+        if(runnables.containsKey(neighbor)) {
+            ((ReplicatorSinkProcessor)runnables.get(neighbor)).stop();
+        }
+        Runnable proc = new ReplicatorSinkProcessor(neighbor, this, port);
         sinkPool.submit(proc);
+        runnables.put(neighbor, proc);
     }
     
     public void shutdownSink(TCPNeighbor neighbor) {

@@ -134,7 +134,7 @@ class ReplicatorSourceProcessor implements Runnable {
             connection.setSoTimeout(0);  // infinite timeout - blocking read
 
             offset = 0;
-            while (!shutdown) {
+            while (!shutdown && !neighbor.isStopped()) {
 
                 while ( ((count = stream.read(data, offset, (TRANSACTION_PACKET_SIZE - offset + ReplicatorSinkProcessor.CRC32_BYTES))) != -1) 
                         && (offset < (TRANSACTION_PACKET_SIZE + ReplicatorSinkProcessor.CRC32_BYTES))) {

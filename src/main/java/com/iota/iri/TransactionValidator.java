@@ -143,7 +143,7 @@ public class TransactionValidator {
                         break;
                     case INVALID:
                         if(!priority) {
-                            propagateInvalidSubtangle(transaction.getHash());
+                            propagateInvalidSubtangle(transaction.getHash(), priority);
                             return false;
                         }
                 }
@@ -266,22 +266,31 @@ public class TransactionValidator {
         return approovee.subtangleStatus() == SubtangleStatus.SOLID;
     }
 
-    public void propagateInvalidSubtangle(Hash invalidHash) throws Exception {
+    public void propagateInvalidSubtangle(Hash invalidHash, boolean force) throws Exception {
         Hash hash;
         TransactionViewModel tx;
         Queue<Hash> approversToVisit = new LinkedList<>(Collections.singleton(invalidHash));
         Set<Hash> visitedHashes = new HashSet<>();
-        Queue<Hash> hashes = new LinkedList<>();
         while(approversToVisit.size() > 0) {
             if(visitedHashes.add((hash = approversToVisit.poll()))) {
-                for(Hash up: ApproveeViewModel.load(tangle, hash).getHashes()) {
-                    approversToVisit.offer(up);
-                }
                 tx = TransactionViewModel.fromHash(tangle, hash);
-                tx.updateSolid(SubtangleStatus.INVALID);
-                tx.update(tangle, "solid");
+                switch (tx.subtangleStatus()) {
+                    case UNKNOWN:
+                        tx.updateSolid(SubtangleStatus.INVALID);
+                        tx.update(tangle, "solid");
+                        for(Hash up: ApproveeViewModel.load(tangle, hash).getHashes()) {
+                            approversToVisit.offer(up);
+                        }
+                        break;
+                    case SOLID:
+                        if(force) break;
+                        checkSolidity(hash, true);
+                        addSolidTransaction(hash);
+                        approversToVisit.clear();
+                }
             }
         }
+        visitedHashes.clear();
     }
 
 }

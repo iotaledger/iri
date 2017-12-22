@@ -281,7 +281,7 @@ public class Node {
                     log.error(e.getMessage());
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     try {
-                        transactionValidator.propagateInvalidSubtangle(receivedTransactionHash);
+                        transactionValidator.propagateInvalidSubtangle(receivedTransactionHash, false);
                         transactionRequester.clearTransactionRequest(receivedTransactionHash);
                     } catch (Exception e1) {
                         log.error(e1.getMessage());

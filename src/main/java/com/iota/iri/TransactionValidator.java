@@ -129,25 +129,27 @@ public class TransactionValidator {
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (analyzedHashes.add(hashPointer)) {
                 final TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hashPointer);
-                if(transaction.subtangleStatus() == SubtangleStatus.UNKNOWN) {
-                    if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
-                        transactionRequester.requestTransaction(hashPointer, milestone);
-                        solid = false;
-                        break;
-                    } else {
-                        if (solid) {
+                switch (transaction.subtangleStatus()) {
+                    case UNKNOWN:
+                        if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Milestone.INITIAL_MILESTONE_HASH)) {
+                            transactionRequester.requestTransaction(hashPointer, milestone);
+                            nonAnalyzedTransactions.clear();
+                            analyzedHashes.clear();
+                            return false;
+                        } else {
                             nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
                             nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
                         }
-                    }
+                        break;
+                    case INVALID:
+                        propagateInvalidSubtangle(transaction.getHash());
+                        return false;
                 }
             }
         }
-        if (solid) {
-            TransactionViewModel.updateSolidTransactions(tangle, analyzedHashes);
-        }
+        TransactionViewModel.updateSolidTransactions(tangle, analyzedHashes);
         analyzedHashes.clear();
-        return solid;
+        return true;
     }
 
     public void addSolidTransaction(Hash hash) {

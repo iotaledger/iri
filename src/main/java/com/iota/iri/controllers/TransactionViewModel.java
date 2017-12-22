@@ -11,6 +11,12 @@ import com.iota.iri.utils.Pair;
 
 public class TransactionViewModel {
 
+    public enum SubtangleStatus {
+        UNKNOWN,
+        SOLID,
+        INVALID
+    }
+
     private final com.iota.iri.model.Transaction transaction;
 
     public static final int SIZE = 1604;
@@ -45,6 +51,7 @@ public class TransactionViewModel {
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
     private final Hash hash;
+
 
 
     public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction value)
@@ -369,21 +376,28 @@ public class TransactionViewModel {
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
             transactionViewModel.updateHeights(tangle);
-            transactionViewModel.updateSolid(true);
+            transactionViewModel.updateSolid(SubtangleStatus.SOLID);
             transactionViewModel.update(tangle, "solid|height");
         }
     }
 
-    public boolean updateSolid(boolean solid) throws Exception {
-        if(solid != transaction.solid) {
-            transaction.solid = solid;
+    public boolean updateSolid(SubtangleStatus status) throws Exception {
+        if(transaction.solid == 0) {
+            switch (status) {
+                case SOLID: transaction.solid = 1;
+                case INVALID: transaction.solid = -1;
+            }
             return true;
         }
         return false;
     }
 
-    public boolean isSolid() {
-        return transaction.solid;
+    public SubtangleStatus subtangleStatus() {
+        switch (transaction.solid) {
+            case 1: return SubtangleStatus.SOLID;
+            case -1: return SubtangleStatus.INVALID;
+            default: return SubtangleStatus.UNKNOWN;
+        }
     }
 
     public int snapshotIndex() {

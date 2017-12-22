@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.StringUtils;
@@ -230,13 +231,14 @@ public class Node {
         return Optional.of(hostAddress);
     }
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
-        TransactionViewModel receivedTransactionViewModel = null;
+        TransactionViewModel receivedTransactionViewModel;
         Hash receivedTransactionHash = null;
 
         boolean addressMatch = false;
         boolean cached = false;
 
         for (final Neighbor neighbor : getNeighbors()) {
+            receivedTransactionViewModel = null;
             addressMatch = neighbor.matches(senderAddress);
             if (addressMatch) {
                 //Validate transaction
@@ -260,8 +262,9 @@ public class Node {
 
                     if (!cached) {
                         //if not, then validate
-                        receivedTransactionViewModel = TransactionValidator.validate(receivedData, transactionValidator.getMinWeightMagnitude());
+                        receivedTransactionViewModel = new TransactionViewModel(receivedData, Hash.calculate(receivedData, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
                         receivedTransactionHash = receivedTransactionViewModel.getHash();
+                        TransactionValidator.runValidation(receivedTransactionViewModel, transactionValidator.getMinWeightMagnitude());
 
                         synchronized (recentSeenBytes) {
                             recentSeenBytes.put(byteHash, receivedTransactionHash);
@@ -277,6 +280,11 @@ public class Node {
                 } catch (final RuntimeException e) {
                     log.error(e.getMessage());
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
+                    try {
+                        transactionValidator.propagateInvalidSubtangle(receivedTransactionHash);
+                    } catch (Exception e1) {
+                        log.error(e1.getMessage());
+                    }
                     neighbor.incInvalidTransactions();
                     break;
                 }

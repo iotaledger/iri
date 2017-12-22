@@ -118,7 +118,7 @@ public class TransactionValidator {
 
     private final AtomicInteger nextSubSolidGroup = new AtomicInteger(1);
 
-    public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
+    public boolean checkSolidity(Hash hash, boolean priority) throws Exception {
         if(TransactionViewModel.fromHash(tangle, hash).subtangleStatus() == SubtangleStatus.SOLID) {
             return true;
         }
@@ -132,7 +132,7 @@ public class TransactionValidator {
                 switch (transaction.subtangleStatus()) {
                     case UNKNOWN:
                         if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Milestone.INITIAL_MILESTONE_HASH)) {
-                            transactionRequester.requestTransaction(hashPointer, milestone);
+                            transactionRequester.requestTransaction(hashPointer, priority);
                             nonAnalyzedTransactions.clear();
                             analyzedHashes.clear();
                             return false;
@@ -142,8 +142,10 @@ public class TransactionValidator {
                         }
                         break;
                     case INVALID:
-                        propagateInvalidSubtangle(transaction.getHash());
-                        return false;
+                        if(!priority) {
+                            propagateInvalidSubtangle(transaction.getHash());
+                            return false;
+                        }
                 }
             }
         }

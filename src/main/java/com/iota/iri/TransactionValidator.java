@@ -123,7 +123,6 @@ public class TransactionValidator {
             return true;
         }
         Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
-        boolean solid = true;
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
@@ -138,8 +137,6 @@ public class TransactionValidator {
                     case UNKNOWN:
                         if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Milestone.INITIAL_MILESTONE_HASH)) {
                             transactionRequester.requestTransaction(hashPointer, priority);
-                            nonAnalyzedTransactions.clear();
-                            analyzedHashes.clear();
                             return false;
                         } else {
                             nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());

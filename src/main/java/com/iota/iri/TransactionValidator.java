@@ -5,7 +5,6 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -243,7 +242,7 @@ public class TransactionValidator {
                 solid = false;
             }
             if(solid) {
-                transactionViewModel.updateSolid(SubtangleStatus.SOLID);
+                transactionViewModel.updateSubtangleStatus(SubtangleStatus.SOLID);
                 transactionViewModel.updateHeights(tangle);
                 return true;
             }
@@ -273,7 +272,7 @@ public class TransactionValidator {
                 tx = TransactionViewModel.fromHash(tangle, hash);
                 switch (tx.subtangleStatus()) {
                     case UNKNOWN:
-                        tx.updateSolid(SubtangleStatus.INVALID);
+                        tx.updateSubtangleStatus(SubtangleStatus.INVALID);
                         tx.update(tangle, "solid");
                         for(Hash up: ApproveeViewModel.load(tangle, hash).getHashes()) {
                             approversToVisit.offer(up);

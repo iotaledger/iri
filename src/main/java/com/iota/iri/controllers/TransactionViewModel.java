@@ -376,12 +376,12 @@ public class TransactionViewModel {
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
             transactionViewModel.updateHeights(tangle);
-            transactionViewModel.updateSolid(SubtangleStatus.SOLID);
+            transactionViewModel.updateSubtangleStatus(SubtangleStatus.SOLID);
             transactionViewModel.update(tangle, "solid|height");
         }
     }
 
-    public boolean updateSolid(SubtangleStatus status) throws Exception {
+    public boolean updateSubtangleStatus(SubtangleStatus status) throws Exception {
         if(transaction.solid == 0) {
             switch (status) {
                 case SOLID: transaction.solid = 1;

@@ -130,6 +130,11 @@ public class TransactionValidator {
             if (analyzedHashes.add(hashPointer)) {
                 final TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hashPointer);
                 switch (transaction.subtangleStatus()) {
+                    case INVALID:
+                        if(!priority) {
+                            propagateInvalidSubtangle(transaction.getHash(), priority);
+                            return false;
+                        }
                     case UNKNOWN:
                         if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Milestone.INITIAL_MILESTONE_HASH)) {
                             transactionRequester.requestTransaction(hashPointer, priority);
@@ -141,11 +146,6 @@ public class TransactionValidator {
                             nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
                         }
                         break;
-                    case INVALID:
-                        if(!priority) {
-                            propagateInvalidSubtangle(transaction.getHash(), priority);
-                            return false;
-                        }
                 }
             }
         }

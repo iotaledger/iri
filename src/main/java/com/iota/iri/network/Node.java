@@ -276,15 +276,18 @@ public class Node {
 
                 } catch (NoSuchAlgorithmException e) {
                     log.error("MessageDigest: "+e);
-                } catch (final RuntimeException e) {
+                } catch (final TransactionValidator.StaleTimestampException e) {
                     log.error(e.getMessage());
-                    log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     try {
                         transactionValidator.propagateInvalidSubtangle(receivedTransactionHash, false);
                         transactionRequester.clearTransactionRequest(receivedTransactionHash);
                     } catch (Exception e1) {
                         log.error(e1.getMessage());
                     }
+                    neighbor.incInvalidTransactions();
+                } catch (final RuntimeException e) {
+                    log.error(e.getMessage());
+                    log.error("Received an Invalid TransactionViewModel. Dropping it...");
                     neighbor.incInvalidTransactions();
                     break;
                 }

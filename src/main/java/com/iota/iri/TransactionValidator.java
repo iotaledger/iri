@@ -34,6 +34,12 @@ public class TransactionValidator {
 
     private Thread newSolidThread;
 
+    public enum TransactionValidationStatus {
+        VALID,
+        INVALID_TIMESTAMP,
+        INSUFFICIENT_WEIGHT,
+    }
+
     private final AtomicBoolean useFirst = new AtomicBoolean(true);
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final Object cascadeSync = new Object();
@@ -81,7 +87,7 @@ public class TransactionValidator {
     public static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
         if(invalidTimestamp(transactionViewModel)) {
-            throw new RuntimeException("Invalid transaction timestamp.");
+            throw new StaleTimestampException("Invalid transaction timestamp.");
         }
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
@@ -288,5 +294,9 @@ public class TransactionValidator {
         }
         visitedHashes.clear();
     }
-
+    public static class StaleTimestampException extends RuntimeException {
+        public StaleTimestampException (String message) {
+            super(message);
+        }
+    }
 }

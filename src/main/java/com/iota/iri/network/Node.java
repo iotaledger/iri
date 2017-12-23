@@ -238,7 +238,6 @@ public class Node {
         boolean cached = false;
 
         for (final Neighbor neighbor : getNeighbors()) {
-            receivedTransactionViewModel = null;
             addressMatch = neighbor.matches(senderAddress);
             if (addressMatch) {
                 //Validate transaction

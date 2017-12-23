@@ -44,10 +44,10 @@ public class Milestone {
     public Snapshot latestSnapshot;
 
     private LedgerValidator ledgerValidator;
-    public Hash latestMilestone = Hash.NULL_HASH;
+    public static Hash INITIAL_MILESTONE_HASH = Hash.NULL_HASH;
+    public Hash latestMilestone = INITIAL_MILESTONE_HASH;
     public Hash latestSolidSubtangleMilestone = latestMilestone;
 
-    public static Hash INITIAL_MILESTONE_HASH = Hash.NULL_HASH;
     public static final int MILESTONE_START_INDEX = 243000;
     private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 20;
 

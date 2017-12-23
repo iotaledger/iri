@@ -53,7 +53,6 @@ public class TransactionViewModel {
     private final Hash hash;
 
 
-
     public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction value)
     public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only another tx references that hash
     public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash

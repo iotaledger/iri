@@ -176,6 +176,7 @@ public class Node {
                                 } else {
                                     if (configuration.booling(Configuration.DefaultConfSettings.DNS_REFRESHER_ENABLED)) {
                                         log.info("IP CHANGED for {}! Updating...", hostname);
+                                        log.info("IP CHANGED from '{}' to '{}'", neighborAddress,ip);
                                         messageQ.publish("dnscu %s", hostname);
                                         String protocol = (n instanceof TCPNeighbor) ? "tcp://" : "udp://";
                                         String port = ":" + n.getAddress().getPort();
@@ -183,8 +184,9 @@ public class Node {
                                         uri(protocol + hostname + port).ifPresent(uri -> {
                                             removeNeighbor(uri, n.isFlagged());
 
-                                            uri(protocol + ip + port).ifPresent(nuri -> {
-                                                Neighbor neighbor = newNeighbor(nuri, n.isFlagged());
+                                            uri(protocol + neighborAddress + port).ifPresent(nuri -> {
+                                                removeNeighbor(nuri,n.isFlagged());
+                                                Neighbor neighbor = newNeighbor(uri, n.isFlagged());
                                                 addNeighbor(neighbor);
                                                 neighborIpCache.put(hostname, ip);
                                             });

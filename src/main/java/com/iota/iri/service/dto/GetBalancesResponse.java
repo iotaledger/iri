@@ -1,25 +1,23 @@
 package com.iota.iri.service.dto;
 
-import com.iota.iri.model.Hash;
-
 import java.util.List;
 
 public class GetBalancesResponse extends AbstractResponse {
 	
 	private List<String> balances;
-	private String milestone;
+	private List<String> references;
 	private int milestoneIndex;
 
-	public static AbstractResponse create(List<String> elements, Hash milestone, int milestoneIndex) {
+	public static AbstractResponse create(List<String> elements, List<String> references, int milestoneIndex) {
 		GetBalancesResponse res = new GetBalancesResponse();
 		res.balances = elements;
-		res.milestone = milestone.toString();
+		res.references = references;
 		res.milestoneIndex = milestoneIndex;
 		return res;
 	}
 	
-	public String getMilestone() {
-		return milestone;
+	public List<String> getReferences() {
+		return references;
 	}
 	
 	public int getMilestoneIndex() {

@@ -223,8 +223,11 @@ public class API {
                 }
                 case "getBalances": {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
+                    final List<String> hashes = request.containsKey("hashes") ?
+                            getParameterAsList(request,"hashes", HASH_SIZE):
+                            null;
                     final int threshold = getParameterAsInt(request, "threshold");
-                    return getBalancesStatement(addresses, threshold);
+                    return getBalancesStatement(addresses, hashes, threshold);
                 }
                 case "getInclusionStates": {
                     if (invalidSubtangleStatus()) {
@@ -762,7 +765,7 @@ public class API {
         }
     }
 
-    private AbstractResponse getBalancesStatement(final List<String> addrss, final int threshold) throws Exception {
+    private AbstractResponse getBalancesStatement(final List<String> addrss, final List<String> txs, final int threshold) throws Exception {
 
         if (threshold <= 0 || threshold > 100) {
             return ErrorResponse.create("Illegal 'threshold'");
@@ -770,29 +773,36 @@ public class API {
 
         final List<Hash> addresses = addrss.stream().map(address -> (new Hash(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
+        final List<Hash> hashes;
+        if (txs == null || txs.size() == 0) {
+            hashes = Collections.singletonList(instance.milestone.latestSolidSubtangleMilestone);
+        } else {
+            hashes = txs.stream().map(address -> (new Hash(address)))
+                    .collect(Collectors.toCollection(LinkedList::new));
+        }
 
         final Map<Hash, Long> balances = new HashMap<>();
         final int index;
+        Snapshot referenceSnapshot;
         synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
-            index = instance.milestone.latestSnapshot.index();
-            for (final Hash address : addresses) {
-                balances.put(address,
-                        instance.milestone.latestSnapshot.getState().containsKey(address) ?
-                                instance.milestone.latestSnapshot.getState().get(address) : Long.valueOf(0));
+            referenceSnapshot = new Snapshot(instance.milestone.latestSnapshot);
+        }
+        index = referenceSnapshot.index();
+        for(Hash hash: hashes) {
+            if (!instance.ledgerValidator.isTipConsistent(referenceSnapshot, hash)) {
+                return ErrorResponse.create("Hashes are not consistent");
             }
         }
+        for (final Hash address : addresses) {
+            balances.put(address, referenceSnapshot.getState().containsKey(address) ? referenceSnapshot.getState().get(address) : Long.valueOf(0));
+        }
 
-        final Hash milestone = instance.milestone.latestSolidSubtangleMilestone;
-        final int milestoneIndex = instance.milestone.latestSolidSubtangleMilestoneIndex;
 
-
-        Set<Hash> analyzedTips = new HashSet<>();
-
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestone));
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(hashes);
         Hash hash;
         while ((hash = nonAnalyzedTransactions.poll()) != null) {
 
-            if (analyzedTips.add(hash)) {
+            if (referenceSnapshot.approvedHashes.add(hash)) {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, hash);
 
@@ -814,7 +824,7 @@ public class API {
         final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())
                 .collect(Collectors.toCollection(LinkedList::new));
 
-        return GetBalancesResponse.create(elements, milestone, milestoneIndex);
+        return GetBalancesResponse.create(elements, hashes.stream().map(h -> h.toString()).collect(Collectors.toList()), index);
     }
 
     private static int counter_PoW = 0;

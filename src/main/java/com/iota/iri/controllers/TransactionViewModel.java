@@ -119,9 +119,8 @@ public class TransactionViewModel {
         getBundleHash();
         getTagValue();
         getObsoleteTagValue();
-        getAttachmentTimestamp();
-        getAttachmentTimestampUpperBound();
-        getAttachmentTimestampLowerBound();
+        setAttachmentData();
+        setMetadata();
         if(hash.equals(Hash.NULL_HASH)) {
             return false;
         }

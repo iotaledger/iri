@@ -11,11 +11,9 @@ import com.iota.iri.utils.Pair;
 
 public class TransactionViewModel {
 
-    public enum SubtangleStatus {
-        UNKNOWN,
-        SOLID,
-        INVALID
-    }
+    public static final byte UNKNOWN = 0;
+    public static final byte SOLID = 1;
+    public static final byte INVALID = -1;
 
     private final com.iota.iri.model.Transaction transaction;
 
@@ -44,7 +42,6 @@ public class TransactionViewModel {
     public static final int TRINARY_SIZE = NONCE_TRINARY_OFFSET + NONCE_TRINARY_SIZE;
 
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + OBSOLETE_TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
-
 
     private AddressViewModel address;
     private ApproveeViewModel approovers;
@@ -375,28 +372,21 @@ public class TransactionViewModel {
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
             transactionViewModel.updateHeights(tangle);
-            transactionViewModel.updateSubtangleStatus(SubtangleStatus.SOLID);
+            transactionViewModel.updateSubtangleStatus(SOLID);
             transactionViewModel.update(tangle, "solid|height");
         }
     }
 
-    public boolean updateSubtangleStatus(SubtangleStatus status) throws Exception {
-        if(transaction.solid == 0) {
-            switch (status) {
-                case SOLID: transaction.solid = 1;
-                case INVALID: transaction.solid = -1;
-            }
+    public boolean updateSubtangleStatus(byte status) throws Exception {
+        if(transaction.solid == UNKNOWN) {
+            transaction.solid = status;
             return true;
         }
         return false;
     }
 
-    public SubtangleStatus subtangleStatus() {
-        switch (transaction.solid) {
-            case 1: return SubtangleStatus.SOLID;
-            case -1: return SubtangleStatus.INVALID;
-            default: return SubtangleStatus.UNKNOWN;
-        }
+    public byte subtangleStatus() {
+        return transaction.solid;
     }
 
     public int snapshotIndex() {

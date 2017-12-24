@@ -277,7 +277,7 @@ public class LedgerValidator {
 
     public boolean isTipConsistent(Snapshot snapshot, Hash tip) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
-        if(transactionViewModel.subtangleStatus() != TransactionViewModel.SubtangleStatus.SOLID) {
+        if(transactionViewModel.subtangleStatus() != TransactionViewModel.SOLID) {
             return false;
         }
         boolean isConsistent;

@@ -11,6 +11,10 @@ import com.iota.iri.utils.Pair;
 
 public class TransactionViewModel {
 
+    public static final byte UNKNOWN = 0;
+    public static final byte SOLID = 1;
+    public static final byte INVALID = -1;
+
     private final com.iota.iri.model.Transaction transaction;
 
     public static final int SIZE = 1604;
@@ -38,7 +42,6 @@ public class TransactionViewModel {
     public static final int TRINARY_SIZE = NONCE_TRINARY_OFFSET + NONCE_TRINARY_SIZE;
 
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + OBSOLETE_TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
-
 
     private AddressViewModel address;
     private ApproveeViewModel approovers;
@@ -372,20 +375,20 @@ public class TransactionViewModel {
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
             transactionViewModel.updateHeights(tangle);
-            transactionViewModel.updateSolid(true);
+            transactionViewModel.updateSubtangleStatus(SOLID);
             transactionViewModel.update(tangle, "solid|height");
         }
     }
 
-    public boolean updateSolid(boolean solid) throws Exception {
-        if(solid != transaction.solid) {
-            transaction.solid = solid;
+    public boolean updateSubtangleStatus(byte status) throws Exception {
+        if(transaction.solid == UNKNOWN) {
+            transaction.solid = status;
             return true;
         }
         return false;
     }
 
-    public boolean isSolid() {
+    public byte subtangleStatus() {
         return transaction.solid;
     }
 

@@ -81,7 +81,6 @@ public class TipsManager {
                 isTip = false;
             }
             if(hash != null  && isTip && transactionValidator.checkSolidity(hash, false)) {
-                //if(hash != null && TransactionViewModel.fromHash(hash).isSolid() && isTip) {
                 tipsViewModel.setSolid(hash);
             }
         }

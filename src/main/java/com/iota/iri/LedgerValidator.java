@@ -1,7 +1,6 @@
 package com.iota.iri;
 
 import com.iota.iri.controllers.*;
-import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.zmq.MessageQ;
@@ -278,7 +277,7 @@ public class LedgerValidator {
 
     public boolean isTipConsistent(Snapshot snapshot, Hash tip) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
-        if(!transactionViewModel.isSolid()) {
+        if(transactionViewModel.subtangleStatus() != TransactionViewModel.SOLID) {
             return false;
         }
         boolean isConsistent;

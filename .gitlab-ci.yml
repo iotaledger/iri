@@ -1,0 +1,34 @@
+image: docker
+
+services:
+  - docker:dind
+
+stages:
+  - build
+  - package
+
+maven-build:
+  image: maven:3.5-jdk-8
+  stage: build
+  script: "mvn clean package"
+  artifacts:
+    paths:
+      - target/*.jar
+
+docker-build:
+  stage: package
+  only:
+    - master
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE .
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE
+
+docker-build-dev:
+  stage: package
+  only:
+    - dev
+  script:
+    - docker build -t $CI_REGISTRY_IMAGE:dev .
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN $CI_REGISTRY
+    - docker push $CI_REGISTRY_IMAGE:dev

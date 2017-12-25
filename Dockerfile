@@ -1,16 +1,22 @@
-FROM maven:3.5-jdk-8 as builder
-WORKDIR /iri
-COPY . /iri
-RUN mvn clean package
-
-FROM openjdk:jre-slim
-WORKDIR /iri
-COPY --from=builder /iri/target/iri-1.4.1.4.jar iri.jar
-COPY logback.xml /iri
-VOLUME /iri
-
+FROM openjdk:8-jdk
+VOLUME /tmp
+VOLUME /iri/db
+VOLUME /iri/logs
+VOLUME /ixi
+ADD logback.xml /iri/conf/
+ADD /target/iri-*.jar iri.jar
+RUN touch /iri/conf/application.conf
+EXPOSE 14600/udp
+EXPOSE 15600
 EXPOSE 14265
-EXPOSE 14777/udp
-EXPOSE 15777
+ENV REMOTE=true
+ENV REMOTE_LIMIT_API="addNeighbors, removeNeighbors, getNeighbors"
+ENV API_HOST="0.0.0.0"
+ENV PORT=14265
+ENV UDP_RECEIVER_PORT=14600
+ENV TCP_RECEIVER_PORT=15600
+ENV DB_PATH=/iri/db
+ENV DB_LOG_PATH=/iri/logs/dblog.log
+ENV IXI_DIR=/ixi
 
-CMD ["/usr/bin/java", "-XX:+DisableAttachMechanism", "-Xmx8g", "-Xms256m", "-Dlogback.configurationFile=/iri/conf/logback.xml", "-Djava.net.preferIPv4Stack=true", "-jar", "iri.jar", "-p", "14265", "-u", "14777", "-t", "15777", "--remote", "--remote-limit-api", "\"addNeighbors, removeNeighbors, getNeighbors\"", "$@"]
+ENTRYPOINT ["java", "-XX:+DisableAttachMechanism", "-Dconfig.file=/iri/conf/application.conf","-Dlogback.configurationFile=/iri/conf/logback.xml", "-Djava.net.preferIPv4Stack=true", "-jar", "iri.jar"]

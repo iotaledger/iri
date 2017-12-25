@@ -1,31 +1,20 @@
 package com.iota.iri.conf;
 
-import org.ini4j.Ini;
-import org.ini4j.IniPreferences;
+import com.typesafe.config.Config;
+import com.typesafe.config.ConfigFactory;
+import com.typesafe.config.ConfigValueFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.prefs.Preferences;
-
 /**
- * All those settings are modificable at runtime,
- * but for most of them the node needs to be restarted.
+ * Wrapper and interface for the configuration stack.
+ * Primary used to be backwards compatible to the legacy configuration code.
  */
 public class Configuration {
-    private Ini ini;
-    private Preferences prefs;
-
-
-    private final Logger log = LoggerFactory.getLogger(Configuration.class);
-
-    private final Map<String, String> conf = new ConcurrentHashMap<>();
+    private Config config = ConfigFactory.load();
+    private final Logger log = LoggerFactory.getLogger(getClass());
 
     public enum DefaultConfSettings {
-        CONFIG,
         PORT,
         API_HOST,
         UDP_RECEIVER_PORT,
@@ -34,7 +23,7 @@ public class Configuration {
         DEBUG,
         REMOTE_LIMIT_API,
         REMOTE_AUTH,
-        NEIGHBORS,        
+        NEIGHBORS,
         IXI_DIR,
         DB_PATH,
         DB_LOG_PATH,
@@ -71,116 +60,50 @@ public class Configuration {
         LRU_SIZE_BYTES,
     }
 
-    {
-        // defaults
-        conf.put(DefaultConfSettings.PORT.name(), "14600");
-        conf.put(DefaultConfSettings.API_HOST.name(), "localhost");
-        conf.put(DefaultConfSettings.UDP_RECEIVER_PORT.name(), "14600");
-        conf.put(DefaultConfSettings.TCP_RECEIVER_PORT.name(), "15600");
-        conf.put(DefaultConfSettings.TESTNET.name(), "false");
-        conf.put(DefaultConfSettings.DEBUG.name(), "false");
-        conf.put(DefaultConfSettings.REMOTE_LIMIT_API.name(), "");
-        conf.put(DefaultConfSettings.REMOTE_AUTH.name(), "");
-        conf.put(DefaultConfSettings.NEIGHBORS.name(), "");
-        conf.put(DefaultConfSettings.IXI_DIR.name(), "ixi");
-        conf.put(DefaultConfSettings.DB_PATH.name(), "mainnetdb");
-        conf.put(DefaultConfSettings.DB_LOG_PATH.name(), "mainnet.log");
-        conf.put(DefaultConfSettings.DB_CACHE_SIZE.name(), "100000"); //KB
-        conf.put(DefaultConfSettings.CONFIG.name(), "iota.ini");
-        conf.put(DefaultConfSettings.P_REMOVE_REQUEST.name(), "0.01");
-        conf.put(DefaultConfSettings.P_DROP_TRANSACTION.name(), "0.0");
-        conf.put(DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name(), "0.7");
-        conf.put(DefaultConfSettings.P_SEND_MILESTONE.name(), "0.02");
-        conf.put(DefaultConfSettings.P_REPLY_RANDOM_TIP.name(), "0.66");
-        conf.put(DefaultConfSettings.P_PROPAGATE_REQUEST.name(), "0.01");
-        conf.put(DefaultConfSettings.MAIN_DB.name(), "rocksdb");
-        conf.put(DefaultConfSettings.EXPORT.name(), "false");
-        conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
-        conf.put(DefaultConfSettings.NEW_TX_LIMIT.name(), "0.0");
-        conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
-        conf.put(DefaultConfSettings.DNS_REFRESHER_ENABLED.name(), "true");
-        conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
-        conf.put(DefaultConfSettings.RESCAN_DB.name(), "false");
-        conf.put(DefaultConfSettings.MAINNET_MWM.name(), "14");
-        conf.put(DefaultConfSettings.TESTNET_MWM.name(), "13");
+    public Configuration() {
 
-        // Pick a number based on best performance
-        conf.put(DefaultConfSettings.MIN_RANDOM_WALKS.name(), "5");
-        conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "27");
-        // Pick a milestone depth number depending on risk model
-        conf.put(DefaultConfSettings.MAX_DEPTH.name(), "15");
-
-        conf.put(DefaultConfSettings.MAX_FIND_TRANSACTIONS.name(), "100000");
-        conf.put(DefaultConfSettings.MAX_REQUESTS_LIST.name(), "1000");
-        conf.put(DefaultConfSettings.MAX_GET_TRYTES.name(), "10000");
-        conf.put(DefaultConfSettings.MAX_BODY_LENGTH.name(), "1000000");
-        conf.put(DefaultConfSettings.ZMQ_ENABLED.name(), "false");
-        conf.put(DefaultConfSettings.ZMQ_PORT.name(), "5556");
-        conf.put(DefaultConfSettings.ZMQ_IPC.name(), "ipc://iri");
-        conf.put(DefaultConfSettings.ZMQ_THREADS.name(), "2");
-
-        conf.put(DefaultConfSettings.Q_SIZE_NODE.name(), "1000");
-        conf.put(DefaultConfSettings.LRU_SIZE_HASHES.name(), "5000");
-        conf.put(DefaultConfSettings.LRU_SIZE_BYTES.name(), "15000");
-
-    }
-
-    public boolean init() throws IOException {
-        File confFile = new File(string(Configuration.DefaultConfSettings.CONFIG));
-        if(confFile.exists()) {
-            ini = new Ini(confFile);
-            prefs = new IniPreferences(ini);
-            return true;
-        }
-        return false;
-    }
-
-    public String getIniValue(String k) {
-        if(ini != null) {
-            return prefs.node("IRI").get(k, null);
-        }
-        return null;
-    }
-
-    private String getConfValue(String k) {
-        String value = getIniValue(k);
-        return value == null? conf.get(k): value;
-    }
-
-    public String allSettings() {
-        final StringBuilder settings = new StringBuilder();
-        conf.keySet().forEach(t -> settings.append("Set '").append(t).append("'\t -> ").append(getConfValue(t)).append("\n"));
-        return settings.toString();
+        // this is needed to put system env variables into the configuration
+        // until https://github.com/lightbend/config/issues/488 got fixed
+        System.getenv().forEach(this::put);
     }
 
     public void put(final String k, final String v) {
         log.debug("Setting {} with {}", k, v);
-        conf.put(k, v);
+        config = config.withValue(k,
+                ConfigValueFactory.fromAnyRef(v));
     }
 
     public void put(final DefaultConfSettings d, String v) {
         log.debug("Setting {} with {}", d.name(), v);
-        conf.put(d.name(), v);
+        this.put(d.name(), v);
     }
 
-    private String string(String k) {
-        return getConfValue(k);
+    public boolean has(String k) {
+        return config.hasPath(k);
+    }
+
+    public boolean has(final DefaultConfSettings d) {
+        return this.has(d.name());
+    }
+
+    public String string(String k) {
+        return config.getString(k);
     }
 
     public float floating(String k) {
-        return Float.parseFloat(getConfValue(k));
+        return (float) config.getDouble(k);
     }
 
     public double doubling(String k) {
-        return Double.parseDouble(getConfValue(k));
+        return config.getDouble(k);
     }
 
     private int integer(String k) {
-        return Integer.parseInt(getConfValue(k));
+        return config.getInt(k);
     }
 
     private boolean booling(String k) {
-        return Boolean.parseBoolean(getConfValue(k));
+        return config.getBoolean(k);
     }
 
     public String string(final DefaultConfSettings d) {

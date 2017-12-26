@@ -360,7 +360,7 @@ public class API {
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
         boolean state = true;
-        String info = null;
+        String info = "";
 
         //check transactions themselves are valid
         for (Hash transaction : transactions) {
@@ -375,19 +375,19 @@ public class API {
 
             if (!instance.transactionValidator.checkSolidity(txVM.getHash(), false)) {
                 state = false;
-                info = "tail is not solid (missing a referenced tx): " + transaction;
+                info = "tails are not solid (missing a referenced tx): " + transaction;
                 break;
             } else if (BundleValidator.validate(instance.tangle, txVM.getBundleHash()).size() == 0) {
                 state = false;
-                info = "tail is not consistent (bundle is invalid): " + transaction;
+                info = "tails are not consistent (bundle is invalid): " + transaction;
                 break;
             }
         }
 
-        if (state = true) {
+        if (state) {
             if (!instance.ledgerValidator.checkConsistency(instance.milestone.latestSnapshot, transactions)) {
                 state = false;
-                info = "tails is not consistent (would lead to inconsistent ledger state)";
+                info = "tails are not consistent (would lead to inconsistent ledger state)";
             }
         }
 

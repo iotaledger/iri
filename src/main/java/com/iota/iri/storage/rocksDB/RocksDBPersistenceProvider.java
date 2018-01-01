@@ -31,7 +31,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
      */
     //TODO current value is arbitrary, make configurable. Change only the multiplier so no unit test will fail.
     //size of Hash + 1 byte because of the delimiter
-    public static final int BYTE_LENGTH_SPLIT = (Hash.SIZE_IN_BYTES + 1)*20;
+            //TODO test what happens when you persist an object larger than this
+    public static final int BYTE_LENGTH_SPLIT = (Hash.SIZE_IN_BYTES + 1)*27;
     /**
      * The maximal byte size a value in a key-value pair will not be above
      * {@code BYTE_LENGTH_SPLIT} * ({@code MAX_BYTE_RATIO} + 1)
@@ -296,16 +297,22 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             throw new IllegalArgumentException(String.format("When fetching an object that is splitBytes over several keys," +
                     "the start offset %d should be less than the end offset %d", splitStart, splitEnd));
         }
+        if (model == null) {
+            log.error("Must specify what kind of object you are trying to read.");
+            return null;
+        }
+
+        if (index == null) {
+            log.error("Trying to read from a null index.");
+            return null;
+        }
+
         Persistable object = model.newInstance();
         ColumnFamilyHandle columnFamilyHandle = classTreeMap.get().get(model);
         if (object.isSplittable()) {
-            List<byte[]> keysThatHoldSplitValue = listKeyBytesThatHoldSplitValue(model, index);
-            for (int i = splitStart; i < Math.min(keysThatHoldSplitValue.size(), splitEnd); ++i) {
-                byte[] key = keysThatHoldSplitValue.get(i);
-                byte[] bytes = db.get(columnFamilyHandle, key == null ? new byte[0] : key);
-                object.read(bytes);
-            }
-        } else {
+            object = readSplitObject(object, index);
+        }
+        else {
             object.read(db.get(columnFamilyHandle, index == null ? new byte[0] : index.bytes()));
         }
         ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
@@ -370,6 +377,26 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             }
         }
         return keyBytes;
+    }
+
+    private <T extends Persistable> T readSplitObject(T object, Indexable index) {
+        List<byte[]> keyBytes = new ArrayList<>();
+        ColumnFamilyHandle columnFamilyHandle = classTreeMap.get().get(object.getClass());
+        if (columnFamilyHandle != null) {
+            byte[] indexBytes = index.bytes();
+            try (RocksIterator iterator = db.newIterator(columnFamilyHandle)) {
+                iterator.seek(indexBytes);
+                while (iterator.isValid()
+                        && Arrays.equals(Arrays.copyOf(iterator.key(), indexBytes.length), indexBytes)) {
+                    byte[] key = iterator.key();
+                    keyBytes.add(key);
+                    byte[] value = iterator.value();
+                    object.read(value);
+                    iterator.next();
+                }
+            }
+        }
+        return object;
     }
 
     @Override
@@ -507,7 +534,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private byte[] determineMergeStartPoint(ColumnFamilyHandle handle, byte[] lastSplitKey, WriteBatch writeBatch) throws RocksDBException {
         byte[] dbEntry = db.get(handle, lastSplitKey);
         if (dbEntry != null && dbEntry.length >= MAX_BYTE_RATIO * BYTE_LENGTH_SPLIT) {
-            //assume no more than 127 splits. I this isn't enough we need to make the suffix longer
+            //TODO add carry
+            // assume no more than 127 splits. If this isn't enough we need to make the suffix longer
             ++lastSplitKey[lastSplitKey.length -1];
         }
 

@@ -524,6 +524,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             exists = true;
         }
         lastSplitKey = determineMergeStartPoint(handle, lastSplitKey, writeBatch);
+        if (lastSplitKey == null) {
+            log.error("Merge was not performed");
+            return false;
+        }
         List<Pair<byte[], byte[]>> splitModelAndIndexPairs = createSplitModelAndIndexPairs(model, lastSplitKey);
         for (Pair<byte[], byte[]> pair : splitModelAndIndexPairs) {
             writeBatch.merge(handle, pair.hi, pair.low);
@@ -534,9 +538,12 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private byte[] determineMergeStartPoint(ColumnFamilyHandle handle, byte[] lastSplitKey, WriteBatch writeBatch) throws RocksDBException {
         byte[] dbEntry = db.get(handle, lastSplitKey);
         if (dbEntry != null && dbEntry.length >= MAX_BYTE_RATIO * BYTE_LENGTH_SPLIT) {
-            //TODO add carry
-            // assume no more than 127 splits. If this isn't enough we need to make the suffix longer
-            ++lastSplitKey[lastSplitKey.length -1];
+            try {
+                lastSplitKey = IotaUtils.incrementArrayIntegerSuffix(lastSplitKey);
+            } catch (Exception e) {
+                log.error("Can't find merge start point, e");
+                return null;
+            }
         }
 
         return lastSplitKey;

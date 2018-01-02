@@ -223,11 +223,11 @@ public class API {
                 }
                 case "getBalances": {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
-                    final List<String> hashes = request.containsKey("hashes") ?
-                            getParameterAsList(request,"hashes", HASH_SIZE):
+                    final List<String> tips = request.containsKey("tips") ?
+                            getParameterAsList(request,"tips ", HASH_SIZE):
                             null;
                     final int threshold = getParameterAsInt(request, "threshold");
-                    return getBalancesStatement(addresses, hashes, threshold);
+                    return getBalancesStatement(addresses, tips, threshold);
                 }
                 case "getInclusionStates": {
                     if (invalidSubtangleStatus()) {
@@ -765,7 +765,7 @@ public class API {
         }
     }
 
-    private AbstractResponse getBalancesStatement(final List<String> addrss, final List<String> txs, final int threshold) throws Exception {
+    private AbstractResponse getBalancesStatement(final List<String> addrss, final List<String> tips, final int threshold) throws Exception {
 
         if (threshold <= 0 || threshold > 100) {
             return ErrorResponse.create("Illegal 'threshold'");
@@ -774,10 +774,10 @@ public class API {
         final List<Hash> addresses = addrss.stream().map(address -> (new Hash(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
         final List<Hash> hashes;
-        if (txs == null || txs.size() == 0) {
+        if (tips == null || tips.size() == 0) {
             hashes = Collections.singletonList(instance.milestone.latestSolidSubtangleMilestone);
         } else {
-            hashes = txs.stream().map(address -> (new Hash(address)))
+            hashes = tips.stream().map(address -> (new Hash(address)))
                     .collect(Collectors.toCollection(LinkedList::new));
         }
 
@@ -789,8 +789,11 @@ public class API {
         }
         index = referenceSnapshot.index();
         for(Hash hash: hashes) {
+            if (!TransactionViewModel.exists(instance.tangle, hash)) {
+                return ErrorResponse.create("Tip not found: " + hash.toString());
+            }
             if (!instance.ledgerValidator.isTipConsistent(referenceSnapshot, hash)) {
-                return ErrorResponse.create("Hashes are not consistent");
+                return ErrorResponse.create("Tips are not consistent");
             }
         }
         for (final Hash address : addresses) {

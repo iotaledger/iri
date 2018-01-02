@@ -758,10 +758,7 @@ public class Node {
 
         public V get(K key) {
             V value = this.map.get(key);
-            if (value == null) {
-                return null;
-            }
-            if (rnd.nextDouble() < this.dropRate) {
+            if (value != null && (rnd.nextDouble() < this.dropRate)) {
                 this.map.remove(key);
                 return null;
             }

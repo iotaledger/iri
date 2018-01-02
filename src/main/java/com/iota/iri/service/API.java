@@ -93,6 +93,7 @@ public class API {
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
+    private int maxTxToApprovePerRequest;
 
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
@@ -103,6 +104,7 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
+        maxTxToApprovePerRequest = instance.configuration.integer(DefaultConfSettings.MAX_TIPS_PER_REQUEST);
         newTransactionsRateLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
 
         newTransactionsLimit = (newTransactionsRateLimit * Neighbor.newTransactionsWindow) / 1000;
@@ -250,10 +252,20 @@ public class API {
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
 
-                    final List<String> references = request.containsKey("hashes") ? getParameterAsList(request, "hashes", HASH_SIZE): new ArrayList<>();
+                    final List<String> referenceTips = request.containsKey("tips") ? getParameterAsList(request, "hashes", HASH_SIZE): new ArrayList<>();
                     final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
                     final int depth = getParameterAsInt(request, "depth");
-                    final int count = request.containsKey("count") ? getParameterAsInt(request, "count"): 2;
+                    final int count;
+                    if (request.containsKey("count")) {
+                        int countParam = getParameterAsInt(request, "count");
+                        if (countParam < maxTxToApprovePerRequest) {
+                            count = countParam;
+                        } else {
+                            count = maxTxToApprovePerRequest;
+                        }
+                    } else {
+                        count = 2;
+                    }
                     if(depth < 0 || (reference == null && depth == 0)) {
                         return ErrorResponse.create("Invalid depth input");
                     }
@@ -262,7 +274,7 @@ public class API {
                         numWalks = minRandomWalks;
                     }
                     try {
-                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, references, count, numWalks);
+                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, referenceTips, count, numWalks);
                         if(tips == null) {
                             return ErrorResponse.create("The subtangle is not solid");
                         }

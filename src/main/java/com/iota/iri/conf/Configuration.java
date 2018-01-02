@@ -68,8 +68,9 @@ public class Configuration {
         ZMQ_IPC,
         ZMQ_THREADS,
         Q_SIZE_NODE,
-        LRU_SIZE_HASHES,
-        LRU_SIZE_BYTES,
+        P_DROP_CACHE_ENTRY,
+        CACHE_SIZE_HASHES,
+        CACHE_SIZE_BYTES,
     }
 
     {
@@ -122,8 +123,9 @@ public class Configuration {
         conf.put(DefaultConfSettings.ZMQ_THREADS.name(), "2");
 
         conf.put(DefaultConfSettings.Q_SIZE_NODE.name(), "1000");
-        conf.put(DefaultConfSettings.LRU_SIZE_HASHES.name(), "5000");
-        conf.put(DefaultConfSettings.LRU_SIZE_BYTES.name(), "15000");
+        conf.put(DefaultConfSettings.P_DROP_CACHE_ENTRY.name(), "0.02");
+        conf.put(DefaultConfSettings.CACHE_SIZE_HASHES.name(), "5000");
+        conf.put(DefaultConfSettings.CACHE_SIZE_BYTES.name(), "15000");
 
     }
 

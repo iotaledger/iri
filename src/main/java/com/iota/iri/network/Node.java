@@ -69,8 +69,8 @@ public class Node {
     private double P_PROPAGATE_REQUEST;
 
 
-    private LRUCache<Hash, Boolean> recentSeenHashes;
-    private LRUCache<ByteBuffer, Hash> recentSeenBytes;
+    private FIFOCache<Hash, Boolean> recentSeenHashes;
+    private FIFOCache<ByteBuffer, Hash> recentSeenBytes;
 
     private boolean debug;
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
@@ -114,8 +114,9 @@ public class Node {
         debug = configuration.booling(Configuration.DefaultConfSettings.DEBUG);
 
         BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.integer(Configuration.DefaultConfSettings.Q_SIZE_NODE);
-        recentSeenHashes = new LRUCache<>(configuration.integer(Configuration.DefaultConfSettings.LRU_SIZE_HASHES));
-        recentSeenBytes = new LRUCache<>(configuration.integer(Configuration.DefaultConfSettings.LRU_SIZE_BYTES));
+        double pDropCacheEntry = configuration.doubling(Configuration.DefaultConfSettings.P_DROP_CACHE_ENTRY.name());
+        recentSeenHashes = new FIFOCache<>(configuration.integer(Configuration.DefaultConfSettings.CACHE_SIZE_HASHES),pDropCacheEntry);
+        recentSeenBytes = new FIFOCache<>(configuration.integer(Configuration.DefaultConfSettings.CACHE_SIZE_BYTES), pDropCacheEntry);
 
         parseNeighborsConfig();
 
@@ -742,35 +743,41 @@ public class Node {
         return replyQueue.size();
     }
 
-    public class LRUCache<K, V> {
+    public class FIFOCache<K, V> {
 
-        private int capacity;
+        private final int capacity;
+        private final double dropRate;
         private LinkedHashMap<K, V> map;
+        private final SecureRandom rnd = new SecureRandom();
 
-        public LRUCache(int capacity) {
+        public FIFOCache(int capacity, double dropRate) {
             this.capacity = capacity;
+            this.dropRate = dropRate;
             this.map = new LinkedHashMap<>();
         }
 
         public V get(K key) {
             V value = this.map.get(key);
             if (value == null) {
-                value = null;
-            } else {
-                this.put(key, value);
+                return null;
+            }
+            if (rnd.nextDouble() < this.dropRate) {
+                this.map.remove(key);
+                return null;
             }
             return value;
         }
 
         public V put(K key, V value) {
             if (this.map.containsKey(key)) {
-                this.map.remove(key);
-            } else if (this.map.size() == this.capacity) {
+                return value;
+            }
+            if (this.map.size() >= this.capacity) {
                 Iterator<K> it = this.map.keySet().iterator();
                 it.next();
                 it.remove();
             }
-            return map.put(key, value);
+            return this.map.put(key, value);
         }
     }
 

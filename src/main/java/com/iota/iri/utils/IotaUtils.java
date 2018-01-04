@@ -29,14 +29,15 @@ public class IotaUtils {
     }
 
     private static byte[] advanceByteArray(byte[] array, int remainingCarryPasses, int currentIndexToAdvance) throws OverFlowException {
-        if (array[currentIndexToAdvance] == Byte.MAX_VALUE) {
+        while (array[currentIndexToAdvance] == Byte.MAX_VALUE) {
             if (remainingCarryPasses == 0) {
                 throw new OverFlowException("Can't advance the byte array without superseding allowed carry");
             }
             if (currentIndexToAdvance == 0) {
                 throw new OverFlowException("Can't advance the byte array without overflowing");
             }
-            advanceByteArray(array, --remainingCarryPasses, --currentIndexToAdvance);
+            --remainingCarryPasses;
+            --currentIndexToAdvance;
         }
         array[currentIndexToAdvance]++;
         return array;

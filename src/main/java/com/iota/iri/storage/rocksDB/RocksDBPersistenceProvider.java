@@ -379,6 +379,23 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         return keyBytes;
     }
 
+    private byte[] findLastKeyByteThatMayHoldSplitValue(ColumnFamilyHandle columnFamilyHandle, Indexable index) throws IotaUtils.OverFlowException {
+        byte[] keyBytes = index.bytes();
+        byte[] lastSplitKey = new byte[keyBytes.length + 4];
+        System.arraycopy(keyBytes,0,lastSplitKey,0 ,keyBytes.length);
+
+        boolean keyMayExist = db.keyMayExist(columnFamilyHandle, lastSplitKey, new StringBuilder());
+        while (keyMayExist) {
+            byte[] bytes = IotaUtils.incrementArrayIntegerSuffix(lastSplitKey);
+            keyMayExist = db.keyMayExist(columnFamilyHandle, keyBytes, new StringBuilder());
+            if (keyMayExist) {
+                lastSplitKey = bytes;
+            }
+        }
+
+        return lastSplitKey;
+    }
+
     private <T extends Persistable> T readSplitObject(T object, Indexable index) {
         List<byte[]> keyBytes = new ArrayList<>();
         ColumnFamilyHandle columnFamilyHandle = classTreeMap.get().get(object.getClass());
@@ -510,43 +527,35 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         return exists;
     }
 
-    private boolean mergeSplittable(Persistable model, Indexable index, ColumnFamilyHandle handle, WriteBatch writeBatch) throws RocksDBException, OperationNotSupportedException {
-        List<byte[]> indexBytes = listKeyBytesThatHoldSplitValue(model.getClass(), index);
-        byte[] lastSplitKey;
-        boolean exists = false;
-        if (indexBytes.isEmpty()) {
-            byte[] bytes = index.bytes();
-            lastSplitKey = new byte[bytes.length + 4];
-            System.arraycopy(bytes,0,lastSplitKey,0 ,bytes.length);
-        }
-        else {
-            lastSplitKey = indexBytes.get(indexBytes.size() - 1);
-            exists = true;
-        }
-        lastSplitKey = determineMergeStartPoint(handle, lastSplitKey, writeBatch);
-        if (lastSplitKey == null) {
+    private boolean mergeSplittable(Persistable model, Indexable index, ColumnFamilyHandle handle, WriteBatch writeBatch) throws RocksDBException, OperationNotSupportedException,
+            IotaUtils.OverFlowException {
+        byte[] lastSplitKey = findLastKeyByteThatMayHoldSplitValue(handle, index);
+
+        byte[] dbEntry = db.get(handle, lastSplitKey);
+        byte[] newKey = determineMergeStartPoint(dbEntry, lastSplitKey, writeBatch);
+        if (newKey == null) {
             log.error("Merge was not performed");
             return false;
         }
-        List<Pair<byte[], byte[]>> splitModelAndIndexPairs = createSplitModelAndIndexPairs(model, lastSplitKey);
+        List<Pair<byte[], byte[]>> splitModelAndIndexPairs = createSplitModelAndIndexPairs(model, newKey);
         for (Pair<byte[], byte[]> pair : splitModelAndIndexPairs) {
             writeBatch.merge(handle, pair.hi, pair.low);
         }
-        return exists;
+        return dbEntry!=null && Arrays.equals(newKey, lastSplitKey);
     }
 
-    private byte[] determineMergeStartPoint(ColumnFamilyHandle handle, byte[] lastSplitKey, WriteBatch writeBatch) throws RocksDBException {
-        byte[] dbEntry = db.get(handle, lastSplitKey);
+    private byte[] determineMergeStartPoint(byte[] dbEntry, byte[] lastSplitKey, WriteBatch writeBatch) throws RocksDBException {
+        byte[] newKey = ArrayUtils.clone(lastSplitKey);
         if (dbEntry != null && dbEntry.length >= MAX_BYTE_RATIO * BYTE_LENGTH_SPLIT) {
             try {
-                lastSplitKey = IotaUtils.incrementArrayIntegerSuffix(lastSplitKey);
+                newKey = IotaUtils.incrementArrayIntegerSuffix(newKey);
             } catch (Exception e) {
                 log.error("Can't find merge start point, e");
                 return null;
             }
         }
 
-        return lastSplitKey;
+        return newKey;
     }
 
     @Override

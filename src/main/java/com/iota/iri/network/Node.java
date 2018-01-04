@@ -69,7 +69,6 @@ public class Node {
     private double P_PROPAGATE_REQUEST;
 
 
-    private FIFOCache<Hash, Boolean> recentSeenHashes;
     private FIFOCache<ByteBuffer, Hash> recentSeenBytes;
 
     private boolean debug;
@@ -115,7 +114,6 @@ public class Node {
 
         BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.integer(Configuration.DefaultConfSettings.Q_SIZE_NODE);
         double pDropCacheEntry = configuration.doubling(Configuration.DefaultConfSettings.P_DROP_CACHE_ENTRY.name());
-        recentSeenHashes = new FIFOCache<>(configuration.integer(Configuration.DefaultConfSettings.CACHE_SIZE_HASHES),pDropCacheEntry);
         recentSeenBytes = new FIFOCache<>(configuration.integer(Configuration.DefaultConfSettings.CACHE_SIZE_BYTES), pDropCacheEntry);
 
         parseNeighborsConfig();
@@ -294,7 +292,7 @@ public class Node {
                         missCount = recentSeenBytesMissCount.get();
                     } else {
                         hitCount = recentSeenBytesHitCount.get();
-                        missCount = recentSeenBytesMissCount.getAndIncrement();
+                        missCount = recentSeenBytesMissCount.incrementAndGet();
                     }
                     if (((hitCount + missCount) % 50000L == 0)) {
                         log.info("RecentSeenBytes cache hit/miss ratio: " + hitCount + "/" + missCount);
@@ -370,21 +368,12 @@ public class Node {
 
     public void processReceivedData(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
 
-        boolean cached = false;
         boolean stored = false;
 
         //store new transaction
         try {
-            //first check if Hash seen recently & update seen.
-            synchronized (recentSeenHashes) {
-                cached = (recentSeenHashes.put(receivedTransactionViewModel.getHash(), true)) != null;
-
-            }
-            if (!cached) {
-                //if not, store tx.
-                if (neighbor.isBelowNewTransactionLimit()) {
-                    stored = receivedTransactionViewModel.store(tangle);
-                }
+            if (neighbor.isBelowNewTransactionLimit()) {
+                stored = receivedTransactionViewModel.store(tangle);
             }
         } catch (Exception e) {
             log.error("Error accessing persistence store.", e);

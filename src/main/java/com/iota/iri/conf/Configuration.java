@@ -108,7 +108,7 @@ public class Configuration {
         // Pick a number based on best performance
         conf.put(DefaultConfSettings.MIN_RANDOM_WALKS.name(), "5");
         conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "27");
-        conf.put(DefaultConfSettings.MAX_TIPS_PER_REQUEST.name(), "100");
+        conf.put(DefaultConfSettings.MAX_TIPS_PER_REQUEST.name(), "2");
         // Pick a milestone depth number depending on risk model
         conf.put(DefaultConfSettings.MAX_DEPTH.name(), "15");
 

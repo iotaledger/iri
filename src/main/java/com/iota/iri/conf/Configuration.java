@@ -69,7 +69,6 @@ public class Configuration {
         ZMQ_THREADS,
         Q_SIZE_NODE,
         P_DROP_CACHE_ENTRY,
-        CACHE_SIZE_HASHES,
         CACHE_SIZE_BYTES,
     }
 
@@ -124,7 +123,6 @@ public class Configuration {
 
         conf.put(DefaultConfSettings.Q_SIZE_NODE.name(), "1000");
         conf.put(DefaultConfSettings.P_DROP_CACHE_ENTRY.name(), "0.02");
-        conf.put(DefaultConfSettings.CACHE_SIZE_HASHES.name(), "5000");
         conf.put(DefaultConfSettings.CACHE_SIZE_BYTES.name(), "15000");
 
     }

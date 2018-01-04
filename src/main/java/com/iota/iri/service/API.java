@@ -255,17 +255,7 @@ public class API {
                     final List<String> referenceTips = request.containsKey("tips") ? getParameterAsList(request, "hashes", HASH_SIZE): new ArrayList<>();
                     final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
                     final int depth = getParameterAsInt(request, "depth");
-                    final int count;
-                    if (request.containsKey("count")) {
-                        int countParam = getParameterAsInt(request, "count");
-                        if (countParam < maxTxToApprovePerRequest) {
-                            count = countParam;
-                        } else {
-                            count = maxTxToApprovePerRequest;
-                        }
-                    } else {
-                        count = 2;
-                    }
+                    final int count = request.containsKey("count") ? Math.min(getParameterAsInt(request, "count"), maxTxToApprovePerRequest) : 2;
                     if(depth < 0 || (reference == null && depth == 0)) {
                         return ErrorResponse.create("Invalid depth input");
                     }
@@ -497,11 +487,11 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
-    public synchronized Hash[] getTransactionToApproveStatement(final int depth, final String reference, final List<String> references, final int tipsToApprove, final int numWalks) throws Exception {
+    public synchronized Hash[] getTransactionToApproveStatement(final int depth, final String reference, final List<String> referenceTips, final int tipsToApprove, final int numWalks) throws Exception {
         final Hash[] tips;
         final SecureRandom random;
         final int randomWalkCount;
-        final List<Hash> referenceHashes;
+        final List<Hash> referenceTipsHashes;
         final Snapshot referenceSnapshot;
 
         tips = new Hash[tipsToApprove];
@@ -516,20 +506,21 @@ public class API {
             }
         }
 
-        referenceHashes = references == null? new ArrayList<>(): references.stream().map(h -> new Hash(h)).collect(Collectors.toList());
+        referenceTipsHashes = referenceTips == null? new ArrayList<>(): referenceTips.stream().map(h -> new Hash(h)).collect(Collectors.toList());
 
-        extraTip = referenceHashes.size() > 0 ? referenceHashes.get(0): null;
+        extraTip = referenceTipsHashes.size() > 0 ? referenceTipsHashes.get(0): null;
         synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
             referenceSnapshot = new Snapshot(instance.milestone.latestSnapshot);
         }
 
-        for(Hash hash: referenceHashes) {
+        for(Hash hash: referenceTipsHashes) {
+            if (!TransactionViewModel.exists(instance.tangle, hash)) throw new RuntimeException("Reference tip not found");
             if (!instance.ledgerValidator.isTipConsistent(referenceSnapshot, hash)) throw new RuntimeException("inconsistent tips pair selected");
         }
         for(int i = 0; i < tipsToApprove; i++) {
             tips[i] = instance.tipsManager.transactionToApprove(referenceSnapshot, referenceHash, extraTip, depth, randomWalkCount, random);
             extraTip = tips[i];
-            if (tips[i] == null || instance.ledgerValidator.isTipConsistent(referenceSnapshot, extraTip)) {
+            if (tips[i] == null || !instance.ledgerValidator.isTipConsistent(referenceSnapshot, extraTip)) {
                 throw new RuntimeException("inconsistent tips pair selected");
             }
         }

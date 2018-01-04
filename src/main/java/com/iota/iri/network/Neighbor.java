@@ -18,7 +18,7 @@ public abstract class Neighbor {
     private int newTransactionsCounter;
     private long newTransactionsTimer;
     private final double newTransactionsLimit;
-    public static final long newTransactionsWindow = 10 * 1000L;
+    public static final long newTransactionsWindow = 30 * 1000L;
 
     private boolean flagged = false;
     public boolean isFlagged() {

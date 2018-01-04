@@ -48,6 +48,7 @@ public class Configuration {
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
         NEW_TX_LIMIT,
+        API_NEW_TX_LIMIT,
         MAX_PEERS,
         DNS_RESOLUTION_ENABLED,
         DNS_REFRESHER_ENABLED,
@@ -98,6 +99,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
         conf.put(DefaultConfSettings.NEW_TX_LIMIT.name(), "0.0");
+        conf.put(DefaultConfSettings.API_NEW_TX_LIMIT.name(), "0.0");
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
         conf.put(DefaultConfSettings.DNS_REFRESHER_ENABLED.name(), "true");
         conf.put(DefaultConfSettings.DNS_RESOLUTION_ENABLED.name(), "true");

@@ -11,15 +11,7 @@ import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -101,6 +93,7 @@ public class API {
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
+    private int maxTxToApprovePerRequest;
 
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
@@ -111,6 +104,7 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
+        maxTxToApprovePerRequest = instance.configuration.integer(DefaultConfSettings.MAX_TIPS_PER_REQUEST);
         newTransactionsRateLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
 
         newTransactionsLimit = (newTransactionsRateLimit * Neighbor.newTransactionsWindow) / 1000;
@@ -261,8 +255,10 @@ public class API {
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
 
+                    final List<String> referenceTips = request.containsKey("tips") ? getParameterAsList(request, "hashes", HASH_SIZE): new ArrayList<>();
                     final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
                     final int depth = getParameterAsInt(request, "depth");
+                    final int count = request.containsKey("count") ? Math.min(getParameterAsInt(request, "count"), maxTxToApprovePerRequest) : 2;
                     if(depth < 0 || (reference == null && depth == 0)) {
                         return ErrorResponse.create("Invalid depth input");
                     }
@@ -271,7 +267,7 @@ public class API {
                         numWalks = minRandomWalks;
                     }
                     try {
-                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
+                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, referenceTips, count, numWalks);
                         if(tips == null) {
                             return ErrorResponse.create("The subtangle is not solid");
                         }
@@ -494,26 +490,41 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
-    public synchronized Hash[] getTransactionToApproveStatement(final int depth, final String reference, final int numWalks) throws Exception {
-        int tipsToApprove = 2;
-        Hash[] tips = new Hash[tipsToApprove];
-        final SecureRandom random = new SecureRandom();
-        final int randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks:numWalks;
+    public synchronized Hash[] getTransactionToApproveStatement(final int depth, final String reference, final List<String> referenceTips, final int tipsToApprove, final int numWalks) throws Exception {
+        final Hash[] tips;
+        final SecureRandom random;
+        final int randomWalkCount;
+        final List<Hash> referenceTipsHashes;
+        final Snapshot referenceSnapshot;
+
+        tips = new Hash[tipsToApprove];
+        random = new SecureRandom();
+        randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks:numWalks;
         Hash referenceHash = null;
+        Hash extraTip;
         if(reference != null) {
             referenceHash = new Hash(reference);
             if(!TransactionViewModel.exists(instance.tangle, referenceHash)) {
                 referenceHash = null;
             }
         }
-        Snapshot referenceSnapshot;
+
+        referenceTipsHashes = referenceTips == null? new ArrayList<>(): referenceTips.stream().map(h -> new Hash(h)).collect(Collectors.toList());
+
+        extraTip = referenceTipsHashes.size() > 0 ? referenceTipsHashes.get(0): null;
         synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
             referenceSnapshot = new Snapshot(instance.milestone.latestSnapshot);
         }
+
+        for(Hash hash: referenceTipsHashes) {
+            if (!TransactionViewModel.exists(instance.tangle, hash)) throw new RuntimeException("Reference tip not found");
+            if (!instance.ledgerValidator.isTipConsistent(referenceSnapshot, hash)) throw new RuntimeException("inconsistent tips pair selected");
+        }
         for(int i = 0; i < tipsToApprove; i++) {
-            tips[i] = instance.tipsManager.transactionToApprove(referenceSnapshot, referenceHash, tips[0], depth, randomWalkCount, random);
-            if (tips[i] == null) {
-                return null;
+            tips[i] = instance.tipsManager.transactionToApprove(referenceSnapshot, referenceHash, extraTip, depth, randomWalkCount, random);
+            extraTip = tips[i];
+            if (tips[i] == null || !instance.ledgerValidator.isTipConsistent(referenceSnapshot, extraTip)) {
+                throw new RuntimeException("inconsistent tips pair selected");
             }
         }
         API.incCounter_getTxToApprove();

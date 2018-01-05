@@ -91,10 +91,10 @@ public class API {
     private final int maxGetTrytes;
     private final int maxBodyLength;
     private final double newTransactionsRateLimit;
-    private double newTransactionsLimit;
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
+    private AtomicInteger newTransactionsLimit;
     private HashMap<InetAddress,AtomicInteger> broadcastStoreCounters;
     private AtomicLong broadcastStoreTimer;
 
@@ -111,9 +111,10 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
-        newTransactionsRateLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.API_NEW_TX_LIMIT.name());
-        setApiRateLimit(newTransactionsRateLimit);
 
+        newTransactionsRateLimit = instance.configuration.doubling(Configuration.DefaultConfSettings.API_NEW_TX_LIMIT.name());
+        newTransactionsLimit = new AtomicInteger(0);
+        setApiRateLimit(newTransactionsRateLimit);
         broadcastStoreCounters = new HashMap<>();
         broadcastStoreTimer = new AtomicLong(0);
     }
@@ -353,7 +354,8 @@ public class API {
     }
 
     private boolean isBelowNewTransactionLimit(InetAddress sourceAddress, int size) {
-        if (newTransactionsLimit == 0) {
+        int newTransactionsLimitInt = newTransactionsLimit.get();
+        if (newTransactionsLimitInt == 0) {
             return true;
         }
 
@@ -364,9 +366,9 @@ public class API {
         }
 
         if(broadcastStoreCounters.putIfAbsent(sourceAddress, new AtomicInteger(size)) == null) { //not already in counter
-            return size < newTransactionsLimit;
+            return size < newTransactionsLimitInt;
         } else {
-            return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < newTransactionsLimit;
+            return broadcastStoreCounters.get(sourceAddress).addAndGet(size) < newTransactionsLimitInt;
         }
     }
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
@@ -1000,7 +1002,7 @@ public class API {
     }
     
     public void setApiRateLimit(double apiRateLimit) {
-        newTransactionsLimit = (apiRateLimit * Neighbor.newTransactionsWindow) / 1000;
+        newTransactionsLimit.set((int) ((apiRateLimit * Neighbor.newTransactionsWindow) / 1000));
     }
                 
 

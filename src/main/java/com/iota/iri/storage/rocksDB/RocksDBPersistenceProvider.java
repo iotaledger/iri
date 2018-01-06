@@ -380,16 +380,16 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     private byte[] findLastKeyByteThatMayHoldSplitValue(ColumnFamilyHandle columnFamilyHandle, Indexable index) throws IotaUtils.OverFlowException {
-        byte[] keyBytes = index.bytes();
-        byte[] lastSplitKey = new byte[keyBytes.length + 4];
-        System.arraycopy(keyBytes,0,lastSplitKey,0 ,keyBytes.length);
+        byte[] bytes = createSplitIndexBytes(index, 0);
+        byte[] lastSplitKey = Arrays.copyOf(bytes, bytes.length);
 
-        boolean keyMayExist = db.keyMayExist(columnFamilyHandle, lastSplitKey, new StringBuilder());
+        boolean keyMayExist = db.keyMayExist(columnFamilyHandle, bytes, new StringBuilder());
         while (keyMayExist) {
-            byte[] bytes = IotaUtils.incrementArrayIntegerSuffix(lastSplitKey);
-            keyMayExist = db.keyMayExist(columnFamilyHandle, keyBytes, new StringBuilder());
+            bytes = IotaUtils.incrementArrayIntegerSuffix(bytes);
+            StringBuilder stringBuilder = new StringBuilder();
+            keyMayExist = db.keyMayExist(columnFamilyHandle, bytes, stringBuilder);
             if (keyMayExist) {
-                lastSplitKey = bytes;
+                lastSplitKey = Arrays.copyOf(bytes, bytes.length);
             }
         }
 

@@ -1,3 +1,9 @@
+1.4.1.6
+    - fixes stale tcp connections
+    - fixes solid milestone getting stuck (regression)
+    - enables checking balance based on tips
+    - enables API Rate limit for new transacitons
+
 1.4.1.4
     - Improved memory allocation
     - add checkConsistency API call for transaction promotion

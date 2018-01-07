@@ -185,8 +185,7 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            if (instance.configuration.string(DefaultConfSettings.REMOTE_LIMIT_API).contains(command) &&
-                    !sourceAddress.getAddress().isLoopbackAddress()) {
+            if (instance.configuration.string(DefaultConfSettings.REMOTE_LIMIT_API).contains(command)) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 

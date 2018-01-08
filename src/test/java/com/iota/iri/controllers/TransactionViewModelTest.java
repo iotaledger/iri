@@ -338,7 +338,7 @@ public class TransactionViewModelTest {
         Assert.assertFalse(Arrays.equals(TransactionViewModel.find(tangle, Arrays.copyOf(hash.bytes(), TransactionRequester.REQUEST_HASH_SIZE)).getBytes(), transactionViewModel.getBytes()));
     }
 
-    //@Test
+    @Test
     public void testManyTXInDB() throws Exception {
         int i, j;
         LinkedList<Hash> hashes = new LinkedList<>();
@@ -388,12 +388,44 @@ public class TransactionViewModelTest {
                 maxdiff = 0;
             }
         }
-        log.info("Done. #TX: {}", TransactionViewModel.getNumberOfStoredTransactions(tangle));
+
     }
+
+    @Test
+    public void testStoreAndGetByAddress() throws Exception {
+        log.info("starting test");
+
+        long maxStore = 0, maxGet = 0, sumStore = 0, sumGet = 0;
+        for (int i=1; i<990000; ++i) {
+            Transaction randomTransaction = getRandomTransaction(seed);
+            TransactionViewModel transactionViewModel = new TransactionViewModel(randomTransaction, getRandomTransactionHash());
+            Hash addressHash = transactionViewModel.getAddressHash();
+            long startStore = System.nanoTime();
+            transactionViewModel.store(tangle);
+            long diffStore = System.nanoTime() - startStore;
+            maxStore = diffStore > maxStore ? diffStore : maxStore;
+            sumStore += diffStore;
+
+
+            long startGet = System.nanoTime();
+            AddressViewModel addressViewModel = AddressViewModel.load(tangle, transactionViewModel.getAddressHash());
+//            log.info(addressViewModel.getHashes().toString());
+            long diffGet = System.nanoTime() - startGet;
+            maxGet = diffGet > maxGet ? diffGet : maxGet;
+            sumGet += diffGet;
+
+            if (i % 200 == 0)
+            log.info("Save time for {}: {} us.\tGet Time: {} us.\tMax time Store: {} us. Max time Get: {} us. Average store: {} us. Average get: {} us.", i,
+                    (diffStore / 1000) , diffGet/1000, maxStore/1000, maxGet/1000, sumStore/i/1000, sumGet/i/1000);
+
+        }
+    }
+
 
     private Transaction getRandomTransaction(Random seed) {
         Transaction transaction = new Transaction();
         transaction.bytes = Converter.bytes(Arrays.stream(new int[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE]).map(i -> seed.nextInt(3)-1).toArray());
+
         return transaction;
     }
     public static int[] getRandomTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {
@@ -409,5 +441,9 @@ public class TransactionViewModelTest {
     }
     public static Hash getRandomTransactionHash() {
         return new Hash(Arrays.stream(new int[Hash.SIZE_IN_TRITS]).map(i -> seed.nextInt(3)-1).toArray());
+    }
+
+    public static Hash getRandomTransactionHash(int bound) {
+        return new Hash(Arrays.stream(new int[Hash.SIZE_IN_TRITS]).map(i -> seed.nextInt(bound)).toArray());
     }
 }

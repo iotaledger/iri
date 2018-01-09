@@ -5,7 +5,10 @@ RUN mvn clean package
 
 FROM openjdk:jre-slim
 WORKDIR /iri
-COPY --from=builder /iri/target/iri-1.4.1.6.jar iri.jar
+COPY docker-entrypoint.sh .
+RUN ["chmod", "+x", "docker-entrypoint.sh"]
+
+COPY --from=builder /iri/target/iri-1.4.1.4.jar iri.jar
 COPY logback.xml /iri
 VOLUME /iri
 
@@ -13,4 +16,18 @@ EXPOSE 14265
 EXPOSE 14777/udp
 EXPOSE 15777
 
-CMD ["/usr/bin/java", "-XX:+DisableAttachMechanism", "-Xmx8g", "-Xms256m", "-Dlogback.configurationFile=/iri/conf/logback.xml", "-Djava.net.preferIPv4Stack=true", "-jar", "iri.jar", "-p", "14265", "-u", "14777", "-t", "15777", "--remote", "--remote-limit-api", "\"addNeighbors, removeNeighbors, getNeighbors\"", "$@"]
+ENV PORT= \
+    NEIGHBORS= \
+    CONFIG= \
+    UPD_RECEIVER_PORT= \
+    TCP_RECEIVER_PORT= \
+    TESTNET= \   #If defined flag will be assumed
+    REMOTE= \   #If defined flag will be assumed
+    REMOTE_AUTH= \
+    REMOTE_LIMIT_API= \
+    SEND_LIMIT= \
+    MAX_PEERS= \
+    DNS_RESOLUTION_FALSE=   #If defined flag will be assumed
+
+CMD ["./docker-entrypoint.sh"]
+

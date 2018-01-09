@@ -3,7 +3,7 @@
 [ -z "$NEIGHBORS" ]  || n="-n $NEIGHBORS"
 [ -z "$CONFIG" ]  || c="-c $CONFIG"
 [ -z "$UDP_RECEIVER_PORT" ]  || u="-u $UDP_RECEIVER_PORT"
-[ -z "$TCP_RECEIVER_PORT" ]  || t="-t TCP_RECEIVER_PORT"
+[ -z "$TCP_RECEIVER_PORT" ]  || t="-t $TCP_RECEIVER_PORT"
 [ -z "$TESTNET" ]  || testnet="--testnet"
 [ -z "$REMOTE" ]  || remote="--remote"
 [ -z "$REMOTE_AUTH" ]  || remote_auth="--remote-auth $REMOTE_AUTH"

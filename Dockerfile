@@ -21,13 +21,13 @@ ENV PORT= \
     CONFIG= \
     UPD_RECEIVER_PORT= \
     TCP_RECEIVER_PORT= \
-    TESTNET= \   #If defined flag will be assumed
-    REMOTE= \   #If defined flag will be assumed
+    TESTNET= \
+    REMOTE= \
     REMOTE_AUTH= \
     REMOTE_LIMIT_API= \
     SEND_LIMIT= \
     MAX_PEERS= \
-    DNS_RESOLUTION_FALSE=   #If defined flag will be assumed
+    DNS_RESOLUTION_FALSE=
 
 ENTRYPOINT ["./docker-entrypoint.sh"]
 

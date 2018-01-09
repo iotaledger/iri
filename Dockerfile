@@ -29,5 +29,5 @@ ENV PORT= \
     MAX_PEERS= \
     DNS_RESOLUTION_FALSE=   #If defined flag will be assumed
 
-CMD ["./docker-entrypoint.sh"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
 

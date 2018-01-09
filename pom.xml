@@ -160,6 +160,36 @@
 <build>
     <plugins>
         <plugin>
+            <groupId>com.spotify</groupId>
+            <artifactId>docker-maven-plugin</artifactId>
+            <version>1.0.0</version>
+            <configuration>
+                <imageName>iri</imageName>
+                <imageTags>
+                    <imageTag>latest</imageTag>
+                    <imageTag>${project.version}</imageTag>
+                </imageTags>
+                <baseImage>openjdk:jre-slim</baseImage>
+                <workdir>/iri</workdir>
+                <exposes>14265</exposes>
+                <exposes>14777/udp</exposes>
+                <exposes>15777</exposes>
+                <entryPoint>["java", "-XX:+DisableAttachMechanism", "-Xmx8g", "-Xms256m", "-Dlogback.configurationFile=/iri/conf/logback.xml", "-Djava.net.preferIPv4Stack=true", "-jar", "/iri/${project.build.finalName}.jar", "-p", "14265", "-u", "14777", "-t", "15777", "--remote", "--remote-limit-api", "\"addNeighbors, removeNeighbors, getNeighbors\"", "$@"]</entryPoint>
+                <resources>
+                    <resource>
+                        <targetPath>/iri</targetPath>
+                        <directory>${project.basedir}</directory>
+                        <include>logback.xml</include>
+                    </resource>
+                    <resource>
+                        <targetPath>/iri</targetPath>
+                        <directory>${project.build.directory}</directory>
+                        <include>${project.build.finalName}.jar</include>
+                    </resource>
+                </resources>
+            </configuration>
+        </plugin>
+        <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-compiler-plugin</artifactId>
             <version>3.3</version>

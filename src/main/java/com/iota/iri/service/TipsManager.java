@@ -3,18 +3,25 @@ package com.iota.iri.service;
 import java.util.*;
 
 import com.iota.iri.LedgerValidator;
-import com.iota.iri.Snapshot;
+import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.controllers.ApproveeViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.controllers.*;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.collections.BoundedSetValuedHashMap;
 import com.iota.iri.zmq.MessageQ;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Milestone;
-
 public class TipsManager {
+
+    public static final int MAX_ANCESTORS_SIZE = 10000;
 
     private final Logger log = LoggerFactory.getLogger(TipsManager.class);
     private final Tangle tangle;
@@ -109,15 +116,15 @@ public class TipsManager {
         if(milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX ||
                 milestone.latestMilestoneIndex == Milestone.MILESTONE_START_INDEX) {
 
-            Map<Hash, Long> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
             Set<Hash> maxDepthOk = new HashSet<>();
             try {
                 Hash tip = entryPoint(reference, extraTip, depth);
-                serialUpdateRatings(visitedHashes, tip, ratings, analyzedTips, extraTip);
+                Map<Hash, Integer> cumulativeWeights = calculateCumulativeWeight(visitedHashes, tip,
+                        extraTip != null, new HashSet<>());
                 analyzedTips.clear();
                 if (ledgerValidator.updateDiff(visitedHashes, diff, tip)) {
-                    return markovChainMonteCarlo(visitedHashes, diff, tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex - depth * 2, maxDepthOk, seed);
+                    return markovChainMonteCarlo(visitedHashes, diff, tip, extraTip, cumulativeWeights, iterations, milestone.latestSolidSubtangleMilestoneIndex - depth * 2, maxDepthOk, seed);
                 } else {
                     throw new RuntimeException("starting tip failed consistency check: " + tip.toString());
                 }
@@ -149,11 +156,13 @@ public class TipsManager {
         return milestone.latestSolidSubtangleMilestone;
     }
 
-    Hash markovChainMonteCarlo(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, final Hash tip, final Hash extraTip, final Map<Hash, Long> ratings, final int iterations, final int maxDepth, final Set<Hash> maxDepthOk, final Random seed) throws Exception {
+    Hash markovChainMonteCarlo(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, Hash tip, Hash extraTip, Map<Hash, Integer> cumulativeWeight,
+            int iterations, int maxDepth, Set<Hash> maxDepthOk, Random seed) throws Exception {
         Map<Hash, Integer> monteCarloIntegrations = new HashMap<>();
         Hash tail;
         for(int i = iterations; i-- > 0; ) {
-            tail = randomWalk(visitedHashes, diff, tip, extraTip, ratings, maxDepth, maxDepthOk, seed);
+            tail = randomWalk(visitedHashes, diff, tip, extraTip, cumulativeWeight,
+                    maxDepth, maxDepthOk, seed);
             if(monteCarloIntegrations.containsKey(tail)) {
                 monteCarloIntegrations.put(tail, monteCarloIntegrations.get(tail) + 1);
             } else {
@@ -173,7 +182,25 @@ public class TipsManager {
         }).map(Map.Entry::getKey).orElse(null);
     }
 
-    Hash randomWalk(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
+    /**
+     * Performs a walk from {@code start} until you reach a tip or {@code extraTip}. The path depends of the values
+     * of transaction weights given in {@code cumulativeWeights}. If a tx weight is missing, then calculate it on
+     * the fly.
+     *
+     * @param visitedHashes hashes of transactions that were validated and their weights can be disregarded when we have
+     *                      {@code extraTip} is not {@code null}.
+     * @param diff map of address to change in balance since last snapshot.
+     * @param start hash of the transaction that starts the walk.
+     * @param extraTip an extra ending point for the walk. If not null the walk will ignore the weights of
+     * {@code visitedHashes}.
+     * @param cumulativeWeights maps transaction hashes to weights. Missing data is computed by this method.
+     * @param maxDepth the transactions we are traversing may not be below this depth measured in number of snapshots.
+     * @param maxDepthOk transaction hashes that we know are not below {@code maxDepth}
+     * @param rnd generates random doubles to make the walk less deterministic
+     * @return a tip's hash
+     * @throws Exception
+     */
+    Hash randomWalk(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, final Hash start, final Hash extraTip, final Map<Hash, Integer> cumulativeWeights, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
         Hash tip = start, tail = tip;
         Hash[] tips;
         Set<Hash> tipSet;
@@ -232,17 +259,18 @@ public class TipsManager {
             } else {
                 // walk to the next approver
                 tips = tipSet.toArray(new Hash[tipSet.size()]);
-                if (!ratings.containsKey(tip)) {
-                    serialUpdateRatings(myApprovedHashes, tip, ratings, analyzedTips, extraTip);
+                if (!cumulativeWeights.containsKey(tip)) {
+                    cumulativeWeights.putAll(calculateCumulativeWeight(myApprovedHashes, tip, extraTip != null,
+                            analyzedTips));
                     analyzedTips.clear();
                 }
 
                 walkRatings = new double[tips.length];
                 double maxRating = 0;
-                long tipRating = ratings.get(tip);
+                long tipRating = cumulativeWeights.get(tip);
                 for (int i = 0; i < tips.length; i++) {
                     //transition probability = ((Hx-Hy)^-3)/maxRating
-                    walkRatings[i] = Math.pow(tipRating - ratings.getOrDefault(tips[i],0L), -3);
+                    walkRatings[i] = Math.pow(tipRating - cumulativeWeights.getOrDefault(tips[i],0), -3);
                     maxRating += walkRatings[i];
                 }
                 ratingWeight = rnd.nextDouble() * maxRating;
@@ -272,70 +300,135 @@ public class TipsManager {
         return a+b;
     }
 
-    void serialUpdateRatings(final Set<Hash> visitedHashes, final Hash txHash, final Map<Hash, Long> ratings, final Set<Hash> analyzedTips, final Hash extraTip) throws Exception {
-        Stack<Hash> hashesToRate = new Stack<>();
-        hashesToRate.push(txHash);
-        Hash currentHash;
-        boolean addedBack;
-        while(!hashesToRate.empty()) {
-            currentHash = hashesToRate.pop();
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, currentHash);
-            addedBack = false;
-            Set<Hash> approvers = transactionViewModel.getApprovers(tangle).getHashes();
-            for(Hash approver : approvers) {
-                if(ratings.get(approver) == null && !approver.equals(currentHash)) {
-                    if(!addedBack) {
-                        addedBack = true;
-                        hashesToRate.push(currentHash);
+    /**
+     * Updates the cumulative weight of txs.
+     * A cumulative weight of each tx is 1 + the number of ancestors it has.
+     *
+     * See https://github.com/alongalky/iota-docs/blob/master/cumulative.md
+     *
+     *
+     * @param myApprovedHashes the current hashes of the snapshot at the time of calculation
+     * @param currentTxHash the transaction from where the analysis starts
+     * @param confirmLeftBehind if true attempt to give more weight to previously
+     *                          unconfirmed txs
+     * @throws Exception if there is a problem accessing the db
+     */
+    Map<Hash, Integer> calculateCumulativeWeight(Set<Hash> myApprovedHashes, Hash currentTxHash, boolean confirmLeftBehind,
+            Set<Hash> analyzedTips) throws Exception {
+        Collection<TransactionViewModel> txsToRate = sortTransactionsInTopologicalOrder(currentTxHash);
+        return calculateCwInOrder(txsToRate, myApprovedHashes, confirmLeftBehind, analyzedTips);
+    }
+
+    private Set<TransactionViewModel> sortTransactionsInTopologicalOrder(Hash startTx) throws Exception {
+        Set<TransactionViewModel> sortedTxs = new LinkedHashSet<>();
+        Set<TransactionViewModel> temporary = new HashSet<>();
+        Deque<TransactionViewModel> stack = new ArrayDeque<>();
+        Map<TransactionViewModel, Collection<TransactionViewModel>> txToDirectApprovers = new HashMap<>();
+
+        stack.push(TransactionViewModel.fromHash(tangle, startTx));
+        while (CollectionUtils.isNotEmpty(stack)) {
+            TransactionViewModel tx = stack.peek();
+            if (!sortedTxs.contains(tx)) {
+                Collection<TransactionViewModel> appHashes = getTxDirectApproversHashes(tx, txToDirectApprovers);
+                if (CollectionUtils.isNotEmpty(appHashes)) {
+                    TransactionViewModel txApp = getAndRemoveApprover(appHashes);
+                    if (!temporary.add(txApp)) {
+                        throw new IllegalStateException("A circle was found in a subtangle on hash: " + txApp.getHash());
                     }
-                    hashesToRate.push(approver);
+                    stack.push(txApp);
+                    continue;
                 }
             }
-            if(!addedBack && analyzedTips.add(currentHash)) {
-                long rating = (extraTip != null && visitedHashes.contains(currentHash)? 0: 1) + approvers.stream().map(ratings::get).filter(Objects::nonNull)
-                        .reduce((a, b) -> capSum(a,b, Long.MAX_VALUE/2)).orElse(0L);
-                ratings.put(currentHash, rating);
+            else {
+                temporary.remove(stack.pop());
+                continue;
             }
+            sortedTxs.add(tx);
         }
+
+        return sortedTxs;
     }
 
-    Set<Hash> updateHashRatings(Hash txHash, Map<Hash, Set<Hash>> ratings, Set<Hash> analyzedTips) throws Exception {
-        Set<Hash> rating;
-        if(analyzedTips.add(txHash)) {
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
-            rating = new HashSet<>(Collections.singleton(txHash));
-            Set<Hash> approverHashes = transactionViewModel.getApprovers(tangle).getHashes();
-            for(Hash approver : approverHashes) {
-                rating.addAll(updateHashRatings(approver, ratings, analyzedTips));
-            }
-            ratings.put(txHash, rating);
-        } else {
-            if(ratings.containsKey(txHash)) {
-                rating = ratings.get(txHash);
-            } else {
-                rating = new HashSet<>();
-            }
-        }
-        return rating;
+    private TransactionViewModel getAndRemoveApprover(Collection<TransactionViewModel> appHashes) {
+        Iterator<TransactionViewModel> hashIterator = appHashes.iterator();
+        TransactionViewModel txApp = hashIterator.next();
+        hashIterator.remove();
+        return txApp;
     }
 
-    long recursiveUpdateRatings(Hash txHash, Map<Hash, Long> ratings, Set<Hash> analyzedTips) throws Exception {
-        long rating = 1;
-        if(analyzedTips.add(txHash)) {
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
-            Set<Hash> approverHashes = transactionViewModel.getApprovers(tangle).getHashes();
-            for(Hash approver : approverHashes) {
-                rating = capSum(rating, recursiveUpdateRatings(approver, ratings, analyzedTips), Long.MAX_VALUE/2);
+    private Collection<TransactionViewModel> getTxDirectApproversHashes(TransactionViewModel tx,
+            Map<TransactionViewModel, Collection<TransactionViewModel>> txToDirectApprovers) throws Exception {
+        Collection<TransactionViewModel> txApprovers = txToDirectApprovers.get(tx);
+        if (txApprovers == null) {
+            ApproveeViewModel approvers = tx.getApprovers(tangle);
+            Collection<Hash> appHashes = CollectionUtils.emptyIfNull(approvers.getHashes());
+            txApprovers = new HashSet<>(appHashes.size());
+            for (Hash appHash : appHashes) {
+                //if not genesis (the tx that confirms itself)
+                if (ObjectUtils.notEqual(Hash.NULL_HASH, appHash)) {
+                    TransactionViewModel txApp = TransactionViewModel.fromHash(tangle, appHash);
+                    txApprovers.add(txApp);
+                }
             }
-            ratings.put(txHash, rating);
-        } else {
-            if(ratings.containsKey(txHash)) {
-                rating = ratings.get(txHash);
-            } else {
-                rating = 0;
-            }
+            txToDirectApprovers.put(tx, txApprovers);
         }
-        return rating;
+        return txApprovers;
+    }
+
+    private Map<Hash, Integer> calculateCwInOrder(Collection<TransactionViewModel> txsToRate,
+            Set<Hash> myApprovedHashes, boolean confirmLeftBehind, Set<Hash> analyzedTips) throws Exception {
+        AbstractSetValuedMap<TransactionViewModel, TransactionViewModel> txToApprovers =
+                new BoundedSetValuedHashMap<>(MAX_ANCESTORS_SIZE);
+        HashMap<Hash, Integer> txToCumulativeWeight = new HashMap<>();
+
+        for (TransactionViewModel transactionViewModel : txsToRate) {
+            if (analyzedTips.add(transactionViewModel.getHash())) {
+                txToCumulativeWeight = updateCw(txToApprovers, txToCumulativeWeight, transactionViewModel, myApprovedHashes,
+                        confirmLeftBehind);
+            }
+            txToApprovers = updateApproversAndReleaseMemory(txToApprovers, transactionViewModel, myApprovedHashes,
+                    confirmLeftBehind);
+        }
+
+        return txToCumulativeWeight;
+    }
+
+
+    private AbstractSetValuedMap<TransactionViewModel, TransactionViewModel> updateApproversAndReleaseMemory(
+            AbstractSetValuedMap<TransactionViewModel, TransactionViewModel> txToApprovers,
+            TransactionViewModel transactionViewModel, Set<Hash> myApprovedHashes, boolean confirmLeftBehind) throws Exception {
+        Set<TransactionViewModel> approvers = txToApprovers.get(transactionViewModel);
+
+        TransactionViewModel trunkTransaction = transactionViewModel.getTrunkTransaction(tangle);
+        txToApprovers.putAll(trunkTransaction, approvers);
+        TransactionViewModel branchTransaction = transactionViewModel.getBranchTransaction(tangle);
+        txToApprovers.putAll(branchTransaction, approvers);
+        if (shouldIncludeTransaction(transactionViewModel, myApprovedHashes, confirmLeftBehind)) {
+            txToApprovers.put(trunkTransaction, transactionViewModel);
+            txToApprovers.put(branchTransaction, transactionViewModel);
+        }
+
+        txToApprovers.remove(transactionViewModel);
+
+        return txToApprovers;
+    }
+
+    private static boolean shouldIncludeTransaction(TransactionViewModel tx, Set<Hash> myApprovedHashes,
+            boolean confirmLeftBehind) {
+        return tx != null
+                && !(confirmLeftBehind && myApprovedHashes.contains(tx.getHash()));
+    }
+
+    private HashMap<Hash, Integer> updateCw(AbstractSetValuedMap<TransactionViewModel, TransactionViewModel> txToApprovers,
+            HashMap<Hash, Integer> txToCumulativeWeight, TransactionViewModel transactionViewModel,
+            Set<Hash> myApprovedHashes, boolean confirmLeftBehind) {
+        Set<TransactionViewModel> approvers = txToApprovers.get(transactionViewModel);
+        int weight = CollectionUtils.emptyIfNull(approvers).size();
+        if (shouldIncludeTransaction(transactionViewModel, myApprovedHashes, confirmLeftBehind)) {
+            ++weight;
+        }
+        txToCumulativeWeight.put(transactionViewModel.getHash(), weight);
+        return txToCumulativeWeight;
     }
 
     public int getMaxDepth() {

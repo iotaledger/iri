@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 
@@ -97,7 +98,7 @@ public class Snapshot {
     private final Map<Hash, Long> state;
     private final int index;
     private final Snapshot referencedSnapshot;
-    private boolean isConsistentMarker = false;
+    private AtomicBoolean isConsistentMarker = new AtomicBoolean(false);
 
     public int index() {
         return index;
@@ -146,26 +147,34 @@ public class Snapshot {
     public Optional<Long> getStateOf(Hash h) {
         Long l = this.state.get(h);
 
-        if (l != null) return Optional.of(l);
-        else if (this.referencedSnapshot != null) {
-            return referencedSnapshot.getStateOf(h);
+
+        if(referencedSnapshot != null) {
+            Optional<Long> nestedValue = referencedSnapshot.getStateOf(h);
+
+            if(l != null) {
+                // TODO @th0br0 We can store the return value in a ConcurrentHashMap to reduce nesting
+                // needs to store one additional bit of metadata though.
+                return Optional.of(l + nestedValue.orElse(0L));
+            } else {
+                return nestedValue;
+            }
         }
 
-        return Optional.empty();
+        return Optional.ofNullable(l);
     }
 
     public Snapshot patch(Map<Hash, Long> diff, int index) {
-        Map<Hash, Long> patchedState = diff.entrySet().parallelStream()
+        /*Map<Hash, Long> patchedState = diff.entrySet().parallelStream()
                 .map(hashLongEntry -> new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
                         hashLongEntry.getValue() + getStateOf(hashLongEntry.getKey()).orElse(0L)))
                 .filter(e -> e.getValue() != 0L)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));*/
 
-        return new Snapshot(this, patchedState, index);
+        return new Snapshot(this, diff, index);
     }
 
     boolean isConsistent() {
-        if (isConsistentMarker) {
+        if (isConsistentMarker.get()) {
             return true;
         }
         Map<Hash, Long> totalState;
@@ -177,7 +186,8 @@ public class Snapshot {
 
             while (ptr != null) {
                 for (Map.Entry<Hash, Long> e : ptr.state.entrySet()) {
-                    totalState.putIfAbsent(e.getKey(), e.getValue());
+                    // getStateOf return value is non-Empty.
+                    totalState.putIfAbsent(e.getKey(), ptr.getStateOf(e.getKey()).get());
                 }
 
                 ptr = ptr.referencedSnapshot;
@@ -205,7 +215,7 @@ public class Snapshot {
             }
         }
 
-        isConsistentMarker = true;
+        isConsistentMarker.set(true);
         return true;
     }
 }

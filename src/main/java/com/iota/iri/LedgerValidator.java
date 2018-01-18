@@ -302,6 +302,8 @@ public class LedgerValidator {
                 if (isConsistent) {
                     updateConsistentHashes(snapshot, tip, latestSyncIndex);
                     //snapshot.merge(snapshot.patch(currentState, latestSyncIndex));
+                } else {
+                    log.info("Tip is not consistent");
                 }
             }
         }

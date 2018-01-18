@@ -159,15 +159,26 @@ public class Snapshot {
         }
 
         l = this.state.get(h);
+        Snapshot ref = referencedSnapshot;
 
-        if (referencedSnapshot != null) {
-            Optional<Long> nestedValue = referencedSnapshot.getStateOfNaive(h);
-
-            if (l != null) {
-                return Optional.of(l + nestedValue.orElse(0L));
-            } else {
-                return nestedValue;
+        while (ref != null) {
+            if (ref.computedState.containsKey(h)) {
+                Long v = ref.computedState.get(h);
+                if (l != null) {
+                    return Optional.of(l + v);
+                } else {
+                    return Optional.of(v);
+                }
             }
+
+            Long v = ref.state.get(h);
+            if (l == null) {
+                l = v;
+            } else if (v != null) {
+                l += v;
+            }
+
+            ref = ref.referencedSnapshot;
         }
 
         return Optional.ofNullable(l);

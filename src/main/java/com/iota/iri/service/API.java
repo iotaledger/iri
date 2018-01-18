@@ -399,7 +399,7 @@ public class API {
         }
 
         if (state) {
-            if (!instance.ledgerValidator.checkConsistency(instance.milestone.latestSnapshot, transactions)) {
+            if (!instance.ledgerValidator.checkConsistency(instance.milestone.latestSnapshot.get(), transactions)) {
                 state = false;
                 info = "tails are not consistent (would lead to inconsistent ledger state)";
             }
@@ -529,10 +529,8 @@ public class API {
                 referenceHash = null;
             }
         }
-        Snapshot referenceSnapshot;
-        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
-            referenceSnapshot = new Snapshot(instance.milestone.latestSnapshot);
-        }
+        final Snapshot referenceSnapshot = instance.milestone.latestSnapshot.get();
+
         for(int i = 0; i < tipsToApprove; i++) {
             tips[i] = instance.tipsManager.transactionToApprove(referenceSnapshot, referenceHash, tips[0], depth, randomWalkCount, random);
             if (tips[i] == null) {
@@ -549,7 +547,7 @@ public class API {
             ellapsedTime_getTxToApprove = 0L;
         }
 
-        if (instance.ledgerValidator.checkConsistency(instance.milestone.latestSnapshot, Arrays.asList(tips))) {
+        if (instance.ledgerValidator.checkConsistency(referenceSnapshot, Arrays.asList(tips))) {
             return tips;
         }
         throw new RuntimeException("inconsistent tips pair selected");
@@ -806,10 +804,8 @@ public class API {
 
         final Map<Hash, Long> balances = new HashMap<>();
         final int index;
-        Snapshot referenceSnapshot;
-        synchronized (instance.milestone.latestSnapshot.snapshotSyncObject) {
-            referenceSnapshot = new Snapshot(instance.milestone.latestSnapshot);
-        }
+        Snapshot referenceSnapshot = instance.milestone.latestSnapshot.get();
+
         index = referenceSnapshot.index();
         for(Hash hash: hashes) {
             if (!TransactionViewModel.exists(instance.tangle, hash)) {
@@ -820,30 +816,33 @@ public class API {
             }
         }
         for (final Hash address : addresses) {
-            balances.put(address, referenceSnapshot.getState().containsKey(address) ? referenceSnapshot.getState().get(address) : Long.valueOf(0));
+            balances.put(address, referenceSnapshot.getStateOf(address).orElse(0L));
         }
 
 
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(hashes);
         Hash hash;
-        while ((hash = nonAnalyzedTransactions.poll()) != null) {
+        synchronized (referenceSnapshot.approvalsSyncObject) {
+            while ((hash = nonAnalyzedTransactions.poll()) != null) {
 
-            if (referenceSnapshot.approvedHashes.add(hash)) {
+                if (!referenceSnapshot.isApproved(hash)) {
+                    referenceSnapshot.markApproved(hash);
 
-                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, hash);
+                    final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, hash);
 
-                if(transactionViewModel.snapshotIndex() == 0 || transactionViewModel.snapshotIndex() > index) {
-                    if (transactionViewModel.value() != 0) {
+                    if(transactionViewModel.snapshotIndex() == 0 || transactionViewModel.snapshotIndex() > index) {
+                        if (transactionViewModel.value() != 0) {
 
-                        final Hash address = transactionViewModel.getAddressHash();
-                        final Long balance = balances.get(address);
-                        if (balance != null) {
+                            final Hash address = transactionViewModel.getAddressHash();
+                            final Long balance = balances.get(address);
+                            if (balance != null) {
 
-                            balances.put(address, balance + transactionViewModel.value());
+                                balances.put(address, balance + transactionViewModel.value());
+                            }
                         }
+                        nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
+                        nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                     }
-                    nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
-                    nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
                 }
             }
         }

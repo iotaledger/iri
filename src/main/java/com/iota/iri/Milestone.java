@@ -6,11 +6,9 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -41,7 +39,7 @@ public class Milestone {
     private final TransactionValidator transactionValidator;
     private final boolean testnet;
     private final MessageQ messageQ;
-    public Snapshot latestSnapshot;
+    public AtomicReference<Snapshot> latestSnapshot;
 
     private LedgerValidator ledgerValidator;
     public Hash latestMilestone = Hash.NULL_HASH;
@@ -64,7 +62,7 @@ public class Milestone {
                      ) {
         this.tangle = tangle;
         this.coordinator = coordinator;
-        this.latestSnapshot = initialSnapshot;
+        this.latestSnapshot = new AtomicReference<>(initialSnapshot);
         this.transactionValidator = transactionValidator;
         this.testnet = testnet;
         this.messageQ = messageQ;
@@ -223,11 +221,22 @@ public class Milestone {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
                  milestoneViewModel = milestoneViewModel.next(tangle)) {
+
                 if (transactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&
-                        milestoneViewModel.index() >= latestSolidSubtangleMilestoneIndex &&
-                        ledgerValidator.updateSnapshot(latestSnapshot, milestoneViewModel)) {
-                    latestSolidSubtangleMilestone = milestoneViewModel.getHash();
-                    latestSolidSubtangleMilestoneIndex = milestoneViewModel.index();
+                        milestoneViewModel.index() >= latestSolidSubtangleMilestoneIndex) {
+                   final Optional<Snapshot> maybeSnapshot = ledgerValidator.updateSnapshot(latestSnapshot.get(), milestoneViewModel);
+                   final MilestoneViewModel localMVM = milestoneViewModel;
+
+                   if(maybeSnapshot.isPresent())  {
+                       latestSnapshot.updateAndGet((s) -> {
+                           latestSolidSubtangleMilestone = localMVM.getHash();
+                           latestSolidSubtangleMilestoneIndex = localMVM.index();
+
+                           return maybeSnapshot.get();
+                       });
+                   } else {
+                       break;
+                   }
                 } else {
                     break;
                 }

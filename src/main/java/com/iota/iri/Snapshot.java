@@ -1,10 +1,11 @@
 package com.iota.iri;
+
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -15,7 +16,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.stream.Collectors;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 
 public class Snapshot {
@@ -33,15 +35,14 @@ public class Snapshot {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
         Sponge curl = SpongeFactory.create(SpongeFactory.Mode.KERL);
-        int[] trits = new int[Curl.HASH_LENGTH*3];
+        int[] trits = new int[Curl.HASH_LENGTH * 3];
         try {
-            while((line = reader.readLine()) != null) {
+            while ((line = reader.readLine()) != null) {
                 Converter.trits(Converter.asciiToTrytes(line), trits, 0);
                 curl.absorb(trits, 0, trits.length);
                 Arrays.fill(trits, 0);
                 String[] parts = line.split(";", 2);
-                if (parts.length >= 2)
-                {
+                if (parts.length >= 2) {
                     String key = parts[0];
                     String value = parts[1];
                     initialState.put(new Hash(key), Long.valueOf(value));
@@ -57,16 +58,16 @@ public class Snapshot {
                 int i;
                 in = Snapshot.class.getResourceAsStream("/Snapshot.sig");
                 reader = new BufferedReader(new InputStreamReader(in));
-                for(i = 0; i < 3 && (line = reader.readLine()) != null; i++) {
+                for (i = 0; i < 3 && (line = reader.readLine()) != null; i++) {
                     int[] lineTrits = Converter.allocateTritsForTrytes(line.length());
                     Converter.trits(line, lineTrits, 0);
                     digests = ArrayUtils.addAll(
                             digests,
                             ISS.digest(mode
-                                    , Arrays.copyOfRange(bundle, i*ISS.NORMALIZED_FRAGMENT_LENGTH, (i+1)*ISS.NORMALIZED_FRAGMENT_LENGTH)
+                                    , Arrays.copyOfRange(bundle, i * ISS.NORMALIZED_FRAGMENT_LENGTH, (i + 1) * ISS.NORMALIZED_FRAGMENT_LENGTH)
                                     , lineTrits));
                 }
-                if((line = reader.readLine()) != null) {
+                if ((line = reader.readLine()) != null) {
                     int[] lineTrits = Converter.allocateTritsForTrytes(line.length());
                     Converter.trits(line, lineTrits, 0);
                     root = ISS.getMerkleRoot(mode, ISS.address(mode, digests), lineTrits, 0, SNAPSHOT_INDEX, SNAPSHOT_PUBKEY_DEPTH);
@@ -76,7 +77,7 @@ public class Snapshot {
 
                 int[] pubkeyTrits = Converter.allocateTritsForTrytes(SNAPSHOT_PUBKEY.length());
                 Converter.trits(SNAPSHOT_PUBKEY, pubkeyTrits, 0);
-                if(!Arrays.equals(pubkeyTrits, root)) {
+                if (!Arrays.equals(pubkeyTrits, root)) {
                     throw new RuntimeException("Snapshot signature failed.");
                 }
             }
@@ -86,76 +87,141 @@ public class Snapshot {
         }
 
         initialSnapshot = new Snapshot(initialState, 0);
-        if(!initialSnapshot.isConsistent()) {
+        if (!initialSnapshot.isConsistent()) {
             System.out.println("Initial Snapshot inconsistent.");
             System.exit(-1);
         }
     }
 
-    public final Object snapshotSyncObject = new Object();
-    public final Object approvalsSyncObject = new Object();
-    public final Set<Hash> approvedHashes = new HashSet<>();
+    public Object approvalsSyncObject = new Object();
+    private final Set<Hash> approvedHashes = new HashSet<>();
     private final Map<Hash, Long> state;
-    private int index;
+    private final ConcurrentHashMap<Hash, Long> computedState = new ConcurrentHashMap<>();
+    private final int index;
+    private final Snapshot referencedSnapshot;
+    private AtomicBoolean isConsistentMarker = new AtomicBoolean(false);
 
     public int index() {
         return index;
     }
 
     public Snapshot(Snapshot snapshot) {
-        state = new HashMap<>(snapshot.state);
+        state = Collections.emptyMap();
+        referencedSnapshot = snapshot;
         this.index = snapshot.index;
     }
 
     private Snapshot(Map<Hash, Long> initialState, int index) {
         state = new HashMap<>(initialState);
+        referencedSnapshot = null;
         this.index = index;
     }
 
-    public Map<Hash, Long> getState() {
-        return state;
+    public Snapshot(Snapshot referencedSnapshot, Map<Hash, Long> delta, int index) {
+        assert index > referencedSnapshot.index;
+
+        this.state = new HashMap<>(delta);
+        this.index = index;
+        this.referencedSnapshot = referencedSnapshot;
     }
 
-    public Map<Hash, Long> diff(Map<Hash, Long> newState) {
-        return newState.entrySet().parallelStream()
-                .map(hashLongEntry ->
-                        new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
-                                hashLongEntry.getValue() -
-                                        (state.containsKey(hashLongEntry.getKey()) ?
-                                                state.get(hashLongEntry.getKey()): 0) ))
-                .filter(e -> e.getValue() != 0L)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+    /**
+     * Caller has to make sure that he holds a lock.
+     */
+    public boolean isApproved(Hash h) {
+        if (approvedHashes.contains(h)) {
+            return true;
+        } else if (referencedSnapshot != null) {
+            return referencedSnapshot.isApproved(h);
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * Caller has to make sure that he holds a lock.
+     */
+    public void markApproved(Hash h) {
+        approvedHashes.add(h);
+    }
+
+    public Optional<Long> getStateOf(Hash h) {
+        return Optional.ofNullable(this.computedState.computeIfAbsent(h, (someValue) -> getStateOfNaive(someValue).orElse(null)));
+    }
+
+    // This optimisation means that we only add a hash to the computed state on the snapshots where it's actually
+    // used
+    private Optional<Long> getStateOfNaive(Hash h) {
+        Long l = this.computedState.get(h);
+
+        if (l != null) {
+            return Optional.of(l);
+        }
+
+        l = this.state.get(h);
+        Snapshot ref = referencedSnapshot;
+
+        while (ref != null) {
+            if (ref.computedState.containsKey(h)) {
+                Long v = ref.computedState.get(h);
+                if (l != null) {
+                    return Optional.of(l + v);
+                } else {
+                    return Optional.of(v);
+                }
+            }
+
+            Long v = ref.state.get(h);
+            if (l == null) {
+                l = v;
+            } else if (v != null) {
+                l += v;
+            }
+
+            ref = ref.referencedSnapshot;
+        }
+
+        return Optional.ofNullable(l);
     }
 
     public Snapshot patch(Map<Hash, Long> diff, int index) {
-        Map<Hash, Long> patchedState = state.entrySet().parallelStream()
-                .map( hashLongEntry ->
-                        new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
-                                hashLongEntry.getValue() +
-                                        (diff.containsKey(hashLongEntry.getKey()) ?
-                                         diff.get(hashLongEntry.getKey()) : 0)) )
+        /*Map<Hash, Long> patchedState = diff.entrySet().parallelStream()
+                .map(hashLongEntry -> new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
+                        hashLongEntry.getValue() + getStateOf(hashLongEntry.getKey()).orElse(0L)))
                 .filter(e -> e.getValue() != 0L)
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        diff.entrySet().stream()
-                .filter(e -> e.getValue() > 0L)
-                .forEach(e -> patchedState.putIfAbsent(e.getKey(), e.getValue()));
-        return new Snapshot(patchedState, index);
-    }
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));*/
 
-    void merge(Snapshot snapshot) {
-        state.clear();
-        state.putAll(snapshot.state);
-        index = snapshot.index;
+        return new Snapshot(this, diff, index);
     }
 
     boolean isConsistent() {
-        long stateValue = state.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
-        if(stateValue != TransactionViewModel.SUPPLY) {
+        if (isConsistentMarker.get()) {
+            return true;
+        }
+        Map<Hash, Long> totalState;
+        if (referencedSnapshot == null) {
+            totalState = state;
+        } else {
+            totalState = new HashMap<>();
+            Snapshot ptr = this;
+
+            while (ptr != null) {
+                for (Map.Entry<Hash, Long> e : ptr.state.entrySet()) {
+                    // getStateOf return value is non-Empty.
+                    totalState.putIfAbsent(e.getKey(), ptr.getStateOf(e.getKey()).get());
+                }
+
+                ptr = ptr.referencedSnapshot;
+            }
+        }
+
+        final long stateValue = totalState.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
+        if (stateValue != TransactionViewModel.SUPPLY) {
             long difference = TransactionViewModel.SUPPLY - stateValue;
             log.info("Transaction resolves to incorrect ledger balance: {}", difference);
             return false;
         }
-        final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
+        final Iterator<Map.Entry<Hash, Long>> stateIterator = totalState.entrySet().iterator();
         while (stateIterator.hasNext()) {
 
             final Map.Entry<Hash, Long> entry = stateIterator.next();
@@ -168,15 +234,9 @@ public class Snapshot {
 
                 stateIterator.remove();
             }
-            //////////// --Coo only--
-                /*
-                 * if (entry.getValue() > 0) {
-                 *
-                 * System.out.ln("initialState.put(new Hash(\"" + entry.getKey()
-                 * + "\"), " + entry.getValue() + "L);"); }
-                 */
-            ////////////
         }
+
+        isConsistentMarker.set(true);
         return true;
     }
 }

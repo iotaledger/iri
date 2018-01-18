@@ -16,8 +16,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.stream.Collectors;
 
 
 public class Snapshot {
@@ -96,6 +96,7 @@ public class Snapshot {
     public Object approvalsSyncObject = new Object();
     private final Set<Hash> approvedHashes = new HashSet<>();
     private final Map<Hash, Long> state;
+    private final ConcurrentHashMap<Hash, Long> computedState = new ConcurrentHashMap<>();
     private final int index;
     private final Snapshot referencedSnapshot;
     private AtomicBoolean isConsistentMarker = new AtomicBoolean(false);
@@ -145,15 +146,24 @@ public class Snapshot {
     }
 
     public Optional<Long> getStateOf(Hash h) {
-        Long l = this.state.get(h);
+        return Optional.ofNullable(this.computedState.computeIfAbsent(h, (someValue) -> getStateOfNaive(someValue).orElse(null)));
+    }
 
+    // This optimisation means that we only add a hash to the computed state on the snapshots where it's actually
+    // used
+    private Optional<Long> getStateOfNaive(Hash h) {
+        Long l = this.computedState.get(h);
 
-        if(referencedSnapshot != null) {
-            Optional<Long> nestedValue = referencedSnapshot.getStateOf(h);
+        if (l != null) {
+            return Optional.of(l);
+        }
 
-            if(l != null) {
-                // TODO @th0br0 We can store the return value in a ConcurrentHashMap to reduce nesting
-                // needs to store one additional bit of metadata though.
+        l = this.state.get(h);
+
+        if (referencedSnapshot != null) {
+            Optional<Long> nestedValue = referencedSnapshot.getStateOfNaive(h);
+
+            if (l != null) {
                 return Optional.of(l + nestedValue.orElse(0L));
             } else {
                 return nestedValue;

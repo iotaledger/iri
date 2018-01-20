@@ -247,16 +247,10 @@ public class LedgerValidator {
     public boolean checkConsistency(List<Hash> hashes) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>();
         Map<Hash, Long> diff = new HashMap<>();
-
-        milestone.latestSnapshot.rwlock.readLock().lock();
-        try {
-            for (Hash hash : hashes) {
-                if (!updateDiff(visitedHashes, diff, hash)) return false;
-            }
-            return true;
-        } finally {
-            milestone.latestSnapshot.rwlock.readLock().unlock();
+        for (Hash hash : hashes) {
+            if (!updateDiff(visitedHashes, diff, hash)) return false;
         }
+        return true;
     }
 
     public boolean updateDiff(Set<Hash> approvedHashes, final Map<Hash, Long> diff, Hash tip) throws Exception {

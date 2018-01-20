@@ -399,9 +399,15 @@ public class API {
         }
 
         if (state) {
-            if (!instance.ledgerValidator.checkConsistency(transactions)) {
-                state = false;
-                info = "tails are not consistent (would lead to inconsistent ledger state)";
+            instance.milestone.latestSnapshot.rwlock.readLock().lock();
+            try {
+
+                if (!instance.ledgerValidator.checkConsistency(transactions)) {
+                    state = false;
+                    info = "tails are not consistent (would lead to inconsistent ledger state)";
+                }
+            } finally {
+                instance.milestone.latestSnapshot.rwlock.readLock().unlock();
             }
         }
 

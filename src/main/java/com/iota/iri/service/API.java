@@ -531,29 +531,31 @@ public class API {
         }
 
         instance.milestone.latestSnapshot.rwlock.readLock().lock();
-        Set<Hash> visitedHashes = new HashSet<>();
-        Map<Hash, Long> diff = new HashMap<>();
-        for(int i = 0; i < tipsToApprove; i++) {
-            tips[i] = instance.tipsManager.transactionToApprove(visitedHashes, diff, referenceHash, tips[0], depth, randomWalkCount, random);
-            if (tips[i] == null) {
-                return null;
+        try {
+            Set<Hash> visitedHashes = new HashSet<>();
+            Map<Hash, Long> diff = new HashMap<>();
+            for (int i = 0; i < tipsToApprove; i++) {
+                tips[i] = instance.tipsManager.transactionToApprove(visitedHashes, diff, referenceHash, tips[0], depth, randomWalkCount, random);
+                if (tips[i] == null) {
+                    return null;
+                }
             }
-        }
-        API.incCounter_getTxToApprove();
-        if ( ( getCounter_getTxToApprove() % 100) == 0 ) {
-            String sb = "Last 100 getTxToApprove consumed " +
-                    API.getEllapsedTime_getTxToApprove() / 1000000000L +
-                    " seconds processing time.";
-            log.info(sb);
-            counter_getTxToApprove = 0;
-            ellapsedTime_getTxToApprove = 0L;
-        }
+            API.incCounter_getTxToApprove();
+            if ((getCounter_getTxToApprove() % 100) == 0) {
+                String sb = "Last 100 getTxToApprove consumed " +
+                        API.getEllapsedTime_getTxToApprove() / 1000000000L +
+                        " seconds processing time.";
+                log.info(sb);
+                counter_getTxToApprove = 0;
+                ellapsedTime_getTxToApprove = 0L;
+            }
 
-        if (instance.ledgerValidator.checkConsistency(Arrays.asList(tips))) {
+            if (instance.ledgerValidator.checkConsistency(Arrays.asList(tips))) {
+                return tips;
+            }
+        } finally {
             instance.milestone.latestSnapshot.rwlock.readLock().unlock();
-            return tips;
         }
-        instance.milestone.latestSnapshot.rwlock.readLock().unlock();
         throw new RuntimeException("inconsistent tips pair selected");
     }
 
@@ -808,30 +810,31 @@ public class API {
 
         final Map<Hash, Long> balances = new HashMap<>();
         instance.milestone.latestSnapshot.rwlock.readLock().lock();
-        final int index = instance.milestone.latestSnapshot.index();
-        for (final Hash address : addresses) {
-            Long value = instance.milestone.latestSnapshot.getBalance(address);
-            if (value == null) value = 0L;
-            balances.put(address, value);
-        }
-
-        final Set<Hash> visitedHashes;
-        final Map<Hash, Long> diff;
-
-        visitedHashes = new HashSet<>();
-        diff = new HashMap<>();
-        for(Hash tip: hashes) {
-            if (!TransactionViewModel.exists(instance.tangle, tip)) {
-                instance.milestone.latestSnapshot.rwlock.readLock().unlock();
-                return ErrorResponse.create("Tip not found: " + tip.toString());
+        try {
+            final int index = instance.milestone.latestSnapshot.index();
+            for (final Hash address : addresses) {
+                Long value = instance.milestone.latestSnapshot.getBalance(address);
+                if (value == null) value = 0L;
+                balances.put(address, value);
             }
-            if (!instance.ledgerValidator.updateDiff(visitedHashes, diff, tip)) {
-                instance.milestone.latestSnapshot.rwlock.readLock().unlock();
-                return ErrorResponse.create("Tips are not consistent");
+
+            final Set<Hash> visitedHashes;
+            final Map<Hash, Long> diff;
+
+            visitedHashes = new HashSet<>();
+            diff = new HashMap<>();
+            for (Hash tip : hashes) {
+                if (!TransactionViewModel.exists(instance.tangle, tip)) {
+                    return ErrorResponse.create("Tip not found: " + tip.toString());
+                }
+                if (!instance.ledgerValidator.updateDiff(visitedHashes, diff, tip)) {
+                    return ErrorResponse.create("Tips are not consistent");
+                }
             }
+            diff.forEach((key, value) -> balances.computeIfPresent(key, (hash, aLong) -> value + aLong));
+        } finally {
+            instance.milestone.latestSnapshot.rwlock.readLock().unlock();
         }
-        diff.forEach((key, value) -> balances.computeIfPresent(key, (hash, aLong) -> value + aLong));
-        instance.milestone.latestSnapshot.rwlock.readLock().unlock();
 
         final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())
                 .collect(Collectors.toCollection(LinkedList::new));

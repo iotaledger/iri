@@ -808,8 +808,8 @@ public class API {
                 .collect(Collectors.toCollection(LinkedList::new));
         final List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
-        final int index = instance.milestone.latestSnapshot.index();
         instance.milestone.latestSnapshot.rwlock.readLock().lock();
+        final int index = instance.milestone.latestSnapshot.index();
         if (tips == null || tips.size() == 0) {
             hashes = Collections.singletonList(instance.milestone.latestSolidSubtangleMilestone);
         } else {

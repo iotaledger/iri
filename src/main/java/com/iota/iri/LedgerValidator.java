@@ -201,7 +201,7 @@ public class LedgerValidator {
     private MilestoneViewModel buildSnapshot() throws Exception {
         MilestoneViewModel consistentMilestone = null;
         StateDiffViewModel stateDiffViewModel;
-        milestone.latestSnapshot.rwlock.writeLock().lock();
+        long stamp = milestone.latestSnapshot.sl.readLock();
         try {
             MilestoneViewModel snapshotMilestone = MilestoneViewModel.firstWithSnapshot(tangle);
             while (snapshotMilestone != null) {
@@ -213,14 +213,14 @@ public class LedgerValidator {
                 }
             }
         } finally {
-            milestone.latestSnapshot.rwlock.writeLock().unlock();
+            milestone.latestSnapshot.sl.unlockRead(stamp);
         }
         return consistentMilestone;
     }
 
     public boolean updateSnapshot(MilestoneViewModel milestoneVM) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestoneVM.getHash());
-        milestone.latestSnapshot.rwlock.writeLock().lock();
+        long stamp = milestone.latestSnapshot.sl.readLock();
         try {
             final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
             boolean hasSnapshot = transactionSnapshotIndex != 0;
@@ -240,7 +240,7 @@ public class LedgerValidator {
             }
             return hasSnapshot;
         } finally {
-            milestone.latestSnapshot.rwlock.writeLock().unlock();
+            milestone.latestSnapshot.sl.unlockRead(stamp);
         }
     }
 

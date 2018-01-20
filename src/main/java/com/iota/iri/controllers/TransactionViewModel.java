@@ -160,11 +160,11 @@ public class TransactionViewModel {
 
     public List<Pair<Indexable, Persistable>> getMetadataSaveBatch() throws Exception {
         List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
-        if(!getAddressHash().equals(Hash.NULL_HASH)) hashesList.add(new Pair<>(getAddressHash(), new Address(hash)));
-        if(getCurrentIndex() == 0) hashesList.add(new Pair<>(getBundleHash(), new Bundle(hash)));
+        hashesList.add(new Pair<>(getAddressHash(), new Address(hash)));
+        hashesList.add(new Pair<>(getBundleHash(), new Bundle(hash)));
         hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(hash)));
         hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(hash)));
-        if(!getObsoleteTagValue().equals(Hash.NULL_HASH)) hashesList.add(new Pair<>(getObsoleteTagValue(), new Tag(hash)));
+        hashesList.add(new Pair<>(getObsoleteTagValue(), new Tag(hash)));
         setAttachmentData();
         setMetadata();
         return hashesList;

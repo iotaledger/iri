@@ -43,9 +43,11 @@ public class LedgerValidator {
      * until it reaches a transaction that is marked as a "confirmed" transaction.
      * If {milestone} is false, it will search up until it reaches a confirmed transaction, or until it finds a hash that has been
      * marked as consistent since the previous milestone.
-     * @param tip       the hash of a transaction to start the search from
-     * @param milestone marker to indicate whether to stop only at confirmed transactions
-     * @return {state}  the addresses that have a balance changed since the last diff check
+     * @param visitedHashes         hashes that have been visited and considered as approved
+     * @param tip                   the hash of a transaction to start the search from
+     * @param latestSnapshotIndex   index of the latest snapshot to traverse to
+     * @param milestone             marker to indicate whether to stop only at confirmed transactions
+     * @return {state}              the addresses that have a balance changed since the last diff check
      * @throws Exception
      */
     public Map<Hash,Long> getLatestDiff(final Set<Hash> visitedHashes, Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {

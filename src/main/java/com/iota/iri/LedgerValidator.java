@@ -226,8 +226,7 @@ public class LedgerValidator {
             boolean hasSnapshot = transactionSnapshotIndex != 0;
             if (!hasSnapshot) {
                 Hash tail = transactionViewModel.getHash();
-                Set<Hash> visitedHashes = new HashSet<>();
-                Map<Hash, Long> currentState = getLatestDiff(visitedHashes, tail, milestone.latestSnapshot.index(), true);
+                Map<Hash, Long> currentState = getLatestDiff(new HashSet<>(), tail, milestone.latestSnapshot.index(), true);
                 hasSnapshot = currentState != null && Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(currentState));
                 if (hasSnapshot) {
                     updateSnapshotMilestone(milestoneVM.getHash(), milestoneVM.index());

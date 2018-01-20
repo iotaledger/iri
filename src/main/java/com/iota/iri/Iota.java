@@ -80,7 +80,7 @@ public class Iota {
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
-        milestone =  new Milestone(tangle, coordinator, new Snapshot(Snapshot.initialSnapshot), transactionValidator, testnet, messageQ);
+        milestone =  new Milestone(tangle, coordinator, Snapshot.initialSnapshot.clone(), transactionValidator, testnet, messageQ);
         node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
         replicator = new Replicator(node, tcpPort, maxPeers, testnet);
         udpReceiver = new UDPReceiver(udpPort, node);

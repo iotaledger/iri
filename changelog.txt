@@ -1,3 +1,7 @@
+1.4.1.7
+    - fixes snapshot copies
+    - removes extra bundles lookup from validation
+
 1.4.1.6
     - fixes stale tcp connections
     - fixes solid milestone getting stuck (regression)

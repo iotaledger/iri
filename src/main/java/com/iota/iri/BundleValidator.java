@@ -142,13 +142,13 @@ public class BundleValidator {
 
     private static Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle, TransactionViewModel tail) {
         final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();
-        boolean end = false;
+        final Hash bundleHash = tail.getBundleHash();
         try {
-            for(TransactionViewModel tx = tail;
-                tail.getBundleHash().equals(tx.getBundleHash()) && !end;
-                tx = tx.getTrunkTransaction(tangle), end = tx.getCurrentIndex() == 0) {
+            TransactionViewModel tx = tail;
+            do {
                 bundleTransactions.put(tx.getHash(), tx);
-            }
+                tx = tx.getTrunkTransaction(tangle);
+            } while (tx.getCurrentIndex() != 0 && tx.getBundleHash().equals(bundleHash));
         } catch (Exception e) {
             e.printStackTrace();
         }

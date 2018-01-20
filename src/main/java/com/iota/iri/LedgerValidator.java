@@ -43,14 +43,14 @@ public class LedgerValidator {
      * until it reaches a transaction that is marked as a "confirmed" transaction.
      * If {milestone} is false, it will search up until it reaches a confirmed transaction, or until it finds a hash that has been
      * marked as consistent since the previous milestone.
-     * @param visitedHashes         hashes that have been visited and considered as approved
-     * @param tip                   the hash of a transaction to start the search from
-     * @param latestSnapshotIndex   index of the latest snapshot to traverse to
-     * @param milestone             marker to indicate whether to stop only at confirmed transactions
-     * @return {state}              the addresses that have a balance changed since the last diff check
+     * @param visitedNonMilestoneSubtangleHashes hashes that have been visited and considered as approved
+     * @param tip                                the hash of a transaction to start the search from
+     * @param latestSnapshotIndex                index of the latest snapshot to traverse to
+     * @param milestone                          marker to indicate whether to stop only at confirmed transactions
+     * @return {state}                           the addresses that have a balance changed since the last diff check
      * @throws Exception
      */
-    public Map<Hash,Long> getLatestDiff(final Set<Hash> visitedHashes, Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
+    public Map<Hash,Long> getLatestDiff(final Set<Hash> visitedNonMilestoneSubtangleHashes, Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>();
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> countedTx = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -58,7 +58,7 @@ public class LedgerValidator {
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
-            if (visitedHashes.add(transactionPointer)) {
+            if (visitedNonMilestoneSubtangleHashes.add(transactionPointer)) {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, transactionPointer);
                 if (transactionViewModel.snapshotIndex() == 0 || transactionViewModel.snapshotIndex() > latestSnapshotIndex) {

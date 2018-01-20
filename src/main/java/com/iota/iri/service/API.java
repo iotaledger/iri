@@ -399,7 +399,7 @@ public class API {
         }
 
         if (state) {
-            instance.milestone.latestSnapshot.rwlock.readLock().lock();
+            long stamp = instance.milestone.latestSnapshot.sl.readLock();
             try {
 
                 if (!instance.ledgerValidator.checkConsistency(transactions)) {
@@ -407,7 +407,7 @@ public class API {
                     info = "tails are not consistent (would lead to inconsistent ledger state)";
                 }
             } finally {
-                instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+                instance.milestone.latestSnapshot.sl.unlockRead(stamp);
             }
         }
 
@@ -536,7 +536,7 @@ public class API {
             }
         }
 
-        instance.milestone.latestSnapshot.rwlock.readLock().lock();
+        long stamp = instance.milestone.latestSnapshot.sl.readLock();
         try {
             Set<Hash> visitedHashes = new HashSet<>();
             Map<Hash, Long> diff = new HashMap<>();
@@ -560,7 +560,7 @@ public class API {
                 return tips;
             }
         } finally {
-            instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+            instance.milestone.latestSnapshot.sl.unlockRead(stamp);
         }
         throw new RuntimeException("inconsistent tips pair selected");
     }
@@ -808,7 +808,7 @@ public class API {
                 .collect(Collectors.toCollection(LinkedList::new));
         final List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
-        instance.milestone.latestSnapshot.rwlock.readLock().lock();
+        long stamp = instance.milestone.latestSnapshot.sl.readLock();
         final int index = instance.milestone.latestSnapshot.index();
         if (tips == null || tips.size() == 0) {
             hashes = Collections.singletonList(instance.milestone.latestSolidSubtangleMilestone);
@@ -838,7 +838,7 @@ public class API {
             }
             diff.forEach((key, value) -> balances.computeIfPresent(key, (hash, aLong) -> value + aLong));
         } finally {
-            instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+            instance.milestone.latestSnapshot.sl.unlockRead(stamp);
         }
 
         final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())

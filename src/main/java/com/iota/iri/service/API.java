@@ -809,9 +809,10 @@ public class API {
         }
 
         final Map<Hash, Long> balances = new HashMap<>();
+        final int index;
         instance.milestone.latestSnapshot.rwlock.readLock().lock();
         try {
-            final int index = instance.milestone.latestSnapshot.index();
+            index = instance.milestone.latestSnapshot.index();
             for (final Hash address : addresses) {
                 Long value = instance.milestone.latestSnapshot.getBalance(address);
                 if (value == null) value = 0L;

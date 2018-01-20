@@ -51,15 +51,12 @@ public class LedgerValidator {
     public Map<Hash,Long> getLatestDiff(final Set<Hash> visitedHashes, Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>();
         int numberOfAnalyzedTransactions = 0;
-        Set<Hash> analyzedTips = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
         Set<Hash> countedTx = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
 
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash transactionPointer;
-        boolean keepScanning;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
-            keepScanning = milestone || !visitedHashes.contains(transactionPointer);
-            if (analyzedTips.add(transactionPointer) && keepScanning) {
+            if (visitedHashes.add(transactionPointer)) {
 
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, transactionPointer);
                 if (transactionViewModel.snapshotIndex() == 0 || transactionViewModel.snapshotIndex() > latestSnapshotIndex) {
@@ -87,7 +84,7 @@ public class LedgerValidator {
                             */
                             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
-                                if(BundleValidator.isInconsistent(bundleTransactionViewModels, milestone)) {
+                                if(BundleValidator.isInconsistent(bundleTransactionViewModels)) {
                                     break;
                                 }
                                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
@@ -277,7 +274,6 @@ public class LedgerValidator {
                 diff.computeIfPresent(key, ((hash, aLong) -> value + aLong));
                 diff.putIfAbsent(key, value);
             });
-
             approvedHashes.addAll(visitedHashes);
         }
         return isConsistent;

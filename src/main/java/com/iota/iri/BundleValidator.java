@@ -124,7 +124,7 @@ public class BundleValidator {
         return transactions;
     }
 
-    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels, boolean milestone) {
+    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels) {
         long value = 0;
         for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {
             if (bundleTransactionViewModel.value() != 0) {

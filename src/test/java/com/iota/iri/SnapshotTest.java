@@ -36,7 +36,7 @@ public class SnapshotTest {
     }
 
     @Test
-    public void merge() throws Exception {
+    public void applyShouldFail() throws Exception {
         Snapshot latestSnapshot = Snapshot.initialSnapshot.clone();
         Map<Hash, Long> badMap = new HashMap<>();
         badMap.put(new Hash("PSRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), 100L);

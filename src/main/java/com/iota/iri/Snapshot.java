@@ -153,8 +153,9 @@ public class Snapshot {
         }
         long stamp = sl.writeLock();
         patch.entrySet().stream().forEach(hashLongEntry -> {
-            state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong);
-            state.putIfAbsent(hashLongEntry.getKey(), hashLongEntry.getValue());
+            if (state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong) == null) {
+                state.putIfAbsent(hashLongEntry.getKey(), hashLongEntry.getValue());
+            }
         });
         index = newIndex;
         sl.unlockWrite(stamp);

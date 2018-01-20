@@ -144,11 +144,10 @@ public class Snapshot {
 
     void merge(Map<Hash, Long> patch, int newIndex) {
         rwlock.writeLock().lock();
-        patch.entrySet().stream().forEach(hashLongEntry ->
-                state.compute(hashLongEntry.getKey(), (hash, aLong) ->
-                                hashLongEntry.getValue() + (aLong == null ? 0 : aLong)
-                )
-        );
+        patch.entrySet().stream().forEach(hashLongEntry -> {
+            state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong);
+            state.putIfAbsent(hashLongEntry.getKey(), hashLongEntry.getValue());
+        });
         index = newIndex;
         rwlock.writeLock().unlock();
     }

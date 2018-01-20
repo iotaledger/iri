@@ -208,8 +208,8 @@ public class LedgerValidator {
         MilestoneViewModel snapshotMilestone = MilestoneViewModel.firstWithSnapshot(tangle);
         while (snapshotMilestone != null) {
             stateDiffViewModel = StateDiffViewModel.load(tangle, snapshotMilestone.getHash());
-            if(Snapshot.isConsistent(milestone.latestSnapshot.patch(stateDiffViewModel.getDiff()))) {
-                milestone.latestSnapshot.merge(stateDiffViewModel.getDiff(), snapshotMilestone.index());
+            if(Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(stateDiffViewModel.getDiff()))) {
+                milestone.latestSnapshot.apply(stateDiffViewModel.getDiff(), snapshotMilestone.index());
                 consistentMilestone = snapshotMilestone;
                 snapshotMilestone = snapshotMilestone.nextWithSnapshot(tangle);
             }
@@ -227,7 +227,7 @@ public class LedgerValidator {
             Hash tail = transactionViewModel.getHash();
             Set<Hash> visitedHashes = new HashSet<>();
             Map<Hash, Long> currentState = getLatestDiff(visitedHashes, tail, this.milestone.latestSnapshot.index(), true);
-            hasSnapshot = currentState != null && Snapshot.isConsistent(latestSnapshot.patch(currentState));
+            hasSnapshot = currentState != null && Snapshot.isConsistent(latestSnapshot.patchedDiff(currentState));
             if (hasSnapshot) {
                 updateSnapshotMilestone(milestoneVM.getHash(), milestoneVM.index());
                 StateDiffViewModel stateDiffViewModel;
@@ -235,7 +235,7 @@ public class LedgerValidator {
                 if(currentState.size() != 0) {
                     stateDiffViewModel.store(tangle);
                 }
-                latestSnapshot.merge(currentState, milestoneVM.index());
+                latestSnapshot.apply(currentState, milestoneVM.index());
             }
         }
         this.milestone.latestSnapshot.rwlock.writeLock().unlock();
@@ -262,7 +262,7 @@ public class LedgerValidator {
         Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
         Map<Hash, Long> currentState = getLatestDiff(visitedHashes, tip, milestone.latestSnapshot.index(), false);
         if (currentState == null) return false;
-        boolean isConsistent = Snapshot.isConsistent(milestone.latestSnapshot.patch(currentState));
+        boolean isConsistent = Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(currentState));
         if (isConsistent) {
             currentState.forEach((key, value) -> {
                 diff.computeIfPresent(key, ((hash, aLong) -> value + aLong));

@@ -132,7 +132,7 @@ public class Snapshot {
         return l;
     }
 
-    public Map<Hash, Long> patch(Map<Hash, Long> diff) {
+    public Map<Hash, Long> patchedDiff(Map<Hash, Long> diff) {
         Map<Hash, Long> patch;
         rwlock.readLock().lock();
         patch = diff.entrySet().stream().map(hashLongEntry ->
@@ -142,7 +142,10 @@ public class Snapshot {
         return patch;
     }
 
-    void merge(Map<Hash, Long> patch, int newIndex) {
+    void apply(Map<Hash, Long> patch, int newIndex) {
+        if (!patch.entrySet().stream().map(Map.Entry::getValue).reduce(Math::addExact).orElse(0L).equals(0L)) {
+            throw new RuntimeException("Diff is not consistent.");
+        }
         rwlock.writeLock().lock();
         patch.entrySet().stream().forEach(hashLongEntry -> {
             state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong);

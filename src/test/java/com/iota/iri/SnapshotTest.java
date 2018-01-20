@@ -32,7 +32,7 @@ public class SnapshotTest {
         diff.put(firstOne.getKey(), -firstOne.getValue());
         diff.put(someHash, firstOne.getValue());
         Assert.assertNotEquals(0, diff.size());
-        Assert.assertTrue("The ledger should be consistent", Snapshot.isConsistent(Snapshot.initialSnapshot.patch(diff)));
+        Assert.assertTrue("The ledger should be consistent", Snapshot.isConsistent(Snapshot.initialSnapshot.patchedDiff(diff)));
     }
 
     @Test
@@ -41,8 +41,8 @@ public class SnapshotTest {
         Map<Hash, Long> badMap = new HashMap<>();
         badMap.put(new Hash("PSRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), 100L);
         badMap.put(new Hash("ESRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), -100L);
-        Map<Hash, Long> patch = latestSnapshot.patch(badMap);
-        assertFalse("should be inconsistent", Snapshot.isConsistent(latestSnapshot.patch(badMap)));
+        Map<Hash, Long> patch = latestSnapshot.patchedDiff(badMap);
+        assertFalse("should be inconsistent", Snapshot.isConsistent(latestSnapshot.patchedDiff(badMap)));
     }
 
     private Map<Hash, Long> getModifiedMap() {

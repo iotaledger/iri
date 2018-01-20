@@ -821,18 +821,16 @@ public class API {
         visitedHashes = new HashSet<>();
         diff = new HashMap<>();
         for(Hash tip: hashes) {
-            instance.ledgerValidator.getLatestDiff(visitedHashes, tip, index, false)
-                    .forEach((key, value) -> diff.compute(key, (hash, aLong) -> value + aLong));
-        }
-
-        for(Hash hash: hashes) {
-            if (!TransactionViewModel.exists(instance.tangle, hash)) {
-                return ErrorResponse.create("Tip not found: " + hash.toString());
+            if (!TransactionViewModel.exists(instance.tangle, tip)) {
+                instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+                return ErrorResponse.create("Tip not found: " + tip.toString());
             }
-            if (!Snapshot.isConsistent(instance.milestone.latestSnapshot.patch(diff))) {
+            if (!instance.ledgerValidator.updateDiff(visitedHashes, diff, tip)) {
+                instance.milestone.latestSnapshot.rwlock.readLock().unlock();
                 return ErrorResponse.create("Tips are not consistent");
             }
         }
+        diff.forEach((key, value) -> balances.computeIfPresent(key, (hash, aLong) -> value + aLong));
         instance.milestone.latestSnapshot.rwlock.readLock().unlock();
 
         final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())

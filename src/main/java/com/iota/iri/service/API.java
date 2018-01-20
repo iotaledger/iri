@@ -801,18 +801,16 @@ public class API {
         final List<Hash> addresses = addrss.stream().map(address -> (new Hash(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
         final List<Hash> hashes;
+        final Map<Hash, Long> balances = new HashMap<>();
+        final int index = instance.milestone.latestSnapshot.index();
+        instance.milestone.latestSnapshot.rwlock.readLock().lock();
         if (tips == null || tips.size() == 0) {
             hashes = Collections.singletonList(instance.milestone.latestSolidSubtangleMilestone);
         } else {
             hashes = tips.stream().map(address -> (new Hash(address)))
                     .collect(Collectors.toCollection(LinkedList::new));
         }
-
-        final Map<Hash, Long> balances = new HashMap<>();
-        final int index;
-        instance.milestone.latestSnapshot.rwlock.readLock().lock();
         try {
-            index = instance.milestone.latestSnapshot.index();
             for (final Hash address : addresses) {
                 Long value = instance.milestone.latestSnapshot.getBalance(address);
                 if (value == null) value = 0L;

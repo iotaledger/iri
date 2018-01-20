@@ -145,10 +145,11 @@ public class BundleValidator {
         final Hash bundleHash = tail.getBundleHash();
         try {
             TransactionViewModel tx = tail;
+            long i = 0, end = tx.lastIndex();
             do {
                 bundleTransactions.put(tx.getHash(), tx);
                 tx = tx.getTrunkTransaction(tangle);
-            } while (tx.getCurrentIndex() != 0 && tx.getBundleHash().equals(bundleHash));
+            } while (i++ < end && tx.getCurrentIndex() != 0 && tx.getBundleHash().equals(bundleHash));
         } catch (Exception e) {
             e.printStackTrace();
         }

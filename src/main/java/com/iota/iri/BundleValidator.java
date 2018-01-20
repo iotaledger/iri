@@ -11,10 +11,11 @@ import java.util.*;
 
 public class BundleValidator {
 
-    public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash hash) throws Exception {
-        BundleViewModel bundleViewModel = BundleViewModel.load(tangle, hash);
+    public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash tailHash) throws Exception {
+        TransactionViewModel tail = TransactionViewModel.fromHash(tangle, tailHash);
         List<List<TransactionViewModel>> transactions = new LinkedList<>();
-        final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(tangle, bundleViewModel);
+        if(tail.getCurrentIndex() != 0) return transactions;
+        final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(tangle, tail);
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
@@ -124,7 +125,7 @@ public class BundleValidator {
         return transactions;
     }
 
-    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels, boolean milestone) {
+    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels) {
         long value = 0;
         for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {
             if (bundleTransactionViewModel.value() != 0) {
@@ -139,11 +140,14 @@ public class BundleValidator {
         return (value != 0 || transactionViewModels.size() == 0);
     }
 
-    private static Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle, BundleViewModel bundle) {
+    private static Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle, TransactionViewModel tail) {
         final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();
+        boolean end = false;
         try {
-            for (final Hash transactionViewModel : bundle.getHashes()) {
-                bundleTransactions.put(transactionViewModel, TransactionViewModel.fromHash(tangle, transactionViewModel));
+            for(TransactionViewModel tx = tail;
+                tail.getBundleHash().equals(tx.getBundleHash()) && !end;
+                tx = tx.getTrunkTransaction(tangle), end = tx.getCurrentIndex() == 0) {
+                bundleTransactions.put(tx.getHash(), tx);
             }
         } catch (Exception e) {
             e.printStackTrace();

@@ -179,7 +179,7 @@ public class Milestone {
             // Already validated.
             return VALID;
         }
-        final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getBundleHash());
+        final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getHash());
         if (bundleTransactions.size() == 0) {
             return INCOMPLETE;
         }

@@ -1,6 +1,5 @@
 1.4.1.7
     - fixes snapshot copies
-    - Use StampedLock for Snapshot mutex
     - removes extra bundles lookup from validation
 
 1.4.1.6

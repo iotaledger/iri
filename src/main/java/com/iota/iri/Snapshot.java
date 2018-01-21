@@ -1,10 +1,13 @@
 package com.iota.iri;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.StateDiffViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -15,7 +18,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.concurrent.locks.StampedLock;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
 
 
@@ -27,7 +31,7 @@ public class Snapshot {
 
     public static final Map<Hash, Long> initialState = new HashMap<>();
     public static final Snapshot initialSnapshot;
-    public final StampedLock sl = new StampedLock();
+    public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
     static {
 
@@ -105,9 +109,9 @@ public class Snapshot {
 
     public int index() {
         int i;
-        long stamp = sl.readLock();
+        rwlock.readLock().lock();
         i = index;
-        sl.unlockRead(stamp);
+        rwlock.readLock().unlock();
         return i;
     }
 
@@ -120,30 +124,21 @@ public class Snapshot {
         return new Snapshot(state, index);
     }
 
-    public Map<Hash, Long> getState() {
-        long stamp = sl.readLock();
-        try {
-            return new HashMap<>(state);
-        } finally {
-            sl.unlockRead(stamp);
-        }
-    }
-
     public Long getBalance(Hash hash) {
         Long l;
-        long stamp = sl.readLock();
+        rwlock.readLock().lock();
         l = state.get(hash);
-        sl.unlockRead(stamp);
+        rwlock.readLock().unlock();
         return l;
     }
 
     public Map<Hash, Long> patchedDiff(Map<Hash, Long> diff) {
         Map<Hash, Long> patch;
-        long stamp = sl.readLock();
+        rwlock.readLock().lock();
         patch = diff.entrySet().stream().map(hashLongEntry ->
             new HashMap.SimpleEntry<>(hashLongEntry.getKey(), state.getOrDefault(hashLongEntry.getKey(), 0L) + hashLongEntry.getValue())
         ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        sl.unlockRead(stamp);
+        rwlock.readLock().unlock();
         return patch;
     }
 
@@ -151,14 +146,14 @@ public class Snapshot {
         if (!patch.entrySet().stream().map(Map.Entry::getValue).reduce(Math::addExact).orElse(0L).equals(0L)) {
             throw new RuntimeException("Diff is not consistent.");
         }
-        long stamp = sl.writeLock();
+        rwlock.writeLock().lock();
         patch.entrySet().stream().forEach(hashLongEntry -> {
             if (state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong) == null) {
                 state.putIfAbsent(hashLongEntry.getKey(), hashLongEntry.getValue());
             }
         });
         index = newIndex;
-        sl.unlockWrite(stamp);
+        rwlock.writeLock().unlock();
     }
 
     public static boolean isConsistent(Map<Hash, Long> state) {

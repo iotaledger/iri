@@ -3,6 +3,7 @@ package com.iota.iri.service;
 import java.util.*;
 
 import com.iota.iri.LedgerValidator;
+import com.iota.iri.Snapshot;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.*;
@@ -124,6 +125,7 @@ public class TipsManager {
                     throw new RuntimeException("starting tip failed consistency check: " + tip.toString());
                 }
             } catch (Exception e) {
+                milestone.latestSnapshot.rwlock.readLock().unlock();
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());
                 throw e;

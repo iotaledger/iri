@@ -536,14 +536,12 @@ public class API {
         if(reference != null) {
             referenceHash = new Hash(reference);
             if (!TransactionViewModel.exists(instance.tangle, referenceHash)) {
-                //reference not found
-                referenceHash = null;
+                throw new RuntimeException("reference transaction not found");
             } else {
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, referenceHash);
                 if (transactionViewModel.snapshotIndex() != 0
                         && transactionViewModel.snapshotIndex() < instance.milestone.latestSolidSubtangleMilestoneIndex - depth) {
-                    //reference too old
-                    referenceHash = null;
+                    throw new RuntimeException("reference transaction is too old");
                 }
             }
         }

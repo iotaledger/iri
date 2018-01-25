@@ -531,8 +531,16 @@ public class API {
         Hash referenceHash = null;
         if(reference != null) {
             referenceHash = new Hash(reference);
-            if(!TransactionViewModel.exists(instance.tangle, referenceHash)) {
+            if (!TransactionViewModel.exists(instance.tangle, referenceHash)) {
+                //reference not found
                 referenceHash = null;
+            } else {
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, referenceHash);
+                if (transactionViewModel.snapshotIndex() != 0
+                        && transactionViewModel.snapshotIndex() < instance.milestone.latestSolidSubtangleMilestoneIndex - depth) {
+                    //reference too old
+                    referenceHash = null;
+                }
             }
         }
 

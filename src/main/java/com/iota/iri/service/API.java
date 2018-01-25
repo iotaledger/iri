@@ -530,7 +530,7 @@ public class API {
         final int randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks:numWalks;
         Hash referenceHash = null;
         int maxDepth = instance.tipsManager.getMaxDepth();
-        if (maxDepth > depth) {
+        if (depth > maxDepth) {
             depth = maxDepth;
         }
         if(reference != null) {

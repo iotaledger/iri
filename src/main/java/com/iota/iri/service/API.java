@@ -67,6 +67,8 @@ import io.undertow.util.StatusCodes;
 @SuppressWarnings("unchecked")
 public class API {
 
+    public static final String REFERENCE_TRANSACTION_NOT_FOUND = "reference transaction not found";
+    public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
     private static final Logger log = LoggerFactory.getLogger(API.class);
     private final IXI ixi;
 
@@ -536,12 +538,12 @@ public class API {
         if(reference != null) {
             referenceHash = new Hash(reference);
             if (!TransactionViewModel.exists(instance.tangle, referenceHash)) {
-                throw new RuntimeException("reference transaction not found");
+                throw new RuntimeException(REFERENCE_TRANSACTION_NOT_FOUND);
             } else {
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, referenceHash);
                 if (transactionViewModel.snapshotIndex() != 0
                         && transactionViewModel.snapshotIndex() < instance.milestone.latestSolidSubtangleMilestoneIndex - depth) {
-                    throw new RuntimeException("reference transaction is too old");
+                    throw new RuntimeException(REFERENCE_TRANSACTION_TOO_OLD);
                 }
             }
         }

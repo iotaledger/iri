@@ -523,12 +523,16 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
-    public synchronized Hash[] getTransactionToApproveStatement(final int depth, final String reference, final int numWalks) throws Exception {
+    public synchronized Hash[] getTransactionToApproveStatement(int depth, final String reference, final int numWalks) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
         final int randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks:numWalks;
         Hash referenceHash = null;
+        int maxDepth = instance.tipsManager.getMaxDepth();
+        if (maxDepth > depth) {
+            depth = maxDepth;
+        }
         if(reference != null) {
             referenceHash = new Hash(reference);
             if (!TransactionViewModel.exists(instance.tangle, referenceHash)) {

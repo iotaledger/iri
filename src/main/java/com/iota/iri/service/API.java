@@ -2,8 +2,7 @@ package com.iota.iri.service;
 
 import static io.undertow.Handlers.path;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -116,6 +115,8 @@ public class API {
     }
 
     public void init() throws IOException {
+        readPreviousEpochsSpentAddresses();
+
         final int apiPort = instance.configuration.integer(DefaultConfSettings.PORT);
         final String apiHost = instance.configuration.string(DefaultConfSettings.API_HOST);
 
@@ -147,6 +148,24 @@ public class API {
                     }
                 }))).build();
         server.start();
+    }
+
+    private void readPreviousEpochsSpentAddresses() {
+        if (!SignedFiles.isFileSignatureValid("/previousEpochsSpentAddresses.txt", "/previousEpochsSpentAddresses.sig",
+                Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
+            log.error("Failed to load previousEpochsSpentAddresses - signature failed.");
+        }
+
+        InputStream in = Snapshot.class.getResourceAsStream("/previousEpochsSpentAddresses.txt");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        String line;
+        try {
+            while((line = reader.readLine()) != null) {
+                previousEpochsSpentAddresses.put(new Hash(line),true);
+            }
+        } catch (IOException e) {
+            log.error("Failed to load previousEpochsSpentAddresses.");
+        }
     }
 
     private void processRequest(final HttpServerExchange exchange) throws IOException {

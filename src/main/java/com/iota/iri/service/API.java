@@ -380,12 +380,39 @@ public class API {
                     return true;
                 }
                 //pending
-                return (BundleValidator.validate(instance.tangle, hash).size() != 0);
+                Hash tail = findTail(hash);
+                if (tail == null) {
+                    return false;
+                }
+                return (BundleValidator.validate(instance.tangle, tail  ).size() != 0);
             }
         }
 
         return false;
     }
+
+    private Hash findTail(Hash hash) throws Exception {
+        TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
+        final Hash bundleHash = tx.getBundleHash();
+        long index = tx.getCurrentIndex();
+        while (index-- > 0 && tx.getBundleHash().equals(bundleHash)) {
+            Set<Hash> approvees = tx.getApprovers(instance.tangle).getHashes();
+            for (Hash approvee : approvees) {
+                TransactionViewModel nextTx = TransactionViewModel.fromHash(instance.tangle, approvee);
+                if (nextTx.getBundleHash().equals(bundleHash)) {
+                    tx = nextTx;
+                    break;
+                }
+            }
+            //no related approvee found
+            break;
+        }
+        if (tx.getCurrentIndex() == 0) {
+            return tx.getHash();
+        }
+        return null;
+    }
+
 
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());

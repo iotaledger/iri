@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -95,6 +96,8 @@ public class API {
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
+    private ConcurrentHashMap<Hash, Boolean> previousEpochsSpentAddresses;
+
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
@@ -108,6 +111,8 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
+
+        previousEpochsSpentAddresses = new ConcurrentHashMap<>();
     }
 
     public void init() throws IOException {
@@ -310,6 +315,10 @@ public class API {
                     final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
                     return checkConsistencyStatement(transactions);
                 }
+                case "wereAddressesSpentFrom": {
+                    final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
+                    return wereAddressesSpentFromStatement(addresses);
+                }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?
@@ -325,6 +334,38 @@ public class API {
             log.error("API Exception: ", e);
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
+    }
+
+    private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
+        final List<Hash> addresses = addressesStr.stream().map(Hash::new).collect(Collectors.toList());
+        final boolean[] states = new boolean[addresses.size()];
+        int index = 0;
+
+        for (Hash address : addresses) {
+            states[index++] = wasAddressSpentFrom(address);
+        }
+        return GetInclusionStatesResponse.create(states);
+    }
+
+    private boolean wasAddressSpentFrom(Hash address) throws Exception {
+        if (previousEpochsSpentAddresses.containsKey(address)) {
+            return true;
+        }
+        Set<Hash> hashes = AddressViewModel.load(instance.tangle, address).getHashes();
+        for (Hash hash : hashes) {
+            final TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
+            //spend
+            if (tx.value() < 0) {
+                //confirmed
+                if (tx.snapshotIndex() != 0) {
+                    return true;
+                }
+                //pending
+                return (BundleValidator.validate(instance.tangle, hash).size() != 0);
+            }
+        }
+
+        return false;
     }
 
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {

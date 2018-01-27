@@ -92,7 +92,7 @@ class ReplicatorSourceProcessor implements Runnable {
                     connection.close();
                     return;
                 } else {
-                    final TCPNeighbor fresh_neighbor = new TCPNeighbor(inet_socket_address, false, 0);
+                    final TCPNeighbor fresh_neighbor = new TCPNeighbor(inet_socket_address, false);
                     node.getNeighbors().add(fresh_neighbor);
                     neighbor = fresh_neighbor;
                     Neighbor.incNumPeers();

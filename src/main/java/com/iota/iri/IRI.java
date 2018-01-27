@@ -214,10 +214,6 @@ public class IRI {
         if (vsendLimit != null) {
             configuration.put(DefaultConfSettings.SEND_LIMIT, vsendLimit);
         }
-        if (parser.getOptionValue(sync) != null) {
-            configuration.put(DefaultConfSettings.NEW_TX_LIMIT, "0.0");
-        }
-
 
         final String vmaxPeers = parser.getOptionValue(maxPeers);
         if (vmaxPeers != null) {

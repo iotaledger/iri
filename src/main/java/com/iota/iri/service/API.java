@@ -614,8 +614,8 @@ public class API {
 
         List<Integer> tipsIndex = new LinkedList<>();
         {
-            for(Hash hash: tips) {
-                TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
+            for(Hash tip: tips) {
+                TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, tip);
                 if (tx.getType() != TransactionViewModel.PREFILLED_SLOT) {
                     tipsIndex.add(tx.snapshotIndex());
                 }
@@ -624,42 +624,47 @@ public class API {
         int minTipsIndex = tipsIndex.stream().reduce((a,b) -> a < b ? a : b).orElse(0);
         if(minTipsIndex > 0) {
             int maxTipsIndex = tipsIndex.stream().reduce((a,b) -> a > b ? a : b).orElse(0);
+            int count = 0;
             for(Hash hash: transactions) {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(instance.tangle, hash);
                 if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
-                    inclusionStates[transactions.indexOf(transaction.getHash())] = -1;
+                    inclusionStates[count] = -1;
                 } else if(transaction.snapshotIndex() > maxTipsIndex) {
-                    inclusionStates[transactions.indexOf(transaction.getHash())] = -1;
+                    inclusionStates[count] = -1;
                 } else if(transaction.snapshotIndex() < maxTipsIndex) {
-                    inclusionStates[transactions.indexOf(transaction.getHash())] = 1;
+                    inclusionStates[count] = 1;
                 }
+                count++;
             }
         }
 
         Set<Hash> analyzedTips = new HashSet<>();
-        Map<Integer, Set<Hash>> sameIndexTips = new HashMap<>();
-        Map<Integer, Set<Hash>> sameIndexTransactions = new HashMap<>();
-        Map<Integer, Queue<Hash>> nonAnalyzedTransactionsMap = new HashMap<>();
+        Map<Integer, Integer> sameIndexTransactionCount = new HashMap<>();
+        Map<Integer, Queue<Hash>> sameIndexTips = new HashMap<>();
         for (final Hash tip : tips) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, tip);
             if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
                 return ErrorResponse.create("One of the tips absents");
             }
-            sameIndexTips.putIfAbsent(transactionViewModel.snapshotIndex(), new HashSet<>());
-            sameIndexTips.get(transactionViewModel.snapshotIndex()).add(tip);
-            nonAnalyzedTransactionsMap.putIfAbsent(transactionViewModel.snapshotIndex(), new LinkedList<>());
-            nonAnalyzedTransactionsMap.get(transactionViewModel.snapshotIndex()).offer(tip);
+            int snapshotIndex = transactionViewModel.snapshotIndex();
+            sameIndexTips.putIfAbsent(snapshotIndex, new LinkedList<>());
+            sameIndexTips.get(snapshotIndex).add(tip);
         }
         for(int i = 0; i < inclusionStates.length; i++) {
             if(inclusionStates[i] == 0) {
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, transactions.get(i));
-                sameIndexTransactions.putIfAbsent(transactionViewModel.snapshotIndex(), new HashSet<>());
-                sameIndexTransactions.get(transactionViewModel.snapshotIndex()).add(transactionViewModel.getHash());
+                int snapshotIndex = transactionViewModel.snapshotIndex();
+                sameIndexTransactionCount.putIfAbsent(snapshotIndex, 0);
+                sameIndexTransactionCount.put(snapshotIndex, sameIndexTransactionCount.get(snapshotIndex) + 1);
             }
         }
-        for(Map.Entry<Integer, Set<Hash>> entry: sameIndexTransactions.entrySet()) {
-            if(!exhaustiveSearchWithinIndex(nonAnalyzedTransactionsMap.get(entry.getKey()), analyzedTips, transactions, inclusionStates, entry.getValue().size(), entry.getKey())) {
-                return ErrorResponse.create("The subtangle is not solid");
+        for(Integer index : sameIndexTransactionCount.keySet()) {
+            Queue<Hash> sameIndexTip = sameIndexTips.get(index);
+            if (sameIndexTip != null) {
+                //has tips in the same index level
+                if (!exhaustiveSearchWithinIndex(sameIndexTip, analyzedTips, transactions, inclusionStates, sameIndexTransactionCount.get(index), index)) {
+                    return ErrorResponse.create("The subtangle is not solid");
+                }
             }
         }
         final boolean[] inclusionStatesBoolean = new boolean[inclusionStates.length];
@@ -674,20 +679,16 @@ public class API {
         Hash pointer;
         MAIN_LOOP:
         while ((pointer = nonAnalyzedTransactions.poll()) != null) {
-
-
             if (analyzedTips.add(pointer)) {
-
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, pointer);
-                if(transactionViewModel.snapshotIndex() == index) {
+                if (transactionViewModel.snapshotIndex() == index) {
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         return false;
                     } else {
                         for (int i = 0; i < inclusionStates.length; i++) {
-
                             if (inclusionStates[i] < 1 && pointer.equals(transactions.get(i))) {
                                 inclusionStates[i] = 1;
-                                if (--count<= 0) {
+                                if (--count <= 0) {
                                     break MAIN_LOOP;
                                 }
                             }

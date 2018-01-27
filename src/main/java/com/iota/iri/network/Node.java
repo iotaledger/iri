@@ -5,6 +5,7 @@ import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.zmq.MessageQ;
@@ -221,7 +222,7 @@ public class Node {
     }
 
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
-        TransactionViewModel receivedTransactionViewModel = null;
+        TransactionViewModel receivedTransactionViewModel;
         Hash receivedTransactionHash = null;
 
         boolean addressMatch = false;
@@ -251,8 +252,9 @@ public class Node {
 
                     if (!cached) {
                         //if not, then validate
-                        receivedTransactionViewModel = TransactionValidator.validate(receivedData, transactionValidator.getMinWeightMagnitude());
+                        receivedTransactionViewModel = new TransactionViewModel(receivedData, Hash.calculate(receivedData, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
                         receivedTransactionHash = receivedTransactionViewModel.getHash();
+                        TransactionValidator.runValidation(receivedTransactionViewModel, transactionValidator.getMinWeightMagnitude());
 
                         synchronized (recentSeenBytes) {
                             recentSeenBytes.put(byteHash, receivedTransactionHash);
@@ -265,6 +267,14 @@ public class Node {
 
                 } catch (NoSuchAlgorithmException e) {
                     log.error("MessageDigest: " + e);
+                } catch (final TransactionValidator.StaleTimestampException e) {
+                    log.error(e.getMessage());
+                    try {
+                        transactionRequester.clearTransactionRequest(receivedTransactionHash);
+                    } catch (Exception e1) {
+                        log.error(e1.getMessage());
+                    }
+                    neighbor.incInvalidTransactions();
                 } catch (final RuntimeException e) {
                     log.error(e.getMessage());
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");

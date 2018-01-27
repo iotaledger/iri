@@ -22,8 +22,8 @@ public class TCPNeighbor extends Neighbor {
     private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(10);
     private boolean stopped = false;
 
-    public TCPNeighbor(InetSocketAddress address, boolean isConfigured, final double limit) {
-        super(address, isConfigured, limit);
+    public TCPNeighbor(InetSocketAddress address, boolean isConfigured) {
+        super(address, isConfigured);
         this.tcpPort = address.getPort();
     }
 

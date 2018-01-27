@@ -84,6 +84,7 @@ public class TransactionValidator {
 
     public static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
+        transactionViewModel.setAttachmentData();
         if(invalidTimestamp(transactionViewModel)) {
             throw new StaleTimestampException("Invalid transaction timestamp.");
         }

@@ -73,19 +73,19 @@ public class TransactionValidator {
         return MIN_WEIGHT_MAGNITUDE;
     }
 
-    private static boolean invalidTimestamp(TransactionViewModel transactionViewModel) {
+    private static boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
         if (transactionViewModel.getAttachmentTimestamp() == 0) {
-            return transactionViewModel.getTimestamp() < MIN_TIMESTAMP && !transactionViewModel.getHash().equals(Hash.NULL_HASH)
+            return transactionViewModel.getTimestamp() < MIN_TIMESTAMP && !Objects.equals(transactionViewModel.getHash(), Hash.NULL_HASH)
                     || transactionViewModel.getTimestamp() > (System.currentTimeMillis() / 1000) + MAX_TIMESTAMP_FUTURE;
         }
         return transactionViewModel.getAttachmentTimestamp() < MIN_TIMESTAMP_MS
-                || transactionViewModel.getTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
+                || transactionViewModel.getAttachmentTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
     }
 
     public static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
         transactionViewModel.setAttachmentData();
-        if(invalidTimestamp(transactionViewModel)) {
+        if(hasInvalidTimestamp(transactionViewModel)) {
             throw new StaleTimestampException("Invalid transaction timestamp.");
         }
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {

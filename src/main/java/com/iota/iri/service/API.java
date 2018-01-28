@@ -154,7 +154,7 @@ public class API {
     private void readPreviousEpochsSpentAddresses() {
         if (!SignedFiles.isFileSignatureValid("/previousEpochsSpentAddresses.txt", "/previousEpochsSpentAddresses.sig",
                 Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
-            log.error("Failed to load previousEpochsSpentAddresses - signature failed.");
+            throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
         }
 
         InputStream in = Snapshot.class.getResourceAsStream("/previousEpochsSpentAddresses.txt");
@@ -394,17 +394,20 @@ public class API {
         TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
         final Hash bundleHash = tx.getBundleHash();
         long index = tx.getCurrentIndex();
+        boolean foundApprovee = false;
         while (index-- > 0 && tx.getBundleHash().equals(bundleHash)) {
             Set<Hash> approvees = tx.getApprovers(instance.tangle).getHashes();
             for (Hash approvee : approvees) {
                 TransactionViewModel nextTx = TransactionViewModel.fromHash(instance.tangle, approvee);
                 if (nextTx.getBundleHash().equals(bundleHash)) {
                     tx = nextTx;
+                    foundApprovee = true;
                     break;
                 }
             }
-            //no related approvee found
-            break;
+            if (!foundApprovee) {
+                break;
+            }
         }
         if (tx.getCurrentIndex() == 0) {
             return tx.getHash();

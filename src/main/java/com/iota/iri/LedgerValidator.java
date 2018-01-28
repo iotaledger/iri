@@ -55,6 +55,8 @@ public class LedgerValidator {
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> countedTx = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
 
+        visitedNonMilestoneSubtangleHashes.add(Hash.NULL_HASH);
+
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {

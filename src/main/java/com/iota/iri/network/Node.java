@@ -219,7 +219,7 @@ public class Node {
     }
 
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
-        TransactionViewModel receivedTransactionViewModel;
+        TransactionViewModel receivedTransactionViewModel = null;
         Hash receivedTransactionHash = null;
 
         boolean addressMatch = false;

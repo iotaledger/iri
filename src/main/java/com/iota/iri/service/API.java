@@ -2,8 +2,7 @@ package com.iota.iri.service;
 
 import static io.undertow.Handlers.path;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
@@ -20,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
@@ -95,6 +95,8 @@ public class API {
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
+    private ConcurrentHashMap<Hash, Boolean> previousEpochsSpentAddresses;
+
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
@@ -108,9 +110,14 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
+
+        previousEpochsSpentAddresses = new ConcurrentHashMap<>();
+
     }
 
     public void init() throws IOException {
+        readPreviousEpochsSpentAddresses();
+
         final int apiPort = instance.configuration.integer(DefaultConfSettings.PORT);
         final String apiHost = instance.configuration.string(DefaultConfSettings.API_HOST);
 
@@ -142,6 +149,24 @@ public class API {
                     }
                 }))).build();
         server.start();
+    }
+
+    private void readPreviousEpochsSpentAddresses() {
+        if (!SignedFiles.isFileSignatureValid("/previousEpochsSpentAddresses.txt", "/previousEpochsSpentAddresses.sig",
+                Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
+            throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
+        }
+
+        InputStream in = Snapshot.class.getResourceAsStream("/previousEpochsSpentAddresses.txt");
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        String line;
+        try {
+            while((line = reader.readLine()) != null) {
+                previousEpochsSpentAddresses.put(new Hash(line),true);
+            }
+        } catch (IOException e) {
+            log.error("Failed to load previousEpochsSpentAddresses.");
+        }
     }
 
     private void processRequest(final HttpServerExchange exchange) throws IOException {
@@ -310,6 +335,10 @@ public class API {
                     final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
                     return checkConsistencyStatement(transactions);
                 }
+                case "wereAddressesSpentFrom": {
+                    final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
+                    return wereAddressesSpentFromStatement(addresses);
+                }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?
@@ -326,6 +355,66 @@ public class API {
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
     }
+
+    private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
+        final List<Hash> addresses = addressesStr.stream().map(Hash::new).collect(Collectors.toList());
+        final boolean[] states = new boolean[addresses.size()];
+        int index = 0;
+
+        for (Hash address : addresses) {
+            states[index++] = wasAddressSpentFrom(address);
+        }
+        return wereAddressesSpentFrom.create(states);
+    }
+
+    private boolean wasAddressSpentFrom(Hash address) throws Exception {
+        if (previousEpochsSpentAddresses.containsKey(address)) {
+            return true;
+        }
+        Set<Hash> hashes = AddressViewModel.load(instance.tangle, address).getHashes();
+        for (Hash hash : hashes) {
+            final TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
+            //spend
+            if (tx.value() < 0) {
+                //confirmed
+                if (tx.snapshotIndex() != 0) {
+                    return true;
+                }
+                //pending
+                Hash tail = findTail(hash);
+                if (tail != null && BundleValidator.validate(instance.tangle, tail).size() != 0) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private Hash findTail(Hash hash) throws Exception {
+        TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
+        final Hash bundleHash = tx.getBundleHash();
+        long index = tx.getCurrentIndex();
+        boolean foundApprovee = false;
+        while (index-- > 0 && tx.getBundleHash().equals(bundleHash)) {
+            Set<Hash> approvees = tx.getApprovers(instance.tangle).getHashes();
+            for (Hash approvee : approvees) {
+                TransactionViewModel nextTx = TransactionViewModel.fromHash(instance.tangle, approvee);
+                if (nextTx.getBundleHash().equals(bundleHash)) {
+                    tx = nextTx;
+                    foundApprovee = true;
+                    break;
+                }
+            }
+            if (!foundApprovee) {
+                break;
+            }
+        }
+        if (tx.getCurrentIndex() == 0) {
+            return tx.getHash();
+        }
+        return null;
+    }
+
 
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());

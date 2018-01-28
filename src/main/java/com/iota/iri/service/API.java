@@ -382,10 +382,9 @@ public class API {
                 }
                 //pending
                 Hash tail = findTail(hash);
-                if (tail == null) {
-                    return false;
+                if (tail != null && BundleValidator.validate(instance.tangle, tail).size() != 0) {
+                    return true;
                 }
-                return (BundleValidator.validate(instance.tangle, tail).size() != 0);
             }
         }
         return false;

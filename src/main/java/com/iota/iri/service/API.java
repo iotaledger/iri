@@ -112,6 +112,7 @@ public class API {
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
+
     }
 
     public void init() throws IOException {
@@ -363,7 +364,7 @@ public class API {
         for (Hash address : addresses) {
             states[index++] = wasAddressSpentFrom(address);
         }
-        return GetInclusionStatesResponse.create(states);
+        return wereAddressesSpentFrom.create(states);
     }
 
     private boolean wasAddressSpentFrom(Hash address) throws Exception {
@@ -384,10 +385,9 @@ public class API {
                 if (tail == null) {
                     return false;
                 }
-                return (BundleValidator.validate(instance.tangle, tail  ).size() != 0);
+                return (BundleValidator.validate(instance.tangle, tail).size() != 0);
             }
         }
-
         return false;
     }
 

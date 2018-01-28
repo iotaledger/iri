@@ -265,11 +265,7 @@ public class LedgerValidator {
         if (currentState == null) return false;
         boolean isConsistent = Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(currentState));
         if (isConsistent) {
-            currentState.forEach((key, value) -> {
-                if(diff.computeIfPresent(key, ((hash, aLong) -> value + aLong)) == null) {
-                    diff.putIfAbsent(key, value);
-                }
-            });
+            currentState.forEach((key, value) -> diff.compute(key, ((hash, aLong) -> hash == null ? value: aLong + value)));
             approvedHashes.addAll(visitedHashes);
         }
         return isConsistent;

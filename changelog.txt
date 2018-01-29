@@ -1,3 +1,9 @@
+1.4.2.1
+    - Add wasAddressSpentFrom API call
+    - Bugfix in getInclusionStates
+    - Bugfix in getTransactionsToApprove
+    - Update Snapshot to 20180128 16:00 UTC (#512)
+
 1.4.1.7
     - fixes snapshot copies
     - removes extra bundles lookup from validation

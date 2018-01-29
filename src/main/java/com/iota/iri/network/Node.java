@@ -265,7 +265,7 @@ public class Node {
                 } catch (NoSuchAlgorithmException e) {
                     log.error("MessageDigest: " + e);
                 } catch (final TransactionValidator.StaleTimestampException e) {
-                    log.error(e.getMessage());
+                    log.debug(e.getMessage());
                     try {
                         transactionRequester.clearTransactionRequest(receivedTransactionHash);
                     } catch (Exception e1) {

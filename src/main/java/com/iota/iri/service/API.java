@@ -3,25 +3,15 @@ package com.iota.iri.service;
 import static io.undertow.Handlers.path;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -92,6 +82,7 @@ public class API {
     private final int maxRequestList;
     private final int maxGetTrytes;
     private final int maxBodyLength;
+    private final int maxReferenceTips;
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
@@ -110,6 +101,7 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
+        maxReferenceTips = instance.configuration.integer(DefaultConfSettings.MAX_REFERENCE_TIPS);
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
@@ -274,6 +266,7 @@ public class API {
                     }
 
                     final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
+                    final List<String> referenceTips = request.containsKey("tips") ? getParameterAsList(request, "tips", maxReferenceTips): new ArrayList<>();
                     final int depth = getParameterAsInt(request, "depth");
                     if(depth < 0 || (reference == null && depth == 0)) {
                         return ErrorResponse.create("Invalid depth input");
@@ -283,7 +276,7 @@ public class API {
                         numWalks = minRandomWalks;
                     }
                     try {
-                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
+                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks, referenceTips);
                         if(tips == null) {
                             return ErrorResponse.create("The subtangle is not solid");
                         }
@@ -568,7 +561,7 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
-    public synchronized Hash[] getTransactionToApproveStatement(int depth, final String reference, final int numWalks) throws Exception {
+    public synchronized Hash[] getTransactionToApproveStatement(int depth, final String reference, final int numWalks, List<String> referenceTips) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
@@ -593,9 +586,16 @@ public class API {
 
         instance.milestone.latestSnapshot.rwlock.readLock().lock();
         try {
+            int start = 0;
             Set<Hash> visitedHashes = new HashSet<>();
             Map<Hash, Long> diff = new HashMap<>();
-            for (int i = 0; i < tipsToApprove; i++) {
+            for (String referenceTip: referenceTips) {
+                instance.ledgerValidator.updateDiff(visitedHashes, diff, new Hash(referenceTip));
+            }
+            if (referenceTips.size() != 0) {
+                tips[start] = new Hash(referenceTips.get(start++));
+            }
+            for (int i = start; i < tipsToApprove; i++) {
                 tips[i] = instance.tipsManager.transactionToApprove(visitedHashes, diff, referenceHash, tips[0], depth, randomWalkCount, random);
                 if (tips[i] == null) {
                     return null;

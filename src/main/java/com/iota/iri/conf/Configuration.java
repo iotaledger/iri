@@ -69,6 +69,7 @@ public class Configuration {
         Q_SIZE_NODE,
         P_DROP_CACHE_ENTRY,
         CACHE_SIZE_BYTES,
+        MAX_REFERENCE_TIPS,
     }
 
     {
@@ -109,6 +110,7 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAX_RANDOM_WALKS.name(), "27");
         // Pick a milestone depth number depending on risk model
         conf.put(DefaultConfSettings.MAX_DEPTH.name(), "15");
+        conf.put(DefaultConfSettings.MAX_REFERENCE_TIPS.name(), "100");
 
         conf.put(DefaultConfSettings.MAX_FIND_TRANSACTIONS.name(), "100000");
         conf.put(DefaultConfSettings.MAX_REQUESTS_LIST.name(), "1000");

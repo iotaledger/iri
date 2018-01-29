@@ -135,7 +135,7 @@ public class NodeIntegrationTests {
     }
 
     private void sendMilestone(API api, long index) throws Exception {
-        newMilestone(api, api.getTransactionToApproveStatement(10, null, 1), index);
+        newMilestone(api, api.getTransactionToApproveStatement(10, null, 1, new ArrayList<>()), index);
     }
 
     private void newMilestone(API api, Hash[] tips, long index) throws Exception {

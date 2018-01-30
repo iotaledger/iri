@@ -55,9 +55,9 @@ public class TransactionValidator {
         } else {
             MIN_WEIGHT_MAGNITUDE = MAINNET_MWM;
         }
-        //lowest allowed MWM encoded in 46 bytes.
-        if (MIN_WEIGHT_MAGNITUDE<13){
-            MIN_WEIGHT_MAGNITUDE = 13;
+        //lowest allowed MWM encoded in 49 bytes.
+        if (MIN_WEIGHT_MAGNITUDE<9){
+            MIN_WEIGHT_MAGNITUDE = 9;
         }
 
         newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");

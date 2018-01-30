@@ -47,8 +47,8 @@ public class Milestone {
     public Hash latestMilestone = Hash.NULL_HASH;
     public Hash latestSolidSubtangleMilestone = latestMilestone;
 
-    public static final int MILESTONE_START_INDEX = 338000;
-    private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 20;
+    public static final int MILESTONE_START_INDEX = 200;
+    private static final int NUMBER_OF_KEYS_IN_A_MILESTONE = 22;
 
     public int latestMilestoneIndex = MILESTONE_START_INDEX;
     public int latestSolidSubtangleMilestoneIndex = MILESTONE_START_INDEX;
@@ -203,7 +203,7 @@ public class Milestone {
                                         ISS.NUMBER_OF_FRAGMENT_CHUNKS),
                                 signatureFragmentTrits)),
                                 transactionViewModel2.trits(), 0, index, NUMBER_OF_KEYS_IN_A_MILESTONE);
-                        if (testnet || (new Hash(merkleRoot)).equals(coordinator)) {
+                        if ((new Hash(merkleRoot)).equals(coordinator)) {
                             new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
                             return VALID;
                         } else {

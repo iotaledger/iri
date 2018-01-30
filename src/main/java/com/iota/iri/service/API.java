@@ -593,9 +593,13 @@ public class API {
                 instance.ledgerValidator.updateDiff(visitedHashes, diff, new Hash(referenceTip));
             }
             if (referenceTips.size() != 0) {
-                tips[start] = new Hash(referenceTips.get(start++));
+                if (referenceHash == null) {
+                    tips[start] = new Hash(referenceTips.get(start++));
+                } else {
+                    tips[start + 1] = new Hash(referenceTips.get(start));
+                }
             }
-            for (int i = start; i < tipsToApprove; i++) {
+            for (int i = start; tips[i] == null && i < tipsToApprove; i++) {
                 tips[i] = instance.tipsManager.transactionToApprove(visitedHashes, diff, referenceHash, tips[0], depth, randomWalkCount, random);
                 if (tips[i] == null) {
                     return null;

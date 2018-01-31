@@ -438,4 +438,21 @@ public class TransactionViewModel {
     public String getSender() {
         return transaction.sender;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        TransactionViewModel other = (TransactionViewModel) o;
+        return Objects.equals(getHash(), other.getHash());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getHash());
+    }
 }

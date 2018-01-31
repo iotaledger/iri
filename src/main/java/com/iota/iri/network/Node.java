@@ -516,9 +516,9 @@ public class Node {
         };
     }
 
-    public void setPauseBetweenTransactions(long millis, int nanoseconds) {
-        msPauseBetweenTransactions = millis;
-        nsPauseBetweenTransactions = nanoseconds;
+    public void setPauseBetweenTransactions(long nanoseconds) {
+        msPauseBetweenTransactions = nanoseconds / 1000000;
+        nsPauseBetweenTransactions = (int)(nanoseconds % 1000000);
     }
 
     private Runnable spawnTipRequesterThread() {

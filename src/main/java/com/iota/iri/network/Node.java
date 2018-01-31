@@ -37,7 +37,6 @@ public class Node {
     private int BROADCAST_QUEUE_SIZE;
     private int RECV_QUEUE_SIZE;
     private int REPLY_QUEUE_SIZE;
-    private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
     public static final int REQUEST_HASH_SIZE = 46;
     private static double P_SELECT_MILESTONE;
 
@@ -81,6 +80,8 @@ public class Node {
     private static AtomicLong sendPacketsTimer = new AtomicLong(0L);
 
     public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
+    public long msPauseBetweenTransactions = 1;
+    public int nsPauseBetweenTransactions = 0;
     private DatagramSocket udpSocket;
 
     public Node(final Configuration configuration,
@@ -506,13 +507,18 @@ public class Node {
                             }
                         }
                     }
-                    Thread.sleep(PAUSE_BETWEEN_TRANSACTIONS);
+                    Thread.sleep(msPauseBetweenTransactions, nsPauseBetweenTransactions);
                 } catch (final Exception e) {
                     log.error("Broadcaster Thread Exception:", e);
                 }
             }
             log.info("Shutting down Broadcaster Thread");
         };
+    }
+
+    public void setPauseBetweenTransactions(long millis, int nanoseconds) {
+        msPauseBetweenTransactions = millis;
+        nsPauseBetweenTransactions = nanoseconds;
     }
 
     private Runnable spawnTipRequesterThread() {

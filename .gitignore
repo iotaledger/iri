@@ -12,3 +12,4 @@ target/*
 *.iri
 *.jar
 src/main/ixi/
+dependency-reduced-pom.xml

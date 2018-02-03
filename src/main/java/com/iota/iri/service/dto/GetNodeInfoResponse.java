@@ -18,7 +18,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
     private String latestSolidSubtangleMilestone;
     private int latestSolidSubtangleMilestoneIndex;
 
-		private int milestoneStartIndex;
+    private int milestoneStartIndex;
 
     private int neighbors;
     private int packetsQueueSize;

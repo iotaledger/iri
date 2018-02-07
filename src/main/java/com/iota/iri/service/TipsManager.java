@@ -161,7 +161,7 @@ public class TipsManager {
                 monteCarloIntegrations.put(tail,1);
             }
         }
-        return monteCarloIntegrations.entrySet().stream().reduce((a, b) -> {
+        Hash resultTip = monteCarloIntegrations.entrySet().stream().reduce((a, b) -> {
             if (a.getValue() > b.getValue()) {
                 return a;
             } else if (a.getValue() < b.getValue()) {
@@ -172,6 +172,11 @@ public class TipsManager {
                 return b;
             }
         }).map(Map.Entry::getKey).orElse(null);
+        //update world view, so next tips selected will be inter-consistent
+        if (resultTip != null && ledgerValidator.updateDiff(visitedHashes, diff, resultTip)) {
+            return resultTip;
+        }
+        return null;
     }
 
     Hash randomWalk(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {

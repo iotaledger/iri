@@ -17,6 +17,7 @@ import org.junit.rules.TemporaryFolder;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
@@ -135,7 +136,7 @@ public class NodeIntegrationTests {
     }
 
     private void sendMilestone(API api, long index) throws Exception {
-        newMilestone(api, api.getTransactionToApproveStatement(10, null, 1, new ArrayList<>()), index);
+        newMilestone(api, api.getTransactionToApproveStatement(10, null, 1, Collections.EMPTY_LIST), index);
     }
 
     private void newMilestone(API api, Hash[] tips, long index) throws Exception {

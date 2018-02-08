@@ -266,7 +266,7 @@ public class API {
                     }
 
                     final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
-                    final List<String> referenceTips = request.containsKey("tips") ? getParameterAsList(request, "tips", maxReferenceTips): new ArrayList<>();
+                    final List<String> referenceTips = request.containsKey("tips") ? getParameterAsList(request, "tips", maxReferenceTips): Collections.EMPTY_LIST;
                     final int depth = getParameterAsInt(request, "depth");
                     if(depth < 0 || (reference == null && depth == 0)) {
                         return ErrorResponse.create("Invalid depth input");

@@ -7,6 +7,7 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Converter;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 public class Hash implements Serializable, Indexable {
@@ -15,6 +16,7 @@ public class Hash implements Serializable, Indexable {
     public static final int SIZE_IN_BYTES = 49;
 
     public static final Hash NULL_HASH = new Hash(new int[Curl.HASH_LENGTH]);
+    public static final int SUBHASH_LENGTH = 16;
 
     private byte[] bytes;
     private int[] trits;
@@ -123,6 +125,16 @@ public class Hash implements Serializable, Indexable {
         this.bytes = new byte[SIZE_IN_BYTES];
         System.arraycopy(bytes, offset, this.bytes, 0, size - offset > bytes.length ? bytes.length-offset: size);
         hashCode = Arrays.hashCode(this.bytes);
+    }
+
+    /**
+     * Used to create low-memory index keys.
+     *
+     * @return a {@link ByteBuffer} that holds a subarray of {@link #bytes()}
+     * that has a size of {@value #SUBHASH_LENGTH}
+     */
+    public ByteBuffer getSubHash() {
+        return ByteBuffer.wrap(Arrays.copyOf(bytes(), SUBHASH_LENGTH));
     }
 
     @Override

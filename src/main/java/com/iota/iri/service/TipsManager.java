@@ -1,7 +1,5 @@
 package com.iota.iri.service;
 
-import java.util.*;
-
 import com.iota.iri.LedgerValidator;
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
@@ -11,17 +9,23 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.collections.BoundedSetValuedHashMap;
+import com.iota.iri.utils.SafeUtils;
+import com.iota.iri.utils.collections.impl.BoundedHashSet;
+import com.iota.iri.utils.collections.interfaces.BoundedSet;
 import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.multimap.AbstractSetValuedMap;
+import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
+import java.util.*;
+
 public class TipsManager {
 
-    public static final int MAX_ANCESTORS_SIZE = 10000;
+    public static final int MAX_ANCESTORS_SIZE = 1000;
 
     private final Logger log = LoggerFactory.getLogger(TipsManager.class);
     private final Tangle tangle;
@@ -124,7 +128,7 @@ public class TipsManager {
             Set<Hash> maxDepthOk = new HashSet<>();
             try {
                 Hash tip = entryPoint(reference, extraTip, depth);
-                Map<Hash, Integer> cumulativeWeights = calculateCumulativeWeight(visitedHashes, tip,
+                Map<Buffer, Integer> cumulativeWeights = calculateCumulativeWeight(visitedHashes, tip,
                         extraTip != null, new HashSet<>());
                 analyzedTips.clear();
                 if (ledgerValidator.updateDiff(visitedHashes, diff, tip)) {
@@ -160,7 +164,7 @@ public class TipsManager {
         return milestone.latestSolidSubtangleMilestone;
     }
 
-    Hash markovChainMonteCarlo(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, Hash tip, Hash extraTip, Map<Hash, Integer> cumulativeWeight,
+    Hash markovChainMonteCarlo(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, Hash tip, Hash extraTip, Map<Buffer, Integer> cumulativeWeight,
             int iterations, int maxDepth, Set<Hash> maxDepthOk, Random seed) throws Exception {
         Map<Hash, Integer> monteCarloIntegrations = new HashMap<>();
         Hash tail;
@@ -208,7 +212,7 @@ public class TipsManager {
      * @return a tip's hash
      * @throws Exception
      */
-    Hash randomWalk(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, final Hash start, final Hash extraTip, final Map<Hash, Integer> cumulativeWeights, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
+    Hash randomWalk(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, final Hash start, final Hash extraTip, final Map<Buffer, Integer> cumulativeWeights, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {
         Hash tip = start, tail = tip;
         Hash[] tips;
         Set<Hash> tipSet;
@@ -218,10 +222,6 @@ public class TipsManager {
         int approverIndex;
         double ratingWeight;
         double[] walkRatings;
-        List<Hash> extraTipList = null;
-        if (extraTip != null) {
-            extraTipList = Collections.singletonList(extraTip);
-        }
         Map<Hash, Long> myDiff = new HashMap<>(diff);
         Set<Hash> myApprovedHashes = new HashSet<>(visitedHashes);
 
@@ -274,7 +274,7 @@ public class TipsManager {
             else {
                 // walk to the next approver
                 tips = tipSet.toArray(new Hash[tipSet.size()]);
-                if (!cumulativeWeights.containsKey(tip)) {
+                if (!cumulativeWeights.containsKey(tip.getSubHash())) {
                     cumulativeWeights.putAll(calculateCumulativeWeight(myApprovedHashes, tip, extraTip != null,
                             analyzedTips));
                     analyzedTips.clear();
@@ -282,10 +282,12 @@ public class TipsManager {
 
                 walkRatings = new double[tips.length];
                 double maxRating = 0;
-                long tipRating = cumulativeWeights.get(tip);
+                ByteBuffer subHash = tip.getSubHash();
+                long tipRating = cumulativeWeights.get(subHash);
                 for (int i = 0; i < tips.length; i++) {
+                    subHash = tips[i].getSubHash();
                     //transition probability = ((Hx-Hy)^-3)/maxRating
-                    walkRatings[i] = Math.pow(tipRating - cumulativeWeights.getOrDefault(tips[i],0), -3);
+                    walkRatings[i] = Math.pow(tipRating - cumulativeWeights.getOrDefault(subHash,0), -3);
                     maxRating += walkRatings[i];
                 }
                 ratingWeight = rnd.nextDouble() * maxRating;
@@ -328,121 +330,147 @@ public class TipsManager {
      *                          unconfirmed txs
      * @throws Exception if there is a problem accessing the db
      */
-    Map<Hash, Integer> calculateCumulativeWeight(Set<Hash> myApprovedHashes, Hash currentTxHash, boolean confirmLeftBehind,
+    Map<Buffer, Integer> calculateCumulativeWeight(Set<Hash> myApprovedHashes, Hash currentTxHash, boolean confirmLeftBehind,
             Set<Hash> analyzedTips) throws Exception {
-        Collection<TransactionViewModel> txsToRate = sortTransactionsInTopologicalOrder(currentTxHash);
-        return calculateCwInOrder(txsToRate, myApprovedHashes, confirmLeftBehind, analyzedTips);
+        log.info("Start calculating cw starting with tx hash {}", currentTxHash);
+        log.debug("Start topological sort");
+        long start = System.currentTimeMillis();
+        LinkedHashSet<Hash> txHashesToRate = sortTransactionsInTopologicalOrder(currentTxHash);
+        log.debug("Subtangle size: {}", txHashesToRate.size());
+        log.debug("Topological sort done. Start traversing on txs in order and calculate weight");
+        Map<Buffer, Integer> cumulativeWeights = calculateCwInOrder(txHashesToRate, myApprovedHashes, confirmLeftBehind,
+                analyzedTips);
+        log.debug("Cumulative weights calculation done in {} ms", System.currentTimeMillis() - start);
+        return cumulativeWeights;
     }
 
-    private Set<TransactionViewModel> sortTransactionsInTopologicalOrder(Hash startTx) throws Exception {
-        Set<TransactionViewModel> sortedTxs = new LinkedHashSet<>();
-        Set<TransactionViewModel> temporary = new HashSet<>();
-        Deque<TransactionViewModel> stack = new ArrayDeque<>();
-        Map<TransactionViewModel, Collection<TransactionViewModel>> txToDirectApprovers = new HashMap<>();
+    private LinkedHashSet<Hash>  sortTransactionsInTopologicalOrder(Hash startTx) throws Exception {
+        LinkedHashSet<Hash> sortedTxs = new LinkedHashSet<>();
+        Set<Hash> temporary = new HashSet<>();
+        Deque<Hash> stack = new ArrayDeque<>();
+        Map<Hash, Collection<Hash>> txToDirectApprovers = new HashMap<>();
 
-        stack.push(TransactionViewModel.fromHash(tangle, startTx));
+        stack.push(startTx);
         while (CollectionUtils.isNotEmpty(stack)) {
-            TransactionViewModel tx = stack.peek();
-            if (!sortedTxs.contains(tx)) {
-                Collection<TransactionViewModel> appHashes = getTxDirectApproversHashes(tx, txToDirectApprovers);
+            Hash txHash = stack.peek();
+            if (!sortedTxs.contains(txHash)) {
+                Collection<Hash> appHashes = getTxDirectApproversHashes(txHash, txToDirectApprovers);
                 if (CollectionUtils.isNotEmpty(appHashes)) {
-                    TransactionViewModel txApp = getAndRemoveApprover(appHashes);
+                    Hash txApp = getAndRemoveApprover(appHashes);
                     if (!temporary.add(txApp)) {
-                        throw new IllegalStateException("A circle was found in a subtangle on hash: " + txApp.getHash());
+                        throw new IllegalStateException("A circle or a collision was found in a subtangle on hash: "
+                                + txApp);
                     }
                     stack.push(txApp);
                     continue;
                 }
             }
             else {
-                temporary.remove(stack.pop());
+                txHash = stack.pop();
+                temporary.remove(txHash);
                 continue;
             }
-            sortedTxs.add(tx);
+            sortedTxs.add(txHash);
         }
 
         return sortedTxs;
     }
 
-    private TransactionViewModel getAndRemoveApprover(Collection<TransactionViewModel> appHashes) {
-        Iterator<TransactionViewModel> hashIterator = appHashes.iterator();
-        TransactionViewModel txApp = hashIterator.next();
+    private Hash getAndRemoveApprover(Collection<Hash> appHashes) {
+        Iterator<Hash> hashIterator = appHashes.iterator();
+        Hash txApp = hashIterator.next();
         hashIterator.remove();
         return txApp;
     }
 
-    private Collection<TransactionViewModel> getTxDirectApproversHashes(TransactionViewModel tx,
-            Map<TransactionViewModel, Collection<TransactionViewModel>> txToDirectApprovers) throws Exception {
-        Collection<TransactionViewModel> txApprovers = txToDirectApprovers.get(tx);
+    private Collection<Hash> getTxDirectApproversHashes(Hash txHash,
+            Map<Hash, Collection<Hash>> txToDirectApprovers) throws Exception {
+        Collection<Hash> txApprovers = txToDirectApprovers.get(txHash);
         if (txApprovers == null) {
-            ApproveeViewModel approvers = tx.getApprovers(tangle);
+            ApproveeViewModel approvers = TransactionViewModel.fromHash(tangle, txHash).getApprovers(tangle);
             Collection<Hash> appHashes = CollectionUtils.emptyIfNull(approvers.getHashes());
             txApprovers = new HashSet<>(appHashes.size());
             for (Hash appHash : appHashes) {
                 //if not genesis (the tx that confirms itself)
                 if (ObjectUtils.notEqual(Hash.NULL_HASH, appHash)) {
-                    TransactionViewModel txApp = TransactionViewModel.fromHash(tangle, appHash);
-                    txApprovers.add(txApp);
+                    txApprovers.add(appHash);
                 }
             }
-            txToDirectApprovers.put(tx, txApprovers);
+            txToDirectApprovers.put(txHash, txApprovers);
         }
         return txApprovers;
     }
 
-    private Map<Hash, Integer> calculateCwInOrder(Collection<TransactionViewModel> txsToRate,
+    //must specify using LinkedHashSet since Java has no interface that guarantees uniqueness and insertion order
+    private Map<Buffer, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate,
             Set<Hash> myApprovedHashes, boolean confirmLeftBehind, Set<Hash> analyzedTips) throws Exception {
-        AbstractSetValuedMap<TransactionViewModel, TransactionViewModel> txToApprovers =
-                new BoundedSetValuedHashMap<>(MAX_ANCESTORS_SIZE);
-        HashMap<Hash, Integer> txToCumulativeWeight = new HashMap<>();
+        Map<Buffer, Set<Buffer>> txSubHashToApprovers = new HashMap<>();
+        Map<Buffer, Integer> txSubHashToCumulativeWeight = new HashMap<>();
 
-        for (TransactionViewModel transactionViewModel : txsToRate) {
-            if (analyzedTips.add(transactionViewModel.getHash())) {
-                txToCumulativeWeight = updateCw(txToApprovers, txToCumulativeWeight, transactionViewModel, myApprovedHashes,
-                        confirmLeftBehind);
+        Iterator<Hash> txHashIterator = txsToRate.iterator();
+        while (txHashIterator.hasNext()) {
+            Hash txHash = txHashIterator.next();
+            if (analyzedTips.add(txHash)) {
+                txSubHashToCumulativeWeight = updateCw(txSubHashToApprovers, txSubHashToCumulativeWeight, txHash,
+                        myApprovedHashes, confirmLeftBehind);
             }
-            txToApprovers = updateApproversAndReleaseMemory(txToApprovers, transactionViewModel, myApprovedHashes,
+            txSubHashToApprovers = updateApproversAndReleaseMemory(txSubHashToApprovers, txHash, myApprovedHashes,
                     confirmLeftBehind);
+            txHashIterator.remove();
         }
 
-        return txToCumulativeWeight;
+        return txSubHashToCumulativeWeight;
     }
 
 
-    private AbstractSetValuedMap<TransactionViewModel, TransactionViewModel> updateApproversAndReleaseMemory(
-            AbstractSetValuedMap<TransactionViewModel, TransactionViewModel> txToApprovers,
-            TransactionViewModel transactionViewModel, Set<Hash> myApprovedHashes, boolean confirmLeftBehind) throws Exception {
-        Set<TransactionViewModel> approvers = txToApprovers.get(transactionViewModel);
+    private Map<Buffer, Set<Buffer>> updateApproversAndReleaseMemory(
+            Map<Buffer, Set<Buffer>> txSubHashToApprovers,
+            Hash txHash, Set<Hash> myApprovedHashes, boolean confirmLeftBehind) throws Exception {
+        ByteBuffer txSubHash = txHash.getSubHash();
+        BoundedSet<Buffer> approvers =
+                new BoundedHashSet<>(SetUtils.emptyIfNull(txSubHashToApprovers.get(txSubHash)), MAX_ANCESTORS_SIZE);
 
-        TransactionViewModel trunkTransaction = transactionViewModel.getTrunkTransaction(tangle);
-        txToApprovers.putAll(trunkTransaction, approvers);
-        TransactionViewModel branchTransaction = transactionViewModel.getBranchTransaction(tangle);
-        txToApprovers.putAll(branchTransaction, approvers);
-        if (shouldIncludeTransaction(transactionViewModel, myApprovedHashes, confirmLeftBehind)) {
-            txToApprovers.put(trunkTransaction, transactionViewModel);
-            txToApprovers.put(branchTransaction, transactionViewModel);
+        if (shouldIncludeTransaction(txHash, myApprovedHashes, confirmLeftBehind)) {
+            approvers.add(txSubHash);
         }
 
-        txToApprovers.remove(transactionViewModel);
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
+        Hash trunkHash = transactionViewModel.getTrunkTransactionHash();
+        Buffer trunkSubHash = trunkHash.getSubHash();
+        Hash branchHash = transactionViewModel.getBranchTransactionHash();
+        Buffer branchSubHash = branchHash.getSubHash();
+        if (!approvers.isFull()) {
+            Set<Buffer> trunkApprovers = new BoundedHashSet<>(approvers, MAX_ANCESTORS_SIZE);
+            trunkApprovers.addAll(CollectionUtils.emptyIfNull(txSubHashToApprovers.get(trunkSubHash)));
+            Set<Buffer> branchApprovers = new BoundedHashSet<>(approvers, MAX_ANCESTORS_SIZE);
+            branchApprovers.addAll(CollectionUtils.emptyIfNull(txSubHashToApprovers.get(branchSubHash)));
+            txSubHashToApprovers.put(trunkSubHash, trunkApprovers);
+            txSubHashToApprovers.put(branchSubHash, branchApprovers);
+        }
+        else {
+            txSubHashToApprovers.put(trunkSubHash, approvers);
+            txSubHashToApprovers.put(branchSubHash, approvers);
+        }
+        txSubHashToApprovers.remove(txSubHash);
 
-        return txToApprovers;
+        return txSubHashToApprovers;
     }
 
-    private static boolean shouldIncludeTransaction(TransactionViewModel tx, Set<Hash> myApprovedHashes,
+    private static boolean shouldIncludeTransaction(Hash txHash, Set<Hash> myApprovedSubHashes,
             boolean confirmLeftBehind) {
-        return tx != null
-                && !(confirmLeftBehind && myApprovedHashes.contains(tx.getHash()));
+        return !confirmLeftBehind || !SafeUtils.isContaining(myApprovedSubHashes, txHash);
     }
 
-    private HashMap<Hash, Integer> updateCw(AbstractSetValuedMap<TransactionViewModel, TransactionViewModel> txToApprovers,
-            HashMap<Hash, Integer> txToCumulativeWeight, TransactionViewModel transactionViewModel,
+    private Map<Buffer, Integer> updateCw(Map<Buffer, Set<Buffer>> txSubHashToApprovers,
+            Map<Buffer, Integer> txToCumulativeWeight, Hash txHash,
             Set<Hash> myApprovedHashes, boolean confirmLeftBehind) {
-        Set<TransactionViewModel> approvers = txToApprovers.get(transactionViewModel);
+        ByteBuffer txSubHash = txHash.getSubHash();
+        Set<Buffer> approvers = txSubHashToApprovers.get(txSubHash);
         int weight = CollectionUtils.emptyIfNull(approvers).size();
-        if (shouldIncludeTransaction(transactionViewModel, myApprovedHashes, confirmLeftBehind)) {
+        if (shouldIncludeTransaction(txHash, myApprovedHashes, confirmLeftBehind)) {
             ++weight;
         }
-        txToCumulativeWeight.put(transactionViewModel.getHash(), weight);
+        txToCumulativeWeight.put(txSubHash, weight);
         return txToCumulativeWeight;
     }
 

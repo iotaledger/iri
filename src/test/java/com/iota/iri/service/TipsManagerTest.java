@@ -19,6 +19,7 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.Buffer;
 import java.util.*;
 
 import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionHash;
@@ -90,19 +91,19 @@ public class TipsManagerTest {
         transaction2.store(tangle);
         transaction3.store(tangle);
         transaction4.store(tangle);
-        Map<Hash, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
+        Map<Buffer, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
                 transaction.getHash(), false, new HashSet<>());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
-                1, txToCw.get(transaction4.getHash()).intValue());
+                1, txToCw.get(transaction4.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
-                2, txToCw.get(transaction3.getHash()).intValue());
+                2, txToCw.get(transaction3.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 2),
-                3, txToCw.get(transaction2.getHash()).intValue());
+                3, txToCw.get(transaction2.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 1),
-                4, txToCw.get(transaction1.getHash()).intValue());
+                4, txToCw.get(transaction1.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 0),
-                5, txToCw.get(transaction.getHash()).intValue());
+                5, txToCw.get(transaction.getHash().getSubHash()).intValue());
     }
 
     @Test
@@ -121,17 +122,17 @@ public class TipsManagerTest {
         transaction3.store(tangle);
         log.debug("printing transaction in diamond shape \n                      {} \n{}  {}\n                      {}",
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash());
-        Map<Hash, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
+        Map<Buffer, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
                 transaction.getHash(), false, new HashSet<>());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
-                1, txToCw.get(transaction3.getHash()).intValue());
+                1, txToCw.get(transaction3.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 1),
-                2, txToCw.get(transaction1.getHash()).intValue());
+                2, txToCw.get(transaction1.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 2),
-                2, txToCw.get(transaction2.getHash()).intValue());
+                2, txToCw.get(transaction2.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 0),
-                4, txToCw.get(transaction.getHash()).intValue());
+                4, txToCw.get(transaction.getHash().getSubHash()).intValue());
     }
 
     @Test
@@ -151,20 +152,24 @@ public class TipsManagerTest {
         transaction2.store(tangle);
         transaction3.store(tangle);
         transaction4.store(tangle);
-        Map<Hash, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
+
+        log.info(String.format("Linear ordered hashes from tip %.4s, %.4s, %.4s, %.4s, %.4s", transaction4.getHash(),
+                transaction3.getHash(), transaction2.getHash(), transaction1.getHash(), transaction.getHash()));
+
+        Map<Buffer, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
                 transaction.getHash(), false, new HashSet<>());
 
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
-                1, txToCw.get(transaction4.getHash()).intValue());
+                1, txToCw.get(transaction4.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
-                2, txToCw.get(transaction3.getHash()).intValue());
+                2, txToCw.get(transaction3.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 2),
-                3, txToCw.get(transaction2.getHash()).intValue());
+                3, txToCw.get(transaction2.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 1),
-                4, txToCw.get(transaction1.getHash()).intValue());
+                4, txToCw.get(transaction1.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 0),
-                5, txToCw.get(transaction.getHash()).intValue());
+                5, txToCw.get(transaction.getHash().getSubHash()).intValue());
     }
 
     @Test
@@ -197,23 +202,23 @@ public class TipsManagerTest {
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash(),
                 transaction4, transaction5, transaction6);
 
-        Map<Hash, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
+        Map<Buffer, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
                 transaction.getHash(), false, new HashSet<>());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 6),
-                1, txToCw.get(transaction6.getHash()).intValue());
+                1, txToCw.get(transaction6.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 5),
-                2, txToCw.get(transaction5.getHash()).intValue());
+                2, txToCw.get(transaction5.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
-                2, txToCw.get(transaction4.getHash()).intValue());
+                2, txToCw.get(transaction4.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
-                3, txToCw.get(transaction3.getHash()).intValue());
+                3, txToCw.get(transaction3.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 2),
-                3, txToCw.get(transaction2.getHash()).intValue());
+                3, txToCw.get(transaction2.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 1),
-                1, txToCw.get(transaction1.getHash()).intValue());
+                1, txToCw.get(transaction1.getHash().getSubHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 0),
-                7, txToCw.get(transaction.getHash()).intValue());
+                7, txToCw.get(transaction.getHash().getSubHash()).intValue());
     }
 
     @Test
@@ -236,7 +241,7 @@ public class TipsManagerTest {
         }
         Map<Hash, Set<Hash>> ratings = new HashMap<>();
         updateApproversRecursively(hashes[0], ratings, new HashSet<>());
-        Map<Hash, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
+        Map<Buffer, Integer> txToCw = tipsManager.calculateCumulativeWeight(new HashSet<>(),
                 hashes[0], false, new HashSet<>());
 
         Assert.assertEquals("missing txs from new calculation", ratings.size(), txToCw.size());
@@ -244,7 +249,7 @@ public class TipsManagerTest {
             log.debug(String.format("tx %.4s has expected weight of %d", hash, weight.size()));
             Assert.assertEquals(
                     "new calculation weight is not as expected for hash " + hash,
-                    weight.size(), txToCw.get(hash).intValue());
+                    weight.size(), txToCw.get(hash.getSubHash()).intValue());
         });
     }
 
@@ -269,16 +274,16 @@ public class TipsManagerTest {
         transaction3.store(tangle);
         transaction4.store(tangle);
 
-        Map<Hash, Integer> cumulativeWeight = tipsManager.calculateCumulativeWeight(approvedHashes,
+        Map<Buffer, Integer> cumulativeWeight = tipsManager.calculateCumulativeWeight(approvedHashes,
                 transaction.getHash(), true, new HashSet<>());
 
         log.info(cumulativeWeight.toString());
         String msg = "Cumulative weight is wrong for tx";
-        Assert.assertEquals(msg + 4, 1, cumulativeWeight.get(transaction4.getHash()).intValue());
-        Assert.assertEquals(msg + 3, 1, cumulativeWeight.get(transaction3.getHash()).intValue());
-        Assert.assertEquals(msg + 2, 1, cumulativeWeight.get(transaction2.getHash()).intValue());
-        Assert.assertEquals(msg + 1, 2, cumulativeWeight.get(transaction1.getHash()).intValue());
-        Assert.assertEquals(msg + 0, 3, cumulativeWeight.get(transaction.getHash()).intValue());
+        Assert.assertEquals(msg + 4, 1, cumulativeWeight.get(transaction4.getHash().getSubHash()).intValue());
+        Assert.assertEquals(msg + 3, 1, cumulativeWeight.get(transaction3.getHash().getSubHash()).intValue());
+        Assert.assertEquals(msg + 2, 1, cumulativeWeight.get(transaction2.getHash().getSubHash()).intValue());
+        Assert.assertEquals(msg + 1, 2, cumulativeWeight.get(transaction1.getHash().getSubHash()).intValue());
+        Assert.assertEquals(msg + 0, 3, cumulativeWeight.get(transaction.getHash().getSubHash()).intValue());
     }
 
     //    @Test

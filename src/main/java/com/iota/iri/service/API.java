@@ -597,7 +597,8 @@ public class API {
             Map<Hash, Long> diff = new HashMap<>();
             for (int i = 0; i < tipsToApprove; i++) {
                 tips[i] = instance.tipsManager.transactionToApprove(visitedHashes, diff, referenceHash, tips[0], depth, randomWalkCount, random);
-                if (tips[i] == null) {
+                //update world view, so next tips selected will be inter-consistent
+                if (tips[i] == null || !instance.ledgerValidator.updateDiff(visitedHashes, diff, tips[i])) {
                     return null;
                 }
             }

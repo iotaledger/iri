@@ -114,11 +114,13 @@ public class Snapshot {
             throw new RuntimeException("Diff is not consistent.");
         }
         rwlock.writeLock().lock();
-        patch.entrySet().stream().forEach(hashLongEntry -> {
-            if (state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong) == null) {
-                state.putIfAbsent(hashLongEntry.getKey(), hashLongEntry.getValue());
+        patch.forEach((key, value) -> state.compute(key, ((hash, aLong) -> {
+            if (hash == null) {
+                return value;
             }
-        });
+            Long newValue = aLong + value;
+            return newValue == 0 ? null : newValue;
+        })));
         index = newIndex;
         rwlock.writeLock().unlock();
     }

@@ -83,3 +83,11 @@ DEBUG = true
 DB_PATH = db
 ```
 
+### Running sonar analysis on sonarcloud.io
+To generate a new analysis, run the following:
+```
+$ mvn clean install sonar:sonar -Psonar-coverage -Dsonar.login=<the token provided by sonarcloud.io>  -Dsonar.organization=<org on sonarcloud.io>  -Dsonar.projectKey=<project key sonarcloud.io>
+```
+Last code analysis (February 18, 2018): https://sonarcloud.io/dashboard?id=iota
+
+

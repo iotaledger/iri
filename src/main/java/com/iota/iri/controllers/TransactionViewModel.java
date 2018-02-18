@@ -312,8 +312,10 @@ public class TransactionViewModel {
     }
 
     public void setValidity(final Tangle tangle, int validity) throws Exception {
-        transaction.validity = validity;
-        update(tangle, "validity");
+        if(transaction.validity != validity) {
+            transaction.validity = validity;
+            update(tangle, "validity");
+        }
     }
 
     public int getValidity() {
@@ -371,9 +373,13 @@ public class TransactionViewModel {
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
+
             transactionViewModel.updateHeights(tangle);
-            transactionViewModel.updateSolid(true);
-            transactionViewModel.update(tangle, "solid|height");
+
+            if(!transactionViewModel.isSolid()) {
+                transactionViewModel.updateSolid(true);
+                transactionViewModel.update(tangle, "solid|height");
+            }
         }
     }
 
@@ -419,12 +425,18 @@ public class TransactionViewModel {
         }
         while(transactionViewModels.size() != 0) {
             transactionVM = TransactionViewModel.fromHash(tangle, transactionViewModels.pop());
+            long currentHeight = transactionVM.getHeight();
             if(trunk.getHash().equals(Hash.NULL_HASH) && trunk.getHeight() == 0 && !transactionVM.getHash().equals(Hash.NULL_HASH)) {
-                transactionVM.updateHeight(1L);
-                transactionVM.update(tangle, "height");
+                if(currentHeight != 1L ){
+                    transactionVM.updateHeight(1L);
+                    transactionVM.update(tangle, "height");
+                }
             } else if ( trunk.getType() != PREFILLED_SLOT && transactionVM.getHeight() == 0){
-                transactionVM.updateHeight(1 + trunk.getHeight());
-                transactionVM.update(tangle, "height");
+                long newHeight = 1L + trunk.getHeight();
+                if(currentHeight != newHeight) {
+                    transactionVM.updateHeight(newHeight);
+                    transactionVM.update(tangle, "height");
+                }
             } else {
                 break;
             }

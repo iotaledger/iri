@@ -153,7 +153,7 @@
 <dependency>
   <groupId>org.zeromq</groupId>
   <artifactId>jeromq</artifactId>
-  <version>0.4.0</version>
+  <version>0.4.3</version>
 </dependency>
 </dependencies>
 
@@ -247,6 +247,7 @@
                                     <urn>junit:junit:4.12:jar:null:test:2973d150c0dc1fefe998f834810d68f278ea58ec</urn>
                                     <urn>org.ini4j:ini4j:0.5.4:jar:null:compile:4a3ee4146a90c619b20977d65951825f5675b560</urn>
                                     <urn>org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12</urn>
+
                                     <!-- A check for the rules themselves -->
                                     <urn>uk.co.froot.maven.enforcer:digest-enforcer-rules:0.0.1:jar:null:runtime:16a9e04f3fe4bb143c42782d07d5faf65b32106f</urn>
                                 </urns>

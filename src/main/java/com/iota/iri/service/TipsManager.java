@@ -112,14 +112,11 @@ public class TipsManager {
             Map<Hash, Long> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
             Set<Hash> maxDepthOk = new HashSet<>();
-            final Set<Hash> approvedHashes = new HashSet<>(visitedHashes);
             try {
                 Hash tip = entryPoint(reference, extraTip, depth);
                 serialUpdateRatings(visitedHashes, tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
-                if (ledgerValidator.updateDiff(approvedHashes, diff, tip)) {
-                    visitedHashes.addAll(approvedHashes);
-                    approvedHashes.clear();
+                if (ledgerValidator.updateDiff(visitedHashes, diff, tip)) {
                     return markovChainMonteCarlo(visitedHashes, diff, tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex - depth * 2, maxDepthOk, seed);
                 } else {
                     throw new RuntimeException("starting tip failed consistency check: " + tip.toString());

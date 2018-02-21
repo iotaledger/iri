@@ -257,12 +257,11 @@ public class LedgerValidator {
         return true;
     }
 
-    public boolean updateDiff(Set<Hash> approvedHashes, final Map<Hash, Long> diff, Hash tip) throws Exception {
+    public boolean updateDiff(Set<Hash> visitedHashes, final Map<Hash, Long> diff, Hash tip) throws Exception {
         if(!TransactionViewModel.fromHash(tangle, tip).isSolid()) {
             return false;
         }
-        if (approvedHashes.contains(tip)) return true;
-        Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
+        if (visitedHashes .contains(tip)) return true;
         Map<Hash, Long> currentState = getLatestDiff(visitedHashes, tip, milestone.latestSnapshot.index(), false);
         if (currentState == null) return false;
         boolean isConsistent = Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(currentState));
@@ -272,7 +271,7 @@ public class LedgerValidator {
                     diff.putIfAbsent(key, value);
                 }
             });
-            approvedHashes.addAll(visitedHashes);
+            visitedHashes .addAll(visitedHashes);
         }
         return isConsistent;
     }

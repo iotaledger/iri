@@ -112,11 +112,14 @@ public class TipsManager {
             Map<Hash, Long> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
             Set<Hash> maxDepthOk = new HashSet<>();
+            final Set<Hash> approvedHashes = new HashSet<>(visitedHashes);
             try {
                 Hash tip = entryPoint(reference, extraTip, depth);
                 serialUpdateRatings(visitedHashes, tip, ratings, analyzedTips, extraTip);
                 analyzedTips.clear();
-                if (ledgerValidator.updateDiff(visitedHashes, diff, tip)) {
+                if (ledgerValidator.updateDiff(approvedHashes, diff, tip)) {
+                    visitedHashes.addAll(approvedHashes);
+                    approvedHashes.clear();
                     return markovChainMonteCarlo(visitedHashes, diff, tip, extraTip, ratings, iterations, milestone.latestSolidSubtangleMilestoneIndex - depth * 2, maxDepthOk, seed);
                 } else {
                     throw new RuntimeException("starting tip failed consistency check: " + tip.toString());
@@ -161,7 +164,7 @@ public class TipsManager {
                 monteCarloIntegrations.put(tail,1);
             }
         }
-        return monteCarloIntegrations.entrySet().stream().reduce((a, b) -> {
+        tail = monteCarloIntegrations.entrySet().stream().reduce((a, b) -> {
             if (a.getValue() > b.getValue()) {
                 return a;
             } else if (a.getValue() < b.getValue()) {
@@ -172,6 +175,8 @@ public class TipsManager {
                 return b;
             }
         }).map(Map.Entry::getKey).orElse(null);
+        ledgerValidator.getLatestDiff(visitedHashes, tail, milestone.latestSnapshot.index(), false);
+        return tail;
     }
 
     Hash randomWalk(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, final Hash start, final Hash extraTip, final Map<Hash, Long> ratings, final int maxDepth, final Set<Hash> maxDepthOk, Random rnd) throws Exception {

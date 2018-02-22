@@ -27,8 +27,10 @@ public class PearlDiver {
     private final Object syncObj = new Object();
 
     public void cancel() {
-        synchronized (syncObj) {
-            state = CANCELLED;
+        if (state == RUNNING) {
+            synchronized (syncObj) {
+                state = CANCELLED;
+            }
         }
     }
 
@@ -43,6 +45,8 @@ public class PearlDiver {
             throw new RuntimeException("Invalid min weight magnitude: " + minWeightMagnitude);
         }
 
+        // state still needs protected, because it is 
+        // possible that another thread calls cancel()
         synchronized (syncObj) {
             state = RUNNING;
         }

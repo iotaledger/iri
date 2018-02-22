@@ -34,8 +34,7 @@ public class PearlDiver {
         }
     }
 
-    public synchronized boolean search(final int[] transactionTrits, final int minWeightMagnitude,
-        int numberOfThreads) {
+    public synchronized boolean search(final int[] transactionTrits, final int minWeightMagnitude) {
 
         if (transactionTrits.length != TRANSACTION_LENGTH) {
             throw new RuntimeException(
@@ -126,9 +125,7 @@ public class PearlDiver {
 
         }
 
-        if (numberOfThreads <= 0) {
-            numberOfThreads = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
-        }
+        int numberOfThreads = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
 
         Thread[] workers = new Thread[numberOfThreads];
 

@@ -29,7 +29,6 @@ public class PearlDiver {
     public void cancel() {
         synchronized (syncObj) {
             state = CANCELLED;
-            syncObj.notifyAll();
         }
     }
 
@@ -178,7 +177,6 @@ public class PearlDiver {
                                     (midCurlStateCopyLow[i] & outMask) == 0 ? 1
                                         : (midCurlStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
                             }
-                            syncObj.notifyAll();
                         }
                     }
                     break;
@@ -186,18 +184,6 @@ public class PearlDiver {
             }));
             workers[threadIndex] = worker;
             worker.start();
-        }
-
-        try {
-            synchronized (syncObj) {
-                if (state == RUNNING) {
-                    syncObj.wait();
-                }
-            }
-        } catch (final InterruptedException e) {
-            synchronized (syncObj) {
-                state = CANCELLED;
-            }
         }
 
         for (Thread worker : workers) {

@@ -265,13 +265,14 @@ public class LedgerValidator {
         Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
         Map<Hash, Long> currentState = getLatestDiff(visitedHashes, tip, milestone.latestSnapshot.index(), false);
         if (currentState == null) return false;
+        diff.forEach((key, value) -> {
+            if(currentState.computeIfPresent(key, ((hash, aLong) -> value + aLong)) == null) {
+                currentState.putIfAbsent(key, value);
+            }
+        });
         boolean isConsistent = Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(currentState));
         if (isConsistent) {
-            currentState.forEach((key, value) -> {
-                if(diff.computeIfPresent(key, ((hash, aLong) -> value + aLong)) == null) {
-                    diff.putIfAbsent(key, value);
-                }
-            });
+            diff.putAll(currentState);
             approvedHashes.addAll(visitedHashes);
         }
         return isConsistent;

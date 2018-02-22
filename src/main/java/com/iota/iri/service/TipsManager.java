@@ -122,7 +122,6 @@ public class TipsManager {
                     throw new RuntimeException("starting tip failed consistency check: " + tip.toString());
                 }
             } catch (Exception e) {
-                milestone.latestSnapshot.rwlock.readLock().unlock();
                 e.printStackTrace();
                 log.error("Encountered error: " + e.getLocalizedMessage());
                 throw e;

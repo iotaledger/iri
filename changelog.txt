@@ -1,3 +1,8 @@
+1.4.2.2
+    - Fix locking issue (#534)
+    - Fix internal snapshot consistency checks 
+    - Update jeromq dependency to 0.4.3 (#544)
+
 1.4.2.1
     - Add wasAddressSpentFrom API call
     - Bugfix in getInclusionStates

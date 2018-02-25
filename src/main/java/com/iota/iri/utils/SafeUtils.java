@@ -6,8 +6,6 @@ import java.util.stream.Stream;
 
 /**
  * Null safe utils
- *
- * @author galrogo
  */
 public class SafeUtils {
 

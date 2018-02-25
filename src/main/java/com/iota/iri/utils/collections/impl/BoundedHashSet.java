@@ -11,8 +11,6 @@ import java.util.stream.Collectors;
  * A set that doesn't allow to add elements to it once it is full
  *
  * @param <E> the type parameter
- *
- * @author galrogo
  */
 public class BoundedHashSet<E> extends HashSet<E> implements BoundedSet<E>{
     final private int maxSize;

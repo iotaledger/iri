@@ -8,9 +8,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-/**
- * @author galrogo on 25/01/18
- **/
 public class BoundedHashSetTest {
 
     @Test

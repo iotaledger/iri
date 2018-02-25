@@ -390,7 +390,7 @@ public class TipsManager {
     private Map<Buffer, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate,
             Set<Hash> myApprovedHashes, boolean confirmLeftBehind, Set<Hash> analyzedTips) throws Exception {
         Map<Buffer, Set<Buffer>> txSubHashToApprovers = new HashMap<>();
-        HashMap<Buffer, Integer> txSubHashToCumulativeWeight = new HashMap<>();
+        Map<Buffer, Integer> txSubHashToCumulativeWeight = new HashMap<>();
 
         Iterator<Hash> txHashIterator = txsToRate.iterator();
         while (txHashIterator.hasNext()) {
@@ -446,8 +446,8 @@ public class TipsManager {
         return !confirmLeftBehind || !SafeUtils.isContaining(myApprovedSubHashes, txHash);
     }
 
-    private HashMap<Buffer, Integer> updateCw(Map<Buffer, Set<Buffer>> txSubHashToApprovers,
-            HashMap<Buffer, Integer> txToCumulativeWeight, Hash txHash,
+    private Map<Buffer, Integer> updateCw(Map<Buffer, Set<Buffer>> txSubHashToApprovers,
+            Map<Buffer, Integer> txToCumulativeWeight, Hash txHash,
             Set<Hash> myApprovedHashes, boolean confirmLeftBehind) {
         ByteBuffer txSubHash = txHash.getSubHash();
         Set<Buffer> approvers = txSubHashToApprovers.get(txSubHash);

@@ -317,15 +317,15 @@ public class TipsManager {
      */
     Map<Buffer, Integer> calculateCumulativeWeight(Set<Hash> myApprovedHashes, Hash currentTxHash, boolean confirmLeftBehind,
             Set<Hash> analyzedTips) throws Exception {
-        log.info("start calculating cw starting with tx hash {}", currentTxHash);
-        log.info("start topological sort");
+        log.info("Start calculating cw starting with tx hash {}", currentTxHash);
+        log.debug("Start topological sort");
         long start = System.currentTimeMillis();
         LinkedHashSet<Hash> txHashesToRate = sortTransactionsInTopologicalOrder(currentTxHash);
-        log.info("subtangle size: {}", txHashesToRate.size());
-        log.info("topological sort done. start traversing on txs in order and calculate weight");
+        log.debug("Subtangle size: {}", txHashesToRate.size());
+        log.debug("Topological sort done. Start traversing on txs in order and calculate weight");
         Map<Buffer, Integer> cumulativeWeights = calculateCwInOrder(txHashesToRate, myApprovedHashes, confirmLeftBehind,
                 analyzedTips);
-        log.info("cumulative weights calculation done in {} ms", System.currentTimeMillis() - start);
+        log.debug("Cumulative weights calculation done in {} ms", System.currentTimeMillis() - start);
         return cumulativeWeights;
     }
 

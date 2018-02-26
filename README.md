@@ -9,7 +9,7 @@ It allows to connect easily using java directly to a local or a remote [[IOTA no
 
 # How to get started
 
-Obviously, because this is its own, independent network, you have to go through the same process as in the main network: **find neighbors**. You can find neighbors in the `#nodesharing` Slack channel[[Slack Invite]](http://slack.iota.org), or on our forum. Community members are usually very happy to help you out and get you connected. If you want to get tokens for your testcase, please just ask in one of the communication channels as well.
+Obviously, because this is its own, independent network, you have to go through the same process as in the main network: **find neighbors**. You can find neighbors in the [[Discord Community]](https://discord.gg/7Gu2mG5), or on [[our forum]](https://forum.iota.org/). Community members are usually very happy to help you out and get you connected. If you want to get tokens for your testcase, please just ask in one of the communication channels as well.
 
 ## Reporting Issues
 

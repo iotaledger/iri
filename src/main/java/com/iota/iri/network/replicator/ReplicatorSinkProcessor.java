@@ -11,8 +11,6 @@ import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.network.Node;
 
 class ReplicatorSinkProcessor implements Runnable {
@@ -93,10 +91,10 @@ class ReplicatorSinkProcessor implements Runnable {
                                             try {
                                                 CRC32 crc32 = new CRC32();                                        
                                                 crc32.update(message.array());
-                                                String crc32_string = Long.toHexString(crc32.getValue());
-                                                while (crc32_string.length() < CRC32_BYTES) crc32_string = "0"+crc32_string;
+                                                StringBuilder crc32_string = new StringBuilder(Long.toHexString(crc32.getValue()));
+                                                while (crc32_string.length() < CRC32_BYTES) crc32_string.insert(0, "0");
                                                 out.write(message.array());
-                                                out.write(crc32_string.getBytes());
+                                                out.write(crc32_string.toString().getBytes());
                                                 out.flush();
                                                 neighbor.incSentTransactions();
                                             } catch (IOException e2) {

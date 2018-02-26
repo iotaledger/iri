@@ -4,10 +4,6 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.util.Map;
-
 /**
  * Created by paul on 4/11/17.
  */

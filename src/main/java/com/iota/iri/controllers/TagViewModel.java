@@ -1,7 +1,5 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.model.Address;
-import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tag;
 import com.iota.iri.storage.Indexable;

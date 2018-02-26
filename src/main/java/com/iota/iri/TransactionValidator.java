@@ -256,14 +256,11 @@ public class TransactionValidator {
     }
 
     private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
-        if(approovee.getType() == PREFILLED_SLOT) {
+        if (approovee.getType() == PREFILLED_SLOT) {
             transactionRequester.requestTransaction(approovee.getHash(), false);
             return false;
         }
-        if(approovee.getHash().equals(Hash.NULL_HASH)) {
-            return true;
-        }
-        return approovee.isSolid();
+        return approovee.getHash().equals(Hash.NULL_HASH) || approovee.isSolid();
     }
 
     public static class StaleTimestampException extends RuntimeException {

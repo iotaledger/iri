@@ -10,7 +10,6 @@ import com.iota.iri.utils.Pair;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 4/11/17.

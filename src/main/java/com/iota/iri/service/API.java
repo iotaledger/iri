@@ -3,7 +3,6 @@ package com.iota.iri.service;
 import static io.undertow.Handlers.path;
 
 import java.io.*;
-import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,7 +20,6 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -821,9 +819,11 @@ public class API {
     }
 
     private String padTag(String tag) throws ValidationException {
-        while (tag.length() < HASH_SIZE) {
-            tag += Converter.TRYTE_ALPHABET.charAt(0);
+        StringBuilder tagBuilder = new StringBuilder(tag);
+        while (tagBuilder.length() < HASH_SIZE) {
+            tagBuilder.append(Converter.TRYTE_ALPHABET.charAt(0));
         }
+        tag = tagBuilder.toString();
         if (tag.equals(Hash.NULL_HASH.toString())) {
             throw new ValidationException("Invalid tag input");
         }

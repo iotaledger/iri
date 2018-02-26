@@ -5,7 +5,6 @@ import com.iota.iri.model.StateDiff;
 import com.iota.iri.storage.Tangle;
 
 import java.util.Map;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 5/6/17.

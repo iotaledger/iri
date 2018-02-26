@@ -4,13 +4,11 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.model.Hash;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.io.*;
 import java.util.Arrays;
-import java.util.Scanner;
 
 /**
  * Created by alon on 26/01/18.

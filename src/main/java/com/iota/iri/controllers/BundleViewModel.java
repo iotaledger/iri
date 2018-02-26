@@ -2,7 +2,6 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;

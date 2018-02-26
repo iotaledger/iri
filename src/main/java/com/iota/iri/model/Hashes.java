@@ -3,8 +3,6 @@ package com.iota.iri.model;
 import com.iota.iri.storage.Persistable;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.Serializable;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 

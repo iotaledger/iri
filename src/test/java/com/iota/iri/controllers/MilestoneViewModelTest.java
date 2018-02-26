@@ -1,11 +1,9 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.Milestone;
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.storage.rocksDB.RocksDBPersistenceProviderTest;
 import org.junit.*;
 import org.junit.rules.TemporaryFolder;
 

@@ -572,7 +572,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             db.close();
         }
         if (missingFromDescription.size() != 0) {
-            missingFromDescription.forEach(familyDescriptors::add);
+            familyDescriptors.addAll(missingFromDescription);
         }
     }
 

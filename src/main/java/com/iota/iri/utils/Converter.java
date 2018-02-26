@@ -1,6 +1,5 @@
 package com.iota.iri.utils;
 
-import java.math.BigInteger;
 import java.util.Arrays;
 
 public class Converter {

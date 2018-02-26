@@ -1,15 +1,6 @@
 package com.iota.iri;
-import com.iota.iri.controllers.MilestoneViewModel;
-import com.iota.iri.controllers.StateDiffViewModel;
-import com.iota.iri.hash.Curl;
-import com.iota.iri.hash.ISS;
-import com.iota.iri.hash.Sponge;
-import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Converter;
-import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -1,24 +1,11 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.ErrorResponse;
 import com.iota.iri.service.dto.IXIResponse;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-
-import static java.nio.file.StandardOpenOption.CREATE;
-import static org.junit.Assert.*;
 
 /**
  * Created by paul on 1/4/17.

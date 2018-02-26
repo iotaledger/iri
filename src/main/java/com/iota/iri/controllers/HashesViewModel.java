@@ -1,15 +1,10 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.model.Hashes;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Pair;
 
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 5/6/17.

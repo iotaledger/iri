@@ -2,9 +2,6 @@ package com.iota.iri.zmq;
 
 import org.zeromq.ZMQ;
 
-import java.text.MessageFormat;
-import java.util.Objects;
-
 /**
  * Created by paul on 6/20/17.
  */

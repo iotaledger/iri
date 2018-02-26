@@ -1,15 +1,12 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.model.Address;
-import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**

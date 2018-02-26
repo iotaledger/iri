@@ -1,7 +1,5 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
@@ -14,7 +12,6 @@ import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static com.iota.iri.controllers.TransactionViewModel.TRINARY_SIZE;

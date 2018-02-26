@@ -7,9 +7,6 @@ import org.junit.rules.TemporaryFolder;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
-
-import static org.junit.Assert.*;
 
 /**
  * Created by paul on 4/15/17.

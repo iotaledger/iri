@@ -76,20 +76,19 @@ public class PearlDiver {
                 final long[] curlStateLow = new long[CURL_STATE_LENGTH], curlStateHigh = new long[CURL_STATE_LENGTH];
                 long mask, outMask = 1;
                 
-                if ((mask = loop(midCurlStateCopyLow, midCurlStateCopyHigh, minWeightMagnitude)) != 0) {
-                    if (state == RUNNING) {
-                        synchronized (syncObj) {
-                            state = COMPLETED;
+                if ((mask = loop(midCurlStateCopyLow, midCurlStateCopyHigh, minWeightMagnitude)) != 0 &&
+                    state == RUNNING) {
+                    synchronized (syncObj) {
+                        state = COMPLETED;
 
-                            while ((outMask & mask) == 0) {
-                                outMask <<= 1;
-                            }
+                        while ((outMask & mask) == 0) {
+                            outMask <<= 1;
+                        }
 
-                            for (int i = 0; i < CURL_HASH_LENGTH; i++) {
-                                transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] =
-                                    (midCurlStateCopyLow[i] & outMask) == 0 ? 1
-                                    : (midCurlStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
-                            }
+                        for (int i = 0; i < CURL_HASH_LENGTH; i++) {
+                            transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] =
+                                (midCurlStateCopyLow[i] & outMask) == 0 ? 1
+                                : (midCurlStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
                         }
                     }
                 }

@@ -28,7 +28,9 @@ public class Serializer {
         return getLong(bytes, 0);
     }
     public static long getLong(byte[] bytes, int start) {
-        if(bytes == null) return 0;
+        if(bytes == null) {
+            return 0;
+        }
         int length = Long.BYTES;
         long res = 0;
         for (int i=0; i< length;i++) {
@@ -41,7 +43,9 @@ public class Serializer {
         return getInteger(bytes, 0);
     }
     public static int getInteger(byte[] bytes, int start) {
-        if(bytes == null) return 0;
+        if(bytes == null) {
+            return 0;
+        }
         int length = Integer.BYTES;
         int res = 0;
         for (int i=0; i< length;i++) {

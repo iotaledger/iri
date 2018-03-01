@@ -32,7 +32,9 @@ public abstract class Neighbor {
     }
     public static void decNumPeers() {
         int v = numPeers.decrementAndGet();
-        if (v < 0) numPeers.set(0);
+        if (v < 0) {
+            numPeers.set(0);
+        }
     }
 
     private final String hostAddress;

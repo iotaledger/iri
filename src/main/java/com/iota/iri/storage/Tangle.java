@@ -119,14 +119,18 @@ public class Tangle {
 
     public Boolean exists(Class<?> modelClass, Indexable hash) throws Exception {
             for(PersistenceProvider provider: this.persistenceProviders) {
-                if(provider.exists(modelClass, hash)) return true;
+                if (provider.exists(modelClass, hash)) {
+                    return true;
+                }
             }
             return false;
     }
 
     public Boolean maybeHas(Class<?> model, Indexable index) throws Exception {
             for(PersistenceProvider provider: this.persistenceProviders) {
-                if(provider.mayExist(model, index)) return true;
+                if (provider.mayExist(model, index)) {
+                    return true;
+                }
             }
             return false;
     }

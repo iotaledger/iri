@@ -1,5 +1,7 @@
 package com.iota.iri.zmq;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
 
 import java.util.concurrent.ExecutorService;
@@ -10,6 +12,8 @@ import java.util.concurrent.TimeUnit;
  * Created by paul on 6/20/17.
  */
 public class MessageQ {
+    private final static Logger LOG = LoggerFactory.getLogger(MessageQ.class);
+
     private final ZMQ.Context context;
     private final ZMQ.Socket publisher;
     private boolean enabled = false;
@@ -40,11 +44,13 @@ public class MessageQ {
 
     public void shutdown() {
         publisherService.shutdown();
+
         try {
             publisherService.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
-            e.printStackTrace();
+            LOG.error("Publisher service shutdown failed.", e);
         }
+
         publisher.close();
         context.term();
     }

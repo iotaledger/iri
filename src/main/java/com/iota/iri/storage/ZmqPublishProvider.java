@@ -66,39 +66,39 @@ public class ZmqPublishProvider implements PersistenceProvider {
     }
 
     private void publishTx(TransactionViewModel transactionViewModel) {
-        StringBuilder txStringBuffer = new StringBuilder(600);
+        StringBuilder txStringBuilder = new StringBuilder(600);
 
         try {
-            txStringBuffer.append("tx ");
-            txStringBuffer.append(transactionViewModel.getHash()); txStringBuffer.append(" ");
-            txStringBuffer.append(transactionViewModel.getAddressHash()); txStringBuffer.append(" ");
-            txStringBuffer.append(String.valueOf(transactionViewModel.value())); txStringBuffer.append(" ");
-            txStringBuffer.append(transactionViewModel.getObsoleteTagValue().toString().substring(0,27)); txStringBuffer.append(" ");
-            txStringBuffer.append(String.valueOf(transactionViewModel.getTimestamp())); txStringBuffer.append(" ");
-            txStringBuffer.append(String.valueOf(transactionViewModel.getCurrentIndex())); txStringBuffer.append(" ");
-            txStringBuffer.append(String.valueOf(transactionViewModel.lastIndex())); txStringBuffer.append(" ");
-            txStringBuffer.append(transactionViewModel.getBundleHash()); txStringBuffer.append(" ");
-            txStringBuffer.append(transactionViewModel.getTrunkTransactionHash()); txStringBuffer.append(" ");
-            txStringBuffer.append(transactionViewModel.getBranchTransactionHash()); txStringBuffer.append(" ");
-            txStringBuffer.append(String.valueOf(transactionViewModel.getArrivalTime()));
+            txStringBuilder.append("tx ");
+            txStringBuilder.append(transactionViewModel.getHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getAddressHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.value())); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getObsoleteTagValue().toString().substring(0,27)); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.getTimestamp())); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.getCurrentIndex())); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.lastIndex())); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getBundleHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getTrunkTransactionHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getBranchTransactionHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.getArrivalTime()));
 
-            messageQ.publish(txStringBuffer.toString());
+            messageQ.publish(txStringBuilder.toString());
         } catch (Exception e) {
-            log.error(txStringBuffer.toString());
+            log.error(txStringBuilder.toString());
             log.error("Error publishing tx to zmq.", e);
         }
     }
 
     private void publishTxTrytes(TransactionViewModel transactionViewModel) {
-        StringBuilder txTrytesStringBuffer = new StringBuilder(2673);
+        StringBuilder txTrytesStringBuilder = new StringBuilder(TransactionViewModel.TRINARY_SIZE/3);
 
         try {
-            txTrytesStringBuffer.append("tx_trytes ");
-            txTrytesStringBuffer.append(Converter.trytes(transactionViewModel.trits()));
+            txTrytesStringBuilder.append("tx_trytes ");
+            txTrytesStringBuilder.append(Converter.trytes(transactionViewModel.trits()));
 
-            messageQ.publish(txTrytesStringBuffer.toString());
+            messageQ.publish(txTrytesStringBuilder.toString());
         } catch (Exception e) {
-            log.error(txTrytesStringBuffer.toString());
+            log.error(txTrytesStringBuilder.toString());
             log.error("Error publishing tx_trytes to zmq.", e);
         }
     }

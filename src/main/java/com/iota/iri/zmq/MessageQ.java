@@ -1,20 +1,27 @@
 package com.iota.iri.zmq;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
 
-import java.text.MessageFormat;
-import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Created by paul on 6/20/17.
  */
 public class MessageQ {
+    private final static Logger LOG = LoggerFactory.getLogger(MessageQ.class);
+
     private final ZMQ.Context context;
     private final ZMQ.Socket publisher;
     private boolean enabled = false;
 
+    private final ExecutorService publisherService = Executors.newSingleThreadExecutor();
+
     public MessageQ(int port, String ipc, int nthreads, boolean enabled) {
-        if(enabled) {
+        if (enabled) {
             context = ZMQ.context(nthreads);
             publisher = context.socket(ZMQ.PUB);
             publisher.bind(String.format("tcp://*:%d", port));
@@ -29,12 +36,21 @@ public class MessageQ {
     }
 
     public void publish(String message, Object... objects) {
-        if(enabled) {
-            publisher.send(String.format(message, objects));
+        if (enabled) {
+            String toSend = String.format(message, objects);
+            publisherService.submit(() -> publisher.send(toSend));
         }
     }
 
-    public void shutdown () {
+    public void shutdown() {
+        publisherService.shutdown();
+
+        try {
+            publisherService.awaitTermination(5, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            LOG.error("Publisher service shutdown failed.", e);
+        }
+
         publisher.close();
         context.term();
     }

@@ -153,22 +153,22 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception {
         final Indexable index;
         final Persistable object;
-        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model));
-        iterator.seekToLast();
-        if(iterator.isValid()) {
-            object = (Persistable) model.newInstance();
-            index = (Indexable) indexModel.newInstance();
-            index.read(iterator.key());
-            object.read(iterator.value());
-            ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
-            if(referenceHandle != null) {
-                object.readMetadata(db.get(referenceHandle, iterator.key()));
+        try (RocksIterator iterator = db.newIterator(classTreeMap.get().get(model))) {
+            iterator.seekToLast();
+            if (iterator.isValid()) {
+                object = (Persistable) model.newInstance();
+                index = (Indexable) indexModel.newInstance();
+                index.read(iterator.key());
+                object.read(iterator.value());
+                ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
+                if (referenceHandle != null) {
+                    object.readMetadata(db.get(referenceHandle, iterator.key()));
+                }
+            } else {
+                object = null;
+                index = null;
             }
-        } else {
-            object = null;
-            index = null;
         }
-        iterator.close();
         return new Pair<>(index, object);
     }
 
@@ -176,15 +176,15 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public Set<Indexable> keysWithMissingReferences(Class<?> model, Class<?> other) throws Exception {
         ColumnFamilyHandle handle = classTreeMap.get().get(model);
         ColumnFamilyHandle otherHandle = classTreeMap.get().get(other);
-        RocksIterator iterator = db.newIterator(handle);
-        Set<Indexable> indexables = new HashSet<>();
-        for(iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-            if(db.get(otherHandle, iterator.key()) == null) {
-                indexables.add(new Hash(iterator.key()));
+        try (RocksIterator iterator = db.newIterator(handle)) {
+            Set<Indexable> indexables = new HashSet<>();
+            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                if (db.get(otherHandle, iterator.key()) == null) {
+                    indexables.add(new Hash(iterator.key()));
+                }
             }
+            return indexables;
         }
-        iterator.close();
-        return indexables;
     }
 
     @Override
@@ -253,73 +253,73 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     @Override
     public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception {
-        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model));
-        final Persistable object;
-        final Indexable indexable;
-        iterator.seek(index.bytes());
-        iterator.next();
-        if(iterator.isValid()) {
-            object = (Persistable) model.newInstance();
-            indexable = index.getClass().newInstance();
-            indexable.read(iterator.key());
-            object.read(iterator.value());
-            ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
-            if(referenceHandle != null) {
-                object.readMetadata(db.get(referenceHandle, iterator.key()));
+        try (RocksIterator iterator = db.newIterator(classTreeMap.get().get(model))) {
+            final Persistable object;
+            final Indexable indexable;
+            iterator.seek(index.bytes());
+            iterator.next();
+            if (iterator.isValid()) {
+                object = (Persistable) model.newInstance();
+                indexable = index.getClass().newInstance();
+                indexable.read(iterator.key());
+                object.read(iterator.value());
+                ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
+                if (referenceHandle != null) {
+                    object.readMetadata(db.get(referenceHandle, iterator.key()));
+                }
+            } else {
+                object = null;
+                indexable = null;
             }
-        } else {
-            object = null;
-            indexable = null;
+            return new Pair<>(indexable, object);
         }
-        iterator.close();
-        return new Pair<>(indexable, object);
     }
 
     @Override
     public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception {
-        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model));
-        final Persistable object;
-        final Indexable indexable;
-        iterator.seek(index.bytes());
-        iterator.prev();
-        if(iterator.isValid()) {
-            object = (Persistable) model.newInstance();
-            object.read(iterator.value());
-            indexable = (Indexable) index.getClass().newInstance();
-            indexable.read(iterator.key());
-            ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
-            if(referenceHandle != null) {
-                object.readMetadata(db.get(referenceHandle, iterator.key()));
+        try (RocksIterator iterator = db.newIterator(classTreeMap.get().get(model))) {
+            final Persistable object;
+            final Indexable indexable;
+            iterator.seek(index.bytes());
+            iterator.prev();
+            if (iterator.isValid()) {
+                object = (Persistable) model.newInstance();
+                object.read(iterator.value());
+                indexable = (Indexable) index.getClass().newInstance();
+                indexable.read(iterator.key());
+                ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
+                if (referenceHandle != null) {
+                    object.readMetadata(db.get(referenceHandle, iterator.key()));
+                }
+            } else {
+                object = null;
+                indexable = null;
             }
-        } else {
-            object = null;
-            indexable = null;
+            return new Pair<>(indexable, object);
         }
-        iterator.close();
-        return new Pair<>(indexable, object);
     }
 
     @Override
     public Pair<Indexable, Persistable> first(Class<?> model, Class<?> index) throws Exception {
-        RocksIterator iterator = db.newIterator(classTreeMap.get().get(model));
-        final Persistable object;
-        final Indexable indexable;
-        iterator.seekToFirst();
-        if(iterator.isValid()) {
-            object = (Persistable) model.newInstance();
-            object.read(iterator.value());
-            indexable = (Indexable) index.newInstance();
-            indexable.read(iterator.key());
-            ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
-            if(referenceHandle != null) {
-                object.readMetadata(db.get(referenceHandle, iterator.key()));
+        try (RocksIterator iterator = db.newIterator(classTreeMap.get().get(model))) {
+            final Persistable object;
+            final Indexable indexable;
+            iterator.seekToFirst();
+            if (iterator.isValid()) {
+                object = (Persistable) model.newInstance();
+                object.read(iterator.value());
+                indexable = (Indexable) index.newInstance();
+                indexable.read(iterator.key());
+                ColumnFamilyHandle referenceHandle = metadataReference.get().get(model);
+                if (referenceHandle != null) {
+                    object.readMetadata(db.get(referenceHandle, iterator.key()));
+                }
+            } else {
+                object = null;
+                indexable = null;
             }
-        } else {
-            object = null;
-            indexable = null;
+            return new Pair<>(indexable, object);
         }
-        iterator.close();
-        return new Pair<>(indexable, object);
     }
 
     public boolean merge(Persistable model, Indexable index) throws Exception {
@@ -390,11 +390,9 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public void createBackup(String path) throws RocksDBException {
         Env env;
         BackupableDBOptions backupableDBOptions;
-        BackupEngine backupEngine;
         env = Env.getDefault();
         backupableDBOptions = new BackupableDBOptions(path);
-        try {
-            backupEngine = BackupEngine.open(env, backupableDBOptions);
+        try (BackupEngine backupEngine = BackupEngine.open(env, backupableDBOptions)) {
             backupEngine.createNewBackup(db, true);
             backupEngine.close();
         } finally {
@@ -491,7 +489,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
 
         MergeOperator mergeOperator = new StringAppendOperator();
-        ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions()
+        try (ColumnFamilyOptions columnFamilyOptions = new ColumnFamilyOptions()
                 .setMergeOperator(mergeOperator)
                 .setTableFormatConfig(blockBasedTableConfig)
                 .setMaxWriteBufferNumber(2)
@@ -500,8 +498,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 .setCompactionStyle(CompactionStyle.UNIVERSAL)
                 .setCompressionType(CompressionType.SNAPPY_COMPRESSION)
                 */
-                ;
-        //columnFamilyOptions.setMemTableConfig(hashSkipListMemTableConfig);
+        ) {
+            //columnFamilyOptions.setMemTableConfig(hashSkipListMemTableConfig);
 
         //List<ColumnFamilyDescriptor> familyDescriptors = columnFamilyNames.stream().map(name -> new ColumnFamilyDescriptor(name.getBytes(), columnFamilyOptions)).collect(Collectors.toList());
         //familyDescriptors.add(0, new ColumnFamilyDescriptor(RocksDB.DEFAULT_COLUMN_FAMILY, new ColumnFamilyOptions()));
@@ -510,7 +508,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
         db.enableFileDeletions(true);
 
-        fillmodelColumnHandles();
+            fillmodelColumnHandles();
+        }
     }
 
 
@@ -555,24 +554,27 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private interface MyRunnable<R> {
         R run() throws Exception;
     }
+
     private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, String path) throws Exception {
-        List<ColumnFamilyDescriptor> columnFamilies = RocksDB.listColumnFamilies(new Options().setCreateIfMissing(true), path)
-                .stream()
-                .map(b -> new ColumnFamilyDescriptor(b, new ColumnFamilyOptions()))
-                .collect(Collectors.toList());
-        columnFamilies.add(0, familyDescriptors.get(0));
-        List<ColumnFamilyDescriptor> missingFromDatabase = familyDescriptors.stream().filter(d -> columnFamilies.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
-        List<ColumnFamilyDescriptor> missingFromDescription = columnFamilies.stream().filter(d -> familyDescriptors.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
-        if (missingFromDatabase.size() != 0) {
-            missingFromDatabase.remove(familyDescriptors.get(0));
-            db = RocksDB.open(options, path, columnFamilies, columnFamilyHandles);
-            for (ColumnFamilyDescriptor description : missingFromDatabase) {
-                addColumnFamily(description.columnFamilyName(), db);
+        try (final Options options = new Options().setCreateIfMissing(true)) {
+            List<ColumnFamilyDescriptor> columnFamilies = RocksDB.listColumnFamilies(options, path)
+                    .stream()
+                    .map(b -> new ColumnFamilyDescriptor(b, new ColumnFamilyOptions()))
+                    .collect(Collectors.toList());
+            columnFamilies.add(0, familyDescriptors.get(0));
+            List<ColumnFamilyDescriptor> missingFromDatabase = familyDescriptors.stream().filter(d -> columnFamilies.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
+            List<ColumnFamilyDescriptor> missingFromDescription = columnFamilies.stream().filter(d -> familyDescriptors.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
+            if (missingFromDatabase.size() != 0) {
+                missingFromDatabase.remove(familyDescriptors.get(0));
+                db = RocksDB.open(this.options, path, columnFamilies, columnFamilyHandles);
+                for (ColumnFamilyDescriptor description : missingFromDatabase) {
+                    addColumnFamily(description.columnFamilyName(), db);
+                }
+                db.close();
             }
-            db.close();
-        }
-        if (missingFromDescription.size() != 0) {
-            missingFromDescription.forEach(familyDescriptors::add);
+            if (missingFromDescription.size() != 0) {
+                familyDescriptors.addAll(missingFromDescription);
+            }
         }
     }
 

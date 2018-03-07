@@ -1,19 +1,16 @@
 package com.iota.iri.network.replicator;
 
+import com.iota.iri.network.Node;
+import com.iota.iri.network.TCPNeighbor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
-
-import com.iota.iri.network.TCPNeighbor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.network.Node;
 
 class ReplicatorSinkProcessor implements Runnable {
 
@@ -40,6 +37,7 @@ class ReplicatorSinkProcessor implements Runnable {
     	}
     	catch (InterruptedException e) {
     		log.info("Interrupted");
+            Thread.currentThread().interrupt();
     	}
 
         String remoteAddress = neighbor.getHostAddress();
@@ -115,6 +113,7 @@ class ReplicatorSinkProcessor implements Runnable {
                             }
                         } catch (InterruptedException e) {
                             log.error("Interrupted while waiting for send buffer");
+                            Thread.currentThread().interrupt();
                         }                        
                     }
                 }

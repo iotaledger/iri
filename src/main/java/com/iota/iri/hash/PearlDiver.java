@@ -26,6 +26,43 @@ public class PearlDiver {
     private volatile State state;
     private final Object syncObj = new Object();
 
+    public class Pow implements Runnable {
+        private final long[] midCurlStateLow;
+        private final long[] midCurlStateHigh;
+        private final int[] transactionTrits;
+        private final int mwm;
+
+        public Pow(final long[] midCurlStateLow, final long[] midCurlStateHigh, final int[] transactionTrits, final int mwm) {
+            this.midCurlStateLow = midCurlStateLow;
+            this.midCurlStateHigh = midCurlStateHigh;
+            this.transactionTrits = transactionTrits;
+            this.mwm = mwm;
+        }
+
+        @Override
+        public void run() {
+            long mask;
+            long outMask = 1;
+
+            if ((mask = PearlDiver.this.loop(this.midCurlStateLow, this.midCurlStateHigh, this.mwm)) != 0 &&
+                state == RUNNING) {
+                synchronized (syncObj) {
+                    state = COMPLETED;
+
+                    while ((outMask & mask) == 0) {
+                        outMask <<= 1;
+                    }
+
+                    for (int i = 0; i < CURL_HASH_LENGTH; i++) {
+                        this.transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] =
+                            (this.midCurlStateLow[i] & outMask) == 0 ? 1
+                            : (this.midCurlStateHigh[i] & outMask) == 0 ? -1 : 0;
+                    }
+                }
+            }
+        }
+    }
+
     public void cancel() {
         if (state == RUNNING) {
             synchronized (syncObj) {
@@ -51,50 +88,27 @@ public class PearlDiver {
         }
 
         final long[] midCurlStateLow = new long[CURL_STATE_LENGTH], midCurlStateHigh = new long[CURL_STATE_LENGTH];
+        int numberOfThreads = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
+        Thread[] workers = new Thread[numberOfThreads];
 
         para(transactionTrits, midCurlStateLow, midCurlStateHigh);
-        
-        int numberOfThreads = Math.max(Runtime.getRuntime().availableProcessors() - 1, 1);
-
-        Thread[] workers = new Thread[numberOfThreads];
 
         while (numberOfThreads-- > 0) {
             final int threadIndex = numberOfThreads;
-            
-            Thread worker = (new Thread(() -> {
-                final long[] midCurlStateCopyLow = new long[CURL_STATE_LENGTH], midCurlStateCopyHigh = new long[CURL_STATE_LENGTH];
-                
-                System.arraycopy(midCurlStateLow, 0, midCurlStateCopyLow, 0, CURL_STATE_LENGTH);
-                System.arraycopy(midCurlStateHigh, 0, midCurlStateCopyHigh, 0, CURL_STATE_LENGTH);
-                
-                for (int i = threadIndex; i-- > 0; ) {
-                    increment(midCurlStateCopyLow, midCurlStateCopyHigh, 162 + CURL_HASH_LENGTH / 9,
-                            162 + (CURL_HASH_LENGTH / 9) * 2);
+            final long[] midCurlStateCopyLow = new long[CURL_STATE_LENGTH];
+            final long[] midCurlStateCopyHigh = new long[CURL_STATE_LENGTH];
 
-                }
+            System.arraycopy(midCurlStateLow, 0, midCurlStateCopyLow, 0, CURL_STATE_LENGTH);
+            System.arraycopy(midCurlStateHigh, 0, midCurlStateCopyHigh, 0, CURL_STATE_LENGTH);
 
-                final long[] curlStateLow = new long[CURL_STATE_LENGTH], curlStateHigh = new long[CURL_STATE_LENGTH];
-                long mask, outMask = 1;
-                
-                if ((mask = loop(midCurlStateCopyLow, midCurlStateCopyHigh, minWeightMagnitude)) != 0 &&
-                    state == RUNNING) {
-                    synchronized (syncObj) {
-                        state = COMPLETED;
+            for (int i = threadIndex; i-- > 0; ) {
+                increment(midCurlStateCopyLow, midCurlStateCopyHigh, 162 + CURL_HASH_LENGTH / 9,
+                        162 + (CURL_HASH_LENGTH / 9) * 2);
+            }
 
-                        while ((outMask & mask) == 0) {
-                            outMask <<= 1;
-                        }
-
-                        for (int i = 0; i < CURL_HASH_LENGTH; i++) {
-                            transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] =
-                                (midCurlStateCopyLow[i] & outMask) == 0 ? 1
-                                : (midCurlStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
-                        }
-                    }
-                }
-            }));
-            workers[threadIndex] = worker;
-            worker.start();
+            Pow pwork = new Pow(midCurlStateCopyLow, midCurlStateCopyHigh, transactionTrits, minWeightMagnitude);
+            workers[threadIndex] = new Thread(pwork);
+            workers[threadIndex].start();
         }
 
         for (Thread worker : workers) {
@@ -120,9 +134,7 @@ public class PearlDiver {
         int offset = 0;
         
         for (int i = (TRANSACTION_LENGTH - CURL_HASH_LENGTH) / CURL_HASH_LENGTH; i-- > 0; ) {
-
             for (int j = 0; j < CURL_HASH_LENGTH; j++) {
-
                 switch (transactionTrits[offset++]) {
                     case 0: {
                         midCurlStateLow[j] = HIGH_BITS;
@@ -146,9 +158,7 @@ public class PearlDiver {
         }
 
         for (int i = 0; i < 162; i++) {
-
             switch (transactionTrits[offset++]) {
-
                 case 0: {
                     midCurlStateLow[i] = HIGH_BITS;
                     midCurlStateHigh[i] = HIGH_BITS;
@@ -181,26 +191,22 @@ public class PearlDiver {
         long mask = 1;
 
         while (state == RUNNING) {
-
-            increment(midCurlStateLow, midCurlStateHigh, 162 + (CURL_HASH_LENGTH / 9) * 2, CURL_HASH_LENGTH);
-
+            PearlDiver.increment(midCurlStateLow, midCurlStateHigh, 162 + (CURL_HASH_LENGTH / 9) * 2, CURL_HASH_LENGTH);
             System.arraycopy(midCurlStateLow, 0, curlStateLow, 0, CURL_STATE_LENGTH);
             System.arraycopy(midCurlStateHigh, 0, curlStateHigh, 0, CURL_STATE_LENGTH);
-            transform(curlStateLow, curlStateHigh);
-
+            PearlDiver.transform(curlStateLow, curlStateHigh);
             mask = HIGH_BITS;
+
             for (int i = mwm; i-- > 0; ) {
                 mask &= ~(curlStateLow[CURL_HASH_LENGTH - 1 - i] ^ curlStateHigh[CURL_HASH_LENGTH - 1 - i]);
                 if (mask == 0) break;
             }
-            
             if (mask != 0) break;
         }
         return mask;
-    }   
+    } 
 
     private static void transform(final long[] curlStateLow, final long[] curlStateHigh) {
-
         int curlScratchpadIndex = 0;
         final long[] curlScratchpadLow = new long[CURL_STATE_LENGTH], curlScratchpadHigh = new long[CURL_STATE_LENGTH];
 
@@ -227,7 +233,6 @@ public class PearlDiver {
 
     private static void increment(final long[] midCurlStateCopyLow,
         final long[] midCurlStateCopyHigh, final int fromIndex, final int toIndex) {
-
         for (int i = fromIndex; i < toIndex; i++) {
             if (midCurlStateCopyLow[i] == LOW_BITS) {
                 midCurlStateCopyLow[i] = HIGH_BITS;

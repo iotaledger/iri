@@ -11,6 +11,8 @@ It allows to connect easily using java directly to a local or a remote [[IOTA no
 
 Obviously, because this is its own, independent network, you have to go through the same process as in the main network: **find neighbors**. You can find neighbors in the [[Discord Community]](https://discord.gg/7Gu2mG5), or on [[our forum]](https://forum.iota.org/). Community members are usually very happy to help you out and get you connected. If you want to get tokens for your testcase, please just ask in one of the communication channels as well.
 
+You can install nelson (https://github.com/SemkoDev/nelson.cli), so you don't have to find neighbors. 
+
 ## Reporting Issues
 
 If you notice any issues or irregularities in this release. Please make sure to submit an issue on github.

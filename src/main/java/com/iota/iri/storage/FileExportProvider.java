@@ -56,10 +56,8 @@ public class FileExportProvider implements PersistenceProvider {
         if(model instanceof Transaction) {
             Transaction transaction = ((Transaction) model);
             if(item.contains("sender")) {
-                try {
-                    PrintWriter writer;
-                    Path path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
-                    writer = new PrintWriter(path.toString(), "UTF-8");
+                Path path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
+                try(PrintWriter writer = new PrintWriter(path.toString(), "UTF-8")) {
                     writer.println(index.toString());
                     writer.println(Converter.trytes(trits(transaction)));
                     writer.println(transaction.sender);
@@ -74,8 +72,6 @@ public class FileExportProvider implements PersistenceProvider {
                     log.error("File export failed", e);
                 } catch (Exception e) {
                     log.error("Transaction load failed. ", e);
-                } finally {
-
                 }
             }
         }

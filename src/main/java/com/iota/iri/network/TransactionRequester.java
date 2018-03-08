@@ -24,7 +24,7 @@ public class TransactionRequester {
     public static final int MAX_TX_REQ_QUEUE_SIZE = 10000;
 
     private static volatile long lastTime = System.currentTimeMillis();
-    public  static final int REQUEST_HASH_SIZE = 46;
+    public  static final int REQUEST_HASH_SIZE = 49;
 
     private static double P_REMOVE_REQUEST;
     private static boolean initialized = false;

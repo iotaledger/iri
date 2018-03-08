@@ -1,51 +1,23 @@
 package com.iota.iri.service;
 
-import static io.undertow.Handlers.path;
-
-import java.io.*;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import com.iota.iri.*;
-import com.iota.iri.controllers.*;
-import com.iota.iri.network.*;
-import com.iota.iri.service.dto.*;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.channels.StreamSinkChannel;
-import org.xnio.streams.ChannelInputStream;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.iota.iri.*;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
+import com.iota.iri.controllers.AddressViewModel;
+import com.iota.iri.controllers.BundleViewModel;
+import com.iota.iri.controllers.TagViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
+import com.iota.iri.hash.Sponge;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.Neighbor;
+import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.MapIdentityManager;
-
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -57,12 +29,29 @@ import io.undertow.security.idm.IdentityManager;
 import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
-import io.undertow.util.Methods;
-import io.undertow.util.MimeMappings;
-import io.undertow.util.StatusCodes;
+import io.undertow.util.*;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.channels.StreamSinkChannel;
+import org.xnio.streams.ChannelInputStream;
+
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static io.undertow.Handlers.path;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -70,35 +59,30 @@ public class API {
     public static final String REFERENCE_TRANSACTION_NOT_FOUND = "reference transaction not found";
     public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
     private static final Logger log = LoggerFactory.getLogger(API.class);
-    private final IXI ixi;
-
-    private Undertow server;
-
-    private final Gson gson = new GsonBuilder().create();
-    private volatile PearlDiver pearlDiver = new PearlDiver();
-
-    private final AtomicInteger counter = new AtomicInteger(0);
-
-    private Pattern trytesPattern = Pattern.compile("[9A-Z]*");
-
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
-
-    private final static long MAX_TIMESTAMP_VALUE = (3^27 - 1) / 2;
-
+    private final static long MAX_TIMESTAMP_VALUE = (3 ^ 27 - 1) / 2;
+    private final static String overMaxErrorMessage = "Could not complete request";
+    private final static String invalidParams = "Invalid parameters";
+    private final static char ZERO_LENGTH_ALLOWED = 'Y';
+    private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
+    private static int counter_getTxToApprove = 0;
+    private static long ellapsedTime_getTxToApprove = 0L;
+    private static int counter_PoW = 0;
+    private static long ellapsedTime_PoW = 0L;
+    private final IXI ixi;
+    private final Gson gson = new GsonBuilder().create();
+    private final AtomicInteger counter = new AtomicInteger(0);
     private final int minRandomWalks;
     private final int maxRandomWalks;
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
     private final int maxBodyLength;
-    private final static String overMaxErrorMessage = "Could not complete request";
-    private final static String invalidParams = "Invalid parameters";
-
+    private Undertow server;
+    private volatile PearlDiver pearlDiver = new PearlDiver();
+    private Pattern trytesPattern = Pattern.compile("[9A-Z]*");
     private ConcurrentHashMap<Hash, Boolean> previousEpochsSpentAddresses;
-
-    private final static char ZERO_LENGTH_ALLOWED = 'Y';
-    private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
 
     public API(Iota instance, IXI ixi) {
@@ -113,6 +97,44 @@ public class API {
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
+    }
+
+    public static int getCounter_getTxToApprove() {
+        return counter_getTxToApprove;
+    }
+
+    public static void incCounter_getTxToApprove() {
+        counter_getTxToApprove++;
+    }
+
+    public static long getEllapsedTime_getTxToApprove() {
+        return ellapsedTime_getTxToApprove;
+    }
+
+    public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
+        ellapsedTime_getTxToApprove += ellapsedTime;
+    }
+
+    public static int getCounter_PoW() {
+        return counter_PoW;
+    }
+
+    public static void incCounter_PoW() {
+        API.counter_PoW++;
+    }
+
+    public static long getEllapsedTime_PoW() {
+        return ellapsedTime_PoW;
+    }
+
+    public static void incEllapsedTime_PoW(long ellapsedTime) {
+        ellapsedTime_PoW += ellapsedTime;
+    }
+
+    private static void setupResponseHeaders(final HttpServerExchange exchange) {
+        final HeaderMap headerMap = exchange.getResponseHeaders();
+        headerMap.add(new HttpString("Access-Control-Allow-Origin"), "*");
+        headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
     }
 
     public void init() throws IOException {
@@ -161,8 +183,8 @@ public class API {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
         try {
-            while((line = reader.readLine()) != null) {
-                previousEpochsSpentAddresses.put(new Hash(line),true);
+            while ((line = reader.readLine()) != null) {
+                previousEpochsSpentAddresses.put(new Hash(line), true);
             }
         } catch (IOException e) {
             log.error("Failed to load previousEpochsSpentAddresses.");
@@ -209,24 +231,40 @@ public class API {
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
             switch (command) {
+                case "storeMessage": {
+                    if (!request.containsKey("address") || !request.containsKey("message")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
+
+                    if (invalidSubtangleStatus()) {
+                        return ErrorResponse
+                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    }
+
+                    final String address = (String) request.get("address");
+                    final String message = (String) request.get("message");
+
+                    storeMessageStatement(address, message);
+                    return AbstractResponse.createEmptyResponse();
+                }
 
                 case "addNeighbors": {
-                    List<String> uris = getParameterAsList(request,"uris",0);
+                    List<String> uris = getParameterAsList(request, "uris", 0);
                     log.debug("Invoking 'addNeighbors' with {}", uris);
                     return addNeighborsStatement(uris);
                 }
                 case "attachToTangle": {
-                    final Hash trunkTransaction  = new Hash(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
-                    final Hash branchTransaction = new Hash(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
-                    final int minWeightMagnitude = getParameterAsInt(request,"minWeightMagnitude");
+                    final Hash trunkTransaction = new Hash(getParameterAsStringAndValidate(request, "trunkTransaction", HASH_SIZE));
+                    final Hash branchTransaction = new Hash(getParameterAsStringAndValidate(request, "branchTransaction", HASH_SIZE));
+                    final int minWeightMagnitude = getParameterAsInt(request, "minWeightMagnitude");
 
-                    final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                    final List<String> trytes = getParameterAsList(request, "trytes", TRYTES_SIZE);
 
                     List<String> elements = attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
                     return AttachToTangleResponse.create(elements);
                 }
                 case "broadcastTransactions": {
-                    final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                    final List<String> trytes = getParameterAsList(request, "trytes", TRYTES_SIZE);
                     broadcastTransactionStatement(trytes);
                     return AbstractResponse.createEmptyResponse();
                 }
@@ -234,9 +272,9 @@ public class API {
                     return findTransactionStatement(request);
                 }
                 case "getBalances": {
-                    final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
+                    final List<String> addresses = getParameterAsList(request, "addresses", HASH_SIZE);
                     final List<String> tips = request.containsKey("tips") ?
-                            getParameterAsList(request,"tips ", HASH_SIZE):
+                            getParameterAsList(request, "tips ", HASH_SIZE) :
                             null;
                     final int threshold = getParameterAsInt(request, "threshold");
                     return getBalancesStatement(addresses, tips, threshold);
@@ -246,8 +284,8 @@ public class API {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    final List<String> transactions = getParameterAsList(request,"transactions", HASH_SIZE);
-                    final List<String> tips = getParameterAsList(request,"tips", HASH_SIZE);
+                    final List<String> transactions = getParameterAsList(request, "transactions", HASH_SIZE);
+                    final List<String> tips = getParameterAsList(request, "tips", HASH_SIZE);
 
                     return getNewInclusionStateStatement(transactions, tips);
                 }
@@ -273,18 +311,18 @@ public class API {
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
 
-                    final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
+                    final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request, "reference", HASH_SIZE) : null;
                     final int depth = getParameterAsInt(request, "depth");
-                    if(depth < 0 || (reference == null && depth == 0)) {
+                    if (depth < 0 || (reference == null && depth == 0)) {
                         return ErrorResponse.create("Invalid depth input");
                     }
-                    int numWalks = request.containsKey("numWalks") ? getParameterAsInt(request,"numWalks") : 1;
-                    if(numWalks < minRandomWalks) {
+                    int numWalks = request.containsKey("numWalks") ? getParameterAsInt(request, "numWalks") : 1;
+                    if (numWalks < minRandomWalks) {
                         numWalks = minRandomWalks;
                     }
                     try {
                         final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
-                        if(tips == null) {
+                        if (tips == null) {
                             return ErrorResponse.create("The subtangle is not solid");
                         }
                         return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
@@ -294,7 +332,7 @@ public class API {
                     }
                 }
                 case "getTrytes": {
-                    final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
+                    final List<String> hashes = getParameterAsList(request, "hashes", HASH_SIZE);
                     return getTrytesStatement(hashes);
                 }
 
@@ -303,14 +341,14 @@ public class API {
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "removeNeighbors": {
-                    List<String> uris = getParameterAsList(request,"uris",0);
+                    List<String> uris = getParameterAsList(request, "uris", 0);
                     log.debug("Invoking 'removeNeighbors' with {}", uris);
                     return removeNeighborsStatement(uris);
                 }
 
                 case "storeTransactions": {
                     try {
-                        final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                        final List<String> trytes = getParameterAsList(request, "trytes", TRYTES_SIZE);
                         storeTransactionStatement(trytes);
                         return AbstractResponse.createEmptyResponse();
                     } catch (RuntimeException e) {
@@ -332,11 +370,11 @@ public class API {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
-                    final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
+                    final List<String> transactions = getParameterAsList(request, "tails", HASH_SIZE);
                     return checkConsistencyStatement(transactions);
                 }
                 case "wereAddressesSpentFrom": {
-                    final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
+                    final List<String> addresses = getParameterAsList(request, "addresses", HASH_SIZE);
                     return wereAddressesSpentFromStatement(addresses);
                 }
                 default: {
@@ -415,6 +453,71 @@ public class API {
         return null;
     }
 
+    public synchronized void storeMessageStatement(final String address, final String message) throws Exception {
+        final Hash[] txToApprove = getTransactionToApproveStatement(3, null, 5);
+
+        final Hash addressHash = new Hash(address);
+        final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
+
+        final int txCount = (message.length() + txMessageSize - 1) / txMessageSize;
+
+        final int[] timestampTrits = new int[TransactionViewModel.TIMESTAMP_TRINARY_SIZE];
+        Converter.copyTrits(System.currentTimeMillis(), timestampTrits, 0, timestampTrits.length);
+        final String timestampTrytes = StringUtils.rightPad(Converter.trytes(timestampTrits), timestampTrits.length / 3, '9');
+
+        final int[] lastIndexTrits = new int[TransactionViewModel.LAST_INDEX_TRINARY_SIZE];
+        int[] currentIndexTrits = new int[TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE];
+
+        Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
+        final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
+
+        List<String> transactions = new ArrayList<>();
+        for (int i = 0; i < txCount; i++) {
+            String tx;
+            if (i != txCount - 1) {
+                tx = message.substring(i * txMessageSize, (i + 1) * txMessageSize);
+            } else {
+                tx = message.substring(i * txMessageSize);
+            }
+
+            Converter.copyTrits(i, currentIndexTrits, 0, currentIndexTrits.length);
+
+            tx = StringUtils.rightPad(tx, txMessageSize, '9');
+            tx += address.substring(0, 81);
+// value
+            tx += StringUtils.repeat('9', 27);
+// obsolete tag
+            tx += StringUtils.repeat('9', 27);
+// timestamp
+            tx += timestampTrytes;
+// current index
+            tx += StringUtils.rightPad(Converter.trytes(currentIndexTrits), currentIndexTrits.length / 3, '9');
+// last index
+            tx += StringUtils.rightPad(lastIndexTrytes, lastIndexTrits.length / 3, '9');
+            transactions.add(tx);
+        }
+
+// let's calculate the bundle essence :S
+        int startIdx = TransactionViewModel.ESSENCE_TRINARY_OFFSET / 3;
+        Sponge sponge = SpongeFactory.create(SpongeFactory.Mode.KERL);
+
+        for (String tx : transactions) {
+            String essence = tx.substring(startIdx);
+            int[] essenceTrits = new int[essence.length() * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
+            Converter.trits(essence, essenceTrits, 0);
+            sponge.absorb(essenceTrits, 0, essenceTrits.length);
+        }
+
+        int[] essenceTrits = new int[243];
+        sponge.squeeze(essenceTrits, 0, essenceTrits.length);
+        final String bundleHash = Converter.trytes(essenceTrits, 0, essenceTrits.length);
+
+        transactions = transactions.stream().map(tx -> StringUtils.rightPad(tx + bundleHash, TRYTES_SIZE, '9')).collect(Collectors.toList());
+
+// do pow
+        List<String> powResult = attachToTangleStatement(txToApprove[0], txToApprove[1], 9, transactions);
+        broadcastTransactionStatement(powResult);
+    }
 
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
@@ -456,20 +559,19 @@ public class API {
             }
         }
 
-        return CheckConsistency.create(state,info);
+        return CheckConsistency.create(state, info);
     }
-    
+
     private double getParameterAsDouble(Map<String, Object> request, String paramName) throws ValidationException {
         validateParamExists(request, paramName);
         final double result;
         try {
-                result = ((Double) request.get(paramName));
-            } catch (ClassCastException e) {
-                throw new ValidationException("Invalid " + paramName + " input");
-            }
+            result = ((Double) request.get(paramName));
+        } catch (ClassCastException e) {
+            throw new ValidationException("Invalid " + paramName + " input");
+        }
         return result;
     }
-
 
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {
         validateParamExists(request, paramName);
@@ -490,7 +592,7 @@ public class API {
     }
 
     private void validateTrytes(String paramName, int size, String result) throws ValidationException {
-        if (!validTrytes(result,size,ZERO_LENGTH_NOT_ALLOWED)) {
+        if (!validTrytes(result, size, ZERO_LENGTH_NOT_ALLOWED)) {
             throw new ValidationException("Invalid " + paramName + " input");
         }
     }
@@ -528,11 +630,11 @@ public class API {
         try {
             for (final String uriString : uris) {
                 log.info("Removing neighbor: " + uriString);
-                if (instance.node.removeNeighbor(new URI(uriString),true)) {
+                if (instance.node.removeNeighbor(new URI(uriString), true)) {
                     numberOfRemovedNeighbors++;
                 }
             }
-        } catch (URISyntaxException|RuntimeException e) {
+        } catch (URISyntaxException | RuntimeException e) {
             return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
         }
         return RemoveNeighborsResponse.create(numberOfRemovedNeighbors);
@@ -546,39 +648,23 @@ public class API {
                 elements.add(Converter.trytes(transactionViewModel.trits()));
             }
         }
-        if (elements.size() > maxGetTrytes){
+        if (elements.size() > maxGetTrytes) {
             return ErrorResponse.create(overMaxErrorMessage);
         }
         return GetTrytesResponse.create(elements);
-    }
-
-    private static int counter_getTxToApprove = 0;
-    public static int getCounter_getTxToApprove() {
-        return counter_getTxToApprove;
-    }
-    public static void incCounter_getTxToApprove() {
-        counter_getTxToApprove++;
-    }
-
-    private static long ellapsedTime_getTxToApprove = 0L;
-    public static long getEllapsedTime_getTxToApprove() {
-        return ellapsedTime_getTxToApprove;
-    }
-    public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
-        ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
     public synchronized Hash[] getTransactionToApproveStatement(int depth, final String reference, final int numWalks) throws Exception {
         int tipsToApprove = 2;
         Hash[] tips = new Hash[tipsToApprove];
         final SecureRandom random = new SecureRandom();
-        final int randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks:numWalks;
+        final int randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks : numWalks;
         Hash referenceHash = null;
         int maxDepth = instance.tipsManager.getMaxDepth();
         if (depth > maxDepth) {
             depth = maxDepth;
         }
-        if(reference != null) {
+        if (reference != null) {
             referenceHash = new Hash(reference);
             if (!TransactionViewModel.exists(instance.tangle, referenceHash)) {
                 throw new RuntimeException(REFERENCE_TRANSACTION_NOT_FOUND);
@@ -616,7 +702,11 @@ public class API {
                 return tips;
             }
         } finally {
-            instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+            try {
+                instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+            } catch (Exception e) {
+
+            }
         }
         throw new RuntimeException("inconsistent tips pair selected");
     }
@@ -637,7 +727,7 @@ public class API {
         }
         for (final TransactionViewModel transactionViewModel : elements) {
             //store transactions
-            if(transactionViewModel.store(instance.tangle)) {
+            if (transactionViewModel.store(instance.tangle)) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
@@ -658,24 +748,24 @@ public class API {
 
         List<Integer> tipsIndex = new LinkedList<>();
         {
-            for(Hash tip: tips) {
+            for (Hash tip : tips) {
                 TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, tip);
                 if (tx.getType() != TransactionViewModel.PREFILLED_SLOT) {
                     tipsIndex.add(tx.snapshotIndex());
                 }
             }
         }
-        int minTipsIndex = tipsIndex.stream().reduce((a,b) -> a < b ? a : b).orElse(0);
-        if(minTipsIndex > 0) {
-            int maxTipsIndex = tipsIndex.stream().reduce((a,b) -> a > b ? a : b).orElse(0);
+        int minTipsIndex = tipsIndex.stream().reduce((a, b) -> a < b ? a : b).orElse(0);
+        if (minTipsIndex > 0) {
+            int maxTipsIndex = tipsIndex.stream().reduce((a, b) -> a > b ? a : b).orElse(0);
             int count = 0;
-            for(Hash hash: transactions) {
+            for (Hash hash : transactions) {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(instance.tangle, hash);
-                if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
+                if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
                     inclusionStates[count] = -1;
-                } else if(transaction.snapshotIndex() > maxTipsIndex) {
+                } else if (transaction.snapshotIndex() > maxTipsIndex) {
                     inclusionStates[count] = -1;
-                } else if(transaction.snapshotIndex() < maxTipsIndex) {
+                } else if (transaction.snapshotIndex() < maxTipsIndex) {
                     inclusionStates[count] = 1;
                 }
                 count++;
@@ -687,22 +777,22 @@ public class API {
         Map<Integer, Queue<Hash>> sameIndexTips = new HashMap<>();
         for (final Hash tip : tips) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, tip);
-            if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
+            if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                 return ErrorResponse.create("One of the tips absents");
             }
             int snapshotIndex = transactionViewModel.snapshotIndex();
             sameIndexTips.putIfAbsent(snapshotIndex, new LinkedList<>());
             sameIndexTips.get(snapshotIndex).add(tip);
         }
-        for(int i = 0; i < inclusionStates.length; i++) {
-            if(inclusionStates[i] == 0) {
+        for (int i = 0; i < inclusionStates.length; i++) {
+            if (inclusionStates[i] == 0) {
                 TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, transactions.get(i));
                 int snapshotIndex = transactionViewModel.snapshotIndex();
                 sameIndexTransactionCount.putIfAbsent(snapshotIndex, 0);
                 sameIndexTransactionCount.put(snapshotIndex, sameIndexTransactionCount.get(snapshotIndex) + 1);
             }
         }
-        for(Integer index : sameIndexTransactionCount.keySet()) {
+        for (Integer index : sameIndexTransactionCount.keySet()) {
             Queue<Hash> sameIndexTip = sameIndexTips.get(index);
             if (sameIndexTip != null) {
                 //has tips in the same index level
@@ -712,13 +802,14 @@ public class API {
             }
         }
         final boolean[] inclusionStatesBoolean = new boolean[inclusionStates.length];
-        for(int i = 0; i < inclusionStates.length; i++) {
+        for (int i = 0; i < inclusionStates.length; i++) {
             inclusionStatesBoolean[i] = inclusionStates[i] == 1;
         }
         {
             return GetInclusionStatesResponse.create(inclusionStatesBoolean);
         }
     }
+
     private boolean exhaustiveSearchWithinIndex(Queue<Hash> nonAnalyzedTransactions, Set<Hash> analyzedTips, List<Hash> transactions, int[] inclusionStates, int count, int index) throws Exception {
         Hash pointer;
         MAIN_LOOP:
@@ -747,12 +838,12 @@ public class API {
     }
 
     private synchronized AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {
-        final Set<Hash> foundTransactions =  new HashSet<>();
+        final Set<Hash> foundTransactions = new HashSet<>();
         boolean containsKey = false;
 
         final Set<Hash> bundlesTransactions = new HashSet<>();
         if (request.containsKey("bundles")) {
-            final HashSet<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);
+            final HashSet<String> bundles = getParameterAsSet(request, "bundles", HASH_SIZE);
             for (final String bundle : bundles) {
                 bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, new Hash(bundle)).getHashes());
             }
@@ -762,7 +853,7 @@ public class API {
 
         final Set<Hash> addressesTransactions = new HashSet<>();
         if (request.containsKey("addresses")) {
-            final HashSet<String> addresses = getParameterAsSet(request,"addresses",HASH_SIZE);
+            final HashSet<String> addresses = getParameterAsSet(request, "addresses", HASH_SIZE);
             for (final String address : addresses) {
                 addressesTransactions.addAll(AddressViewModel.load(instance.tangle, new Hash(address)).getHashes());
             }
@@ -772,7 +863,7 @@ public class API {
 
         final Set<Hash> tagsTransactions = new HashSet<>();
         if (request.containsKey("tags")) {
-            final HashSet<String> tags = getParameterAsSet(request,"tags",0);
+            final HashSet<String> tags = getParameterAsSet(request, "tags", 0);
             for (String tag : tags) {
                 tag = padTag(tag);
                 tagsTransactions.addAll(TagViewModel.load(instance.tangle, new Hash(tag)).getHashes());
@@ -784,7 +875,7 @@ public class API {
         final Set<Hash> approveeTransactions = new HashSet<>();
 
         if (request.containsKey("approvees")) {
-            final HashSet<String> approvees = getParameterAsSet(request,"approvees",HASH_SIZE);
+            final HashSet<String> approvees = getParameterAsSet(request, "approvees", HASH_SIZE);
             for (final String approvee : approvees) {
                 approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, new Hash(approvee)).getApprovers(instance.tangle).getHashes());
             }
@@ -809,7 +900,7 @@ public class API {
         if (request.containsKey("approvees")) {
             foundTransactions.retainAll(approveeTransactions);
         }
-        if (foundTransactions.size() > maxFindTxs){
+        if (foundTransactions.size() > maxFindTxs) {
             return ErrorResponse.create(overMaxErrorMessage);
         }
 
@@ -832,7 +923,7 @@ public class API {
 
     private HashSet<String> getParameterAsSet(Map<String, Object> request, String paramName, int size) throws ValidationException {
 
-        HashSet<String> result = getParameterAsList(request,paramName,size).stream().collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> result = getParameterAsList(request, paramName, size).stream().collect(Collectors.toCollection(HashSet::new));
         if (result.contains(Hash.NULL_HASH.toString())) {
             throw new ValidationException("Invalid " + paramName + " input");
         }
@@ -904,24 +995,8 @@ public class API {
         return GetBalancesResponse.create(elements, hashes.stream().map(h -> h.toString()).collect(Collectors.toList()), index);
     }
 
-    private static int counter_PoW = 0;
-    public static int getCounter_PoW() {
-        return counter_PoW;
-    }
-    public static void incCounter_PoW() {
-        API.counter_PoW++;
-    }
-
-    private static long ellapsedTime_PoW = 0L;
-    public static long getEllapsedTime_PoW() {
-        return ellapsedTime_PoW;
-    }
-    public static void incEllapsedTime_PoW(long ellapsedTime) {
-        ellapsedTime_PoW += ellapsedTime;
-    }
-
     public synchronized List<String> attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
-                                                                  final int minWeightMagnitude, final List<String> trytes) {
+                                                             final int minWeightMagnitude, final List<String> trytes) {
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
 
         Hash prevTransaction = null;
@@ -944,17 +1019,17 @@ public class API {
 
                 //attachment fields: tag and timestamps
                 //tag - copy the obsolete tag to the attachment tag field only if tag isn't set.
-                if(Arrays.stream(transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET, TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE).allMatch(s -> s == 0)) {
+                if (Arrays.stream(transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET, TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE).allMatch(s -> s == 0)) {
                     System.arraycopy(transactionTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
-                        transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
-                        TransactionViewModel.TAG_TRINARY_SIZE);
+                            transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
+                            TransactionViewModel.TAG_TRINARY_SIZE);
                 }
 
-                Converter.copyTrits(timestamp,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
+                Converter.copyTrits(timestamp, transactionTrits, TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_SIZE);
-                Converter.copyTrits(0,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
+                Converter.copyTrits(0, transactionTrits, TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE);
-                Converter.copyTrits(MAX_TIMESTAMP_VALUE,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
+                Converter.copyTrits(MAX_TIMESTAMP_VALUE, transactionTrits, TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
 
                 if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
@@ -969,7 +1044,7 @@ public class API {
             } finally {
                 API.incEllapsedTime_PoW(System.nanoTime() - startTime);
                 API.incCounter_PoW();
-                if ( ( API.getCounter_PoW() % 100) == 0 ) {
+                if ((API.getCounter_PoW() % 100) == 0) {
                     String sb = "Last 100 PoW consumed " +
                             API.getEllapsedTime_PoW() / 1000000000L +
                             " seconds processing time.";
@@ -998,7 +1073,7 @@ public class API {
                     numberOfAddedNeighbors++;
                 }
             }
-        } catch (URISyntaxException|RuntimeException e) {
+        } catch (URISyntaxException | RuntimeException e) {
             return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
         }
         return AddedNeighborsResponse.create(numberOfAddedNeighbors);
@@ -1022,7 +1097,7 @@ public class API {
         ByteBuffer responseBuf = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
         exchange.setResponseContentLength(responseBuf.array().length);
         StreamSinkChannel sinkChannel = exchange.getResponseChannel();
-        sinkChannel.getWriteSetter().set( channel -> {
+        sinkChannel.getWriteSetter().set(channel -> {
             if (responseBuf.remaining() > 0)
                 try {
                     sinkChannel.write(responseBuf);
@@ -1052,15 +1127,9 @@ public class API {
         return matcher.matches();
     }
 
-    private static void setupResponseHeaders(final HttpServerExchange exchange) {
-        final HeaderMap headerMap = exchange.getResponseHeaders();
-        headerMap.add(new HttpString("Access-Control-Allow-Origin"),"*");
-        headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
-    }
-
     private HttpHandler addSecurity(final HttpHandler toWrap) {
         String credentials = instance.configuration.string(DefaultConfSettings.REMOTE_AUTH);
-        if(credentials == null || credentials.isEmpty()) return toWrap;
+        if (credentials == null || credentials.isEmpty()) return toWrap;
 
         final Map<String, char[]> users = new HashMap<>(2);
         users.put(credentials.split(":")[0], credentials.split(":")[1].toCharArray());

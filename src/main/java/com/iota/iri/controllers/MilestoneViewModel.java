@@ -111,9 +111,6 @@ public class MilestoneViewModel {
     }
 
     public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index) throws Exception {
-        if(index <= com.iota.iri.Milestone.MILESTONE_START_INDEX) {
-            return first(tangle);
-        }
         Pair<Indexable, Persistable> milestonePair = tangle.next(Milestone.class, new IntegerIndex(index));
         if(milestonePair != null && milestonePair.hi != null) {
             return new MilestoneViewModel((Milestone) milestonePair.hi);

@@ -8,6 +8,8 @@ import com.iota.iri.utils.Converter;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Objects;
+ 
 
 public class Hash implements Serializable, Indexable {
 
@@ -19,33 +21,56 @@ public class Hash implements Serializable, Indexable {
     private byte[] bytes;
     private int[] trits;
     private int hashCode;
+	
+    public final Object sync = new Object();
+
     
     // constructors' bill
+
+    public Hash(){}
 
     public Hash(final byte[] bytes, final int offset, final int size) {
         fullRead(bytes, offset, size);
     }
-
-    public Hash(){}
-
-    public Hash(final byte[] bytes) {
-        this(bytes, 0, SIZE_IN_BYTES);
-    }
-
+    
     public Hash(final int[] trits, final int offset) {
-        this.trits = new int[SIZE_IN_TRITS];
-        System.arraycopy(trits, offset, this.trits, 0, SIZE_IN_TRITS);
-        //this(Converter.bytes(trits, offset, trits.length));
+        fullRead(trits, offset);
+    }
+    
+    public Hash(final byte[] bytes) {
+        fullRead(bytes, 0, SIZE_IN_BYTES);
     }
 
     public Hash(final int[] trits) {
-        this(trits, 0);
+        fullRead(trits, 0);
     }
 
     public Hash(final String trytes) {
-        this.trits = new int[SIZE_IN_TRITS];
-        Converter.trits(trytes, this.trits, 0);
+        int[] trits = new int[SIZE_IN_TRITS];
+        Converter.trits(trytes,trits, 0);
+        fullRead(trits, 0);
     }
+	
+	private void fullRead(final byte[] bytes, final int offset, final int size){
+		synchronized (sync) {
+			this.bytes = new byte[SIZE_IN_BYTES];
+			System.arraycopy(bytes, offset, this.bytes, 0, size - offset > bytes.length ? bytes.length-offset: size);
+			this.trits = new int[Curl.HASH_LENGTH];
+                        Converter.getTrits(this.bytes, this.trits);
+			this.hashCode = Arrays.hashCode(this.bytes);
+		}
+	}
+	
+	private void fullRead(final int[] trits, final int offset){
+		synchronized (sync) {
+			this.trits = new int[SIZE_IN_TRITS];
+			System.arraycopy(trits, offset, this.trits, 0, SIZE_IN_TRITS);
+			this.bytes = new byte[SIZE_IN_BYTES];
+                        Converter.bytes(this.trits, 0, this.bytes, 0, this.trits.length);  
+			this.hashCode = Arrays.hashCode(this.bytes);
+		}
+	}
+      
 
     //
     /*
@@ -71,63 +96,62 @@ public class Hash implements Serializable, Indexable {
     }
 
     public int trailingZeros() {
-        int index, zeros;
-        final int[] trits;
-        index = SIZE_IN_TRITS;
-        zeros = 0;
-        trits = trits();
-        while(index-- > 0 && trits[index] == 0) {
-            zeros++;
-        }
-        return zeros;
+		synchronized (sync) {
+			int index, zeros;
+			index = SIZE_IN_TRITS;
+			zeros = 0;
+			while(index-- > 0 && this.trits[index] == 0) {
+				zeros++;
+			}
+			return zeros;
+		}
     }
 
-    public int[] trits() {
-        if(trits == null) {
-            trits = new int[Curl.HASH_LENGTH];
-            Converter.getTrits(bytes, trits);
-        }
-        return trits;
-    }
+  
 
     @Override
-    public boolean equals(final Object obj) {
-        assert obj instanceof Hash;
-        if (obj == null) return false;
-        return Arrays.equals(bytes(), ((Hash) obj).bytes());
-    }
+    public boolean equals(Object o) {
+		synchronized (sync) {
+			if (this == o) {
+				return true;
+			}
+			if (o == null || getClass() != o.getClass()) {
+				return false;
+			}
+			Hash hash = (Hash) o;
+			return Arrays.equals(this.bytes, hash.bytes());
+		}
+     }
 
     @Override
-    public int hashCode() {
-        if(bytes == null) {
-            bytes();
-        }
-        return hashCode;
+    public int hashCode() {  
+		synchronized (sync) {    
+			return this.hashCode;
+		}
     }
 
     @Override
     public String toString() {
-        return Converter.trytes(trits());
+		synchronized (sync) {
+			return Converter.trytes(this.trits);
+		}
     }
     
-    public byte[] bytes() {
-        if(bytes == null) {
-            bytes = new byte[SIZE_IN_BYTES];
-            Converter.bytes(trits, 0, bytes, 0, trits.length);
-            hashCode = Arrays.hashCode(this.bytes);
-        }
-        return bytes;
+    public byte[] bytes() { 
+		synchronized (sync) {    
+			return this.bytes;
+		}
     }
-
-    private void fullRead(byte[] bytes, int offset, int size) {
-        this.bytes = new byte[SIZE_IN_BYTES];
-        System.arraycopy(bytes, offset, this.bytes, 0, size - offset > bytes.length ? bytes.length-offset: size);
-        hashCode = Arrays.hashCode(this.bytes);
+	
+    public int[] trits() {
+		synchronized (sync) {
+			return this.trits;
+		}
     }
 
     @Override
     public void read(byte[] bytes) {
-        fullRead(bytes, 0, SIZE_IN_BYTES);
+         fullRead(bytes, 0, SIZE_IN_BYTES);
     }
 
     @Override
@@ -153,4 +177,3 @@ public class Hash implements Serializable, Indexable {
         return (int) diff;
     }
 }
-

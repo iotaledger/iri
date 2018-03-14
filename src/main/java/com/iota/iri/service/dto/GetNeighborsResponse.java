@@ -1,6 +1,6 @@
 package com.iota.iri.service.dto;
 
-import java.util.List;
+import java.util.Set;
 
 public class GetNeighborsResponse extends AbstractResponse {
 
@@ -20,26 +20,6 @@ public class GetNeighborsResponse extends AbstractResponse {
             return address;
         }
 
-        public long getNumberOfAllTransactions() {
-            return numberOfAllTransactions;
-        }
-
-        public long getNumberOfNewTransactions() {
-            return numberOfNewTransactions;
-        }
-
-        public long getNumberOfInvalidTransactions() {
-            return numberOfInvalidTransactions;
-        }
-        
-        public long getNumberOfSentTransactions() {
-            return numberOfSentTransactions;
-        }
-
-        public String getConnectionType() {
-            return connectionType;
-        }
-
         public static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
             Neighbor ne = new Neighbor();
             int port = n.getPort();
@@ -54,7 +34,7 @@ public class GetNeighborsResponse extends AbstractResponse {
         }
     }
 
-    public static AbstractResponse create(final List<com.iota.iri.network.Neighbor> elements) {
+    public static AbstractResponse create(final Set<com.iota.iri.network.Neighbor> elements) {
         GetNeighborsResponse res = new GetNeighborsResponse();
         res.neighbors = new Neighbor[elements.size()];
         int i = 0;

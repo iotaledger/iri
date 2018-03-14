@@ -3,20 +3,16 @@ package com.iota.iri;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
-import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.zmq.MessageQ;
+import com.iota.iri.network.TCPReplicator;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.storage.FileExportProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.ZmqPublishProvider;
+import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
+import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,7 +38,10 @@ public class Iota {
     public final TransactionRequester transactionRequester;
     public final Node node;
     public final UDPReceiver udpReceiver;
-    public final Replicator replicator;
+
+    //public final Replicator replicator;
+    public final TCPReplicator replicator;
+
     public final Configuration configuration;
     public final Hash coordinator;
     public final TipsViewModel tipsViewModel;
@@ -61,9 +60,9 @@ public class Iota {
         udpPort = configuration.integer(Configuration.DefaultConfSettings.UDP_RECEIVER_PORT);
         tcpPort = configuration.integer(Configuration.DefaultConfSettings.TCP_RECEIVER_PORT);
         maxTipSearchDepth = configuration.integer(Configuration.DefaultConfSettings.MAX_DEPTH);
-        if(testnet) {
+        if (testnet) {
             String coordinatorTrytes = configuration.string(Configuration.DefaultConfSettings.COORDINATOR);
-            if(coordinatorTrytes != null) {
+            if (coordinatorTrytes != null) {
                 coordinator = new Hash(coordinatorTrytes);
             } else {
                 coordinator = TESTNET_COORDINATOR;
@@ -76,14 +75,14 @@ public class Iota {
                 configuration.string(Configuration.DefaultConfSettings.ZMQ_IPC),
                 configuration.integer(Configuration.DefaultConfSettings.ZMQ_THREADS),
                 configuration.booling(Configuration.DefaultConfSettings.ZMQ_ENABLED)
-                );
+        );
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
-        milestone =  new Milestone(tangle, coordinator, Snapshot.initialSnapshot.clone(), transactionValidator, testnet, messageQ);
+        milestone = new Milestone(tangle, coordinator, Snapshot.initialSnapshot.clone(), transactionValidator, testnet, messageQ);
         node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
-        replicator = new Replicator(node, tcpPort, maxPeers, testnet);
-        udpReceiver = new UDPReceiver(udpPort, node);
+        replicator = new TCPReplicator(node.getStripeTasker(), node.getNeighborManager(), tcpPort, maxPeers, testnet);
+        udpReceiver = new UDPReceiver(udpPort, node.getNeighborManager(), node.getStripeTasker());
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth, messageQ);
     }
@@ -92,7 +91,7 @@ public class Iota {
         initializeTangle();
         tangle.init();
 
-        if (configuration.booling(Configuration.DefaultConfSettings.RESCAN_DB)){
+        if (configuration.booling(Configuration.DefaultConfSettings.RESCAN_DB)) {
             rescan_db();
         }
         boolean revalidate = configuration.booling(Configuration.DefaultConfSettings.REVALIDATE);
@@ -106,8 +105,8 @@ public class Iota {
         transactionValidator.init(testnet, configuration.integer(Configuration.DefaultConfSettings.MAINNET_MWM), configuration.integer(Configuration.DefaultConfSettings.TESTNET_MWM));
         tipsManager.init();
         transactionRequester.init(configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
+        replicator.init(tcpPort);
         udpReceiver.init();
-        replicator.init();
         node.init();
     }
 

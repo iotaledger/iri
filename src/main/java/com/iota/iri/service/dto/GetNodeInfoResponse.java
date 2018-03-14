@@ -4,11 +4,11 @@ import com.iota.iri.model.Hash;
 
 public class GetNodeInfoResponse extends AbstractResponse {
 
-	private String appName;
-	private String appVersion;
-	private int jreAvailableProcessors;
-	private long jreFreeMemory;
-	private String jreVersion;
+    private String appName;
+    private String appVersion;
+    private int jreAvailableProcessors;
+    private long jreFreeMemory;
+    private String jreVersion;
 
     private long jreMaxMemory;
     private long jreTotalMemory;
@@ -24,96 +24,109 @@ public class GetNodeInfoResponse extends AbstractResponse {
     private int tips;
     private int transactionsToRequest;
 
-	public static AbstractResponse create(String appName, String appVersion, int jreAvailableProcessors, long jreFreeMemory,
-	        String jreVersion, long maxMemory, long totalMemory, Hash latestMilestone, int latestMilestoneIndex,
-	        Hash latestSolidSubtangleMilestone, int latestSolidSubtangleMilestoneIndex,
-	        int neighbors, int packetsQueueSize,
-	        long currentTimeMillis, int tips, int numberOfTransactionsToRequest) {
-		final GetNodeInfoResponse res = new GetNodeInfoResponse();
-		res.appName = appName;
-		res.appVersion = appVersion;
-		res.jreAvailableProcessors = jreAvailableProcessors;
-		res.jreFreeMemory = jreFreeMemory;
-		res.jreVersion = jreVersion;
+    public static AbstractResponse create(
+            String appName,
+            String appVersion,
+            int jreAvailableProcessors,
+            long jreFreeMemory,
+            String jreVersion,
+            long maxMemory,
+            long totalMemory,
+            Hash latestMilestone,
+            int latestMilestoneIndex,
+            Hash latestSolidSubtangleMilestone,
+            int latestSolidSubtangleMilestoneIndex,
+            int neighbors,
+            int packetsQueueSize,
+            long currentTimeMillis,
+            int tips,
+            int numberOfTransactionsToRequest) {
 
-		res.jreMaxMemory = maxMemory;
-		res.jreTotalMemory = totalMemory;
-		res.latestMilestone = latestMilestone.toString();
-		res.latestMilestoneIndex = latestMilestoneIndex;
+        final GetNodeInfoResponse res = new GetNodeInfoResponse();
+        res.appName = appName;
+        res.appVersion = appVersion;
+        res.jreAvailableProcessors = jreAvailableProcessors;
+        res.jreFreeMemory = jreFreeMemory;
+        res.jreVersion = jreVersion;
 
-		res.latestSolidSubtangleMilestone = latestSolidSubtangleMilestone.toString();
-		res.latestSolidSubtangleMilestoneIndex = latestSolidSubtangleMilestoneIndex;
+        res.jreMaxMemory = maxMemory;
+        res.jreTotalMemory = totalMemory;
+        res.latestMilestone = latestMilestone.toString();
+        res.latestMilestoneIndex = latestMilestoneIndex;
 
-		res.neighbors = neighbors;
-		res.packetsQueueSize = packetsQueueSize;
-		res.time = currentTimeMillis;
-		res.tips = tips;
-		res.transactionsToRequest = numberOfTransactionsToRequest;
-		return res;
-	}
+        res.latestSolidSubtangleMilestone = latestSolidSubtangleMilestone.toString();
+        res.latestSolidSubtangleMilestoneIndex = latestSolidSubtangleMilestoneIndex;
 
-	public String getAppName() {
-		return appName;
-	}
+        res.neighbors = neighbors;
+        res.packetsQueueSize = packetsQueueSize;
+        res.time = currentTimeMillis;
+        res.tips = tips;
+        res.transactionsToRequest = numberOfTransactionsToRequest;
+        return res;
+    }
 
-	public String getAppVersion() {
-		return appVersion;
-	}
+    public String getAppName() {
+        return appName;
+    }
 
-	public int getJreAvailableProcessors() {
-		return jreAvailableProcessors;
-	}
+    public String getAppVersion() {
+        return appVersion;
+    }
 
-	public long getJreFreeMemory() {
-		return jreFreeMemory;
-	}
+    public int getJreAvailableProcessors() {
+        return jreAvailableProcessors;
+    }
 
-	public long getJreMaxMemory() {
-		return jreMaxMemory;
-	}
+    public long getJreFreeMemory() {
+        return jreFreeMemory;
+    }
 
-	public long getJreTotalMemory() {
-		return jreTotalMemory;
-	}
+    public long getJreMaxMemory() {
+        return jreMaxMemory;
+    }
 
-	public String getJreVersion() {
-		return jreVersion;
-	}
+    public long getJreTotalMemory() {
+        return jreTotalMemory;
+    }
 
-	public String getLatestMilestone() {
-		return latestMilestone;
-	}
+    public String getJreVersion() {
+        return jreVersion;
+    }
 
-	public int getLatestMilestoneIndex() {
-		return latestMilestoneIndex;
-	}
+    public String getLatestMilestone() {
+        return latestMilestone;
+    }
 
-	public String getLatestSolidSubtangleMilestone() {
-		return latestSolidSubtangleMilestone;
-	}
+    public int getLatestMilestoneIndex() {
+        return latestMilestoneIndex;
+    }
 
-	public int getLatestSolidSubtangleMilestoneIndex() {
-		return latestSolidSubtangleMilestoneIndex;
-	}
+    public String getLatestSolidSubtangleMilestone() {
+        return latestSolidSubtangleMilestone;
+    }
 
-	public int getNeighbors() {
-		return neighbors;
-	}
+    public int getLatestSolidSubtangleMilestoneIndex() {
+        return latestSolidSubtangleMilestoneIndex;
+    }
 
-	public int getPacketsQueueSize() {
-		return packetsQueueSize;
-	}
+    public int getNeighbors() {
+        return neighbors;
+    }
 
-	public long getTime() {
-		return time;
-	}
+    public int getPacketsQueueSize() {
+        return packetsQueueSize;
+    }
 
-	public int getTips() {
-		return tips;
-	}
+    public long getTime() {
+        return time;
+    }
 
-	public int getTransactionsToRequest() {
-		return transactionsToRequest;
-	}
+    public int getTips() {
+        return tips;
+    }
+
+    public int getTransactionsToRequest() {
+        return transactionsToRequest;
+    }
 
 }

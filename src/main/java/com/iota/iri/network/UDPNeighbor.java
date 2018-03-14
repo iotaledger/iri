@@ -1,5 +1,6 @@
 package com.iota.iri.network;
 
+import com.iota.iri.conf.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -11,30 +12,21 @@ import java.net.SocketAddress;
 /**
  * Created by paul on 4/15/17.
  */
-public class UDPNeighbor extends Neighbor {
+public final class UDPNeighbor extends Neighbor {
     private static final Logger log = LoggerFactory.getLogger(UDPNeighbor.class);
 
-    private final DatagramSocket socket;
+    private final DatagramSocket datagramSocket;
 
-    public UDPNeighbor(final InetSocketAddress address, final DatagramSocket socket, final boolean isConfigured) {
+    private final String addressStr;
+    private final String portStr;
+
+    UDPNeighbor(InetSocketAddress address, DatagramSocket datagramSocket, boolean isConfigured) {
         super(address, isConfigured);
-        this.socket = socket;
-    }
+        this.datagramSocket = datagramSocket;
 
-    @Override
-    public void send(DatagramPacket packet) {
-        try {
-            packet.setSocketAddress(getAddress());
-            socket.send(packet);
-            incSentTransactions();
-        } catch (final Exception e) {
-            log.error("Error sending UDP packet to [{}]: {}", getAddress(), e.toString());
-        }
-    }
-
-    @Override
-    public int getPort() {
-        return getAddress().getPort();
+        // we make these because they don't change and they would otherwise get made for every call to 'matches'.
+        this.addressStr = getAddress().toString();
+        this.portStr = ":" + getPort();
     }
 
     @Override
@@ -43,14 +35,29 @@ public class UDPNeighbor extends Neighbor {
     }
 
     @Override
-    public boolean matches(SocketAddress address) {
-        if (this.getAddress().toString().contains(address.toString())) {
-            int port = this.getAddress().getPort();
-            if (address.toString().contains(Integer.toString(port))) {
+    public int getPort() {
+        return getAddress().getPort();
+    }
+
+    @Override
+    public void send(byte[] data) {
+        DatagramPacket datagramPacket = new DatagramPacket(data, data.length);
+        try {
+            datagramPacket.setSocketAddress(getAddress());
+            datagramSocket.send(datagramPacket);
+            incSentTransactions();
+        } catch (final Exception e) {
+            log.error("Error sending UDP packet to [{}]: {}", getAddress(), e.toString());
+        }
+    }
+
+    @Override
+    public boolean addressMatches(String str) {
+        if (addressStr.contains(str)) {
+            if (str.contains(portStr)) {
                 return true;
             }
         }
         return false;
     }
-
 }

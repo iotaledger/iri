@@ -3,10 +3,12 @@ package com.iota.iri;
 import com.iota.iri.conf.Configuration;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;
+
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.NeighborManager;
 import com.iota.iri.network.Node;
 import com.iota.iri.service.API;
 import com.iota.iri.utils.Converter;
@@ -47,18 +49,21 @@ public class NodeIntegrationTests {
         API api[] = new API[count];
         IXI ixi[] = new IXI[count];
         Thread cooThread, master;
-        TemporaryFolder[] folders = new TemporaryFolder[count*2];
-        for(int i = 0; i < count; i++) {
-            folders[i*2] = new TemporaryFolder();
-            folders[i*2 + 1] = new TemporaryFolder();
-            iotaNodes[i] = newNode(i, folders[i*2], folders[i*2+1]);
+        TemporaryFolder[] folders = new TemporaryFolder[count * 2];
+        for (int i = 0; i < count; i++) {
+            folders[i * 2] = new TemporaryFolder();
+            folders[i * 2 + 1] = new TemporaryFolder();
+            iotaNodes[i] = newNode(i, folders[i * 2], folders[i * 2 + 1]);
             ixi[i] = new IXI(iotaNodes[i]);
             ixi[i].init(iotaNodes[i].configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
             api[i] = new API(iotaNodes[i], ixi[i]);
             api[i].init();
         }
-        Node.uri("udp://localhost:14701").ifPresent(uri -> iotaNodes[0].node.addNeighbor(iotaNodes[0].node.newNeighbor(uri, true)));
-        //Node.uri("udp://localhost:14700").ifPresent(uri -> iotaNodes[1].node.addNeighbor(iotaNodes[1].node.newNeighbor(uri, true)));
+        Node.uri("udp://localhost:14701").ifPresent(uri -> {
+            NeighborManager neighborManager = iotaNodes[0].node.getNeighborManager();
+            neighborManager.add(neighborManager.newNeighbor(uri, true));
+        });
+        //Node.uri("udp://localhost:14700").ifPresent(uri -> iotaNodes[1].node.add(iotaNodes[1].node.newNeighbor(uri, true)));
 
         cooThread = new Thread(spawnCoordinator(api[0], spacing), "Coordinator");
         master = new Thread(spawnMaster(), "master");
@@ -150,7 +155,7 @@ public class NodeIntegrationTests {
         api.broadcastTransactionStatement(elements);
     }
 
-    public void setBundleHash(List<int[]> transactions, Curl customCurl) {
+    private void setBundleHash(List<int[]> transactions, Curl customCurl) {
 
         int[] hash = new int[Curl.HASH_LENGTH];
 
@@ -182,8 +187,8 @@ public class NodeIntegrationTests {
 
         curl.squeeze(hash, 0, hash.length);
 
-        for (int i = 0; i < transactions.size(); i++) {
-            System.arraycopy(hash, 0, transactions.get(i), BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE);
+        for (int[] transaction : transactions) {
+            System.arraycopy(hash, 0, transaction, BUNDLE_TRINARY_OFFSET, BUNDLE_TRINARY_SIZE);
         }
     }
 

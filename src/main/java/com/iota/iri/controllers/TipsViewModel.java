@@ -19,7 +19,7 @@ public class TipsViewModel {
     private FifoHashCache<Hash> solidTips = new FifoHashCache<>(TipsViewModel.MAX_TIPS);
 
     private SecureRandom seed = new SecureRandom();
-    public final Object sync = new Object();
+    private final Object sync = new Object();
 
     public boolean addTipHash (Hash hash) throws ExecutionException, InterruptedException {
         synchronized (sync) {

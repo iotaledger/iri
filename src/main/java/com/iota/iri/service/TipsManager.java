@@ -242,7 +242,9 @@ public class TipsManager {
                 long tipRating = ratings.get(tip);
                 for (int i = 0; i < tips.length; i++) {
                     //transition probability = ((Hx-Hy)^-3)/maxRating
-                    walkRatings[i] = Math.pow(tipRating - ratings.getOrDefault(tips[i],0L), -3);
+                    long rating = tipRating - ratings.getOrDefault(tips[i],0L);
+                    double divisior = (double) rating * rating * rating;
+                    walkRatings[i] = 1.0 / divisior;
                     maxRating += walkRatings[i];
                 }
                 ratingWeight = rnd.nextDouble() * maxRating;

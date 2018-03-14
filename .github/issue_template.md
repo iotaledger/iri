@@ -7,7 +7,7 @@ If you have general questions on IOTA you can go to https://iota.stackexchange.c
 
 <!----Format For Reporting Bugs------->
 ### Bug description
-A general description of the bug 
+A general description of the bug.
 
 ### Steps To Reproduce
 1. 
@@ -15,13 +15,13 @@ A general description of the bug
 3. 
 
 ### Expected behaviour
-What should happen
+What should happen.
 
 ### Actual behavior
-What really happened
+What really happened.
 
 ### Errors
-Paste any errors that you see
+Paste any errors that you see.
 
 
 
@@ -31,16 +31,16 @@ The feature request will probably be integrated faster if you do a pull request 
 If you want to discuss the feature before you actually write the code you are welcome to do it by first submitting an issue.
 
 ### Description
-Briefly describe the feature you want
+Briefly describe the feature you want.
 
 ### Motivation
-Explain why this feature is needed
+Explain why this feature is needed.
 
 ### Requirements
 Create a list of what you want this feature request to fulfill.
 
 ### Open Questions (optional)
-Anything you want to discuss
+Anything you want to discuss.
 
 ### Am I planning to do it myself with a PR?
-Yes/No
+Yes/No.

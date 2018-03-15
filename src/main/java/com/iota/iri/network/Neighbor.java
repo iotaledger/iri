@@ -1,110 +1,125 @@
 package com.iota.iri.network;
 
-import java.net.DatagramPacket;
+import com.iota.iri.conf.Configuration;
+
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 public abstract class Neighbor {
 
+    private final int tcpReceiverPort;
+    private final int udpRecveiverPort;
     private final InetSocketAddress address;
-    
-    private long numberOfAllTransactions;
-    private long numberOfNewTransactions;
-    private long numberOfInvalidTransactions;
-    private long randomTransactionRequests;
-    private long numberOfSentTransactions;
-
-    private boolean flagged = false;
-    public boolean isFlagged() {
-        return flagged;
-    }
-    public void setFlagged(boolean flagged) {
-        this.flagged = flagged;
-    }
-    
-    private final static AtomicInteger numPeers = new AtomicInteger(0);
-    public static int getNumPeers() {
-        return numPeers.get();
-    }
-    public static void incNumPeers() {
-        numPeers.incrementAndGet();
-    }
-    public static void decNumPeers() {
-        int v = numPeers.decrementAndGet();
-        if (v < 0) numPeers.set(0);
-    }
-
     private final String hostAddress;
+    private final boolean configured;
 
-    public String getHostAddress() {
+    private AtomicLong numberOfAllTransactions = new AtomicLong();
+    private AtomicLong numberOfNewTransactions = new AtomicLong();
+    private AtomicLong numberOfInvalidTransactions = new AtomicLong();
+    private AtomicLong randomTransactionRequests = new AtomicLong();
+    private AtomicLong numberOfSentTransactions = new AtomicLong();
+
+    Neighbor(final int tcpReceiverPort, final int udpRecveiverPort, final InetSocketAddress address, boolean isConfigured) {
+        this.tcpReceiverPort = tcpReceiverPort;
+        this.udpRecveiverPort = udpRecveiverPort;
+        this.address = address;
+        this.hostAddress = address.getAddress().getHostAddress();
+        this.configured = isConfigured;
+    }
+
+    ///////////////////////////////////////
+    ///////////////////////////////////////
+
+    public abstract int getPort();
+
+    public abstract void send(byte[] data);
+
+    public abstract String connectionType();
+
+    public abstract boolean addressMatches(String socketAddress);
+
+    ///////////////////////////////////////
+    ///////////////////////////////////////
+
+
+    public final int getTcpReceiverPort() {
+        return tcpReceiverPort;
+    }
+
+    public final int getUdpRecveiverPort() {
+        return udpRecveiverPort;
+    }
+
+    public boolean isConfigured() {
+        return configured;
+    }
+
+
+    public final String getHostAddress() {
         return hostAddress;
     }
 
-
-    public Neighbor(final InetSocketAddress address, boolean isConfigured) {
-        this.address = address;
-        this.hostAddress = address.getAddress().getHostAddress();
-        this.flagged = isConfigured;
+    public final InetSocketAddress getAddress() {
+        return address;
     }
 
-    public abstract void send(final DatagramPacket packet);
-    public abstract int getPort();
-    public abstract String connectionType();
-    public abstract boolean matches(SocketAddress address);
-
+    /**
+     * @param obj another Neighbor - preferably
+     * @return true if a Neighbor and both the address and port match.
+     */
     @Override
     public boolean equals(final Object obj) {
-        return this == obj || !((obj == null) || (obj.getClass() != this.getClass())) && address.equals(((Neighbor) obj).address);
+        return this == obj || obj instanceof Neighbor && address.equals(((Neighbor) obj).address);
     }
+
 
     @Override
     public int hashCode() {
         return address.hashCode();
     }
-    
-    public InetSocketAddress getAddress() {
-		return address;
-	}
-    
+
     void incAllTransactions() {
-    	numberOfAllTransactions++;
+        numberOfAllTransactions.incrementAndGet();
     }
-    
+
     void incNewTransactions() {
-    	numberOfNewTransactions++;
+        numberOfNewTransactions.incrementAndGet();
     }
 
     void incRandomTransactionRequests() {
-        randomTransactionRequests++;
+        randomTransactionRequests.incrementAndGet();
     }
 
     public void incInvalidTransactions() {
-    	numberOfInvalidTransactions++;
+        numberOfInvalidTransactions.incrementAndGet();
     }
-    
-    public void incSentTransactions() {
-        numberOfSentTransactions++;
-    }
-    
-    public long getNumberOfAllTransactions() {
-		return numberOfAllTransactions;
-	}
-    
-    public long getNumberOfInvalidTransactions() {
-		return numberOfInvalidTransactions;
-	}
-    
-    public long getNumberOfNewTransactions() {
-		return numberOfNewTransactions;
-	}
 
-	public long getNumberOfRandomTransactionRequests() {
-        return randomTransactionRequests;
+    void incSentTransactions() {
+        numberOfSentTransactions.incrementAndGet();
     }
-	
-	public long getNumberOfSentTransactions() {
-	    return numberOfSentTransactions;
-	}
-    
+
+    ///////////////////////
+
+    public long getNumberOfAllTransactions() {
+        return numberOfAllTransactions.get();
+    }
+
+    public long getNumberOfInvalidTransactions() {
+        return numberOfInvalidTransactions.get();
+    }
+
+    public long getNumberOfNewTransactions() {
+        return numberOfNewTransactions.get();
+    }
+
+    public long getNumberOfRandomTransactionRequests() {
+        return randomTransactionRequests.get();
+    }
+
+    public long getNumberOfSentTransactions() {
+        return numberOfSentTransactions.get();
+    }
+
 }

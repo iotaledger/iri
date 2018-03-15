@@ -1,116 +1,111 @@
 package com.iota.iri.network;
 
+import com.iota.iri.conf.Configuration;
+import com.iota.iri.utils.Quiet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
-import java.net.Socket;
 import java.net.SocketAddress;
-import java.nio.ByteBuffer;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
-/**
- * Created by paul on 4/15/17.
- */
-public class TCPNeighbor extends Neighbor {
-    private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
-    private int tcpPort;
+public final class TCPNeighbor extends Neighbor implements Closeable {
 
-    private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(10);
-    private boolean stopped = false;
+    private static final Logger log = LoggerFactory.getLogger(TCPNeighbor.class);
 
-    public TCPNeighbor(InetSocketAddress address, boolean isConfigured) {
-        super(address, isConfigured);
-        this.tcpPort = address.getPort();
-    }
+    private final Object lock = new Object();
+    private TCPSink sink;
+    private TCPSource source;
+    private final AtomicInteger port = new AtomicInteger();
 
-    private Socket source = null;
 
-    public Socket getSource() {
-        return source;
-    }
+    private volatile boolean stopped = false;
 
-    public void clear() {
-        setSource(null);
-        setSink(null);
-        this.stopped = true;
-    }
 
-    public boolean isStopped() {
-        return stopped;
-    }
-
-    public void setSource(Socket source) {
-        if (source == null) {
-            if (this.source != null && !this.source.isClosed()) {
-                try {
-                    this.source.close();
-                    log.info("Source {} closed", this.getHostAddress());
-                } catch (IOException e) {
-                    log.info("Source {} close failure {}", this.getHostAddress());
-                }
-            }
-        }
-        this.source = source;
-    }
-
-    private Socket sink = null;
-
-    public Socket getSink() {
-        return sink;
-    }
-
-    public void setSink(Socket sink) {
-        if (sink == null) {
-            if (this.sink != null && !this.sink.isClosed()) {
-                try {
-                    this.sink.close();
-                    log.info("Sink {} closed", this.getHostAddress());
-                } catch (IOException e) {
-                    log.info("Source {} close failure {}", this.getHostAddress());
-                }
-            }
-        }
-        this.sink = sink;
+    TCPNeighbor(int tcpReceiverPort, int udpRecveiverPort, InetSocketAddress address, boolean isConfigured) {
+        super(tcpReceiverPort, udpRecveiverPort, address, isConfigured);
+        this.port.set(address.getPort());
+        this.sink = new TCPSink(this);
     }
 
     @Override
-    public void send(DatagramPacket packet) {
-        if ( sendQueue.remainingCapacity() == 0 ) {
-            sendQueue.poll();
-        }
-        sendQueue.add(ByteBuffer.wrap(packet.getData()));
+    public void close() {
+        stop();
     }
 
-    @Override
-    public int getPort() {
-        return tcpPort;
-    }
 
     @Override
     public String connectionType() {
         return "tcp";
     }
 
-    public void setTcpPort(int tcpPort) {
-        this.tcpPort = tcpPort;
+    @Override
+    public int getPort() {
+        return port.get();
     }
 
-    public ByteBuffer getNextMessage() throws InterruptedException {
-        return (this.sendQueue.poll(10000, TimeUnit.MILLISECONDS));
+    public void setPort(int port) {
+        this.port.set(port);
+    }
+
+
+    public void stop() {
+        this.stopped = true;
+        Quiet.close(sink);
+        Quiet.close(source);
+        log.info("STOPPED: id {} for {}", this.hashCode(), getHostAddress(), getPort());
+    }
+
+    public boolean isStopped() {
+        return stopped;
+    }
+
+
+    public void setSource(TCPSource source) throws Exception {
+        synchronized (lock) {
+            if (stopped) {
+                throw new Exception("Neighbor stopped: " + hashCode() + ", " + getHostAddress() + ":" + getPort());
+            }
+            if (this.source != null) {
+                log.warn("Shutting down source to replace with new one for {}, {}:{}", hashCode(), getHostAddress(), getPort());
+                this.source.close();
+            }
+            this.source = source;
+        }
+    }
+
+
+    @Override
+    public void send(byte[] data) {
+        try {
+            // we drop packets if connecting or shutdown
+            if (!sink.isShutdown()) {
+                sink.sendData(data);
+            }
+        } catch (Exception e) {
+            if (log.isDebugEnabled())
+                log.debug("cannot send: {} for {}, {}:{}", e, hashCode(), getHostAddress(), getPort());
+        }
     }
 
     @Override
-    public boolean matches(SocketAddress address) {
-        if (address.toString().contains(this.getHostAddress())) {
-            int port = this.getSource().getPort();
-            if (address.toString().contains(Integer.toString(port))) {
-                return true;
-            }
+    public boolean addressMatches(String str) {
+        if (str.contains(getHostAddress())) {
+            int index = str.indexOf(Integer.toString(port.get()));
+            return index > 0 && str.charAt(index - 1) == ':';
         }
         return false;
+    }
+
+    public TCPSource.Stats getSourceStats() {
+        synchronized (lock) {
+            return source != null ? source.getStats() : null;
+        }
+    }
+
+    public TCPSink.Stats getSinkStats() {
+        return sink != null ? sink.getStats() : null;
     }
 }

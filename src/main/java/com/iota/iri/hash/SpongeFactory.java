@@ -10,13 +10,18 @@ public abstract class SpongeFactory {
         KERL,
         //BCURLT
     }
-    public static Sponge create(Mode mode){
+
+    public static Sponge create(Mode mode) {
         switch (mode) {
-            case CURLP81: return new Curl(mode);
-            case CURLP27: return new Curl(mode);
-            case KERL: return new Kerl();
+            case CURLP81:
+                return new Curl(mode);
+            case CURLP27:
+                return new Curl(mode);
+            case KERL:
+                return new Kerl();
             //case BCURLT: return new Curl(true, mode);
-            default: return null;
+            default:
+                throw new IllegalArgumentException(" I do not understand the mode: " + mode);
         }
     }
 }

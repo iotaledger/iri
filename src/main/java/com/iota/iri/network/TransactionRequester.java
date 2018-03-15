@@ -2,14 +2,16 @@ package com.iota.iri.network;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Created by paul on 3/27/17.
@@ -23,8 +25,8 @@ public class TransactionRequester {
 
     public static final int MAX_TX_REQ_QUEUE_SIZE = 10000;
 
-    private static volatile long lastTime = System.currentTimeMillis();
-    public  static final int REQUEST_HASH_SIZE = 46;
+    public static final int REQUEST_HASH_SIZE = 46;
+
 
     private static double P_REMOVE_REQUEST;
     private static boolean initialized = false;
@@ -39,11 +41,17 @@ public class TransactionRequester {
     }
 
     public void init(double p_REMOVE_REQUEST) {
-        if(!initialized) {
+        if (!initialized) {
             initialized = true;
             P_REMOVE_REQUEST = p_REMOVE_REQUEST;
+            log.info("P_REMOVE_REQUEST = {}", P_REMOVE_REQUEST);
         }
     }
+
+    private boolean isP_REMOVE_REQUEST() {
+        return random.nextDouble() < P_REMOVE_REQUEST;
+    }
+
 
     public Hash[] getRequestedTransactions() {
         synchronized (syncObj) {
@@ -53,7 +61,9 @@ public class TransactionRequester {
     }
 
     public int numberOfTransactionsToRequest() {
-        return transactionsToRequest.size() + milestoneTransactionsToRequest.size();
+        synchronized (syncObj) {
+            return transactionsToRequest.size() + milestoneTransactionsToRequest.size();
+        }
     }
 
     public boolean clearTransactionRequest(Hash hash) {
@@ -65,41 +75,43 @@ public class TransactionRequester {
     }
 
     public void requestTransaction(Hash hash, boolean milestone) throws Exception {
-        if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(tangle, hash)) {
-            synchronized (syncObj) {
-                if(milestone) {
-                    transactionsToRequest.remove(hash);
-                    milestoneTransactionsToRequest.add(hash);
-                } else {
-                    if(!milestoneTransactionsToRequest.contains(hash) && !transactionsToRequestIsFull()) {
-                        transactionsToRequest.add(hash);
-                    }
+        if (hash.equals(Hash.NULL_HASH) || TransactionViewModel.exists(tangle, hash)) {
+            return;
+        }
+        synchronized (syncObj) {
+            if (milestone) {
+                transactionsToRequest.remove(hash);
+                milestoneTransactionsToRequest.add(hash);
+            } else {
+                if (!milestoneTransactionsToRequest.contains(hash) && !transactionsToRequestIsFull()) {
+                    transactionsToRequest.add(hash);
                 }
             }
         }
     }
 
     private boolean transactionsToRequestIsFull() {
-        return transactionsToRequest.size() >= TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
+        synchronized (syncObj) {
+            return transactionsToRequest.size() >= TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
+        }
     }
 
 
     public Hash transactionToRequest(boolean milestone) throws Exception {
-        final long beginningTime = System.currentTimeMillis();
         Hash hash = null;
         Set<Hash> requestSet;
-        if(milestone) {
-             requestSet = milestoneTransactionsToRequest;
-             if(requestSet.size() == 0) {
-                 requestSet = transactionsToRequest;
-             }
-        } else {
-            requestSet = transactionsToRequest;
-            if(requestSet.size() == 0) {
-                requestSet = milestoneTransactionsToRequest;
-            }
-        }
         synchronized (syncObj) {
+            if (milestone) {
+                requestSet = milestoneTransactionsToRequest;
+                if (requestSet.size() == 0) {
+                    requestSet = transactionsToRequest;
+                }
+            } else {
+                requestSet = transactionsToRequest;
+                if (requestSet.size() == 0) {
+                    requestSet = milestoneTransactionsToRequest;
+                }
+            }
             while (requestSet.size() != 0) {
                 Iterator<Hash> iterator = requestSet.iterator();
                 hash = iterator.next();
@@ -114,20 +126,10 @@ public class TransactionRequester {
                     break;
                 }
             }
-        }
-
-        if(random.nextDouble() < P_REMOVE_REQUEST && !requestSet.equals(milestoneTransactionsToRequest)) {
-            synchronized (syncObj) {
+            if (isP_REMOVE_REQUEST() && !requestSet.equals(milestoneTransactionsToRequest)) {
                 transactionsToRequest.remove(hash);
             }
         }
-
-        long now = System.currentTimeMillis();
-        if ((now - lastTime) > 10000L) {
-            lastTime = now;
-            //log.info("Transactions to request = {}", numberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
-        }
         return hash;
     }
-
 }

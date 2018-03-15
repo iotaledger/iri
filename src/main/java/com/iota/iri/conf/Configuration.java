@@ -126,7 +126,7 @@ public class Configuration {
     }
 
     public boolean init() throws IOException {
-        File confFile = new File(string(Configuration.DefaultConfSettings.CONFIG));
+        File confFile = new File(string(DefaultConfSettings.CONFIG));
         if (confFile.exists()) {
             ini = new Ini(confFile);
             prefs = new IniPreferences(ini);

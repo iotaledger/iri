@@ -4,7 +4,6 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.util.StatusPrinter;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.model.Hash;
 import com.iota.iri.service.API;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
@@ -21,9 +20,6 @@ import java.io.IOException;
 public class IRI {
 
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
-
-    public static final Hash MAINNET_COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
-    public static final Hash TESTNET_COORDINATOR = new Hash("XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA");
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
@@ -80,17 +76,31 @@ public class IRI {
         log.info("IOTA Node initialised correctly.");
     }
 
+    private static Integer obtainPort(Configuration configuration, CmdLineParser parser, Option<String> port) {
+        final String iniValue = configuration.getIniValue(DefaultConfSettings.PORT.name());
+        final String argsValue = parser.getOptionValue(port);
+        final String value;
+        if (argsValue != null) {
+            value = argsValue;
+            log.info("Port setting obtained from commandline: {}", value);
+        } else {
+            value = iniValue;
+            if (value != null) log.info("Port setting obtained from ini file: {}", value);
+        }
+        if (iniValue != null && argsValue != null && !iniValue.equals(argsValue)) {
+            log.info("Porty setting in INI file is different from the command line arguments: INI= {}, ARGS= {}", iniValue, argsValue);
+        }
+        return value == null ? null : Integer.parseInt(value);
+    }
+
     private static void validateParams(final Configuration configuration, final String[] args) throws IOException {
-
-        boolean configurationInit = configuration.init();
-
-        if (args == null || (args.length < 2 && !configurationInit)) {
-            log.error("Invalid arguments list. Provide ini-file 'iota.ini' or API port number (i.e. '-p 14600').");
-            printUsage();
+        // CANNOT HAVE ENTIRELY MISSING ARGS
+        if (args == null || args.length == 0) {
+            log.error("Missing arguments list. Provide ini-file 'iota.ini' or API port number (i.e. '-p 14600').");
+            printUsageAndExitSystem(-1);
         }
 
         final CmdLineParser parser = new CmdLineParser();
-
         final Option<String> config = parser.addStringOption('c', "config");
         final Option<String> port = parser.addStringOption('p', "port");
         final Option<String> rportudp = parser.addStringOption('u', "udp-receiver-port");
@@ -115,32 +125,41 @@ public class IRI {
             parser.parse(args);
         } catch (CmdLineParser.OptionException e) {
             log.error("CLI error: ", e);
-            printUsage();
-            System.exit(2);
+            printUsageAndExitSystem(2);
         }
 
-        // optional config file path
-        String confFilePath = parser.getOptionValue(config);
-        if (confFilePath != null) {
-            configuration.put(DefaultConfSettings.CONFIG, confFilePath);
-            configuration.init();
+        // PARSE MANDATORY ARGS
+        // FIRST FIND CONFIG FILE - IF IT IS ALREADY SPECIFIED
+        {
+            String confFilePath = parser.getOptionValue(config);
+            if (confFilePath != null) {
+                configuration.put(DefaultConfSettings.CONFIG, confFilePath);
+                if (configuration.init()) {
+                    log.info("Configuration file at '{}' being used.", confFilePath);
+                } else {
+                    log.error("Invalid configuration argument or bad config file. Please check to see that '{}' is a valid INI file.", confFilePath);
+                    printUsageAndExitSystem(-1);
+                }
+            } else if (args.length < 2 && !configuration.init()) {
+                log.error("Invalid arguments list. Provide ini-file 'iota.ini' or API port number (i.e. '-p 14600').");
+                printUsageAndExitSystem(-1);
+            }
         }
 
-        // mandatory args
-        String inicport = configuration.getIniValue(DefaultConfSettings.PORT.name());
-        final String cport = inicport == null ? parser.getOptionValue(port) : inicport;
+        final Integer cport = obtainPort(configuration, parser, port);
         if (cport == null) {
             log.error("Invalid arguments list. Provide at least the PORT in iota.ini or with -p option");
-            printUsage();
-        } else {
-            configuration.put(DefaultConfSettings.PORT, cport);
+            printUsageAndExitSystem(-1);
+        } else if (cport < 1024) {
+            log.warn("Warning: api port value seems too low: port= {}", cport);
         }
+        configuration.put(DefaultConfSettings.PORT, "" + cport);
+
 
         // optional flags
         if (parser.getOptionValue(help) != null) {
-            printUsage();
+            printUsageAndExitSystem(0);
         }
-
 
         String cns = parser.getOptionValue(neighbors);
         if (cns == null) {
@@ -181,10 +200,6 @@ public class IRI {
             configuration.put(DefaultConfSettings.EXPORT, "true");
         }
 
-        if (Integer.parseInt(cport) < 1024) {
-            log.warn("Warning: api port value seems too low.");
-        }
-
         if (parser.getOptionValue(debug) != null) {
             configuration.put(DefaultConfSettings.DEBUG, "true");
             log.info(configuration.allSettings());
@@ -209,7 +224,6 @@ public class IRI {
             configuration.put(DefaultConfSettings.DNS_RESOLUTION_ENABLED, "false");
         }
 
-
         final String vsendLimit = parser.getOptionValue(sendLimit);
         if (vsendLimit != null) {
             configuration.put(DefaultConfSettings.SEND_LIMIT, vsendLimit);
@@ -221,7 +235,8 @@ public class IRI {
         }
     }
 
-    private static void printUsage() {
+
+    private static void printUsageAndExitSystem(int status) {
         log.info("Usage: java -jar {}-{}.jar " +
                         "[{-n,--neighbors} '<list of neighbors>'] " +
                         "[{-p,--port} 14600] " +
@@ -234,7 +249,7 @@ public class IRI {
                         "[{--remote-auth} string]" +
                         "[{--remote-limit-api} string]"
                 , MAINNET_NAME, VERSION);
-        System.exit(0);
+        System.exit(status);
     }
 
     private static void shutdownHook() {

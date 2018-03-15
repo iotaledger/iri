@@ -3,20 +3,16 @@ package com.iota.iri;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
-import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.zmq.MessageQ;
+import com.iota.iri.network.TCPReplicator;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.storage.FileExportProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.ZmqPublishProvider;
+import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
+import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +25,9 @@ import java.util.List;
 public class Iota {
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
-    public static final String MAINNET_COORDINATOR_ADDRESS = "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
-    public static final Hash MAINNET_COORDINATOR = new Hash(MAINNET_COORDINATOR_ADDRESS);
-    public static final String TESTNET_COORDINATOR_ADDRESS = "XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA";
+    private static final String MAINNET_COORDINATOR_ADDRESS = "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
+    private static final Hash MAINNET_COORDINATOR = new Hash(MAINNET_COORDINATOR_ADDRESS);
+    private static final String TESTNET_COORDINATOR_ADDRESS = "XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA";
     public static final Hash TESTNET_COORDINATOR = new Hash(TESTNET_COORDINATOR_ADDRESS);
 
     public final LedgerValidator ledgerValidator;
@@ -41,29 +37,28 @@ public class Iota {
     public final TipsManager tipsManager;
     public final TransactionRequester transactionRequester;
     public final Node node;
-    public final UDPReceiver udpReceiver;
-    public final Replicator replicator;
+    private final UDPReceiver udpReceiver;
+    private final TCPReplicator replicator;
+
     public final Configuration configuration;
-    public final Hash coordinator;
     public final TipsViewModel tipsViewModel;
     public final MessageQ messageQ;
 
     public final boolean testnet;
-    public final int maxPeers;
-    public final int udpPort;
-    public final int tcpPort;
-    public final int maxTipSearchDepth;
 
-    public Iota(Configuration configuration) {
+    Iota(Configuration configuration) {
         this.configuration = configuration;
         testnet = configuration.booling(Configuration.DefaultConfSettings.TESTNET);
-        maxPeers = configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
-        udpPort = configuration.integer(Configuration.DefaultConfSettings.UDP_RECEIVER_PORT);
-        tcpPort = configuration.integer(Configuration.DefaultConfSettings.TCP_RECEIVER_PORT);
-        maxTipSearchDepth = configuration.integer(Configuration.DefaultConfSettings.MAX_DEPTH);
-        if(testnet) {
+
+        int maxPeers = configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
+        int udpPort = configuration.integer(Configuration.DefaultConfSettings.UDP_RECEIVER_PORT);
+        int tcpPort = configuration.integer(Configuration.DefaultConfSettings.TCP_RECEIVER_PORT);
+
+        int maxTipSearchDepth = configuration.integer(Configuration.DefaultConfSettings.MAX_DEPTH);
+        Hash coordinator;
+        if (testnet) {
             String coordinatorTrytes = configuration.string(Configuration.DefaultConfSettings.COORDINATOR);
-            if(coordinatorTrytes != null) {
+            if (coordinatorTrytes != null) {
                 coordinator = new Hash(coordinatorTrytes);
             } else {
                 coordinator = TESTNET_COORDINATOR;
@@ -76,14 +71,14 @@ public class Iota {
                 configuration.string(Configuration.DefaultConfSettings.ZMQ_IPC),
                 configuration.integer(Configuration.DefaultConfSettings.ZMQ_THREADS),
                 configuration.booling(Configuration.DefaultConfSettings.ZMQ_ENABLED)
-                );
+        );
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
-        milestone =  new Milestone(tangle, coordinator, Snapshot.initialSnapshot.clone(), transactionValidator, testnet, messageQ);
+        milestone = new Milestone(tangle, coordinator, Snapshot.initialSnapshot.clone(), transactionValidator, testnet, messageQ);
         node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
-        replicator = new Replicator(node, tcpPort, maxPeers, testnet);
-        udpReceiver = new UDPReceiver(udpPort, node);
+        replicator = new TCPReplicator(node.getStripeTasker(), node.getNeighborManager(), tcpPort, maxPeers, testnet);
+        udpReceiver = new UDPReceiver(udpPort, node.getNeighborManager(), node.getStripeTasker());
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth, messageQ);
     }
@@ -92,7 +87,7 @@ public class Iota {
         initializeTangle();
         tangle.init();
 
-        if (configuration.booling(Configuration.DefaultConfSettings.RESCAN_DB)){
+        if (configuration.booling(Configuration.DefaultConfSettings.RESCAN_DB)) {
             rescan_db();
         }
         boolean revalidate = configuration.booling(Configuration.DefaultConfSettings.REVALIDATE);

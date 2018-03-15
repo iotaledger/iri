@@ -182,7 +182,7 @@ public final class TCPSource implements CompletionHandler<Long, String>, Closeab
 
 
     private void processTransaction() {
-        byte[] data = getDataPart().array();
+        byte[] data = getDataPart().array().clone();
         byte[] checksumData = getCRC32Part().array();
         long processed = stats.packetsProcessed.incrementAndGet();
 

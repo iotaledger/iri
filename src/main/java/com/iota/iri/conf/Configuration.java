@@ -137,7 +137,7 @@ public class Configuration {
 
     public String getIniValue(String k) {
         if (ini != null) {
-            return prefs.node("IRI").get(k, null);
+            return prefs.node("IRIImpl").get(k, null);
         }
         return null;
     }

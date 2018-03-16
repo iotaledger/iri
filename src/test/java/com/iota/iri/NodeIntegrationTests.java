@@ -43,6 +43,8 @@ public class NodeIntegrationTests {
 
     //@Test
     public void testGetsSolid() throws Exception {
+        IRITestVersion iri = new IRITestVersion();
+
         int count = 1;
         long spacing = 5000;
         Iota iotaNodes[] = new Iota[count];
@@ -56,7 +58,7 @@ public class NodeIntegrationTests {
             iotaNodes[i] = newNode(i, folders[i * 2], folders[i * 2 + 1]);
             ixi[i] = new IXI(iotaNodes[i]);
             ixi[i].init(iotaNodes[i].configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
-            api[i] = new API(iotaNodes[i], ixi[i]);
+            api[i] = new API(iri, iotaNodes[i], ixi[i]);
             api[i].init();
         }
         NeighborManager.uri("udp://localhost:14701").ifPresent(uri -> {

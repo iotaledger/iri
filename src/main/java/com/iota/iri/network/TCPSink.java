@@ -24,6 +24,47 @@ public final class TCPSink implements Closeable, Shutdown {
 
     private static final Logger log = LoggerFactory.getLogger(TCPSink.class);
 
+    private static final int MAXIMUM_TRANSACTIONS_PER_SECOND_THROUGHPUT_PER_NEIGHBOR = 128;
+
+    // THE QUEUE IS ALWAYS DRAINED BY THE CURRENT WORKER OR NEXT WORKER WAITING
+    // IF NO WORKER IS WAITING AND THE QUEUE HAS JOBS, THEN THE CURRENT WORKER WILL
+    // PICK THEM UP BEFORE EXITING
+    private static final int QUEUE_SIZE = 24;
+
+    private static final Duration CONNECTION_REFUSED_RETRY = Duration.ofSeconds(30);
+
+    // how many times we will retry a connection problem that is possibly recoverable
+    private static final int RECOVERABLE_SEND_PROBLEM_MAX_RETRIES = 4;
+
+    // how long we will wait in a single thread to establish a connection
+    private static final int SOCKET_TIMEOUT = (int) Node.SO_TIMEOUT.toMillis();
+
+    // up to 5 threads can enter the timed waiting area
+    private static final int TIMED_AREA_MAXIMUM_PERMITS = 5;
+    private static final int TIMED_AREA_PERMITS_ISSUED_PER_THREAD = 1;
+
+    // only one thread can be sending at any time
+    private static final int WORKING_AREA_PERMITS = 1;
+    private static final Duration WORKING_AREA_WAIT_TIME = Duration.ofMillis(60);
+
+
+    private final Object queueLock = new Object();
+    private final List<byte[]> queue = new ArrayList<>(QUEUE_SIZE);
+    private AtomicLong connectionRefusedTimeMillis = new AtomicLong();
+    private final Semaphore timedAreaSemaphore = new Semaphore(TIMED_AREA_MAXIMUM_PERMITS, true);
+    private final Semaphore workingAreaSemaphore = new Semaphore(WORKING_AREA_PERMITS, true);
+    private final SendTPSLimiter transactionsPerSecondLimiter = new SendTPSLimiter(MAXIMUM_TRANSACTIONS_PER_SECOND_THROUGHPUT_PER_NEIGHBOR);
+
+    private final TCPNeighbor neighbor;
+    private final Stats stats;
+
+    private volatile boolean closed = false;
+    private Socket socket;
+    private OutputStream socketOutputStream;
+    private int destinationPort;
+    private boolean tcpPortBytesSent;
+
+
     public static class Stats {
         private final long started = System.currentTimeMillis();
 
@@ -73,7 +114,6 @@ public final class TCPSink implements Closeable, Shutdown {
             return packetsDroppedTPSLimited.get();
         }
 
-
         public long getPermanentErrorsThrown() {
             return permanentErrorsThrown.get();
         }
@@ -103,43 +143,6 @@ public final class TCPSink implements Closeable, Shutdown {
             return (int) (getPacketsSent() / uptimeSecs);
         }
     }
-
-    private final Object queueLock = new Object();
-    private final int QUEUE_SIZE = 24;
-    private final List<byte[]> queue = new ArrayList<>(QUEUE_SIZE);
-
-    // how long we will wait in a single thread to establish a connection
-    private final int so_timeout = (int) Node.SO_TIMEOUT.toMillis();
-
-    // connection retry
-    private final Duration CONNECTION_RETRY = Duration.ofSeconds(30);
-    private AtomicLong connectionRefusedTimeMillis = new AtomicLong();
-
-
-    // how many times we will retry a connection problem that is possibly recoverable
-    private final int MAX_RETRIES = 4;
-
-    // UP TO 5 THREADS CAN SIT WAITING WITH NO TIMOUT
-    private final Semaphore timedAreaSemaphore = new Semaphore(5, true);
-    private final int TIMED_AREA_REQUIRED_PERMITS = 1;
-
-    // AFTER 60 millis, they will give up and queue the request if space available in the queue
-    private final Semaphore workingAreaSemaphore = new Semaphore(1, true);
-    private final int WORKING_AREA_WAIT_TIME = 60; // milliseconds
-
-    // How many TPS max to allow in sending
-    private final SendTPSLimiter transactionsPerSecondLimiter = new SendTPSLimiter(128);
-
-
-    private final TCPNeighbor neighbor;
-    private final Stats stats;
-
-    private volatile boolean closed = false;
-
-    private Socket socket;
-    private OutputStream socketOutputStream;
-    private int destinationPort;
-    private boolean tcpPortBytesSent;
 
     TCPSink(TCPNeighbor neighbor) {
         this.neighbor = neighbor;
@@ -215,13 +218,13 @@ public final class TCPSink implements Closeable, Shutdown {
 
         try {
             socket.setSoLinger(true, 0);
-            socket.setSoTimeout(so_timeout);
+            socket.setSoTimeout(SOCKET_TIMEOUT);
 
             this.destinationPort = neighbor.getPort();
             InetSocketAddress insa = new InetSocketAddress(neighbor.getHostAddress(), destinationPort);
             // socket.isConnected() will be true after this
             // if connect fails then it WILL throw
-            socket.connect(insa, so_timeout);
+            socket.connect(insa, SOCKET_TIMEOUT);
             socketOutputStream = socket.getOutputStream();
             return true;
         } catch (IOException ex) {
@@ -303,7 +306,7 @@ public final class TCPSink implements Closeable, Shutdown {
                     log.info("----- NETWORK INFO ----- terminating for {}, {}:{}", neighbor.hashCode(), neighbor.getHostAddress(), destinationPort);
                     return;
                 }
-                if (retries >= MAX_RETRIES) {
+                if (retries >= RECOVERABLE_SEND_PROBLEM_MAX_RETRIES) {
                     throw exception;
                 }
                 if (socket.isClosed()) {
@@ -332,7 +335,7 @@ public final class TCPSink implements Closeable, Shutdown {
 
     private boolean isConnectionWait() {
         long timeSince = System.currentTimeMillis() - connectionRefusedTimeMillis.get();
-        long connectionRetryTimeOutstanding = CONNECTION_RETRY.toMillis() - timeSince;
+        long connectionRetryTimeOutstanding = CONNECTION_REFUSED_RETRY.toMillis() - timeSince;
         if (connectionRetryTimeOutstanding < 0) {
             return false;
         }
@@ -372,7 +375,7 @@ public final class TCPSink implements Closeable, Shutdown {
      * already inside to process or for the next thread to also process.
      */
     private void enterTimedWaiters(byte[] data) throws InterruptedException, IOException {
-        if (workingAreaSemaphore.tryAcquire(WORKING_AREA_WAIT_TIME, TimeUnit.MILLISECONDS)) {
+        if (workingAreaSemaphore.tryAcquire(WORKING_AREA_WAIT_TIME.toMillis(), TimeUnit.MILLISECONDS)) {
             try {
                 enterWorkingArea(data);
             } finally {
@@ -396,7 +399,7 @@ public final class TCPSink implements Closeable, Shutdown {
      * queued at the next queueLock.
      */
     private void enterRateLimited(byte[] data) throws InterruptedException, IOException {
-        if (timedAreaSemaphore.tryAcquire(TIMED_AREA_REQUIRED_PERMITS)) {
+        if (timedAreaSemaphore.tryAcquire(TIMED_AREA_PERMITS_ISSUED_PER_THREAD)) {
             try {
                 enterTimedWaiters(data);
             } finally {

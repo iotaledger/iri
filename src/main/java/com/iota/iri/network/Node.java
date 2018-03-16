@@ -7,12 +7,13 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.exec.SendTPSLimiter;
+import com.iota.iri.network.exec.StripedExecutor;
 import com.iota.iri.scheduledReports.SystemStatsReport;
 import com.iota.iri.scheduledReports.TCPSinkReport;
 import com.iota.iri.scheduledReports.TCPSourceReport;
-import com.iota.iri.scheduledTasks.*;
-import com.iota.iri.network.exec.SendTPSLimiter;
-import com.iota.iri.network.exec.StripedExecutor;
+import com.iota.iri.scheduledTasks.DNSRefreshRepeatingJob;
+import com.iota.iri.scheduledTasks.TipRequestingPacketsTask;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Quiet;
 import com.iota.iri.utils.ScheduledTask;
@@ -22,14 +23,15 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -203,27 +205,6 @@ public final class Node {
         return neighborManager;
     }
 
-    private boolean P_REPLY_RANDOM_TIP() {
-        return rnd.nextDouble() < P_REPLY_RANDOM_TIP;
-    }
-
-    private boolean P_DROP_TRANSACTION() {
-        // no need to call random if zero - and it is sometimes
-        return !(P_DROP_TRANSACTION <= 0) && rnd.nextDouble() < P_DROP_TRANSACTION;
-    }
-
-    private boolean P_PROPAGATE_REQUEST() {
-        return rnd.nextDouble() < P_PROPAGATE_REQUEST;
-    }
-
-    private boolean P_SELECT_MILESTONE() {
-        return rnd.nextDouble() < P_SELECT_MILESTONE;
-    }
-
-    private boolean P_SEND_MILESTONE() {
-        return rnd.nextDouble() < P_SEND_MILESTONE;
-    }
-
 
     private void addReceivedDataToReceiveQueue(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
         boolean added = receiveQueue.add(new ImmutablePair<>(receivedTransactionViewModel, neighbor));
@@ -308,7 +289,8 @@ public final class Node {
         neighbor.incAllTransactions();
 
         // randomly drop tx
-        if (P_DROP_TRANSACTION()) {
+        // no need to call random if zero - and it is sometimes
+        if (P_DROP_TRANSACTION > 0 && rnd.nextDouble() < P_DROP_TRANSACTION) {
             log.info("Randomly dropping transaction. Stand by... ");
             return;
         }
@@ -409,10 +391,10 @@ public final class Node {
             try {
                 // 66% chance of getting a reply
                 // 70% chance of getting reply as from latest milestone
-                if (transactionRequester.numberOfTransactionsToRequest() > 0 && P_REPLY_RANDOM_TIP()) {
+                if (transactionRequester.numberOfTransactionsToRequest() > 0 && rnd.nextDouble() < P_REPLY_RANDOM_TIP) {
                     neighbor.incRandomTransactionRequests();
 
-                    transactionPointer = P_SEND_MILESTONE()
+                    transactionPointer = rnd.nextDouble() < P_SEND_MILESTONE
                             ? milestone.getLatestMilestone()
                             : tipsViewModel.getRandomSolidTipHash();
 
@@ -445,7 +427,7 @@ public final class Node {
             }
         } else {
             //trytes not found
-            if (!requestedHash.equals(Hash.NULL_HASH) && P_PROPAGATE_REQUEST()) {
+            if (!requestedHash.equals(Hash.NULL_HASH) && rnd.nextDouble() < P_PROPAGATE_REQUEST) {
                 //request is an actual transaction and missing in request queue add it.
                 try {
                     transactionRequester.requestTransaction(requestedHash, false);
@@ -464,7 +446,7 @@ public final class Node {
             byte[] packet = new byte[TRANSACTION_PACKET_SIZE];
             System.arraycopy(transactionViewModel.getBytes(), 0, packet, 0, TransactionViewModel.SIZE);
 
-            Hash hash = transactionRequester.transactionToRequest(P_SELECT_MILESTONE());
+            Hash hash = transactionRequester.transactionToRequest(rnd.nextDouble() < P_SELECT_MILESTONE);
 
             System.arraycopy(hash != null ? hash.bytes() : transactionViewModel.getHash().bytes(), 0,
                     packet, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);

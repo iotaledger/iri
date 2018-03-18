@@ -45,7 +45,7 @@ public class GetNeighborsResponse extends AbstractResponse {
             java.net.InetSocketAddress address = n.getAddress();
             int port = n.getPort();
             ne.address = address.getHostString() + ":" + port;
-            ne.ip = n.getAddress().getAddress().toString().split("/")[1];
+            ne.ip = address.getAddress().getHostAddress();
             ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
             ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();
             ne.numberOfNewTransactions = n.getNumberOfNewTransactions();

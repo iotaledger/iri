@@ -42,8 +42,9 @@ public class GetNeighborsResponse extends AbstractResponse {
 
         public static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
             Neighbor ne = new Neighbor();
+            java.net.InetSocketAddress address = n.getAddress();
             int port = n.getPort();
-            ne.address = n.getAddress().getHostString() + ":" + port;
+            ne.address = address.getHostString() + ":" + port;
             ne.ip = n.getAddress().getAddress().toString().split("/")[1];
             ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
             ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();

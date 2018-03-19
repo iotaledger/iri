@@ -876,7 +876,9 @@ public class API {
         try {
             for (final Hash address : addresses) {
                 Long value = instance.milestone.latestSnapshot.getBalance(address);
-                if (value == null) value = 0L;
+                if (value == null) {
+                    value = 0L;
+                }
                 balances.put(address, value);
             }
 
@@ -1023,7 +1025,7 @@ public class API {
         exchange.setResponseContentLength(responseBuf.array().length);
         StreamSinkChannel sinkChannel = exchange.getResponseChannel();
         sinkChannel.getWriteSetter().set( channel -> {
-            if (responseBuf.remaining() > 0)
+            if (responseBuf.remaining() > 0) {
                 try {
                     sinkChannel.write(responseBuf);
                     if (responseBuf.remaining() == 0) {
@@ -1034,6 +1036,7 @@ public class API {
                     exchange.endExchange();
                     sinkChannel.getWriteSetter().set(null);
                 }
+            }
             else {
                 exchange.endExchange();
             }
@@ -1060,7 +1063,9 @@ public class API {
 
     private HttpHandler addSecurity(final HttpHandler toWrap) {
         String credentials = instance.configuration.string(DefaultConfSettings.REMOTE_AUTH);
-        if(credentials == null || credentials.isEmpty()) return toWrap;
+        if (credentials == null || credentials.isEmpty()) {
+            return toWrap;
+        }
 
         final Map<String, char[]> users = new HashMap<>(2);
         users.put(credentials.split(":")[0], credentials.split(":")[1].toCharArray());
@@ -1081,3 +1086,4 @@ public class API {
         }
     }
 }
+

@@ -252,7 +252,9 @@ public class LedgerValidator {
         Set<Hash> visitedHashes = new HashSet<>();
         Map<Hash, Long> diff = new HashMap<>();
         for (Hash hash : hashes) {
-            if (!updateDiff(visitedHashes, diff, hash)) return false;
+            if (!updateDiff(visitedHashes, diff, hash)) {
+                return false;
+            }
         }
         return true;
     }
@@ -261,10 +263,14 @@ public class LedgerValidator {
         if(!TransactionViewModel.fromHash(tangle, tip).isSolid()) {
             return false;
         }
-        if (approvedHashes.contains(tip)) return true;
+        if (approvedHashes.contains(tip)) {
+            return true;
+        }
         Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
         Map<Hash, Long> currentState = getLatestDiff(visitedHashes, tip, milestone.latestSnapshot.index(), false);
-        if (currentState == null) return false;
+        if (currentState == null) {
+            return false;
+        }
         diff.forEach((key, value) -> {
             if(currentState.computeIfPresent(key, ((hash, aLong) -> value + aLong)) == null) {
                 currentState.putIfAbsent(key, value);

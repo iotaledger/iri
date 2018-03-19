@@ -94,7 +94,9 @@ class ReplicatorSinkProcessor implements Runnable {
                                                 CRC32 crc32 = new CRC32();                                        
                                                 crc32.update(message.array());
                                                 String crc32_string = Long.toHexString(crc32.getValue());
-                                                while (crc32_string.length() < CRC32_BYTES) crc32_string = "0"+crc32_string;
+                                                while (crc32_string.length() < CRC32_BYTES) {
+                                                    crc32_string = "0"+crc32_string;
+                                                }
                                                 out.write(message.array());
                                                 out.write(crc32_string.getBytes());
                                                 out.flush();
@@ -121,8 +123,11 @@ class ReplicatorSinkProcessor implements Runnable {
             }
         } catch (Exception e) {
             String reason = e.getMessage();
-            if (reason==null || reason.equals("null")) reason = "closed"; 
-            log.error("***** NETWORK ALERT ***** No sink to host {}:{}, reason: {}", remoteAddress, neighbor.getPort(), e.getMessage());
+            if (reason == null || reason.equals("null")) {
+                reason = "closed";
+            }
+            log.error("***** NETWORK ALERT ***** No sink to host {}:{}, reason: {}", remoteAddress, neighbor.getPort(),
+                    reason);
             synchronized (neighbor) {
                 Socket sourceSocket = neighbor.getSource();
                 if (sourceSocket != null && (sourceSocket.isClosed() || !sourceSocket.isConnected())) {

@@ -55,7 +55,9 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
-        if (transactionViewModel.getHash().equals(Hash.NULL_HASH)) { return; }
+        if (Hash.NULL_HASH.equals(transactionViewModel.getHash())) {
+            return;
+        }
         if(transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
             tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
         }
@@ -426,7 +428,8 @@ public class TransactionViewModel {
         while(transactionViewModels.size() != 0) {
             transactionVM = TransactionViewModel.fromHash(tangle, transactionViewModels.pop());
             long currentHeight = transactionVM.getHeight();
-            if(trunk.getHash().equals(Hash.NULL_HASH) && trunk.getHeight() == 0 && !transactionVM.getHash().equals(Hash.NULL_HASH)) {
+            if(Hash.NULL_HASH.equals(trunk.getHash()) && trunk.getHeight() == 0
+                    && !Hash.NULL_HASH.equals(transactionVM.getHash())) {
                 if(currentHeight != 1L ){
                     transactionVM.updateHeight(1L);
                     transactionVM.update(tangle, "height");

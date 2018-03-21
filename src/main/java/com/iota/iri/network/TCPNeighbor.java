@@ -78,7 +78,7 @@ public class TCPNeighbor extends Neighbor {
     }
 
     /**
-     * This is a non-blocking write and that makes it necessary to make a defensive copy of the sent data.
+     * This is a non-blocking write and that makes it necessary to make a defendive copy of the sent data.
      *
      * @param packet the data to be queued for sending.
      */

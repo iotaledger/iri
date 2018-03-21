@@ -14,20 +14,18 @@ import java.util.Arrays;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.iota.iri.network.Node.TRANSACTION_PACKET_SIZE;
-
 /**
  * Created by paul on 4/16/17.
  */
 public class UDPReceiver {
     private static final Logger log = LoggerFactory.getLogger(UDPReceiver.class);
 
-    private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
-            TRANSACTION_PACKET_SIZE);
+    private final DatagramPacket receivingPacket;
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final int port;
     private final Node node;
+    private final int packetSize;
 
     private DatagramSocket socket;
 
@@ -39,9 +37,11 @@ public class UDPReceiver {
 
     private Thread receivingThread;
 
-    public UDPReceiver(final int port, final Node node) {
+    public UDPReceiver(final int port, final Node node, int packetSize) {
         this.port = port;
         this.node = node;
+        this.packetSize = packetSize;
+        this.receivingPacket = new DatagramPacket(new byte[packetSize], packetSize);
     }
 
     public void init() throws Exception {
@@ -76,7 +76,7 @@ public class UDPReceiver {
                 try {
                     socket.receive(receivingPacket);
 
-                    if (receivingPacket.getLength() == TRANSACTION_PACKET_SIZE) {
+                    if (receivingPacket.getLength() == packetSize) {
 
                         byte[] bytes = Arrays.copyOf(receivingPacket.getData(), receivingPacket.getLength());
                         SocketAddress address = receivingPacket.getSocketAddress();
@@ -87,7 +87,7 @@ public class UDPReceiver {
                         Thread.yield();
 
                     } else {
-                        receivingPacket.setLength(TRANSACTION_PACKET_SIZE);
+                        receivingPacket.setLength(packetSize);
                     }
                 } catch (final RejectedExecutionException e) {
                     //no free thread, packet dropped

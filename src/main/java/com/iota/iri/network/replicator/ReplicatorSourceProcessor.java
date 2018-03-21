@@ -25,12 +25,12 @@ class ReplicatorSourceProcessor implements Runnable {
 
     private final Socket connection;
 
-    private final static int TRANSACTION_PACKET_SIZE = Node.TRANSACTION_PACKET_SIZE;
     private final boolean shutdown = false;
     private final Node node;
     private final int maxPeers;
     private final boolean testnet;
     private final ReplicatorSinkPool replicatorSinkPool;
+    private final int packetSize;
 
     private boolean existingNeighbor;
     
@@ -46,6 +46,9 @@ class ReplicatorSourceProcessor implements Runnable {
         this.maxPeers = maxPeers;
         this.testnet = testnet;
         this.replicatorSinkPool = replicatorSinkPool;
+        this.packetSize = testnet
+                ? Integer.parseInt(Configuration.TESTNET_PACKET_SIZE)
+                : Integer.parseInt(Configuration.PACKET_SIZE);
     }
 
     @Override
@@ -136,8 +139,8 @@ class ReplicatorSourceProcessor implements Runnable {
             offset = 0;
             while (!shutdown && !neighbor.isStopped()) {
 
-                while ( ((count = stream.read(data, offset, (TRANSACTION_PACKET_SIZE - offset + ReplicatorSinkProcessor.CRC32_BYTES))) != -1) 
-                        && (offset < (TRANSACTION_PACKET_SIZE + ReplicatorSinkProcessor.CRC32_BYTES))) {
+                while ( ((count = stream.read(data, offset, (packetSize- offset + ReplicatorSinkProcessor.CRC32_BYTES))) != -1)
+                        && (offset < (packetSize + ReplicatorSinkProcessor.CRC32_BYTES))) {
                     offset += count;
                 }
               
@@ -149,7 +152,7 @@ class ReplicatorSourceProcessor implements Runnable {
 
                 try {
                     CRC32 crc32 = new CRC32();
-                    for (int i=0; i<TRANSACTION_PACKET_SIZE; i++) {
+                    for (int i=0; i<packetSize; i++) {
                         crc32.update(data[i]);
                     }
                     String crc32_string = Long.toHexString(crc32.getValue());
@@ -160,7 +163,7 @@ class ReplicatorSourceProcessor implements Runnable {
                     
                     boolean crcError = false;
                     for (int i=0; i<ReplicatorSinkProcessor.CRC32_BYTES; i++) {
-                        if (crc32_bytes[i] != data[TRANSACTION_PACKET_SIZE + i]) {
+                        if (crc32_bytes[i] != data[packetSize + i]) {
                             crcError = true;
                             break;
                         }

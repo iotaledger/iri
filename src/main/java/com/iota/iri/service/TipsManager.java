@@ -3,7 +3,6 @@ package com.iota.iri.service;
 import java.util.*;
 
 import com.iota.iri.LedgerValidator;
-import com.iota.iri.Snapshot;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.*;
@@ -23,6 +22,8 @@ public class TipsManager {
     private final LedgerValidator ledgerValidator;
     private final TransactionValidator transactionValidator;
     private final MessageQ messageQ;
+    private final boolean testnet;
+    private final int milestoneStartIndex;
 
     private int RATING_THRESHOLD = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
@@ -46,7 +47,9 @@ public class TipsManager {
                        final TipsViewModel tipsViewModel,
                        final Milestone milestone,
                        final int maxDepth,
-                       final MessageQ messageQ) {
+                       final MessageQ messageQ,
+                       final boolean testnet,
+                       final int milestoneStartIndex) {
         this.tangle = tangle;
         this.ledgerValidator = ledgerValidator;
         this.transactionValidator = transactionValidator;
@@ -54,6 +57,8 @@ public class TipsManager {
         this.milestone = milestone;
         this.maxDepth = maxDepth;
         this.messageQ = messageQ;
+        this.testnet = testnet;
+        this.milestoneStartIndex = milestoneStartIndex;
     }
 
     public void init() {
@@ -110,8 +115,8 @@ public class TipsManager {
             depth = maxDepth;
         }
 
-        if (milestone.latestSolidSubtangleMilestoneIndex > Milestone.MILESTONE_START_INDEX ||
-                milestone.latestMilestoneIndex == Milestone.MILESTONE_START_INDEX) {
+        if (milestone.latestSolidSubtangleMilestoneIndex > milestoneStartIndex ||
+                milestone.latestMilestoneIndex == milestoneStartIndex) {
 
             Map<Hash, Long> ratings = new HashMap<>();
             Set<Hash> analyzedTips = new HashSet<>();
@@ -146,7 +151,8 @@ public class TipsManager {
 
         //branch (extraTip)
         int milestoneIndex = Math.max(milestone.latestSolidSubtangleMilestoneIndex - depth - 1, 0);
-        MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex);
+        MilestoneViewModel milestoneViewModel =
+                MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex, testnet, milestoneStartIndex);
         if (milestoneViewModel != null && milestoneViewModel.getHash() != null) {
             return milestoneViewModel.getHash();
         }

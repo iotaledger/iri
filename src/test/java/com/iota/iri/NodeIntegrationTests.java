@@ -143,7 +143,8 @@ public class NodeIntegrationTests {
         transactions.add(new int[TRINARY_SIZE]);
         Converter.copyTrits(index, transactions.get(0), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE);
         transactions.add(Arrays.copyOf(transactions.get(0), TRINARY_SIZE));
-        System.arraycopy(Iota.TESTNET_COORDINATOR.trits(), 0, transactions.get(0), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
+        Hash coordinator = new Hash(Configuration.TESTNET_COORDINATOR_ADDRESS);
+        System.arraycopy(coordinator.trits(), 0, transactions.get(0), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         setBundleHash(transactions, null);
         List<String> elements = api.attachToTangleStatement(tips[0], tips[1], 13, transactions.stream().map(Converter::trytes).collect(Collectors.toList()));
         api.storeTransactionStatement(elements);

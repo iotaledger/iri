@@ -60,6 +60,7 @@ public class API {
     public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
     private static final Logger log = LoggerFactory.getLogger(API.class);
     private final IXI ixi;
+    private final int milestoneStartIndex;
 
     private Undertow server;
 
@@ -102,6 +103,7 @@ public class API {
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
         testNet = instance.configuration.booling(DefaultConfSettings.TESTNET);
+        milestoneStartIndex = instance.configuration.integer(DefaultConfSettings.MILESTONE_START_INDEX);
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
@@ -144,7 +146,8 @@ public class API {
     }
 
     private void readPreviousEpochsSpentAddresses() {
-        if (!SignedFiles.isFileSignatureValid("/previousEpochsSpentAddresses.txt", "/previousEpochsSpentAddresses.sig",
+        if (!SignedFiles.isFileSignatureValid(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT,
+                Configuration.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
                 Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
             throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
         }
@@ -532,11 +535,8 @@ public class API {
     }
 
     public boolean invalidSubtangleStatus() {
-        return (instance.milestone.latestSolidSubtangleMilestoneIndex == instance.configuration
-                .integer(DefaultConfSettings.MILESTONE_START_INDEX));
+        return (instance.milestone.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
     }
-
-
 
     private AbstractResponse removeNeighborsStatement(List<String> uris) {
         int numberOfRemovedNeighbors = 0;

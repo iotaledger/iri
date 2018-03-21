@@ -1,23 +1,14 @@
 package com.iota.iri;
-import com.iota.iri.controllers.MilestoneViewModel;
-import com.iota.iri.controllers.StateDiffViewModel;
-import com.iota.iri.hash.Curl;
-import com.iota.iri.hash.ISS;
-import com.iota.iri.hash.Sponge;
-import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.model.Hash;
+
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Converter;
-import org.apache.commons.lang3.ArrayUtils;
+import com.iota.iri.model.Hash;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.util.*;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.stream.Collectors;
@@ -29,46 +20,61 @@ public class Snapshot {
     public static int SNAPSHOT_PUBKEY_DEPTH = 6;
     public static int SNAPSHOT_INDEX = 2;
     public static int SPENT_ADDRESSES_INDEX = 3;
+    private static Snapshot initialSnapshot;
 
-    public static final Map<Hash, Long> initialState = new HashMap<>();
-    public static final Snapshot initialSnapshot;
+
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
-    static {
 
-        if (!SignedFiles.isFileSignatureValid("/Snapshot.txt", "/Snapshot.sig", SNAPSHOT_PUBKEY, SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
-            throw new RuntimeException("Snapshot signature failed.");
+    public static Snapshot init(String snapshotFile, String snapshotSigFile, boolean testnet) {
+        //This is not thread-safe (and it is ok)
+        if (initialSnapshot == null) {
+            if (!testnet && !SignedFiles.isFileSignatureValid(snapshotFile, snapshotSigFile, SNAPSHOT_PUBKEY,
+                    SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
+                throw new RuntimeException("Snapshot signature failed.");
+            }
+
+            Map<Hash, Long> initialState = initInitialState(snapshotFile);
+            initialSnapshot = new Snapshot(initialState, 0);
+            checkStateHasCorrectSupply(initialState);
+            checkInitialSnapshotIsConsistent(initialState);
         }
+        return initialSnapshot;
+    }
 
-        InputStream in = Snapshot.class.getResourceAsStream("/Snapshot.txt");
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+    private static void checkInitialSnapshotIsConsistent(Map<Hash, Long> initialState) {
+        if (!isConsistent(initialState)) {
+            log.error("Initial Snapshot inconsistent.");
+            System.exit(-1);
+        }
+    }
+
+    private static void checkStateHasCorrectSupply(Map<Hash, Long> initialState) {
+        long stateValue = initialState.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
+        if (stateValue != TransactionViewModel.SUPPLY) {
+            log.error("Transaction resolves to incorrect ledger balance: {}", TransactionViewModel.SUPPLY - stateValue);
+            System.exit(-1);
+        }
+    }
+
+    private static Map<Hash, Long> initInitialState(String snapshotFile) {
         String line;
-        try {
-            while((line = reader.readLine()) != null) {
+        Map<Hash, Long> state = new HashMap<>();
+        File snapshot = new File(snapshotFile);
+        try (BufferedReader reader = new BufferedReader(new FileReader(snapshot))) {
+            while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(";", 2);
-                if (parts.length >= 2)
-                {
+                if (parts.length >= 2) {
                     String key = parts[0];
                     String value = parts[1];
-                    initialState.put(new Hash(key), Long.valueOf(value));
+                    state.put(new Hash(key), Long.valueOf(value));
                 }
             }
         } catch (IOException e) {
             System.out.println("Failed to load snapshot.");
             System.exit(-1);
         }
-
-        initialSnapshot = new Snapshot(initialState, 0);
-        long stateValue = initialState.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
-        if(stateValue != TransactionViewModel.SUPPLY) {
-            log.error("Transaction resolves to incorrect ledger balance: {}", TransactionViewModel.SUPPLY - stateValue);
-            System.exit(-1);
-        }
-
-        if(!isConsistent(initialState)) {
-            System.out.println("Initial Snapshot inconsistent.");
-            System.exit(-1);
-        }
+        return state;
     }
 
     protected final Map<Hash, Long> state;

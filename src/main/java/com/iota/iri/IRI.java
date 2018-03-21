@@ -4,7 +4,6 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.core.util.StatusPrinter;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.model.Hash;
 import com.iota.iri.service.API;
 import com.sanityinc.jargs.CmdLineParser;
 import com.sanityinc.jargs.CmdLineParser.Option;
@@ -14,6 +13,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Optional;
 
 /**
  * Main IOTA Reference Implementation starting class
@@ -22,9 +22,6 @@ public class IRI {
 
     private static final Logger log = LoggerFactory.getLogger(IRI.class);
 
-    public static final Hash MAINNET_COORDINATOR = new Hash("KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
-    public static final Hash TESTNET_COORDINATOR = new Hash("XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA");
-
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
     public static final String VERSION = "1.4.2.2";
@@ -32,6 +29,7 @@ public class IRI {
     public static API api;
     public static IXI ixi;
     public static Configuration configuration;
+    private static final String TESTNET_FLAG_REQUIRED = "--testnet flag must be turned on to use ";
 
     public static void main(final String[] args) throws IOException {
         configuration = new Configuration();
@@ -109,6 +107,15 @@ public class IRI {
         final Option<Boolean> sync = parser.addBooleanOption("sync");
         final Option<Boolean> dnsResolutionFalse = parser.addBooleanOption("dns-resolution-false");
         final Option<String> maxPeers = parser.addStringOption("max-peers");
+        final Option<String> testnetCoordinator = parser.addStringOption("testnet-coordinator");
+        final Option<Boolean> disableCooValidation = parser.addBooleanOption("testnet-no-coo-validation");
+        final Option<String> snapshot = parser.addStringOption("snapshot");
+        final Option<String> snapshotSignature = parser.addStringOption("snapshot-sig");
+        final Option<Integer> minimalWeightMagnitude = parser.addIntegerOption("mwm");
+        final Option<Integer> milestoneStartIndex = parser.addIntegerOption("milestone-start");
+        final Option<Integer> milestoneKeys = parser.addIntegerOption("milestone-keys");
+        final Option<Long> snapshotTime = parser.addLongOption("snapshot-timestamp");
+
 
         try {
             assert args != null;
@@ -124,6 +131,24 @@ public class IRI {
         if (confFilePath != null) {
             configuration.put(DefaultConfSettings.CONFIG, confFilePath);
             configuration.init();
+        }
+
+        //This block cannot be moved down
+        final boolean isTestnet = Optional.ofNullable(parser.getOptionValue(testnet)).orElse(Boolean.FALSE)
+                || configuration.booling(DefaultConfSettings.TESTNET);
+        if (isTestnet) {
+            configuration.put(DefaultConfSettings.TESTNET, "true");
+            configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
+            configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+            configuration.put(DefaultConfSettings.COORDINATOR, Configuration.TESTNET_COORDINATOR_ADDRESS);
+            configuration.put(DefaultConfSettings.SNAPSHOT_FILE, Configuration.TESTNET_SNAPSHOT_FILE);
+            configuration.put(DefaultConfSettings.MILESTONE_START_INDEX, Configuration.TESTNET_MILESTONE_START_INDEX);
+            configuration.put(DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE, Configuration.TESTNET_SNAPSHOT_SIG_FILE);
+            configuration.put(DefaultConfSettings.MWM, Configuration.TESTNET_MWM);
+            configuration.put(DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE,
+                    Configuration.TESTNET_NUM_KEYS_IN_MILESTONE);
+            configuration.put(DefaultConfSettings.TRANSACTION_PACKET_SIZE, Configuration.TESTNET_PACKET_SIZE);
+            configuration.put(DefaultConfSettings.REQUEST_HASH_SIZE, Configuration.TESTNET_REQ_HASH_SIZE);
         }
 
         // mandatory args
@@ -191,10 +216,55 @@ public class IRI {
             StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
         }
 
-        if (parser.getOptionValue(testnet) != null) {
-            configuration.put(DefaultConfSettings.TESTNET, "true");
-            configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
-            configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), "testnetdb.log");
+
+        final String coordinatorAddress = parser.getOptionValue(testnetCoordinator);
+        if (coordinatorAddress != null) {
+            if (isTestnet) {
+                configuration.put(DefaultConfSettings.COORDINATOR, coordinatorAddress);
+            } else {
+                log.warn(TESTNET_FLAG_REQUIRED + testnetCoordinator.longForm());
+            }
+        }
+
+        final Boolean noCooValidation = parser.getOptionValue(disableCooValidation);
+        if (noCooValidation != null) {
+            if (isTestnet) {
+                configuration.put(DefaultConfSettings.DONT_VALIDATE_TESTNET_MILESTONE_SIG, noCooValidation.toString());
+            }
+            else {
+                log.warn(TESTNET_FLAG_REQUIRED + noCooValidation);
+            }
+        }
+
+        //TODO check what happens if string is invalid int
+        final Integer mwm = parser.getOptionValue(minimalWeightMagnitude);
+        if (mwm != null) {
+            configuration.put(DefaultConfSettings.MWM, String.valueOf(mwm));
+        }
+
+        final String snapshotFile = parser.getOptionValue(snapshot);
+        if (snapshotFile != null) {
+            configuration.put(DefaultConfSettings.SNAPSHOT_FILE, snapshotFile);
+        }
+
+        final String snapshotSig = parser.getOptionValue(snapshotSignature);
+        if (snapshotSig != null) {
+            configuration.put(DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE, snapshotSig);
+        }
+
+        final Integer milestoneStart = parser.getOptionValue(milestoneStartIndex);
+        if (milestoneStart != null) {
+            configuration.put(DefaultConfSettings.MILESTONE_START_INDEX, String.valueOf(milestoneStart));
+        }
+
+        final Integer numberOfKeys = parser.getOptionValue(milestoneKeys);
+        if (numberOfKeys != null) {
+            configuration.put(DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE, String.valueOf(numberOfKeys));
+        }
+
+        final Long snapshotTimestamp = parser.getOptionValue(snapshotTime);
+        if (snapshotTimestamp != null) {
+            configuration.put(DefaultConfSettings.SNAPSHOT_TIME, String.valueOf(snapshotTimestamp));
         }
 
         if (parser.getOptionValue(revalidate) != null) {

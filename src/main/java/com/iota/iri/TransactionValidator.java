@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
@@ -29,8 +30,8 @@ public class TransactionValidator {
     private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
     private int MIN_WEIGHT_MAGNITUDE = 81;
-    private static long MIN_TIMESTAMP = 1517180400;
-    private static long MIN_TIMESTAMP_MS = MIN_TIMESTAMP * 1000;
+    private static long snapshotTimestamp;
+    private static long snapshotTimestampMs;
     private static long MAX_TIMESTAMP_FUTURE = 2 * 60 * 60;
     private static long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1000;
 
@@ -42,21 +43,21 @@ public class TransactionValidator {
     private final Set<Hash> newSolidTransactionsOne = new LinkedHashSet<>();
     private final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
 
-    public TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, MessageQ messageQ) {
+    public TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester,
+                                MessageQ messageQ, long snapshotTimestamp) {
         this.tangle = tangle;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
         this.messageQ = messageQ;
+        TransactionValidator.snapshotTimestamp = snapshotTimestamp;
+        TransactionValidator.snapshotTimestampMs = snapshotTimestamp * 1000;
     }
 
-    public void init(boolean testnet,int MAINNET_MWM, int TESTNET_MWM) {
-        if(testnet) {
-            MIN_WEIGHT_MAGNITUDE = TESTNET_MWM;
-        } else {
-            MIN_WEIGHT_MAGNITUDE = MAINNET_MWM;
-        }
+    public void init(boolean testnet, int mwm) {
+        MIN_WEIGHT_MAGNITUDE = mwm;
+        
         //lowest allowed MWM encoded in 46 bytes.
-        if (MIN_WEIGHT_MAGNITUDE<13){
+        if (!testnet && MIN_WEIGHT_MAGNITUDE<13){
             MIN_WEIGHT_MAGNITUDE = 13;
         }
 
@@ -75,10 +76,10 @@ public class TransactionValidator {
 
     private static boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
         if (transactionViewModel.getAttachmentTimestamp() == 0) {
-            return transactionViewModel.getTimestamp() < MIN_TIMESTAMP && !Objects.equals(transactionViewModel.getHash(), Hash.NULL_HASH)
+            return transactionViewModel.getTimestamp() < snapshotTimestamp && !Objects.equals(transactionViewModel.getHash(), Hash.NULL_HASH)
                     || transactionViewModel.getTimestamp() > (System.currentTimeMillis() / 1000) + MAX_TIMESTAMP_FUTURE;
         }
-        return transactionViewModel.getAttachmentTimestamp() < MIN_TIMESTAMP_MS
+        return transactionViewModel.getAttachmentTimestamp() < snapshotTimestampMs
                 || transactionViewModel.getAttachmentTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
     }
 

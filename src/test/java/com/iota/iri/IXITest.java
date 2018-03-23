@@ -31,7 +31,7 @@ public class IXITest {
     public static void setUp() throws Exception {
         ixiDir.create();
         ixi = new IXI();
-        ixi.init(ixiDir.getRoot().getAbsolutePath().toString());
+        ixi.init(ixiDir.getRoot().getAbsolutePath());
     }
 
     @AfterClass

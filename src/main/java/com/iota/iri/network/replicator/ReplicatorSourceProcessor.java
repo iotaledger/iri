@@ -1,5 +1,11 @@
 package com.iota.iri.network.replicator;
 
+import com.iota.iri.network.Neighbor;
+import com.iota.iri.network.Node;
+import com.iota.iri.network.TCPNeighbor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -7,17 +13,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.zip.CRC32;
-
-import com.iota.iri.network.TCPNeighbor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.network.Neighbor;
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Hash;
-import com.iota.iri.network.Node;
-import com.iota.iri.controllers.TransactionViewModel;
 
 class ReplicatorSourceProcessor implements Runnable {
 
@@ -77,7 +72,7 @@ class ReplicatorSourceProcessor implements Runnable {
                 int maxPeersAllowed = maxPeers;
                 if (!testnet || Neighbor.getNumPeers() >= maxPeersAllowed) {
                     String hostAndPort = inet_socket_address.getHostName() + ":" + String.valueOf(inet_socket_address.getPort());
-                    if (Node.rejectedAddresses.add(inet_socket_address.getHostName())) {
+                    if (node.rejectedAddresses.add(inet_socket_address.getHostName())) {
                         String sb = "***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://"
                             + hostAndPort
                             + " (" + inet_socket_address.getAddress().getHostAddress() + ") - closing connection";                    

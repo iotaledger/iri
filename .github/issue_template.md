@@ -9,6 +9,9 @@ If you have general questions on IOTA you can go to https://iota.stackexchange.c
 ### Bug description
 A general description of the bug.
 
+### Hardware Spec
+On what hardware is the node running on?
+
 ### Steps To Reproduce
 1. 
 2. 

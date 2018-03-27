@@ -2,8 +2,9 @@
 Hints for a successful PR:
 1. It is recommended that before you submit a PR to IOTA, to open an issue first and assign yourself.
 This way you may get inputs and discover parallel PRs to the one you want to submit.
-2. In case of a big PR, consider breaking it up to smaller PRs. This will help getting it merged in an incremental process
-3. It will be helpful if you make additional comments on the code via github PR review to explain the chooices you made
+2. In case of a big PR, consider breaking it up to smaller PRs. This will help getting it merged in an incremental process.
+3. Note that a PR should have a *single* area of responsibility. If your PR does more than one thing than it should be splitted to several PRs!!!!!
+4. It will be helpful if you make additional comments on the code via github PR review to explain the choices you made
 -->
 
 # Description

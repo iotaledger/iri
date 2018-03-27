@@ -1,8 +1,6 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.model.Hash;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.HashSet;
@@ -15,7 +13,6 @@ import java.util.concurrent.ExecutionException;
  * Created by paul on 3/14/17 for iri-testnet.
  */
 public class TipsViewModel {
-    private static final Logger log = LoggerFactory.getLogger(TipsViewModel.class);
 
     // THIS NEEDS TO BE PACKAGE LEVEL ACCESS FOR TESTS ONLY
     public static final int MAX_TIPS = 5000;

@@ -29,7 +29,7 @@ public class TransactionValidator {
     private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
     private int MIN_WEIGHT_MAGNITUDE = 81;
-    private static long MIN_TIMESTAMP = 1517180400;
+    private static long MIN_TIMESTAMP = 1522306500;
     private static long MIN_TIMESTAMP_MS = MIN_TIMESTAMP * 1000;
     private static long MAX_TIMESTAMP_FUTURE = 2 * 60 * 60;
     private static long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1000;

@@ -41,10 +41,11 @@ public class Configuration {
     public static final String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = Configuration.class
             .getResource("/previousEpochsSpentAddresses.sig").getFile();
     public static final String MAINNET_MILESTONE_START_INDEX = "338000";
-    public static final String TESTNET_MILESTONE_START_INDEX = "199";
+    public static final String TESTNET_MILESTONE_START_INDEX = "434525";
     public static final String MAINNET_NUM_KEYS_IN_MILESTONE = "20";
     public static final String TESTNET_NUM_KEYS_IN_MILESTONE = "22";
     public static final String GLOBAL_SNAPSHOT_TIME = "1517180400";
+    public static final String TESTNET_GLOBAL_SNAPSHOT_TIME = "1522306500";
 
 
     public static final String MAINNET_MWM = "14";

@@ -5,7 +5,7 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.Pair;
-import com.iota.iri.utils.Quietly;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
 import org.rocksdb.util.SizeUnit;
@@ -18,18 +18,12 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
 
-/**
- * Created by paul on 3/2/17 for iri.
- * Edited by footloosejava on 03/28/2018
- * All Sets returned are unmodifiable.
- */
 public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private static final Logger log = LoggerFactory.getLogger(RocksDBPersistenceProvider.class);
     private static final int BLOOM_FILTER_BITS_PER_KEY = 10;
 
     private static final Pair<Indexable, Persistable> PAIR_OF_NULLS = new Pair<>(null, null);
-    private static final Set<Indexable> EMPTY_SET = Collections.emptySet();
 
     private final List<String> columnFamilyNames = Arrays.asList(
         new String(RocksDB.DEFAULT_COLUMN_FAMILY),
@@ -107,9 +101,9 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     @Override
     public void shutdown() {
         for (final ColumnFamilyHandle columnFamilyHandle : columnFamilyHandles) {
-            Quietly.close(columnFamilyHandle::close);
+            IOUtils.closeQuietly(columnFamilyHandle::close);
         }
-        Quietly.closeAll(db::close, options::close, bloomFilter::close);
+        IOUtils.closeQuietly(db::close, options::close, bloomFilter::close);
     }
 
     @Override
@@ -149,7 +143,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     indexables.add(new Hash(iterator.key()));
                 }
             }
-            return indexables == null ? EMPTY_SET : Collections.unmodifiableSet(indexables);
+            return indexables == null ? Collections.emptySet() : Collections.unmodifiableSet(indexables);
         }
     }
 
@@ -191,27 +185,27 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 iterator.seek(new Hash(value, 0, value.length).bytes());
 
                 byte[] found;
-                while (iterator.isValid() && compareStartsWithKey(value, found = iterator.key())) {
+                while (iterator.isValid() && keyStartsWithValue(value, found = iterator.key())) {
                     keys = keys == null ? new HashSet<>() : keys;
                     keys.add(new Hash(found));
                     iterator.next();
                 }
             }
         }
-        return keys == null ? EMPTY_SET : Collections.unmodifiableSet(keys);
+        return keys == null ? Collections.emptySet() : Collections.unmodifiableSet(keys);
     }
 
     /**
-     * @param key   What we are looking for.
-     * @param value The bytes we are searching in.
-     * @return true If the value byte[] starts with the key byte[].
+     * @param value What we are looking for.
+     * @param key   The bytes we are searching in.
+     * @return true If the {@code key} starts with the {@code value}.
      */
-    private boolean compareStartsWithKey(byte[] key, byte[] value) {
-        if (value == null || value.length < key.length) {
+    private static boolean keyStartsWithValue(byte[] value, byte[] key) {
+        if (key == null || key.length < value.length) {
             return false;
         }
-        for (int n = 0; n < key.length; n++) {
-            if (key[n] != value[n]) {
+        for (int n = 0; n < value.length; n++) {
+            if (value[n] != key[n]) {
                 return false;
             }
         }
@@ -399,8 +393,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             File pathToLogDir = Paths.get(logPath).toFile();
             if (!pathToLogDir.exists() || !pathToLogDir.isDirectory()) {
                 boolean success = pathToLogDir.mkdir();
-                if(!success){
-                    log.warn("Unable to make directory: {}",pathToLogDir);
+                if (!success) {
+                    log.warn("Unable to make directory: {}", pathToLogDir);
                 }
             }
 
@@ -452,7 +446,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             fillmodelColumnHandles();
 
         } catch (Exception e) {
-            Quietly.close(db::close);
+            IOUtils.closeQuietly(db::close);
         }
     }
 

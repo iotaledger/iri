@@ -23,6 +23,7 @@ public class UDPNeighbor extends Neighbor {
 
     /**
      * This is a blocking write and it is not necessary to copy the sent data.
+     *
      * @param packet the packet to be sent immediately.
      */
     @Override

@@ -149,6 +149,7 @@ public class IRI {
                     Configuration.TESTNET_NUM_KEYS_IN_MILESTONE);
             configuration.put(DefaultConfSettings.TRANSACTION_PACKET_SIZE, Configuration.TESTNET_PACKET_SIZE);
             configuration.put(DefaultConfSettings.REQUEST_HASH_SIZE, Configuration.TESTNET_REQ_HASH_SIZE);
+            configuration.put(DefaultConfSettings.SNAPSHOT_TIME, Configuration.TESTNET_GLOBAL_SNAPSHOT_TIME);
         }
 
         // mandatory args

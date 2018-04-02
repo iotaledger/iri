@@ -7,14 +7,9 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
-/**
- * Created by paul on 3/14/17 for iri-testnet.
- */
 public class TipsViewModel {
 
-    // THIS NEEDS TO BE PACKAGE LEVEL ACCESS FOR TESTS ONLY
     public static final int MAX_TIPS = 5000;
 
     private final FifoHashCache<Hash> tips = new FifoHashCache<>(TipsViewModel.MAX_TIPS);
@@ -23,13 +18,13 @@ public class TipsViewModel {
     private final SecureRandom seed = new SecureRandom();
     private final Object sync = new Object();
 
-    public void addTipHash(Hash hash) throws ExecutionException, InterruptedException {
+    public void addTipHash(Hash hash) {
         synchronized (sync) {
             tips.add(hash);
         }
     }
 
-    public void removeTipHash(Hash hash) throws ExecutionException, InterruptedException {
+    public void removeTipHash(Hash hash) {
         synchronized (sync) {
             if (!tips.remove(hash)) {
                 solidTips.remove(hash);

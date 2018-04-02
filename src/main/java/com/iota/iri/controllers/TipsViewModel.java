@@ -7,7 +7,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 
+/**
+ * Created by paul on 3/14/17 for iri-testnet.
+ */
 public class TipsViewModel {
 
     // THIS NEEDS TO BE PACKAGE LEVEL ACCESS FOR TESTS ONLY
@@ -19,45 +23,43 @@ public class TipsViewModel {
     private final SecureRandom seed = new SecureRandom();
     private final Object sync = new Object();
 
-    /**
-     * @param hash The tip to add.
-     * @return true If the {hash} was added to {@code tips} and {@code tips} did not already contain it.
-     */
-    public boolean addTipHash(Hash hash) {
+    public void addTipHash(Hash hash) throws ExecutionException, InterruptedException {
         synchronized (sync) {
-            return tips.add(hash);
+            tips.add(hash);
         }
     }
 
-    /**
-     * @param hash The tip to remove.
-     * @return true If the tip was removed from either {@code tips} or {@code solidTips}.
-     */
-    public boolean removeTipHash(Hash hash) {
+    public void removeTipHash(Hash hash) throws ExecutionException, InterruptedException {
         synchronized (sync) {
-            return tips.remove(hash) || solidTips.remove(hash);
+            if (!tips.remove(hash)) {
+                solidTips.remove(hash);
+            }
         }
     }
 
-    /**
-     * This removes the tip from {@code tips} and adds it to {@code solidTips}.
-     *
-     * @param tip The tip to set solid.
-     * @return true If the tip was removed from {@code tips} and added to {@code solidTips}.
-     */
-    public boolean setSolid(Hash tip) {
+    public void setSolid(Hash tip) {
         synchronized (sync) {
-            return tips.remove(tip) && solidTips.add(tip);
+            if (tips.remove(tip)) {
+                solidTips.add(tip);
+            }
         }
     }
 
     public Set<Hash> getTips() {
+        Set<Hash> hashes = new HashSet<>();
         synchronized (sync) {
-            Set<Hash> hashes = new HashSet<>(tips.size() + solidTips.size());
-            tips.iterator().forEachRemaining(hashes::add);
-            solidTips.iterator().forEachRemaining(hashes::add);
-            return hashes;
+            Iterator<Hash> hashIterator;
+            hashIterator = tips.iterator();
+            while (hashIterator.hasNext()) {
+                hashes.add(hashIterator.next());
+            }
+
+            hashIterator = solidTips.iterator();
+            while (hashIterator.hasNext()) {
+                hashes.add(hashIterator.next());
+            }
         }
+        return hashes;
     }
 
     public Hash getRandomSolidTipHash() {
@@ -67,12 +69,14 @@ public class TipsViewModel {
                 return getRandomNonSolidTipHash();
             }
             int index = seed.nextInt(size);
-            Iterator<Hash> hashIterator = solidTips.iterator();
+            Iterator<Hash> hashIterator;
+            hashIterator = solidTips.iterator();
             Hash hash = null;
             while (index-- >= 0 && hashIterator.hasNext()) {
                 hash = hashIterator.next();
             }
             return hash;
+            //return solidTips.size() != 0 ? solidTips.get(seed.nextInt(solidTips.size())) : getRandomNonSolidTipHash();
         }
     }
 
@@ -83,12 +87,14 @@ public class TipsViewModel {
                 return null;
             }
             int index = seed.nextInt(size);
-            Iterator<Hash> hashIterator = tips.iterator();
+            Iterator<Hash> hashIterator;
+            hashIterator = tips.iterator();
             Hash hash = null;
             while (index-- >= 0 && hashIterator.hasNext()) {
                 hash = hashIterator.next();
             }
             return hash;
+            //return tips.size() != 0 ? tips.get(seed.nextInt(tips.size())) : null;
         }
     }
 

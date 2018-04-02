@@ -86,22 +86,6 @@ public class MilestoneViewModel {
         return null;
     }
 
-    public MilestoneViewModel nextWithSnapshot(Tangle tangle) throws Exception {
-        MilestoneViewModel milestoneViewModel = next(tangle);
-        while(milestoneViewModel !=null && !StateDiffViewModel.exists(tangle, milestoneViewModel.getHash())) {
-            milestoneViewModel = milestoneViewModel.next(tangle);
-        }
-        return milestoneViewModel;
-    }
-
-    public static MilestoneViewModel firstWithSnapshot(Tangle tangle) throws Exception {
-        MilestoneViewModel milestoneViewModel = first(tangle);
-        while(milestoneViewModel !=null && !StateDiffViewModel.exists(tangle, milestoneViewModel.getHash())) {
-            milestoneViewModel = milestoneViewModel.next(tangle);
-        }
-        return milestoneViewModel;
-    }
-
     public static MilestoneViewModel findClosestPrevMilestone(Tangle tangle, int index) throws Exception {
         Pair<Indexable, Persistable> milestonePair = tangle.previous(Milestone.class, new IntegerIndex(index));
         if(milestonePair != null && milestonePair.hi != null) {
@@ -119,14 +103,6 @@ public class MilestoneViewModel {
             return new MilestoneViewModel((Milestone) milestonePair.hi);
         }
         return null;
-    }
-
-    public static MilestoneViewModel latestWithSnapshot(Tangle tangle) throws Exception {
-        MilestoneViewModel milestoneViewModel = latest(tangle);
-        while(milestoneViewModel !=null && !StateDiffViewModel.exists(tangle, milestoneViewModel.getHash())) {
-            milestoneViewModel = milestoneViewModel.previous(tangle);
-        }
-        return milestoneViewModel;
     }
 
     public boolean store(Tangle tangle) throws Exception {

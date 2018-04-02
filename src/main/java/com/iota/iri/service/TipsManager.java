@@ -1,18 +1,18 @@
 package com.iota.iri.service;
 
-import java.util.*;
-
 import com.iota.iri.LedgerValidator;
-import com.iota.iri.Snapshot;
+import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.controllers.*;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.Milestone;
+import java.util.*;
 
 public class TipsManager {
 
@@ -69,6 +69,8 @@ public class TipsManager {
                     Thread.sleep(RESCAN_TX_TO_REQUEST_INTERVAL);
                 } catch (InterruptedException e) {
                     log.error("Solidity rescan interrupted.");
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
         }, "Tip Solidity Rescan");
@@ -91,7 +93,7 @@ public class TipsManager {
         }
     }
 
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         shuttingDown = true;
         try {
             if (solidityRescanHandle != null && solidityRescanHandle.isAlive()) {
@@ -99,8 +101,8 @@ public class TipsManager {
             }
         } catch (Exception e) {
             log.error("Error in shutdown", e);
+            Thread.currentThread().interrupt();
         }
-
     }
 
     Hash transactionToApprove(final Set<Hash> visitedHashes, final Map<Hash, Long> diff, final Hash reference, final Hash extraTip, int depth, final int iterations, Random seed) throws Exception {

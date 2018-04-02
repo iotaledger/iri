@@ -1,15 +1,14 @@
 package com.iota.iri;
 
 import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.zmq.MessageQ;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
-
+import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,14 +48,14 @@ public class TransactionValidator {
         this.messageQ = messageQ;
     }
 
-    public void init(boolean testnet,int MAINNET_MWM, int TESTNET_MWM) {
-        if(testnet) {
+    public void init(boolean testnet, int MAINNET_MWM, int TESTNET_MWM) {
+        if (testnet) {
             MIN_WEIGHT_MAGNITUDE = TESTNET_MWM;
         } else {
             MIN_WEIGHT_MAGNITUDE = MAINNET_MWM;
         }
         //lowest allowed MWM encoded in 46 bytes.
-        if (MIN_WEIGHT_MAGNITUDE<13){
+        if (MIN_WEIGHT_MAGNITUDE < 13) {
             MIN_WEIGHT_MAGNITUDE = 13;
         }
 
@@ -64,9 +63,14 @@ public class TransactionValidator {
         newSolidThread.start();
     }
 
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         shuttingDown.set(true);
-        newSolidThread.join();
+        try {
+            newSolidThread.join();
+        } catch (InterruptedException e) {
+            log.info("interrupted");
+            Thread.currentThread().interrupt();
+        }
     }
 
     public int getMinWeightMagnitude() {
@@ -76,16 +80,16 @@ public class TransactionValidator {
     private static boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
         if (transactionViewModel.getAttachmentTimestamp() == 0) {
             return transactionViewModel.getTimestamp() < MIN_TIMESTAMP && !Objects.equals(transactionViewModel.getHash(), Hash.NULL_HASH)
-                    || transactionViewModel.getTimestamp() > (System.currentTimeMillis() / 1000) + MAX_TIMESTAMP_FUTURE;
+                || transactionViewModel.getTimestamp() > (System.currentTimeMillis() / 1000) + MAX_TIMESTAMP_FUTURE;
         }
         return transactionViewModel.getAttachmentTimestamp() < MIN_TIMESTAMP_MS
-                || transactionViewModel.getAttachmentTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
+            || transactionViewModel.getAttachmentTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
     }
 
     public static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
         transactionViewModel.setAttachmentData();
-        if(hasInvalidTimestamp(transactionViewModel)) {
+        if (hasInvalidTimestamp(transactionViewModel)) {
             throw new StaleTimestampException("Invalid transaction timestamp.");
         }
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
@@ -95,7 +99,7 @@ public class TransactionValidator {
         }
 
         int weightMagnitude = transactionViewModel.weightMagnitude;
-        if(weightMagnitude < minWeightMagnitude) {
+        if (weightMagnitude < minWeightMagnitude) {
             throw new RuntimeException("Invalid transaction hash");
         }
 
@@ -109,6 +113,7 @@ public class TransactionValidator {
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
+
     public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude) {
         return validate(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
 
@@ -123,7 +128,7 @@ public class TransactionValidator {
     private final AtomicInteger nextSubSolidGroup = new AtomicInteger(1);
 
     public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
-        if(TransactionViewModel.fromHash(tangle, hash).isSolid()) {
+        if (TransactionViewModel.fromHash(tangle, hash).isSolid()) {
             return true;
         }
         Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -133,7 +138,7 @@ public class TransactionValidator {
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (analyzedHashes.add(hashPointer)) {
                 final TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hashPointer);
-                if(!transaction.isSolid()) {
+                if (!transaction.isSolid()) {
                     if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
                         transactionRequester.requestTransaction(hashPointer, milestone);
                         solid = false;
@@ -166,7 +171,7 @@ public class TransactionValidator {
 
     private Runnable spawnSolidTransactionsPropagation() {
         return () -> {
-            while(!shuttingDown.get()) {
+            while (!shuttingDown.get()) {
                 Set<Hash> newSolidHashes = new HashSet<>();
                 useFirst.set(!useFirst.get());
                 synchronized (cascadeSync) {
@@ -178,15 +183,15 @@ public class TransactionValidator {
                 }
                 Iterator<Hash> cascadeIterator = newSolidHashes.iterator();
                 Set<Hash> hashesToCascade = new HashSet<>();
-                while(cascadeIterator.hasNext() && !shuttingDown.get()) {
+                while (cascadeIterator.hasNext() && !shuttingDown.get()) {
                     try {
                         Hash hash = cascadeIterator.next();
                         TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
                         Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
-                        for(Hash h: approvers) {
+                        for (Hash h : approvers) {
                             TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
-                            if(quietQuickSetSolid(tx)) {
-                                    tx.update(tangle, "solid");
+                            if (quietQuickSetSolid(tx)) {
+                                tx.update(tangle, "solid");
                             } else {
                                 if (transaction.isSolid()) {
                                     addSolidTransaction(hash);
@@ -208,7 +213,9 @@ public class TransactionValidator {
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    log.info("interrupted");
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
         };
@@ -216,13 +223,13 @@ public class TransactionValidator {
 
     public void updateStatus(TransactionViewModel transactionViewModel) throws Exception {
         transactionRequester.clearTransactionRequest(transactionViewModel.getHash());
-        if(transactionViewModel.getApprovers(tangle).size() == 0) {
+        if (transactionViewModel.getApprovers(tangle).size() == 0) {
             tipsViewModel.addTipHash(transactionViewModel.getHash());
         }
         tipsViewModel.removeTipHash(transactionViewModel.getTrunkTransactionHash());
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
 
-        if(quickSetSolid(transactionViewModel)) {
+        if (quickSetSolid(transactionViewModel)) {
             addSolidTransaction(transactionViewModel.getHash());
         }
     }
@@ -237,7 +244,7 @@ public class TransactionValidator {
     }
 
     private boolean quickSetSolid(final TransactionViewModel transactionViewModel) throws Exception {
-        if(!transactionViewModel.isSolid()) {
+        if (!transactionViewModel.isSolid()) {
             boolean solid = true;
             if (!checkApproovee(transactionViewModel.getTrunkTransaction(tangle))) {
                 solid = false;
@@ -245,7 +252,7 @@ public class TransactionValidator {
             if (!checkApproovee(transactionViewModel.getBranchTransaction(tangle))) {
                 solid = false;
             }
-            if(solid) {
+            if (solid) {
                 transactionViewModel.updateSolid(true);
                 transactionViewModel.updateHeights(tangle);
                 return true;
@@ -256,18 +263,18 @@ public class TransactionValidator {
     }
 
     private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
-        if(approovee.getType() == PREFILLED_SLOT) {
+        if (approovee.getType() == PREFILLED_SLOT) {
             transactionRequester.requestTransaction(approovee.getHash(), false);
             return false;
         }
-        if(approovee.getHash().equals(Hash.NULL_HASH)) {
+        if (approovee.getHash().equals(Hash.NULL_HASH)) {
             return true;
         }
         return approovee.isSolid();
     }
 
     public static class StaleTimestampException extends RuntimeException {
-        public StaleTimestampException (String message) {
+        public StaleTimestampException(String message) {
             super(message);
         }
     }

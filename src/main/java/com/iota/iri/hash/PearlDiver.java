@@ -1,8 +1,6 @@
 package com.iota.iri.hash;
 
-import static com.iota.iri.hash.PearlDiver.State.CANCELLED;
-import static com.iota.iri.hash.PearlDiver.State.COMPLETED;
-import static com.iota.iri.hash.PearlDiver.State.RUNNING;
+import static com.iota.iri.hash.PearlDiver.State.*;
 
 /**
  * (c) 2016 Come-from-Beyond
@@ -195,6 +193,7 @@ public class PearlDiver {
                 }
             }
         } catch (final InterruptedException e) {
+            Thread.currentThread().interrupt();
             synchronized (syncObj) {
                 state = CANCELLED;
             }
@@ -204,6 +203,7 @@ public class PearlDiver {
             try {
                 worker.join();
             } catch (final InterruptedException e) {
+                Thread.currentThread().interrupt();
                 synchronized (syncObj) {
                     state = CANCELLED;
                 }

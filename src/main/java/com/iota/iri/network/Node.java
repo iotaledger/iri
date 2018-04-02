@@ -645,9 +645,14 @@ public class Node {
         }
     }
 
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         shuttingDown.set(true);
-        executor.awaitTermination(6, TimeUnit.SECONDS);
+        try {
+            executor.awaitTermination(6, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            log.info("interrupted");
+            Thread.currentThread().interrupt();
+        }
     }
 
     // helpers methods

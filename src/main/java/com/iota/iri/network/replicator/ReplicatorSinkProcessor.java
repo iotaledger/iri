@@ -1,5 +1,10 @@
 package com.iota.iri.network.replicator;
 
+import com.iota.iri.network.Node;
+import com.iota.iri.network.TCPNeighbor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -7,20 +12,12 @@ import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
 
-import com.iota.iri.network.TCPNeighbor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
-import com.iota.iri.network.Node;
-
 class ReplicatorSinkProcessor implements Runnable {
 
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSinkProcessor.class);
 
     private final TCPNeighbor neighbor;
-    
+
     public final static int CRC32_BYTES = 16;
     private final ReplicatorSinkPool replicatorSinkPool;
     private final int port;
@@ -35,67 +32,67 @@ class ReplicatorSinkProcessor implements Runnable {
 
     @Override
     public void run() {
-    	try {
-    		Thread.sleep(1000);
-    	}
-    	catch (InterruptedException e) {
-    		log.info("Interrupted");
-    	}
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            log.info("Interrupted");
+            Thread.currentThread().interrupt();
+            return;
+        }
 
         String remoteAddress = neighbor.getHostAddress();
-        
+
         try {
             Socket socket;
-            synchronized (neighbor) { 
+            synchronized (neighbor) {
                 Socket sink = neighbor.getSink();
-                if ( sink == null ) {
+                if (sink == null) {
                     log.info("Opening sink {}", remoteAddress);
                     socket = new Socket();
                     socket.setSoLinger(true, 0);
                     socket.setSoTimeout(30000);
                     neighbor.setSink(socket);
-                }
-                else {
+                } else {
                     // Sink already created
                     log.info("Sink {} already created", remoteAddress);
                     return;
                 }
             }
-            
+
             if (socket != null) {
                 log.info("Connecting sink {}", remoteAddress);
                 socket.connect(new InetSocketAddress(remoteAddress, neighbor.getPort()), 30000);
                 if (!socket.isClosed() && socket.isConnected()) {
                     OutputStream out = socket.getOutputStream();
                     log.info("----- NETWORK INFO ----- Sink {} is connected", remoteAddress);
-                    
+
                     // Let neighbor know our tcp listener port
-                    String fmt = "%0"+String.valueOf(ReplicatorSinkPool.PORT_BYTES)+"d";
-                    byte [] portAsByteArray = new byte [10];
+                    String fmt = "%0" + String.valueOf(ReplicatorSinkPool.PORT_BYTES) + "d";
+                    byte[] portAsByteArray = new byte[10];
                     System.arraycopy(String.format(fmt, port).getBytes(), 0,
-                            portAsByteArray, 0, ReplicatorSinkPool.PORT_BYTES);
+                        portAsByteArray, 0, ReplicatorSinkPool.PORT_BYTES);
                     out.write(portAsByteArray);
-                    
+
                     while (!replicatorSinkPool.shutdown && !neighbor.isStopped()) {
                         try {
                             ByteBuffer message = neighbor.getNextMessage();
-                            if (neighbor.getSink() != null) { 
+                            if (neighbor.getSink() != null) {
                                 if (neighbor.getSink().isClosed() || !neighbor.getSink().isConnected()) {
                                     log.info("----- NETWORK INFO ----- Sink {} got disconnected", remoteAddress);
                                     return;
                                 } else {
                                     if ((message != null) && (neighbor.getSink() != null && neighbor.getSink().isConnected())
                                         && (neighbor.getSource() != null && neighbor.getSource().isConnected())) {
-                                    
+
                                         byte[] bytes = message.array();
 
                                         if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
                                             try {
-                                                CRC32 crc32 = new CRC32();                                        
+                                                CRC32 crc32 = new CRC32();
                                                 crc32.update(message.array());
                                                 String crc32_string = Long.toHexString(crc32.getValue());
                                                 while (crc32_string.length() < CRC32_BYTES) {
-                                                    crc32_string = "0"+crc32_string;
+                                                    crc32_string = "0" + crc32_string;
                                                 }
                                                 out.write(message.array());
                                                 out.write(crc32_string.getBytes());
@@ -117,7 +114,9 @@ class ReplicatorSinkProcessor implements Runnable {
                             }
                         } catch (InterruptedException e) {
                             log.error("Interrupted while waiting for send buffer");
-                        }                        
+                            Thread.currentThread().interrupt();
+                            break;
+                        }
                     }
                 }
             }
@@ -127,7 +126,7 @@ class ReplicatorSinkProcessor implements Runnable {
                 reason = "closed";
             }
             log.error("***** NETWORK ALERT ***** No sink to host {}:{}, reason: {}", remoteAddress, neighbor.getPort(),
-                    reason);
+                reason);
             synchronized (neighbor) {
                 Socket sourceSocket = neighbor.getSource();
                 if (sourceSocket != null && (sourceSocket.isClosed() || !sourceSocket.isConnected())) {

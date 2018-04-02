@@ -5,9 +5,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.ExecutionException;
-
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Created by paul on 5/2/17.
@@ -74,7 +72,7 @@ public class TipsViewModelTest {
     }
 
     @Test
-    public void nonsolidCapacityLimited() throws ExecutionException, InterruptedException {
+    public void nonsolidCapacityLimited()  {
         TipsViewModel tipsVM = new TipsViewModel();
         int capacity = TipsViewModel.MAX_TIPS;
         //fill tips list
@@ -87,7 +85,7 @@ public class TipsViewModelTest {
     }
 
     @Test
-    public void solidCapacityLimited() throws ExecutionException, InterruptedException {
+    public void solidCapacityLimited() {
         TipsViewModel tipsVM = new TipsViewModel();
         int capacity = TipsViewModel.MAX_TIPS;
         //fill tips list
@@ -101,7 +99,7 @@ public class TipsViewModelTest {
     }
 
     @Test
-    public void totalCapacityLimited() throws ExecutionException, InterruptedException {
+    public void totalCapacityLimited() {
         TipsViewModel tipsVM = new TipsViewModel();
         int capacity = TipsViewModel.MAX_TIPS;
         //fill tips list

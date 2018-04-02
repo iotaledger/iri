@@ -1,8 +1,6 @@
 package com.iota.iri;
 
 import com.iota.iri.conf.Configuration;
-
-import static com.iota.iri.controllers.TransactionViewModel.*;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
@@ -20,6 +18,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import static com.iota.iri.controllers.TransactionViewModel.*;
 
 /**
  * Created by paul on 5/19/17.
@@ -102,7 +102,9 @@ public class NodeIntegrationTests {
             try {
                 Thread.sleep(20000);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                System.err.println(this + ": interrupted");
+                e.printStackTrace(System.err);
+                Thread.currentThread().interrupt();
             }
             shutdown.set(true);
             synchronized (waitObj) {
@@ -123,7 +125,10 @@ public class NodeIntegrationTests {
                 try {
                     Thread.sleep(spacing);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    System.err.println(this + ": interrupted");
+                    e.printStackTrace(System.err);
+                    Thread.currentThread().interrupt();
+                    return;
                 }
                 try {
                     sendMilestone(api, index++);

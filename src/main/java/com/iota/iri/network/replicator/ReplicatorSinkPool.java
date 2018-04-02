@@ -1,5 +1,11 @@
 package com.iota.iri.network.replicator;
 
+import com.iota.iri.network.Neighbor;
+import com.iota.iri.network.Node;
+import com.iota.iri.network.TCPNeighbor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.Socket;
@@ -7,14 +13,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import com.iota.iri.Iota;
-import com.iota.iri.network.TCPNeighbor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.network.Neighbor;
-import com.iota.iri.network.Node;
 
 public class ReplicatorSinkPool  implements Runnable {
     
@@ -48,6 +46,8 @@ public class ReplicatorSinkPool  implements Runnable {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
                     log.error("Interrupted");
+                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
             neighbors.stream().filter(n -> n instanceof TCPNeighbor && n.isFlagged())
@@ -55,12 +55,14 @@ public class ReplicatorSinkPool  implements Runnable {
                     .forEach(this::createSink);
         }
         
-        while (!Thread.interrupted()) {
+        while (true) {
             // Restart attempt for neighbors that are in the configuration.
             try {
                 Thread.sleep(30000);
             } catch (InterruptedException e) {
-                log.debug("Interrupted: ", e);
+                log.debug("Interrupted");
+                Thread.currentThread().interrupt();
+                break;
             }
             List<Neighbor> neighbors = node.getNeighbors();
             neighbors.stream()
@@ -111,9 +113,14 @@ public class ReplicatorSinkPool  implements Runnable {
     }
     */
 
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         shutdown = true;
         sinkPool.shutdown();
-        sinkPool.awaitTermination(6, TimeUnit.SECONDS);
+        try {
+            sinkPool.awaitTermination(6, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+           log.info("interrupted");
+            Thread.currentThread().interrupt();
+        }
     }
 }

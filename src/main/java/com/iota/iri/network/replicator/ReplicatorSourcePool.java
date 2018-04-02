@@ -1,18 +1,15 @@
 package com.iota.iri.network.replicator;
 
+import com.iota.iri.network.Node;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
-import com.iota.iri.network.Node;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
 
 public class ReplicatorSourcePool implements Runnable {
 
@@ -70,11 +67,16 @@ public class ReplicatorSourcePool implements Runnable {
         }
     }
 
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         shutdown = true;
         //notify();
         pool.shutdown();
-        pool.awaitTermination(6, TimeUnit.SECONDS);
+        try {
+            pool.awaitTermination(6, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            log.info("interrupted");
+            Thread.currentThread().interrupt();
+        }
     }
 
     public ReplicatorSourcePool init(int port) {

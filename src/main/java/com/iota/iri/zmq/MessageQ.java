@@ -49,6 +49,7 @@ public class MessageQ {
             publisherService.awaitTermination(5, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             LOG.error("Publisher service shutdown failed.", e);
+            Thread.currentThread().interrupt();
         }
 
         publisher.close();

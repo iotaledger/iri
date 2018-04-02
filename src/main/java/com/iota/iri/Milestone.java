@@ -1,5 +1,18 @@
 package com.iota.iri;
 
+import com.iota.iri.controllers.AddressViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.hash.ISS;
+import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Converter;
+import com.iota.iri.zmq.MessageQ;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,19 +24,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
-
-import javax.net.ssl.HttpsURLConnection;
-
-import com.iota.iri.controllers.*;
-import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.zmq.MessageQ;
-import com.iota.iri.storage.Tangle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.hash.ISS;
-import com.iota.iri.model.Hash;
-import com.iota.iri.utils.Converter;
 
 import static com.iota.iri.Milestone.Validity.*;
 
@@ -76,11 +76,14 @@ public class Milestone {
     public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) throws Exception {
         this.ledgerValidator = ledgerValidator;
         AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
-        (new Thread(() -> {
+        Thread thread = new Thread(() -> {
             while(!ledgerValidatorInitialized.get()) {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
+                    log.info("interrupted",e);
+                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
             while (!shuttingDown) {
@@ -124,15 +127,24 @@ public class Milestone {
                                 + " to #" + latestMilestoneIndex);
                     }
 
-                    Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
+                    try {
+                        Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
+                    } catch (InterruptedException e) {
+                        log.info("interrupted",e);
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
 
                 } catch (final Exception e) {
                     log.error("Error during Latest Milestone updating", e);
                 }
             }
-        }, "Latest Milestone Tracker")).start();
+        });
+        thread.setDaemon(true);
+        thread.setName("Latest Milestone Tracker");
+        thread.start();
 
-        (new Thread(() -> {
+        thread = new Thread(() -> {
 
             try {
                 ledgerValidator.init();
@@ -159,15 +171,22 @@ public class Milestone {
                                 + latestSolidSubtangleMilestoneIndex);
                     }
 
-                    Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
+                    try {
+                        Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
+                    } catch (InterruptedException e) {
+                        log.info("interrupted",e);
+                        Thread.currentThread().interrupt();
+                        return;
+                    }
 
                 } catch (final Exception e) {
                     log.error("Error during Solid Milestone updating", e);
                 }
             }
-        }, "Solid Milestone Tracker")).start();
-
-
+        });
+        thread.setDaemon(true);
+        thread.setName("Solid Milestone Tracker");
+        thread.start();
     }
 
     private Validity validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {

@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.*;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 3/14/17 for iri-testnet.
@@ -21,13 +20,13 @@ public class TipsViewModel {
     private SecureRandom seed = new SecureRandom();
     public final Object sync = new Object();
 
-    public boolean addTipHash (Hash hash) throws ExecutionException, InterruptedException {
+    public boolean addTipHash (Hash hash) {
         synchronized (sync) {
             return tips.add(hash);
         }
     }
 
-    public boolean removeTipHash (Hash hash) throws ExecutionException, InterruptedException {
+    public boolean removeTipHash (Hash hash) {
         synchronized (sync) {
             if(!tips.remove(hash)) {
                 return solidTips.remove(hash);

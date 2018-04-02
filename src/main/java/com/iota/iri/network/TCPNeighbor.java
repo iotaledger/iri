@@ -100,7 +100,7 @@ public class TCPNeighbor extends Neighbor {
     }
 
     public ByteBuffer getNextMessage() throws InterruptedException {
-        return (this.sendQueue.poll(10000, TimeUnit.MILLISECONDS));
+        return sendQueue.poll(10000, TimeUnit.MILLISECONDS);
     }
 
     @Override

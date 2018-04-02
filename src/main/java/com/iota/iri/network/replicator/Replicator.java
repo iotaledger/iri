@@ -25,7 +25,7 @@ public class Replicator {
         log.info("Started ReplicatorSourcePool");
     }
     
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         // TODO
         replicatorSourcePool.shutdown();
         replicatorSinkPool.shutdown();

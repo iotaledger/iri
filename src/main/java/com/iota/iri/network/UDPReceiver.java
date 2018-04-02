@@ -23,7 +23,7 @@ public class UDPReceiver {
     private static final Logger log = LoggerFactory.getLogger(UDPReceiver.class);
 
     private final DatagramPacket receivingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
-            TRANSACTION_PACKET_SIZE);
+        TRANSACTION_PACKET_SIZE);
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final int port;
@@ -31,11 +31,11 @@ public class UDPReceiver {
 
     private DatagramSocket socket;
 
-    private final int PROCESSOR_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors() * 4 );
+    private final int PROCESSOR_THREADS = Math.max(1, Runtime.getRuntime().availableProcessors() * 4);
 
     private final ExecutorService processor = new ThreadPoolExecutor(PROCESSOR_THREADS, PROCESSOR_THREADS, 5000L,
-                                            TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(PROCESSOR_THREADS, true),
-                                             new ThreadPoolExecutor.AbortPolicy());
+        TimeUnit.MILLISECONDS, new ArrayBlockingQueue<Runnable>(PROCESSOR_THREADS, true),
+        new ThreadPoolExecutor.AbortPolicy());
 
     private Thread receivingThread;
 
@@ -68,7 +68,7 @@ public class UDPReceiver {
             while (!shuttingDown.get()) {
 
                 if (((processed + dropped) % 50000 == 0)) {
-                    log.info("Receiver thread processed/dropped ratio: "+processed+"/"+dropped);
+                    log.info("Receiver thread processed/dropped ratio: " + processed + "/" + dropped);
                     processed = 0;
                     dropped = 0;
                 }
@@ -111,15 +111,15 @@ public class UDPReceiver {
         }
     }
 
-    public void shutdown() throws InterruptedException {
+    public void shutdown() {
         shuttingDown.set(true);
         processor.shutdown();
-        processor.awaitTermination(6, TimeUnit.SECONDS);
         try {
+            processor.awaitTermination(6, TimeUnit.SECONDS);
             receivingThread.join(6000L);
-        }
-        catch (Exception e) {
-            // ignore
+        } catch (Exception e) {
+            log.info("interrupted");
+            Thread.currentThread().interrupt();
         }
     }
 

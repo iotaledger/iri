@@ -210,7 +210,7 @@ public class LedgerValidator {
         try {
             MilestoneViewModel candidateMilestone = MilestoneViewModel.first(tangle);
             while (candidateMilestone != null) {
-                if (log.isDebugEnabled() && candidateMilestone.index() % 10000 == 0) {
+                if (candidateMilestone.index() % 10000 == 0) {
                     StringBuilder logMessage = new StringBuilder();
 
                     logMessage.append("Building snapshot... Consistent: #");
@@ -218,18 +218,21 @@ public class LedgerValidator {
                     logMessage.append(", Candidate: #");
                     logMessage.append(candidateMilestone.index());
 
-                    log.debug(logMessage.toString());
+                    log.info(logMessage.toString());
                 }
                 if (StateDiffViewModel.maybeExists(tangle, candidateMilestone.getHash())) {
                     StateDiffViewModel stateDiffViewModel = StateDiffViewModel.load(tangle, candidateMilestone.getHash());
 
-	                if (stateDiffViewModel != null && !stateDiffViewModel.isEmpty() && 
-                        Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(stateDiffViewModel.getDiff()))) {
-	                    milestone.latestSnapshot.apply(stateDiffViewModel.getDiff(), candidateMilestone.index());
-	                    consistentMilestone = candidateMilestone;
-	                }
-	            }
-	            candidateMilestone = candidateMilestone.next(tangle);
+                    if (stateDiffViewModel != null && !stateDiffViewModel.isEmpty()) {
+                        if (Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(stateDiffViewModel.getDiff()))) {
+                            milestone.latestSnapshot.apply(stateDiffViewModel.getDiff(), candidateMilestone.index());
+                            consistentMilestone = candidateMilestone;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                candidateMilestone = candidateMilestone.next(tangle);
             }
         } finally {
             milestone.latestSnapshot.rwlock.writeLock().unlock();

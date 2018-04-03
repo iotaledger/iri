@@ -1,7 +1,10 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,20 +29,29 @@ public class Snapshot {
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
 
-    public static Snapshot init(String snapshotFile, String snapshotSigFile, boolean testnet) {
+    public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) {
         //This is not thread-safe (and it is ok)
         if (initialSnapshot == null) {
-            if (!testnet && !SignedFiles.isFileSignatureValid(snapshotFile, snapshotSigFile, SNAPSHOT_PUBKEY,
+            if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,
                     SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
                 throw new RuntimeException("Snapshot signature failed.");
             }
-
-            Map<Hash, Long> initialState = initInitialState(snapshotFile);
+            Map<Hash, Long> initialState = initInitialState(snapshotPath, testnet);
             initialSnapshot = new Snapshot(initialState, 0);
             checkStateHasCorrectSupply(initialState);
             checkInitialSnapshotIsConsistent(initialState);
+
         }
         return initialSnapshot;
+    }
+
+    private static InputStream getSnapshotStream(String snapshotPath) throws FileNotFoundException {
+        InputStream inputStream = Snapshot.class.getResourceAsStream(snapshotPath);
+        if (inputStream == null) {
+            inputStream = new FileInputStream(snapshotPath);
+        }
+
+        return inputStream;
     }
 
     private static void checkInitialSnapshotIsConsistent(Map<Hash, Long> initialState) {
@@ -57,11 +69,14 @@ public class Snapshot {
         }
     }
 
-    private static Map<Hash, Long> initInitialState(String snapshotFile) {
+    private static Map<Hash, Long> initInitialState(String snapshotFile, boolean testnet) {
         String line;
         Map<Hash, Long> state = new HashMap<>();
-        File snapshot = new File(snapshotFile);
-        try (BufferedReader reader = new BufferedReader(new FileReader(snapshot))) {
+        BufferedReader reader = null;
+        try {
+            InputStream snapshotStream = getSnapshotStream(snapshotFile);
+            BufferedInputStream bufferedInputStream = new BufferedInputStream(snapshotStream);
+            reader = new BufferedReader(new InputStreamReader(bufferedInputStream));
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(";", 2);
                 if (parts.length >= 2) {
@@ -71,8 +86,13 @@ public class Snapshot {
                 }
             }
         } catch (IOException e) {
+            //syso is left until logback is fixed
             System.out.println("Failed to load snapshot.");
+            log.error("Failed to load snapshot.", e);
             System.exit(-1);
+        }
+        finally {
+            IOUtils.closeQuietly(reader);
         }
         return state;
     }

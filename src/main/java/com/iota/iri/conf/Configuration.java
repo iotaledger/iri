@@ -28,18 +28,12 @@ public class Configuration {
             "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
     public static final String TESTNET_COORDINATOR_ADDRESS =
             "EKSWROOKCRYOKRKOJMXGJGJFGJVKQCFFZALCBSTZQSU9HLTBFTW9OSCJJIN9PWVBRHUZ9SEIQDOYBENOT";
-    public static final String MAINNET_SNAPSHOT_FILE = Configuration.class.getResource("/snapshotMainnet.txt")
-            .getFile();
-    public static final String TESTNET_SNAPSHOT_FILE = Configuration.class.getResource("/snapshotTestnet.txt")
-            .getFile();
-    public static final String MAINNET_SNAPSHOT_SIG_FILE = Configuration.class.getResource("/snapshotMainnet.sig")
-            .getFile();
-    public static final String TESTNET_SNAPSHOT_SIG_FILE = Configuration.class.getResource("/snapshotTestnet.sig")
-            .getFile();
-    public static final String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT = Configuration.class
-            .getResource("/previousEpochsSpentAddresses.txt").getFile();
-    public static final String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = Configuration.class
-            .getResource("/previousEpochsSpentAddresses.sig").getFile();
+    public static final String MAINNET_SNAPSHOT_FILE = "/snapshotMainnet.txt";
+    public static final String TESTNET_SNAPSHOT_FILE = "/snapshotTestnet.txt";
+    public static final String MAINNET_SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
+
+    public static final String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT = "/previousEpochsSpentAddresses.txt";
+    public static final String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = "/previousEpochsSpentAddresses.sig";
     public static final String MAINNET_MILESTONE_START_INDEX = "338000";
     public static final String TESTNET_MILESTONE_START_INDEX = "434525";
     public static final String MAINNET_NUM_KEYS_IN_MILESTONE = "20";

@@ -143,7 +143,6 @@ public class IRI {
             configuration.put(DefaultConfSettings.COORDINATOR, Configuration.TESTNET_COORDINATOR_ADDRESS);
             configuration.put(DefaultConfSettings.SNAPSHOT_FILE, Configuration.TESTNET_SNAPSHOT_FILE);
             configuration.put(DefaultConfSettings.MILESTONE_START_INDEX, Configuration.TESTNET_MILESTONE_START_INDEX);
-            configuration.put(DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE, Configuration.TESTNET_SNAPSHOT_SIG_FILE);
             configuration.put(DefaultConfSettings.MWM, Configuration.TESTNET_MWM);
             configuration.put(DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE,
                     Configuration.TESTNET_NUM_KEYS_IN_MILESTONE);

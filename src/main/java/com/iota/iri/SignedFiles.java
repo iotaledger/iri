@@ -26,6 +26,7 @@ public class SignedFiles {
         //digest file
         try {
             InputStream inputStream = SignedFiles.class.getResourceAsStream(filename);
+            //if resource doesn't exist, read from file system
             if (inputStream == null) {
                 inputStream = new FileInputStream(filename);
             }

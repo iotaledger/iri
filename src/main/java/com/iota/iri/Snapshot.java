@@ -47,6 +47,7 @@ public class Snapshot {
 
     private static InputStream getSnapshotStream(String snapshotPath) throws FileNotFoundException {
         InputStream inputStream = Snapshot.class.getResourceAsStream(snapshotPath);
+        //if resource doesn't exist, read from file system
         if (inputStream == null) {
             inputStream = new FileInputStream(snapshotPath);
         }

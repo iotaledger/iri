@@ -1105,7 +1105,6 @@ public class API {
     private synchronized void storeMessageStatement(final String address, final String message) throws Exception {
         final Hash[] txToApprove = getTransactionToApproveStatement(3, null, 5);
 
-        final Hash addressHash = new Hash(address);
         final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
 
         final int txCount = (message.length() + txMessageSize - 1) / txMessageSize;

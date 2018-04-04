@@ -1,6 +1,5 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;

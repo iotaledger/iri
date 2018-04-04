@@ -1,10 +1,8 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +34,7 @@ public class Snapshot {
                     SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
                 throw new RuntimeException("Snapshot signature failed.");
             }
-            Map<Hash, Long> initialState = initInitialState(snapshotPath, testnet);
+            Map<Hash, Long> initialState = initInitialState(snapshotPath);
             initialSnapshot = new Snapshot(initialState, 0);
             checkStateHasCorrectSupply(initialState);
             checkInitialSnapshotIsConsistent(initialState);
@@ -70,7 +68,7 @@ public class Snapshot {
         }
     }
 
-    private static Map<Hash, Long> initInitialState(String snapshotFile, boolean testnet) {
+    private static Map<Hash, Long> initInitialState(String snapshotFile) {
         String line;
         Map<Hash, Long> state = new HashMap<>();
         BufferedReader reader = null;

@@ -1,10 +1,12 @@
 package com.iota.iri;
 
-import com.iota.iri.controllers.*;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.StateDiffViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -121,11 +123,11 @@ public class LedgerValidator {
             }
         }
 
-        log.debug("Analyzed transactions = " + numberOfAnalyzedTransactions);
         if (tip == null) {
             numberOfConfirmedTransactions = numberOfAnalyzedTransactions;
         }
-        log.debug("Confirmed transactions = " + numberOfConfirmedTransactions);
+        log.debug("Analyzed transactions = {}",numberOfAnalyzedTransactions);
+        log.debug("Confirmed transactions = {}", numberOfConfirmedTransactions);
         return state;
     }
 
@@ -223,7 +225,7 @@ public class LedgerValidator {
                 if (StateDiffViewModel.maybeExists(tangle, candidateMilestone.getHash())) {
                     StateDiffViewModel stateDiffViewModel = StateDiffViewModel.load(tangle, candidateMilestone.getHash());
 
-                    if (stateDiffViewModel != null && !stateDiffViewModel.isEmpty()) {
+                    if (!stateDiffViewModel.isEmpty()) {
                         if (Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(stateDiffViewModel.getDiff()))) {
                             milestone.latestSnapshot.apply(stateDiffViewModel.getDiff(), candidateMilestone.index());
                             consistentMilestone = candidateMilestone;

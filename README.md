@@ -1,11 +1,10 @@
 ## IOTA
 
-The IRI repository is the main branch of the IOTA Reference Implementation and the embodiment
-of the IOTA network specification. 
+The IRI repository is the main IOTA Reference Implementation and the embodiment of the IOTA network specification. 
 
-This is a full-featured [[IOTA]](http://iota.org/) node with a convenient JSON-REST HTTP interface.
-It allows users to become part of the [[IOTA]](http://iota.org) network as both a transaction relay
-and network information provider through the easy-to-use API.
+This is a full-featured [[IOTA]](https://iota.org/) node with a convenient JSON-REST HTTP interface.
+It allows users to become part of the [[IOTA]](https://iota.org) network as both a transaction relay
+and network information provider through the easy-to-use [[API]](https://iota.readme.io/reference).
 
 It is specially designed for users seeking a fast, efficient and fully-compatible network setup.
 

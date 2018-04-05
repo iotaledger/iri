@@ -2,13 +2,11 @@ package com.iota.iri;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -16,29 +14,34 @@ import java.util.stream.Collectors;
 
 
 public class Snapshot {
+
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
+
     public static String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
     public static int SNAPSHOT_PUBKEY_DEPTH = 6;
     public static int SNAPSHOT_INDEX = 2;
     public static int SPENT_ADDRESSES_INDEX = 3;
     private static Snapshot initialSnapshot;
 
-
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
-
+    protected final Map<Hash, Long> state;
+    private int index;
 
     public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) {
         //This is not thread-safe (and it is ok)
         if (initialSnapshot == null) {
             if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,
-                    SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
+                SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
                 throw new RuntimeException("Snapshot signature failed.");
             }
+
             Map<Hash, Long> initialState = initInitialState(snapshotPath);
             initialSnapshot = new Snapshot(initialState, 0);
             checkStateHasCorrectSupply(initialState);
             checkInitialSnapshotIsConsistent(initialState);
 
+            // prune zero values to honour original intent of 'remove' of ZERO values in Snapshot.isConsistent(...)
+            initialState.entrySet().removeIf(entry -> entry.getValue() == 0);
         }
         return initialSnapshot;
     }
@@ -69,35 +72,26 @@ public class Snapshot {
     }
 
     private static Map<Hash, Long> initInitialState(String snapshotFile) {
-        String line;
         Map<Hash, Long> state = new HashMap<>();
-        BufferedReader reader = null;
-        try {
-            InputStream snapshotStream = getSnapshotStream(snapshotFile);
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(snapshotStream);
-            reader = new BufferedReader(new InputStreamReader(bufferedInputStream));
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(";", 2);
-                if (parts.length >= 2) {
-                    String key = parts[0];
-                    String value = parts[1];
+        try (BufferedReader reader = new BufferedReader(
+            new InputStreamReader(getSnapshotStream(snapshotFile)))) {
+
+            reader.lines().forEach(line -> {
+                int index = line.indexOf(';');
+                if (index != -1 && index != line.length() - 1) {
+                    String key = line.substring(0, index);
+                    String value = line.substring(index + 1);
                     state.put(new Hash(key), Long.valueOf(value));
                 }
-            }
+            });
+            return state;
         } catch (IOException e) {
-            //syso is left until logback is fixed
-            System.out.println("Failed to load snapshot.");
+            //serr is left until logback is fixed
+            System.err.println("Failed to load snapshot.");
             log.error("Failed to load snapshot.", e);
-            System.exit(-1);
+            throw new UncheckedIOException("Failed to load snapshot", e);
         }
-        finally {
-            IOUtils.closeQuietly(reader);
-        }
-        return state;
     }
-
-    protected final Map<Hash, Long> state;
-    private int index;
 
     public int index() {
         int i;
@@ -139,7 +133,7 @@ public class Snapshot {
             throw new RuntimeException("Diff is not consistent.");
         }
         rwlock.writeLock().lock();
-        patch.entrySet().stream().forEach(hashLongEntry -> {
+        patch.entrySet().forEach(hashLongEntry -> {
             if (state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong) == null) {
                 state.putIfAbsent(hashLongEntry.getKey(), hashLongEntry.getValue());
             }
@@ -149,27 +143,11 @@ public class Snapshot {
     }
 
     public static boolean isConsistent(Map<Hash, Long> state) {
-        final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
-        while (stateIterator.hasNext()) {
-
-            final Map.Entry<Hash, Long> entry = stateIterator.next();
-            if (entry.getValue() <= 0) {
-
-                if (entry.getValue() < 0) {
-                    log.info("Skipping negative value for address: " + entry.getKey() + ": " + entry.getValue());
-                    return false;
-                }
-
-                stateIterator.remove();
+        for (Map.Entry<Hash, Long> entry : state.entrySet()) {
+            if (entry.getValue() < 0) {
+                log.info("Skipping negative value for address: " + entry.getKey() + ": " + entry.getValue());
+                return false;
             }
-            //////////// --Coo only--
-                /*
-                 * if (entry.getValue() > 0) {
-                 *
-                 * System.out.ln("initialState.put(new Hash(\"" + entry.getKey()
-                 * + "\"), " + entry.getValue() + "L);"); }
-                 */
-            ////////////
         }
         return true;
     }

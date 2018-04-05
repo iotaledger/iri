@@ -64,17 +64,16 @@ public class SignedFiles {
                 int[] lineTrits = Converter.allocateTritsForTrytes(line.length());
                 Converter.trits(line, lineTrits, 0);
                 digests = ArrayUtils.addAll(
-                        digests,
-                        ISS.digest(mode
-                                , Arrays.copyOfRange(bundle, i * ISS.NORMALIZED_FRAGMENT_LENGTH, (i + 1) * ISS.NORMALIZED_FRAGMENT_LENGTH)
-                                , lineTrits));
+                    digests,
+                    ISS.digest(mode
+                        , Arrays.copyOfRange(bundle, i * ISS.NORMALIZED_FRAGMENT_LENGTH, (i + 1) * ISS.NORMALIZED_FRAGMENT_LENGTH)
+                        , lineTrits));
             }
             if ((line = reader.readLine()) != null) {
                 int[] lineTrits = Converter.allocateTritsForTrytes(line.length());
                 Converter.trits(line, lineTrits, 0);
                 root = ISS.getMerkleRoot(mode, ISS.address(mode, digests), lineTrits, 0, index, depth);
-            }
-            else {
+            } else {
                 root = ISS.address(mode, digests);
             }
 

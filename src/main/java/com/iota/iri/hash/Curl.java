@@ -8,9 +8,8 @@ import java.util.NoSuchElementException;
 
 /**
  * (c) 2016 Come-from-Beyond and Paul Handy
- *
+ * <p>
  * Curl belongs to the sponge function family.
- *
  */
 public class Curl implements Sponge {
 
@@ -36,14 +35,17 @@ public class Curl implements Sponge {
 
 
     protected Curl(SpongeFactory.Mode mode) {
-        switch(mode) {
+        switch (mode) {
             case CURLP27: {
                 numberOfRounds = NUMBER_OF_ROUNDSP27;
-            } break;
+            }
+            break;
             case CURLP81: {
                 numberOfRounds = NUMBER_OF_ROUNDSP81;
-            } break;
-            default: throw new NoSuchElementException("Only Curl-P-27 and Curl-P-81 are supported.");
+            }
+            break;
+            default:
+                throw new NoSuchElementException("Only Curl-P-27 and Curl-P-81 are supported.");
         }
         state = new int[STATE_LENGTH];
         stateHigh = null;
@@ -51,16 +53,19 @@ public class Curl implements Sponge {
     }
 
     public Curl(boolean pair, SpongeFactory.Mode mode) {
-        switch(mode) {
+        switch (mode) {
             case CURLP27: {
                 numberOfRounds = NUMBER_OF_ROUNDSP27;
-            } break;
+            }
+            break;
             case CURLP81: {
                 numberOfRounds = NUMBER_OF_ROUNDSP81;
-            } break;
-            default: throw new NoSuchElementException("Only Curl-P-27 and Curl-P-81 are supported.");
+            }
+            break;
+            default:
+                throw new NoSuchElementException("Only Curl-P-27 and Curl-P-81 are supported.");
         }
-        if(pair) {
+        if (pair) {
             stateHigh = new long[STATE_LENGTH];
             stateLow = new long[STATE_LENGTH];
             state = null;
@@ -112,16 +117,19 @@ public class Curl implements Sponge {
             }
         }
     }
+
     public void reset() {
         Arrays.fill(state, 0);
     }
+
     public void reset(boolean pair) {
-        if(pair) {
+        if (pair) {
             set();
         } else {
             reset();
         }
     }
+
     private void set() {
         Arrays.fill(stateLow, Converter.HIGH_LONG_BITS);
         Arrays.fill(stateHigh, Converter.HIGH_LONG_BITS);

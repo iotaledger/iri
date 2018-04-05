@@ -231,9 +231,9 @@ public class Converter {
         StringBuilder sb = new StringBuilder(80);
         for (int i = 0; i < input.length(); i++) {
             int asciiValue = input.charAt(i);
-            // If not recognizable ASCII character, return null
             if (asciiValue > 255) {
-                return null;
+                throw new IllegalArgumentException("The ascii trytes String contains un illegal tryte character:" +
+                    " char= " + ((char)asciiValue) + ", (" + asciiValue +")");
             }
             int firstValue = asciiValue % 27;
             int secondValue = (asciiValue - firstValue) / 27;

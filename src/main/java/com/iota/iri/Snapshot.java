@@ -58,7 +58,7 @@ public final class Snapshot {
             } catch (Exception e) {
                 log.error("Quitting - Unable to verify snapshot: " + e, e);
                 System.exit(-1);
-                throw new Error("unreachable");
+                throw new IllegalStateException("unreachable");
             }
         }
     }

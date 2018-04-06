@@ -89,33 +89,34 @@ public class Kerl implements Sponge {
     }
 
     public static BigInteger bigIntFromTrits(final int[] trits, final int offset, final int size) {
-
         BigInteger value = BigInteger.ZERO;
         int power = 0;
+        int sequence;
         for (int i = offset + size - 1; i >= offset; i--) {
             switch (trits[i]) {
-                case 1: {
-                    int sequence = 0;
+                case 1:
+                    sequence = 0;
                     while (i - 1 >= offset && trits[i - 1] == 1) {
                         i--;
                         sequence++;
                     }
                     value = value.multiply(RADIX_POWERS[power + 1 + sequence]).add(RADIX_POSITIVE_ONE_FUNCTION[sequence]);
                     power = 0;
-                }
-                break;
-                case -1: {
-                    int sequence = 0;
+                    break;
+
+                case -1:
+                    sequence = 0;
                     while (i - 1 >= offset && trits[i - 1] == -1) {
                         i--;
                         sequence++;
                     }
                     value = value.multiply(RADIX_POWERS[power + 1 + sequence]).add(RADIX_NEGATIVE_ONE_FUNCTION[sequence]);
                     power = 0;
-                }
-                break;
+                    break;
+
                 default:
                     power++;
+                    break;
             }
         }
         // do leftover pow

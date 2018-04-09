@@ -1,3 +1,6 @@
+[![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=dev)](https://travis-ci.org/iotaledger/iri)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/alon-e/iri?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=iotaledger/iri&amp;utm_campaign=Badge_Grade)
+
 ## IOTA
 
 This is the main branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for what we have setup. It is a complete [[IOTA]](http://iota.org/) Node with a JSON-REST HTTP interface.

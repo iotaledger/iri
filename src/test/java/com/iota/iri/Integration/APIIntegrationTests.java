@@ -170,8 +170,7 @@ public class APIIntegrationTests {
             body(containsString("packetsQueueSize")).
             body(containsString("time")).
             body(containsString("tips")).
-            body(containsString("transactionsToRequest")).
-            statusCode(200);
+            body(containsString("transactionsToRequest"));
     }
 
     @Test

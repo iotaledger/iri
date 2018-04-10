@@ -1,5 +1,6 @@
 [![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=dev)](https://travis-ci.org/iotaledger/iri)
-[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/alon-e/iri?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=iotaledger/iri&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/iotaledger/iri?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=iotaledger/iri&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/f6ccb1b439ed400ea6d144a5a827aac6)](https://www.codacy.com/app/alon-e/iri_2?utm_source=github.com&utm_medium=referral&utm_content=alon-e/iri&utm_campaign=Badge_Coverage) *<-TEMP_BADGE*
 ![GitHub release](https://img.shields.io/github/release/iotaledger/iri.svg)
 ![license](https://img.shields.io/github/license/iotaledger/iri.svg)
 

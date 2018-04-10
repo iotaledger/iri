@@ -110,7 +110,9 @@ public class API {
     }
 
     public void init() throws IOException {
-        readPreviousEpochsSpentAddresses();
+        if (!testNet) {
+            readPreviousEpochsSpentAddresses();
+        }
 
         final int apiPort = instance.configuration.integer(DefaultConfSettings.PORT);
         final String apiHost = instance.configuration.string(DefaultConfSettings.API_HOST);

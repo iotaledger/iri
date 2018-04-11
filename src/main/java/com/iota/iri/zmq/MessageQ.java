@@ -1,5 +1,6 @@
 package com.iota.iri.zmq;
 
+import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.zeromq.ZMQ;
@@ -51,7 +52,7 @@ public class MessageQ {
             LOG.error("Publisher service shutdown failed.", e);
         }
 
-        publisher.close();
-        context.term();
+        IOUtils.closeQuietly(publisher);
+        IOUtils.closeQuietly(context);
     }
 }

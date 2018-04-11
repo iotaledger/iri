@@ -22,8 +22,8 @@ public class TCPNeighbor extends Neighbor {
     private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(10);
     private boolean stopped = false;
 
-    public TCPNeighbor(InetSocketAddress address, boolean isConfigured, final double limit) {
-        super(address, isConfigured, limit);
+    public TCPNeighbor(InetSocketAddress address, boolean isConfigured) {
+        super(address, isConfigured);
         this.tcpPort = address.getPort();
     }
 
@@ -77,12 +77,18 @@ public class TCPNeighbor extends Neighbor {
         this.sink = sink;
     }
 
+    /**
+     * This is a non-blocking write and that makes it necessary to make a defensive copy of the sent data.
+     *
+     * @param packet the data to be queued for sending.
+     */
     @Override
     public void send(DatagramPacket packet) {
-        if ( sendQueue.remainingCapacity() == 0 ) {
+        if (sendQueue.remainingCapacity() == 0) {
             sendQueue.poll();
         }
-        sendQueue.add(ByteBuffer.wrap(packet.getData()));
+        byte[] bytes = packet.getData().clone();
+        sendQueue.add(ByteBuffer.wrap(bytes));
     }
 
     @Override

@@ -4,12 +4,12 @@ This is the main branch of the main IRI repository, as this is a IOTA reference 
 
 It allows to connect easily using java directly to a local or a remote [[IOTA node]](http://learn.iota.org/).
 
-* **Latest release:** 1.4.1 Release
+* **Latest release:** 1.4.2.2 Release
 * **License:** GPLv3
 
 # How to get started
 
-Obviously, because this is its own, independent network, you have to go through the same process as in the main network: **find neighbors**. You can find neighbors in the `#nodesharing` Slack channel[[Slack Invite]](http://slack.iota.org), or on our forum. Community members are usually very happy to help you out and get you connected. If you want to get tokens for your testcase, please just ask in one of the communication channels as well.
+Obviously, because this is its own, independent network, you have to go through the same process as in the main network: **find neighbors**. You can find neighbors in the [[Discord Community]](https://discord.gg/7Gu2mG5), or on [[our forum]](https://forum.iota.org/). Community members are usually very happy to help you out and get you connected. If you want to get tokens for your testcase, please just ask in one of the communication channels as well.
 
 ## Reporting Issues
 
@@ -51,7 +51,7 @@ Create an iota.ini file with all of your configuration variables set in it.
 Any that you don't provide in here will be assumed to be default or taken from
 command line arguments.
 
-`docker run -d --net=host --name iota-node -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
+`docker run -d --net=host --name iota-node -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
 
 ### Command Line Options 
 

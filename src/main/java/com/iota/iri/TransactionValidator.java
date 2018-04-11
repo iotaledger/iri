@@ -29,6 +29,10 @@ public class TransactionValidator {
     private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
     private int MIN_WEIGHT_MAGNITUDE = 81;
+    private static long snapshotTimestamp;
+    private static long snapshotTimestampMs;
+    private static long MAX_TIMESTAMP_FUTURE = 2 * 60 * 60;
+    private static long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1000;
 
     private Thread newSolidThread;
 
@@ -38,21 +42,21 @@ public class TransactionValidator {
     private final Set<Hash> newSolidTransactionsOne = new LinkedHashSet<>();
     private final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
 
-    public TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester, MessageQ messageQ) {
+    public TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester,
+                                MessageQ messageQ, long snapshotTimestamp) {
         this.tangle = tangle;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
         this.messageQ = messageQ;
+        TransactionValidator.snapshotTimestamp = snapshotTimestamp;
+        TransactionValidator.snapshotTimestampMs = snapshotTimestamp * 1000;
     }
 
-    public void init(boolean testnet,int MAINNET_MWM, int TESTNET_MWM) {
-        if(testnet) {
-            MIN_WEIGHT_MAGNITUDE = TESTNET_MWM;
-        } else {
-            MIN_WEIGHT_MAGNITUDE = MAINNET_MWM;
-        }
+    public void init(boolean testnet, int mwm) {
+        MIN_WEIGHT_MAGNITUDE = mwm;
+        
         //lowest allowed MWM encoded in 46 bytes.
-        if (MIN_WEIGHT_MAGNITUDE<13){
+        if (!testnet && MIN_WEIGHT_MAGNITUDE<13){
             MIN_WEIGHT_MAGNITUDE = 13;
         }
 
@@ -69,10 +73,20 @@ public class TransactionValidator {
         return MIN_WEIGHT_MAGNITUDE;
     }
 
-    private static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
+    private static boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
+        if (transactionViewModel.getAttachmentTimestamp() == 0) {
+            return transactionViewModel.getTimestamp() < snapshotTimestamp && !Objects.equals(transactionViewModel.getHash(), Hash.NULL_HASH)
+                    || transactionViewModel.getTimestamp() > (System.currentTimeMillis() / 1000) + MAX_TIMESTAMP_FUTURE;
+        }
+        return transactionViewModel.getAttachmentTimestamp() < snapshotTimestampMs
+                || transactionViewModel.getAttachmentTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
+    }
+
+    public static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
-        if(transactionViewModel.getTimestamp() < 1508760000 && !transactionViewModel.getHash().equals(Hash.NULL_HASH)) {
-            throw new RuntimeException("Invalid transaction timestamp.");
+        transactionViewModel.setAttachmentData();
+        if(hasInvalidTimestamp(transactionViewModel)) {
+            throw new StaleTimestampException("Invalid transaction timestamp.");
         }
         for (int i = VALUE_TRINARY_OFFSET + VALUE_USABLE_TRINARY_SIZE; i < VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE; i++) {
             if (transactionViewModel.trits()[i] != 0) {
@@ -252,4 +266,9 @@ public class TransactionValidator {
         return approovee.isSolid();
     }
 
+    public static class StaleTimestampException extends RuntimeException {
+        public StaleTimestampException (String message) {
+            super(message);
+        }
+    }
 }

@@ -5,6 +5,7 @@ import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.zmq.MessageQ;
@@ -30,14 +31,13 @@ import java.util.concurrent.atomic.AtomicLong;
 public class Node {
 
     private static final Logger log = LoggerFactory.getLogger(Node.class);
+    private final int reqHashSize;
 
 
-    public static final int TRANSACTION_PACKET_SIZE = 1650;
     private int BROADCAST_QUEUE_SIZE;
     private int RECV_QUEUE_SIZE;
     private int REPLY_QUEUE_SIZE;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
-    public static final int REQUEST_HASH_SIZE = 46;
     private static double P_SELECT_MILESTONE;
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
@@ -48,10 +48,8 @@ public class Node {
     private final ConcurrentSkipListSet<Pair<Hash, Neighbor>> replyQueue = weightQueueHashPair();
 
 
-    private final DatagramPacket sendingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
-            TRANSACTION_PACKET_SIZE);
-    private final DatagramPacket tipRequestingPacket = new DatagramPacket(new byte[TRANSACTION_PACKET_SIZE],
-            TRANSACTION_PACKET_SIZE);
+    private final DatagramPacket sendingPacket;
+    private final DatagramPacket tipRequestingPacket;
 
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
     private final Configuration configuration;
@@ -79,8 +77,6 @@ public class Node {
     private static AtomicLong sendPacketsCounter = new AtomicLong(0L);
     private static AtomicLong sendPacketsTimer = new AtomicLong(0L);
 
-    private static double newTxLimit;
-
     public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
     private DatagramSocket udpSocket;
 
@@ -99,6 +95,11 @@ public class Node {
         this.tipsViewModel = tipsViewModel;
         this.milestone = milestone;
         this.messageQ = messageQ;
+        this.reqHashSize = configuration.integer(Configuration.DefaultConfSettings.REQUEST_HASH_SIZE);
+        int packetSize = configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE);
+        this.sendingPacket = new DatagramPacket(new byte[packetSize], packetSize);
+        this.tipRequestingPacket = new DatagramPacket(new byte[packetSize], packetSize);
+
     }
 
     public void init() throws Exception {
@@ -108,8 +109,7 @@ public class Node {
         P_SEND_MILESTONE = configuration.doubling(Configuration.DefaultConfSettings.P_SEND_MILESTONE.name());
         P_REPLY_RANDOM_TIP = configuration.doubling(Configuration.DefaultConfSettings.P_REPLY_RANDOM_TIP.name());
         P_PROPAGATE_REQUEST = configuration.doubling(Configuration.DefaultConfSettings.P_PROPAGATE_REQUEST.name());
-        sendLimit = (long) ((configuration.doubling(Configuration.DefaultConfSettings.SEND_LIMIT.name()) * 1000000) / (TRANSACTION_PACKET_SIZE * 8));
-        newTxLimit = configuration.doubling(Configuration.DefaultConfSettings.NEW_TX_LIMIT.name());
+        sendLimit = (long) ((configuration.doubling(Configuration.DefaultConfSettings.SEND_LIMIT.name()) * 1000000) / (configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE) * 8));
         debug = configuration.booling(Configuration.DefaultConfSettings.DEBUG);
 
         BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.integer(Configuration.DefaultConfSettings.Q_SIZE_NODE);
@@ -251,8 +251,9 @@ public class Node {
 
                     if (!cached) {
                         //if not, then validate
-                        receivedTransactionViewModel = TransactionValidator.validate(receivedData, transactionValidator.getMinWeightMagnitude());
+                        receivedTransactionViewModel = new TransactionViewModel(receivedData, Hash.calculate(receivedData, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
                         receivedTransactionHash = receivedTransactionViewModel.getHash();
+                        TransactionValidator.runValidation(receivedTransactionViewModel, transactionValidator.getMinWeightMagnitude());
 
                         synchronized (recentSeenBytes) {
                             recentSeenBytes.put(byteHash, receivedTransactionHash);
@@ -265,6 +266,14 @@ public class Node {
 
                 } catch (NoSuchAlgorithmException e) {
                     log.error("MessageDigest: " + e);
+                } catch (final TransactionValidator.StaleTimestampException e) {
+                    log.debug(e.getMessage());
+                    try {
+                        transactionRequester.clearTransactionRequest(receivedTransactionHash);
+                    } catch (Exception e1) {
+                        log.error(e1.getMessage());
+                    }
+                    neighbor.incInvalidTransactions();
                 } catch (final RuntimeException e) {
                     log.error(e.getMessage());
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");
@@ -275,7 +284,7 @@ public class Node {
                 //Request bytes
 
                 //add request to reply queue (requestedHash, neighbor)
-                Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, TransactionRequester.REQUEST_HASH_SIZE);
+                Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, reqHashSize);
                 if (requestedHash.equals(receivedTransactionHash)) {
                     //requesting a random tip
                     requestedHash = Hash.NULL_HASH;
@@ -372,9 +381,7 @@ public class Node {
 
         //store new transaction
         try {
-            if (neighbor.isBelowNewTransactionLimit()) {
-                stored = receivedTransactionViewModel.store(tangle);
-            }
+            stored = receivedTransactionViewModel.store(tangle);
         } catch (Exception e) {
             log.error("Error accessing persistence store.", e);
             neighbor.incInvalidTransactions();
@@ -420,7 +427,7 @@ public class Node {
             //find requested trytes
             try {
                 //transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
-                transactionViewModel = TransactionViewModel.fromHash(tangle, new Hash(requestedHash.bytes(), 0, TransactionRequester.REQUEST_HASH_SIZE));
+                transactionViewModel = TransactionViewModel.fromHash(tangle, new Hash(requestedHash.bytes(), 0, reqHashSize));
                 //log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
             } catch (Exception e) {
                 log.error("Error while searching for transaction.", e);
@@ -475,7 +482,7 @@ public class Node {
             System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
             Hash hash = transactionRequester.transactionToRequest(rnd.nextDouble() < P_SELECT_MILESTONE);
             System.arraycopy(hash != null ? hash.bytes() : transactionViewModel.getHash().bytes(), 0,
-                    sendingPacket.getData(), TransactionViewModel.SIZE, REQUEST_HASH_SIZE);
+                    sendingPacket.getData(), TransactionViewModel.SIZE, reqHashSize);
             neighbor.send(sendingPacket);
         }
 
@@ -521,7 +528,7 @@ public class Node {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestone.latestMilestone);
                     System.arraycopy(transactionViewModel.getBytes(), 0, tipRequestingPacket.getData(), 0, TransactionViewModel.SIZE);
                     System.arraycopy(transactionViewModel.getHash().bytes(), 0, tipRequestingPacket.getData(), TransactionViewModel.SIZE,
-                            TransactionRequester.REQUEST_HASH_SIZE);
+                           reqHashSize);
                     //Hash.SIZE_IN_BYTES);
 
                     neighbors.forEach(n -> n.send(tipRequestingPacket));
@@ -679,10 +686,10 @@ public class Node {
     public Neighbor newNeighbor(final URI uri, boolean isConfigured) {
         if (isUriValid(uri)) {
             if (uri.getScheme().equals("tcp")) {
-                return new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured, newTxLimit);
+                return new TCPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), isConfigured);
             }
             if (uri.getScheme().equals("udp")) {
-                return new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, isConfigured, newTxLimit);
+                return new UDPNeighbor(new InetSocketAddress(uri.getHost(), uri.getPort()), udpSocket, isConfigured);
             }
         }
         throw new RuntimeException(uri.toString());

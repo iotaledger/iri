@@ -7,8 +7,7 @@ FROM openjdk:jre-slim
 WORKDIR /iri
 COPY docker-entrypoint.sh .
 RUN ["chmod", "+x", "docker-entrypoint.sh"]
-
-COPY --from=builder /iri/target/iri-1.4.1.4.jar iri.jar
+COPY --from=builder /iri/target/iri-1.4.2.2.jar iri.jar
 COPY logback.xml /iri
 VOLUME /iri
 

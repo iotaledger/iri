@@ -1,3 +1,18 @@
+1.4.2.2
+    - Fix locking issue (#534)
+    - Fix internal snapshot consistency checks 
+    - Update jeromq dependency to 0.4.3 (#544)
+
+1.4.2.1
+    - Add wasAddressSpentFrom API call
+    - Bugfix in getInclusionStates
+    - Bugfix in getTransactionsToApprove
+    - Update Snapshot to 20180128 16:00 UTC (#512)
+
+1.4.1.7
+    - fixes snapshot copies
+    - removes extra bundles lookup from validation
+
 1.4.1.6
     - fixes stale tcp connections
     - fixes solid milestone getting stuck (regression)

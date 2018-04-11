@@ -269,7 +269,9 @@ public class IXI {
         Map<String, Runnable> ixiMap = ixiLifetime.get(moduleName);
         if(ixiMap != null) {
             Runnable stop = ixiMap.get("shutdown");
-            if (stop != null) stop.run();
+            if (stop != null) {
+                stop.run();
+            }
         }
         ixiLifetime.remove(moduleName);
     }

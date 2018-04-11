@@ -91,10 +91,15 @@ public class Hash implements Serializable, Indexable {
     }
 
     @Override
-    public boolean equals(final Object obj) {
-        assert obj instanceof Hash;
-        if (obj == null) return false;
-        return Arrays.equals(bytes(), ((Hash) obj).bytes());
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        Hash hash = (Hash) o;
+        return Arrays.equals(bytes(), hash.bytes());
     }
 
     @Override

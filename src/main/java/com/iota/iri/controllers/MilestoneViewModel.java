@@ -10,7 +10,6 @@ import com.iota.iri.utils.Pair;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Created by paul on 4/11/17.
@@ -86,22 +85,6 @@ public class MilestoneViewModel {
         return null;
     }
 
-    public MilestoneViewModel nextWithSnapshot(Tangle tangle) throws Exception {
-        MilestoneViewModel milestoneViewModel = next(tangle);
-        while(milestoneViewModel !=null && !StateDiffViewModel.exists(tangle, milestoneViewModel.getHash())) {
-            milestoneViewModel = milestoneViewModel.next(tangle);
-        }
-        return milestoneViewModel;
-    }
-
-    public static MilestoneViewModel firstWithSnapshot(Tangle tangle) throws Exception {
-        MilestoneViewModel milestoneViewModel = first(tangle);
-        while(milestoneViewModel !=null && !StateDiffViewModel.exists(tangle, milestoneViewModel.getHash())) {
-            milestoneViewModel = milestoneViewModel.next(tangle);
-        }
-        return milestoneViewModel;
-    }
-
     public static MilestoneViewModel findClosestPrevMilestone(Tangle tangle, int index) throws Exception {
         Pair<Indexable, Persistable> milestonePair = tangle.previous(Milestone.class, new IntegerIndex(index));
         if(milestonePair != null && milestonePair.hi != null) {
@@ -110,8 +93,9 @@ public class MilestoneViewModel {
         return null;
     }
 
-    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index) throws Exception {
-        if(index <= com.iota.iri.Milestone.MILESTONE_START_INDEX) {
+    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index, boolean testnet,
+                                                              int milestoneStartIndex) throws Exception {
+        if(!testnet && index <= milestoneStartIndex) {
             return first(tangle);
         }
         Pair<Indexable, Persistable> milestonePair = tangle.next(Milestone.class, new IntegerIndex(index));
@@ -119,14 +103,6 @@ public class MilestoneViewModel {
             return new MilestoneViewModel((Milestone) milestonePair.hi);
         }
         return null;
-    }
-
-    public static MilestoneViewModel latestWithSnapshot(Tangle tangle) throws Exception {
-        MilestoneViewModel milestoneViewModel = latest(tangle);
-        while(milestoneViewModel !=null && !StateDiffViewModel.exists(tangle, milestoneViewModel.getHash())) {
-            milestoneViewModel = milestoneViewModel.previous(tangle);
-        }
-        return milestoneViewModel;
     }
 
     public boolean store(Tangle tangle) throws Exception {

@@ -3,14 +3,14 @@ package com.iota.iri.service;
 public class ValidationException extends Exception {
 
     /**
-     * Initializes a new instance of the ArgumentException.
+     * Initializes a new instance of the ValidationException.
      */
     public ValidationException() {
-        super("Wrong arguments passed to function");
+        super("Invalid parameters are passed");
     }
 
     /**
-     * Initializes a new instance of the ArgumentException.
+     * Initializes a new instance of the ValidationException with the specified detail message.
      */
     public ValidationException(String msg) {
         super(msg);

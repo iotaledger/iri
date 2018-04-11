@@ -24,6 +24,34 @@ public class Configuration {
 
     private final Map<String, String> conf = new ConcurrentHashMap<>();
 
+    public static final String MAINNET_COORDINATOR_ADDRESS =
+            "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
+    public static final String TESTNET_COORDINATOR_ADDRESS =
+            "EQQFCZBIHRHWPXKMTOLMYUYPCN9XLMJPYZVFJSAY9FQHCCLWTOLLUGKKMXYFDBOOYFBLBI9WUEILGECYM";
+    public static final String MAINNET_SNAPSHOT_FILE = "/snapshotMainnet.txt";
+    public static final String TESTNET_SNAPSHOT_FILE = "/snapshotTestnet.txt";
+    public static final String MAINNET_SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
+
+    public static final String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT = "/previousEpochsSpentAddresses.txt";
+    public static final String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = "/previousEpochsSpentAddresses.sig";
+    public static final String MAINNET_MILESTONE_START_INDEX = "338000";
+    public static final String TESTNET_MILESTONE_START_INDEX = "434525";
+    public static final String MAINNET_NUM_KEYS_IN_MILESTONE = "20";
+    public static final String TESTNET_NUM_KEYS_IN_MILESTONE = "22";
+    public static final String GLOBAL_SNAPSHOT_TIME = "1517180400";
+    public static final String TESTNET_GLOBAL_SNAPSHOT_TIME = "1522306500";
+
+
+    public static final String MAINNET_MWM = "14";
+    public static final String TESTNET_MWM = "9";
+    public static final String PACKET_SIZE = "1650";
+    public static final String TESTNET_PACKET_SIZE = "1653";
+    public static final String REQ_HASH_SIZE = "46";
+    public static final String TESTNET_REQ_HASH_SIZE = "49";
+
+
+
+
     public enum DefaultConfSettings {
         CONFIG,
         PORT,
@@ -47,12 +75,11 @@ public class Configuration {
         P_PROPAGATE_REQUEST,
         MAIN_DB, EXPORT, // exports transaction trytes to filesystem
         SEND_LIMIT,
-        NEW_TX_LIMIT,
-        API_NEW_TX_LIMIT,
         MAX_PEERS,
         DNS_RESOLUTION_ENABLED,
         DNS_REFRESHER_ENABLED,
         COORDINATOR,
+        DONT_VALIDATE_TESTNET_MILESTONE_SIG,
         REVALIDATE,
         RESCAN_DB,
         MIN_RANDOM_WALKS,
@@ -62,8 +89,7 @@ public class Configuration {
         MAX_GET_TRYTES,
         MAX_BODY_LENGTH,
         MAX_DEPTH,
-        MAINNET_MWM,
-        TESTNET_MWM,
+        MWM,
         ZMQ_ENABLED,
         ZMQ_PORT,
         ZMQ_IPC,
@@ -71,7 +97,16 @@ public class Configuration {
         Q_SIZE_NODE,
         P_DROP_CACHE_ENTRY,
         CACHE_SIZE_BYTES,
+        SNAPSHOT_FILE,
+        SNAPSHOT_SIGNATURE_FILE,
+        MILESTONE_START_INDEX,
+        NUMBER_OF_KEYS_IN_A_MILESTONE,
+        TRANSACTION_PACKET_SIZE,
+        REQUEST_HASH_SIZE,
+        SNAPSHOT_TIME
     }
+
+
 
     {
         // defaults
@@ -98,15 +133,12 @@ public class Configuration {
         conf.put(DefaultConfSettings.MAIN_DB.name(), "rocksdb");
         conf.put(DefaultConfSettings.EXPORT.name(), "false");
         conf.put(DefaultConfSettings.SEND_LIMIT.name(), "-1.0");
-        conf.put(DefaultConfSettings.NEW_TX_LIMIT.name(), "0.0");
-        conf.put(DefaultConfSettings.API_NEW_TX_LIMIT.name(), "0.0");
         conf.put(DefaultConfSettings.MAX_PEERS.name(), "0");
         conf.put(DefaultConfSettings.DNS_REFRESHER_ENABLED.name(), "true");
         conf.put(DefaultConfSettings.DNS_RESOLUTION_ENABLED.name(), "true");
         conf.put(DefaultConfSettings.REVALIDATE.name(), "false");
         conf.put(DefaultConfSettings.RESCAN_DB.name(), "false");
-        conf.put(DefaultConfSettings.MAINNET_MWM.name(), "14");
-        conf.put(DefaultConfSettings.TESTNET_MWM.name(), "13");
+        conf.put(DefaultConfSettings.MWM.name(), MAINNET_MWM);
 
         // Pick a number based on best performance
         conf.put(DefaultConfSettings.MIN_RANDOM_WALKS.name(), "5");
@@ -127,6 +159,15 @@ public class Configuration {
         conf.put(DefaultConfSettings.P_DROP_CACHE_ENTRY.name(), "0.02");
         conf.put(DefaultConfSettings.CACHE_SIZE_BYTES.name(), "15000");
 
+        conf.put(DefaultConfSettings.COORDINATOR.name(), MAINNET_COORDINATOR_ADDRESS);
+        conf.put(DefaultConfSettings.DONT_VALIDATE_TESTNET_MILESTONE_SIG.name(), "false");
+        conf.put(DefaultConfSettings.SNAPSHOT_FILE.name(), MAINNET_SNAPSHOT_FILE);
+        conf.put(DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE.name(), MAINNET_SNAPSHOT_SIG_FILE);
+        conf.put(DefaultConfSettings.MILESTONE_START_INDEX.name(), MAINNET_MILESTONE_START_INDEX);
+        conf.put(DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE.name(), MAINNET_NUM_KEYS_IN_MILESTONE);
+        conf.put(DefaultConfSettings.TRANSACTION_PACKET_SIZE.name(), PACKET_SIZE);
+        conf.put(DefaultConfSettings.REQUEST_HASH_SIZE.name(), REQ_HASH_SIZE);
+        conf.put(DefaultConfSettings.SNAPSHOT_TIME.name(), GLOBAL_SNAPSHOT_TIME);
     }
 
     public boolean init() throws IOException {
@@ -187,12 +228,18 @@ public class Configuration {
         return Boolean.parseBoolean(getConfValue(k));
     }
 
+    private long longNum(String k) { return Long.parseLong(getConfValue(k)); }
+
     public String string(final DefaultConfSettings d) {
         return string(d.name());
     }
 
     public int integer(final DefaultConfSettings d) {
         return integer(d.name());
+    }
+
+    public long longNum(final DefaultConfSettings d) {
+        return longNum(d.name());
     }
 
     public boolean booling(final DefaultConfSettings d) {

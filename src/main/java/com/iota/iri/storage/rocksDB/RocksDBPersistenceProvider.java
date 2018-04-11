@@ -112,7 +112,9 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         for (final ColumnFamilyHandle columnFamilyHandle : columnFamilyHandles) {
             columnFamilyHandle.close();
         }
-        if (db != null) db.close();
+        if (db != null) {
+            db.close();
+        }
         options.close();
         bloomFilter.close();
     }

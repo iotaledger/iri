@@ -289,6 +289,52 @@
             </dependencies>
 
         </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.21.0</version>
+            <configuration>
+                <excludes>
+                    <exclude>integration/*.java</exclude>
+                </excludes>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>integration-test</id>
+                    <goals>
+                        <goal>test</goal>
+                    </goals>
+                    <phase>integration-test</phase>
+                    <configuration>
+                        <excludes>
+                            <exclude>none</exclude>
+                        </excludes>
+                        <includes>
+                            <include>integration/*.java</include>
+                        </includes>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+        <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.7.9</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>prepare-agent</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>report</id>
+                    <phase>integration-test</phase>
+                    <goals>
+                        <goal>report</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
     </plugins>
 
 </build>

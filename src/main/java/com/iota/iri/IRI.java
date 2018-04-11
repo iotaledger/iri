@@ -78,7 +78,7 @@ public class IRI {
         log.info("IOTA Node initialised correctly.");
     }
 
-    private static void validateParams(final Configuration configuration, final String[] args) throws IOException {
+    public static void validateParams(final Configuration configuration, final String[] args) throws IOException {
 
         boolean configurationInit = configuration.init();
 

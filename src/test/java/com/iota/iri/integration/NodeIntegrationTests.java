@@ -1,5 +1,7 @@
-package com.iota.iri;
+package com.iota.iri.integration;
 
+import com.iota.iri.IXI;
+import com.iota.iri.Iota;
 import com.iota.iri.conf.Configuration;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;

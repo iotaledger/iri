@@ -1,4 +1,4 @@
-package com.iota.iri.Integration;
+package com.iota.iri.integration;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

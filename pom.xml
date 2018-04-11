@@ -295,7 +295,7 @@
             <version>2.21.0</version>
             <configuration>
                 <excludes>
-                    <exclude>Integration/*.java</exclude>
+                    <exclude>integration/*.java</exclude>
                 </excludes>
             </configuration>
             <executions>
@@ -310,7 +310,7 @@
                             <exclude>none</exclude>
                         </excludes>
                         <includes>
-                            <include>Integration/*.java</include>
+                            <include>integration/*.java</include>
                         </includes>
                     </configuration>
                 </execution>

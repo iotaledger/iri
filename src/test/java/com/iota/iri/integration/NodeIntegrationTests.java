@@ -1,4 +1,4 @@
-package com.iota.iri.Integration;
+package com.iota.iri.integration;
 
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;

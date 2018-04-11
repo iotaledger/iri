@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
+import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
 
@@ -48,34 +49,58 @@ public class ZmqPublishProvider implements PersistenceProvider {
 
     @Override
     public boolean update(Persistable model, Indexable index, String item) throws Exception {
-        if (model instanceof Transaction) {
-            Transaction transaction = ((Transaction) model);
-            if (item.contains("sender")) {
-                TransactionViewModel transactionViewModel = new TransactionViewModel(transaction, (Hash)index);
-                StringBuffer sb = new StringBuffer(600);
-                try {
-                    sb.append("tx ");
-                    sb.append(transactionViewModel.getHash()); sb.append(" ");
-                    sb.append(transactionViewModel.getAddressHash()); sb.append(" ");
-                    sb.append(String.valueOf(transactionViewModel.value())); sb.append(" ");
-                    sb.append(transactionViewModel.getObsoleteTagValue().toString().substring(0,27)); sb.append(" ");
-                    sb.append(String.valueOf(transactionViewModel.getTimestamp())); sb.append(" ");
-                    sb.append(String.valueOf(transactionViewModel.getCurrentIndex())); sb.append(" ");
-                    sb.append(String.valueOf(transactionViewModel.lastIndex())); sb.append(" ");
-                    sb.append(transactionViewModel.getBundleHash()); sb.append(" ");
-                    sb.append(transactionViewModel.getTrunkTransactionHash()); sb.append(" ");
-                    sb.append(transactionViewModel.getBranchTransactionHash()); sb.append(" ");
-                    sb.append(String.valueOf(transactionViewModel.getArrivalTime()));
-                    messageQ.publish(sb.toString());
-                }
-                catch (Exception e) {
-                    log.error(sb.toString());
-                    log.error("Error publishing to zmq.", e);
-                }
-                return true;
-            }
+        if(!(model instanceof Transaction)) {
+            return false;
         }
-        return false;
+        if(!item.contains("sender")) {
+            return false;
+        }
+
+        Transaction transaction = ((Transaction) model);
+        TransactionViewModel transactionViewModel = new TransactionViewModel(transaction, (Hash)index);
+
+        publishTx(transactionViewModel);
+        publishTxTrytes(transactionViewModel);
+
+        return true;
+    }
+
+    private void publishTx(TransactionViewModel transactionViewModel) {
+        StringBuilder txStringBuilder = new StringBuilder(600);
+
+        try {
+            txStringBuilder.append("tx ");
+            txStringBuilder.append(transactionViewModel.getHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getAddressHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.value())); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getObsoleteTagValue().toString().substring(0,27)); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.getTimestamp())); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.getCurrentIndex())); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.lastIndex())); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getBundleHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getTrunkTransactionHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getBranchTransactionHash()); txStringBuilder.append(" ");
+            txStringBuilder.append(String.valueOf(transactionViewModel.getArrivalTime()));
+
+            messageQ.publish(txStringBuilder.toString());
+        } catch (Exception e) {
+            log.error(txStringBuilder.toString());
+            log.error("Error publishing tx to zmq.", e);
+        }
+    }
+
+    private void publishTxTrytes(TransactionViewModel transactionViewModel) {
+        StringBuilder txTrytesStringBuilder = new StringBuilder(TransactionViewModel.TRINARY_SIZE/3);
+
+        try {
+            txTrytesStringBuilder.append("tx_trytes ");
+            txTrytesStringBuilder.append(Converter.trytes(transactionViewModel.trits()));
+
+            messageQ.publish(txTrytesStringBuilder.toString());
+        } catch (Exception e) {
+            log.error(txTrytesStringBuilder.toString());
+            log.error("Error publishing tx_trytes to zmq.", e);
+        }
     }
 
     @Override

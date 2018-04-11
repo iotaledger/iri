@@ -54,26 +54,28 @@ public class TransactionViewModel {
     private int[] trits;
     public int weightMagnitude;
 
-    public static void fillMetadata(final Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
-        if (transactionViewModel.getHash().equals(Hash.NULL_HASH)) { return; }
+    public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
+        if (Hash.NULL_HASH.equals(transactionViewModel.getHash())) {
+            return;
+        }
         if(transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
             tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
         }
     }
 
-    public static TransactionViewModel find(final Tangle tangle, byte[] hash) throws Exception {
+    public static TransactionViewModel find(Tangle tangle, byte[] hash) throws Exception {
         TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), new Hash(hash));
         fillMetadata(tangle, transactionViewModel);
         return transactionViewModel;
     }
 
-    public static TransactionViewModel fromHash(final Tangle tangle, final Hash hash) throws Exception {
+    public static TransactionViewModel fromHash(Tangle tangle, final Hash hash) throws Exception {
         TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
         fillMetadata(tangle, transactionViewModel);
         return transactionViewModel;
     }
 
-    public static boolean mightExist(final Tangle tangle, Hash hash) throws Exception {
+    public static boolean mightExist(Tangle tangle, Hash hash) throws Exception {
         return tangle.maybeHas(Transaction.class, hash);
     }
 
@@ -108,11 +110,11 @@ public class TransactionViewModel {
         transaction.type = FILLED_SLOT;
     }
 
-    public static int getNumberOfStoredTransactions(final Tangle tangle) throws Exception {
+    public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
         return tangle.getCount(Transaction.class).intValue();
     }
 
-    public boolean update(final Tangle tangle, String item) throws Exception {
+    public boolean update(Tangle tangle, String item) throws Exception {
         getAddressHash();
         getTrunkTransactionHash();
         getBranchTransactionHash();
@@ -127,14 +129,14 @@ public class TransactionViewModel {
         return tangle.update(transaction, hash, item);
     }
 
-    public TransactionViewModel getBranchTransaction(final Tangle tangle) throws Exception {
+    public TransactionViewModel getBranchTransaction(Tangle tangle) throws Exception {
         if(branch == null) {
             branch = TransactionViewModel.fromHash(tangle, getBranchTransactionHash());
         }
         return branch;
     }
 
-    public TransactionViewModel getTrunkTransaction(final Tangle tangle) throws Exception {
+    public TransactionViewModel getTrunkTransaction(Tangle tangle) throws Exception {
         if(trunk == null) {
             trunk = TransactionViewModel.fromHash(tangle, getTrunkTransactionHash());
         }
@@ -311,9 +313,11 @@ public class TransactionViewModel {
         return transaction.value;
     }
 
-    public void setValidity(final Tangle tangle, int validity) throws Exception {
-        transaction.validity = validity;
-        update(tangle, "validity");
+    public void setValidity(Tangle tangle, int validity) throws Exception {
+        if(transaction.validity != validity) {
+            transaction.validity = validity;
+            update(tangle, "validity");
+        }
     }
 
     public int getValidity() {
@@ -366,14 +370,18 @@ public class TransactionViewModel {
         return tangle.keysWithMissingReferences(Approvee.class, Transaction.class);
     }
 
-    public static void updateSolidTransactions(final Tangle tangle, final Set<Hash> analyzedHashes) throws Exception {
+    public static void updateSolidTransactions(Tangle tangle, final Set<Hash> analyzedHashes) throws Exception {
         Iterator<Hash> hashIterator = analyzedHashes.iterator();
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
+
             transactionViewModel.updateHeights(tangle);
-            transactionViewModel.updateSolid(true);
-            transactionViewModel.update(tangle, "solid|height");
+
+            if(!transactionViewModel.isSolid()) {
+                transactionViewModel.updateSolid(true);
+                transactionViewModel.update(tangle, "solid|height");
+            }
         }
     }
 
@@ -393,7 +401,7 @@ public class TransactionViewModel {
         return transaction.snapshot;
     }
 
-    public void setSnapshot(final Tangle tangle, final int index) throws Exception {
+    public void setSnapshot(Tangle tangle, final int index) throws Exception {
         if ( index != transaction.snapshot ) {
             transaction.snapshot = index;
             update(tangle, "snapshot");
@@ -408,7 +416,7 @@ public class TransactionViewModel {
         transaction.height = height;
     }
 
-    public void updateHeights(final Tangle tangle) throws Exception {
+    public void updateHeights(Tangle tangle) throws Exception {
         TransactionViewModel transactionVM = this, trunk = this.getTrunkTransaction(tangle);
         Stack<Hash> transactionViewModels = new Stack<>();
         transactionViewModels.push(transactionVM.getHash());
@@ -419,12 +427,19 @@ public class TransactionViewModel {
         }
         while(transactionViewModels.size() != 0) {
             transactionVM = TransactionViewModel.fromHash(tangle, transactionViewModels.pop());
-            if(trunk.getHash().equals(Hash.NULL_HASH) && trunk.getHeight() == 0 && !transactionVM.getHash().equals(Hash.NULL_HASH)) {
-                transactionVM.updateHeight(1L);
-                transactionVM.update(tangle, "height");
+            long currentHeight = transactionVM.getHeight();
+            if(Hash.NULL_HASH.equals(trunk.getHash()) && trunk.getHeight() == 0
+                    && !Hash.NULL_HASH.equals(transactionVM.getHash())) {
+                if(currentHeight != 1L ){
+                    transactionVM.updateHeight(1L);
+                    transactionVM.update(tangle, "height");
+                }
             } else if ( trunk.getType() != PREFILLED_SLOT && transactionVM.getHeight() == 0){
-                transactionVM.updateHeight(1 + trunk.getHeight());
-                transactionVM.update(tangle, "height");
+                long newHeight = 1L + trunk.getHeight();
+                if(currentHeight != newHeight) {
+                    transactionVM.updateHeight(newHeight);
+                    transactionVM.update(tangle, "height");
+                }
             } else {
                 break;
             }

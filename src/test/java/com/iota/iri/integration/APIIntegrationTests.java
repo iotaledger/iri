@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.junit.Assert.fail;
 
 public class APIIntegrationTests {
 
@@ -87,6 +88,7 @@ public class APIIntegrationTests {
                 ixi.init(configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
             } catch (final Exception e) {
                 log.error("Exception during IOTA node initialisation: ", e);
+                fail("Exception during IOTA node initialisation");
             }
             log.info("IOTA Node initialised correctly.");
         }
@@ -101,7 +103,7 @@ public class APIIntegrationTests {
                 iota.shutdown();
             } catch (final Exception e) {
                 log.error("Exception occurred shutting down IOTA node: ", e);
-                System.exit(-1);
+                fail("Exception occurred shutting down IOTA node");
             }
         }
     }

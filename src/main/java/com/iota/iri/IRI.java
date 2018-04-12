@@ -99,6 +99,7 @@ public class IRI {
         final Option<String> remoteAuth = parser.addStringOption("remote-auth");
         final Option<String> neighbors = parser.addStringOption('n', "neighbors");
         final Option<Boolean> export = parser.addBooleanOption("export");
+        final Option<Boolean> zmq = parser.addBooleanOption("zmq-enabled");
         final Option<Boolean> help = parser.addBooleanOption('h', "help");
         final Option<Boolean> testnet = parser.addBooleanOption("testnet");
         final Option<Boolean> revalidate = parser.addBooleanOption("revalidate");
@@ -205,6 +206,10 @@ public class IRI {
         if (parser.getOptionValue(export) != null) {
             log.info("Export transaction trytes turned on.");
             configuration.put(DefaultConfSettings.EXPORT, "true");
+        }
+
+        if (parser.getOptionValue(zmq) != null) {
+            configuration.put(DefaultConfSettings.ZMQ_ENABLED, "true");
         }
 
         if (Integer.parseInt(cport) < 1024) {

@@ -36,7 +36,7 @@ public class KerlTest {
         int byte_size = 48;
         BigInteger bigInteger = new BigInteger("13190295509826637194583200125168488859623001289643321872497025844241981297292953903419783680940401133507992851240799");
         byte[] outBytes = new byte[Kerl.BYTE_HASH_LENGTH];
-        Kerl.bytesFromBigInt(bigInteger, outBytes, 0);
+        Kerl.bytesFromBigInt(bigInteger, outBytes);
         BigInteger out_bigInteger = Kerl.bigIntFromBytes(outBytes, 0, outBytes.length);
         Assert.assertTrue(bigInteger.equals(out_bigInteger));
     }
@@ -54,7 +54,7 @@ public class KerlTest {
             BigInteger in_bigInteger = Kerl.bigIntFromBytes(inBytes, 0, inBytes.length);
             Kerl.tritsFromBigInt(in_bigInteger, trits, 0, trit_size);
             BigInteger out_bigInteger = Kerl.bigIntFromTrits(trits, 0, trit_size);
-            Kerl.bytesFromBigInt(out_bigInteger, outBytes, 0);
+            Kerl.bytesFromBigInt(out_bigInteger, outBytes);
             if (i % 1_000 == 0) {
                 System.out.println(String.format("%d iteration: %s", i, in_bigInteger));
             }
@@ -75,7 +75,7 @@ public class KerlTest {
             inTrits[242] = 0;
 
             BigInteger in_bigInteger = Kerl.bigIntFromTrits(inTrits, 0, trit_size);
-            Kerl.bytesFromBigInt(in_bigInteger, bytes, 0);
+            Kerl.bytesFromBigInt(in_bigInteger, bytes);
             BigInteger out_bigInteger = Kerl.bigIntFromBytes(bytes, 0, bytes.length);
             Kerl.tritsFromBigInt(out_bigInteger, outTrits, 0, trit_size);
 
@@ -84,6 +84,16 @@ public class KerlTest {
             }
             Assert.assertTrue(String.format("bigInt that failed: %s", in_bigInteger), Arrays.equals(inTrits, outTrits));
         }
+    }
+
+    @Test
+    public void limitBigIntFromTrits() {
+        // this confirms that the limit we set using long math works for any size input
+        int[] trits = new int[2048];
+        Arrays.fill(trits, 1);
+        Kerl.bigIntFromTrits(trits, 0, trits.length);
+        Arrays.fill(trits, -1);
+        Kerl.bigIntFromTrits(trits, 0, trits.length);
     }
 
     //@Test

@@ -58,24 +58,24 @@ public class Kerl implements Sponge {
         }
 
         try {
-          do {
-              this.keccak.digest(byte_state, 0, BYTE_HASH_LENGTH);
-              //convert to trits
-              tritsFromBigInt(bigIntFromBytes(byte_state, 0, BYTE_HASH_LENGTH), trit_state, 0, Sponge.HASH_LENGTH);
+            do {
+                this.keccak.digest(byte_state, 0, BYTE_HASH_LENGTH);
+                //convert to trits
+                tritsFromBigInt(bigIntFromBytes(byte_state, 0, BYTE_HASH_LENGTH), trit_state, 0, Sponge.HASH_LENGTH);
 
-              //copy with offset
-              trit_state[HASH_LENGTH - 1] = 0;
-              System.arraycopy(trit_state, 0, trits, offset, HASH_LENGTH);
+                //copy with offset
+                trit_state[HASH_LENGTH - 1] = 0;
+                System.arraycopy(trit_state, 0, trits, offset, HASH_LENGTH);
 
-              //calculate hash again
-              for (int i = byte_state.length; i-- > 0; ) {
+                //calculate hash again
+                for (int i = byte_state.length; i-- > 0; ) {
 
-                  byte_state[i] = (byte) (byte_state[i] ^ 0xFF);
-              }
-              keccak.update(byte_state);
-              offset += HASH_LENGTH;
+                    byte_state[i] = (byte) (byte_state[i] ^ 0xFF);
+                }
+                keccak.update(byte_state);
+                offset += HASH_LENGTH;
 
-          } while ((length -= HASH_LENGTH) > 0);
+            } while ((length -= HASH_LENGTH) > 0);
         } catch (DigestException e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -101,7 +101,7 @@ public class Kerl implements Sponge {
 
     public static void tritsFromBigInt(final BigInteger value, int[] destination, int offset, int size) {
 
-        if(destination.length - offset < size) {
+        if (destination.length - offset < size) {
             throw new IllegalArgumentException("Destination array has invalid size");
         }
 
@@ -117,7 +117,7 @@ public class Kerl implements Sponge {
                 remainder = Converter.MIN_TRIT_VALUE;
                 absoluteValue = absoluteValue.add(BigInteger.ONE);
             }
-            destination[offset  + i] = remainder;
+            destination[offset + i] = remainder;
         }
 
         if (value.compareTo(BigInteger.ZERO) < 0) {
@@ -128,8 +128,9 @@ public class Kerl implements Sponge {
             }
         }
     }
+
     public static void bytesFromBigInt(final BigInteger value, byte[] destination, int offset) {
-        if(destination.length - offset < BYTE_HASH_LENGTH) {
+        if (destination.length - offset < BYTE_HASH_LENGTH) {
             throw new IllegalArgumentException("Destination array has invalid size.");
         }
 

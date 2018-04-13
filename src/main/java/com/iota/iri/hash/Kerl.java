@@ -110,7 +110,7 @@ public final class Kerl implements Sponge {
                     break;
 
                 default:
-                    throw new RuntimeException("unreachable");
+                    throw new IllegalStateException("unreachable");
             }
         }
         for (; n >= offset; n--) {
@@ -127,7 +127,7 @@ public final class Kerl implements Sponge {
                     power = 0;
                     break;
                 default:
-                    throw new RuntimeException("unreachable");
+                    throw new IllegalStateException("unreachable");
             }
         }
         // do leftover pow

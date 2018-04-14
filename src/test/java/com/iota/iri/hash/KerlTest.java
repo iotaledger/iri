@@ -37,7 +37,7 @@ public class KerlTest {
         BigInteger bigInteger = new BigInteger("13190295509826637194583200125168488859623001289643321872497025844241981297292953903419783680940401133507992851240799");
         byte[] outBytes = new byte[Kerl.BYTE_HASH_LENGTH];
         Kerl.bytesFromBigInt(bigInteger, outBytes);
-        BigInteger out_bigInteger = Kerl.bigIntFromBytes(outBytes, 0, outBytes.length);
+        BigInteger out_bigInteger = new BigInteger(outBytes);
         Assert.assertTrue(bigInteger.equals(out_bigInteger));
     }
 
@@ -51,7 +51,7 @@ public class KerlTest {
         byte[] outBytes = new byte[Kerl.BYTE_HASH_LENGTH];
         for (int i = 0; i < 10_000; i++) {
             seed.nextBytes(inBytes);
-            BigInteger in_bigInteger = Kerl.bigIntFromBytes(inBytes, 0, inBytes.length);
+            BigInteger in_bigInteger = new BigInteger(inBytes);
             Kerl.tritsFromBigInt(in_bigInteger, trits, 0, trit_size);
             BigInteger out_bigInteger = Kerl.bigIntFromTrits(trits, 0, trit_size);
             Kerl.bytesFromBigInt(out_bigInteger, outBytes);
@@ -76,7 +76,7 @@ public class KerlTest {
 
             BigInteger in_bigInteger = Kerl.bigIntFromTrits(inTrits, 0, trit_size);
             Kerl.bytesFromBigInt(in_bigInteger, bytes);
-            BigInteger out_bigInteger = Kerl.bigIntFromBytes(bytes, 0, bytes.length);
+            BigInteger out_bigInteger = new BigInteger(bytes);
             Kerl.tritsFromBigInt(out_bigInteger, outTrits, 0, trit_size);
 
             if (i % 1_000 == 0) {

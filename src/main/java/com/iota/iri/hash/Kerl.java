@@ -15,7 +15,8 @@ public final class Kerl implements Sponge {
 
     // radix constant conversion for fast math
     public static final BigInteger RADIX = BigInteger.valueOf(Converter.RADIX);
-    private static final BigInteger[] RADIX_POWERS = IntStream.range(0, Sponge.HASH_LENGTH + 1).mapToObj(RADIX::pow).toArray(BigInteger[]::new);
+    private static final int MAX_POWERS_LONG = 40;
+    private static final BigInteger[] RADIX_POWERS = IntStream.range(0, MAX_POWERS_LONG + 1).mapToObj(RADIX::pow).toArray(BigInteger[]::new);
 
     private final byte[] byte_state;
     private final int[] trit_state;
@@ -84,55 +85,12 @@ public final class Kerl implements Sponge {
             }
         }
         BigInteger value = BigInteger.ZERO;
-        long num;
-        int power = 0;
-        int n = offset + size - 1;
-        for (; n > offset + 1; n--) {
-            switch (trits[n]) {
-                case 0: // a * b
-                    power++;
-                    break;
-                case 1: // a * b + 1
-                    num = 9 + (trits[--n] * 3) + trits[--n];
-                    for (int count = 0; n > offset && count <= 36; count++, power++) {
-                        num = 3 * num + trits[--n];
-                    }
-                    value = value.multiply(RADIX_POWERS[power + 3]).add(BigInteger.valueOf(num));
-                    power = 0;
-                    break;
-                case -1: // a * b - 1
-                    num = 9 - (trits[--n] * 3) - trits[--n];
-                    for (int count = 0; n > offset && count <= 36; count++, power++) {
-                        num = 3 * num - trits[--n];
-                    }
-                    value = value.multiply(RADIX_POWERS[power + 3]).subtract(BigInteger.valueOf(num));
-                    power = 0;
-                    break;
-
-                default:
-                    throw new IllegalStateException("unreachable");
+        for (int n = offset + size - 1, count = 0; n >= offset; count = 0) {
+            long num = 0L;
+            for (; n >= offset && count < MAX_POWERS_LONG; count++, n--) {
+                num = 3 * num + trits[n];
             }
-        }
-        for (; n >= offset; n--) {
-            switch (trits[n]) {
-                case 0:
-                    power++;
-                    break;
-                case 1:
-                    value = value.multiply(RADIX_POWERS[power + 1]).add(BigInteger.ONE);
-                    power = 0;
-                    break;
-                case -1:
-                    value = value.multiply(RADIX_POWERS[power + 1]).subtract(BigInteger.ONE);
-                    power = 0;
-                    break;
-                default:
-                    throw new IllegalStateException("unreachable");
-            }
-        }
-        // do leftover pow
-        if (power > 0) {
-            value = value.multiply(RADIX_POWERS[power]);
+            value = value.multiply(RADIX_POWERS[count]).add(BigInteger.valueOf(num));
         }
         return value;
     }
@@ -172,7 +130,7 @@ public final class Kerl implements Sponge {
         }
         int start = BYTE_HASH_LENGTH - (value.bitLength() / 8 + 1);
         Arrays.fill(destination, 0, start, (byte) (value.signum() < 0 ? -1 : 0));
-        for (final byte aByte : value.toByteArray()) {
+        for (byte aByte : value.toByteArray()) {
             destination[start++] = aByte;
         }
     }

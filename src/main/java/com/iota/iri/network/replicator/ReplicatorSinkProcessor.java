@@ -11,8 +11,6 @@ import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
 import com.iota.iri.network.Node;
 
 class ReplicatorSinkProcessor implements Runnable {
@@ -24,13 +22,15 @@ class ReplicatorSinkProcessor implements Runnable {
     public final static int CRC32_BYTES = 16;
     private final ReplicatorSinkPool replicatorSinkPool;
     private final int port;
+    private int reqHashSize;
 
     public ReplicatorSinkProcessor(final TCPNeighbor neighbor,
                                    final ReplicatorSinkPool replicatorSinkPool,
-                                   final int port) {
+                                   final int port, int reqHashSize) {
         this.neighbor = neighbor;
         this.replicatorSinkPool = replicatorSinkPool;
         this.port = port;
+        this.reqHashSize = reqHashSize;
     }
 
     @Override
@@ -89,12 +89,14 @@ class ReplicatorSinkProcessor implements Runnable {
                                     
                                         byte[] bytes = message.array();
 
-                                        if (bytes.length == Node.TRANSACTION_PACKET_SIZE) {
+                                        if (bytes.length == reqHashSize) {
                                             try {
                                                 CRC32 crc32 = new CRC32();                                        
                                                 crc32.update(message.array());
                                                 String crc32_string = Long.toHexString(crc32.getValue());
-                                                while (crc32_string.length() < CRC32_BYTES) crc32_string = "0"+crc32_string;
+                                                while (crc32_string.length() < CRC32_BYTES) {
+                                                    crc32_string = "0"+crc32_string;
+                                                }
                                                 out.write(message.array());
                                                 out.write(crc32_string.getBytes());
                                                 out.flush();
@@ -121,8 +123,11 @@ class ReplicatorSinkProcessor implements Runnable {
             }
         } catch (Exception e) {
             String reason = e.getMessage();
-            if (reason==null || reason.equals("null")) reason = "closed"; 
-            log.error("***** NETWORK ALERT ***** No sink to host {}:{}, reason: {}", remoteAddress, neighbor.getPort(), e.getMessage());
+            if (reason == null || reason.equals("null")) {
+                reason = "closed";
+            }
+            log.error("***** NETWORK ALERT ***** No sink to host {}:{}, reason: {}", remoteAddress, neighbor.getPort(),
+                    reason);
             synchronized (neighbor) {
                 Socket sourceSocket = neighbor.getSource();
                 if (sourceSocket != null && (sourceSocket.isClosed() || !sourceSocket.isConnected())) {

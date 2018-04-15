@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.4.2.2</version>
+    <version>1.4.2.3</version>
 
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
@@ -204,6 +204,27 @@
                 </execution>
             </executions>
         </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <version>3.0.0</version>
+            <executions>
+                <execution>
+                    <id>validate</id>
+                    <phase>validate</phase>
+                    <configuration>
+                        <configLocation>iota-checks.xml</configLocation>
+                        <encoding>UTF-8</encoding>
+                        <consoleOutput>true</consoleOutput>
+                        <failsOnError>true</failsOnError>
+                        <linkXRef>false</linkXRef>
+                    </configuration>
+                    <goals>
+                        <goal>check</goal>
+                    </goals>
+                </execution>
+            </executions>
+        </plugin>
         <!-- Use the Enforcer to verify build integrity -->
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
@@ -267,6 +288,52 @@
                 </dependency>
             </dependencies>
 
+        </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-surefire-plugin</artifactId>
+            <version>2.21.0</version>
+            <configuration>
+                <excludes>
+                    <exclude>integration/*.java</exclude>
+                </excludes>
+            </configuration>
+            <executions>
+                <execution>
+                    <id>integration-test</id>
+                    <goals>
+                        <goal>test</goal>
+                    </goals>
+                    <phase>integration-test</phase>
+                    <configuration>
+                        <excludes>
+                            <exclude>none</exclude>
+                        </excludes>
+                        <includes>
+                            <include>integration/*.java</include>
+                        </includes>
+                    </configuration>
+                </execution>
+            </executions>
+        </plugin>
+        <plugin>
+            <groupId>org.jacoco</groupId>
+            <artifactId>jacoco-maven-plugin</artifactId>
+            <version>0.7.9</version>
+            <executions>
+                <execution>
+                    <goals>
+                        <goal>prepare-agent</goal>
+                    </goals>
+                </execution>
+                <execution>
+                    <id>report</id>
+                    <phase>integration-test</phase>
+                    <goals>
+                        <goal>report</goal>
+                    </goals>
+                </execution>
+            </executions>
         </plugin>
     </plugins>
 

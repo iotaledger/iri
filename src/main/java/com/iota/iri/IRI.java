@@ -139,70 +139,7 @@ public class IRI {
         final boolean isTestnet = Optional.ofNullable(parser.getOptionValue(testnet)).orElse(Boolean.FALSE)
                 || configuration.booling(DefaultConfSettings.TESTNET);
         if (isTestnet) {
-            configuration.put(DefaultConfSettings.TESTNET, "true");
-
-            String dbPath = configuration.string(DefaultConfSettings.DB_PATH);
-            if (StringUtils.isEmpty(dbPath)) {
-                dbPath = Configuration.TESTNETDB;
-            }
-            configuration.put(DefaultConfSettings.DB_PATH.name(), dbPath);
-
-            String dbLog = configuration.string(DefaultConfSettings.DB_LOG_PATH);
-            if (StringUtils.isEmpty(dbLog)) {
-                dbLog = Configuration.TESTNETDB_LOG;
-            }
-            configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), dbLog);
-
-            String coordinator_address = configuration.string(DefaultConfSettings.COORDINATOR);
-            if (StringUtils.isEmpty(coordinator_address)) {
-                coordinator_address = Configuration.TESTNET_COORDINATOR_ADDRESS;
-            }
-            configuration.put(DefaultConfSettings.COORDINATOR, coordinator_address);
-
-            String snapshotFile = configuration.string(DefaultConfSettings.SNAPSHOT_FILE);
-            if (StringUtils.isEmpty(snapshotFile)) {
-                snapshotFile = Configuration.TESTNET_SNAPSHOT_FILE;
-            }
-            configuration.put(DefaultConfSettings.SNAPSHOT_FILE, snapshotFile);
-
-            String milestoneStart = configuration.string(DefaultConfSettings.MILESTONE_START_INDEX);
-            if (StringUtils.isEmpty(milestoneStart)) {
-                milestoneStart = Configuration.TESTNET_MILESTONE_START_INDEX;
-            }
-            configuration.put(DefaultConfSettings.MILESTONE_START_INDEX, milestoneStart);
-
-            //this should always be empty
-            configuration.put(DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE, "");
-
-            String mwm = configuration.string(DefaultConfSettings.MWM);
-            if (StringUtils.isEmpty(mwm)) {
-                mwm = Configuration.TESTNET_MWM;
-            }
-            configuration.put(DefaultConfSettings.MWM, mwm);
-
-            String keysInMilestone = configuration.string(DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE);
-            if (StringUtils.isEmpty(keysInMilestone)) {
-                keysInMilestone = Configuration.TESTNET_NUM_KEYS_IN_MILESTONE;
-            }
-            configuration.put(DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE, keysInMilestone);
-
-            String transactionPacketSize = configuration.string(DefaultConfSettings.TRANSACTION_PACKET_SIZE);
-            if (StringUtils.isEmpty(transactionPacketSize)) {
-                transactionPacketSize = Configuration.TESTNET_PACKET_SIZE;
-            }
-            configuration.put(DefaultConfSettings.TRANSACTION_PACKET_SIZE, transactionPacketSize);
-
-            String reqHashSize = configuration.string(DefaultConfSettings.REQUEST_HASH_SIZE);
-            if (StringUtils.isEmpty(reqHashSize)) {
-                reqHashSize = Configuration.TESTNET_REQ_HASH_SIZE;
-            }
-            configuration.put(DefaultConfSettings.REQUEST_HASH_SIZE, reqHashSize);
-
-            String globalSnapshotTime = configuration.string(DefaultConfSettings.SNAPSHOT_TIME);
-            if (StringUtils.isEmpty(globalSnapshotTime)) {
-                globalSnapshotTime = Configuration.TESTNET_GLOBAL_SNAPSHOT_TIME;
-            }
-            configuration.put(DefaultConfSettings.SNAPSHOT_TIME, globalSnapshotTime);
+            setTestnetConfigs(configuration);
         }
 
         // mandatory args
@@ -356,6 +293,73 @@ public class IRI {
         if (vmaxPeers != null) {
             configuration.put(DefaultConfSettings.MAX_PEERS, vmaxPeers);
         }
+    }
+
+    private static void setTestnetConfigs(Configuration configuration) {
+        configuration.put(DefaultConfSettings.TESTNET, "true");
+
+        String dbPath = configuration.string(DefaultConfSettings.DB_PATH);
+        if (StringUtils.isEmpty(dbPath)) {
+            dbPath = Configuration.TESTNETDB;
+        }
+        configuration.put(DefaultConfSettings.DB_PATH.name(), dbPath);
+
+        String dbLog = configuration.string(DefaultConfSettings.DB_LOG_PATH);
+        if (StringUtils.isEmpty(dbLog)) {
+            dbLog = Configuration.TESTNETDB_LOG;
+        }
+        configuration.put(DefaultConfSettings.DB_LOG_PATH.name(), dbLog);
+
+        String coordinator_address = configuration.string(DefaultConfSettings.COORDINATOR);
+        if (StringUtils.isEmpty(coordinator_address)) {
+            coordinator_address = Configuration.TESTNET_COORDINATOR_ADDRESS;
+        }
+        configuration.put(DefaultConfSettings.COORDINATOR, coordinator_address);
+
+        String snapshotFile = configuration.string(DefaultConfSettings.SNAPSHOT_FILE);
+        if (StringUtils.isEmpty(snapshotFile)) {
+            snapshotFile = Configuration.TESTNET_SNAPSHOT_FILE;
+        }
+        configuration.put(DefaultConfSettings.SNAPSHOT_FILE, snapshotFile);
+
+        String milestoneStart = configuration.string(DefaultConfSettings.MILESTONE_START_INDEX);
+        if (StringUtils.isEmpty(milestoneStart)) {
+            milestoneStart = Configuration.TESTNET_MILESTONE_START_INDEX;
+        }
+        configuration.put(DefaultConfSettings.MILESTONE_START_INDEX, milestoneStart);
+
+        //this should always be empty
+        configuration.put(DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE, "");
+
+        String mwm = configuration.string(DefaultConfSettings.MWM);
+        if (StringUtils.isEmpty(mwm)) {
+            mwm = Configuration.TESTNET_MWM;
+        }
+        configuration.put(DefaultConfSettings.MWM, mwm);
+
+        String keysInMilestone = configuration.string(DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE);
+        if (StringUtils.isEmpty(keysInMilestone)) {
+            keysInMilestone = Configuration.TESTNET_NUM_KEYS_IN_MILESTONE;
+        }
+        configuration.put(DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE, keysInMilestone);
+
+        String transactionPacketSize = configuration.string(DefaultConfSettings.TRANSACTION_PACKET_SIZE);
+        if (StringUtils.isEmpty(transactionPacketSize)) {
+            transactionPacketSize = Configuration.TESTNET_PACKET_SIZE;
+        }
+        configuration.put(DefaultConfSettings.TRANSACTION_PACKET_SIZE, transactionPacketSize);
+
+        String reqHashSize = configuration.string(DefaultConfSettings.REQUEST_HASH_SIZE);
+        if (StringUtils.isEmpty(reqHashSize)) {
+            reqHashSize = Configuration.TESTNET_REQ_HASH_SIZE;
+        }
+        configuration.put(DefaultConfSettings.REQUEST_HASH_SIZE, reqHashSize);
+
+        String globalSnapshotTime = configuration.string(DefaultConfSettings.SNAPSHOT_TIME);
+        if (StringUtils.isEmpty(globalSnapshotTime)) {
+            globalSnapshotTime = Configuration.TESTNET_GLOBAL_SNAPSHOT_TIME;
+        }
+        configuration.put(DefaultConfSettings.SNAPSHOT_TIME, globalSnapshotTime);
     }
 
     private static void printUsage() {

@@ -14,7 +14,7 @@ public final class Kerl implements Sponge {
     public static final int BYTE_HASH_LENGTH = BIT_HASH_LENGTH / 8;
 
     public static final BigInteger RADIX = BigInteger.valueOf(Converter.RADIX);
-    private static final int MAX_POWERS_LONG = 40;
+    public static final int MAX_POWERS_LONG = 40;
     private static final BigInteger[] RADIX_POWERS = IntStream.range(0, MAX_POWERS_LONG + 1).mapToObj(RADIX::pow).toArray(BigInteger[]::new);
 
     private final Keccak.Digest384 keccak;

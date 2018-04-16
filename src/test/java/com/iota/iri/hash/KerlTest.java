@@ -98,9 +98,8 @@ public class KerlTest {
         BigInteger expected = BigInteger.ZERO;
         for (int i = trits.length; i-- > 0; ) {
             expected = expected.multiply(BigInteger.valueOf(Converter.RADIX)).add(BigInteger.valueOf(trits[i]));
-        }
-        
-        Assert.assertTrue(expected.equals(result),"Overflow in long math");
+        }        
+        Assert.assertTrue("Overflow in long math", expected.equals(result));
     }
 
     //@Test

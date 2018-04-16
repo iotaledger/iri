@@ -88,11 +88,9 @@ public class KerlTest {
 
     @Test
     public void limitBigIntFromTrits() {
-        // this confirms that the limit we set using long math works for any size input
-        int[] trits = new int[2048];
+        // this confirms that the long math does not produce an overflow.
+        int[] trits = new int[Kerl.MAX_POWERS_LONG];
         Arrays.fill(trits, 1);
-        Kerl.bigIntFromTrits(trits, 0, trits.length);
-        Arrays.fill(trits, -1);
         Kerl.bigIntFromTrits(trits, 0, trits.length);
     }
 

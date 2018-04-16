@@ -90,8 +90,17 @@ public class KerlTest {
     public void limitBigIntFromTrits() {
         // this confirms that the long math does not produce an overflow.
         int[] trits = new int[Kerl.MAX_POWERS_LONG];
+        
         Arrays.fill(trits, 1);
-        Kerl.bigIntFromTrits(trits, 0, trits.length);
+        BigInteger result = Kerl.bigIntFromTrits(trits, 0, trits.length);
+
+        Arrays.fill(trits, 1);
+        BigInteger expected = BigInteger.ZERO;
+        for (int i = trits.length; i-- > 0; ) {
+            expected = expected.multiply(BigInteger.valueOf(Converter.RADIX)).add(BigInteger.valueOf(trits[i]));
+        }
+        
+        Assert.equals(expected,result,"Overflow in long math");
     }
 
     //@Test

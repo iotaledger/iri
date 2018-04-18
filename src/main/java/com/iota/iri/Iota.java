@@ -65,7 +65,7 @@ public class Iota {
         int numKeysMilestone = configuration.integer(Configuration.DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE);
         boolean dontValidateMilestoneSig = configuration.booling(Configuration.DefaultConfSettings
                 .DONT_VALIDATE_TESTNET_MILESTONE_SIG);
-        int reqHashSize = configuration.integer(Configuration.DefaultConfSettings.REQUEST_HASH_SIZE);
+        int transactionPacketSize = configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE);
 
         maxTipSearchDepth = configuration.integer(Configuration.DefaultConfSettings.MAX_DEPTH);
         if(testnet) {
@@ -93,7 +93,7 @@ public class Iota {
         milestone = new Milestone(tangle, coordinator, initialSnapshot, transactionValidator, testnet, messageQ,
                 numKeysMilestone, milestoneStartIndex, dontValidateMilestoneSig);
         node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
-        replicator = new Replicator(node, tcpPort, maxPeers, testnet, reqHashSize);
+        replicator = new Replicator(node, tcpPort, maxPeers, testnet, transactionPacketSize);
         udpReceiver = new UDPReceiver(udpPort, node, configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE));
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone,

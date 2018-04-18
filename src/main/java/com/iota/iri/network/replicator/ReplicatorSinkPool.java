@@ -18,7 +18,7 @@ public class ReplicatorSinkPool  implements Runnable {
     
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSinkPool.class);
     private final int port;
-    private int reqHashSize;
+    private int transactionPacketSize;
     private final Node node;
 
     private ExecutorService sinkPool;
@@ -27,10 +27,10 @@ public class ReplicatorSinkPool  implements Runnable {
 
     public final static int PORT_BYTES = 10;
 
-    public ReplicatorSinkPool(Node node, int port, int reqHashSize) {
+    public ReplicatorSinkPool(Node node, int port, int transactionPacketSize) {
         this.node = node;
         this.port = port;
-        this.reqHashSize = reqHashSize;
+        this.transactionPacketSize = transactionPacketSize;
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ReplicatorSinkPool  implements Runnable {
     }
     
     public void createSink(TCPNeighbor neighbor) {
-        Runnable proc = new ReplicatorSinkProcessor( neighbor, this, port, reqHashSize);
+        Runnable proc = new ReplicatorSinkProcessor( neighbor, this, port, transactionPacketSize);
         sinkPool.submit(proc);
     }
     

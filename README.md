@@ -59,6 +59,12 @@ command line arguments.
 
 `docker run -d --net=host --name iota-node -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
 
+For development purposes you can build docker image locally by using:
+
+`mvn clean package docker:build`
+
+This will create an image locally with tags `iri:latest` and `iri:<current-version>`.
+
 ### Command Line Options 
 
 Option | Shortened version | Description | Example Input
@@ -74,7 +80,7 @@ Option | Shortened version | Description | Example Input
 `--remote-limit-api` | | Exclude certain API calls from being able to be accessed remotely | `--remote-limit-api "attachToTangle, addNeighbors"`
 `--send-limit`| | Limit the outbound bandwidth consumption. Limit is set to mbit/s | `--send-limit 1.0`
 `--max-peers` | | Limit the number of max accepted peers. Default is set to 0 (mutual tethering) | `--max-peers 8`
-`--dns-resolution-false` | | Ignores DNS resolution refreshing  | --dns-resolution-false	
+`--dns-resolution-false` | | Ignores DNS resolution refreshing  | `--dns-resolution-false`	
 ### INI File
 
 You can also provide an ini file to store all of your command line options and easily update (especially neighbors) if needed. You can enable it via the `--config` flag. Here is an example INI file:
@@ -88,4 +94,3 @@ HEADLESS = true
 DEBUG = true
 DB_PATH = db
 ```
-

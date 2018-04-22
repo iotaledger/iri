@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
 /**
  * Created by paul on 4/12/17.
@@ -26,12 +26,12 @@ public class SnapshotTest {
 
     @Test
     public void isConsistent() throws Exception {
-        Assert.assertTrue("Initial confirmed should be consistent", Snapshot.isConsistent(initSnapshot.state));
+        Assert.assertTrue("Initial confirmed should be consistent", Snapshot.isConsistent(initSnapshot.getState()));
     }
 
     @Test
     public void patch() throws Exception {
-        Map.Entry<Hash, Long> firstOne = initSnapshot.state.entrySet().iterator().next();
+        Map.Entry<Hash, Long> firstOne = initSnapshot.getState().entrySet().iterator().next();
         Hash someHash = new Hash("PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS");
         Map<Hash, Long> diff = new HashMap<>();
         diff.put(firstOne.getKey(), -firstOne.getValue());
@@ -42,7 +42,7 @@ public class SnapshotTest {
 
     @Test
     public void applyShouldFail() throws Exception {
-        Snapshot latestSnapshot = initSnapshot.clone();
+        Snapshot latestSnapshot = initSnapshot.copySnapshot();
         Map<Hash, Long> badMap = new HashMap<>();
         badMap.put(new Hash("PSRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), 100L);
         badMap.put(new Hash("ESRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), -100L);

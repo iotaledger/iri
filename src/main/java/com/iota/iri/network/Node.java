@@ -60,11 +60,7 @@ public class Node {
     private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
 
-    private double P_DROP_TRANSACTION;
     private static final SecureRandom rnd = new SecureRandom();
-    private double P_SEND_MILESTONE;
-    private double P_REPLY_RANDOM_TIP;
-    private double P_PROPAGATE_REQUEST;
 
 
     private FIFOCache<ByteBuffer, Hash> recentSeenBytes;
@@ -95,8 +91,8 @@ public class Node {
         this.tipsViewModel = tipsViewModel;
         this.milestone = milestone;
         this.messageQ = messageQ;
-        this.reqHashSize = configuration.integer(Configuration.DefaultConfSettings.REQUEST_HASH_SIZE);
-        int packetSize = configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE);
+        this.reqHashSize = configuration.getRequestHashSize();
+        int packetSize = configuration.getTransactionPacketSize();
         this.sendingPacket = new DatagramPacket(new byte[packetSize], packetSize);
         this.tipRequestingPacket = new DatagramPacket(new byte[packetSize], packetSize);
 
@@ -104,17 +100,13 @@ public class Node {
 
     public void init() throws Exception {
 
-        P_DROP_TRANSACTION = configuration.doubling(Configuration.DefaultConfSettings.P_DROP_TRANSACTION.name());
-        P_SELECT_MILESTONE = configuration.doubling(Configuration.DefaultConfSettings.P_SELECT_MILESTONE_CHILD.name());
-        P_SEND_MILESTONE = configuration.doubling(Configuration.DefaultConfSettings.P_SEND_MILESTONE.name());
-        P_REPLY_RANDOM_TIP = configuration.doubling(Configuration.DefaultConfSettings.P_REPLY_RANDOM_TIP.name());
-        P_PROPAGATE_REQUEST = configuration.doubling(Configuration.DefaultConfSettings.P_PROPAGATE_REQUEST.name());
-        sendLimit = (long) ((configuration.doubling(Configuration.DefaultConfSettings.SEND_LIMIT.name()) * 1000000) / (configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE) * 8));
-        debug = configuration.booling(Configuration.DefaultConfSettings.DEBUG);
+        //TODO ask Alon
+        sendLimit = (long) ((configuration.getSendLimit() * 1000000) / (configuration.getTransactionPacketSize() * 8));
 
-        BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.integer(Configuration.DefaultConfSettings.Q_SIZE_NODE);
-        double pDropCacheEntry = configuration.doubling(Configuration.DefaultConfSettings.P_DROP_CACHE_ENTRY.name());
-        recentSeenBytes = new FIFOCache<>(configuration.integer(Configuration.DefaultConfSettings.CACHE_SIZE_BYTES), pDropCacheEntry);
+        debug = configuration.isDebug();
+
+        BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.getQSizeNode();
+        recentSeenBytes = new FIFOCache<>(configuration.getCacheSizeBytes(), configuration.getPDropCacheEntry());
 
         parseNeighborsConfig();
 
@@ -139,7 +131,7 @@ public class Node {
 
     private Runnable spawnNeighborDNSRefresherThread() {
         return () -> {
-            if (configuration.booling(Configuration.DefaultConfSettings.DNS_RESOLUTION_ENABLED)) {
+            if (configuration.isDnsResolutionEnabled()) {
                 log.info("Spawning Neighbor DNS Refresher Thread");
 
                 while (!shuttingDown.get()) {
@@ -161,7 +153,7 @@ public class Node {
                                         log.info("{} seems fine.", hostname);
                                         messageQ.publish("dnscc %s", hostname);
                                     } else {
-                                        if (configuration.booling(Configuration.DefaultConfSettings.DNS_REFRESHER_ENABLED)) {
+                                        if (configuration.isDnsRefresherEnabled()) {
                                             log.info("IP CHANGED for {}! Updating...", hostname);
                                             messageQ.publish("dnscu %s", hostname);
                                             String protocol = (n instanceof TCPNeighbor) ? "tcp://" : "udp://";
@@ -232,7 +224,7 @@ public class Node {
             if (addressMatch) {
                 //Validate transaction
                 neighbor.incAllTransactions();
-                if (rnd.nextDouble() < P_DROP_TRANSACTION) {
+                if (rnd.nextDouble() < configuration.getPDropTransaction()) {
                     //log.info("Randomly dropping transaction. Stand by... ");
                     break;
                 }
@@ -315,8 +307,8 @@ public class Node {
             }
         }
 
-        if (!addressMatch && configuration.booling(Configuration.DefaultConfSettings.TESTNET)) {
-            int maxPeersAllowed = configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
+        if (!addressMatch && configuration.isTestnet()) {
+            int maxPeersAllowed = configuration.getMaxPeers();
             String uriString = uriScheme + ":/" + senderAddress.toString();
             if (Neighbor.getNumPeers() < maxPeersAllowed) {
                 log.info("Adding non-tethered neighbor: " + uriString);
@@ -412,7 +404,8 @@ public class Node {
         if (requestedHash.equals(Hash.NULL_HASH)) {
             //Random Tip Request
             try {
-                if (transactionRequester.numberOfTransactionsToRequest() > 0 && rnd.nextDouble() < P_REPLY_RANDOM_TIP) {
+                if (transactionRequester.numberOfTransactionsToRequest() > 0
+                        && rnd.nextDouble() < configuration.getpReplyRandomTip()) {
                     neighbor.incRandomTransactionRequests();
                     transactionPointer = getRandomTipPointer();
                     transactionViewModel = TransactionViewModel.fromHash(tangle, transactionPointer);
@@ -444,7 +437,7 @@ public class Node {
             }
         } else {
             //trytes not found
-            if (!requestedHash.equals(Hash.NULL_HASH) && rnd.nextDouble() < P_PROPAGATE_REQUEST) {
+            if (!requestedHash.equals(Hash.NULL_HASH) && rnd.nextDouble() < configuration.getPPropagateRequest()) {
                 //request is an actual transaction and missing in request queue add it.
                 try {
                     transactionRequester.requestTransaction(requestedHash, false);
@@ -459,7 +452,7 @@ public class Node {
     }
 
     private Hash getRandomTipPointer() throws Exception {
-        Hash tip = rnd.nextDouble() < P_SEND_MILESTONE ? milestone.latestMilestone : tipsViewModel.getRandomSolidTipHash();
+        Hash tip = rnd.nextDouble() < configuration.getPSendMilestone() ? milestone.latestMilestone : tipsViewModel.getRandomSolidTipHash();
         return tip == null ? Hash.NULL_HASH : tip;
     }
 
@@ -705,7 +698,7 @@ public class Node {
     }
 
     private void parseNeighborsConfig() {
-        Arrays.stream(configuration.string(Configuration.DefaultConfSettings.NEIGHBORS).split(" ")).distinct()
+        configuration.getNeighbors().stream().distinct()
                 .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get)
                 .filter(u -> isUriValid(u))
                 .map(u -> newNeighbor(u, true))

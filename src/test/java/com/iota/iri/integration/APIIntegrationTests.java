@@ -6,6 +6,7 @@ import com.iota.iri.IRI;
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
 import com.iota.iri.conf.Configuration;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.service.API;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.ResponseSpecBuilder;
@@ -95,7 +96,7 @@ public class APIIntegrationTests {
     }
 
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void tearDown() {
         if (spawnNode) {
             try {
                 ixi.shutdown();
@@ -374,14 +375,17 @@ public class APIIntegrationTests {
                 body(containsString("trytes"));
     }
 
-    @Test
-    public void shouldSendTransactionAndFetch() throws InterruptedException {
+    private List<Object> sendTransfer(String[] Trytes) {
+        return sendTransfer(Trytes, NULL_HASH, NULL_HASH);
+    }
+
+    private List<Object> sendTransfer(String[] Trytes, String branch, String trunk) {
         //do PoW
         final Map<String, Object> request = new HashMap<>();
         request.put("command", "attachToTangle");
-        request.put("trytes", TRYTES);
-        request.put("trunkTransaction", NULL_HASH);
-        request.put("branchTransaction", NULL_HASH);
+        request.put("trytes", Trytes);
+        request.put("trunkTransaction", branch);
+        request.put("branchTransaction", trunk);
         request.put("minWeightMagnitude", configuration.integer(Configuration.DefaultConfSettings.MWM));
 
         Response response = given().
@@ -396,7 +400,6 @@ public class APIIntegrationTests {
         request.clear();
         request.put("command", "storeTransactions");
         request.put("trytes", trytes);
-
         given().
                 body(gson().toJson(request)).
                 when().
@@ -404,19 +407,53 @@ public class APIIntegrationTests {
                 then().
                 log().all().and().spec(responseSpec);
 
-        //Fetch
-        String temp = (String) trytes.get(0);
-        String[] addresses = {temp.substring(2187,2268)}; //extract address from trytes
+        return trytes;
+    }
+
+    private List<Object> findTransactions(String key, String[] values) {
+        final Map<String, Object> request = new HashMap<>();
         request.clear();
         request.put("command", "findTransactions");
-        request.put("addresses", addresses);
-        response = given().
+        request.put(key, values);
+        Response response = given().
                 body(gson().toJson(request)).
                 when().
                 post("/");
         response.getBody();
-        responseJson = response.jsonPath();
-        List<Object> hashes = responseJson.getList("hashes");
+        JsonPath responseJson = response.jsonPath();
+
+        return responseJson.getList("hashes");
+    }
+
+    @Test
+    public void shouldSendTransactionAndFetchByAddress() {
+
+        List<Object> trytes = sendTransfer(TRYTES);
+
+        String temp = (String) trytes.get(0);
+        String[] addresses = {temp.substring(TransactionViewModel.ADDRESS_TRINARY_OFFSET / 3,
+                (TransactionViewModel.ADDRESS_TRINARY_OFFSET + TransactionViewModel.ADDRESS_TRINARY_SIZE) / 3)}; //extract address from trytes
+        List<Object> hashes = findTransactions("addresses", addresses);
         Assert.assertTrue(!hashes.isEmpty());
     }
+
+    @Test
+    public void shouldSendTransactionAndFetchByTag() {
+
+        List<Object> trytes = sendTransfer(TRYTES);
+
+        //Tag
+        String temp = (String) trytes.get(0);
+        String[] tags = {temp.substring(TransactionViewModel.TAG_TRINARY_OFFSET / 3,
+                (TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE) / 3)}; //extract address from trytes
+        List<Object> hashes = findTransactions("tags", tags);
+        Assert.assertTrue(!hashes.isEmpty());
+
+        //ObsoleteTag
+        String[] obsoleteTags = {temp.substring(TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET / 3,
+                (TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET + TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE) / 3)}; //extract address from trytes
+        hashes = findTransactions("tags", obsoleteTags);
+        Assert.assertTrue(!hashes.isEmpty());
+    }
+
 }

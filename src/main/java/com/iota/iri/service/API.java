@@ -14,6 +14,7 @@ import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.ObsoleteTag;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;
@@ -795,6 +796,12 @@ public class API {
             for (String tag : tags) {
                 tag = padTag(tag);
                 tagsTransactions.addAll(TagViewModel.load(instance.tangle, new Hash(tag)).getHashes());
+            }
+            if (tagsTransactions.isEmpty()) {
+                for (String tag : tags) {
+                    tag = padTag(tag);
+                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, new Hash(tag)).getHashes());
+                }
             }
             foundTransactions.addAll(tagsTransactions);
             containsKey = true;

@@ -166,7 +166,8 @@ public class TransactionViewModel {
         hashesList.add(new Pair<>(getBundleHash(), new Bundle(hash)));
         hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(hash)));
         hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(hash)));
-        hashesList.add(new Pair<>(getObsoleteTagValue(), new Tag(hash)));
+        hashesList.add(new Pair<>(getObsoleteTagValue(), new ObsoleteTag(hash)));
+        hashesList.add(new Pair<>(getTagValue(), new Tag(hash)));
         setAttachmentData();
         setMetadata();
         return hashesList;

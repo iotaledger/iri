@@ -34,6 +34,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         "address",
         "approvee",
         "bundle",
+        "obsoleteTag",
         "tag"
     );
 
@@ -51,6 +52,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private ColumnFamilyHandle addressHandle;
     private ColumnFamilyHandle approveeHandle;
     private ColumnFamilyHandle bundleHandle;
+    private ColumnFamilyHandle obsoleteTagHandle;
     private ColumnFamilyHandle tagHandle;
 
     private Map<Class<?>, ColumnFamilyHandle> classTreeMap;
@@ -90,6 +92,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         classMap.put(Address.class, addressHandle);
         classMap.put(Approvee.class, approveeHandle);
         classMap.put(Bundle.class, bundleHandle);
+        classMap.put(ObsoleteTag.class, obsoleteTagHandle);
         classMap.put(Tag.class, tagHandle);
         classTreeMap = classMap;
 
@@ -443,14 +446,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             db = RocksDB.open(options, path, columnFamilyDescriptors, columnFamilyHandles);
             db.enableFileDeletions(true);
 
-            fillmodelColumnHandles();
+            fillModelColumnHandles();
 
         } catch (Exception e) {
             IOUtils.closeQuietly(db::close);
         }
     }
 
-    private void fillmodelColumnHandles() throws Exception {
+    private void fillModelColumnHandles() throws Exception {
         int i = 0;
         transactionHandle = columnFamilyHandles.get(++i);
         transactionMetadataHandle = columnFamilyHandles.get(++i);
@@ -459,6 +462,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         addressHandle = columnFamilyHandles.get(++i);
         approveeHandle = columnFamilyHandles.get(++i);
         bundleHandle = columnFamilyHandles.get(++i);
+        obsoleteTagHandle = columnFamilyHandles.get(++i);
         tagHandle = columnFamilyHandles.get(++i);
 
         for (; ++i < columnFamilyHandles.size(); ) {

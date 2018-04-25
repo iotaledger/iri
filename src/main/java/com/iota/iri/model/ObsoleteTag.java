@@ -6,6 +6,7 @@ public class ObsoleteTag extends Tag {
         super(hash);
     }
 
+    // used by the persistence layer to instantiate the object
     public ObsoleteTag() {
 
     }

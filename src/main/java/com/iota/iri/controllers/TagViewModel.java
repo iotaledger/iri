@@ -27,7 +27,7 @@ public class TagViewModel implements HashesViewModel {
         this.hash = hash;
     }
 
-    private static TagViewModel load(Tangle tangle, Indexable hash, Class<?> model) throws Exception {
+    private static TagViewModel load(Tangle tangle, Indexable hash, Class<? extends Tag> model) throws Exception {
         return new TagViewModel((Tag) tangle.load(model, hash), hash);
     }
 

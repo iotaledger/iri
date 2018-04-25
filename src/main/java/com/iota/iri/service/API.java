@@ -14,7 +14,6 @@ import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.ObsoleteTag;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;

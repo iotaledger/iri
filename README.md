@@ -60,11 +60,11 @@ Running IRI is quick and easy, and you can usually run it without admin rights.
 Below is a list of command line options.
 At a minimum you must provide one of:
 
-- the port — e.g., '`-p 14265`'
-- the location of an ini config file — e.g., '`-c iota.ini`' 
-- the default config ini file must exist **and also** contain the port setting — e.g.,'`PORT = 14265`'.
+- the port must be specified on the command-line — e.g., '`-p 14265`' 
+or in the `iota.ini` file — e.g., '`PORT = 14265`'.
 
-If the '`iota.ini`' file exists, it will be read even if it is not specified on the command line. The port and all the command line options below take precedence over values specified in the ini config file.
+If the '`iota.ini`' file exists, it will be read.
+The port and all the command line options below take precedence over values specified in the ini config file.
 
 Here is an example script that specifies only the port, with all other setting to be read from the ini file **if it exists**:
 
@@ -105,7 +105,6 @@ PORT = 14265
 UDP_RECEIVER_PORT = 14600
 NEIGHBORS = udp://my.favorite.com:14600
 IXI_DIR = ixi
-HEADLESS = true
 DEBUG = false
 DB_PATH = db
 ```

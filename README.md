@@ -58,9 +58,8 @@ This will create a `target` directory in which you will find the executable jar 
 
 Running IRI is quick and easy, and you can usually run it without admin rights.
 Below is a list of command line options.
-At a minimum you must provide one of:
 
-- the port must be specified on the command-line — e.g., '`-p 14265`' 
+At a minimum, the port must be specified on the command-line — e.g., '`-p 14265`' 
 or in the `iota.ini` file — e.g., '`PORT = 14265`'.
 
 If the '`iota.ini`' file exists, it will be read.

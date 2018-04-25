@@ -145,7 +145,7 @@ public class API {
         server.start();
     }
 
-    private void readPreviousEpochsSpentAddresses(boolean isTestnet) {
+    private void readPreviousEpochsSpentAddresses(boolean isTestnet) throws IOException {
         if (isTestnet) {
             return;
         }

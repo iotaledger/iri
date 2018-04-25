@@ -27,7 +27,7 @@ public class Snapshot {
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
 
-    public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) {
+    public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) throws IOException {
         //This is not thread-safe (and it is ok)
         if (initialSnapshot == null) {
             if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,

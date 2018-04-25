@@ -3,25 +3,22 @@ package com.iota.iri;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.storage.FileExportProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.ZmqPublishProvider;
+import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
+import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -50,7 +47,7 @@ public class Iota {
     public final int tcpPort;
     public final int maxTipSearchDepth;
 
-    public Iota(Configuration configuration) {
+    public Iota(Configuration configuration) throws IOException {
         this.configuration = configuration;
         testnet = configuration.booling(Configuration.DefaultConfSettings.TESTNET);
         maxPeers = configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);

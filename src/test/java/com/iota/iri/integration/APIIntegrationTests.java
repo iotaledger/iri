@@ -7,7 +7,10 @@ import com.iota.iri.IXI;
 import com.iota.iri.Iota;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.model.Hash;
 import com.iota.iri.service.API;
+import com.iota.iri.utils.Converter;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.ResponseSpecBuilder;
 import com.jayway.restassured.config.HttpClientConfig;
@@ -28,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.fail;
 
 public class APIIntegrationTests {
@@ -375,15 +379,15 @@ public class APIIntegrationTests {
                 body(containsString("trytes"));
     }
 
-    private List<Object> sendTransfer(String[] Trytes) {
-        return sendTransfer(Trytes, NULL_HASH, NULL_HASH);
+    private List<Object> sendTransfer(String[] trytesArray) {
+        return sendTransfer(trytesArray, NULL_HASH, NULL_HASH);
     }
 
-    private List<Object> sendTransfer(String[] Trytes, String branch, String trunk) {
+    private List<Object> sendTransfer(String[] trytesArray, String branch, String trunk) {
         //do PoW
         final Map<String, Object> request = new HashMap<>();
         request.put("command", "attachToTangle");
-        request.put("trytes", Trytes);
+        request.put("trytes", trytesArray);
         request.put("trunkTransaction", branch);
         request.put("branchTransaction", trunk);
         request.put("minWeightMagnitude", configuration.integer(Configuration.DefaultConfSettings.MWM));
@@ -431,29 +435,36 @@ public class APIIntegrationTests {
         List<Object> trytes = sendTransfer(TRYTES);
 
         String temp = (String) trytes.get(0);
+        String hash = getHash(temp);
+
         String[] addresses = {temp.substring(TransactionViewModel.ADDRESS_TRINARY_OFFSET / 3,
                 (TransactionViewModel.ADDRESS_TRINARY_OFFSET + TransactionViewModel.ADDRESS_TRINARY_SIZE) / 3)}; //extract address from trytes
         List<Object> hashes = findTransactions("addresses", addresses);
-        Assert.assertTrue(!hashes.isEmpty());
+        Assert.assertThat(hashes,hasItem(hash));
     }
 
     @Test
     public void shouldSendTransactionAndFetchByTag() {
 
         List<Object> trytes = sendTransfer(TRYTES);
+        String temp = (String) trytes.get(0);
+        String hash = getHash(temp);
 
         //Tag
-        String temp = (String) trytes.get(0);
         String[] tags = {temp.substring(TransactionViewModel.TAG_TRINARY_OFFSET / 3,
                 (TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE) / 3)}; //extract address from trytes
         List<Object> hashes = findTransactions("tags", tags);
-        Assert.assertTrue(!hashes.isEmpty());
+        Assert.assertThat(hashes,hasItem(hash));
 
         //ObsoleteTag
         String[] obsoleteTags = {temp.substring(TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET / 3,
                 (TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET + TransactionViewModel.OBSOLETE_TAG_TRINARY_SIZE) / 3)}; //extract address from trytes
         hashes = findTransactions("tags", obsoleteTags);
-        Assert.assertTrue(!hashes.isEmpty());
+        Assert.assertThat(hashes,hasItem(hash));
+    }
+
+    private String getHash(String temp) {
+        return Hash.calculate(Converter.allocatingTritsFromTrytes(temp), 0, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)).toString();
     }
 
 }

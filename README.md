@@ -1,3 +1,9 @@
+[![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=dev)](https://travis-ci.org/iotaledger/iri)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/iotaledger/iri?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=iotaledger/iri&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/iotaledger/iri?utm_source=github.com&utm_medium=referral&utm_content=iotaledger/iri&utm_campaign=Badge_Coverage)
+![GitHub release](https://img.shields.io/github/release/iotaledger/iri.svg)
+![license](https://img.shields.io/github/license/iotaledger/iri.svg)
+
 ## IOTA
 
 The IRI repository is the main IOTA Reference Implementation and the embodiment of the IOTA network specification. 

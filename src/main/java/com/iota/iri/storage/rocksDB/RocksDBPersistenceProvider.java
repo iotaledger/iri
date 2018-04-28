@@ -320,11 +320,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     @Override
     public void clear(Class<?> column) throws Exception {
+        log.info("Deleting: {} entries", column.getSimpleName());
         flushHandle(classTreeMap.get(column));
     }
 
     @Override
     public void clearMetadata(Class<?> column) throws Exception {
+        log.info("Deleting: {} metadata", column.getSimpleName());
         flushHandle(metadataReference.get(column));
     }
 
@@ -337,9 +339,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             }
         }
         if (itemsToDelete.size() > 0) {
-            log.info("Flushing flags. Amount to delete: " + itemsToDelete.size());
+            log.info("Amount to delete: " + itemsToDelete.size());
         }
+        int counter = 0;
         for (byte[] itemToDelete : itemsToDelete) {
+            if (++counter % 10000 == 0) {
+                log.info("Deleted: {}", counter);
+            }
             db.delete(handle, itemToDelete);
         }
     }

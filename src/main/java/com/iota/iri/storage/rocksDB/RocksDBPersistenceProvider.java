@@ -455,7 +455,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             fillModelColumnHandles();
 
         } catch (Exception e) {
-            IOUtils.closeQuietly(db::close);
+            log.error("Error while initializing RocksDb", e);
+            if (db != null) {
+                IOUtils.closeQuietly(db::close);
+            }
         }
     }
 

@@ -796,6 +796,12 @@ public class API {
                 tag = padTag(tag);
                 tagsTransactions.addAll(TagViewModel.load(instance.tangle, new Hash(tag)).getHashes());
             }
+            if (tagsTransactions.isEmpty()) {
+                for (String tag : tags) {
+                    tag = padTag(tag);
+                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, new Hash(tag)).getHashes());
+                }
+            }
             foundTransactions.addAll(tagsTransactions);
             containsKey = true;
         }

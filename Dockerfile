@@ -5,7 +5,7 @@ RUN mvn clean package
 
 FROM openjdk:jre-slim
 WORKDIR /iri
-COPY --from=builder /iri/target/iri-1.4.2.4_RC.jar iri.jar
+COPY --from=builder /iri/target/iri-1.4.2.4.jar iri.jar
 COPY logback.xml /iri
 VOLUME /iri
 

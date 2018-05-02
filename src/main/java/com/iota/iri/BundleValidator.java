@@ -14,7 +14,9 @@ public class BundleValidator {
     public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash tailHash) throws Exception {
         TransactionViewModel tail = TransactionViewModel.fromHash(tangle, tailHash);
         List<List<TransactionViewModel>> transactions = new LinkedList<>();
-        if(tail.getCurrentIndex() != 0) return transactions;
+        if (tail.getCurrentIndex() != 0) {
+            return transactions;
+        }
         final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(tangle, tail);
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {

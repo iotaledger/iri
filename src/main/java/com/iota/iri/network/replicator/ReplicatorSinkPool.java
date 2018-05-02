@@ -1,14 +1,12 @@
 package com.iota.iri.network.replicator;
 
 import java.io.IOException;
-import java.net.DatagramPacket;
 import java.net.Socket;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-import com.iota.iri.Iota;
 import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,6 +18,7 @@ public class ReplicatorSinkPool  implements Runnable {
     
     private static final Logger log = LoggerFactory.getLogger(ReplicatorSinkPool.class);
     private final int port;
+    private int transactionPacketSize;
     private final Node node;
 
     private ExecutorService sinkPool;
@@ -28,11 +27,10 @@ public class ReplicatorSinkPool  implements Runnable {
 
     public final static int PORT_BYTES = 10;
 
-    private final DatagramPacket sendingPacket = new DatagramPacket(new byte[Node.TRANSACTION_PACKET_SIZE], Node.TRANSACTION_PACKET_SIZE);
-
-    public ReplicatorSinkPool(Node node, int port) {
+    public ReplicatorSinkPool(Node node, int port, int transactionPacketSize) {
         this.node = node;
         this.port = port;
+        this.transactionPacketSize = transactionPacketSize;
     }
 
     @Override
@@ -72,7 +70,7 @@ public class ReplicatorSinkPool  implements Runnable {
     }
     
     public void createSink(TCPNeighbor neighbor) {
-        Runnable proc = new ReplicatorSinkProcessor( neighbor, this, port);
+        Runnable proc = new ReplicatorSinkProcessor( neighbor, this, port, transactionPacketSize);
         sinkPool.submit(proc);
     }
     
@@ -91,25 +89,6 @@ public class ReplicatorSinkPool  implements Runnable {
         neighbor.setSink(null);
     }
 
-    /*
-    public void broadcast(TransactionViewModel transaction) {
-        if (transaction != null) {
-            List<Neighbor> neighbors = instance.node.getNeighbors();
-            if (neighbors != null) {
-                neighbors.stream().filter(n -> n instanceof TCPNeighbor)
-                        .map(n -> ((TCPNeighbor) n))
-                        .filter(n -> n.getSink() != null && !n.getSink().isClosed())
-                        .forEach(neighbor -> {
-                            try {
-                                Node.sendPacket(sendingPacket, transaction, neighbor);
-                            } catch (final Exception e) {
-                                // ignore
-                            }
-                        });
-            }
-        }
-    }
-    */
 
     public void shutdown() throws InterruptedException {
         shutdown = true;

@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
@@ -23,7 +24,6 @@ import static org.junit.Assert.assertTrue;
 public class TransactionValidatorTest {
 
   private static final int MAINNET_MWM = 14;
-  private static final int TESTNET_MWM = 13;
   private static final TemporaryFolder dbFolder = new TemporaryFolder();
   private static final TemporaryFolder logFolder = new TemporaryFolder();
   private static Tangle tangle;
@@ -41,8 +41,9 @@ public class TransactionValidatorTest {
     TipsViewModel tipsViewModel = new TipsViewModel();
     MessageQ messageQ = new MessageQ(0, "", 0, false);
     TransactionRequester txRequester = new TransactionRequester(tangle, messageQ);
-    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ);
-    txValidator.init(false, MAINNET_MWM, TESTNET_MWM);
+    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ,
+            Long.parseLong(Configuration.GLOBAL_SNAPSHOT_TIME));
+    txValidator.init(false, MAINNET_MWM);
   }
 
   @AfterClass
@@ -56,10 +57,10 @@ public class TransactionValidatorTest {
   @Test
   public void testMinMwm() throws InterruptedException {
     txValidator.shutdown();
-    txValidator.init(false, 5, 3);
+    txValidator.init(false, 5);
     assertTrue(txValidator.getMinWeightMagnitude() == 13);
     txValidator.shutdown();
-    txValidator.init(false, MAINNET_MWM, TESTNET_MWM);
+    txValidator.init(false, MAINNET_MWM);
   }
 
   @Test

@@ -1,3 +1,10 @@
+1.4.2.4
+    - Tag indexing (#728)
+    - TCP networking issues fixed (#592)
+    - Running node on testnet is a flag away (#610)
+    - Improved milestone solidity tracking (#486)
+    - ZMQ sending issues fixed (#569)
+    
 1.4.2.2
     - Fix locking issue (#534)
     - Fix internal snapshot consistency checks 

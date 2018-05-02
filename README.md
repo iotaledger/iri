@@ -1,3 +1,9 @@
+[![Build Status](https://travis-ci.org/iotaledger/iri.svg?branch=dev)](https://travis-ci.org/iotaledger/iri)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/iotaledger/iri?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=iotaledger/iri&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/dba5b7ae42024718893991e767390135)](https://www.codacy.com/app/iotaledger/iri?utm_source=github.com&utm_medium=referral&utm_content=iotaledger/iri&utm_campaign=Badge_Coverage)
+![GitHub release](https://img.shields.io/github/release/iotaledger/iri.svg)
+![license](https://img.shields.io/github/license/iotaledger/iri.svg)
+
 ## IOTA
 
 This is the main branch of the main IRI repository, as this is a IOTA reference implementation that is utilized specifically for what we have setup. It is a complete [[IOTA]](http://iota.org/) Node with a JSON-REST HTTP interface.
@@ -9,7 +15,7 @@ It allows to connect easily using java directly to a local or a remote [[IOTA no
 
 # How to get started
 
-Obviously, because this is its own, independent network, you have to go through the same process as in the main network: **find neighbors**. You can find neighbors in the `#nodesharing` Slack channel[[Slack Invite]](http://slack.iota.org), or on our forum. Community members are usually very happy to help you out and get you connected. If you want to get tokens for your testcase, please just ask in one of the communication channels as well.
+Obviously, because this is its own, independent network, you have to go through the same process as in the main network: **find neighbors**. You can find neighbors in the [[Discord Community]](https://discord.gg/7Gu2mG5), or on [[our forum]](https://forum.iota.org/). Community members are usually very happy to help you out and get you connected. If you want to get tokens for your testcase, please just ask in one of the communication channels as well.
 
 ## Reporting Issues
 
@@ -51,7 +57,7 @@ Create an iota.ini file with all of your configuration variables set in it.
 Any that you don't provide in here will be assumed to be default or taken from
 command line arguments.
 
-`docker run -d --net=host --name iota-node -p 14265:14265 -p 14777:14777/udp -p 15777:15777 -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
+`docker run -d --net=host --name iota-node -v iota.ini:/iri/iota.ini iotaledger/iri:latest`
 
 ### Command Line Options 
 

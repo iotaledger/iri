@@ -11,9 +11,6 @@ import com.iota.iri.network.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
-
 public class ReplicatorSourcePool implements Runnable {
 
     private final ReplicatorSinkPool replicatorSinkPool;
@@ -49,7 +46,7 @@ public class ReplicatorSourcePool implements Runnable {
                 try {
                     Socket request = server.accept();
                     request.setSoLinger(true, 0);
-                    Runnable proc = new ReplicatorSourceProcessor( replicatorSinkPool, request, node, maxPeers, testnet );
+                    Runnable proc = new ReplicatorSourceProcessor( replicatorSinkPool, request, node, maxPeers, testnet);
                     pool.submit(proc);
                 } catch (IOException ex) {
                     log.error("Error accepting connection", ex);

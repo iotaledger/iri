@@ -31,7 +31,9 @@ public class Kerl implements Sponge {
     @Override
     public void absorb(final int[] trits, int offset, int length) {
 
-        if (length % 243 != 0) throw new RuntimeException("Illegal length: " + length);
+        if (length % 243 != 0) {
+            throw new RuntimeException("Illegal length: " + length);
+        }
 
         do {
             //copy trits[offset:offset+length]
@@ -51,7 +53,9 @@ public class Kerl implements Sponge {
     @Override
     public void squeeze(final int[] trits, int offset, int length) {
 
-        if (length % 243 != 0) throw new RuntimeException("Illegal length: " + length);
+        if (length % 243 != 0) {
+            throw new RuntimeException("Illegal length: " + length);
+        }
 
         try {
           do {

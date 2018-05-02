@@ -14,13 +14,18 @@ import java.net.SocketAddress;
 public class UDPNeighbor extends Neighbor {
     private static final Logger log = LoggerFactory.getLogger(UDPNeighbor.class);
 
-    private DatagramSocket socket;
+    private final DatagramSocket socket;
 
-    public UDPNeighbor(final InetSocketAddress address, final DatagramSocket socket, final boolean isConfigured) {
+    UDPNeighbor(final InetSocketAddress address, final DatagramSocket socket, final boolean isConfigured) {
         super(address, isConfigured);
         this.socket = socket;
     }
 
+    /**
+     * This is a blocking write and it is not necessary to copy the sent data.
+     *
+     * @param packet the packet to be sent immediately.
+     */
     @Override
     public void send(DatagramPacket packet) {
         try {
@@ -28,7 +33,7 @@ public class UDPNeighbor extends Neighbor {
             socket.send(packet);
             incSentTransactions();
         } catch (final Exception e) {
-            log.error("UDP send error: {}",e.getMessage());
+            log.error("Error sending UDP packet to [{}]: {}", getAddress(), e.toString());
         }
     }
 

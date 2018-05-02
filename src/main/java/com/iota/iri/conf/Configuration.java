@@ -48,6 +48,8 @@ public class Configuration {
     public static final String TESTNET_PACKET_SIZE = "1653";
     public static final String REQ_HASH_SIZE = "46";
     public static final String TESTNET_REQ_HASH_SIZE = "49";
+    public static final String TESTNETDB = "testnetdb";
+    public static final String TESTNETDB_LOG = "testnetdb.log";
 
 
 

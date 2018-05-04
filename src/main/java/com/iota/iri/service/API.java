@@ -1204,7 +1204,7 @@ public class API {
         headerMap.put(Headers.CONTENT_TYPE, getResponseContentType(res));
     }
 
-    private String getResponseContentType(AbstractResponse response) {
+    private static String getResponseContentType(AbstractResponse response) {
         if(response instanceof IXIResponse){
             return ((IXIResponse)response).getResponseContentType();
         }

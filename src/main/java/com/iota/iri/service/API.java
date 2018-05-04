@@ -1174,7 +1174,7 @@ public class API {
         String response = null;
         if(res instanceof IXIResponse){
             final String content = ((IXIResponse)res).getContent();
-            if(content != null && !content.equals(""){
+            if(content != null && !content.equals("")){
                 response = content;
             }
         }

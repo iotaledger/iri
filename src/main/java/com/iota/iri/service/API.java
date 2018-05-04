@@ -1201,7 +1201,7 @@ public class API {
         final HeaderMap headerMap = exchange.getResponseHeaders();
         headerMap.add(new HttpString("Access-Control-Allow-Origin"),"*");
         headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
-        headerMap.put(Headers.CONTENT_TYPE, getResponseContentType(response));
+        headerMap.put(Headers.CONTENT_TYPE, getResponseContentType(res));
     }
 
     private String getResponseContentType(AbstractResponse response) {

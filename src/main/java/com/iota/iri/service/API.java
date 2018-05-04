@@ -38,7 +38,6 @@ import org.xnio.channels.StreamSinkChannel;
 import org.xnio.streams.ChannelInputStream;
 
 import java.io.*;
-import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
@@ -1175,7 +1174,7 @@ public class API {
         String response = null;
         if(res instanceof IXIResponse){
             final String content = ((IXIResponse)res).getContent();
-            if(content != null && content != ""){
+            if(content != null && !content.equals(""){
                 response = content;
             }
         }

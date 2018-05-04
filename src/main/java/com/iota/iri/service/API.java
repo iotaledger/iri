@@ -64,7 +64,7 @@ public class API {
 
     private Undertow server;
 
-    private final Gson gson = new GsonBuilder().create();
+    private final Gson gson = new GsonBuilder().disableHtmlEscaping().create();
     private volatile PearlDiver pearlDiver = new PearlDiver();
 
     private final AtomicInteger counter = new AtomicInteger(0);
@@ -169,24 +169,49 @@ public class API {
     }
 
     private void processRequest(final HttpServerExchange exchange) throws IOException {
-        final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-
         final long beginningTime = System.currentTimeMillis();
-        final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
+        final String body = getRequestBody(exchange);
+
         final AbstractResponse response;
 
-        if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
-            response = ErrorResponse.create("Invalid API Version");
-        } else if (body.length() > maxBodyLength) {
+        if (body.length() > maxBodyLength) {
             response = ErrorResponse.create("Request too long");
         } else {
-            response = process(body, exchange.getSourceAddress());
+            response = process(body, exchange);
         }
+
         sendResponse(exchange, response, beginningTime);
     }
 
-    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress) throws UnsupportedEncodingException {
+    private String getRequestBody(final HttpServerExchange exchange) throws IOException {
+        final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
+        String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
+
+        if(body.length() == 0){
+            body = getQueryParamsBody(exchange.getQueryParameters());
+        }
+        return body;
+    }
+
+    private String getQueryParamsBody(Map<String, Deque<String>> queryParameters) {
+        String queryParamsBody = "{";
+
+        Set<String> keySet = queryParameters.keySet();
+
+        for (String key : keySet) {
+            String param = queryParameters.get(key).getFirst();
+            queryParamsBody += "\"" + key + "\" : " + "\"" + param + "\","; // Json property
+        }
+        
+        // Removes last comma, if multiple params
+        if(queryParamsBody.endsWith(",")){
+            queryParamsBody = queryParamsBody.substring(0, queryParamsBody.length() -1);
+        }
+
+        return queryParamsBody + "}";
+	}
+
+    private AbstractResponse process(final String requestString, final HttpServerExchange exchange) throws UnsupportedEncodingException {
 
         try {
 
@@ -201,7 +226,7 @@ public class API {
             }
 
             if (instance.configuration.string(DefaultConfSettings.REMOTE_LIMIT_API).contains(command) &&
-                    !sourceAddress.getAddress().isLoopbackAddress()) {
+                    !exchange.getSourceAddress().getAddress().isLoopbackAddress()) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 
@@ -209,6 +234,10 @@ public class API {
 
             switch (command) {
                 case "storeMessage": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     if (!testNet) {
                         return AccessLimitedResponse.create("COMMAND storeMessage is only available on testnet");
                     }
@@ -230,11 +259,19 @@ public class API {
                 }
 
                 case "addNeighbors": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     List<String> uris = getParameterAsList(request,"uris",0);
                     log.debug("Invoking 'addNeighbors' with {}", uris);
                     return addNeighborsStatement(uris);
                 }
                 case "attachToTangle": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     final Hash trunkTransaction  = new Hash(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
                     final Hash branchTransaction = new Hash(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
                     final int minWeightMagnitude = getParameterAsInt(request,"minWeightMagnitude");
@@ -245,14 +282,26 @@ public class API {
                     return AttachToTangleResponse.create(elements);
                 }
                 case "broadcastTransactions": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
                     broadcastTransactionStatement(trytes);
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "findTransactions": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     return findTransactionStatement(request);
                 }
                 case "getBalances": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                     final List<String> tips = request.containsKey("tips") ?
                             getParameterAsList(request,"tips ", HASH_SIZE):
@@ -261,6 +310,10 @@ public class API {
                     return getBalancesStatement(addresses, tips, threshold);
                 }
                 case "getInclusionStates": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
@@ -271,9 +324,17 @@ public class API {
                     return getNewInclusionStateStatement(transactions, tips);
                 }
                 case "getNeighbors": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     return getNeighborsStatement();
                 }
                 case "getNodeInfo": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     String name = instance.configuration.booling(Configuration.DefaultConfSettings.TESTNET) ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
                     return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                             Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
@@ -284,9 +345,17 @@ public class API {
                             instance.transactionRequester.numberOfTransactionsToRequest());
                 }
                 case "getTips": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     return getTipsStatement();
                 }
                 case "getTransactionsToApprove": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
@@ -313,21 +382,37 @@ public class API {
                     }
                 }
                 case "getTrytes": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
                     return getTrytesStatement(hashes);
                 }
 
                 case "interruptAttachingToTangle": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+                    
                     pearlDiver.cancel();
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "removeNeighbors": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     List<String> uris = getParameterAsList(request,"uris",0);
                     log.debug("Invoking 'removeNeighbors' with {}", uris);
                     return removeNeighborsStatement(uris);
                 }
 
                 case "storeTransactions": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     try {
                         final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
                         storeTransactionStatement(trytes);
@@ -338,6 +423,10 @@ public class API {
                     }
                 }
                 case "getMissingTransactions": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     //TransactionRequester.instance().rescanTransactionsToRequest();
                     synchronized (instance.transactionRequester) {
                         List<String> missingTx = Arrays.stream(instance.transactionRequester.getRequestedTransactions())
@@ -347,6 +436,10 @@ public class API {
                     }
                 }
                 case "checkConsistency": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
@@ -355,6 +448,10 @@ public class API {
                     return checkConsistencyStatement(transactions);
                 }
                 case "wereAddressesSpentFrom": {
+                    if(!iotaAPIHeaderDefined(exchange)){
+                        return ErrorResponse.create("Invalid API Version");
+                    }
+
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                     return wereAddressesSpentFromStatement(addresses);
                 }
@@ -374,6 +471,10 @@ public class API {
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
     }
+
+    private boolean iotaAPIHeaderDefined(final HttpServerExchange exchange) {
+        return exchange.getRequestHeaders().contains("X-IOTA-API-Version");
+	}
 
     private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
         final List<Hash> addresses = addressesStr.stream().map(Hash::new).collect(Collectors.toList());
@@ -1034,8 +1135,7 @@ public class API {
     private void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime)
             throws IOException {
         res.setDuration((int) (System.currentTimeMillis() - beginningTime));
-        final String response = gson.toJson(res);
-
+        
         if (res instanceof ErrorResponse) {
             exchange.setStatusCode(400); // bad request
         } else if (res instanceof AccessLimitedResponse) {
@@ -1044,7 +1144,9 @@ public class API {
             exchange.setStatusCode(500); // internal error
         }
 
-        setupResponseHeaders(exchange);
+        setupResponseHeaders(exchange, res);
+
+        final String response = convertResponseToClientFormat(res);
 
         ByteBuffer responseBuf = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
         exchange.setResponseContentLength(responseBuf.array().length);
@@ -1069,6 +1171,21 @@ public class API {
         sinkChannel.resumeWrites();
     }
 
+    private String convertResponseToClientFormat(AbstractResponse res) {
+        String response = null;
+        if(res instanceof IXIResponse){
+            final String content = ((IXIResponse)res).getContent();
+            if(content != null && content != ""){
+                response = content;
+            }
+        }
+        if(response == null){
+            response = gson.toJson(res);
+        }
+        
+        return response;
+	}
+
     private boolean validTrytes(String trytes, int length, char zeroAllowed) {
         if (trytes.length() == 0 && zeroAllowed == ZERO_LENGTH_ALLOWED) {
             return true;
@@ -1080,11 +1197,21 @@ public class API {
         return matcher.matches();
     }
 
-    private static void setupResponseHeaders(final HttpServerExchange exchange) {
+    private static void setupResponseHeaders(final HttpServerExchange exchange, final AbstractResponse res) {
         final HeaderMap headerMap = exchange.getResponseHeaders();
         headerMap.add(new HttpString("Access-Control-Allow-Origin"),"*");
         headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
+        headerMap.put(Headers.CONTENT_TYPE, getResponseContentType(response));
     }
+
+    private String getResponseContentType(AbstractResponse response) {
+        if(response instanceof IXIResponse){
+            return ((IXIResponse)response).getResponseContentType();
+        }
+        else {
+            return "application/json";
+        }
+	}
 
     private HttpHandler addSecurity(final HttpHandler toWrap) {
         String credentials = instance.configuration.string(DefaultConfSettings.REMOTE_AUTH);

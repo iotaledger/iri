@@ -23,12 +23,14 @@ matrix:
 script:
   #run tests and integration tests
   - mvn integration-test
+  - echo `mvn help:evaluate -Dexpression=project.version | grep -e '^[^\[]' | grep -v 'Downloading'` > iri.version
   #run jar sanity tests
   - git clone https://github.com/alon-e/iri-regression
   - cd iri-regression
   - mkdir iri
   - cp -rf ../target iri/target
-  - bash run_all_stable_tests.sh
+  - cp ../iri.version .
+  - bash run_all_stable_tests.sh `cat iri.version`
   - cd ..
 
 after_success:

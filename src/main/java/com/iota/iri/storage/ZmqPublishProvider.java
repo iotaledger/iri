@@ -80,7 +80,8 @@ public class ZmqPublishProvider implements PersistenceProvider {
             txStringBuilder.append(transactionViewModel.getBundleHash()); txStringBuilder.append(" ");
             txStringBuilder.append(transactionViewModel.getTrunkTransactionHash()); txStringBuilder.append(" ");
             txStringBuilder.append(transactionViewModel.getBranchTransactionHash()); txStringBuilder.append(" ");
-            txStringBuilder.append(String.valueOf(transactionViewModel.getArrivalTime()));
+            txStringBuilder.append(String.valueOf(transactionViewModel.getArrivalTime())); txStringBuilder.append(" ");
+            txStringBuilder.append(transactionViewModel.getTagValue().toString().substring(0,27));
 
             messageQ.publish(txStringBuilder.toString());
         } catch (Exception e) {

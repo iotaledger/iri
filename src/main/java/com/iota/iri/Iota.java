@@ -3,25 +3,22 @@ package com.iota.iri;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.storage.FileExportProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.ZmqPublishProvider;
+import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
+import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -50,7 +47,7 @@ public class Iota {
     public final int tcpPort;
     public final int maxTipSearchDepth;
 
-    public Iota(Configuration configuration) {
+    public Iota(Configuration configuration) throws IOException {
         this.configuration = configuration;
         testnet = configuration.booling(Configuration.DefaultConfSettings.TESTNET);
         maxPeers = configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
@@ -65,7 +62,7 @@ public class Iota {
         int numKeysMilestone = configuration.integer(Configuration.DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE);
         boolean dontValidateMilestoneSig = configuration.booling(Configuration.DefaultConfSettings
                 .DONT_VALIDATE_TESTNET_MILESTONE_SIG);
-        int reqHashSize = configuration.integer(Configuration.DefaultConfSettings.REQUEST_HASH_SIZE);
+        int transactionPacketSize = configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE);
 
         maxTipSearchDepth = configuration.integer(Configuration.DefaultConfSettings.MAX_DEPTH);
         if(testnet) {
@@ -93,7 +90,7 @@ public class Iota {
         milestone = new Milestone(tangle, coordinator, initialSnapshot, transactionValidator, testnet, messageQ,
                 numKeysMilestone, milestoneStartIndex, dontValidateMilestoneSig);
         node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
-        replicator = new Replicator(node, tcpPort, maxPeers, testnet, reqHashSize);
+        replicator = new Replicator(node, tcpPort, maxPeers, testnet, transactionPacketSize);
         udpReceiver = new UDPReceiver(udpPort, node, configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE));
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone,
@@ -124,51 +121,19 @@ public class Iota {
     }
 
     private void rescan_db() throws Exception {
-        int counter = 0;
-        //delete all Address , Bundle , Approvee & Tag
-        AddressViewModel add = AddressViewModel.first(tangle);
-        while (add != null) {
-            if (++counter % 10000 == 0) {
-                log.info("Clearing cache: {} Addresses", counter);
-            }
-            AddressViewModel NextAdd = add.next(tangle);
-            add.delete(tangle);
-            add = NextAdd;
-        }
-        counter = 0;
-        BundleViewModel bn = BundleViewModel.first(tangle);
-        while (bn != null) {
-            if (++counter % 10000 == 0) {
-                log.info("Clearing cache: {} Bundles", counter);
-            }
-            BundleViewModel NextBn = bn.next(tangle);
-            bn.delete(tangle);
-            bn = NextBn;
-        }
-        counter = 0;
-        ApproveeViewModel app = ApproveeViewModel.first(tangle);
-        while (app != null) {
-            if (++counter % 10000 == 0) {
-                log.info("Clearing cache: {} Approvees", counter);
-            }
-            ApproveeViewModel NextApp = app.next(tangle);
-            app.delete(tangle);
-            app = NextApp;
-        }
-        counter = 0;
-        TagViewModel tag = TagViewModel.first(tangle);
-        while (tag != null) {
-            if (++counter % 10000 == 0) {
-                log.info("Clearing cache: {} Tags", counter);
-            }
-            TagViewModel NextTag = tag.next(tangle);
-            tag.delete(tangle);
-            tag = NextTag;
-        }
+        //delete all transaction indexes
+        tangle.clearColumn(com.iota.iri.model.Address.class);
+        tangle.clearColumn(com.iota.iri.model.Bundle.class);
+        tangle.clearColumn(com.iota.iri.model.Approvee.class);
+        tangle.clearColumn(com.iota.iri.model.ObsoleteTag.class);
+        tangle.clearColumn(com.iota.iri.model.Tag.class);
+        tangle.clearColumn(com.iota.iri.model.Milestone.class);
+        tangle.clearColumn(com.iota.iri.model.StateDiff.class);
+        tangle.clearMetadata(com.iota.iri.model.Transaction.class);
 
         //rescan all tx & refill the columns
         TransactionViewModel tx = TransactionViewModel.first(tangle);
-        counter = 0;
+        int counter = 0;
         while (tx != null) {
             if (++counter % 10000 == 0) {
                 log.info("Rescanned {} Transactions", counter);

@@ -19,15 +19,15 @@ public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
     public static String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
     public static int SNAPSHOT_PUBKEY_DEPTH = 6;
-    public static int SNAPSHOT_INDEX = 2;
-    public static int SPENT_ADDRESSES_INDEX = 3;
+    public static int SNAPSHOT_INDEX = 4;
+    public static int SPENT_ADDRESSES_INDEX = 5;
     private static Snapshot initialSnapshot;
 
 
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
 
-    public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) {
+    public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) throws IOException {
         //This is not thread-safe (and it is ok)
         if (initialSnapshot == null) {
             if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,

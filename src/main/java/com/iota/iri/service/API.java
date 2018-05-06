@@ -110,7 +110,7 @@ public class API {
     }
 
     public void init() throws IOException {
-        readPreviousEpochsSpentAddresses();
+        readPreviousEpochsSpentAddresses(testNet);
 
         final int apiPort = instance.configuration.integer(DefaultConfSettings.PORT);
         final String apiHost = instance.configuration.string(DefaultConfSettings.API_HOST);
@@ -145,14 +145,18 @@ public class API {
         server.start();
     }
 
-    private void readPreviousEpochsSpentAddresses() {
+    private void readPreviousEpochsSpentAddresses(boolean isTestnet) throws IOException {
+        if (isTestnet) {
+            return;
+        }
+
         if (!SignedFiles.isFileSignatureValid(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT,
                 Configuration.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
                 Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
             throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
         }
 
-        InputStream in = Snapshot.class.getResourceAsStream("/previousEpochsSpentAddresses.txt");
+        InputStream in = Snapshot.class.getResourceAsStream(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT);
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
         try {
@@ -791,6 +795,12 @@ public class API {
             for (String tag : tags) {
                 tag = padTag(tag);
                 tagsTransactions.addAll(TagViewModel.load(instance.tangle, new Hash(tag)).getHashes());
+            }
+            if (tagsTransactions.isEmpty()) {
+                for (String tag : tags) {
+                    tag = padTag(tag);
+                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, new Hash(tag)).getHashes());
+                }
             }
             foundTransactions.addAll(tagsTransactions);
             containsKey = true;

@@ -14,7 +14,7 @@ public class TransactionViewModel {
     private final com.iota.iri.model.Transaction transaction;
 
     public static final int SIZE = 1604;
-    private static final int TAG_SIZE = 27;
+    private static final int TAG_SIZE_IN_BYTES = 17; // = ceil(81 TRITS / 5 TRITS_PER_BYTE)
 
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2
 
@@ -166,7 +166,8 @@ public class TransactionViewModel {
         hashesList.add(new Pair<>(getBundleHash(), new Bundle(hash)));
         hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(hash)));
         hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(hash)));
-        hashesList.add(new Pair<>(getObsoleteTagValue(), new Tag(hash)));
+        hashesList.add(new Pair<>(getObsoleteTagValue(), new ObsoleteTag(hash)));
+        hashesList.add(new Pair<>(getTagValue(), new Tag(hash)));
         setAttachmentData();
         setMetadata();
         return hashesList;
@@ -265,7 +266,7 @@ public class TransactionViewModel {
             byte[] tagBytes = Converter.allocateBytesForTrits(OBSOLETE_TAG_TRINARY_SIZE);
             Converter.bytes(trits(), OBSOLETE_TAG_TRINARY_OFFSET, tagBytes, 0, OBSOLETE_TAG_TRINARY_SIZE);
 
-            transaction.obsoleteTag = new Hash(tagBytes, 0, TAG_SIZE);
+            transaction.obsoleteTag = new Hash(tagBytes, 0, TAG_SIZE_IN_BYTES);
         }
         return transaction.obsoleteTag;
     }
@@ -295,7 +296,7 @@ public class TransactionViewModel {
         if(transaction.tag == null) {
             byte[] tagBytes = Converter.allocateBytesForTrits(TAG_TRINARY_SIZE);
             Converter.bytes(trits(), TAG_TRINARY_OFFSET, tagBytes, 0, TAG_TRINARY_SIZE);
-            transaction.tag = new Hash(tagBytes, 0, TAG_SIZE);
+            transaction.tag = new Hash(tagBytes, 0, TAG_SIZE_IN_BYTES);
         }
         return transaction.tag;
     }

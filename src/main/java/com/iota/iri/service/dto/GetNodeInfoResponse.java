@@ -18,6 +18,8 @@ public class GetNodeInfoResponse extends AbstractResponse {
     private String latestSolidSubtangleMilestone;
     private int latestSolidSubtangleMilestoneIndex;
 
+    private int milestoneStartIndex;
+
     private int neighbors;
     private int packetsQueueSize;
     private long time;
@@ -26,7 +28,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 
 	public static AbstractResponse create(String appName, String appVersion, int jreAvailableProcessors, long jreFreeMemory,
 	        String jreVersion, long maxMemory, long totalMemory, Hash latestMilestone, int latestMilestoneIndex,
-	        Hash latestSolidSubtangleMilestone, int latestSolidSubtangleMilestoneIndex,
+	        Hash latestSolidSubtangleMilestone, int latestSolidSubtangleMilestoneIndex, int milestoneStartIndex,
 	        int neighbors, int packetsQueueSize,
 	        long currentTimeMillis, int tips, int numberOfTransactionsToRequest) {
 		final GetNodeInfoResponse res = new GetNodeInfoResponse();
@@ -43,6 +45,8 @@ public class GetNodeInfoResponse extends AbstractResponse {
 
 		res.latestSolidSubtangleMilestone = latestSolidSubtangleMilestone.toString();
 		res.latestSolidSubtangleMilestoneIndex = latestSolidSubtangleMilestoneIndex;
+
+		res.milestoneStartIndex = milestoneStartIndex;
 
 		res.neighbors = neighbors;
 		res.packetsQueueSize = packetsQueueSize;
@@ -94,6 +98,10 @@ public class GetNodeInfoResponse extends AbstractResponse {
 
 	public int getLatestSolidSubtangleMilestoneIndex() {
 		return latestSolidSubtangleMilestoneIndex;
+	}
+
+	public int getMilestoneStartIndex() {
+		return milestoneStartIndex;
 	}
 
 	public int getNeighbors() {

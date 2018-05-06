@@ -24,7 +24,8 @@ public class IXIResponse extends AbstractResponse {
     }
 
     public String getResponseContentType() {
-        String fieldObj = (String)getResponseMapper().get("contentType");
+        Map<String, Object> responseMapper = getResponseMapper();
+        String fieldObj = (String)responseMapper.get("contentType");
         String fieldValue = StringUtils.isBlank(fieldObj) ? getdefaultContentType() : fieldObj;
         return fieldValue;
     }
@@ -34,7 +35,8 @@ public class IXIResponse extends AbstractResponse {
     }
 
     public String getContent() {
-        String fieldObj = (String)getResponseMapper().get("content");
+        Map<String, Object> responseMapper = getResponseMapper();
+        String fieldObj = (String)responseMapper.get("content");
         String fieldValue = StringUtils.isBlank(fieldObj) ? null : fieldObj;
         return fieldValue;
 	}

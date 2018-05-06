@@ -1,6 +1,7 @@
 package com.iota.iri.service.dto;
 
 import java.util.Map;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * Created by paul on 2/10/17.
@@ -23,8 +24,8 @@ public class IXIResponse extends AbstractResponse {
     }
 
     public String getResponseContentType() {
-        Object fieldObj = getResponseMapper().get("contentType");
-        String fieldValue = fieldObj == null || "".equals(fieldObj) ? getdefaultContentType() : fieldObj.toString();
+        String fieldObj = (String)getResponseMapper().get("contentType");
+        String fieldValue = StringUtils.isBlank(fieldObj) ? getdefaultContentType() : fieldObj;
         return fieldValue;
     }
 
@@ -33,8 +34,8 @@ public class IXIResponse extends AbstractResponse {
     }
 
     public String getContent() {
-        Object fieldObj = getResponseMapper().get("content");
-        String fieldValue = fieldObj == null || "".equals(fieldObj) ? null : fieldObj.toString();
+        String fieldObj = (String)getResponseMapper().get("content");
+        String fieldValue = StringUtils.isBlank(fieldObj) ? null : fieldObj;
         return fieldValue;
 	}
 }

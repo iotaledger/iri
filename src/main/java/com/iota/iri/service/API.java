@@ -47,8 +47,7 @@ import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
 import static io.undertow.Handlers.path;
@@ -56,25 +55,28 @@ import static io.undertow.Handlers.path;
 @SuppressWarnings("unchecked")
 public class API {
 
-    public static final String REFERENCE_TRANSACTION_NOT_FOUND = "reference transaction not found";
-    public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
     private static final Logger log = LoggerFactory.getLogger(API.class);
-    private final IXI ixi;
-    private final int milestoneStartIndex;
 
-    private Undertow server;
+    private static final IntPredicate TRYTE_MATCHER = value -> (value >= 'A' && value <= 'Z') || (value == '9');
 
-    private final Gson gson = new GsonBuilder().create();
-    private volatile PearlDiver pearlDiver = new PearlDiver();
+    private final static String overMaxErrorMessage = "Could not complete request";
+    private final static String invalidParams = "Invalid parameters";
 
-    private final AtomicInteger counter = new AtomicInteger(0);
+    private final static char ZERO_LENGTH_ALLOWED = 'Y';
+    private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
 
-    private Pattern trytesPattern = Pattern.compile("[9A-Z]*");
+    private static final String REFERENCE_TRANSACTION_NOT_FOUND = "reference transaction not found";
+    private static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
 
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
+    private final static long MAX_TIMESTAMP_VALUE = (3^27 - 1) / 2;
 
-    private final static long MAX_TIMESTAMP_VALUE = (3 ^ 27 - 1) / 2;
+    private final SecureRandom random = new SecureRandom();
+    private final Gson gson = new GsonBuilder().create();
+    private final AtomicInteger counter = new AtomicInteger(0);
+    private final IXI ixi;
+    private final int milestoneStartIndex;
 
     private final int minRandomWalks;
     private final int maxRandomWalks;
@@ -84,14 +86,11 @@ public class API {
     private final int maxBodyLength;
     private final boolean testNet;
 
-    private final static String overMaxErrorMessage = "Could not complete request";
-    private final static String invalidParams = "Invalid parameters";
+    private final ConcurrentHashMap<Hash, Boolean> previousEpochsSpentAddresses;
+    private final Iota instance;
 
-    private ConcurrentHashMap<Hash, Boolean> previousEpochsSpentAddresses;
-
-    private final static char ZERO_LENGTH_ALLOWED = 'Y';
-    private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
-    private Iota instance;
+    private volatile PearlDiver pearlDiver = new PearlDiver();
+    private Undertow server;
 
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
@@ -104,9 +103,7 @@ public class API {
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
         testNet = instance.configuration.booling(DefaultConfSettings.TESTNET);
         milestoneStartIndex = instance.configuration.integer(DefaultConfSettings.MILESTONE_START_INDEX);
-
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
-
     }
 
     public void init() throws IOException {
@@ -145,14 +142,14 @@ public class API {
         server.start();
     }
 
-    private void readPreviousEpochsSpentAddresses(boolean isTestnet) throws IOException {
+    private void readPreviousEpochsSpentAddresses(boolean isTestnet) {
         if (isTestnet) {
             return;
         }
 
         if (!SignedFiles.isFileSignatureValid(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT,
-            Configuration.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
-            Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
+                Configuration.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
+                Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
             throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
         }
 
@@ -160,8 +157,8 @@ public class API {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
         try {
-            while ((line = reader.readLine()) != null) {
-                previousEpochsSpentAddresses.put(new Hash(line), true);
+            while((line = reader.readLine()) != null) {
+                previousEpochsSpentAddresses.put(new Hash(line),true);
             }
         } catch (IOException e) {
             log.error("Failed to load previousEpochsSpentAddresses.");
@@ -462,20 +459,18 @@ public class API {
             }
         }
 
-        if (state) {
-            instance.milestone.latestSnapshot.rwlock.readLock().lock();
-            try {
-
-                if (!instance.ledgerValidator.checkConsistency(transactions)) {
-                    state = false;
-                    info = "tails are not consistent (would lead to inconsistent ledger state)";
-                }
-            } finally {
-                instance.milestone.latestSnapshot.rwlock.readLock().unlock();
-            }
+        if (!state) {
+            return CheckConsistency.create(state, info);
         }
-
-        return CheckConsistency.create(state, info);
+        boolean[] aState = {state};
+        String[] anInfo = {info};
+        return instance.milestone.latestSnapshot.withReadLock(() -> {
+            if (!instance.ledgerValidator.checkConsistency(transactions)) {
+                aState[0] = false;
+                anInfo[0] = "tails are not consistent (would lead to inconsistent ledger state)";
+            }
+            return CheckConsistency.create(aState[0], anInfo[0]);
+        });
     }
 
     private double getParameterAsDouble(Map<String, Object> request, String paramName) throws ValidationException {
@@ -591,17 +586,15 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
-    public synchronized Hash[] getTransactionToApproveStatement(int depth, final String reference, final int numWalks) throws Exception {
-        int tipsToApprove = 2;
-        Hash[] tips = new Hash[tipsToApprove];
-        final SecureRandom random = new SecureRandom();
+    public synchronized Hash[] getTransactionToApproveStatement(int theDepth, final String reference, final int numWalks) throws Exception {
+        final int tipsToApprove = 2;
         final int randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks : numWalks;
-        Hash referenceHash = null;
-        int maxDepth = instance.tipsManager.getMaxDepth();
-        if (depth > maxDepth) {
-            depth = maxDepth;
-        }
-        if (reference != null) {
+        final int depth = Math.min(theDepth, instance.tipsManager.getMaxDepth());
+        final Hash referenceHash;
+
+        if (reference == null) {
+            referenceHash = null;
+        } else {
             referenceHash = new Hash(reference);
             if (!TransactionViewModel.exists(instance.tangle, referenceHash)) {
                 throw new RuntimeException(REFERENCE_TRANSACTION_NOT_FOUND);
@@ -614,15 +607,15 @@ public class API {
             }
         }
 
-        instance.milestone.latestSnapshot.rwlock.readLock().lock();
-        try {
+        return instance.milestone.latestSnapshot.withReadLock(() -> {
+            Hash[] tips = new Hash[tipsToApprove];
             Set<Hash> visitedHashes = new HashSet<>();
             Map<Hash, Long> diff = new HashMap<>();
             for (int i = 0; i < tipsToApprove; i++) {
                 tips[i] = instance.tipsManager.transactionToApprove(visitedHashes, diff, referenceHash, tips[0], depth, randomWalkCount, random);
                 //update world view, so next tips selected will be inter-consistent
                 if (tips[i] == null || !instance.ledgerValidator.updateDiff(visitedHashes, diff, tips[i])) {
-                    return null;
+                    throw new IllegalArgumentException("inconsistent tips pair selected");
                 }
             }
             API.incCounter_getTxToApprove();
@@ -638,11 +631,10 @@ public class API {
             if (instance.ledgerValidator.checkConsistency(Arrays.asList(tips))) {
                 return tips;
             }
-        } finally {
-            instance.milestone.latestSnapshot.rwlock.readLock().unlock();
-        }
-        throw new RuntimeException("inconsistent tips pair selected");
+            throw new RuntimeException("inconsistent tips pair selected");
+        });
     }
+
 
     private synchronized AbstractResponse getTipsStatement() throws Exception {
         return GetTipsResponse.create(instance.tipsViewModel.getTips().stream().map(Hash::toString).collect(Collectors.toList()));
@@ -862,7 +854,7 @@ public class API {
 
     private HashSet<String> getParameterAsSet(Map<String, Object> request, String paramName, int size) throws ValidationException {
 
-        HashSet<String> result = getParameterAsList(request, paramName, size).stream().collect(Collectors.toCollection(HashSet::new));
+        HashSet<String> result = new HashSet<>(getParameterAsList(request, paramName, size));
         if (result.contains(Hash.NULL_HASH.toString())) {
             throw new ValidationException("Invalid " + paramName + " input");
         }
@@ -875,7 +867,7 @@ public class API {
         for (final String tryte : trytes2) {
             //validate all trytes
             Converter.trits(tryte, txTrits, 0);
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(txTrits, instance.transactionValidator.getMinWeightMagnitude());
+            final TransactionViewModel transactionViewModel = TransactionValidator.validate(txTrits, instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
         for (final TransactionViewModel transactionViewModel : elements) {
@@ -885,26 +877,30 @@ public class API {
         }
     }
 
-    private AbstractResponse getBalancesStatement(final List<String> addrss, final List<String> tips, final int threshold) throws Exception {
+    private AbstractResponse getBalancesStatement(final List<String> addressStrings, final List<String> tips, final int threshold) throws Exception {
 
         if (threshold <= 0 || threshold > 100) {
             return ErrorResponse.create("Illegal 'threshold'");
         }
 
-        final List<Hash> addresses = addrss.stream().map(address -> (new Hash(address)))
-            .collect(Collectors.toCollection(LinkedList::new));
-        final List<Hash> hashes;
-        final Map<Hash, Long> balances = new HashMap<>();
-        instance.milestone.latestSnapshot.rwlock.readLock().lock();
-        final int index = instance.milestone.latestSnapshot.index();
-        if (tips == null || tips.size() == 0) {
-            hashes = Collections.singletonList(instance.milestone.latestSolidSubtangleMilestone);
-        } else {
-            hashes = tips.stream().map(address -> (new Hash(address)))
-                .collect(Collectors.toCollection(LinkedList::new));
+        final List<Hash> addressHashes = new LinkedList<>();
+        for (String s : addressStrings) {
+            addressHashes.add(new Hash(s));
         }
-        try {
-            for (final Hash address : addresses) {
+
+        final Map<Hash, Long> balances = new HashMap<>();
+        final List<Hash> hashes = new ArrayList<>();
+        final int index = instance.milestone.latestSnapshot.index();
+
+        AbstractResponse errorResponse = instance.milestone.latestSnapshot.withReadLock(() -> {
+
+            if (tips == null || tips.size() == 0) {
+                hashes.add(instance.milestone.latestSolidSubtangleMilestone);
+            } else {
+                tips.forEach(tip -> hashes.add(new Hash(tip)));
+            }
+
+            for (Hash address : addressHashes) {
                 Long value = instance.milestone.latestSnapshot.getBalance(address);
                 if (value == null) {
                     value = 0L;
@@ -926,14 +922,21 @@ public class API {
                 }
             }
             diff.forEach((key, value) -> balances.computeIfPresent(key, (hash, aLong) -> value + aLong));
-        } finally {
-            instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+            return null;
+        });
+
+        if (errorResponse != null) {
+            return errorResponse;
         }
 
-        final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())
-            .collect(Collectors.toCollection(LinkedList::new));
+        List<String> elements = new LinkedList<>();
+        for (Hash address : addressHashes) {
+            elements.add(balances.get(address).toString());
+        }
 
-        return GetBalancesResponse.create(elements, hashes.stream().map(h -> h.toString()).collect(Collectors.toList()), index);
+        List<String> list = new ArrayList<>();
+        hashes.forEach(hash -> list.add(hash.toString()));
+        return GetBalancesResponse.create(elements, list, index);
     }
 
     private static int counter_PoW = 0;
@@ -1040,8 +1043,7 @@ public class API {
         return AddedNeighborsResponse.create(numberOfAddedNeighbors);
     }
 
-    private void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime)
-        throws IOException {
+    private void sendResponse(final HttpServerExchange exchange, final AbstractResponse res, final long beginningTime) {
         res.setDuration((int) (System.currentTimeMillis() - beginningTime));
         final String response = gson.toJson(res);
 
@@ -1084,8 +1086,7 @@ public class API {
         if (trytes.length() != length) {
             return false;
         }
-        Matcher matcher = trytesPattern.matcher(trytes);
-        return matcher.matches();
+        return trytes.chars().allMatch(TRYTE_MATCHER);
     }
 
     private static void setupResponseHeaders(final HttpServerExchange exchange) {

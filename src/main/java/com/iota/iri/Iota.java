@@ -55,10 +55,13 @@ public class Iota {
         udpPort = configuration.integer(Configuration.DefaultConfSettings.UDP_RECEIVER_PORT);
         tcpPort = configuration.integer(Configuration.DefaultConfSettings.TCP_RECEIVER_PORT);
 
+        // MAKE INITIAL SNAPSHOT
         String snapshotFile = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_FILE);
         String snapshotSigFile = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE);
-        Snapshot initialSnapshot = Snapshot.init(snapshotFile, snapshotSigFile, testnet).clone();
+        Snapshot initialSnapshot = Snapshot.init(snapshotFile, snapshotSigFile, testnet)
+            .copySnapshot(); // make a copy to make it mutable
         long snapshotTimestamp = configuration.longNum(Configuration.DefaultConfSettings.SNAPSHOT_TIME);
+
         int milestoneStartIndex = configuration.integer(Configuration.DefaultConfSettings.MILESTONE_START_INDEX);
         int numKeysMilestone = configuration.integer(Configuration.DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE);
         boolean dontValidateMilestoneSig = configuration.booling(Configuration.DefaultConfSettings

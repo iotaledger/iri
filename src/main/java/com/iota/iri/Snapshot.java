@@ -31,7 +31,7 @@ public class Snapshot {
         //This is not thread-safe (and it is ok)
         if (initialSnapshot == null) {
             if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,
-                    SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
+                SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
                 throw new RuntimeException("Snapshot signature failed.");
             }
             Map<Hash, Long> initialState = initInitialState(snapshotPath);
@@ -89,8 +89,7 @@ public class Snapshot {
             System.out.println("Failed to load snapshot.");
             log.error("Failed to load snapshot.", e);
             System.exit(-1);
-        }
-        finally {
+        } finally {
             IOUtils.closeQuietly(reader);
         }
         return state;
@@ -163,12 +162,12 @@ public class Snapshot {
                 stateIterator.remove();
             }
             //////////// --Coo only--
-                /*
-                 * if (entry.getValue() > 0) {
-                 *
-                 * System.out.ln("initialState.put(new Hash(\"" + entry.getKey()
-                 * + "\"), " + entry.getValue() + "L);"); }
-                 */
+            /*
+             * if (entry.getValue() > 0) {
+             *
+             * System.out.ln("initialState.put(new Hash(\"" + entry.getKey()
+             * + "\"), " + entry.getValue() + "L);"); }
+             */
             ////////////
         }
         return true;

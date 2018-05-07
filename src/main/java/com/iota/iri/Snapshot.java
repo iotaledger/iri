@@ -2,174 +2,201 @@ package com.iota.iri;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 
-public class Snapshot {
+public final class Snapshot {
+
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
-    public static String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
-    public static int SNAPSHOT_PUBKEY_DEPTH = 6;
-    public static int SNAPSHOT_INDEX = 4;
-    public static int SPENT_ADDRESSES_INDEX = 5;
-    private static Snapshot initialSnapshot;
 
+    public static final String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
+    public static final int SNAPSHOT_PUBKEY_DEPTH = 6;
+    private static final int SNAPSHOT_INDEX = 4;
+    public static final int SPENT_ADDRESSES_INDEX = 5;
 
-    public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
+    private final ReadWriteLock rwlock = new ReentrantReadWriteLock();
+    private final boolean immutable;
+    private final Map<Hash, Long> state;
+    private int index;
 
-
+    /**
+     * This returns an unmodifiable instance. Modifiable copies of the
+     * returned {@link Snapshot} can be made using {@link #copySnapshot()}
+     *
+     * @param snapshotPath    the snapshot file
+     * @param snapshotSigPath the snapshot signature file
+     * @param testnet         true if using the testnet
+     * @return {@link Snapshot} An unmodifiable Snapshot if read and verified.
+     * @throws IOException if snapshot file has cannot be read.
+     */
     public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) throws IOException {
-        //This is not thread-safe (and it is ok)
-        if (initialSnapshot == null) {
-            if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,
-                SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
-                throw new RuntimeException("Snapshot signature failed.");
-            }
-            Map<Hash, Long> initialState = initInitialState(snapshotPath);
-            initialSnapshot = new Snapshot(initialState, 0);
-            checkStateHasCorrectSupply(initialState);
-            checkInitialSnapshotIsConsistent(initialState);
-
+        if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,
+            SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
+            throw new IllegalArgumentException("Provided Snapshot data signature failed.");
         }
-        return initialSnapshot;
-    }
-
-    private static InputStream getSnapshotStream(String snapshotPath) throws FileNotFoundException {
-        InputStream inputStream = Snapshot.class.getResourceAsStream(snapshotPath);
-        //if resource doesn't exist, read from file system
-        if (inputStream == null) {
-            inputStream = new FileInputStream(snapshotPath);
+        Map<Hash, Long> state = initInitialState(snapshotPath);
+        checkStateHasCorrectSupply(state);
+        if (!isConsistent(state)) {
+            throw new IllegalArgumentException("Provided Snapshot data inconsistent.");
         }
-
-        return inputStream;
-    }
-
-    private static void checkInitialSnapshotIsConsistent(Map<Hash, Long> initialState) {
-        if (!isConsistent(initialState)) {
-            log.error("Initial Snapshot inconsistent.");
-            System.exit(-1);
-        }
+        state.entrySet().removeIf(entry -> entry.getValue() == 0); // PRUNE ZEROs
+        return new Snapshot(state, 0, false);
     }
 
     private static void checkStateHasCorrectSupply(Map<Hash, Long> initialState) {
         long stateValue = initialState.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
         if (stateValue != TransactionViewModel.SUPPLY) {
-            log.error("Transaction resolves to incorrect ledger balance: {}", TransactionViewModel.SUPPLY - stateValue);
-            System.exit(-1);
+            throw new IllegalArgumentException("Provided initial state resolves to incorrect ledger balance: " +
+                "" + (TransactionViewModel.SUPPLY - stateValue));
         }
     }
 
-    private static Map<Hash, Long> initInitialState(String snapshotFile) {
-        String line;
-        Map<Hash, Long> state = new HashMap<>();
-        BufferedReader reader = null;
-        try {
-            InputStream snapshotStream = getSnapshotStream(snapshotFile);
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(snapshotStream);
-            reader = new BufferedReader(new InputStreamReader(bufferedInputStream));
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(";", 2);
-                if (parts.length >= 2) {
-                    String key = parts[0];
-                    String value = parts[1];
+    private static Map<Hash, Long> initInitialState(String snapshotFile) throws IOException {
+        try (InputStream inputStream = Snapshot.class.getResourceAsStream(snapshotFile);
+             BufferedReader reader = new BufferedReader((inputStream == null)
+                 ? new FileReader(snapshotFile) : new InputStreamReader(inputStream))) {
+
+            Map<Hash, Long> state = new HashMap<>();
+
+            reader.lines().forEach(line -> {
+                int index = line.indexOf(';');
+                if (index != -1 && index != line.length() - 1) {
+                    String key = line.substring(0, index);
+                    String value = line.substring(index + 1);
                     state.put(new Hash(key), Long.valueOf(value));
                 }
-            }
-        } catch (IOException e) {
-            //syso is left until logback is fixed
-            System.out.println("Failed to load snapshot.");
-            log.error("Failed to load snapshot.", e);
-            System.exit(-1);
-        } finally {
-            IOUtils.closeQuietly(reader);
+            });
+            return state;
         }
-        return state;
     }
 
-    protected final Map<Hash, Long> state;
-    private int index;
-
-    public int index() {
-        int i;
-        rwlock.readLock().lock();
-        i = index;
-        rwlock.readLock().unlock();
-        return i;
-    }
-
-    private Snapshot(Map<Hash, Long> initialState, int index) {
-        state = new HashMap<>(initialState);
+    private Snapshot(Map<Hash, Long> state, int index, boolean immutable) {
+        this.immutable = immutable;
+        this.state = immutable ? Collections.unmodifiableMap(new HashMap<>(state)) : new HashMap<>(state);
         this.index = index;
     }
 
-    public Snapshot clone() {
-        return new Snapshot(state, index);
+    Map<Hash, Long> copyState() { // VISIBLE FOR TESTING ONLY
+        return withReadLockSupply(() -> new HashMap<>(state));
+    }
+
+    public int index() {
+        return withReadLockSupply(() -> index);
+    }
+
+    /**
+     * @return a modifiable copy of this.
+     */
+    public Snapshot copySnapshot() {
+        return withReadLockSupply(() -> new Snapshot(state, index, false));
     }
 
     public Long getBalance(Hash hash) {
-        Long l;
-        rwlock.readLock().lock();
-        l = state.get(hash);
-        rwlock.readLock().unlock();
-        return l;
+        return withReadLockSupply(() -> state.get(hash));
     }
 
-    public Map<Hash, Long> patchedDiff(Map<Hash, Long> diff) {
-        Map<Hash, Long> patch;
-        rwlock.readLock().lock();
-        patch = diff.entrySet().stream().map(hashLongEntry ->
-            new HashMap.SimpleEntry<>(hashLongEntry.getKey(), state.getOrDefault(hashLongEntry.getKey(), 0L) + hashLongEntry.getValue())
-        ).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
-        rwlock.readLock().unlock();
-        return patch;
+    Map<Hash, Long> patchedDiff(Map<Hash, Long> diff) {
+        return withReadLockSupply(() -> {
+            Map<Hash, Long> map = new HashMap<>(diff.size());
+            diff.forEach((key, value) -> {
+                Long previous = state.getOrDefault(key, 0L);
+                map.put(key, Math.addExact(previous, value));
+            });
+            return map;
+        });
     }
 
     void apply(Map<Hash, Long> patch, int newIndex) {
-        if (!patch.entrySet().stream().map(Map.Entry::getValue).reduce(Math::addExact).orElse(0L).equals(0L)) {
-            throw new RuntimeException("Diff is not consistent.");
+        if (immutable) {
+            throw new UnsupportedOperationException("This snapshot is marked immutable. Make a copy if you want the 'apply' function;");
         }
         rwlock.writeLock().lock();
-        patch.entrySet().stream().forEach(hashLongEntry -> {
-            if (state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong) == null) {
-                state.putIfAbsent(hashLongEntry.getKey(), hashLongEntry.getValue());
+        try {
+            Long sum = patch.entrySet().stream().map(Map.Entry::getValue).reduce(Math::addExact).orElse(0L);
+            if (sum != 0L) {
+                throw new RuntimeException("Diff is not consistent. Sum is: " + sum);
             }
-        });
-        index = newIndex;
-        rwlock.writeLock().unlock();
+
+            patch.forEach((key, val) ->
+                state.compute(key, (k, previous) -> Math.addExact(val, previous != null ? previous : 0L)));
+
+            index = newIndex;
+        } finally {
+            rwlock.writeLock().unlock();
+        }
     }
 
-    public static boolean isConsistent(Map<Hash, Long> state) {
-        final Iterator<Map.Entry<Hash, Long>> stateIterator = state.entrySet().iterator();
-        while (stateIterator.hasNext()) {
+    public boolean isConsistent() {
+        return withReadLockSupply(() -> Snapshot.isConsistent(state));
+    }
 
-            final Map.Entry<Hash, Long> entry = stateIterator.next();
-            if (entry.getValue() <= 0) {
-
-                if (entry.getValue() < 0) {
-                    log.info("Skipping negative value for address: " + entry.getKey() + ": " + entry.getValue());
-                    return false;
-                }
-
-                stateIterator.remove();
+    static boolean isConsistent(Map<Hash, Long> state) {
+        for (Map.Entry<Hash, Long> entry : state.entrySet()) {
+            if (entry.getValue() < 0) {
+                log.info("Skipping negative value for address: " + entry.getKey() + ": " + entry.getValue());
+                return false;
             }
-            //////////// --Coo only--
-            /*
-             * if (entry.getValue() > 0) {
-             *
-             * System.out.ln("initialState.put(new Hash(\"" + entry.getKey()
-             * + "\"), " + entry.getValue() + "L);"); }
-             */
-            ////////////
         }
         return true;
+    }
+
+    ///////////////////////////////////////////////////////////
+    //
+    // These methods below allow holders of Snapshot instances
+    // to perform operations, optionally returning values, without
+    // explicitly handling the locks. This ensures that the locks
+    // are held privately and never exposed to deadlocks from
+    // code that does not handle the locks properly.
+    //
+    // If no return value is required, then a null can be returned
+    // and then disregarded.
+    //
+    ///////////////////////////////////////////////////////////
+    public final <V> V withWriteLock(Callable<V> callable) throws Exception {
+        rwlock.writeLock().lock();
+        try {
+            return callable.call();
+        } finally {
+            rwlock.writeLock().unlock();
+        }
+    }
+
+    // THIS IS NOT USED AT THE MOMENT BUT HAS BEEN ADDED FOR ANY FUTURE NEEDED USE AND
+    // TO ENSURE THAT `withWriteLock` and `withReadLock` OFFER THE SAME USE OPTIONS.
+    public final <V> V withWriteLockSupply(Supplier<V> supplier) {
+        rwlock.writeLock().lock();
+        try {
+            return supplier.get();
+        } finally {
+            rwlock.writeLock().unlock();
+        }
+    }
+
+    public final <V> V withReadLock(Callable<V> callable) throws Exception {
+        rwlock.readLock().lock();
+        try {
+            return callable.call();
+        } finally {
+            rwlock.readLock().unlock();
+        }
+    }
+
+    public final <V> V withReadLockSupply(Supplier<V> supplier) {
+        rwlock.readLock().lock();
+        try {
+            return supplier.get();
+        } finally {
+            rwlock.readLock().unlock();
+        }
     }
 }

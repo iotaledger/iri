@@ -1,10 +1,12 @@
 package com.iota.iri;
 
-import com.iota.iri.controllers.*;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.StateDiffViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,17 +34,18 @@ public class LedgerValidator {
     /**
      * Returns a Map of Address and change in balance that can be used to build a new Snapshot state.
      * Under certain conditions, it will return null:
-     *  - While descending through transactions, if a transaction is marked as {PREFILLED_SLOT}, then its hash has been
-     *    referenced by some transaction, but the transaction data is not found in the database. It notifies
-     *    TransactionRequester to increase the probability this transaction will be present the next time this is checked.
-     *  - When a transaction marked as a tail transaction (if the current index is 0), but it is not the first transaction
-     *    in any of the BundleValidator's transaction lists, then the bundle is marked as invalid, deleted, and re-requested.
-     *  - When the bundle is not internally consistent (the sum of all transactions in the bundle must be zero)
+     * - While descending through transactions, if a transaction is marked as {PREFILLED_SLOT}, then its hash has been
+     * referenced by some transaction, but the transaction data is not found in the database. It notifies
+     * TransactionRequester to increase the probability this transaction will be present the next time this is checked.
+     * - When a transaction marked as a tail transaction (if the current index is 0), but it is not the first transaction
+     * in any of the BundleValidator's transaction lists, then the bundle is marked as invalid, deleted, and re-requested.
+     * - When the bundle is not internally consistent (the sum of all transactions in the bundle must be zero)
      * As transactions are being traversed, it will come upon bundles, and will add the transaction value to {state}.
      * If {milestone} is true, it will search, through trunk and branch, all transactions, starting from {tip},
      * until it reaches a transaction that is marked as a "confirmed" transaction.
      * If {milestone} is false, it will search up until it reaches a confirmed transaction, or until it finds a hash that has been
      * marked as consistent since the previous milestone.
+     *
      * @param visitedNonMilestoneSubtangleHashes hashes that have been visited and considered as approved
      * @param tip                                the hash of a transaction to start the search from
      * @param latestSnapshotIndex                index of the latest snapshot to traverse to
@@ -50,7 +53,7 @@ public class LedgerValidator {
      * @return {state}                           the addresses that have a balance changed since the last diff check
      * @throws Exception
      */
-    public Map<Hash,Long> getLatestDiff(final Set<Hash> visitedNonMilestoneSubtangleHashes, Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
+    public Map<Hash, Long> getLatestDiff(final Set<Hash> visitedNonMilestoneSubtangleHashes, Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>();
         int numberOfAnalyzedTransactions = 0;
         Set<Hash> countedTx = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -88,7 +91,7 @@ public class LedgerValidator {
                             */
                             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
-                                if(BundleValidator.isInconsistent(bundleTransactionViewModels)) {
+                                if (BundleValidator.isInconsistent(bundleTransactionViewModels)) {
                                     break;
                                 }
                                 if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
@@ -102,7 +105,7 @@ public class LedgerValidator {
                                             final Hash address = bundleTransactionViewModel.getAddressHash();
                                             final Long value = state.get(address);
                                             state.put(address, value == null ? bundleTransactionViewModel.value()
-                                                    : Math.addExact(value, bundleTransactionViewModel.value()));
+                                                : Math.addExact(value, bundleTransactionViewModel.value()));
                                         }
                                     }
 
@@ -133,7 +136,8 @@ public class LedgerValidator {
      * Descends through the tree of transactions, through trunk and branch, marking each as {mark} until it reaches
      * a transaction while the transaction confirmed marker is mutually exclusive to {mark}
      * // old @param hash start of the update tree
-     * @param hash tail to traverse from
+     *
+     * @param hash  tail to traverse from
      * @param index milestone index
      * @throws Exception
      */
@@ -144,14 +148,14 @@ public class LedgerValidator {
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(tangle, hashPointer);
-                if(transactionViewModel2.snapshotIndex() == 0) {
+                if (transactionViewModel2.snapshotIndex() == 0) {
                     transactionViewModel2.setSnapshot(tangle, index);
                     messageQ.publish("%s %s %d sn", transactionViewModel2.getAddressHash(), transactionViewModel2.getHash(), index);
                     messageQ.publish("sn %d %s %s %s %s %s", index, transactionViewModel2.getHash(),
-                            transactionViewModel2.getAddressHash(),
-                            transactionViewModel2.getTrunkTransactionHash(),
-                            transactionViewModel2.getBranchTransactionHash(),
-                            transactionViewModel2.getBundleHash());
+                        transactionViewModel2.getAddressHash(),
+                        transactionViewModel2.getTrunkTransactionHash(),
+                        transactionViewModel2.getBranchTransactionHash(),
+                        transactionViewModel2.getBundleHash());
                     nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
                 }
@@ -162,6 +166,7 @@ public class LedgerValidator {
     /**
      * Descends through transactions, trunk and branch, beginning at {tip}, until it reaches a transaction marked as
      * confirmed, or until it reaches a transaction that has already been added to the transient consistent set.
+     *
      * @param tip
      * @throws Exception
      */
@@ -170,8 +175,8 @@ public class LedgerValidator {
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(tangle, hashPointer);
-            if((transactionViewModel2.snapshotIndex() == 0 || transactionViewModel2.snapshotIndex() > index) ) {
-                if(visitedHashes.add(hashPointer)) {
+            if ((transactionViewModel2.snapshotIndex() == 0 || transactionViewModel2.snapshotIndex() > index)) {
+                if (visitedHashes.add(hashPointer)) {
                     nonAnalyzedTransactions.offer(transactionViewModel2.getTrunkTransactionHash());
                     nonAnalyzedTransactions.offer(transactionViewModel2.getBranchTransactionHash());
                 }
@@ -185,11 +190,12 @@ public class LedgerValidator {
      * perhaps by database corruption, it will delete the milestone confirmed and all that follow.
      * It then starts at the earliest consistent milestone index with a confirmed, and analyzes the tangle until it
      * either reaches the latest solid subtangle milestone, or until it reaches an inconsistent milestone.
+     *
      * @throws Exception
      */
     protected void init() throws Exception {
         MilestoneViewModel latestConsistentMilestone = buildSnapshot();
-        if(latestConsistentMilestone != null) {
+        if (latestConsistentMilestone != null) {
             log.info("Loaded consistent milestone: #" + latestConsistentMilestone.index());
 
             milestone.latestSolidSubtangleMilestone = latestConsistentMilestone.getHash();
@@ -201,7 +207,8 @@ public class LedgerValidator {
      * Only called once upon initialization, this builds the {latestSnapshot} state up to the most recent
      * solid milestone confirmed. It gets the earliest confirmed, and while checking for consistency, patches the next
      * newest confirmed diff into its map.
-     * @return              the most recent consistent milestone with a confirmed.
+     *
+     * @return the most recent consistent milestone with a confirmed.
      * @throws Exception
      */
     private MilestoneViewModel buildSnapshot() throws Exception {
@@ -278,7 +285,7 @@ public class LedgerValidator {
     }
 
     public boolean updateDiff(Set<Hash> approvedHashes, final Map<Hash, Long> diff, Hash tip) throws Exception {
-        if(!TransactionViewModel.fromHash(tangle, tip).isSolid()) {
+        if (!TransactionViewModel.fromHash(tangle, tip).isSolid()) {
             return false;
         }
         if (approvedHashes.contains(tip)) {
@@ -290,7 +297,7 @@ public class LedgerValidator {
             return false;
         }
         diff.forEach((key, value) -> {
-            if(currentState.computeIfPresent(key, ((hash, aLong) -> value + aLong)) == null) {
+            if (currentState.computeIfPresent(key, ((hash, aLong) -> value + aLong)) == null) {
                 currentState.putIfAbsent(key, value);
             }
         });

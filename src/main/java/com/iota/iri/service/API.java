@@ -70,7 +70,7 @@ public class API {
 
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
-    private final static long MAX_TIMESTAMP_VALUE = (3^27 - 1) / 2;
+    private final static long MAX_TIMESTAMP_VALUE = (3 ^ 27 - 1) / 2;
 
     private final SecureRandom random = new SecureRandom();
     private final Gson gson = new GsonBuilder().create();
@@ -148,8 +148,8 @@ public class API {
         }
 
         if (!SignedFiles.isFileSignatureValid(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT,
-                Configuration.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
-                Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
+            Configuration.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
+            Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
             throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
         }
 
@@ -157,8 +157,8 @@ public class API {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
         try {
-            while((line = reader.readLine()) != null) {
-                previousEpochsSpentAddresses.put(new Hash(line),true);
+            while ((line = reader.readLine()) != null) {
+                previousEpochsSpentAddresses.put(new Hash(line), true);
             }
         } catch (IOException e) {
             log.error("Failed to load previousEpochsSpentAddresses.");

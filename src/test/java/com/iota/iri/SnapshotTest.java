@@ -65,7 +65,7 @@ public class SnapshotTest {
         newMap = new HashMap<>();
         Iterator<Map.Entry<Hash, Long>> iterator = newMap.entrySet().iterator();
         Map.Entry<Hash, Long> entry;
-        if(iterator.hasNext()) {
+        if (iterator.hasNext()) {
             entry = iterator.next();
             Long value = entry.getValue();
             Hash hash = entry.getKey();

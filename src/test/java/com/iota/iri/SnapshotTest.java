@@ -9,7 +9,6 @@ import org.junit.Test;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 import static org.junit.Assert.assertFalse;
@@ -30,17 +29,19 @@ public class SnapshotTest {
 
     @Test
     public void getState() {
-        //Assert.assertTrue(latestSnapshot.getState().equals(Snapshot.initialState));
+        Map<Hash, Long> copyState = initSnapshot.copySnapshot().copyState();
+        Assert.assertEquals(initSnapshot.copyState(), copyState);
     }
 
     @Test
     public void isConsistent() {
-        Assert.assertTrue("Initial confirmed should be consistent", Snapshot.isConsistent(initSnapshot.state));
+        Assert.assertTrue("Initial confirmed should be consistent", initSnapshot.isConsistent());
+        Assert.assertTrue("Initial confirmed should be consistent", Snapshot.isConsistent(initSnapshot.copyState()));
     }
 
     @Test
     public void patch() {
-        Map.Entry<Hash, Long> firstOne = initSnapshot.state.entrySet().iterator().next();
+        Map.Entry<Hash, Long> firstOne = initSnapshot.copyState().entrySet().iterator().next();
         Hash someHash = new Hash("PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS");
         Map<Hash, Long> diff = new HashMap<>();
         diff.put(firstOne.getKey(), -firstOne.getValue());
@@ -51,27 +52,11 @@ public class SnapshotTest {
 
     @Test
     public void applyShouldFail() {
-        Snapshot latestSnapshot = initSnapshot.clone();
+        Snapshot latestSnapshot = initSnapshot.copySnapshot();
         Map<Hash, Long> badMap = new HashMap<>();
         badMap.put(new Hash("PSRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), 100L);
         badMap.put(new Hash("ESRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), -100L);
         Map<Hash, Long> patch = latestSnapshot.patchedDiff(badMap);
-        assertFalse("should be inconsistent", Snapshot.isConsistent(latestSnapshot.patchedDiff(badMap)));
-    }
-
-    private Map<Hash, Long> getModifiedMap() {
-        Hash someHash = new Hash("PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS");
-        Map<Hash, Long> newMap;
-        newMap = new HashMap<>();
-        Iterator<Map.Entry<Hash, Long>> iterator = newMap.entrySet().iterator();
-        Map.Entry<Hash, Long> entry;
-        if (iterator.hasNext()) {
-            entry = iterator.next();
-            Long value = entry.getValue();
-            Hash hash = entry.getKey();
-            newMap.put(hash, 0L);
-            newMap.put(someHash, value);
-        }
-        return newMap;
+        assertFalse("should be inconsistent", Snapshot.isConsistent(patch));
     }
 }

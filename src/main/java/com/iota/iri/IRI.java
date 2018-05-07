@@ -136,7 +136,7 @@ public class IRI {
 
         //This block cannot be moved down
         final boolean isTestnet = Optional.ofNullable(parser.getOptionValue(testnet)).orElse(Boolean.FALSE)
-                || configuration.booling(DefaultConfSettings.TESTNET);
+            || configuration.booling(DefaultConfSettings.TESTNET);
         if (isTestnet) {
             configuration.put(DefaultConfSettings.TESTNET, "true");
             configuration.put(DefaultConfSettings.DB_PATH.name(), "testnetdb");
@@ -147,7 +147,7 @@ public class IRI {
             configuration.put(DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE, "");
             configuration.put(DefaultConfSettings.MWM, Configuration.TESTNET_MWM);
             configuration.put(DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE,
-                    Configuration.TESTNET_NUM_KEYS_IN_MILESTONE);
+                Configuration.TESTNET_NUM_KEYS_IN_MILESTONE);
             configuration.put(DefaultConfSettings.TRANSACTION_PACKET_SIZE, Configuration.TESTNET_PACKET_SIZE);
             configuration.put(DefaultConfSettings.REQUEST_HASH_SIZE, Configuration.TESTNET_REQ_HASH_SIZE);
             configuration.put(DefaultConfSettings.SNAPSHOT_TIME, Configuration.TESTNET_GLOBAL_SNAPSHOT_TIME);
@@ -236,8 +236,7 @@ public class IRI {
         if (noCooValidation != null) {
             if (isTestnet) {
                 configuration.put(DefaultConfSettings.DONT_VALIDATE_TESTNET_MILESTONE_SIG, noCooValidation.toString());
-            }
-            else {
+            } else {
                 log.warn(TESTNET_FLAG_REQUIRED + noCooValidation);
             }
         }
@@ -299,17 +298,17 @@ public class IRI {
 
     private static void printUsage() {
         log.info("Usage: java -jar {}-{}.jar " +
-                        "[{-n,--neighbors} '<list of neighbors>'] " +
-                        "[{-p,--port} 14600] " +
-                        "[{-c,--config} 'config-file-name'] " +
-                        "[{-u,--udp-receiver-port} 14600] " +
-                        "[{-t,--tcp-receiver-port} 15600] " +
-                        "[{-d,--debug} false] " +
-                        "[{--testnet} false]" +
-                        "[{--remote} false]" +
-                        "[{--remote-auth} string]" +
-                        "[{--remote-limit-api} string]"
-                , MAINNET_NAME, VERSION);
+                "[{-n,--neighbors} '<list of neighbors>'] " +
+                "[{-p,--port} 14600] " +
+                "[{-c,--config} 'config-file-name'] " +
+                "[{-u,--udp-receiver-port} 14600] " +
+                "[{-t,--tcp-receiver-port} 15600] " +
+                "[{-d,--debug} false] " +
+                "[{--testnet} false]" +
+                "[{--remote} false]" +
+                "[{--remote-auth} string]" +
+                "[{--remote-limit-api} string]"
+            , MAINNET_NAME, VERSION);
         System.exit(0);
     }
 

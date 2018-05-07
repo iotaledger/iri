@@ -1,8 +1,6 @@
 package com.iota.iri.hash;
 
-import static com.iota.iri.hash.PearlDiver.State.CANCELLED;
-import static com.iota.iri.hash.PearlDiver.State.COMPLETED;
-import static com.iota.iri.hash.PearlDiver.State.RUNNING;
+import static com.iota.iri.hash.PearlDiver.State.*;
 
 /**
  * (c) 2016 Come-from-Beyond
@@ -34,7 +32,7 @@ public class PearlDiver {
     }
 
     public synchronized boolean search(final int[] transactionTrits, final int minWeightMagnitude,
-        int numberOfThreads) {
+                                       int numberOfThreads) {
 
         if (transactionTrits.length != TRANSACTION_LENGTH) {
             throw new RuntimeException(
@@ -95,14 +93,16 @@ public class PearlDiver {
                         midCurlStateLow[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
                         midCurlStateHigh[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
 
-                    } break;
+                    }
+                    break;
 
                     case 1: {
 
                         midCurlStateLow[i] = 0b0000000000000000000000000000000000000000000000000000000000000000L;
                         midCurlStateHigh[i] = 0b1111111111111111111111111111111111111111111111111111111111111111L;
 
-                    } break;
+                    }
+                    break;
 
                     default: {
 
@@ -139,7 +139,7 @@ public class PearlDiver {
                 System.arraycopy(midCurlStateHigh, 0, midCurlStateCopyHigh, 0, CURL_STATE_LENGTH);
                 for (int i = threadIndex; i-- > 0; ) {
                     increment(midCurlStateCopyLow, midCurlStateCopyHigh, 162 + CURL_HASH_LENGTH / 9,
-                            162 + (CURL_HASH_LENGTH / 9) * 2);
+                        162 + (CURL_HASH_LENGTH / 9) * 2);
 
                 }
 
@@ -149,7 +149,7 @@ public class PearlDiver {
                 while (state == RUNNING) {
 
                     increment(midCurlStateCopyLow, midCurlStateCopyHigh, 162 + (CURL_HASH_LENGTH / 9) * 2,
-                            CURL_HASH_LENGTH);
+                        CURL_HASH_LENGTH);
 
                     System.arraycopy(midCurlStateCopyLow, 0, curlStateLow, 0, CURL_STATE_LENGTH);
                     System.arraycopy(midCurlStateCopyHigh, 0, curlStateHigh, 0, CURL_STATE_LENGTH);
@@ -214,7 +214,7 @@ public class PearlDiver {
     }
 
     private static void transform(final long[] curlStateLow, final long[] curlStateHigh,
-        final long[] curlScratchpadLow, final long[] curlScratchpadHigh) {
+                                  final long[] curlScratchpadLow, final long[] curlScratchpadHigh) {
 
         int curlScratchpadIndex = 0;
         for (int round = 0; round < Curl.NUMBER_OF_ROUNDSP81; round++) {
@@ -239,7 +239,7 @@ public class PearlDiver {
     }
 
     private static void increment(final long[] midCurlStateCopyLow,
-        final long[] midCurlStateCopyHigh, final int fromIndex, final int toIndex) {
+                                  final long[] midCurlStateCopyHigh, final int fromIndex, final int toIndex) {
 
         for (int i = fromIndex; i < toIndex; i++) {
             if (midCurlStateCopyLow[i] == LOW_BITS) {

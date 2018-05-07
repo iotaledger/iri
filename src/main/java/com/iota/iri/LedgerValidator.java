@@ -212,9 +212,8 @@ public class LedgerValidator {
      * @throws Exception
      */
     private MilestoneViewModel buildSnapshot() throws Exception {
-        MilestoneViewModel consistentMilestone = null;
-        milestone.latestSnapshot.rwlock.writeLock().lock();
-        try {
+        return milestone.latestSnapshot.withWriteLock(() -> {
+            MilestoneViewModel consistentMilestone = null;
             MilestoneViewModel candidateMilestone = MilestoneViewModel.first(tangle);
             while (candidateMilestone != null) {
                 if (candidateMilestone.index() % 10000 == 0) {
@@ -230,7 +229,7 @@ public class LedgerValidator {
                 if (StateDiffViewModel.maybeExists(tangle, candidateMilestone.getHash())) {
                     StateDiffViewModel stateDiffViewModel = StateDiffViewModel.load(tangle, candidateMilestone.getHash());
 
-                    if (stateDiffViewModel != null && !stateDiffViewModel.isEmpty()) {
+                    if (!stateDiffViewModel.isEmpty()) {
                         if (Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(stateDiffViewModel.getDiff()))) {
                             milestone.latestSnapshot.apply(stateDiffViewModel.getDiff(), candidateMilestone.index());
                             consistentMilestone = candidateMilestone;
@@ -241,16 +240,13 @@ public class LedgerValidator {
                 }
                 candidateMilestone = candidateMilestone.next(tangle);
             }
-        } finally {
-            milestone.latestSnapshot.rwlock.writeLock().unlock();
-        }
-        return consistentMilestone;
+            return consistentMilestone;
+        });
     }
 
     public boolean updateSnapshot(MilestoneViewModel milestoneVM) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestoneVM.getHash());
-        milestone.latestSnapshot.rwlock.writeLock().lock();
-        try {
+        return milestone.latestSnapshot.withWriteLock(() -> {
             final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
             boolean hasSnapshot = transactionSnapshotIndex != 0;
             if (!hasSnapshot) {
@@ -268,9 +264,7 @@ public class LedgerValidator {
                 }
             }
             return hasSnapshot;
-        } finally {
-            milestone.latestSnapshot.rwlock.writeLock().unlock();
-        }
+        });
     }
 
     public boolean checkConsistency(List<Hash> hashes) throws Exception {

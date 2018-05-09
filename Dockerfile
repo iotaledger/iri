@@ -1,4 +1,4 @@
-FROM ubuntu:16.04 as java
+FROM ubuntu:18.04 as java
 
 # Install Java
 ARG JAVA_VERSION=8u171-1
@@ -8,7 +8,7 @@ RUN \
   echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
   add-apt-repository -y ppa:webupd8team/java && \
   apt-get update && \
-  apt-get install -y oracle-java8-installer=8u171-1~webupd8~0 && \
+  apt-get install -y oracle-java8-installer=${JAVA_VERSION}~webupd8~0 && \
   rm -rf /var/lib/apt/lists/* && \
   rm -rf /var/cache/oracle-jdk8-installer
 
@@ -72,7 +72,7 @@ ENV JAVA_MAX_MEMORY 4G
 # Additional custom variables. See DOCKER.md for details
 ENV DOCKER_IRI_JAR_PATH "/iri/target/iri*.jar"
 ENV DOCKER_IRI_REMOTE_LIMIT_API "interruptAttachToTangle, addNeighbors, removeNeighbors, getNeighbors"
-ENV DOCKER_IRI_NEIGHBOR_FILE ""
+ENV DOCKER_IRI_NEIGHBOR_FILE "/iri/conf/neighbors"
 
 # Setting this to 1 will have socat exposing 14266 and pointing it on
 # localhost. See /entrypoint.sh

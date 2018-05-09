@@ -1,14 +1,15 @@
-FROM ubuntu:18.04 as java
+FROM ubuntu:18.04 as local_stage_java
+MAINTAINER giorgio@iota.org
 
 # Install Java
 ARG JAVA_VERSION=8u171-1
 RUN \
   apt-get update && \
-  apt-get install -y software-properties-common && \
+  apt-get install -y software-properties-common --no-install-recommends && \
   echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
   add-apt-repository -y ppa:webupd8team/java && \
   apt-get update && \
-  apt-get install -y oracle-java8-installer=${JAVA_VERSION}~webupd8~0 && \
+  apt-get install -y oracle-java8-installer=${JAVA_VERSION}~webupd8~0 --no-install-recommends && \
   rm -rf /var/lib/apt/lists/* && \
   rm -rf /var/cache/oracle-jdk8-installer
 
@@ -16,7 +17,7 @@ RUN \
 ENV JAVA_HOME /usr/lib/jvm/java-8-oracle
 
 # install maven on top of java stage
-FROM java as build
+FROM local_stage_java as local_stage_build
 ARG MAVEN_VERSION=3.5.3
 ARG USER_HOME_DIR="/root"
 ARG SHA=b52956373fab1dd4277926507ab189fb797b3bc51a2a267a193c931fffad8408
@@ -41,9 +42,6 @@ COPY docker/settings-docker.xml /usr/share/maven/ref/
 
 VOLUME "$USER_HOME_DIR/.m2"
 
-ENTRYPOINT ["/usr/local/bin/mvn-entrypoint.sh"]
-CMD ["mvn"]
-
 # install build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
         git \
@@ -55,13 +53,13 @@ COPY . /iri
 RUN mvn clean package
 
 # execution image
-FROM java
+FROM local_stage_java
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
         jq curl socat \
     && rm -rf /var/lib/apt/lists/*
 
-COPY --from=build /iri/target/iri*.jar /iri/target/
+COPY --from=local_stage_build /iri/target/iri*.jar /iri/target/
 COPY docker/entrypoint.sh /
 
 # Java related options. Defaults set as below

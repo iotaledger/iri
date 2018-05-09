@@ -34,7 +34,7 @@ script:
   #run jar sanity tests
   - VERSION=`echo -e 'setns x=http://maven.apache.org/POM/4.0.0\ncat /x:project/x:version/text()' | xmllint --shell pom.xml | grep -v / | tr -d -` 
   - echo $VERSION
-  - git clone https://github.com/alon-e/iri-regression
+  - git clone https://github.com/iotaledger/iri-regression-tests.git
   - cd iri-regression
   - git checkout -f master
   - mkdir iri

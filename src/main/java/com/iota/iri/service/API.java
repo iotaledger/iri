@@ -17,6 +17,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
@@ -30,7 +31,6 @@ import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -173,7 +173,7 @@ public class API {
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
 
         final long beginningTime = System.currentTimeMillis();
-        final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
+        final String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
         final AbstractResponse response;
 
         if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {

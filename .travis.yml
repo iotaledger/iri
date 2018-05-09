@@ -4,10 +4,10 @@ jdk:
   - openjdk8
   - oraclejdk9
 
-#cache:
-#  apt: true
-#  directories:
-#    - $HOME/.m2
+cache:
+  apt: true
+  directories:
+    - $HOME/.m2
 
 sudo: required
 
@@ -34,9 +34,9 @@ script:
   #run jar sanity tests
   - VERSION=`echo -e 'setns x=http://maven.apache.org/POM/4.0.0\ncat /x:project/x:version/text()' | xmllint --shell pom.xml | grep -v / | tr -d -` 
   - echo $VERSION
-  - git clone https://github.com/GalRogozinski/iri-regression
+  - git clone https://github.com/alon-e/iri-regression
   - cd iri-regression
-  - git checkout travis-tests 
+  - git checkout -f master
   - mkdir iri
   - cp -rf ../target iri/target
   - bash run_all_stable_tests.sh $VERSION

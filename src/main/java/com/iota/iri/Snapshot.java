@@ -2,7 +2,8 @@ package com.iota.iri;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import org.apache.commons.io.IOUtils;
+
+import com.iota.iri.utils.IotaIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -91,7 +92,7 @@ public class Snapshot {
             System.exit(-1);
         }
         finally {
-            IOUtils.closeQuietly(reader);
+            IotaIOUtils.closeQuietly(reader);
         }
         return state;
     }

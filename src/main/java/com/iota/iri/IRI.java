@@ -34,26 +34,26 @@ public class IRI {
 
     private static void configureLogging() {
         String config = System.getProperty("logback.configurationFile");
-        String level = System.getProperty("logging-level", "").toUpperCase();
+        String level = System.getProperty("logging-level", "").toLowerCase();
         switch (level) {
-            case "OFF":
-            case "ERROR":
-            case "WARN":
-            case "INFO":
+            case "off":
+            case "error":
+            case "warn":
+            case "info":
+            case "debug":
                 break;
-            case "DEBUG":
-            case "TRACE":
-            case "ALL":
-                level = "DEBUG";
+            case "trace":
+            case "all":
+                level = "trace";
                 break;
             default:
-                level = "INFO";
+                level = "info";
         }
         System.getProperties().put("logging-level", level);
-        System.out.println("Logging: property 'logging-level' set to : [" + level + "]");
-        System.out.println("Logging: levels can be one of: OFF, ERROR, WARN, INFO, DEBUG");
+        System.out.println("Logging - property 'logging-level' set to: [" + level + "]");
+        System.out.println("Logging - choose from one of these levels: off, error, warn, info, debug, trace");
         if (config != null) {
-            System.out.println("Logging: alternate logging configuration file specified at: '" + config + "'");
+            System.out.println("Logging - alternate logging configuration file specified at: '" + config + "'");
         }
     }
 

@@ -4,6 +4,11 @@
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender" debug="true">
         <target>System.out</target>
         <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>TRACE</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>NEUTRAL</onMismatch>
+        </filter>
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
             <level>DEBUG</level>
             <onMatch>ACCEPT</onMatch>
             <onMismatch>NEUTRAL</onMismatch>

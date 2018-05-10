@@ -69,8 +69,7 @@ ENV JAVA_MAX_MEMORY 4G
 
 # Additional custom variables. See DOCKER.md for details
 ENV DOCKER_IRI_JAR_PATH "/iri/target/iri*.jar"
-ENV DOCKER_IRI_REMOTE_LIMIT_API "interruptAttachToTangle, addNeighbors, removeNeighbors, getNeighbors"
-ENV DOCKER_IRI_NEIGHBOR_FILE "/iri/conf/neighbors"
+ENV DOCKER_IRI_REMOTE_LIMIT_API "interruptAttachToTangle, attachToTangle, addNeighbors, removeNeighbors, getNeighbors"
 
 # Setting this to 1 will have socat exposing 14266 and pointing it on
 # localhost. See /entrypoint.sh

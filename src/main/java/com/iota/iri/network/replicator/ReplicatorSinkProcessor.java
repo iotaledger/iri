@@ -91,12 +91,12 @@ class ReplicatorSinkProcessor implements Runnable {
                                             try {
                                                 CRC32 crc32 = new CRC32();                                        
                                                 crc32.update(message.array());
-                                                String crc32_string = Long.toHexString(crc32.getValue());
-                                                while (crc32_string.length() < CRC32_BYTES) {
-                                                    crc32_string = "0"+crc32_string;
+                                                String crc32String = Long.toHexString(crc32.getValue());
+                                                while (crc32String.length() < CRC32_BYTES) {
+                                                    crc32String = "0"+crc32String;
                                                 }
                                                 out.write(message.array());
-                                                out.write(crc32_string.getBytes());
+                                                out.write(crc32String.getBytes());
                                                 out.flush();
                                                 neighbor.incSentTransactions();
                                             } catch (IOException e2) {

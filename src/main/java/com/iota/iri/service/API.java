@@ -354,7 +354,7 @@ public class API {
                     final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
                     return checkConsistencyStatement(transactions);
                 }
-                case "wereAddressesSpentFrom": {
+                case "WereAddressesSpentFrom": {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                     return wereAddressesSpentFromStatement(addresses);
                 }
@@ -383,7 +383,7 @@ public class API {
         for (Hash address : addresses) {
             states[index++] = wasAddressSpentFrom(address);
         }
-        return wereAddressesSpentFrom.create(states);
+        return WereAddressesSpentFrom.create(states);
     }
 
     private boolean wasAddressSpentFrom(Hash address) throws Exception {
@@ -571,20 +571,20 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    private static int counter_getTxToApprove = 0;
-    public static int getCounter_getTxToApprove() {
-        return counter_getTxToApprove;
+    private static int counterGetTxToApprove = 0;
+    public static int getTxToApproveCount() {
+        return counterGetTxToApprove;
     }
-    public static void incCounter_getTxToApprove() {
-        counter_getTxToApprove++;
+    public static void incCounterGetTxToApprove() {
+        counterGetTxToApprove++;
     }
 
-    private static long ellapsedTime_getTxToApprove = 0L;
-    public static long getEllapsedTime_getTxToApprove() {
-        return ellapsedTime_getTxToApprove;
+    private static long ellapsedTimeGetTxToApprove = 0L;
+    public static long getEllapsedTimeGetTxToApprove() {
+        return ellapsedTimeGetTxToApprove;
     }
-    public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
-        ellapsedTime_getTxToApprove += ellapsedTime;
+    public static void incEllapsedTimeGetTxToApprove(long ellapsedTime) {
+        ellapsedTimeGetTxToApprove += ellapsedTime;
     }
 
     public synchronized Hash[] getTransactionToApproveStatement(int depth, final String reference, final int numWalks) throws Exception {
@@ -621,14 +621,14 @@ public class API {
                     return null;
                 }
             }
-            API.incCounter_getTxToApprove();
-            if ((getCounter_getTxToApprove() % 100) == 0) {
+            API.incCounterGetTxToApprove();
+            if ((getTxToApproveCount() % 100) == 0) {
                 String sb = "Last 100 getTxToApprove consumed " +
-                        API.getEllapsedTime_getTxToApprove() / 1000000000L +
+                        API.getEllapsedTimeGetTxToApprove() / 1000000000L +
                         " seconds processing time.";
                 log.info(sb);
-                counter_getTxToApprove = 0;
-                ellapsedTime_getTxToApprove = 0L;
+                counterGetTxToApprove = 0;
+                ellapsedTimeGetTxToApprove = 0L;
             }
 
             if (instance.ledgerValidator.checkConsistency(Arrays.asList(tips))) {
@@ -931,20 +931,20 @@ public class API {
         return GetBalancesResponse.create(elements, hashes.stream().map(h -> h.toString()).collect(Collectors.toList()), index);
     }
 
-    private static int counter_PoW = 0;
-    public static int getCounter_PoW() {
-        return counter_PoW;
+    private static int counterPow = 0;
+    public static int getCounterPow() {
+        return counterPow;
     }
-    public static void incCounter_PoW() {
-        API.counter_PoW++;
+    public static void incCounterPow() {
+        API.counterPow++;
     }
 
-    private static long ellapsedTime_PoW = 0L;
-    public static long getEllapsedTime_PoW() {
-        return ellapsedTime_PoW;
+    private static long ellapsedTimePow = 0L;
+    public static long getEllapsedTimePow() {
+        return ellapsedTimePow;
     }
-    public static void incEllapsedTime_PoW(long ellapsedTime) {
-        ellapsedTime_PoW += ellapsedTime;
+    public static void incEllapsedTimePow(long ellapsedTime) {
+        ellapsedTimePow += ellapsedTime;
     }
 
     public synchronized List<String> attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
@@ -994,15 +994,15 @@ public class API {
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {
-                API.incEllapsedTime_PoW(System.nanoTime() - startTime);
-                API.incCounter_PoW();
-                if ( ( API.getCounter_PoW() % 100) == 0 ) {
+                API.incEllapsedTimePow(System.nanoTime() - startTime);
+                API.incCounterPow();
+                if ( ( API.getCounterPow() % 100) == 0 ) {
                     String sb = "Last 100 PoW consumed " +
-                            API.getEllapsedTime_PoW() / 1000000000L +
+                            API.getEllapsedTimePow() / 1000000000L +
                             " seconds processing time.";
                     log.info(sb);
-                    counter_PoW = 0;
-                    ellapsedTime_PoW = 0L;
+                    counterPow = 0;
+                    ellapsedTimePow = 0L;
                 }
             }
         }

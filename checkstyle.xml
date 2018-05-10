@@ -18,5 +18,14 @@ IOTA checkstyle draft
     <property name="fileExtensions" value="java, properties, xml"/>
     <module name="TreeWalker">
         <module name="NeedBraces"/>
+        <!-- Checks for Naming Conventions.                  -->
+
+        <!-- See http://checkstyle.sf.net/config_naming.html -->
+        <module name="LocalFinalVariableName"/>
+        <module name="LocalVariableName"/>
+        <module name="MethodName"/>
+        <module name="PackageName"/>
+        <module name="ParameterName"/>
+        <module name="TypeName"/>
     </module>
 </module>

@@ -1,11 +1,11 @@
 package com.iota.iri.service.dto;
 
-public class wereAddressesSpentFrom extends AbstractResponse {
+public class WereAddressesSpentFrom extends AbstractResponse {
 
     private boolean [] states;
 
     public static AbstractResponse create(boolean[] inclusionStates) {
-        wereAddressesSpentFrom res = new wereAddressesSpentFrom();
+        WereAddressesSpentFrom res = new WereAddressesSpentFrom();
         res.states = inclusionStates;
         return res;
     }

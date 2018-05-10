@@ -60,16 +60,15 @@ class ReplicatorSourceProcessor implements Runnable {
         boolean finallyClose = true;
 
         try {
-
             SocketAddress address = connection.getRemoteSocketAddress();
-            InetSocketAddress inet_socket_address = (InetSocketAddress) address;
+            InetSocketAddress inetSocketAddress = (InetSocketAddress) address;
 
             existingNeighbor = false;
             List<Neighbor> neighbors = node.getNeighbors();
             neighbors.stream().filter(n -> n instanceof TCPNeighbor)
                     .map(n -> ((TCPNeighbor) n))
                     .forEach(n -> {
-                        String hisAddress = inet_socket_address.getAddress().getHostAddress();
+                        String hisAddress = inetSocketAddress.getAddress().getHostAddress();
                         if (n.getHostAddress().equals(hisAddress)) {
                             existingNeighbor = true;
                             neighbor = n;
@@ -79,11 +78,11 @@ class ReplicatorSourceProcessor implements Runnable {
             if (!existingNeighbor) {
                 int maxPeersAllowed = maxPeers;
                 if (!testnet || Neighbor.getNumPeers() >= maxPeersAllowed) {
-                    String hostAndPort = inet_socket_address.getHostName() + ":" + String.valueOf(inet_socket_address.getPort());
-                    if (Node.rejectedAddresses.add(inet_socket_address.getHostName())) {
+                    String hostAndPort = inetSocketAddress.getHostName() + ":" + String.valueOf(inetSocketAddress.getPort());
+                    if (Node.rejectedAddresses.add(inetSocketAddress.getHostName())) {
                         String sb = "***** NETWORK ALERT ***** Got connected from unknown neighbor tcp://"
                             + hostAndPort
-                            + " (" + inet_socket_address.getAddress().getHostAddress() + ") - closing connection";                    
+                            + " (" + inetSocketAddress.getAddress().getHostAddress() + ") - closing connection";
                         if (testnet && Neighbor.getNumPeers() >= maxPeersAllowed) {
                             sb = sb + (" (max-peers allowed is "+String.valueOf(maxPeersAllowed)+")");
                         }
@@ -95,15 +94,15 @@ class ReplicatorSourceProcessor implements Runnable {
                     connection.close();
                     return;
                 } else {
-                    final TCPNeighbor fresh_neighbor = new TCPNeighbor(inet_socket_address, false);
-                    node.getNeighbors().add(fresh_neighbor);
-                    neighbor = fresh_neighbor;
+                    final TCPNeighbor freshNeighbor = new TCPNeighbor(inetSocketAddress, false);
+                    node.getNeighbors().add(freshNeighbor);
+                    neighbor = freshNeighbor;
                     Neighbor.incNumPeers();
                 }
             }
             
             if ( neighbor.getSource() != null ) {
-                log.info("Source {} already connected", inet_socket_address.getAddress().getHostAddress());
+                log.info("Source {} already connected", inetSocketAddress.getAddress().getHostAddress());
                 finallyClose = false;
                 return;
             }
@@ -131,7 +130,7 @@ class ReplicatorSourceProcessor implements Runnable {
             }           
             
             if (connection.isConnected()) {
-                log.info("----- NETWORK INFO ----- Source {} is connected", inet_socket_address.getAddress().getHostAddress());
+                log.info("----- NETWORK INFO ----- Source {} is connected", inetSocketAddress.getAddress().getHostAddress());
             }
             
             connection.setSoTimeout(0);  // infinite timeout - blocking read
@@ -155,15 +154,15 @@ class ReplicatorSourceProcessor implements Runnable {
                     for (int i=0; i<packetSize; i++) {
                         crc32.update(data[i]);
                     }
-                    String crc32_string = Long.toHexString(crc32.getValue());
-                    while (crc32_string.length() < ReplicatorSinkProcessor.CRC32_BYTES) {
-                        crc32_string = "0"+crc32_string;
+                    String crc32String = Long.toHexString(crc32.getValue());
+                    while (crc32String.length() < ReplicatorSinkProcessor.CRC32_BYTES) {
+                        crc32String = "0"+crc32String;
                     }
-                    byte [] crc32_bytes = crc32_string.getBytes();
+                    byte [] crc32Bytes = crc32String.getBytes();
                     
                     boolean crcError = false;
                     for (int i=0; i<ReplicatorSinkProcessor.CRC32_BYTES; i++) {
-                        if (crc32_bytes[i] != data[packetSize + i]) {
+                        if (crc32Bytes[i] != data[packetSize + i]) {
                             crcError = true;
                             break;
                         }
@@ -173,7 +172,7 @@ class ReplicatorSourceProcessor implements Runnable {
                     }
                 }
                   catch (IllegalStateException e) {
-                    log.error("Queue is full for neighbor IP {}",inet_socket_address.getAddress().getHostAddress());
+                    log.error("Queue is full for neighbor IP {}",inetSocketAddress.getAddress().getHostAddress());
                 } catch (final RuntimeException e) {
                     log.error("Transaction processing runtime exception ",e);
                     neighbor.incInvalidTransactions();

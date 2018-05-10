@@ -102,7 +102,7 @@ public class Iota {
         tangle.init();
 
         if (configuration.booling(Configuration.DefaultConfSettings.RESCAN_DB)){
-            rescan_db();
+            rescanDb();
         }
         boolean revalidate = configuration.booling(Configuration.DefaultConfSettings.REVALIDATE);
 
@@ -120,7 +120,7 @@ public class Iota {
         node.init();
     }
 
-    private void rescan_db() throws Exception {
+    private void rescanDb() throws Exception {
         //delete all transaction indexes
         tangle.clearColumn(com.iota.iri.model.Address.class);
         tangle.clearColumn(com.iota.iri.model.Bundle.class);

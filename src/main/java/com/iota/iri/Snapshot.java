@@ -18,10 +18,10 @@ import java.util.stream.Collectors;
 
 public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
-    public static String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
-    public static int SNAPSHOT_PUBKEY_DEPTH = 6;
-    public static int SNAPSHOT_INDEX = 4;
-    public static int SPENT_ADDRESSES_INDEX = 5;
+    public static final String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
+    public static final int SNAPSHOT_PUBKEY_DEPTH = 6;
+    public static final int SNAPSHOT_INDEX = 4;
+    public static final int SPENT_ADDRESSES_INDEX = 5;
     private static Snapshot initialSnapshot;
 
 

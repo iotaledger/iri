@@ -25,20 +25,20 @@ public class TipsManager {
     private final boolean testnet;
     private final int milestoneStartIndex;
 
-    private int RATING_THRESHOLD = 75; // Must be in [0..100] range
+    private int ratingThreshold = 75; // Must be in [0..100] range
     private boolean shuttingDown = false;
     private int RESCAN_TX_TO_REQUEST_INTERVAL = 750;
     private final int maxDepth;
     private Thread solidityRescanHandle;
 
-    public void setRATING_THRESHOLD(int value) {
+    public void setRatingThreshold(int value) {
         if (value < 0) {
             value = 0;
         }
         if (value > 100) {
             value = 100;
         }
-        RATING_THRESHOLD = value;
+        ratingThreshold = value;
     }
 
     public TipsManager(final Tangle tangle,
@@ -136,7 +136,7 @@ public class TipsManager {
                 log.error("Encountered error: " + e.getLocalizedMessage());
                 throw e;
             } finally {
-                API.incEllapsedTime_getTxToApprove(System.nanoTime() - startTime);
+                API.incEllapsedTimeGetTxToApprove(System.nanoTime() - startTime);
             }
         }
         return null;

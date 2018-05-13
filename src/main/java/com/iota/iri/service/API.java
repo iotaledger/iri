@@ -185,7 +185,7 @@ public class API {
 
     private String getRequestBody(final HttpServerExchange exchange) throws IOException {
         final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
-        String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
+        String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
 
         if(body.length() == 0){
             body = getQueryParamsBody(exchange.getQueryParameters());

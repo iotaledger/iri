@@ -15,6 +15,7 @@ addons:
   apt:
     packages:
     - jq
+    - libxml2-utils 
 
 matrix:
   allow_failures:
@@ -22,19 +23,27 @@ matrix:
 
 script:
   #run tests and integration tests
+  # see  https://stackoverflow.com/questions/34405047/how-do-you-merge-into-another-branch-using-travis-with-git-commands?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
+  - build_head=$(git rev-parse HEAD) 
+  - git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
+  - git fetch origin dev
+  - git checkout -f dev
+  - git checkout $build_head
+  - git merge dev
   - mvn integration-test
-  - echo `mvn help:evaluate -Dexpression=project.version | grep -e '^[^\[]' | grep -v 'Downloading'` > iri.version
   #run jar sanity tests
-  - git clone https://github.com/alon-e/iri-regression
-  - cd iri-regression
+  - VERSION=`echo -e 'setns x=http://maven.apache.org/POM/4.0.0\ncat /x:project/x:version/text()' | xmllint --shell pom.xml | grep -v / | tr -d -` 
+  - echo $VERSION
+  - git clone https://github.com/iotaledger/iri-regression-tests.git
+  - cd iri-regression-tests
+  - git checkout -f master
   - mkdir iri
   - cp -rf ../target iri/target
-  - cp ../iri.version .
-  - bash run_all_stable_tests.sh `cat iri.version`
+  - bash run_all_stable_tests.sh $VERSION
   - cd ..
 
 after_success:
-  #codacy-coverage send report
+  #codacy-coverage send report. Uses Travis Env variable (CODACY_PROJECT_TOKEN)
   - test $TRAVIS_PULL_REQUEST = "false" && test $TRAVIS_JDK_VERSION = "oraclejdk8" && wget -O codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r .assets[0].browser_download_url)
   - test $TRAVIS_PULL_REQUEST = "false" && test $TRAVIS_JDK_VERSION = "oraclejdk8" && java -jar codacy-coverage-reporter-assembly-latest.jar report -l Java -r target/site/jacoco/jacoco.xml
 

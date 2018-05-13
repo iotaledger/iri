@@ -173,6 +173,7 @@ public class APIIntegrationTests {
             body(containsString("jreAvailableProcessors")).
             body(containsString("latestSolidSubtangleMilestone")).
             body(containsString("latestSolidSubtangleMilestoneIndex")).
+            body(containsString("milestoneStartIndex")).
             body(containsString("neighbors")).
             body(containsString("packetsQueueSize")).
             body(containsString("time")).

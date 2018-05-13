@@ -42,7 +42,6 @@ public class Milestone {
     private final boolean testnet;
     private final MessageQ messageQ;
     private final int numOfKeysInMilestone;
-    private final int milestoneStartIndex;
     private final boolean acceptAnyTestnetCoo;
     public Snapshot latestSnapshot;
 
@@ -52,6 +51,7 @@ public class Milestone {
 
     public int latestMilestoneIndex;
     public int latestSolidSubtangleMilestoneIndex;
+    public final int milestoneStartIndex;
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
 

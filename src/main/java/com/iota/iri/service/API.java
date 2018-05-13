@@ -17,6 +17,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
@@ -30,7 +31,6 @@ import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -170,8 +170,8 @@ public class API {
 
     private void processRequest(final HttpServerExchange exchange) throws IOException {
         final long beginningTime = System.currentTimeMillis();
-        final String body = getRequestBody(exchange);
 
+        final String body = getRequestBody(exchange);
         final AbstractResponse response;
 
         if (body.length() > maxBodyLength) {
@@ -334,7 +334,7 @@ public class API {
                     return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                             Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
                             Runtime.getRuntime().totalMemory(), instance.milestone.latestMilestone, instance.milestone.latestMilestoneIndex,
-                            instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex,
+                            instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex, instance.milestone.milestoneStartIndex,
                             instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                             System.currentTimeMillis(), instance.tipsViewModel.size(),
                             instance.transactionRequester.numberOfTransactionsToRequest());
@@ -573,7 +573,7 @@ public class API {
 
         return CheckConsistency.create(state,info);
     }
-    
+
     private double getParameterAsDouble(Map<String, Object> request, String paramName) throws ValidationException {
         validateParamExists(request, paramName);
         final double result;

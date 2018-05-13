@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.channels.StreamSinkChannel;
+import org.xnio.channels.StreamSourceChannel;
 import org.xnio.streams.ChannelInputStream;
 
 import java.io.*;
@@ -184,7 +185,8 @@ public class API {
     }
 
     private String getRequestBody(final HttpServerExchange exchange) throws IOException {
-        final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
+        StreamSourceChannel requestChannel = exchange.getRequestChannel();
+        final ChannelInputStream cis = new ChannelInputStream(requestChannel);
         String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
 
         if(body.length() == 0){

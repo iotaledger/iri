@@ -16,7 +16,7 @@ It is specially designed for users seeking a fast, efficient and fully-compatibl
 
 Running an IRI node also allows light wallet users a node to directly connect to for their own wallet transactions.
 
-* **Latest release:** 1.4.2.2 Release
+* **Latest release:** 1.4.2.4 Release
 * **License:** GPLv3
 
 # How to get started

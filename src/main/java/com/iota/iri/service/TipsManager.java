@@ -375,10 +375,10 @@ public class TipsManager {
         }
         //if tip unconfirmed, check if any referenced tx is confirmed below maxDepth
         Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
-        Set<Hash> analyzedTranscations = new HashSet<>();
+        Set<Hash> analyzedTransactions = new HashSet<>();
         Hash hash;
         while ((hash = nonAnalyzedTransactions.poll()) != null) {
-            if (analyzedTranscations.add(hash)) {
+            if (analyzedTransactions.add(hash)) {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
                 if (transaction.snapshotIndex() != 0 && transaction.snapshotIndex() < depth) {
                     return true;

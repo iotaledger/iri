@@ -7,6 +7,7 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Converter;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 

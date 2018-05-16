@@ -190,6 +190,8 @@ public class LedgerValidator {
     protected void init() throws Exception {
         MilestoneViewModel latestConsistentMilestone = buildSnapshot();
         if(latestConsistentMilestone != null) {
+            log.info("Loaded consistent milestone: #" + latestConsistentMilestone.index());
+
             milestone.latestSolidSubtangleMilestone = latestConsistentMilestone.getHash();
             milestone.latestSolidSubtangleMilestoneIndex = latestConsistentMilestone.index();
         }
@@ -204,17 +206,33 @@ public class LedgerValidator {
      */
     private MilestoneViewModel buildSnapshot() throws Exception {
         MilestoneViewModel consistentMilestone = null;
-        StateDiffViewModel stateDiffViewModel;
         milestone.latestSnapshot.rwlock.writeLock().lock();
         try {
-            MilestoneViewModel snapshotMilestone = MilestoneViewModel.firstWithSnapshot(tangle);
-            while (snapshotMilestone != null) {
-                stateDiffViewModel = StateDiffViewModel.load(tangle, snapshotMilestone.getHash());
-                if (Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(stateDiffViewModel.getDiff()))) {
-                    milestone.latestSnapshot.apply(stateDiffViewModel.getDiff(), snapshotMilestone.index());
-                    consistentMilestone = snapshotMilestone;
-                    snapshotMilestone = snapshotMilestone.nextWithSnapshot(tangle);
+            MilestoneViewModel candidateMilestone = MilestoneViewModel.first(tangle);
+            while (candidateMilestone != null) {
+                if (candidateMilestone.index() % 10000 == 0) {
+                    StringBuilder logMessage = new StringBuilder();
+
+                    logMessage.append("Building snapshot... Consistent: #");
+                    logMessage.append(consistentMilestone != null ? consistentMilestone.index() : -1);
+                    logMessage.append(", Candidate: #");
+                    logMessage.append(candidateMilestone.index());
+
+                    log.info(logMessage.toString());
                 }
+                if (StateDiffViewModel.maybeExists(tangle, candidateMilestone.getHash())) {
+                    StateDiffViewModel stateDiffViewModel = StateDiffViewModel.load(tangle, candidateMilestone.getHash());
+
+                    if (stateDiffViewModel != null && !stateDiffViewModel.isEmpty()) {
+                        if (Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(stateDiffViewModel.getDiff()))) {
+                            milestone.latestSnapshot.apply(stateDiffViewModel.getDiff(), candidateMilestone.index());
+                            consistentMilestone = candidateMilestone;
+                        } else {
+                            break;
+                        }
+                    }
+                }
+                candidateMilestone = candidateMilestone.next(tangle);
             }
         } finally {
             milestone.latestSnapshot.rwlock.writeLock().unlock();

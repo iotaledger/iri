@@ -1,51 +1,24 @@
 package com.iota.iri.service;
 
-import static io.undertow.Handlers.path;
-
-import java.io.*;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-
-import com.iota.iri.*;
-import com.iota.iri.controllers.*;
-import com.iota.iri.network.*;
-import com.iota.iri.service.dto.*;
-import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.channels.StreamSinkChannel;
-import org.xnio.streams.ChannelInputStream;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.iota.iri.*;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.conf.Configuration.DefaultConfSettings;
+import com.iota.iri.controllers.AddressViewModel;
+import com.iota.iri.controllers.BundleViewModel;
+import com.iota.iri.controllers.TagViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
+import com.iota.iri.hash.Sponge;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.network.Neighbor;
+import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
-
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -57,12 +30,28 @@ import io.undertow.security.idm.IdentityManager;
 import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
-import io.undertow.util.Methods;
-import io.undertow.util.MimeMappings;
-import io.undertow.util.StatusCodes;
+import io.undertow.util.*;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.channels.StreamSinkChannel;
+import org.xnio.streams.ChannelInputStream;
+
+import java.io.*;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+
+import static io.undertow.Handlers.path;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -71,6 +60,7 @@ public class API {
     public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
     private static final Logger log = LoggerFactory.getLogger(API.class);
     private final IXI ixi;
+    private final int milestoneStartIndex;
 
     private Undertow server;
 
@@ -92,6 +82,8 @@ public class API {
     private final int maxRequestList;
     private final int maxGetTrytes;
     private final int maxBodyLength;
+    private final boolean testNet;
+
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
@@ -110,13 +102,15 @@ public class API {
         maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
+        testNet = instance.configuration.booling(DefaultConfSettings.TESTNET);
+        milestoneStartIndex = instance.configuration.integer(DefaultConfSettings.MILESTONE_START_INDEX);
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
     }
 
     public void init() throws IOException {
-        readPreviousEpochsSpentAddresses();
+        readPreviousEpochsSpentAddresses(testNet);
 
         final int apiPort = instance.configuration.integer(DefaultConfSettings.PORT);
         final String apiHost = instance.configuration.string(DefaultConfSettings.API_HOST);
@@ -151,13 +145,18 @@ public class API {
         server.start();
     }
 
-    private void readPreviousEpochsSpentAddresses() {
-        if (!SignedFiles.isFileSignatureValid("/previousEpochsSpentAddresses.txt", "/previousEpochsSpentAddresses.sig",
+    private void readPreviousEpochsSpentAddresses(boolean isTestnet) throws IOException {
+        if (isTestnet) {
+            return;
+        }
+
+        if (!SignedFiles.isFileSignatureValid(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT,
+                Configuration.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
                 Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
             throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
         }
 
-        InputStream in = Snapshot.class.getResourceAsStream("/previousEpochsSpentAddresses.txt");
+        InputStream in = Snapshot.class.getResourceAsStream(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT);
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
         try {
@@ -174,7 +173,7 @@ public class API {
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
 
         final long beginningTime = System.currentTimeMillis();
-        final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
+        final String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
         final AbstractResponse response;
 
         if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
@@ -209,6 +208,26 @@ public class API {
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
             switch (command) {
+                case "storeMessage": {
+                    if (!testNet) {
+                        return AccessLimitedResponse.create("COMMAND storeMessage is only available on testnet");
+                    }
+
+                    if (!request.containsKey("address") || !request.containsKey("message")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
+
+                    if (invalidSubtangleStatus()) {
+                        return ErrorResponse
+                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                    }
+
+                    final String address = (String) request.get("address");
+                    final String message = (String) request.get("message");
+
+                    storeMessageStatement(address, message);
+                    return AbstractResponse.createEmptyResponse();
+                }
 
                 case "addNeighbors": {
                     List<String> uris = getParameterAsList(request,"uris",0);
@@ -259,7 +278,7 @@ public class API {
                     return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                             Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
                             Runtime.getRuntime().totalMemory(), instance.milestone.latestMilestone, instance.milestone.latestMilestoneIndex,
-                            instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex,
+                            instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex, instance.milestone.milestoneStartIndex,
                             instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                             System.currentTimeMillis(), instance.tipsViewModel.size(),
                             instance.transactionRequester.numberOfTransactionsToRequest());
@@ -458,7 +477,7 @@ public class API {
 
         return CheckConsistency.create(state,info);
     }
-    
+
     private double getParameterAsDouble(Map<String, Object> request, String paramName) throws ValidationException {
         validateParamExists(request, paramName);
         final double result;
@@ -520,7 +539,7 @@ public class API {
     }
 
     public boolean invalidSubtangleStatus() {
-        return (instance.milestone.latestSolidSubtangleMilestoneIndex == Milestone.MILESTONE_START_INDEX);
+        return (instance.milestone.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
     }
 
     private AbstractResponse removeNeighborsStatement(List<String> uris) {
@@ -776,6 +795,12 @@ public class API {
             for (String tag : tags) {
                 tag = padTag(tag);
                 tagsTransactions.addAll(TagViewModel.load(instance.tangle, new Hash(tag)).getHashes());
+            }
+            if (tagsTransactions.isEmpty()) {
+                for (String tag : tags) {
+                    tag = padTag(tag);
+                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, new Hash(tag)).getHashes());
+                }
             }
             foundTransactions.addAll(tagsTransactions);
             containsKey = true;
@@ -1084,6 +1109,72 @@ public class API {
         if (server != null) {
             server.stop();
         }
+    }
+
+    //only available on testnet
+    private synchronized void storeMessageStatement(final String address, final String message) throws Exception {
+        final Hash[] txToApprove = getTransactionToApproveStatement(3, null, 5);
+
+        final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
+
+        final int txCount = (message.length() + txMessageSize - 1) / txMessageSize;
+
+        final int[] timestampTrits = new int[TransactionViewModel.TIMESTAMP_TRINARY_SIZE];
+        Converter.copyTrits(System.currentTimeMillis(), timestampTrits, 0, timestampTrits.length);
+        final String timestampTrytes = StringUtils.rightPad(Converter.trytes(timestampTrits), timestampTrits.length / 3, '9');
+
+        final int[] lastIndexTrits = new int[TransactionViewModel.LAST_INDEX_TRINARY_SIZE];
+        int[] currentIndexTrits = new int[TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE];
+
+        Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
+        final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
+
+        List<String> transactions = new ArrayList<>();
+        for (int i = 0; i < txCount; i++) {
+            String tx;
+            if (i != txCount - 1) {
+                tx = message.substring(i * txMessageSize, (i + 1) * txMessageSize);
+            } else {
+                tx = message.substring(i * txMessageSize);
+            }
+
+            Converter.copyTrits(i, currentIndexTrits, 0, currentIndexTrits.length);
+
+            tx = StringUtils.rightPad(tx, txMessageSize, '9');
+            tx += address.substring(0, 81);
+// value
+            tx += StringUtils.repeat('9', 27);
+// obsolete tag
+            tx += StringUtils.repeat('9', 27);
+// timestamp
+            tx += timestampTrytes;
+// current index
+            tx += StringUtils.rightPad(Converter.trytes(currentIndexTrits), currentIndexTrits.length / 3, '9');
+// last index
+            tx += StringUtils.rightPad(lastIndexTrytes, lastIndexTrits.length / 3, '9');
+            transactions.add(tx);
+        }
+
+// let's calculate the bundle essence :S
+        int startIdx = TransactionViewModel.ESSENCE_TRINARY_OFFSET / 3;
+        Sponge sponge = SpongeFactory.create(SpongeFactory.Mode.KERL);
+
+        for (String tx : transactions) {
+            String essence = tx.substring(startIdx);
+            int[] essenceTrits = new int[essence.length() * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
+            Converter.trits(essence, essenceTrits, 0);
+            sponge.absorb(essenceTrits, 0, essenceTrits.length);
+        }
+
+        int[] essenceTrits = new int[243];
+        sponge.squeeze(essenceTrits, 0, essenceTrits.length);
+        final String bundleHash = Converter.trytes(essenceTrits, 0, essenceTrits.length);
+
+        transactions = transactions.stream().map(tx -> StringUtils.rightPad(tx + bundleHash, TRYTES_SIZE, '9')).collect(Collectors.toList());
+
+// do pow
+        List<String> powResult = attachToTangleStatement(txToApprove[0], txToApprove[1], 9, transactions);
+        broadcastTransactionStatement(powResult);
     }
 }
 

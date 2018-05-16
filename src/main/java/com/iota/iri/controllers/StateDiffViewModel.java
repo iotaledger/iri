@@ -24,13 +24,17 @@ public class StateDiffViewModel {
         this.stateDiff.state = state;
     }
 
-    public static boolean exists(Tangle tangle, Hash hash) throws Exception {
+    public static boolean maybeExists(Tangle tangle, Hash hash) throws Exception {
         return tangle.maybeHas(StateDiff.class, hash);
     }
 
     StateDiffViewModel(final StateDiff diff, final Hash hash) {
         this.hash = hash;
         this.stateDiff = diff == null || diff.state == null ? new StateDiff(): diff;
+    }
+
+    public boolean isEmpty() {
+        return stateDiff == null || stateDiff.state == null || stateDiff.state.size() == 0;
     }
 
     public Hash getHash() {

@@ -13,9 +13,9 @@ public class Replicator {
     private final int port;
     private ReplicatorSourcePool replicatorSourcePool;
 
-    public Replicator(final Node node, int port, final int maxPeers, final boolean testnet) {
+    public Replicator(final Node node, int port, final int maxPeers, final boolean testnet, int transactionPacketSize) {
         this.port = port;
-        replicatorSinkPool = new ReplicatorSinkPool(node, port);
+        replicatorSinkPool = new ReplicatorSinkPool(node, port, transactionPacketSize);
         replicatorSourcePool = new ReplicatorSourcePool(replicatorSinkPool, node, maxPeers, testnet);
     }
 

@@ -16,11 +16,16 @@ public class UDPNeighbor extends Neighbor {
 
     private final DatagramSocket socket;
 
-    public UDPNeighbor(final InetSocketAddress address, final DatagramSocket socket, final boolean isConfigured) {
+    UDPNeighbor(final InetSocketAddress address, final DatagramSocket socket, final boolean isConfigured) {
         super(address, isConfigured);
         this.socket = socket;
     }
 
+    /**
+     * This is a blocking write and it is not necessary to copy the sent data.
+     *
+     * @param packet the packet to be sent immediately.
+     */
     @Override
     public void send(DatagramPacket packet) {
         try {

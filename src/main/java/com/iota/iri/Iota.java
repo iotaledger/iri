@@ -3,24 +3,22 @@ package com.iota.iri;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.*;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.service.TipsManager;
-import com.iota.iri.storage.FileExportProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.ZmqPublishProvider;
+import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
+import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.NotImplementedException;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -28,11 +26,6 @@ import java.util.List;
  */
 public class Iota {
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
-
-    public static final String MAINNET_COORDINATOR_ADDRESS = "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
-    public static final Hash MAINNET_COORDINATOR = new Hash(MAINNET_COORDINATOR_ADDRESS);
-    public static final String TESTNET_COORDINATOR_ADDRESS = "XNZBYAST9BETSDNOVQKKTBECYIPMF9IPOZRWUPFQGVH9HJW9NDSQVIPVBWU9YKECRYGDSJXYMZGHZDXCA";
-    public static final Hash TESTNET_COORDINATOR = new Hash(TESTNET_COORDINATOR_ADDRESS);
 
     public final LedgerValidator ledgerValidator;
     public final Milestone milestone;
@@ -54,22 +47,35 @@ public class Iota {
     public final int tcpPort;
     public final int maxTipSearchDepth;
 
-    public Iota(Configuration configuration) {
+    public Iota(Configuration configuration) throws IOException {
         this.configuration = configuration;
         testnet = configuration.booling(Configuration.DefaultConfSettings.TESTNET);
         maxPeers = configuration.integer(Configuration.DefaultConfSettings.MAX_PEERS);
         udpPort = configuration.integer(Configuration.DefaultConfSettings.UDP_RECEIVER_PORT);
         tcpPort = configuration.integer(Configuration.DefaultConfSettings.TCP_RECEIVER_PORT);
+
+        String snapshotFile = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_FILE);
+        String snapshotSigFile = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE);
+        Snapshot initialSnapshot = Snapshot.init(snapshotFile, snapshotSigFile, testnet).clone();
+        long snapshotTimestamp = configuration.longNum(Configuration.DefaultConfSettings.SNAPSHOT_TIME);
+        int milestoneStartIndex = configuration.integer(Configuration.DefaultConfSettings.MILESTONE_START_INDEX);
+        int numKeysMilestone = configuration.integer(Configuration.DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE);
+        boolean dontValidateMilestoneSig = configuration.booling(Configuration.DefaultConfSettings
+                .DONT_VALIDATE_TESTNET_MILESTONE_SIG);
+        int transactionPacketSize = configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE);
+
         maxTipSearchDepth = configuration.integer(Configuration.DefaultConfSettings.MAX_DEPTH);
         if(testnet) {
             String coordinatorTrytes = configuration.string(Configuration.DefaultConfSettings.COORDINATOR);
-            if(coordinatorTrytes != null) {
+            if(StringUtils.isNotEmpty(coordinatorTrytes)) {
                 coordinator = new Hash(coordinatorTrytes);
             } else {
-                coordinator = TESTNET_COORDINATOR;
+                log.warn("No coordinator address given for testnet. Defaulting to "
+                        + Configuration.TESTNET_COORDINATOR_ADDRESS);
+                coordinator = new Hash(Configuration.TESTNET_COORDINATOR_ADDRESS);
             }
         } else {
-            coordinator = MAINNET_COORDINATOR;
+            coordinator = new Hash(Configuration.MAINNET_COORDINATOR_ADDRESS);
         }
         tangle = new Tangle();
         messageQ = new MessageQ(configuration.integer(Configuration.DefaultConfSettings.ZMQ_PORT),
@@ -79,13 +85,16 @@ public class Iota {
                 );
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
-        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ);
-        milestone =  new Milestone(tangle, coordinator, Snapshot.initialSnapshot.clone(), transactionValidator, testnet, messageQ);
+        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ,
+                snapshotTimestamp);
+        milestone = new Milestone(tangle, coordinator, initialSnapshot, transactionValidator, testnet, messageQ,
+                numKeysMilestone, milestoneStartIndex, dontValidateMilestoneSig);
         node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
-        replicator = new Replicator(node, tcpPort, maxPeers, testnet);
-        udpReceiver = new UDPReceiver(udpPort, node);
+        replicator = new Replicator(node, tcpPort, maxPeers, testnet, transactionPacketSize);
+        udpReceiver = new UDPReceiver(udpPort, node, configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE));
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
-        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone, maxTipSearchDepth, messageQ);
+        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone,
+                maxTipSearchDepth, messageQ, testnet, milestoneStartIndex);
     }
 
     public void init() throws Exception {
@@ -103,7 +112,7 @@ public class Iota {
             tangle.clearMetadata(com.iota.iri.model.Transaction.class);
         }
         milestone.init(SpongeFactory.Mode.CURLP27, ledgerValidator, revalidate);
-        transactionValidator.init(testnet, configuration.integer(Configuration.DefaultConfSettings.MAINNET_MWM), configuration.integer(Configuration.DefaultConfSettings.TESTNET_MWM));
+        transactionValidator.init(testnet, configuration.integer(Configuration.DefaultConfSettings.MWM));
         tipsManager.init();
         transactionRequester.init(configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
         udpReceiver.init();
@@ -112,51 +121,19 @@ public class Iota {
     }
 
     private void rescan_db() throws Exception {
-        int counter = 0;
-        //delete all Address , Bundle , Approvee & Tag
-        AddressViewModel add = AddressViewModel.first(tangle);
-        while (add != null) {
-            if (++counter % 10000 == 0) {
-                log.info("Clearing cache: {} Addresses", counter);
-            }
-            AddressViewModel NextAdd = add.next(tangle);
-            add.delete(tangle);
-            add = NextAdd;
-        }
-        counter = 0;
-        BundleViewModel bn = BundleViewModel.first(tangle);
-        while (bn != null) {
-            if (++counter % 10000 == 0) {
-                log.info("Clearing cache: {} Bundles", counter);
-            }
-            BundleViewModel NextBn = bn.next(tangle);
-            bn.delete(tangle);
-            bn = NextBn;
-        }
-        counter = 0;
-        ApproveeViewModel app = ApproveeViewModel.first(tangle);
-        while (app != null) {
-            if (++counter % 10000 == 0) {
-                log.info("Clearing cache: {} Approvees", counter);
-            }
-            ApproveeViewModel NextApp = app.next(tangle);
-            app.delete(tangle);
-            app = NextApp;
-        }
-        counter = 0;
-        TagViewModel tag = TagViewModel.first(tangle);
-        while (tag != null) {
-            if (++counter % 10000 == 0) {
-                log.info("Clearing cache: {} Tags", counter);
-            }
-            TagViewModel NextTag = tag.next(tangle);
-            tag.delete(tangle);
-            tag = NextTag;
-        }
+        //delete all transaction indexes
+        tangle.clearColumn(com.iota.iri.model.Address.class);
+        tangle.clearColumn(com.iota.iri.model.Bundle.class);
+        tangle.clearColumn(com.iota.iri.model.Approvee.class);
+        tangle.clearColumn(com.iota.iri.model.ObsoleteTag.class);
+        tangle.clearColumn(com.iota.iri.model.Tag.class);
+        tangle.clearColumn(com.iota.iri.model.Milestone.class);
+        tangle.clearColumn(com.iota.iri.model.StateDiff.class);
+        tangle.clearMetadata(com.iota.iri.model.Transaction.class);
 
         //rescan all tx & refill the columns
         TransactionViewModel tx = TransactionViewModel.first(tangle);
-        counter = 0;
+        int counter = 0;
         while (tx != null) {
             if (++counter % 10000 == 0) {
                 log.info("Rescanned {} Transactions", counter);

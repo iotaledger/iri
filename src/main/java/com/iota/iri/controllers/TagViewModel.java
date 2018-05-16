@@ -1,9 +1,8 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.model.Address;
-import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tag;
+import com.iota.iri.model.ObsoleteTag;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -28,8 +27,16 @@ public class TagViewModel implements HashesViewModel {
         this.hash = hash;
     }
 
+    private static TagViewModel load(Tangle tangle, Indexable hash, Class<? extends Tag> model) throws Exception {
+        return new TagViewModel((Tag) tangle.load(model, hash), hash);
+    }
+
     public static TagViewModel load(Tangle tangle, Indexable hash) throws Exception {
-        return new TagViewModel((Tag) tangle.load(Tag.class, hash), hash);
+        return load(tangle, hash, Tag.class);
+    }
+
+    public static TagViewModel loadObsolete(Tangle tangle, Indexable hash) throws Exception {
+        return load(tangle, hash, ObsoleteTag.class);
     }
 
     public static Map.Entry<Indexable, Persistable> getEntry(Hash hash, Hash hashToMerge) throws Exception {

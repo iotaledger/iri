@@ -14,7 +14,7 @@ public class IotaUtils {
      * @return a {@link ByteBuffer} that holds a subarray of {@link Hash#bytes()}
      * that has the specified {@code length}
      */
-    public static ByteBuffer getSubHash(Hash hash, int length) {
+    public static ByteBuffer getHashPrefix(Hash hash, int length) {
         if (hash == null) {
             return null;
         }

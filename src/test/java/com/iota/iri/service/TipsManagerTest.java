@@ -101,15 +101,15 @@ public class TipsManagerTest {
                 transaction.getHash(), false, new HashSet<>());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
-                1, txToCw.get(IotaUtils.getSubHash(transaction4.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                1, txToCw.get(IotaUtils.getHashPrefix(transaction4.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
-                2, txToCw.get(IotaUtils.getSubHash(transaction3.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                2, txToCw.get(IotaUtils.getHashPrefix(transaction3.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 2),
-                3, txToCw.get(IotaUtils.getSubHash(transaction2.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                3, txToCw.get(IotaUtils.getHashPrefix(transaction2.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 1),
-                4, txToCw.get(IotaUtils.getSubHash(transaction1.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                4, txToCw.get(IotaUtils.getHashPrefix(transaction1.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 0),
-                5, txToCw.get(IotaUtils.getSubHash(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                5, txToCw.get(IotaUtils.getHashPrefix(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
     }
 
     @Test
@@ -132,16 +132,16 @@ public class TipsManagerTest {
                 transaction.getHash(), false, new HashSet<>());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
-                1, txToCw.get(IotaUtils.getSubHash(transaction3.getHash(), TipsManager.SUBHASH_LENGTH))
+                1, txToCw.get(IotaUtils.getHashPrefix(transaction3.getHash(), TipsManager.SUBHASH_LENGTH))
                         .intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 1),
-                2, txToCw.get(IotaUtils.getSubHash(transaction1.getHash(), TipsManager.SUBHASH_LENGTH))
+                2, txToCw.get(IotaUtils.getHashPrefix(transaction1.getHash(), TipsManager.SUBHASH_LENGTH))
                         .intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 2),
-                2, txToCw.get(IotaUtils.getSubHash(transaction2.getHash(), TipsManager.SUBHASH_LENGTH))
+                2, txToCw.get(IotaUtils.getHashPrefix(transaction2.getHash(), TipsManager.SUBHASH_LENGTH))
                         .intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 0),
-                4, txToCw.get(IotaUtils.getSubHash(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                4, txToCw.get(IotaUtils.getHashPrefix(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
     }
 
     @Test
@@ -170,15 +170,15 @@ public class TipsManagerTest {
 
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
-                1, txToCw.get(IotaUtils.getSubHash(transaction4.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                1, txToCw.get(IotaUtils.getHashPrefix(transaction4.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
-                2, txToCw.get(IotaUtils.getSubHash(transaction3.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                2, txToCw.get(IotaUtils.getHashPrefix(transaction3.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 2),
-                3, txToCw.get(IotaUtils.getSubHash(transaction2.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                3, txToCw.get(IotaUtils.getHashPrefix(transaction2.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 1),
-                4, txToCw.get(IotaUtils.getSubHash(transaction1.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                4, txToCw.get(IotaUtils.getHashPrefix(transaction1.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 0),
-                5, txToCw.get(IotaUtils.getSubHash(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                5, txToCw.get(IotaUtils.getHashPrefix(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
     }
 
     @Test
@@ -215,19 +215,19 @@ public class TipsManagerTest {
                 transaction.getHash(), false, new HashSet<>());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 6),
-                1, txToCw.get(IotaUtils.getSubHash(transaction6.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                1, txToCw.get(IotaUtils.getHashPrefix(transaction6.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 5),
-                2, txToCw.get(IotaUtils.getSubHash(transaction5.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                2, txToCw.get(IotaUtils.getHashPrefix(transaction5.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
-                2, txToCw.get(IotaUtils.getSubHash(transaction4.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                2, txToCw.get(IotaUtils.getHashPrefix(transaction4.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
-                3, txToCw.get(IotaUtils.getSubHash(transaction3.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                3, txToCw.get(IotaUtils.getHashPrefix(transaction3.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 2),
-                3, txToCw.get(IotaUtils.getSubHash(transaction2.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                3, txToCw.get(IotaUtils.getHashPrefix(transaction2.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 1),
-                1, txToCw.get(IotaUtils.getSubHash(transaction1.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                1, txToCw.get(IotaUtils.getHashPrefix(transaction1.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 0),
-                7, txToCw.get(IotaUtils.getSubHash(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                7, txToCw.get(IotaUtils.getHashPrefix(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
     }
 
     @Test
@@ -258,7 +258,7 @@ public class TipsManagerTest {
             log.debug(String.format("tx %.4s has expected weight of %d", hash, weight.size()));
             Assert.assertEquals(
                     "new calculation weight is not as expected for hash " + hash,
-                    weight.size(), txToCw.get(IotaUtils.getSubHash(hash, TipsManager.SUBHASH_LENGTH))
+                    weight.size(), txToCw.get(IotaUtils.getHashPrefix(hash, TipsManager.SUBHASH_LENGTH))
                             .intValue());
         });
     }
@@ -290,15 +290,15 @@ public class TipsManagerTest {
         log.info(cumulativeWeight.toString());
         String msg = "Cumulative weight is wrong for tx";
         Assert.assertEquals(msg + 4, 1, cumulativeWeight.get(
-                IotaUtils.getSubHash(transaction4.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                IotaUtils.getHashPrefix(transaction4.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(msg + 3, 1, cumulativeWeight.get(
-                IotaUtils.getSubHash(transaction3.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                IotaUtils.getHashPrefix(transaction3.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(msg + 2, 1, cumulativeWeight.get(
-                IotaUtils.getSubHash(transaction2.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                IotaUtils.getHashPrefix(transaction2.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(msg + 1, 2, cumulativeWeight.get(
-                IotaUtils.getSubHash(transaction1.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                IotaUtils.getHashPrefix(transaction1.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
         Assert.assertEquals(msg + 0, 3, cumulativeWeight.get(
-                IotaUtils.getSubHash(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
+                IotaUtils.getHashPrefix(transaction.getHash(), TipsManager.SUBHASH_LENGTH)).intValue());
     }
 
     //    @Test

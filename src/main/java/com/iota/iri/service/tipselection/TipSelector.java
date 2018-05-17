@@ -72,9 +72,6 @@ public class TipSelector implements EntryPoint,Rating,Walker{
      */
     public Hash getEntryPoint(int depth) throws Exception{
 
-        if(depth > maxDepth){
-            depth = maxDepth;
-        }
 
         int milestoneIndex = Math.max(milestone.latestSolidSubtangleMilestoneIndex - depth - 1,0);
         MilestoneViewModel milestoneViewModel =

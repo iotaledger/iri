@@ -3,8 +3,8 @@ package com.iota.iri.service.tipselection;
 
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.LedgerValidator;
@@ -19,24 +19,32 @@ import java.util.Map;
 
 public class TipSelector implements EntryPoint,Rating,Walker{
 
-    public final Tangle tangle;
-    public final Milestone reference;
-    public final MessageQ messageQ;
-    public final LedgerValidator ledgerValidator;
-    public final TransactionValidator transactionValidator;
-
+    private final Tangle tangle;
+    private final Milestone milestone;
+    private final MessageQ messageQ;
+    private final LedgerValidator ledgerValidator;
+    private final TransactionValidator transactionValidator;
+    private final int milestoneStartIndex;
+    private final boolean testnet;
+    private final int maxDepth;
 
 
     public TipSelector(final Tangle tangle,
-                       final Milestone reference,
+                       final Milestone milestone,
                        final MessageQ messageQ,
                        final LedgerValidator ledgerValidator,
-                       final TransactionValidator transactionValidator){
+                       final TransactionValidator transactionValidator,
+                       final int maxDepth,
+                       final boolean testnet,
+                       final int milestoneStartIndex){
         this.tangle = tangle;
-        this.reference = reference;
+        this.milestone = milestone;
         this.messageQ = messageQ;
         this.ledgerValidator = ledgerValidator;
         this.transactionValidator = transactionValidator;
+        this.maxDepth = maxDepth;
+        this.testnet = testnet;
+        this.milestoneStartIndex = milestoneStartIndex;
     }
 
 
@@ -62,7 +70,20 @@ public class TipSelector implements EntryPoint,Rating,Walker{
      * @param depth  Depth in milestones used for random walk
      * @return  Entry point for walk method
      */
-    public void getEntryPoint(int depth){
+    public Hash getEntryPoint(int depth) throws Exception{
+
+        if(depth > maxDepth){
+            depth = maxDepth;
+        }
+
+        int milestoneIndex = Math.max(milestone.latestSolidSubtangleMilestoneIndex - depth - 1,0);
+        MilestoneViewModel milestoneViewModel =
+                    MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex,testnet,milestoneStartIndex);
+        if(milestoneViewModel != null && milestoneViewModel.getHash() != null){
+            return milestoneViewModel.getHash();
+        }
+
+        return milestone.latestSolidSubtangleMilestone;
 
     }
 
@@ -77,7 +98,7 @@ public class TipSelector implements EntryPoint,Rating,Walker{
      * @param entryPoint  Transaction ID of selected milestone.
      * @return  Hash Map of cumulative ratings.
      */
-    public void calculate(Hash entryPoint){
+    public Map<Hash, Long> calculate(Hash entryPoint){
 
     }
 
@@ -95,7 +116,7 @@ public class TipSelector implements EntryPoint,Rating,Walker{
      * @param maxIndex  The deepest milestone index allowed for referencing.
      * @return  Transaction ID of tip.
      */
-    public void walk(Hash entryPoint, Map<Hash, Long> ratings, int maxIndex){
+    public Hash walk(Hash entryPoint, Map<Hash, Long> ratings, int maxIndex){
 
     }
 

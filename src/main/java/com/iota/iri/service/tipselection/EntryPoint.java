@@ -1,11 +1,11 @@
 package com.iota.iri.service.tipselection;
 
 
+import com.iota.iri.model.Hash;
 
 public interface EntryPoint{
 
 
-    void getEntryPoint(int depth);
-
+    Hash getEntryPoint(int depth)throws Exception;
 
 }

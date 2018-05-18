@@ -11,7 +11,16 @@ import com.iota.iri.model.Hash;
 
 public interface EntryPoint{
 
-
+    /**
+     *Entry point generator for tip selection
+     *<p>
+     *Uses reference point and depth to determine the entry point for
+     *the random walk.
+     *</p>
+     *
+     * @param depth  Depth in milestones used for random walk
+     * @return  Entry point for walk method
+     */
     Hash getEntryPoint(int depth)throws Exception;
 
 }

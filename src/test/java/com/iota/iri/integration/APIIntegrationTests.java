@@ -182,6 +182,26 @@ public class APIIntegrationTests {
     }
 
     @Test
+    public void shouldTestGetApiConfiguration() {
+
+        final Map<String, Object> request = new HashMap<>();
+        request.put("command", "getApiConfiguration");
+
+        given().
+                body(gson().toJson(request)).
+                when().
+                post("/").
+                then().
+                spec(responseSpec).
+                body(containsString("\"maxRequestList\":" + api.getMaxRequestList())).
+                body(containsString("\"minRandomWalks\":" + api.getMinRandomWalks())).
+                body(containsString("\"maxRandomWalks\":" + api.getMaxRandomWalks())).
+                body(containsString("\"maxFindTxs\":" + api.getMaxFindTxs())).
+                body(containsString("\"maxBodyLength\":" + api.getMaxBodyLength())).
+                body(containsString("\"maxGetTrytes\":" + api.getMaxGetTrytes()));
+    }
+
+    @Test
     public void shouldTestGetNeighbors() {
 
         final Map<String, Object> request = new HashMap<>();

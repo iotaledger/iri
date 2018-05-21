@@ -3,51 +3,59 @@ package com.iota.iri.service.tipselection.impl;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.utils.IotaUtils;
-import com.iota.iri.utils.SafeUtils;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.collections.impl.KeyOptimizedMap;
 import com.iota.iri.utils.collections.impl.BoundedHashSet;
 import com.iota.iri.utils.collections.interfaces.BoundedSet;
+import com.iota.iri.utils.collections.interfaces.OptimizedMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.ObjectUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.function.Function;
 
 public class CumulativeWeightCalculator {
 
-    Map<Hash, Long> calculate(Hash entryPoint) {
+    private static final Logger log = LoggerFactory.getLogger(CumulativeWeightCalculator.class);
 
+    public static final int SUBHASH_LENGTH = 16;
+    public static final int MAX_ANCESTORS_SIZE = 1000;
+
+    public final Tangle tangle;
+    private static final Function<Indexable, Buffer> HASH_TO_PREFIX = (hash) -> {
+        if (hash == null) {
+            return null;
+        }
+        return ByteBuffer.wrap(Arrays.copyOf(hash.bytes(), SUBHASH_LENGTH));
+    };
+
+
+    public CumulativeWeightCalculator(Tangle tangle) {
+        this.tangle = tangle;
     }
 
-    /**
-     * Updates the cumulative weight of txs.
-     * A cumulative weight of each tx is 1 + the number of ancestors it has.
-     * <p>
-     * See https://github.com/alongalky/iota-docs/blob/master/cumulative.md
-     *
-     * @param myApprovedHashes  the current hashes of the snapshot at the time of calculation
-     * @param currentTxHash     the transaction from where the analysis starts
-     * @param confirmLeftBehind if true attempt to give more weight to previously
-     *                          unconfirmed txs
-     * @throws Exception if there is a problem accessing the db
-     */
-    Map<Buffer, Integer> calculateCumulativeWeight(Set<Hash> myApprovedHashes, Hash currentTxHash,
-                                                   boolean confirmLeftBehind,
-                                                   Set<Hash> analyzedTips) throws Exception {
-        log.info("Start calculating cw starting with tx hash {}", currentTxHash);
+    //See https://github.com/alongalky/iota-docs/blob/master/cumulative.md
+    OptimizedMap<Indexable, Integer> calculate(Hash entryPoint) throws Exception {
+        log.info("Start calculating cw starting with tx hash {}", entryPoint);
         log.debug("Start topological sort");
         long start = System.currentTimeMillis();
-        LinkedHashSet<Hash> txHashesToRate = sortTransactionsInTopologicalOrder(currentTxHash);
+        LinkedHashSet<Hash> txHashesToRate = sortTransactionsInTopologicalOrder(entryPoint);
         log.debug("Subtangle size: {}", txHashesToRate.size());
         log.debug("Topological sort done. Start traversing on txs in order and calculate weight");
-        Map<Buffer, Integer> cumulativeWeights = calculateCwInOrder(txHashesToRate, myApprovedHashes, confirmLeftBehind,
-                analyzedTips);
-        log.debug("Cumulative weights calculation done in {} ms", System.currentTimeMillis() - start);
+        OptimizedMap<Indexable, Integer> cumulativeWeights = calculateCwInOrder(txHashesToRate);
+        if (log.isDebugEnabled()) {
+            log.debug("Cumulative weights calculation done in {} ms", System.currentTimeMillis() - start);
+        }
         return cumulativeWeights;
     }
 
+    //Uses DFS algorithm to sort
     private LinkedHashSet<Hash> sortTransactionsInTopologicalOrder(Hash startTx) throws Exception {
         LinkedHashSet<Hash> sortedTxs = new LinkedHashSet<>();
         Set<Hash> temporary = new HashSet<>();
@@ -91,7 +99,7 @@ public class CumulativeWeightCalculator {
                                                         Map<Hash, Collection<Hash>> txToDirectApprovers) throws Exception {
         Collection<Hash> txApprovers = txToDirectApprovers.get(txHash);
         if (txApprovers == null) {
-            ApproveeViewModel approvers = TransactionViewModel.fromHash(tangle, txHash).getApprovers(tangle);
+            ApproveeViewModel approvers = ApproveeViewModel.load(tangle, txHash);
             Collection<Hash> appHashes = CollectionUtils.emptyIfNull(approvers.getHashes());
             txApprovers = new HashSet<>(appHashes.size());
             for (Hash appHash : appHashes) {
@@ -106,75 +114,57 @@ public class CumulativeWeightCalculator {
     }
 
     //must specify using LinkedHashSet since Java has no interface that guarantees uniqueness and insertion order
-    private Map<Buffer, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate,
-                                                    Set<Hash> myApprovedHashes, boolean confirmLeftBehind, Set<Hash> analyzedTips) throws Exception {
-        Map<Buffer, Set<Buffer>> txSubHashToApprovers = new HashMap<>();
-        Map<Buffer, Integer> txSubHashToCumulativeWeight = new HashMap<>();
+    private OptimizedMap<Indexable, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate) throws Exception {
+        OptimizedMap<Indexable, Set<Buffer>> txToApproversPrefix = new KeyOptimizedMap<>(HASH_TO_PREFIX);
+        OptimizedMap<Indexable, Integer> txHashToCumulativeWeight = new KeyOptimizedMap<>(txsToRate.size(),
+                HASH_TO_PREFIX);
 
         Iterator<Hash> txHashIterator = txsToRate.iterator();
         while (txHashIterator.hasNext()) {
             Hash txHash = txHashIterator.next();
-            if (analyzedTips.add(txHash)) {
-                txSubHashToCumulativeWeight = updateCw(txSubHashToApprovers, txSubHashToCumulativeWeight, txHash,
-                        myApprovedHashes, confirmLeftBehind);
-            }
-            txSubHashToApprovers = updateApproversAndReleaseMemory(txSubHashToApprovers, txHash, myApprovedHashes,
-                    confirmLeftBehind);
+            txHashToCumulativeWeight = updateCw(txToApproversPrefix, txHashToCumulativeWeight, txHash);
+            txToApproversPrefix = updateApproversAndReleaseMemory(txToApproversPrefix, txHash);
             txHashIterator.remove();
         }
-
-        return txSubHashToCumulativeWeight;
+        return txHashToCumulativeWeight;
     }
 
 
-    private Map<Buffer, Set<Buffer>> updateApproversAndReleaseMemory(
-            Map<Buffer, Set<Buffer>> txSubHashToApprovers,
-            Hash txHash, Set<Hash> myApprovedHashes, boolean confirmLeftBehind) throws Exception {
-        ByteBuffer txSubHash = IotaUtils.getHashPrefix(txHash, SUBHASH_LENGTH);
+    private OptimizedMap<Indexable, Set<Buffer>> updateApproversAndReleaseMemory(OptimizedMap<Indexable, Set<Buffer>> txHashToApprovers,
+                                                                     Hash txHash) throws Exception {
         BoundedSet<Buffer> approvers =
-                new BoundedHashSet<>(SetUtils.emptyIfNull(txSubHashToApprovers.get(txSubHash)), MAX_ANCESTORS_SIZE);
-
-        if (shouldIncludeTransaction(txHash, myApprovedHashes, confirmLeftBehind)) {
-            approvers.add(txSubHash);
-        }
+                new BoundedHashSet<>(SetUtils.emptyIfNull(txHashToApprovers.get(txHash)), MAX_ANCESTORS_SIZE);
 
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
         Hash trunkHash = transactionViewModel.getTrunkTransactionHash();
-        Buffer trunkSubHash = IotaUtils.getHashPrefix(trunkHash, SUBHASH_LENGTH);
         Hash branchHash = transactionViewModel.getBranchTransactionHash();
-        Buffer branchSubHash = IotaUtils.getHashPrefix(branchHash, SUBHASH_LENGTH);
         if (!approvers.isFull()) {
+            Buffer hashPrefix = HASH_TO_PREFIX.apply(txHash);
+
             Set<Buffer> trunkApprovers = new BoundedHashSet<>(approvers, MAX_ANCESTORS_SIZE);
-            trunkApprovers.addAll(CollectionUtils.emptyIfNull(txSubHashToApprovers.get(trunkSubHash)));
+            trunkApprovers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(trunkHash)));
+            trunkApprovers.add(hashPrefix);
+            txHashToApprovers.put(trunkHash, trunkApprovers);
+
             Set<Buffer> branchApprovers = new BoundedHashSet<>(approvers, MAX_ANCESTORS_SIZE);
-            branchApprovers.addAll(CollectionUtils.emptyIfNull(txSubHashToApprovers.get(branchSubHash)));
-            txSubHashToApprovers.put(trunkSubHash, trunkApprovers);
-            txSubHashToApprovers.put(branchSubHash, branchApprovers);
+            branchApprovers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(branchHash)));
+            branchApprovers.add(hashPrefix);
+            txHashToApprovers.put(branchHash, branchApprovers);
         }
         else {
-            txSubHashToApprovers.put(trunkSubHash, approvers);
-            txSubHashToApprovers.put(branchSubHash, approvers);
+            txHashToApprovers.put(trunkHash, approvers);
+            txHashToApprovers.put(branchHash, approvers);
         }
-        txSubHashToApprovers.remove(txSubHash);
+        txHashToApprovers.remove(txHash);
 
-        return txSubHashToApprovers;
+        return txHashToApprovers;
     }
 
-    private static boolean shouldIncludeTransaction(Hash txHash, Set<Hash> myApprovedSubHashes,
-                                                    boolean confirmLeftBehind) {
-        return !confirmLeftBehind || !SafeUtils.isContaining(myApprovedSubHashes, txHash);
-    }
-
-    private Map<Buffer, Integer> updateCw(Map<Buffer, Set<Buffer>> txSubHashToApprovers,
-                                          Map<Buffer, Integer> txToCumulativeWeight, Hash txHash,
-                                          Set<Hash> myApprovedHashes, boolean confirmLeftBehind) {
-        ByteBuffer txSubHash = IotaUtils.getHashPrefix(txHash, SUBHASH_LENGTH);
-        Set<Buffer> approvers = txSubHashToApprovers.get(txSubHash);
-        int weight = CollectionUtils.emptyIfNull(approvers).size();
-        if (shouldIncludeTransaction(txHash, myApprovedHashes, confirmLeftBehind)) {
-            ++weight;
-        }
-        txToCumulativeWeight.put(txSubHash, weight);
+    private static OptimizedMap<Indexable, Integer> updateCw(OptimizedMap<Indexable, Set<Buffer>> txHashToApprovers,
+                                          OptimizedMap<Indexable, Integer> txToCumulativeWeight, Hash txHash) {
+        Set<Buffer> approvers = txHashToApprovers.get(txHash);
+        int weight = CollectionUtils.emptyIfNull(approvers).size() + 1;
+        txToCumulativeWeight.put(txHash, weight);
         return txToCumulativeWeight;
     }
 }

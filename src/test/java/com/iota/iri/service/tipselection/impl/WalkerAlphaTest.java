@@ -1,16 +1,8 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.LedgerValidator;
-import com.iota.iri.Milestone;
-import com.iota.iri.Snapshot;
-import com.iota.iri.TransactionValidator;
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.tipselection.RatingCalculator;
-import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.zmq.MessageQ;
@@ -22,12 +14,12 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.swing.text.html.Option;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionHash;
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch;
+import static com.iota.iri.controllers.TransactionViewModelTest.*;
 
 public class WalkerAlphaTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -50,66 +42,77 @@ public class WalkerAlphaTest {
         tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
                 .getRoot().getAbsolutePath(), 1000));
         tangle.init();
-        TipsViewModel tipsViewModel = new TipsViewModel();
         MessageQ messageQ = new MessageQ(0, null, 1, false);
-        TransactionRequester transactionRequester = new TransactionRequester(tangle, messageQ);
-        TransactionValidator transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester,
-                messageQ, Long.parseLong(Configuration.GLOBAL_SNAPSHOT_TIME));
-        int milestoneStartIndex = Integer.parseInt(Configuration.MAINNET_MILESTONE_START_INDEX);
-        int numOfKeysInMilestone = Integer.parseInt(Configuration.MAINNET_NUM_KEYS_IN_MILESTONE);
-        Milestone milestone = new Milestone(tangle, Hash.NULL_HASH, Snapshot.init(
-                Configuration.MAINNET_SNAPSHOT_FILE, Configuration.MAINNET_SNAPSHOT_SIG_FILE, false).clone(),
-                transactionValidator, false, messageQ, numOfKeysInMilestone,
-                milestoneStartIndex, true);
-        LedgerValidator ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
 
-        walker = new WalkerAlpha(1, new Random(1), tangle, ledgerValidator, transactionValidator, messageQ, 15, (Optional::of));
+        walker = new WalkerAlpha(1, new Random(1), tangle, messageQ, (Optional::of));
     }
 
+
+    //TODO recreate the select scenarios w/ walk()
     @Test
-    public void testSelectOnlyInRating() {
+    public void testWalkEndsOnlyInRating() throws Exception {
+        //build a small tangle - 1,2,3,4 point to  transaction
+        TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
+        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
 
-        //build rating list
-        Map<Hash, Integer> rating = new HashMap<>();
-        rating.put(new Hash("A"), 1);
-        rating.put(new Hash("B"), 1);
-        rating.put(new Hash("C"), 1);
-        //D missing on purpose
+        transaction.store(tangle);
+        transaction1.store(tangle);
+        transaction2.store(tangle);
+        transaction3.store(tangle);
 
-        //build approvers list
-        Set<Hash> approvers = new HashSet<>();
-        approvers.add(new Hash("A"));
-        approvers.add(new Hash("B"));
-        approvers.add(new Hash("C"));
-        approvers.add(new Hash("D"));
+        //calculate rating
+        RatingCalculator ratingCalculator = new RatingOne(tangle);
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
-        for (int i=0; i < 10; i++) {
-        //select
-        Optional<Hash> next = walker.select(rating, approvers);
+        //add 4 after the rating was calculated
+        transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction4.store(tangle);
 
-        Assert.assertTrue(next.isPresent());
-        //log.info("selected next step: " + next.get().toString());
+        for (int i=0; i < 100; i++) {
+            //select
+            Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
-        Assert.assertTrue(!(new Hash("D")).toString().equals(next.get().toString()));
+            Assert.assertTrue(tip != null);
+            //log.info("selected tip: " + tip.toString());
+            Assert.assertTrue(!transaction4.getHash().equals(tip));
         }
     }
 
     @Test
-    public void showSelectDistributionAlphaHalf() {
+    public void showWalkDistributionAlphaHalf() throws Exception {
 
-        //build rating list
-        Map<Hash, Integer> rating = new HashMap<>();
-        rating.put(new Hash("A"), 1);
-        rating.put(new Hash("B"), 10);
-        rating.put(new Hash("C"), 1);
-        //D missing on purpose
+        //build a small tangle - 1,2,3,4 point to  transaction
+        TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
+        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
 
-        //build approvers list
-        Set<Hash> approvers = new HashSet<>();
-        approvers.add(new Hash("A"));
-        approvers.add(new Hash("B"));
-        approvers.add(new Hash("C"));
-        approvers.add(new Hash("D"));
+        transaction.store(tangle);
+        transaction1.store(tangle);
+        transaction2.store(tangle);
+        transaction3.store(tangle);
+
+        //calculate rating
+        RatingCalculator ratingCalculator = new RatingOne(tangle);
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        //set a higher rate for transaction2
+        rating.put(transaction2.getHash(), 10);
+
+        //add 4 after the rating was calculated
+        transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction4.store(tangle);
 
         Map<Hash, Integer> counters = new HashMap<>(rating.size());
         int iterations = 10000;
@@ -117,38 +120,47 @@ public class WalkerAlphaTest {
         walker.setAlpha(0.3);
         for (int i=0; i < iterations; i++) {
             //select
-            Optional<Hash> next = walker.select(rating, approvers);
+            Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
-            Assert.assertTrue(next.isPresent());
-            counters.put(next.get(), 1 + counters.getOrDefault(next.get(), 0));
+            Assert.assertTrue(tip != null);
+            counters.put(tip, 1 + counters.getOrDefault(tip, 0));
         }
 
         for (Map.Entry<Hash, Integer> entry : counters.entrySet()) {
             log.info(entry.getKey().toString() + " : " + entry.getValue());
         }
 
-        Assert.assertTrue(counters.get(new Hash("B")) > iterations / 2);
+        Assert.assertTrue(counters.get(transaction2.getHash()) > iterations / 2);
     }
 
-
-    //TODO recreate the select scenarios w/ walk()
-
     @Test
-    public void showSelectDistributionAlphaZero() {
+    public void showWalkDistributionAlphaZero() throws Exception {
 
-        //build rating list
-        Map<Hash, Integer> rating = new HashMap<>();
-        rating.put(new Hash("A"), 1);
-        rating.put(new Hash("B"), 10);
-        rating.put(new Hash("C"), 1);
-        //D missing on purpose
+        //build a small tangle - 1,2,3,4 point to  transaction
+        TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
+        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
 
-        //build approvers list
-        Set<Hash> approvers = new HashSet<>();
-        approvers.add(new Hash("A"));
-        approvers.add(new Hash("B"));
-        approvers.add(new Hash("C"));
-        approvers.add(new Hash("D"));
+        transaction.store(tangle);
+        transaction1.store(tangle);
+        transaction2.store(tangle);
+        transaction3.store(tangle);
+
+        //calculate rating
+        RatingCalculator ratingCalculator = new RatingOne(tangle);
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        //set a higher rate for transaction2
+        rating.put(transaction2.getHash(), 10);
+
+        //add 4 after the rating was calculated
+        transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction4.store(tangle);
 
         Map<Hash, Integer> counters = new HashMap<>(rating.size());
         int iterations = 10000;
@@ -156,25 +168,24 @@ public class WalkerAlphaTest {
         walker.setAlpha(0);
         for (int i=0; i < iterations; i++) {
             //select
-            Optional<Hash> next = walker.select(rating, approvers);
+            Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
-            Assert.assertTrue(next.isPresent());
-            counters.put(next.get(), 1 + counters.getOrDefault(next.get(), 0));
+            Assert.assertTrue(tip != null);
+            counters.put(tip, 1 + counters.getOrDefault(tip, 0));
         }
 
         for (Map.Entry<Hash, Integer> entry : counters.entrySet()) {
             log.info(entry.getKey().toString() + " : " + entry.getValue());
         }
 
-        Assert.assertTrue(counters.get(new Hash("A")) > iterations / 6);
+        Assert.assertTrue(counters.get(transaction1.getHash()) > iterations / 6);
     }
-
 
     @Test
     public void testWalk() throws Exception {
         //build a small tangle
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
-        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        transaction = new TransactionViewModel(getRandomTransactionTrits(), Hash.NULL_HASH);
         transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
                 transaction.getHash()), getRandomTransactionHash());
         transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction1.getHash(),

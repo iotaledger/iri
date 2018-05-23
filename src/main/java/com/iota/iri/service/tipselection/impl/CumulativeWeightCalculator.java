@@ -3,7 +3,6 @@ package com.iota.iri.service.tipselection.impl;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.collections.impl.KeyOptimizedMap;
 import com.iota.iri.utils.collections.impl.BoundedHashSet;
@@ -28,7 +27,7 @@ public class CumulativeWeightCalculator {
     public static final int MAX_ANCESTORS_SIZE = 1000;
 
     public final Tangle tangle;
-    private static final Function<Indexable, Buffer> HASH_TO_PREFIX = (hash) -> {
+    private static final Function<Hash, Buffer> HASH_TO_PREFIX = (hash) -> {
         if (hash == null) {
             return null;
         }
@@ -41,14 +40,14 @@ public class CumulativeWeightCalculator {
     }
 
     //See https://github.com/alongalky/iota-docs/blob/master/cumulative.md
-    OptimizedMap<Indexable, Integer> calculate(Hash entryPoint) throws Exception {
+    OptimizedMap<Hash, Integer> calculate(Hash entryPoint) throws Exception {
         log.info("Start calculating cw starting with tx hash {}", entryPoint);
         log.debug("Start topological sort");
         long start = System.currentTimeMillis();
         LinkedHashSet<Hash> txHashesToRate = sortTransactionsInTopologicalOrder(entryPoint);
         log.debug("Subtangle size: {}", txHashesToRate.size());
         log.debug("Topological sort done. Start traversing on txs in order and calculate weight");
-        OptimizedMap<Indexable, Integer> cumulativeWeights = calculateCwInOrder(txHashesToRate);
+        OptimizedMap<Hash, Integer> cumulativeWeights = calculateCwInOrder(txHashesToRate);
         if (log.isDebugEnabled()) {
             log.debug("Cumulative weights calculation done in {} ms", System.currentTimeMillis() - start);
         }
@@ -114,9 +113,9 @@ public class CumulativeWeightCalculator {
     }
 
     //must specify using LinkedHashSet since Java has no interface that guarantees uniqueness and insertion order
-    private OptimizedMap<Indexable, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate) throws Exception {
-        OptimizedMap<Indexable, Set<Buffer>> txToApproversPrefix = new KeyOptimizedMap<>(HASH_TO_PREFIX);
-        OptimizedMap<Indexable, Integer> txHashToCumulativeWeight = new KeyOptimizedMap<>(txsToRate.size(),
+    private OptimizedMap<Hash, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate) throws Exception {
+        OptimizedMap<Hash, Set<Buffer>> txToApproversPrefix = new KeyOptimizedMap<>(HASH_TO_PREFIX);
+        OptimizedMap<Hash, Integer> txHashToCumulativeWeight = new KeyOptimizedMap<>(txsToRate.size(),
                 HASH_TO_PREFIX);
 
         Iterator<Hash> txHashIterator = txsToRate.iterator();
@@ -130,7 +129,7 @@ public class CumulativeWeightCalculator {
     }
 
 
-    private OptimizedMap<Indexable, Set<Buffer>> updateApproversAndReleaseMemory(OptimizedMap<Indexable, Set<Buffer>> txHashToApprovers,
+    private OptimizedMap<Hash, Set<Buffer>> updateApproversAndReleaseMemory(OptimizedMap<Hash, Set<Buffer>> txHashToApprovers,
                                                                      Hash txHash) throws Exception {
         BoundedSet<Buffer> approvers =
                 new BoundedHashSet<>(SetUtils.emptyIfNull(txHashToApprovers.get(txHash)), MAX_ANCESTORS_SIZE);
@@ -160,8 +159,8 @@ public class CumulativeWeightCalculator {
         return txHashToApprovers;
     }
 
-    private static OptimizedMap<Indexable, Integer> updateCw(OptimizedMap<Indexable, Set<Buffer>> txHashToApprovers,
-                                          OptimizedMap<Indexable, Integer> txToCumulativeWeight, Hash txHash) {
+    private static OptimizedMap<Hash, Integer> updateCw(OptimizedMap<Hash, Set<Buffer>> txHashToApprovers,
+                                          OptimizedMap<Hash, Integer> txToCumulativeWeight, Hash txHash) {
         Set<Buffer> approvers = txHashToApprovers.get(txHash);
         int weight = CollectionUtils.emptyIfNull(approvers).size() + 1;
         txToCumulativeWeight.put(txHash, weight);

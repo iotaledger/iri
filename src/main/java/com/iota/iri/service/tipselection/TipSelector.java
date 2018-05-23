@@ -1,17 +1,15 @@
 package com.iota.iri.service.tipselection;
 
 import com.iota.iri.model.Hash;
-import java.util.Collection;
+import java.util.List;
+import java.util.Optional;
 
 /**
- * This interface is used to enforce usage of the init() and
- * getTransactionsToApprove() methods for gathering tips while
- * extending the usage of EntryPoint,RatingCalculator and Walker
- *
+ * This interface is used for gathering tips
  */
 
 
-public interface TipSelector extends EntryPoint,RatingCalculator,Walker{
+public interface TipSelector {
 
     /**
      *Method for finding tips
@@ -25,7 +23,7 @@ public interface TipSelector extends EntryPoint,RatingCalculator,Walker{
      * @param depth  The depth that the transactions will be found from.
      * @return  Transactions for
      */
-    Collection<Hash> getTransactionsToApprove(Hash reference, int depth);
+    List<Hash> getTransactionsToApprove(Optional<Hash> reference, int depth) throws Exception;
 
     /**
      *Initialize
@@ -33,4 +31,3 @@ public interface TipSelector extends EntryPoint,RatingCalculator,Walker{
     void init();
 
 }
-

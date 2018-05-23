@@ -9,7 +9,6 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -21,8 +20,6 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 import static com.iota.iri.controllers.TransactionViewModelTest.*;
 
@@ -81,9 +78,4 @@ public class WalkValidatorImplTest {
         Assert.assertTrue(walkValidator.isValid(transaction.getHash()));
     }
 
-
-    @Test
-    public void testIsValid() {
-
-    }
 }

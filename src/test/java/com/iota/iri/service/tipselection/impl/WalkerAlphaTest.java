@@ -6,8 +6,10 @@ import com.iota.iri.Snapshot;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -19,7 +21,13 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.swing.text.html.Option;
 import java.util.*;
+
+import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionHash;
+import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
+import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch;
 
 public class WalkerAlphaTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -54,9 +62,8 @@ public class WalkerAlphaTest {
                 transactionValidator, false, messageQ, numOfKeysInMilestone,
                 milestoneStartIndex, true);
         LedgerValidator ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
-        TailFinder tailFinder = new TailFinderImpl(tangle);
 
-        walker = new WalkerAlpha(1, new Random(1), tangle, ledgerValidator, transactionValidator, messageQ, 15, tailFinder);
+        walker = new WalkerAlpha(1, new Random(1), tangle, ledgerValidator, transactionValidator, messageQ, 15, (Optional::of));
     }
 
     @Test
@@ -123,6 +130,9 @@ public class WalkerAlphaTest {
         Assert.assertTrue(counters.get(new Hash("B")) > iterations / 2);
     }
 
+
+    //TODO recreate the select scenarios w/ walk()
+
     @Test
     public void showSelectDistributionAlphaZero() {
 
@@ -158,5 +168,94 @@ public class WalkerAlphaTest {
 
         Assert.assertTrue(counters.get(new Hash("A")) > iterations / 6);
     }
+
+
+    @Test
+    public void testWalk() throws Exception {
+        //build a small tangle
+        TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
+        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction1.getHash(),
+                transaction1.getHash()), getRandomTransactionHash());
+        transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction2.getHash(),
+                transaction1.getHash()), getRandomTransactionHash());
+        transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction2.getHash(),
+                transaction3.getHash()), getRandomTransactionHash());
+        transaction.store(tangle);
+        transaction1.store(tangle);
+        transaction2.store(tangle);
+        transaction3.store(tangle);
+        transaction4.store(tangle);
+
+        //calculate rating
+        RatingCalculator ratingCalculator = new RatingOne(tangle);
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+
+        //reach the tips
+        Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
+
+        log.info("selected tip: " + tip.toString());
+        Assert.assertTrue(tip.equals(transaction4.getHash()));
+    }
+
+    @Test
+    public void testWalkDiamond() throws Exception {
+        //build a small tangle
+        TransactionViewModel transaction, transaction1, transaction2, transaction3;
+        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+                transaction.getHash()), getRandomTransactionHash());
+        transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction1.getHash(),
+                transaction2.getHash()), getRandomTransactionHash());
+        transaction.store(tangle);
+        transaction1.store(tangle);
+        transaction2.store(tangle);
+        transaction3.store(tangle);
+
+        //calculate rating
+        RatingCalculator ratingCalculator = new RatingOne(tangle);
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+
+        //reach the tips
+        Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
+
+        log.info("selected tip: " + tip.toString());
+        Assert.assertTrue(tip.equals(transaction3.getHash()));
+    }
+
+    @Test
+    public void testWalkChain() throws Exception {
+        //build a small tangle
+        TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
+        transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(
+                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
+        transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(
+                transaction1.getHash(), transaction1.getHash()), getRandomTransactionHash());
+        transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(
+                transaction2.getHash(), transaction2.getHash()), getRandomTransactionHash());
+        transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(
+                transaction3.getHash(), transaction3.getHash()), getRandomTransactionHash());
+        transaction.store(tangle);
+        transaction1.store(tangle);
+        transaction2.store(tangle);
+        transaction3.store(tangle);
+        transaction4.store(tangle);
+
+        //calculate rating
+        RatingCalculator ratingCalculator = new RatingOne(tangle);
+        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+
+        //reach the tips
+        Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
+
+        log.info("selected tip: " + tip.toString());
+        Assert.assertTrue(tip.equals(transaction4.getHash()));
+    }
+
 }
 

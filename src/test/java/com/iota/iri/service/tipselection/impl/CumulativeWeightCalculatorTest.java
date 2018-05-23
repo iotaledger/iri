@@ -1,6 +1,7 @@
 package com.iota.iri.service.tipselection.impl;
 
 
+import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
@@ -209,7 +210,7 @@ public class CumulativeWeightCalculatorTest {
                     transactionViewModel.getTrunkTransactionHash(),
                     transactionViewModel.getBranchTransactionHash()));
         }
-        Map<Hash, Set<Hash>> ratings = new HashMap<>();
+        Map<HashId, Set<HashId>> ratings = new HashMap<>();
         updateApproversRecursively(hashes[0], ratings, new HashSet<>());
         TransformingMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(hashes[0]);
 
@@ -223,8 +224,8 @@ public class CumulativeWeightCalculatorTest {
         });
     }
 
-    //TODO should delete?
-    //    @Test
+
+    // @Test
     //To be removed once CI tests are ready
     public void testUpdateRatingsTime() throws Exception {
         int max = 100001;
@@ -247,7 +248,6 @@ public class CumulativeWeightCalculatorTest {
             new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes[i - random.nextInt(i) - 1],
                     hashes[i - random.nextInt(i) - 1]), hashes[i]).store(tangle);
         }
-        Map<Hash, Long> ratings = new HashMap<>();
         long start = System.currentTimeMillis();
 
         cumulativeWeightCalculator.calculate(hashes[0]);
@@ -257,13 +257,12 @@ public class CumulativeWeightCalculatorTest {
     }
 
     //Simple recursive algorithm that maps each tx hash to its approvers' hashes
-    private static Set<Hash> updateApproversRecursively(Hash txHash, Map<Hash, Set<Hash>> txToApprovers,
-                                                        Set<Hash> analyzedTips) throws Exception {
-        Set<Hash> approvers;
+    private static Set<HashId> updateApproversRecursively(Hash txHash, Map<HashId, Set<HashId>> txToApprovers,
+                                                        Set<HashId> analyzedTips) throws Exception {
+        Set<HashId> approvers;
         if (analyzedTips.add(txHash)) {
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
             approvers = new HashSet<>(Collections.singleton(txHash));
-            Set<Hash> approverHashes = transactionViewModel.getApprovers(tangle).getHashes();
+            Set<Hash> approverHashes = ApproveeViewModel.load(tangle, txHash).getHashes();
             for (Hash approver : approverHashes) {
                 approvers.addAll(updateApproversRecursively(approver, txToApprovers, analyzedTips));
             }

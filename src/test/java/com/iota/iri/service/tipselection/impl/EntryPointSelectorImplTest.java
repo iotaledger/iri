@@ -9,7 +9,7 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.service.tipselection.EntryPoint;
+import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.zmq.MessageQ;
@@ -24,12 +24,12 @@ import org.slf4j.LoggerFactory;
 import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionHash;
 import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionWithTrunkAndBranchValidBundle;
 
-public class EntryPointImplTest {
+public class EntryPointSelectorImplTest {
 
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
-    private static EntryPoint entryPoint;
+    private static EntryPointSelector entryPointSelector;
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @AfterClass
@@ -60,7 +60,7 @@ public class EntryPointImplTest {
                 milestoneStartIndex, true);
         LedgerValidator ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
 
-        entryPoint  = new EntryPointImpl(tangle, milestone, false, milestoneStartIndex);
+        entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, false, milestoneStartIndex);
     }
 
 
@@ -76,7 +76,7 @@ public class EntryPointImplTest {
 
         //change transaction to pass validation:
         transaction.updateSolid(true);
-        Hash entryPointHash = entryPoint.getEntryPoint(10);
+        Hash entryPointHash = entryPointSelector.getEntryPoint(10);
         Assert.assertNotNull(entryPointHash);
     }
 

@@ -20,7 +20,6 @@ import java.util.stream.StreamSupport;
 
 public class WalkerAlpha implements Walker {
 
-    private final int maxDepth;
     private double alpha;
     private final Random random;
 
@@ -30,11 +29,7 @@ public class WalkerAlpha implements Walker {
 
     private final TailFinder tailFinder;
 
-    private final LedgerValidator ledgerValidator;
-    private final TransactionValidator transactionValidator;
-
-
-    public WalkerAlpha(double alpha, Random random, Tangle tangle, LedgerValidator ledgerValidator, TransactionValidator transactionValidator, MessageQ messageQ, int maxDepth, TailFinder tailFinder) {
+    public WalkerAlpha(double alpha, Random random, Tangle tangle, MessageQ messageQ, TailFinder tailFinder) {
 
         this.alpha = alpha;
         //TODO, check if random (secureRandom) is thread safe
@@ -43,10 +38,6 @@ public class WalkerAlpha implements Walker {
         this.tangle = tangle;
         this.messageQ = messageQ;
 
-        this.ledgerValidator = ledgerValidator;
-        this.transactionValidator = transactionValidator;
-
-        this.maxDepth = maxDepth;
         this.tailFinder = tailFinder;
 
     }
@@ -61,63 +52,56 @@ public class WalkerAlpha implements Walker {
 
     @Override
     public Hash walk(Hash entryPoint, Map<Hash, Integer> ratings, WalkValidator walkValidator) throws Exception {
-
-        Hash tailId;
-        Optional<Hash> nextTailId;
-        boolean tailIdisTip = false;
-        int traversedTails = 0;
-
         // check entryPoint is valid
         if (!walkValidator.isValid(entryPoint)) {
             throw new RuntimeException("entry point failed consistency check: " + entryPoint.toString());
         }
-
-        tailId = entryPoint;
-
+        
+        Optional<Hash> nextStep;
+        LinkedList<Hash> traversedTails = new LinkedList<>(Collections.singleton(entryPoint));
+        
         //Walk
-        while (!tailIdisTip) {
-            Set<Hash> approvers = ApproveeViewModel.load(tangle, tailId).getHashes();
+        do {
+            nextStep = selectApprover(traversedTails.getLast(), ratings, walkValidator);
+            nextStep.ifPresent(traversedTails::add);
+         } while (nextStep.isPresent());
+        
+        log.info("Tx traversed to find tip: " + traversedTails.size());
+        messageQ.publish("mctn %d", traversedTails.size());
 
-            nextTailId = findNextValidTail(ratings, approvers, walkValidator);
-            if (nextTailId.isPresent()) {
-                tailId = nextTailId.get();
-                traversedTails++;
-            } else {
-                //if no next step available = tip
-                tailIdisTip = true;
-            }
-        }
+        return traversedTails.getLast();
+    }
 
-        //TODO remove/rewrite "rts" log messages
-        log.debug("Reason to stop: TransactionViewModel is a tip");
-        messageQ.publish("rtst %s", tailId);
+    private Optional<Hash> selectApprover(Hash tailHash, Map<Hash, Integer> ratings, WalkValidator walkValidator) throws Exception {
+        Set<Hash> approvers = getApprovers(tailHash);
+        return findNextValidTail(ratings, approvers, walkValidator);
+    }
 
-        log.info("Tx traversed to find tip: " + traversedTails);
-        messageQ.publish("mctn %d", traversedTails);
-
-        return tailId;
+    private Set<Hash> getApprovers(Hash tailHash) throws Exception {
+        ApproveeViewModel approveeViewModel = ApproveeViewModel.load(tangle, tailHash);
+        return approveeViewModel.getHashes();
     }
 
     private Optional<Hash> findNextValidTail(Map<Hash, Integer> ratings, Set<Hash> approvers, WalkValidator walkValidator) throws Exception {
-        Optional<Hash> nextTxId;
-        Optional<Hash> nextTailId;
+        Optional<Hash> nextTailHash = Optional.empty();
 
         //select next tail to step to
-        do {
-            nextTxId = select(ratings, approvers);
-            if (!nextTxId.isPresent()) {
+        while (!nextTailHash.isPresent()) {
+            Optional<Hash> nextTxHash = select(ratings, approvers);
+            if (!nextTxHash.isPresent()) {
+                //no existing approver = tip
                 return Optional.empty();
             }
 
-            nextTailId = findTailIfValid(nextTxId.get(), walkValidator);
-            approvers.remove(nextTxId.get());
-
+            nextTailHash = findTailIfValid(nextTxHash.get(), walkValidator);
+            approvers.remove(nextTxHash.get());
             //if next tail is not valid, re-select while removing it from approvers set
-        } while (!nextTailId.isPresent());
-        return nextTailId;
+        }
+
+        return nextTailHash;
     }
 
-    Optional<Hash> select(Map<Hash, Integer> ratings, Set<Hash> approversSet) {
+    private Optional<Hash> select(Map<Hash, Integer> ratings, Set<Hash> approversSet) {
 
         if (approversSet.size() == 0) {
             return Optional.empty();
@@ -129,7 +113,6 @@ public class WalkerAlpha implements Walker {
         //calculate the probabilities
         List<Integer> walkRatings = approvers.stream().map(ratings::get).collect(Collectors.toList());
 
-        //TODO: Integer stream
         Integer maxRating = walkRatings.stream().max(Integer::compareTo).orElse(0);
         //walkRatings.stream().reduce(0, Integer::max);
 
@@ -138,7 +121,6 @@ public class WalkerAlpha implements Walker {
         List<Double> weights = normalizedWalkRatings.stream().map(w -> Math.exp(alpha * w)).collect(Collectors.toList());
 
         //select the next transaction
-        //TODO: Double stream
         Double weightsSum = weights.stream().reduce(0.0, Double::sum);
         double target = random.nextDouble() * weightsSum;
 
@@ -151,16 +133,16 @@ public class WalkerAlpha implements Walker {
         }
 
         return Optional.of(approvers.get(approverIndex));
-
     }
 
-    private Optional<Hash> findTailIfValid(Hash transactionId, WalkValidator validator) throws Exception {
-        Optional<Hash> tailId = tailFinder.findTail(transactionId);
-        if (tailId.isPresent()) {
-            if (validator.isValid(tailId.get())) {
-                return tailId;
+    private Optional<Hash> findTailIfValid(Hash transactionHash, WalkValidator validator) throws Exception {
+        Optional<Hash> tailHash = tailFinder.findTail(transactionHash);
+        if (tailHash.isPresent()) {
+            if (validator.isValid(tailHash.get())) {
+                return tailHash;
             }
         }
+
         return Optional.empty();
     }
 }

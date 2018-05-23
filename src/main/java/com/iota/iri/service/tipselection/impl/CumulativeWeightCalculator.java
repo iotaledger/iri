@@ -3,11 +3,16 @@ package com.iota.iri.service.tipselection.impl;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashId;
+import com.iota.iri.model.HashPrefix;
+import com.iota.iri.service.tipselection.impl.collections.TransformingBoundedHashSet;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.SafeUtils;
 import com.iota.iri.utils.collections.impl.KeyOptimizedMap;
 import com.iota.iri.utils.collections.impl.BoundedHashSet;
+import com.iota.iri.utils.collections.interfaces.BoundedCollection;
 import com.iota.iri.utils.collections.interfaces.BoundedSet;
-import com.iota.iri.utils.collections.interfaces.OptimizedMap;
+import com.iota.iri.utils.collections.interfaces.TransformingMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -18,6 +23,8 @@ import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
+import java.util.stream.Collectors;
 
 public class CumulativeWeightCalculator {
 
@@ -40,17 +47,11 @@ public class CumulativeWeightCalculator {
     }
 
     //See https://github.com/alongalky/iota-docs/blob/master/cumulative.md
-    OptimizedMap<Hash, Integer> calculate(Hash entryPoint) throws Exception {
+    TransformingMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
         log.info("Start calculating cw starting with tx hash {}", entryPoint);
-        log.debug("Start topological sort");
-        long start = System.currentTimeMillis();
+
         LinkedHashSet<Hash> txHashesToRate = sortTransactionsInTopologicalOrder(entryPoint);
-        log.debug("Subtangle size: {}", txHashesToRate.size());
-        log.debug("Topological sort done. Start traversing on txs in order and calculate weight");
-        OptimizedMap<Hash, Integer> cumulativeWeights = calculateCwInOrder(txHashesToRate);
-        if (log.isDebugEnabled()) {
-            log.debug("Cumulative weights calculation done in {} ms", System.currentTimeMillis() - start);
-        }
+        TransformingMap<HashId, Integer> cumulativeWeights = calculateCwInOrder(txHashesToRate);
         return cumulativeWeights;
     }
 
@@ -113,10 +114,9 @@ public class CumulativeWeightCalculator {
     }
 
     //must specify using LinkedHashSet since Java has no interface that guarantees uniqueness and insertion order
-    private OptimizedMap<Hash, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate) throws Exception {
-        OptimizedMap<Hash, Set<Buffer>> txToApproversPrefix = new KeyOptimizedMap<>(HASH_TO_PREFIX);
-        OptimizedMap<Hash, Integer> txHashToCumulativeWeight = new KeyOptimizedMap<>(txsToRate.size(),
-                HASH_TO_PREFIX);
+    private TransformingMap<HashId, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate) throws Exception {
+        TransformingMap<HashId, Set<HashId>> txToApproversPrefix = createTxToApproversPrefixMap();
+        TransformingMap<HashId, Integer> txHashToCumulativeWeight = createTxHashToCumulativeWeightTask(txsToRate.size());
 
         Iterator<Hash> txHashIterator = txsToRate.iterator();
         while (txHashIterator.hasNext()) {
@@ -129,41 +129,48 @@ public class CumulativeWeightCalculator {
     }
 
 
-    private OptimizedMap<Hash, Set<Buffer>> updateApproversAndReleaseMemory(OptimizedMap<Hash, Set<Buffer>> txHashToApprovers,
-                                                                     Hash txHash) throws Exception {
-        BoundedSet<Buffer> approvers =
-                new BoundedHashSet<>(SetUtils.emptyIfNull(txHashToApprovers.get(txHash)), MAX_ANCESTORS_SIZE);
+    private <T extends HashId> TransformingMap<HashId, Set<HashId>> updateApproversAndReleaseMemory(TransformingMap<HashId,
+            Set<HashId>> txHashToApprovers, Hash txHash) throws Exception {
+        Set<HashId> approvers = SetUtils.emptyIfNull(txHashToApprovers.get(txHash));
 
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
         Hash trunkHash = transactionViewModel.getTrunkTransactionHash();
         Hash branchHash = transactionViewModel.getBranchTransactionHash();
-        if (!approvers.isFull()) {
-            Buffer hashPrefix = HASH_TO_PREFIX.apply(txHash);
+        Set<HashId> trunkApprovers = createTransformingBoundedSet(approvers);
+        trunkApprovers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(trunkHash)));
+        trunkApprovers.add(txHash);
+        txHashToApprovers.put(trunkHash, trunkApprovers);
 
-            Set<Buffer> trunkApprovers = new BoundedHashSet<>(approvers, MAX_ANCESTORS_SIZE);
-            trunkApprovers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(trunkHash)));
-            trunkApprovers.add(hashPrefix);
-            txHashToApprovers.put(trunkHash, trunkApprovers);
+        Set<HashId> branchApprovers = createTransformingBoundedSet(approvers);
+        branchApprovers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(branchHash)));
+        branchApprovers.add(txHash);
+        txHashToApprovers.put(branchHash, branchApprovers);
 
-            Set<Buffer> branchApprovers = new BoundedHashSet<>(approvers, MAX_ANCESTORS_SIZE);
-            branchApprovers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(branchHash)));
-            branchApprovers.add(hashPrefix);
-            txHashToApprovers.put(branchHash, branchApprovers);
-        }
-        else {
-            txHashToApprovers.put(trunkHash, approvers);
-            txHashToApprovers.put(branchHash, approvers);
-        }
         txHashToApprovers.remove(txHash);
 
         return txHashToApprovers;
     }
 
-    private static OptimizedMap<Hash, Integer> updateCw(OptimizedMap<Hash, Set<Buffer>> txHashToApprovers,
-                                          OptimizedMap<Hash, Integer> txToCumulativeWeight, Hash txHash) {
-        Set<Buffer> approvers = txHashToApprovers.get(txHash);
+    private static <T extends HashId> TransformingMap<HashId, Integer> updateCw(TransformingMap<HashId, Set<T>> txHashToApprovers,
+                                                           TransformingMap<HashId, Integer> txToCumulativeWeight, Hash txHash) {
+        Set<T> approvers = txHashToApprovers.get(txHash);
         int weight = CollectionUtils.emptyIfNull(approvers).size() + 1;
         txToCumulativeWeight.put(txHash, weight);
         return txToCumulativeWeight;
     }
+
+    private static TransformingMap<HashId, Set<HashId>> createTxToApproversPrefixMap() {
+       return new KeyOptimizedMap<>(HashPrefix::createPrefix, null);
+    }
+
+    private static TransformingMap<HashId, Integer> createTxHashToCumulativeWeightTask(int size) {
+        return new KeyOptimizedMap<>(size, HashPrefix::createPrefix, null);
+    }
+
+    private static  BoundedSet<HashId> createTransformingBoundedSet(Collection<HashId> c) {
+        return new TransformingBoundedHashSet<>(c, MAX_ANCESTORS_SIZE, HashPrefix::createPrefix);
+    }
+
+
+
 }

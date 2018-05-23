@@ -3,10 +3,10 @@ package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.storage.Indexable;
+import com.iota.iri.model.HashId;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.utils.collections.interfaces.OptimizedMap;
+import com.iota.iri.utils.collections.interfaces.TransformingMap;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -62,7 +62,7 @@ public class CumulativeWeightCalculatorTest {
         transaction2.store(tangle);
         transaction3.store(tangle);
         transaction4.store(tangle);
-        OptimizedMap<Indexable, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        TransformingMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
                 1, txToCw.get(transaction4.getHash()).intValue());
@@ -92,7 +92,7 @@ public class CumulativeWeightCalculatorTest {
         transaction3.store(tangle);
         log.debug("printing transaction in diamond shape \n                      {} \n{}  {}\n                      {}",
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash());
-        OptimizedMap<Indexable, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        TransformingMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 3),
                 1, txToCw.get(transaction3.getHash())
@@ -128,7 +128,7 @@ public class CumulativeWeightCalculatorTest {
         log.info(String.format("Linear ordered hashes from tip %.4s, %.4s, %.4s, %.4s, %.4s", transaction4.getHash(),
                 transaction3.getHash(), transaction2.getHash(), transaction1.getHash(), transaction.getHash()));
 
-        OptimizedMap<Indexable, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        TransformingMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
@@ -173,7 +173,7 @@ public class CumulativeWeightCalculatorTest {
                 transaction.getHash(), transaction1.getHash(), transaction2.getHash(), transaction3.getHash(),
                 transaction4, transaction5, transaction6);
 
-        OptimizedMap<Indexable, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        TransformingMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 6),
                 1, txToCw.get(transaction6.getHash()).intValue());
@@ -211,7 +211,7 @@ public class CumulativeWeightCalculatorTest {
         }
         Map<Hash, Set<Hash>> ratings = new HashMap<>();
         updateApproversRecursively(hashes[0], ratings, new HashSet<>());
-        OptimizedMap<Indexable, Integer> txToCw = cumulativeWeightCalculator.calculate(hashes[0]);
+        TransformingMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(hashes[0]);
 
         Assert.assertEquals("missing txs from new calculation", ratings.size(), txToCw.size());
         ratings.forEach((hash, weight) -> {

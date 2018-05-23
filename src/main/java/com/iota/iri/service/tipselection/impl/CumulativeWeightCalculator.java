@@ -5,12 +5,9 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
 import com.iota.iri.model.HashPrefix;
-import com.iota.iri.service.tipselection.impl.collections.TransformingBoundedHashSet;
+import com.iota.iri.utils.collections.impl.TransformingBoundedHashSet;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.SafeUtils;
 import com.iota.iri.utils.collections.impl.KeyOptimizedMap;
-import com.iota.iri.utils.collections.impl.BoundedHashSet;
-import com.iota.iri.utils.collections.interfaces.BoundedCollection;
 import com.iota.iri.utils.collections.interfaces.BoundedSet;
 import com.iota.iri.utils.collections.interfaces.TransformingMap;
 import org.apache.commons.collections4.CollectionUtils;
@@ -19,28 +16,14 @@ import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.Buffer;
-import java.nio.ByteBuffer;
 import java.util.*;
-import java.util.function.Function;
-import java.util.function.UnaryOperator;
-import java.util.stream.Collectors;
 
 public class CumulativeWeightCalculator {
 
     private static final Logger log = LoggerFactory.getLogger(CumulativeWeightCalculator.class);
-
-    public static final int SUBHASH_LENGTH = 16;
     public static final int MAX_ANCESTORS_SIZE = 1000;
 
     public final Tangle tangle;
-    private static final Function<Hash, Buffer> HASH_TO_PREFIX = (hash) -> {
-        if (hash == null) {
-            return null;
-        }
-        return ByteBuffer.wrap(Arrays.copyOf(hash.bytes(), SUBHASH_LENGTH));
-    };
-
 
     public CumulativeWeightCalculator(Tangle tangle) {
         this.tangle = tangle;
@@ -51,8 +34,7 @@ public class CumulativeWeightCalculator {
         log.info("Start calculating cw starting with tx hash {}", entryPoint);
 
         LinkedHashSet<Hash> txHashesToRate = sortTransactionsInTopologicalOrder(entryPoint);
-        TransformingMap<HashId, Integer> cumulativeWeights = calculateCwInOrder(txHashesToRate);
-        return cumulativeWeights;
+        return calculateCwInOrder(txHashesToRate);
     }
 
     //Uses DFS algorithm to sort
@@ -115,21 +97,21 @@ public class CumulativeWeightCalculator {
 
     //must specify using LinkedHashSet since Java has no interface that guarantees uniqueness and insertion order
     private TransformingMap<HashId, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate) throws Exception {
-        TransformingMap<HashId, Set<HashId>> txToApproversPrefix = createTxToApproversPrefixMap();
-        TransformingMap<HashId, Integer> txHashToCumulativeWeight = createTxHashToCumulativeWeightTask(txsToRate.size());
+        TransformingMap<HashId, Set<HashId>> txHashToApprovers = createTxHashToApproversPrefixMap();
+        TransformingMap<HashId, Integer> txHashToCumulativeWeight = createTxHashToCumulativeWeightMap(txsToRate.size());
 
         Iterator<Hash> txHashIterator = txsToRate.iterator();
         while (txHashIterator.hasNext()) {
             Hash txHash = txHashIterator.next();
-            txHashToCumulativeWeight = updateCw(txToApproversPrefix, txHashToCumulativeWeight, txHash);
-            txToApproversPrefix = updateApproversAndReleaseMemory(txToApproversPrefix, txHash);
+            txHashToCumulativeWeight = updateCw(txHashToApprovers, txHashToCumulativeWeight, txHash);
+            txHashToApprovers = updateApproversAndReleaseMemory(txHashToApprovers, txHash);
             txHashIterator.remove();
         }
         return txHashToCumulativeWeight;
     }
 
 
-    private <T extends HashId> TransformingMap<HashId, Set<HashId>> updateApproversAndReleaseMemory(TransformingMap<HashId,
+    private TransformingMap<HashId, Set<HashId>> updateApproversAndReleaseMemory(TransformingMap<HashId,
             Set<HashId>> txHashToApprovers, Hash txHash) throws Exception {
         Set<HashId> approvers = SetUtils.emptyIfNull(txHashToApprovers.get(txHash));
 
@@ -159,11 +141,11 @@ public class CumulativeWeightCalculator {
         return txToCumulativeWeight;
     }
 
-    private static TransformingMap<HashId, Set<HashId>> createTxToApproversPrefixMap() {
+    private static TransformingMap<HashId, Set<HashId>> createTxHashToApproversPrefixMap() {
        return new KeyOptimizedMap<>(HashPrefix::createPrefix, null);
     }
 
-    private static TransformingMap<HashId, Integer> createTxHashToCumulativeWeightTask(int size) {
+    private static TransformingMap<HashId, Integer> createTxHashToCumulativeWeightMap(int size) {
         return new KeyOptimizedMap<>(size, HashPrefix::createPrefix, null);
     }
 

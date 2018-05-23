@@ -17,9 +17,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.rules.TemporaryFolder;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
@@ -117,7 +115,7 @@ public class NodeIntegrationTests {
         return () -> {
             long index = 0;
             try {
-                newMilestone(api, new Hash[]{Hash.NULL_HASH, Hash.NULL_HASH}, index++);
+                newMilestone(api, Arrays.asList(Hash.NULL_HASH, Hash.NULL_HASH), index++);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -137,10 +135,10 @@ public class NodeIntegrationTests {
     }
 
     private void sendMilestone(API api, long index) throws Exception {
-        newMilestone(api, api.getTransactionToApproveStatement(10, null, 1), index);
+        newMilestone(api, api.getTransactionToApproveStatement(Optional.empty(), 10), index);
     }
 
-    private void newMilestone(API api, Hash[] tips, long index) throws Exception {
+    private void newMilestone(API api, List<Hash> tips, long index) throws Exception {
         List<int[]> transactions = new ArrayList<>();
         transactions.add(new int[TRINARY_SIZE]);
         Converter.copyTrits(index, transactions.get(0), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE);
@@ -148,7 +146,7 @@ public class NodeIntegrationTests {
         Hash coordinator = new Hash(Configuration.TESTNET_COORDINATOR_ADDRESS);
         System.arraycopy(coordinator.trits(), 0, transactions.get(0), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         setBundleHash(transactions, null);
-        List<String> elements = api.attachToTangleStatement(tips[0], tips[1], 13, transactions.stream().map(Converter::trytes).collect(Collectors.toList()));
+        List<String> elements = api.attachToTangleStatement(tips.get(0), tips.get(0), 13, transactions.stream().map(Converter::trytes).collect(Collectors.toList()));
         api.storeTransactionStatement(elements);
         api.broadcastTransactionStatement(elements);
     }

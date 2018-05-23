@@ -1,25 +1,25 @@
 package com.iota.iri.utils.collections.impl;
 
-import com.iota.iri.utils.collections.interfaces.OptimizedMap;
+import com.iota.iri.utils.collections.interfaces.TransformingMap;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
-public class KeyOptimizedMap<K,V,T> implements OptimizedMap<K,V> {
-    private Map<T, V> delegateMap;
-    private Function<K, T> optimizationFunction;
+public class KeyOptimizedMap<K,V> implements TransformingMap<K,V> {
+    private Map<K,V> delegateMap;
+    private UnaryOperator<K> keyOptimizer;
+    private UnaryOperator<V> valueTransformer;
 
-    public KeyOptimizedMap(Function<K, T> optimizationFunction) {
-        this(16, optimizationFunction);
+    public KeyOptimizedMap(UnaryOperator<K> keyOptimizer, UnaryOperator<V> valueTransformer) {
+        this(16, keyOptimizer, valueTransformer);
     }
 
-    @SuppressWarnings("unchecked")
-    public KeyOptimizedMap(int initialCapacity, Function<K, T> optimizationFunction) {
-        this.optimizationFunction = optimizationFunction == null
-                ? (Function<K, T>) Function.identity()
-                : optimizationFunction;
+    public KeyOptimizedMap(int initialCapacity, UnaryOperator<K> keyOptimizer, UnaryOperator<V> valueTransformer) {
+        this.keyOptimizer = keyOptimizer == null ? UnaryOperator.identity() : keyOptimizer;
+        this.valueTransformer = valueTransformer == null ? UnaryOperator.identity() : valueTransformer;
 
         this.delegateMap = new HashMap<>(initialCapacity);
     }
@@ -36,7 +36,7 @@ public class KeyOptimizedMap<K,V,T> implements OptimizedMap<K,V> {
 
     @Override
     public boolean containsKey(K key) {
-        T newKey = optimizationFunction.apply(key);
+        K newKey = keyOptimizer.apply(key);
         return delegateMap.containsKey(newKey);
     }
 
@@ -46,16 +46,18 @@ public class KeyOptimizedMap<K,V,T> implements OptimizedMap<K,V> {
     }
 
 
+
     @Override
     public V get(K key) {
-        T newKey = optimizationFunction.apply(key);
+        K newKey = keyOptimizer.apply(key);
         return delegateMap.get(newKey);
     }
 
     @Override
     public V put(K key, V value) {
-        T newKey = optimizationFunction.apply(key);
-        return delegateMap.put(newKey, value);
+        key = keyOptimizer.apply(key);
+        value = valueTransformer.apply(value);
+        return delegateMap.put(key, value);
     }
 
     @Override

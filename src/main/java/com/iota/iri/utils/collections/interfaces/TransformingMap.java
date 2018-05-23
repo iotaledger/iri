@@ -13,7 +13,7 @@ import java.util.Map;
  * @param <K> The key type
  * @param <V> The value type
  */
-public interface OptimizedMap<K,V> {
+public interface TransformingMap<K,V> {
 
 
     /**

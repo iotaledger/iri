@@ -9,7 +9,7 @@ import com.iota.iri.model.Hash;
  * milestone tracking service will be required in the class calls.
  */
 
-public interface EntryPoint{
+public interface EntryPointSelector {
 
     /**
      *Entry point generator for tip selection

@@ -22,9 +22,9 @@ public interface Walker {
      *
      * @param entryPoint  Transaction ID of milestone to start walk from.
      * @param ratings  Mapped ratings associated with Transaction ID.
-     * @param maxIndex  The deepest milestone index allowed for referencing.
+     *                 //TODO add walkVal
      * @return  Transaction ID of tip.
      */
-    Collection<Hash> walk(Hash entryPoint, Map<Hash, Long> ratings, int maxIndex);
+    Hash walk(Hash entryPoint, Map<Hash, Integer> ratings,  WalkValidator walkValidator) throws Exception;
 
 }

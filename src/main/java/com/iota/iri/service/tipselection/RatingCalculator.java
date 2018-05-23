@@ -22,5 +22,5 @@ public interface RatingCalculator {
      * @return  Hash Map of cumulative ratings.
      */
 
-    Map<Hash, Long> calculate(Hash entryPoint);
+    Map<Hash, Integer> calculate(Hash entryPoint) throws Exception;
 }

@@ -77,8 +77,8 @@ public class CumulativeWeightCalculator {
         return txApp;
     }
 
-    private Collection<Hash> getTxDirectApproversHashes(Hash txHash,
-                                                        Map<Hash, Collection<Hash>> txToDirectApprovers) throws Exception {
+    private Collection<Hash> getTxDirectApproversHashes(Hash txHash, Map<Hash, Collection<Hash>> txToDirectApprovers)
+            throws Exception {
         Collection<Hash> txApprovers = txToDirectApprovers.get(txHash);
         if (txApprovers == null) {
             ApproveeViewModel approvers = ApproveeViewModel.load(tangle, txHash);
@@ -118,14 +118,10 @@ public class CumulativeWeightCalculator {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
         Hash trunkHash = transactionViewModel.getTrunkTransactionHash();
         Hash branchHash = transactionViewModel.getBranchTransactionHash();
-        Set<HashId> trunkApprovers = createTransformingBoundedSet(approvers);
-        trunkApprovers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(trunkHash)));
-        trunkApprovers.add(txHash);
-        txHashToApprovers.put(trunkHash, trunkApprovers);
 
-        Set<HashId> branchApprovers = createTransformingBoundedSet(approvers);
-        branchApprovers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(branchHash)));
-        branchApprovers.add(txHash);
+        Set<HashId> trunkApprovers = createApprovers(txHashToApprovers, txHash, approvers, trunkHash);
+        txHashToApprovers.put(trunkHash, trunkApprovers);
+        Set<HashId> branchApprovers = createApprovers(txHashToApprovers, txHash, approvers, branchHash);
         txHashToApprovers.put(branchHash, branchApprovers);
 
         txHashToApprovers.remove(txHash);
@@ -133,8 +129,17 @@ public class CumulativeWeightCalculator {
         return txHashToApprovers;
     }
 
-    private static <T extends HashId> TransformingMap<HashId, Integer> updateCw(TransformingMap<HashId, Set<T>> txHashToApprovers,
-                                                           TransformingMap<HashId, Integer> txToCumulativeWeight, Hash txHash) {
+    private Set<HashId> createApprovers(TransformingMap<HashId, Set<HashId>> txHashToApprovers, HashId txHash,
+                                        Set<HashId> approvers, HashId trunkHash) {
+        approvers = createTransformingBoundedSet(approvers);
+        approvers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(trunkHash)));
+        approvers.add(txHash);
+        return approvers;
+    }
+
+    private static <T extends HashId> TransformingMap<HashId, Integer> updateCw(
+            TransformingMap<HashId, Set<T>> txHashToApprovers, TransformingMap<HashId, Integer> txToCumulativeWeight,
+            Hash txHash) {
         Set<T> approvers = txHashToApprovers.get(txHash);
         int weight = CollectionUtils.emptyIfNull(approvers).size() + 1;
         txToCumulativeWeight.put(txHash, weight);
@@ -152,7 +157,4 @@ public class CumulativeWeightCalculator {
     private static  BoundedSet<HashId> createTransformingBoundedSet(Collection<HashId> c) {
         return new TransformingBoundedHashSet<>(c, MAX_ANCESTORS_SIZE, HashPrefix::createPrefix);
     }
-
-
-
 }

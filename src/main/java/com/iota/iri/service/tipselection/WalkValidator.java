@@ -10,6 +10,6 @@ import com.iota.iri.model.Hash;
 @FunctionalInterface
 public interface WalkValidator {
 
-    boolean isValid(Hash transactionId);
+    boolean isValid(Hash transactionId) throws Exception;
 
 }

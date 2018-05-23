@@ -9,6 +9,8 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.service.TipsManager;
+import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
@@ -40,6 +42,7 @@ public class Iota {
     public final Hash coordinator;
     public final TipsViewModel tipsViewModel;
     public final MessageQ messageQ;
+    public final TipSelector tipsSelector;
 
     public final boolean testnet;
     public final int maxPeers;
@@ -60,6 +63,8 @@ public class Iota {
         long snapshotTimestamp = configuration.longNum(Configuration.DefaultConfSettings.SNAPSHOT_TIME);
         int milestoneStartIndex = configuration.integer(Configuration.DefaultConfSettings.MILESTONE_START_INDEX);
         int numKeysMilestone = configuration.integer(Configuration.DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE);
+        double alpha = configuration.doubling(Configuration.DefaultConfSettings.TIPSELECTION_ALPHA.name());
+
         boolean dontValidateMilestoneSig = configuration.booling(Configuration.DefaultConfSettings
                 .DONT_VALIDATE_TESTNET_MILESTONE_SIG);
         int transactionPacketSize = configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE);
@@ -95,6 +100,7 @@ public class Iota {
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
         tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone,
                 maxTipSearchDepth, messageQ, testnet, milestoneStartIndex);
+        tipsSelector = new TipSelectorImpl(tangle, ledgerValidator, transactionValidator, milestone, maxTipSearchDepth, messageQ, testnet, milestoneStartIndex, alpha);
     }
 
     public void init() throws Exception {

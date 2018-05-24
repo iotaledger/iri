@@ -2,8 +2,11 @@ package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.collections.impl.KeyOptimizedMap;
+import com.iota.iri.utils.collections.interfaces.TransformingMap;
 
 import java.util.*;
 
@@ -25,10 +28,11 @@ public class RatingOne implements RatingCalculator {
      * @param entryPoint  Transaction ID of selected milestone.
      * @return  Hash Map of cumulative ratings.
      */
-    public Map<Hash, Integer> calculate(Hash entryPoint) throws Exception {
-        Map<Hash, Integer> rating = new HashMap<>();
+    public TransformingMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
+        TransformingMap<HashId, Integer> rating = new KeyOptimizedMap<>(null, null);
 
-        Queue<Hash> queue = new LinkedList<>(Collections.singleton(entryPoint));
+        Queue<Hash> queue = new LinkedList<>();
+        queue.add(entryPoint);
         rating.put(entryPoint, 1);
 
         Hash hash;

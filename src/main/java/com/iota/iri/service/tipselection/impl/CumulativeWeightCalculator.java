@@ -5,6 +5,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
 import com.iota.iri.model.HashPrefix;
+import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.utils.collections.impl.TransformingBoundedHashSet;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.collections.impl.KeyOptimizedMap;
@@ -18,7 +19,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class CumulativeWeightCalculator {
+public class CumulativeWeightCalculator implements RatingCalculator{
 
     private static final Logger log = LoggerFactory.getLogger(CumulativeWeightCalculator.class);
     public static final int MAX_ANCESTORS_SIZE = 1000;
@@ -30,7 +31,8 @@ public class CumulativeWeightCalculator {
     }
 
     //See https://github.com/alongalky/iota-docs/blob/master/cumulative.md
-    TransformingMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
+    @Override
+    public TransformingMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
         log.info("Start calculating cw starting with tx hash {}", entryPoint);
 
         LinkedHashSet<Hash> txHashesToRate = sortTransactionsInTopologicalOrder(entryPoint);

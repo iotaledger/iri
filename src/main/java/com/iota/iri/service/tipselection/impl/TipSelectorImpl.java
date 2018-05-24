@@ -28,15 +28,15 @@ public class TipSelectorImpl implements TipSelector {
     private final MessageQ messageQ;
 
     //TODO write unit tests
-    public TipSelectorImpl(final Tangle tangle,
-                           final LedgerValidator ledgerValidator,
-                           final TransactionValidator transactionValidator,
-                           final Milestone milestone,
-                           final int maxDepth,
-                           final MessageQ messageQ,
-                           final boolean testnet,
-                           final int milestoneStartIndex,
-                           final double alpha) {
+    public TipSelectorImpl(Tangle tangle,
+                           LedgerValidator ledgerValidator,
+                           TransactionValidator transactionValidator,
+                           Milestone milestone,
+                           int maxDepth,
+                           MessageQ messageQ,
+                           boolean testnet,
+                           int milestoneStartIndex,
+                           double alpha) {
 
         this.entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, testnet, milestoneStartIndex);
         //TODO used CW rating
@@ -54,23 +54,19 @@ public class TipSelectorImpl implements TipSelector {
     }
 
     @Override
-    public void init() {
-        //TODO is there a need for this?
-    }
-
-    @Override
     public List<Hash> getTransactionsToApprove(Optional<Hash> reference, int depth) throws Exception {
         try {
             milestone.latestSnapshot.rwlock.readLock().lock();
 
             //preparation
-            Hash entryPoint = entryPointSelector.getEntryPoint(10);
+            Hash entryPoint = entryPointSelector.getEntryPoint(depth);
             Map<Hash, Integer> rating = ratingCalculator.calculate(entryPoint);
 
             //random walk
             List<Hash> tips = new LinkedList<>();
             WalkValidator walkValidator = new WalkValidatorImpl(tangle, messageQ, ledgerValidator, transactionValidator, milestone, maxDepth);
-            tips.add(walker.walk(entryPoint, rating, walkValidator));
+            Hash tip = walker.walk(entryPoint, rating, walkValidator);
+            tips.add(tip);
 
             if (reference.isPresent()) {
                 checkReference(reference.get(), rating);
@@ -78,7 +74,8 @@ public class TipSelectorImpl implements TipSelector {
             }
 
             //passing the same walkValidator means that the walks will be consistent with each other
-            tips.add(walker.walk(entryPoint, rating, walkValidator));
+            tip = walker.walk(entryPoint, rating, walkValidator);
+            tips.add(tip);
 
             //validate
             if (!ledgerValidator.checkConsistency(tips)) {

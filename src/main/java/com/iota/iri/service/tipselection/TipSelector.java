@@ -25,9 +25,4 @@ public interface TipSelector {
      */
     List<Hash> getTransactionsToApprove(Optional<Hash> reference, int depth) throws Exception;
 
-    /**
-     *Initialize
-     */
-    void init();
-
 }

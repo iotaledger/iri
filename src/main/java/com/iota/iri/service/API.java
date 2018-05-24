@@ -287,7 +287,9 @@ public class API {
                     return getTipsStatement();
                 }
                 case "getTransactionsToApprove": {
-                    final Optional<Hash> reference = request.containsKey("reference") ? Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE))) : Optional.empty();
+                    final Optional<Hash> reference = request.containsKey("reference") ?
+                            Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
+                            : Optional.empty();
                     final int depth = getParameterAsInt(request, "depth");
                     if (depth < 0 || depth > instance.tipsManager.getMaxDepth()) {
                         return ErrorResponse.create("Invalid depth input");
@@ -577,13 +579,13 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
-    public synchronized List<Hash> getTransactionToApproveStatement(final Optional<Hash> reference, int depth) throws Exception {
+    public synchronized List<Hash> getTransactionToApproveStatement(Optional<Hash> reference, int depth) throws Exception {
 
         if (invalidSubtangleStatus()) {
             throw new RuntimeException("This operations cannot be executed: The subtangle has not been updated yet.");
         }
 
-        List<Hash> tips = instance.tipsSelector.getTransactionsToApprove((reference), depth);
+        List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(reference, depth);
 
         if (log.isDebugEnabled()) {
             gatherStatisticsOnTipSelection();

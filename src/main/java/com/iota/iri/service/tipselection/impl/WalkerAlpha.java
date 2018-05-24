@@ -4,10 +4,12 @@ import com.iota.iri.LedgerValidator;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.collections.interfaces.TransformingMap;
 import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,7 +48,7 @@ public class WalkerAlpha implements Walker {
     }
 
     @Override
-    public Hash walk(Hash entryPoint, Map<Hash, Integer> ratings, WalkValidator walkValidator) throws Exception {
+    public Hash walk(Hash entryPoint, TransformingMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception {
         if (!walkValidator.isValid(entryPoint)) {
             throw new RuntimeException("entry point failed consistency check: " + entryPoint.toString());
         }
@@ -67,7 +69,7 @@ public class WalkerAlpha implements Walker {
         return traversedTails.getLast();
     }
 
-    private Optional<Hash> selectApprover(Hash tailHash, Map<Hash, Integer> ratings, WalkValidator walkValidator) throws Exception {
+    private Optional<Hash> selectApprover(Hash tailHash, TransformingMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception {
         Set<Hash> approvers = getApprovers(tailHash);
         return findNextValidTail(ratings, approvers, walkValidator);
     }
@@ -77,7 +79,7 @@ public class WalkerAlpha implements Walker {
         return approveeViewModel.getHashes();
     }
 
-    private Optional<Hash> findNextValidTail(Map<Hash, Integer> ratings, Set<Hash> approvers, WalkValidator walkValidator) throws Exception {
+    private Optional<Hash> findNextValidTail(TransformingMap<HashId, Integer> ratings, Set<Hash> approvers, WalkValidator walkValidator) throws Exception {
         Optional<Hash> nextTailHash = Optional.empty();
 
         //select next tail to step to
@@ -96,7 +98,7 @@ public class WalkerAlpha implements Walker {
         return nextTailHash;
     }
 
-    private Optional<Hash> select(Map<Hash, Integer> ratings, Set<Hash> approversSet) {
+    private Optional<Hash> select(TransformingMap<HashId, Integer> ratings, Set<Hash> approversSet) {
 
         if (approversSet.size() == 0) {
             return Optional.empty();

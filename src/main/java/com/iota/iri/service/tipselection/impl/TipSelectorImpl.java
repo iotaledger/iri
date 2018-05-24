@@ -4,8 +4,10 @@ import com.iota.iri.LedgerValidator;
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.collections.interfaces.TransformingMap;
 import com.iota.iri.zmq.MessageQ;
 
 import java.security.SecureRandom;
@@ -60,7 +62,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //preparation
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
-            Map<Hash, Integer> rating = ratingCalculator.calculate(entryPoint);
+            TransformingMap<HashId, Integer> rating = ratingCalculator.calculate(entryPoint);
 
             //random walk
             List<Hash> tips = new LinkedList<>();
@@ -88,7 +90,7 @@ public class TipSelectorImpl implements TipSelector {
         }
     }
 
-    private void checkReference(Hash reference, Map<Hash, Integer> rating) {
+    private void checkReference(HashId reference, TransformingMap<HashId, Integer> rating) {
         if (!rating.containsKey(reference)) {
             throw new RuntimeException(REFERENCE_TRANSACTION_TOO_OLD);
         }

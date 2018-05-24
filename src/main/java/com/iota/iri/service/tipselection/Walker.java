@@ -22,7 +22,7 @@ public interface Walker {
      *
      * @param entryPoint  Transaction ID of milestone to start walk from.
      * @param ratings  Mapped ratings associated with Transaction ID.
-     *                 //TODO add walkVal
+     * @param walkValidator Used to validate consistency of tails.
      * @return  Transaction ID of tip.
      */
     Hash walk(Hash entryPoint, Map<Hash, Integer> ratings,  WalkValidator walkValidator) throws Exception;

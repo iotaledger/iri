@@ -48,7 +48,6 @@ public class WalkerAlphaTest {
     }
 
 
-    //TODO recreate the select scenarios w/ walk()
     @Test
     public void testWalkEndsOnlyInRating() throws Exception {
         //build a small tangle - 1,2,3,4 point to  transaction
@@ -109,11 +108,6 @@ public class WalkerAlphaTest {
         //set a higher rate for transaction2
         rating.put(transaction2.getHash(), 10);
 
-        //add 4 after the rating was calculated
-        transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
-                transaction.getHash()), getRandomTransactionHash());
-        transaction4.store(tangle);
-
         Map<Hash, Integer> counters = new HashMap<>(rating.size());
         int iterations = 10000;
 
@@ -122,7 +116,7 @@ public class WalkerAlphaTest {
             //select
             Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
-            Assert.assertTrue(tip != null);
+            Assert.assertNotNull(tip);
             counters.put(tip, 1 + counters.getOrDefault(tip, 0));
         }
 
@@ -170,7 +164,7 @@ public class WalkerAlphaTest {
             //select
             Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
-            Assert.assertTrue(tip != null);
+            Assert.assertNotNull(tip);
             counters.put(tip, 1 + counters.getOrDefault(tip, 0));
         }
 
@@ -208,7 +202,7 @@ public class WalkerAlphaTest {
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
         log.info("selected tip: " + tip.toString());
-        Assert.assertTrue(tip.equals(transaction4.getHash()));
+        Assert.assertEquals(tip, transaction4.getHash());
     }
 
     @Test
@@ -235,7 +229,7 @@ public class WalkerAlphaTest {
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
         log.info("selected tip: " + tip.toString());
-        Assert.assertTrue(tip.equals(transaction3.getHash()));
+        Assert.assertEquals(tip, transaction3.getHash());
     }
 
     @Test
@@ -265,7 +259,7 @@ public class WalkerAlphaTest {
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
 
         log.info("selected tip: " + tip.toString());
-        Assert.assertTrue(tip.equals(transaction4.getHash()));
+        Assert.assertEquals(tip, transaction4.getHash());
     }
 
 }

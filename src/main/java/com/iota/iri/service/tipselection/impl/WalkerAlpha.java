@@ -30,16 +30,11 @@ public class WalkerAlpha implements Walker {
     private final TailFinder tailFinder;
 
     public WalkerAlpha(double alpha, Random random, Tangle tangle, MessageQ messageQ, TailFinder tailFinder) {
-
         this.alpha = alpha;
-        //TODO, check if random (secureRandom) is thread safe
         this.random = random;
-
         this.tangle = tangle;
         this.messageQ = messageQ;
-
         this.tailFinder = tailFinder;
-
     }
 
     public double getAlpha() {
@@ -52,21 +47,21 @@ public class WalkerAlpha implements Walker {
 
     @Override
     public Hash walk(Hash entryPoint, Map<Hash, Integer> ratings, WalkValidator walkValidator) throws Exception {
-        // check entryPoint is valid
         if (!walkValidator.isValid(entryPoint)) {
             throw new RuntimeException("entry point failed consistency check: " + entryPoint.toString());
         }
         
         Optional<Hash> nextStep;
-        LinkedList<Hash> traversedTails = new LinkedList<>(Collections.singleton(entryPoint));
-        
+        Deque<Hash> traversedTails = new LinkedList<>();
+        traversedTails.add(entryPoint);
+
         //Walk
         do {
             nextStep = selectApprover(traversedTails.getLast(), ratings, walkValidator);
             nextStep.ifPresent(traversedTails::add);
          } while (nextStep.isPresent());
         
-        log.info("Tx traversed to find tip: " + traversedTails.size());
+        log.info("Tx traversed to find tip: {}", traversedTails.size());
         messageQ.publish("mctn %d", traversedTails.size());
 
         return traversedTails.getLast();

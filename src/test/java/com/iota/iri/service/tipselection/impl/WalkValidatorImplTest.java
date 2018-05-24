@@ -63,9 +63,8 @@ public class WalkValidatorImplTest {
     }
 
 
-    //TODO recreate the select scenarios w/ walk()
     @Test
-    public void testWalkEndsOnlyInRating() throws Exception {
+    public void shouldPassValidation() throws Exception {
         //build a small tangle - 1,2,3,4 point to  transaction
         TransactionViewModel transaction;
         transaction = new TransactionViewModel(getRandomTransactionWithTrunkAndBranchValidBundle(Hash.NULL_HASH,
@@ -76,6 +75,20 @@ public class WalkValidatorImplTest {
         //change transaction to pass validation:
         transaction.updateSolid(true);
         Assert.assertTrue(walkValidator.isValid(transaction.getHash()));
+    }
+
+    @Test
+    public void shouldFailValidation() throws Exception {
+        //build a small tangle - 1,2,3,4 point to  transaction
+        TransactionViewModel transaction;
+        transaction = new TransactionViewModel(getRandomTransactionWithTrunkAndBranchValidBundle(Hash.NULL_HASH,
+                Hash.NULL_HASH), getRandomTransactionHash());
+
+        transaction.store(tangle);
+
+        //change transaction to pass validation:
+        //transaction.updateSolid(true);
+        Assert.assertFalse(walkValidator.isValid(transaction.getHash()));
     }
 
 }

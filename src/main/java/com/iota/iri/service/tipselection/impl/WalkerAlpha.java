@@ -63,7 +63,7 @@ public class WalkerAlpha implements Walker {
             nextStep.ifPresent(traversedTails::add);
          } while (nextStep.isPresent());
         
-        log.info("Tx traversed to find tip: {}", traversedTails.size());
+        log.debug("{} tails traversed to find tip", traversedTails.size());
         messageQ.publish("mctn %d", traversedTails.size());
 
         return traversedTails.getLast();

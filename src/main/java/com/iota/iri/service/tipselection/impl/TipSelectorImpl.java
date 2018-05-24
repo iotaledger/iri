@@ -27,7 +27,6 @@ public class TipSelectorImpl implements TipSelector {
     private final TransactionValidator transactionValidator;
     private final Tangle tangle;
     private final Milestone milestone;
-    private final MessageQ messageQ;
 
     //TODO write unit tests
     public TipSelectorImpl(Tangle tangle,
@@ -41,8 +40,7 @@ public class TipSelectorImpl implements TipSelector {
                            double alpha) {
 
         this.entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, testnet, milestoneStartIndex);
-        //TODO used CW rating
-        this.ratingCalculator = new RatingOne(tangle);
+        this.ratingCalculator = new CumulativeWeightCalculator(tangle);
 
         this.walker = new WalkerAlpha(alpha, new SecureRandom(), tangle, messageQ, new TailFinderImpl(tangle));
 
@@ -52,7 +50,6 @@ public class TipSelectorImpl implements TipSelector {
         this.transactionValidator = transactionValidator;
         this.tangle = tangle;
         this.milestone = milestone;
-        this.messageQ = messageQ;
     }
 
     @Override
@@ -66,7 +63,8 @@ public class TipSelectorImpl implements TipSelector {
 
             //random walk
             List<Hash> tips = new LinkedList<>();
-            WalkValidator walkValidator = new WalkValidatorImpl(tangle, messageQ, ledgerValidator, transactionValidator, milestone, maxDepth);
+            WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestone,
+                    maxDepth);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 

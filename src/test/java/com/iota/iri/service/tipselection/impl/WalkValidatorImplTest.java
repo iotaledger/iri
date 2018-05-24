@@ -59,7 +59,7 @@ public class WalkValidatorImplTest {
                 milestoneStartIndex, true);
         LedgerValidator ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
 
-        walkValidator  = new WalkValidatorImpl(tangle, messageQ, ledgerValidator, transactionValidator, milestone, 15);
+        walkValidator  = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestone, 15);
     }
 
 

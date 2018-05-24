@@ -1,19 +1,18 @@
 package com.iota.iri.utils.collections.interfaces;
 
-import com.iota.iri.storage.Indexable;
-
 import java.util.Collection;
 import java.util.Map;
 
 
 /**
  * Similar to {@link Map} but hides key retrieval functionality.
- * This is because optimization on the keys doesn't allow us to get the original key back
+ * Thus one can't iterate over key or entries.
+ * Implementing class may transform keys to perform memory operations
  *
  * @param <K> The key type
  * @param <V> The value type
  */
-public interface TransformingMap<K,V> {
+public interface UnIterableMap<K,V> {
 
 
     /**
@@ -34,7 +33,7 @@ public interface TransformingMap<K,V> {
     /**
      * {See {@link Map#containsValue(Object)}}
      */
-    boolean containsValue(K value);
+    boolean containsValue(V value);
 
     /**
      *

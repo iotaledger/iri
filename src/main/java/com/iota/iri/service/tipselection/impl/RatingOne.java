@@ -5,8 +5,8 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.collections.impl.KeyOptimizedMap;
-import com.iota.iri.utils.collections.interfaces.TransformingMap;
+import com.iota.iri.utils.collections.impl.TransformingMap;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 import java.util.*;
 
@@ -28,8 +28,8 @@ public class RatingOne implements RatingCalculator {
      * @param entryPoint  Transaction ID of selected milestone.
      * @return  Hash Map of cumulative ratings.
      */
-    public TransformingMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
-        TransformingMap<HashId, Integer> rating = new KeyOptimizedMap<>(null, null);
+    public UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
+        UnIterableMap<HashId, Integer> rating = new TransformingMap<>(null, null);
 
         Queue<Hash> queue = new LinkedList<>();
         queue.add(entryPoint);

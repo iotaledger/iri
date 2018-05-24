@@ -2,9 +2,7 @@ package com.iota.iri.service.tipselection;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
-import com.iota.iri.utils.collections.interfaces.TransformingMap;
-
-import java.util.Map;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 /**
  * This interface is used to enforce usage of the calculate() method
@@ -25,5 +23,5 @@ public interface RatingCalculator {
      * @return  Hash Map of cumulative ratings.
      */
 
-    TransformingMap<HashId, Integer> calculate(Hash entryPoint) throws Exception;
+    UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception;
 }

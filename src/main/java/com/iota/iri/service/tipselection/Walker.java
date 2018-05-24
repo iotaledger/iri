@@ -2,10 +2,7 @@ package com.iota.iri.service.tipselection;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
-import com.iota.iri.utils.collections.interfaces.TransformingMap;
-
-import java.util.Collection;
-import java.util.Map;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 /**
  * This interface is used to enforce usage of the walk() method which
@@ -27,6 +24,6 @@ public interface Walker {
      * @param walkValidator Used to validate consistency of tails.
      * @return  Transaction ID of tip.
      */
-    Hash walk(Hash entryPoint, TransformingMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception;
+    Hash walk(Hash entryPoint, UnIterableMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception;
 
 }

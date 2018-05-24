@@ -1,23 +1,28 @@
 package com.iota.iri.utils.collections.impl;
 
-import com.iota.iri.utils.collections.interfaces.TransformingMap;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
-public class KeyOptimizedMap<K,V> implements TransformingMap<K,V> {
+/**
+ * A map that performs unary operations on key-value pairs that are inserted into it.
+ *
+ * @param <K> key type
+ * @param <V> value type
+ */
+public class TransformingMap<K,V> implements UnIterableMap<K,V> {
     private Map<K,V> delegateMap;
     private UnaryOperator<K> keyOptimizer;
     private UnaryOperator<V> valueTransformer;
 
-    public KeyOptimizedMap(UnaryOperator<K> keyOptimizer, UnaryOperator<V> valueTransformer) {
+    public TransformingMap(UnaryOperator<K> keyOptimizer, UnaryOperator<V> valueTransformer) {
         this(16, keyOptimizer, valueTransformer);
     }
 
-    public KeyOptimizedMap(int initialCapacity, UnaryOperator<K> keyOptimizer, UnaryOperator<V> valueTransformer) {
+    public TransformingMap(int initialCapacity, UnaryOperator<K> keyOptimizer, UnaryOperator<V> valueTransformer) {
         this.keyOptimizer = keyOptimizer == null ? UnaryOperator.identity() : keyOptimizer;
         this.valueTransformer = valueTransformer == null ? UnaryOperator.identity() : valueTransformer;
 
@@ -41,11 +46,9 @@ public class KeyOptimizedMap<K,V> implements TransformingMap<K,V> {
     }
 
     @Override
-    public boolean containsValue(K value) {
-        return false;
+    public boolean containsValue(V value) {
+        return delegateMap.containsValue(value);
     }
-
-
 
     @Override
     public V get(K key) {

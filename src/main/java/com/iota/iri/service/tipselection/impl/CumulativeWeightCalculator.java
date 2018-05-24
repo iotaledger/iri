@@ -8,9 +8,9 @@ import com.iota.iri.model.HashPrefix;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.utils.collections.impl.TransformingBoundedHashSet;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.collections.impl.KeyOptimizedMap;
+import com.iota.iri.utils.collections.impl.TransformingMap;
 import com.iota.iri.utils.collections.interfaces.BoundedSet;
-import com.iota.iri.utils.collections.interfaces.TransformingMap;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
 import org.apache.commons.lang3.ObjectUtils;
@@ -32,8 +32,8 @@ public class CumulativeWeightCalculator implements RatingCalculator{
 
     //See https://github.com/alongalky/iota-docs/blob/master/cumulative.md
     @Override
-    public TransformingMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
-        log.info("Start calculating cw starting with tx hash {}", entryPoint);
+    public UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
+        log.debug("Start calculating cw starting with tx hash {}", entryPoint);
 
         LinkedHashSet<Hash> txHashesToRate = sortTransactionsInTopologicalOrder(entryPoint);
         return calculateCwInOrder(txHashesToRate);
@@ -98,9 +98,9 @@ public class CumulativeWeightCalculator implements RatingCalculator{
     }
 
     //must specify using LinkedHashSet since Java has no interface that guarantees uniqueness and insertion order
-    private TransformingMap<HashId, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate) throws Exception {
-        TransformingMap<HashId, Set<HashId>> txHashToApprovers = createTxHashToApproversPrefixMap();
-        TransformingMap<HashId, Integer> txHashToCumulativeWeight = createTxHashToCumulativeWeightMap(txsToRate.size());
+    private UnIterableMap<HashId, Integer> calculateCwInOrder(LinkedHashSet<Hash> txsToRate) throws Exception {
+        UnIterableMap<HashId, Set<HashId>> txHashToApprovers = createTxHashToApproversPrefixMap();
+        UnIterableMap<HashId, Integer> txHashToCumulativeWeight = createTxHashToCumulativeWeightMap(txsToRate.size());
 
         Iterator<Hash> txHashIterator = txsToRate.iterator();
         while (txHashIterator.hasNext()) {
@@ -113,8 +113,8 @@ public class CumulativeWeightCalculator implements RatingCalculator{
     }
 
 
-    private TransformingMap<HashId, Set<HashId>> updateApproversAndReleaseMemory(TransformingMap<HashId,
-            Set<HashId>> txHashToApprovers, Hash txHash) throws Exception {
+    private UnIterableMap<HashId, Set<HashId>> updateApproversAndReleaseMemory(UnIterableMap<HashId,
+                    Set<HashId>> txHashToApprovers, Hash txHash) throws Exception {
         Set<HashId> approvers = SetUtils.emptyIfNull(txHashToApprovers.get(txHash));
 
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
@@ -131,7 +131,7 @@ public class CumulativeWeightCalculator implements RatingCalculator{
         return txHashToApprovers;
     }
 
-    private Set<HashId> createApprovers(TransformingMap<HashId, Set<HashId>> txHashToApprovers, HashId txHash,
+    private Set<HashId> createApprovers(UnIterableMap<HashId, Set<HashId>> txHashToApprovers, HashId txHash,
                                         Set<HashId> approvers, HashId trunkHash) {
         approvers = createTransformingBoundedSet(approvers);
         approvers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(trunkHash)));
@@ -139,8 +139,8 @@ public class CumulativeWeightCalculator implements RatingCalculator{
         return approvers;
     }
 
-    private static <T extends HashId> TransformingMap<HashId, Integer> updateCw(
-            TransformingMap<HashId, Set<T>> txHashToApprovers, TransformingMap<HashId, Integer> txToCumulativeWeight,
+    private static <T extends HashId> UnIterableMap<HashId, Integer> updateCw(
+            UnIterableMap<HashId, Set<T>> txHashToApprovers, UnIterableMap<HashId, Integer> txToCumulativeWeight,
             Hash txHash) {
         Set<T> approvers = txHashToApprovers.get(txHash);
         int weight = CollectionUtils.emptyIfNull(approvers).size() + 1;
@@ -148,12 +148,12 @@ public class CumulativeWeightCalculator implements RatingCalculator{
         return txToCumulativeWeight;
     }
 
-    private static TransformingMap<HashId, Set<HashId>> createTxHashToApproversPrefixMap() {
-       return new KeyOptimizedMap<>(HashPrefix::createPrefix, null);
+    private static UnIterableMap<HashId, Set<HashId>> createTxHashToApproversPrefixMap() {
+       return new TransformingMap<>(HashPrefix::createPrefix, null);
     }
 
-    private static TransformingMap<HashId, Integer> createTxHashToCumulativeWeightMap(int size) {
-        return new KeyOptimizedMap<>(size, HashPrefix::createPrefix, null);
+    private static UnIterableMap<HashId, Integer> createTxHashToCumulativeWeightMap(int size) {
+        return new TransformingMap<>(size, HashPrefix::createPrefix, null);
     }
 
     private static  BoundedSet<HashId> createTransformingBoundedSet(Collection<HashId> c) {

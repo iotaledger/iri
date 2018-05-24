@@ -5,7 +5,7 @@ import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.utils.collections.interfaces.TransformingMap;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -59,7 +59,7 @@ public class RatingOneTest {
         transaction2.store(tangle);
         transaction3.store(tangle);
         transaction4.store(tangle);
-        TransformingMap<HashId, Integer> rate = rating.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rate = rating.calculate(transaction.getHash());
 
         Assert.assertEquals(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT,
                 1, rate.get(transaction4.getHash()).intValue());

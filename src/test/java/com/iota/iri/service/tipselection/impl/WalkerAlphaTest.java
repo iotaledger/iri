@@ -111,7 +111,7 @@ public class WalkerAlphaTest {
         rating.put(transaction2.getHash(), 10);
 
         Map<Hash, Integer> counters = new HashMap<>(rating.size());
-        int iterations = 10000;
+        int iterations = 100;
 
         walker.setAlpha(0.3);
         for (int i=0; i < iterations; i++) {
@@ -159,7 +159,7 @@ public class WalkerAlphaTest {
         transaction4.store(tangle);
 
         Map<Hash, Integer> counters = new HashMap<>(rating.size());
-        int iterations = 10000;
+        int iterations = 100;
 
         walker.setAlpha(0);
         for (int i=0; i < iterations; i++) {

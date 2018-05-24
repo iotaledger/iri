@@ -53,7 +53,8 @@ public class PearlDiver {
         initializeMidCurlStates(transactionTrits, midStateLow, midStateHigh);
 
         if (numberOfThreads <= 0) {
-            numberOfThreads = Math.max(1, Math.floorDiv(numberOfThreads * 8, 10));
+            int available = Runtime.getRuntime().availableProcessors();
+            numberOfThreads = Math.max(1, Math.floorDiv(available * 8, 10));
         }
         List<Thread> workers = new ArrayList<>(numberOfThreads);
         while (numberOfThreads-- > 0) {

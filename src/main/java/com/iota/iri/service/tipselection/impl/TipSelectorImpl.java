@@ -4,8 +4,10 @@ import com.iota.iri.LedgerValidator;
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 import com.iota.iri.zmq.MessageQ;
 
 import java.security.SecureRandom;
@@ -25,7 +27,6 @@ public class TipSelectorImpl implements TipSelector {
     private final TransactionValidator transactionValidator;
     private final Tangle tangle;
     private final Milestone milestone;
-    private final MessageQ messageQ;
 
     //TODO write unit tests
     public TipSelectorImpl(Tangle tangle,
@@ -39,8 +40,7 @@ public class TipSelectorImpl implements TipSelector {
                            double alpha) {
 
         this.entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, testnet, milestoneStartIndex);
-        //TODO used CW rating
-        this.ratingCalculator = new RatingOne(tangle);
+        this.ratingCalculator = new CumulativeWeightCalculator(tangle);
 
         this.walker = new WalkerAlpha(alpha, new SecureRandom(), tangle, messageQ, new TailFinderImpl(tangle));
 
@@ -50,7 +50,6 @@ public class TipSelectorImpl implements TipSelector {
         this.transactionValidator = transactionValidator;
         this.tangle = tangle;
         this.milestone = milestone;
-        this.messageQ = messageQ;
     }
 
     @Override
@@ -60,11 +59,12 @@ public class TipSelectorImpl implements TipSelector {
 
             //preparation
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
-            Map<Hash, Integer> rating = ratingCalculator.calculate(entryPoint);
+            UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(entryPoint);
 
             //random walk
             List<Hash> tips = new LinkedList<>();
-            WalkValidator walkValidator = new WalkValidatorImpl(tangle, messageQ, ledgerValidator, transactionValidator, milestone, maxDepth);
+            WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestone,
+                    maxDepth);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 
@@ -88,7 +88,7 @@ public class TipSelectorImpl implements TipSelector {
         }
     }
 
-    private void checkReference(Hash reference, Map<Hash, Integer> rating) {
+    private void checkReference(HashId reference, UnIterableMap<HashId, Integer> rating) {
         if (!rating.containsKey(reference)) {
             throw new RuntimeException(REFERENCE_TRANSACTION_TOO_OLD);
         }

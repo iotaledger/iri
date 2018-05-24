@@ -2,9 +2,11 @@ package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 import com.iota.iri.zmq.MessageQ;
 import org.junit.AfterClass;
 import org.junit.Assert;
@@ -67,7 +69,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //add 4 after the rating was calculated
         transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
@@ -104,12 +106,12 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
         //set a higher rate for transaction2
         rating.put(transaction2.getHash(), 10);
 
         Map<Hash, Integer> counters = new HashMap<>(rating.size());
-        int iterations = 10000;
+        int iterations = 100;
 
         walker.setAlpha(0.3);
         for (int i=0; i < iterations; i++) {
@@ -147,7 +149,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
         //set a higher rate for transaction2
         rating.put(transaction2.getHash(), 10);
 
@@ -157,7 +159,7 @@ public class WalkerAlphaTest {
         transaction4.store(tangle);
 
         Map<Hash, Integer> counters = new HashMap<>(rating.size());
-        int iterations = 10000;
+        int iterations = 100;
 
         walker.setAlpha(0);
         for (int i=0; i < iterations; i++) {
@@ -196,7 +198,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
@@ -223,7 +225,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
@@ -253,7 +255,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-        Map<Hash, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));

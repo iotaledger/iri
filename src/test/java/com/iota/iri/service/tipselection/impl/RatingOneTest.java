@@ -1,20 +1,11 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.LedgerValidator;
-import com.iota.iri.Milestone;
-import com.iota.iri.Snapshot;
-import com.iota.iri.TransactionValidator;
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Hash;
-import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.service.TipsManager;
+import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.utils.IotaUtils;
-import com.iota.iri.zmq.MessageQ;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -23,14 +14,7 @@ import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.Buffer;
-import java.util.HashSet;
-import java.util.Map;
-
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionHash;
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch;
-import static org.junit.Assert.*;
+import static com.iota.iri.controllers.TransactionViewModelTest.*;
 
 public class RatingOneTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -75,7 +59,7 @@ public class RatingOneTest {
         transaction2.store(tangle);
         transaction3.store(tangle);
         transaction4.store(tangle);
-        Map<Hash, Integer> rate = rating.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rate = rating.calculate(transaction.getHash());
 
         Assert.assertEquals(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT,
                 1, rate.get(transaction4.getHash()).intValue());

@@ -16,7 +16,6 @@ import java.util.*;
 public class WalkValidatorImpl implements WalkValidator {
 
     private final Tangle tangle;
-    private final MessageQ messageQ;
     private final Logger log = LoggerFactory.getLogger(WalkValidator.class);
     private final LedgerValidator ledgerValidator;
     private final TransactionValidator transactionValidator;
@@ -28,9 +27,9 @@ public class WalkValidatorImpl implements WalkValidator {
     private Map<Hash, Long> myDiff;
     private Set<Hash> myApprovedHashes;
 
-    public WalkValidatorImpl(Tangle tangle, MessageQ messageQ, LedgerValidator ledgerValidator, TransactionValidator transactionValidator, Milestone milestone, int maxDepth) {
+    public WalkValidatorImpl(Tangle tangle, LedgerValidator ledgerValidator, TransactionValidator transactionValidator,
+                             Milestone milestone, int maxDepth) {
         this.tangle = tangle;
-        this.messageQ = messageQ;
         this.ledgerValidator = ledgerValidator;
         this.transactionValidator = transactionValidator;
         this.milestone = milestone;
@@ -42,30 +41,25 @@ public class WalkValidatorImpl implements WalkValidator {
     }
 
     @Override
-    public boolean isValid(Hash transactionId) throws Exception {
+    public boolean isValid(Hash transactionHash) throws Exception {
 
-        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, transactionId);
+        TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, transactionHash);
 
-        //TODO re-write log messages
         if (transactionViewModel.getCurrentIndex() != 0) {
-            log.debug("Reason to stop: transactionViewModel not a tail");
-            messageQ.publish("rtst %s", transactionViewModel.getHash());
+            log.debug("Validation failed: {} not a tail", transactionHash);
             return false;
         }
         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
-            log.debug("Reason to stop: transactionViewModel == null");
-            messageQ.publish("rtsn %s", transactionViewModel.getHash());
+            log.debug("Validation failed: {} is missing in db", transactionHash);
             return false;
         } else if (!transactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
-            log.debug("Reason to stop: !checkSolidity");
-            messageQ.publish("rtss %s", transactionViewModel.getHash());
+            log.debug("Validation failed: {} is not solid", transactionHash);
             return false;
         } else if (belowMaxDepth(transactionViewModel.getHash(), milestone.latestSolidSubtangleMilestoneIndex - maxDepth)) {
-            log.debug("Reason to stop: belowMaxDepth");
+            log.debug("Validation failed: {} is below max depth", transactionHash);
             return false;
         } else if (!ledgerValidator.updateDiff(myApprovedHashes, myDiff, transactionViewModel.getHash())) {
-            log.debug("Reason to stop: !LedgerValidator");
-            messageQ.publish("rtsv %s", transactionViewModel.getHash());
+            log.debug("Validation failed: {} is not consistent", transactionHash);
             return false;
         }
         return true;

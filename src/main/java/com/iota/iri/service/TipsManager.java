@@ -283,7 +283,7 @@ public class TipsManager {
             else {
                 // walk to the next approver
                 tips = tipSet.toArray(new Hash[tipSet.size()]);
-                if (!cumulativeWeights.containsKey(IotaUtils.getSubHash(tip, SUBHASH_LENGTH))) {
+                if (!cumulativeWeights.containsKey(IotaUtils.getHashPrefix(tip, SUBHASH_LENGTH))) {
                     cumulativeWeights.putAll(calculateCumulativeWeight(myApprovedHashes, tip, extraTip != null,
                             analyzedTips));
                     analyzedTips.clear();
@@ -291,10 +291,10 @@ public class TipsManager {
 
                 walkRatings = new double[tips.length];
                 double maxRating = 0;
-                ByteBuffer subHash = IotaUtils.getSubHash(tip, SUBHASH_LENGTH);
+                ByteBuffer subHash = IotaUtils.getHashPrefix(tip, SUBHASH_LENGTH);
                 long tipRating = cumulativeWeights.get(subHash);
                 for (int i = 0; i < tips.length; i++) {
-                    subHash = IotaUtils.getSubHash(tip, SUBHASH_LENGTH);
+                    subHash = IotaUtils.getHashPrefix(tip, SUBHASH_LENGTH);
                     //transition probability = ((Hx-Hy)^-3)/maxRating
                     walkRatings[i] = Math.pow(tipRating - cumulativeWeights.getOrDefault(subHash,0), -3);
                     maxRating += walkRatings[i];
@@ -435,7 +435,7 @@ public class TipsManager {
     private Map<Buffer, Set<Buffer>> updateApproversAndReleaseMemory(
             Map<Buffer, Set<Buffer>> txSubHashToApprovers,
             Hash txHash, Set<Hash> myApprovedHashes, boolean confirmLeftBehind) throws Exception {
-        ByteBuffer txSubHash = IotaUtils.getSubHash(txHash, SUBHASH_LENGTH);
+        ByteBuffer txSubHash = IotaUtils.getHashPrefix(txHash, SUBHASH_LENGTH);
         BoundedSet<Buffer> approvers =
                 new BoundedHashSet<>(SetUtils.emptyIfNull(txSubHashToApprovers.get(txSubHash)), MAX_ANCESTORS_SIZE);
 
@@ -445,9 +445,9 @@ public class TipsManager {
 
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
         Hash trunkHash = transactionViewModel.getTrunkTransactionHash();
-        Buffer trunkSubHash = IotaUtils.getSubHash(trunkHash, SUBHASH_LENGTH);
+        Buffer trunkSubHash = IotaUtils.getHashPrefix(trunkHash, SUBHASH_LENGTH);
         Hash branchHash = transactionViewModel.getBranchTransactionHash();
-        Buffer branchSubHash = IotaUtils.getSubHash(branchHash, SUBHASH_LENGTH);
+        Buffer branchSubHash = IotaUtils.getHashPrefix(branchHash, SUBHASH_LENGTH);
         if (!approvers.isFull()) {
             Set<Buffer> trunkApprovers = new BoundedHashSet<>(approvers, MAX_ANCESTORS_SIZE);
             trunkApprovers.addAll(CollectionUtils.emptyIfNull(txSubHashToApprovers.get(trunkSubHash)));
@@ -473,7 +473,7 @@ public class TipsManager {
     private Map<Buffer, Integer> updateCw(Map<Buffer, Set<Buffer>> txSubHashToApprovers,
             Map<Buffer, Integer> txToCumulativeWeight, Hash txHash,
             Set<Hash> myApprovedHashes, boolean confirmLeftBehind) {
-        ByteBuffer txSubHash = IotaUtils.getSubHash(txHash, SUBHASH_LENGTH);
+        ByteBuffer txSubHash = IotaUtils.getHashPrefix(txHash, SUBHASH_LENGTH);
         Set<Buffer> approvers = txSubHashToApprovers.get(txSubHash);
         int weight = CollectionUtils.emptyIfNull(approvers).size();
         if (shouldIncludeTransaction(txHash, myApprovedHashes, confirmLeftBehind)) {

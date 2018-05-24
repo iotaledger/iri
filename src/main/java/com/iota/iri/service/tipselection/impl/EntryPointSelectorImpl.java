@@ -17,7 +17,6 @@ public class EntryPointSelectorImpl implements EntryPointSelector {
         this.tangle = tangle;
         this.milestone = milestone;
 
-        //TODO - check if this can be removed
         this.testnet = testnet;
         this.milestoneStartIndex = milestoneStartIndex;
     }

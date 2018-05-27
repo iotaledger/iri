@@ -255,7 +255,7 @@ public class API {
                 case "getBalances": {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                     final List<String> tips = request.containsKey("tips") ?
-                            getParameterAsList(request,"tips ", HASH_SIZE):
+                            getParameterAsList(request,"tips", HASH_SIZE):
                             null;
                     final int threshold = getParameterAsInt(request, "threshold");
                     return getBalancesStatement(addresses, tips, threshold);
@@ -1177,4 +1177,3 @@ public class API {
         broadcastTransactionStatement(powResult);
     }
 }
-

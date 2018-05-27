@@ -16,18 +16,17 @@ public class TailFinderImpl implements TailFinder {
         this.tangle = tangle;
     }
 
-    //TODO rewrite
     @Override
     public Optional<Hash> findTail(Hash hash) throws Exception {
         TransactionViewModel tx = TransactionViewModel.fromHash(tangle, hash);
         final Hash bundleHash = tx.getBundleHash();
-        long index = tx.lastIndex();
-        while (index-- > 0 && tx.getBundleHash().equals(bundleHash)) {
+        long index = tx.getCurrentIndex();
+        while (index-- > 0 && bundleHash.equals(tx.getBundleHash())) {
             Set<Hash> approvees = tx.getApprovers(tangle).getHashes();
             boolean foundApprovee = false;
             for (Hash approvee : approvees) {
                 TransactionViewModel nextTx = TransactionViewModel.fromHash(tangle, approvee);
-                if (nextTx.getBundleHash().equals(bundleHash)) {
+                if (nextTx.getCurrentIndex() == index && bundleHash.equals(nextTx.getBundleHash())) {
                     tx = nextTx;
                     foundApprovee = true;
                     break;

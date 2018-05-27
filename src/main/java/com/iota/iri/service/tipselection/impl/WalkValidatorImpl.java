@@ -7,7 +7,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.Milestone;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

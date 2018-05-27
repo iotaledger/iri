@@ -28,7 +28,11 @@ public class TipSelectorImpl implements TipSelector {
     private final Tangle tangle;
     private final Milestone milestone;
 
-    //TODO write unit tests
+    @Override
+    public int getMaxDepth() {
+        return maxDepth;
+    }
+
     public TipSelectorImpl(Tangle tangle,
                            LedgerValidator ledgerValidator,
                            TransactionValidator transactionValidator,

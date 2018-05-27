@@ -291,7 +291,7 @@ public class API {
                             Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
                             : Optional.empty();
                     final int depth = getParameterAsInt(request, "depth");
-                    if (depth < 0 || depth > instance.tipsManager.getMaxDepth()) {
+                    if (depth < 0 || depth > instance.tipsSelector.getMaxDepth()) {
                         return ErrorResponse.create("Invalid depth input");
                     }
 

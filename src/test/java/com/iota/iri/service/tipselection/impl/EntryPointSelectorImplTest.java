@@ -30,7 +30,6 @@ public class EntryPointSelectorImplTest {
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
     private static EntryPointSelector entryPointSelector;
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @AfterClass
     public static void tearDown() throws Exception {
@@ -58,13 +57,11 @@ public class EntryPointSelectorImplTest {
                 Configuration.MAINNET_SNAPSHOT_FILE, Configuration.MAINNET_SNAPSHOT_SIG_FILE, false).clone(),
                 transactionValidator, false, messageQ, numOfKeysInMilestone,
                 milestoneStartIndex, true);
-        LedgerValidator ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
 
         entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, false, milestoneStartIndex);
     }
 
 
-    //TODO recreate the select scenarios w/ walk()
     @Test
     public void testEntryPoint() throws Exception {
         //build a small tangle - 1,2,3,4 point to  transaction

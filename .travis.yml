@@ -30,7 +30,7 @@ script:
   - git checkout -f dev
   - git checkout $build_head
   - git merge dev
-  - mvn integration-test
+  - mvn integration-test -Dlogging-level=INFO
   #run jar sanity tests
   - VERSION=`echo -e 'setns x=http://maven.apache.org/POM/4.0.0\ncat /x:project/x:version/text()' | xmllint --shell pom.xml | grep -v / | tr -d -` 
   - echo $VERSION
@@ -55,7 +55,7 @@ deploy:
   file: target/*.jar*
   skip_cleanup: true
   before_deploy: openssl aes-256-cbc -K $encrypted_5a15fa813cca_key -iv $encrypted_5a15fa813cca_iv -in codesigning.asc.enc -out codesigning.asc -d && gpg --fast-import codesigning.asc
-  deploy: mvn package -P build-extras
+  deploy: mvn package -P build-extras -Dlogging-level=INFO
   on:
     tags: true
     repo: iotaledger/iri

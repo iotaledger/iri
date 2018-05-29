@@ -1,6 +1,7 @@
 package com.iota.iri.model;
 
-import org.apache.commons.lang3.ArrayUtils;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.utils.Converter;
 
 import java.util.Arrays;
 
@@ -45,5 +46,19 @@ public final class HashPrefix implements HashId {
     @Override
     public int hashCode() {
         return Arrays.hashCode(bytes);
+    }
+
+    @Override
+    public String toString() {
+        return trytes() +
+                " HashPrefix{" +
+                "bytes=" + Arrays.toString(bytes) +
+                '}';
+    }
+
+    private String trytes() {
+        int[] dest = new int[Curl.HASH_LENGTH];
+        Converter.getTrits(bytes, dest);
+        return Converter.trytes(dest);
     }
 }

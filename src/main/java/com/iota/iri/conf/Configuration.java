@@ -103,7 +103,8 @@ public class Configuration {
         NUMBER_OF_KEYS_IN_A_MILESTONE,
         TRANSACTION_PACKET_SIZE,
         REQUEST_HASH_SIZE,
-        SNAPSHOT_TIME
+        SNAPSHOT_TIME,
+        TIPSELECTION_ALPHA
     }
 
 
@@ -168,6 +169,8 @@ public class Configuration {
         conf.put(DefaultConfSettings.TRANSACTION_PACKET_SIZE.name(), PACKET_SIZE);
         conf.put(DefaultConfSettings.REQUEST_HASH_SIZE.name(), REQ_HASH_SIZE);
         conf.put(DefaultConfSettings.SNAPSHOT_TIME.name(), GLOBAL_SNAPSHOT_TIME);
+        conf.put(DefaultConfSettings.TIPSELECTION_ALPHA.name(), "0.1");
+
     }
 
     public boolean init() throws IOException {

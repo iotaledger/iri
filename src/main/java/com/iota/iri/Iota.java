@@ -8,7 +8,9 @@ import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.service.TipsManager;
+import com.iota.iri.service.TipsSolidifier;
+import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
@@ -31,7 +33,7 @@ public class Iota {
     public final Milestone milestone;
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
-    public final TipsManager tipsManager;
+    public final TipsSolidifier tipsSolidifier;
     public final TransactionRequester transactionRequester;
     public final Node node;
     public final UDPReceiver udpReceiver;
@@ -40,6 +42,7 @@ public class Iota {
     public final Hash coordinator;
     public final TipsViewModel tipsViewModel;
     public final MessageQ messageQ;
+    public final TipSelector tipsSelector;
 
     public final boolean testnet;
     public final int maxPeers;
@@ -60,6 +63,8 @@ public class Iota {
         long snapshotTimestamp = configuration.longNum(Configuration.DefaultConfSettings.SNAPSHOT_TIME);
         int milestoneStartIndex = configuration.integer(Configuration.DefaultConfSettings.MILESTONE_START_INDEX);
         int numKeysMilestone = configuration.integer(Configuration.DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE);
+        double alpha = configuration.doubling(Configuration.DefaultConfSettings.TIPSELECTION_ALPHA.name());
+
         boolean dontValidateMilestoneSig = configuration.booling(Configuration.DefaultConfSettings
                 .DONT_VALIDATE_TESTNET_MILESTONE_SIG);
         int transactionPacketSize = configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE);
@@ -93,8 +98,8 @@ public class Iota {
         replicator = new Replicator(node, tcpPort, maxPeers, testnet, transactionPacketSize);
         udpReceiver = new UDPReceiver(udpPort, node, configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE));
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
-        tipsManager = new TipsManager(tangle, ledgerValidator, transactionValidator, tipsViewModel, milestone,
-                maxTipSearchDepth, messageQ, testnet, milestoneStartIndex);
+        tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
+        tipsSelector = new TipSelectorImpl(tangle, ledgerValidator, transactionValidator, milestone, maxTipSearchDepth, messageQ, testnet, milestoneStartIndex, alpha);
     }
 
     public void init() throws Exception {
@@ -113,7 +118,7 @@ public class Iota {
         }
         milestone.init(SpongeFactory.Mode.CURLP27, ledgerValidator, revalidate);
         transactionValidator.init(testnet, configuration.integer(Configuration.DefaultConfSettings.MWM));
-        tipsManager.init();
+        tipsSolidifier.init();
         transactionRequester.init(configuration.doubling(Configuration.DefaultConfSettings.P_REMOVE_REQUEST.name()));
         udpReceiver.init();
         replicator.init();
@@ -147,7 +152,7 @@ public class Iota {
 
     public void shutdown() throws Exception {
         milestone.shutDown();
-        tipsManager.shutdown();
+        tipsSolidifier.shutdown();
         node.shutdown();
         udpReceiver.shutdown();
         replicator.shutdown();

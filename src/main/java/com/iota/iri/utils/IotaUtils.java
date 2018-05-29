@@ -1,6 +1,7 @@
 package com.iota.iri.utils;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.storage.Indexable;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -14,7 +15,7 @@ public class IotaUtils {
      * @return a {@link ByteBuffer} that holds a subarray of {@link Hash#bytes()}
      * that has the specified {@code length}
      */
-    public static ByteBuffer getSubHash(Hash hash, int length) {
+    public static ByteBuffer getHashPrefix(Indexable hash, int length) {
         if (hash == null) {
             return null;
         }

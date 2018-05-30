@@ -74,7 +74,7 @@ public class API {
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
 
-    private final static long MAX_TIMESTAMP_VALUE = (3^27 - 1) / 2;
+    private final static long MAX_TIMESTAMP_VALUE = (long) (Math.pow(3, 27) - 1) / 2; // max positive 27-trits value
 
     private final int minRandomWalks;
     private final int maxRandomWalks;

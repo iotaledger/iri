@@ -50,7 +50,7 @@ public class WalkerAlpha implements Walker {
     @Override
     public Hash walk(Hash entryPoint, UnIterableMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception {
         if (!walkValidator.isValid(entryPoint)) {
-            throw new RuntimeException("entry point failed consistency check: " + entryPoint.toString());
+            throw new IllegalStateException("entry point failed consistency check: " + entryPoint.toString());
         }
         
         Optional<Hash> nextStep;
@@ -135,12 +135,9 @@ public class WalkerAlpha implements Walker {
 
     private Optional<Hash> findTailIfValid(Hash transactionHash, WalkValidator validator) throws Exception {
         Optional<Hash> tailHash = tailFinder.findTail(transactionHash);
-        if (tailHash.isPresent()) {
-            if (validator.isValid(tailHash.get())) {
+        if (tailHash.isPresent() && validator.isValid(tailHash.get())) {
                 return tailHash;
-            }
         }
-
         return Optional.empty();
     }
 }

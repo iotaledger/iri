@@ -29,7 +29,6 @@ public class WalkValidatorImplTest {
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
     private static WalkValidator walkValidator;
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @AfterClass
     public static void tearDown() throws Exception {

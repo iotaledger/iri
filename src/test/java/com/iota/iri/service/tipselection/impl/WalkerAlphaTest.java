@@ -90,7 +90,7 @@ public class WalkerAlphaTest {
     public void showWalkDistributionAlphaHalf() throws Exception {
 
         //build a small tangle - 1,2,3,4 point to  transaction
-        TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
+        TransactionViewModel transaction, transaction1, transaction2, transaction3;
         transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
         transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
                 transaction.getHash()), getRandomTransactionHash());

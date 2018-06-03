@@ -22,19 +22,22 @@ public class TransformingBoundedHashSet<E> extends BoundedHashSet<E>{
 
     @Override
     public boolean add(E e) {
-        if (!isFull()) {
-            e = transformer.apply(e);
+        if (isFull()) {
+            return false;
         }
-        return super.add(e);
+
+        E el = transformer.apply(e);
+        return super.add(el);
     }
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
+        Collection<? extends E> col = c;
         if (!isFull()) {
-            c = c.stream()
+            col = c.stream()
                     .map(el -> transformer.apply(el))
                     .collect(Collectors.toSet());
         }
-        return super.addAll(c);
+        return super.addAll(col);
     }
 }

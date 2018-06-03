@@ -10,6 +10,7 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 import com.iota.iri.zmq.MessageQ;
 
+import java.security.InvalidAlgorithmParameterException;
 import java.security.SecureRandom;
 import java.util.*;
 
@@ -104,7 +105,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //validate
             if (!ledgerValidator.checkConsistency(tips)) {
-                throw new RuntimeException(TIPS_NOT_CONSISTENT);
+                throw new IllegalStateException(TIPS_NOT_CONSISTENT);
             }
 
             return tips;
@@ -113,11 +114,10 @@ public class TipSelectorImpl implements TipSelector {
         }
     }
 
-    private void checkReference(HashId reference, UnIterableMap<HashId, Integer> rating) {
+    private void checkReference(HashId reference, UnIterableMap<HashId, Integer> rating)
+            throws InvalidAlgorithmParameterException {
         if (!rating.containsKey(reference)) {
-            throw new RuntimeException(REFERENCE_TRANSACTION_TOO_OLD);
+            throw new InvalidAlgorithmParameterException(REFERENCE_TRANSACTION_TOO_OLD);
         }
     }
-
-
 }

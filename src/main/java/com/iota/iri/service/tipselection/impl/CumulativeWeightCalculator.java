@@ -28,7 +28,7 @@ import java.util.*;
 public class CumulativeWeightCalculator implements RatingCalculator{
 
     private static final Logger log = LoggerFactory.getLogger(CumulativeWeightCalculator.class);
-    public static final int MAX_ANCESTORS_SIZE = 5000;
+    public static final int MAX_FUTURE_SET_SIZE = 5000;
 
     public final Tangle tangle;
 
@@ -132,10 +132,10 @@ public class CumulativeWeightCalculator implements RatingCalculator{
 
     private Set<HashId> createApprovers(UnIterableMap<HashId, Set<HashId>> txHashToApprovers, HashId txHash,
                                         Set<HashId> approvers, HashId trunkHash) {
-        approvers = createTransformingBoundedSet(approvers);
-        approvers.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(trunkHash)));
-        approvers.add(txHash);
-        return approvers;
+        Set<HashId> approverSet = createTransformingBoundedSet(approvers);
+        approverSet.addAll(CollectionUtils.emptyIfNull(txHashToApprovers.get(trunkHash)));
+        approverSet.add(txHash);
+        return approverSet;
     }
 
     private static <T extends HashId> UnIterableMap<HashId, Integer> updateCw(
@@ -156,6 +156,6 @@ public class CumulativeWeightCalculator implements RatingCalculator{
     }
 
     private static  BoundedSet<HashId> createTransformingBoundedSet(Collection<HashId> c) {
-        return new TransformingBoundedHashSet<>(c, MAX_ANCESTORS_SIZE, HashPrefix::createPrefix);
+        return new TransformingBoundedHashSet<>(c, MAX_FUTURE_SET_SIZE, HashPrefix::createPrefix);
     }
 }

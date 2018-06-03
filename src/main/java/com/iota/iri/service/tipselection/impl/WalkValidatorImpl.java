@@ -91,10 +91,7 @@ public class WalkValidatorImpl implements WalkValidator {
                     return true;
                 }
                 if (transaction.snapshotIndex() == 0) {
-                    if (maxDepthOkMemoization.contains(hash)) {
-                        //log.info("Memoization!");
-                    }
-                    else {
+                    if (!maxDepthOkMemoization.contains(hash)) {
                         nonAnalyzedTransactions.offer(transaction.getTrunkTransactionHash());
                         nonAnalyzedTransactions.offer(transaction.getBranchTransactionHash());
                     }

@@ -23,7 +23,6 @@ public class RatingOneTest {
             "tx%d cumulative weight is not as expected";
     private static Tangle tangle;
     private static RatingCalculator rating;
-    private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     @AfterClass
     public static void tearDown() throws Exception {

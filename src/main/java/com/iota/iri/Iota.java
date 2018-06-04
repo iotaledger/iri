@@ -1,7 +1,8 @@
 package com.iota.iri;
 
 import com.iota.iri.conf.Configuration;
-import com.iota.iri.controllers.*;
+import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
@@ -9,8 +10,8 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.service.TipsSolidifier;
-import com.iota.iri.service.tipselection.TipSelector;
-import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
+import com.iota.iri.service.tipselection.*;
+import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
@@ -21,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 import java.util.List;
 
 /**
@@ -99,7 +101,7 @@ public class Iota {
         udpReceiver = new UDPReceiver(udpPort, node, configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE));
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
-        tipsSelector = new TipSelectorImpl(tangle, ledgerValidator, transactionValidator, milestone, maxTipSearchDepth, messageQ, testnet, milestoneStartIndex, alpha);
+        tipsSelector = createTipSelector(milestoneStartIndex, alpha);
     }
 
     public void init() throws Exception {
@@ -194,5 +196,14 @@ public class Iota {
         if (configuration.booling(Configuration.DefaultConfSettings.ZMQ_ENABLED)) {
             tangle.addPersistenceProvider(new ZmqPublishProvider(messageQ));
         }
+    }
+
+    private TipSelector createTipSelector(int milestoneStartIndex, double alpha) {
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, testnet, milestoneStartIndex);
+        RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
+        TailFinder tailFinder = new TailFinderImpl(tangle);
+        Walker walker = new WalkerAlpha(alpha, new SecureRandom(), tangle, messageQ, tailFinder);
+        return new TipSelectorImpl(tangle, ledgerValidator, transactionValidator, entryPointSelector, ratingCalculator,
+                walker, milestone, maxTipSearchDepth);
     }
 }

@@ -9,6 +9,7 @@ import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.controllers.TransactionViewModel;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -67,6 +68,19 @@ public class TangleTest {
         transactionViewModel.store(tangle);
         Set<Indexable> tag = tangle.keysStartingWith(Transaction.class, Arrays.copyOf(transactionViewModel.getTagValue().bytes(), 15));
         //Assert.assertNotEquals(tag.length, 0);
+    }
+
+    @Test
+    public void saveTxsWithColludingHashes() throws Exception {
+        int[] trits = getRandomTransactionTrits();
+        Hash hash = Hash.calculate(SpongeFactory.Mode.CURLP81, trits);
+        TransactionViewModel goodTx = new TransactionViewModel(trits,hash);
+        goodTx.store(tangle);
+        TransactionViewModel colludingTx = new TransactionViewModel(getRandomTransactionTrits(), hash);
+        colludingTx.store(tangle);
+
+        Transaction loadedTx = (Transaction) tangle.load(Transaction.class, hash);
+        Assert.assertArrayEquals("The tx in the db is malicious", loadedTx.bytes, goodTx.getBytes());
     }
 
     @Test

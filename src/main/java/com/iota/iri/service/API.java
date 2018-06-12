@@ -295,7 +295,7 @@ public class API {
                     }
 
                     try {
-                        final List<Hash> tips = getTransactionToApproveStatement(depth, reference);
+                        List<Hash> tips = getTransactionToApproveStatement(depth, reference);
                         return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
 
                     } catch (RuntimeException e) {
@@ -581,7 +581,7 @@ public class API {
     public synchronized List<Hash> getTransactionToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
 
         if (invalidSubtangleStatus()) {
-            throw new RuntimeException("This operations cannot be executed: The subtangle has not been updated yet.");
+            throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
         }
 
         List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(depth, reference);

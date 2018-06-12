@@ -42,17 +42,16 @@ public class TipSelectorImpl implements TipSelector {
     public TipSelectorImpl(Tangle tangle,
                            LedgerValidator ledgerValidator,
                            TransactionValidator transactionValidator,
+                           EntryPointSelector entryPointSelector,
+                           RatingCalculator ratingCalculator,
+                           Walker walkerAlpha,
                            Milestone milestone,
-                           int maxDepth,
-                           MessageQ messageQ,
-                           boolean testnet,
-                           int milestoneStartIndex,
-                           double alpha) {
+                           int maxDepth) {
 
-        this.entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, testnet, milestoneStartIndex);
-        this.ratingCalculator = new CumulativeWeightCalculator(tangle);
+        this.entryPointSelector = entryPointSelector;
+        this.ratingCalculator = ratingCalculator;
 
-        this.walker = new WalkerAlpha(alpha, new SecureRandom(), tangle, messageQ, new TailFinderImpl(tangle));
+        this.walker = walkerAlpha;
 
         //used by walkValidator
         this.maxDepth = maxDepth;

@@ -3,8 +3,8 @@ package com.iota.iri.service;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iota.iri.*;
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.ConfigurationOld;
+import com.iota.iri.conf.APIConfig;
+import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TagViewModel;
@@ -77,8 +77,6 @@ public class API {
 
     private final static long MAX_TIMESTAMP_VALUE = (long) (Math.pow(3, 27) - 1) / 2; // max positive 27-trits value
 
-    private final int minRandomWalks;
-    private final int maxRandomWalks;
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
@@ -97,15 +95,13 @@ public class API {
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
         this.ixi = ixi;
-        Configuration configuration = instance.configuration;
-        minRandomWalks = configuration.getMinRandomWalks();
-        maxRandomWalks = configuration.getMaxRandomWalks();
+        APIConfig configuration = instance.configuration;
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestList();
         maxGetTrytes = configuration.getMaxGetTrytes();
         maxBodyLength = configuration.getMaxBodyLength();
         testNet = configuration.isTestnet();
-        milestoneStartIndex = configuration.getMilestoneStartIndex();
+        milestoneStartIndex = ((ConsensusConfig) configuration).getMilestoneStartIndex();
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
     }
@@ -113,7 +109,7 @@ public class API {
     public void init() throws IOException {
         readPreviousEpochsSpentAddresses(testNet);
 
-        Configuration configuration = instance.configuration;
+        APIConfig configuration = instance.configuration;
         final int apiPort = configuration.getPort();
         final String apiHost = configuration.getApiHost();
 
@@ -151,14 +147,16 @@ public class API {
         if (isTestnet) {
             return;
         }
+        String previousEpochSpentAddressesFile = instance.configuration.getPreviousEpochSpentAddressesFile();
+        String previousEpochSpentAddressesSigFile = instance.configuration.getPreviousEpochSpentAddressesSigFile();
 
-        if (!SignedFiles.isFileSignatureValid(ConfigurationOld.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT,
-                ConfigurationOld.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
+        if (!SignedFiles.isFileSignatureValid(previousEpochSpentAddressesFile,
+                previousEpochSpentAddressesSigFile,
                 Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
             throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
         }
 
-        InputStream in = Snapshot.class.getResourceAsStream(ConfigurationOld.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT);
+        InputStream in = Snapshot.class.getResourceAsStream(previousEpochSpentAddressesFile);
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
         try {

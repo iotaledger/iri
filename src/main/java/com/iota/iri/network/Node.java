@@ -2,7 +2,8 @@ package com.iota.iri.network;
 
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
-import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.NodeConfig;
+import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
@@ -38,7 +39,6 @@ public class Node {
     private int RECV_QUEUE_SIZE;
     private int REPLY_QUEUE_SIZE;
     private static final int PAUSE_BETWEEN_TRANSACTIONS = 1;
-    private static double P_SELECT_MILESTONE;
 
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
@@ -52,7 +52,7 @@ public class Node {
     private final DatagramPacket tipRequestingPacket;
 
     private final ExecutorService executor = Executors.newFixedThreadPool(5);
-    private final Configuration configuration;
+    private final NodeConfig configuration;
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
     private final TransactionValidator transactionValidator;
@@ -65,7 +65,6 @@ public class Node {
 
     private FIFOCache<ByteBuffer, Hash> recentSeenBytes;
 
-    private boolean debug;
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
     private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);
 
@@ -76,7 +75,7 @@ public class Node {
     public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
     private DatagramSocket udpSocket;
 
-    public Node(final Configuration configuration,
+    public Node(final NodeConfig configuration,
                 final Tangle tangle,
                 final TransactionValidator transactionValidator,
                 final TransactionRequester transactionRequester,
@@ -102,8 +101,6 @@ public class Node {
 
         //TODO ask Alon
         sendLimit = (long) ((configuration.getSendLimit() * 1000000) / (configuration.getTransactionPacketSize() * 8));
-
-        debug = configuration.isDebug();
 
         BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.getQSizeNode();
         recentSeenBytes = new FIFOCache<>(configuration.getCacheSizeBytes(), configuration.getPDropCacheEntry());
@@ -286,7 +283,7 @@ public class Node {
 
                 //recentSeenBytes statistics
 
-                if (debug) {
+                if (log.isDebugEnabled()) {
                     long hitCount, missCount;
                     if (cached) {
                         hitCount = recentSeenBytesHitCount.incrementAndGet();
@@ -473,7 +470,7 @@ public class Node {
 
         synchronized (sendingPacket) {
             System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-            Hash hash = transactionRequester.transactionToRequest(rnd.nextDouble() < P_SELECT_MILESTONE);
+            Hash hash = transactionRequester.transactionToRequest(rnd.nextDouble() < configuration.getpSelectMilestoneChild());
             System.arraycopy(hash != null ? hash.bytes() : transactionViewModel.getHash().bytes(), 0,
                     sendingPacket.getData(), TransactionViewModel.SIZE, reqHashSize);
             neighbor.send(sendingPacket);

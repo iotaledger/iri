@@ -8,13 +8,16 @@ import java.net.SocketAddress;
 import java.util.List;
 import java.util.zip.CRC32;
 
+import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.conf.NodeConfig;
+import com.iota.iri.conf.TestnetConfig;
 import com.iota.iri.network.TCPNeighbor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.network.Neighbor;
-import com.iota.iri.conf.ConfigurationOld;
 import com.iota.iri.network.Node;
+import sun.applet.Main;
 
 class ReplicatorSourceProcessor implements Runnable {
 
@@ -44,8 +47,8 @@ class ReplicatorSourceProcessor implements Runnable {
         this.testnet = testnet;
         this.replicatorSinkPool = replicatorSinkPool;
         this.packetSize = testnet
-                ? Integer.parseInt(ConfigurationOld.TESTNET_PACKET_SIZE)
-                : Integer.parseInt(ConfigurationOld.PACKET_SIZE);
+                ? TestnetConfig.Defaults.PACKET_SIZE
+                : MainnetConfig.Defaults.PACKET_SIZE;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
@@ -43,12 +44,12 @@ public class TransactionValidator {
     private final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
 
     public TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester,
-                                MessageQ messageQ, long snapshotTimestamp) {
+                                MessageQ messageQ, SnapshotConfig config) {
         this.tangle = tangle;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
         this.messageQ = messageQ;
-        TransactionValidator.snapshotTimestamp = snapshotTimestamp;
+        TransactionValidator.snapshotTimestamp = config.getSnapshotTime();
         TransactionValidator.snapshotTimestampMs = snapshotTimestamp * 1000;
     }
 

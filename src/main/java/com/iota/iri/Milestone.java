@@ -1,6 +1,7 @@
 package com.iota.iri;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
@@ -14,6 +15,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.net.ssl.HttpsURLConnection;
 
+import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.*;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.zmq.MessageQ;
@@ -55,33 +57,31 @@ public class Milestone {
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
 
-    public Milestone(final Tangle tangle,
-                     final Hash coordinator,
-                     final Snapshot initialSnapshot,
-                     final TransactionValidator transactionValidator,
-                     final boolean testnet,
-                     final MessageQ messageQ,
-                     final int numOfKeysInMilestone,
-                     final int milestoneStartIndex,
-                     final boolean acceptAnyTestnetCoo
+    public Milestone(Tangle tangle,
+                     TransactionValidator transactionValidator,
+                     MessageQ messageQ,
+                     ConsensusConfig config,
+                     Snapshot initialSnapshot
                      ) {
         this.tangle = tangle;
-        this.coordinator = coordinator;
-        this.latestSnapshot = initialSnapshot;
         this.transactionValidator = transactionValidator;
-        this.testnet = testnet;
         this.messageQ = messageQ;
-        this.numOfKeysInMilestone = numOfKeysInMilestone;
-        this.milestoneStartIndex = milestoneStartIndex;
+        this.latestSnapshot = initialSnapshot;
+
+        //configure
+        this.testnet = config.isTestnet();
+        this.coordinator = new Hash(config.getCoordinator());
+        this.numOfKeysInMilestone = config.getNumberOfKeysInMilestone();
+        this.milestoneStartIndex = config.getMilestoneStartIndex();
         this.latestMilestoneIndex = milestoneStartIndex;
         this.latestSolidSubtangleMilestoneIndex = milestoneStartIndex;
-        this.acceptAnyTestnetCoo = acceptAnyTestnetCoo;
+        this.acceptAnyTestnetCoo = !config.isValidateTestnetMilestoneSig();
     }
 
     private boolean shuttingDown;
     private static int RESCAN_INTERVAL = 5000;
 
-    public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) throws Exception {
+    public void init (SpongeFactory.Mode mode, LedgerValidator ledgerValidator) {
         this.ledgerValidator = ledgerValidator;
         AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
         (new Thread(() -> {
@@ -177,6 +177,10 @@ public class Milestone {
         }, "Solid Milestone Tracker")).start();
 
 
+    }
+
+    public int getMilestoneStartIndex() {
+        return milestoneStartIndex;
     }
 
     private Validity validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {

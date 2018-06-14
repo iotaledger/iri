@@ -5,7 +5,10 @@ import com.google.gson.GsonBuilder;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
-import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.ConfigUtils;
+import com.iota.iri.conf.IXIConfig;
+import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.conf.TestnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
@@ -60,7 +63,7 @@ public class APIIntegrationTests {
     private static Iota iota;
     private static API api;
     private static IXI ixi;
-    private static Configuration configuration;
+    private static IotaConfig configuration;
     private static Logger log = LoggerFactory.getLogger(APIIntegrationTests.class);
 
 
@@ -69,17 +72,15 @@ public class APIIntegrationTests {
         if (spawnNode) {
             //configure node parameters
             log.info("IRI integration tests - initializing node.");
-            configuration = new Configuration();
-            String[] args = {"-p", portStr};
-            configuration.put(Configuration.DefaultConfSettings.TESTNET, "true");
-            IRI.validateParams(configuration, args);
             TemporaryFolder dbFolder = new TemporaryFolder();
-            TemporaryFolder logFolder = new TemporaryFolder();
             dbFolder.create();
+            TemporaryFolder logFolder = new TemporaryFolder();
             logFolder.create();
-            configuration.put(Configuration.DefaultConfSettings.DB_PATH.name(), logFolder.getRoot().getAbsolutePath());
-            configuration.put(Configuration.DefaultConfSettings.DB_LOG_PATH.name(), logFolder.getRoot().getAbsolutePath());
-            configuration.put(Configuration.DefaultConfSettings.MWM, "1");
+
+            configuration = ConfigUtils.createIotaConfig(true);
+            String[] args = {"-p", portStr, "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
+            logFolder.getRoot().getAbsolutePath(), "--mwm", "1"};
+            configuration = ConfigUtils.parseFromArgs(args, configuration);
 
             //create node
             iota = new Iota(configuration);
@@ -90,7 +91,7 @@ public class APIIntegrationTests {
             try {
                 iota.init();
                 api.init();
-                ixi.init(configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
+                ixi.init(IXIConfig.IXI_DIR);
             } catch (final Exception e) {
                 log.error("Exception during IOTA node initialisation: ", e);
                 fail("Exception during IOTA node initialisation");
@@ -369,7 +370,7 @@ public class APIIntegrationTests {
         request.put("trytes", TRYTES);
         request.put("trunkTransaction", NULL_HASH);
         request.put("branchTransaction", NULL_HASH);
-        request.put("minWeightMagnitude", configuration.integer(Configuration.DefaultConfSettings.MWM));
+        request.put("minWeightMagnitude", configuration.getMinimumWeightMagnitude());
 
         given().
                 body(gson().toJson(request)).
@@ -391,7 +392,7 @@ public class APIIntegrationTests {
         request.put("trytes", trytesArray);
         request.put("trunkTransaction", branch);
         request.put("branchTransaction", trunk);
-        request.put("minWeightMagnitude", configuration.integer(Configuration.DefaultConfSettings.MWM));
+        request.put("minWeightMagnitude", configuration.getMinimumWeightMagnitude());
 
         Response response = given().
                 body(gson().toJson(request)).

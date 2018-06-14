@@ -1,6 +1,7 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
@@ -14,6 +15,7 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mockito;
 
 import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
 import static org.junit.Assert.assertEquals;
@@ -39,10 +41,9 @@ public class TransactionValidatorTest {
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
-    MessageQ messageQ = new MessageQ(0, "", 0, false);
+    MessageQ messageQ = Mockito.mock(MessageQ.class);
     TransactionRequester txRequester = new TransactionRequester(tangle, messageQ);
-    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ,
-            Long.parseLong(Configuration.GLOBAL_SNAPSHOT_TIME));
+    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ, new MainnetConfig());
     txValidator.init(false, MAINNET_MWM);
   }
 

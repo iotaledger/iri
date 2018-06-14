@@ -1,10 +1,11 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.conf.ProtocolConfig;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
@@ -331,7 +332,8 @@ public class TransactionViewModelTest {
         TransactionViewModel transactionViewModelNoSave = new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURLP81, trits));
         transactionViewModel.store(tangle);
         Hash hash = transactionViewModelNoSave.getHash();
-        Assert.assertFalse(Arrays.equals(TransactionViewModel.find(tangle, Arrays.copyOf(hash.bytes(), Integer.parseInt(Configuration.REQ_HASH_SIZE))).getBytes(), transactionViewModel.getBytes()));
+        Assert.assertFalse(Arrays.equals(TransactionViewModel.find(tangle,
+                Arrays.copyOf(hash.bytes(), new MainnetConfig().getRequestHashSize())).getBytes(), transactionViewModel.getBytes()));
     }
 
     //@Test

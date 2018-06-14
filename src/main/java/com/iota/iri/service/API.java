@@ -199,9 +199,17 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            if (instance.configuration.string(DefaultConfSettings.REMOTE_LIMIT_API).contains(command) &&
-                    !sourceAddress.getAddress().isLoopbackAddress()) {
-                return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+            final String commandMode = instance.configuration.string(DefaultConfSettings.REMOTE_LIMIT_API_MODE);
+            final Boolean commandModeInclude = ((commandMode != null) && commandMode.toLowerCase().contains("include")) ? true : false;
+            final Boolean commandFound = instance.configuration.string(DefaultConfSettings.REMOTE_LIMIT_API).contains(command);
+
+            if (!sourceAddress.getAddress().isLoopbackAddress()) {
+                if(commandFound && !commandModeInclude) {
+                    return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+                }
+                if(!commandFound && commandModeInclude) {
+                    return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+                }
             }
 
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);

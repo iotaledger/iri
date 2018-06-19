@@ -43,6 +43,10 @@ script:
   - cp -rf ../target iri/target
   - bash run_all_stable_tests.sh $VERSION
   - cd ..
+  #print sha256sums of jar files - for manual releases
+  - cd target
+  - sha256sum *.jar*
+  - cd ..
 
 after_success:
   #codacy-coverage send report. Uses Travis Env variable (CODACY_PROJECT_TOKEN)

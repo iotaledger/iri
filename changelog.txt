@@ -1,3 +1,18 @@
+1.5.0
+    - Rework of the Tip Selection algorithm (#778)
+    - Validate the alpha value (#817)
+    - TipSelection: update API reference (#773)
+    - Inserted check for number of available processors. (#758)
+    - Improved Docker support (#744)
+    - Faster PearlDiver (PoW) (#733)
+    - Kerl hashing speed improvement (#628)
+    - Logging routing rework (#727)
+
+    Minor changes and fixes
+    - Fixed `attachmentTimestampUpperBound` value (#777)
+    - Fixed `getBalances` `tips` parameter parsing (#776)
+    - Added hash to `tx_trytes` ZMQ topic (#739)
+
 1.4.2.4
     - Tag indexing (#728)
     - TCP networking issues fixed (#592)

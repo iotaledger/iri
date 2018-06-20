@@ -95,7 +95,8 @@ public class ZmqPublishProvider implements PersistenceProvider {
 
         try {
             txTrytesStringBuilder.append("tx_trytes ");
-            txTrytesStringBuilder.append(Converter.trytes(transactionViewModel.trits()));
+            txTrytesStringBuilder.append(Converter.trytes(transactionViewModel.trits())); txTrytesStringBuilder.append(" ");
+            txTrytesStringBuilder.append(transactionViewModel.getHash());
 
             messageQ.publish(txTrytesStringBuilder.toString());
         } catch (Exception e) {

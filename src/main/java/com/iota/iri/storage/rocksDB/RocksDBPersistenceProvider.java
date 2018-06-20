@@ -4,8 +4,8 @@ import com.iota.iri.model.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
+import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.Pair;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
 import org.rocksdb.util.SizeUnit;
@@ -104,9 +104,9 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     @Override
     public void shutdown() {
         for (final ColumnFamilyHandle columnFamilyHandle : columnFamilyHandles) {
-            IOUtils.closeQuietly(columnFamilyHandle::close);
+            IotaIOUtils.closeQuietly(columnFamilyHandle);
         }
-        IOUtils.closeQuietly(db::close, options::close, bloomFilter::close);
+        IotaIOUtils.closeQuietly(db, options, bloomFilter);
     }
 
     @Override
@@ -455,7 +455,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             fillModelColumnHandles();
 
         } catch (Exception e) {
-            IOUtils.closeQuietly(db::close);
+            log.error("Error while initializing RocksDb", e);
+            IotaIOUtils.closeQuietly(db);
         }
     }
 

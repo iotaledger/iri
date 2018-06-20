@@ -3,34 +3,43 @@ package com.iota.iri;
 import com.iota.iri.conf.Configuration;
 import com.iota.iri.model.Hash;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
 
-/**
- * Created by paul on 4/12/17.
- */
 public class SnapshotTest {
 
-    private static final Snapshot initSnapshot = Snapshot.init(Configuration.MAINNET_SNAPSHOT_FILE,
-            Configuration.MAINNET_SNAPSHOT_SIG_FILE, false);
+    private static Snapshot initSnapshot;
+
+    @BeforeClass
+    public static void beforeClass() {
+        try {
+            initSnapshot = Snapshot.init(Configuration.MAINNET_SNAPSHOT_FILE,
+                Configuration.MAINNET_SNAPSHOT_SIG_FILE, false);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Problem initiating snapshot", e);
+        }
+    }
 
     @Test
-    public void getState() throws Exception {
+    public void getState() {
         //Assert.assertTrue(latestSnapshot.getState().equals(Snapshot.initialState));
     }
 
     @Test
-    public void isConsistent() throws Exception {
+    public void isConsistent() {
         Assert.assertTrue("Initial confirmed should be consistent", Snapshot.isConsistent(initSnapshot.state));
     }
 
     @Test
-    public void patch() throws Exception {
+    public void patch() {
         Map.Entry<Hash, Long> firstOne = initSnapshot.state.entrySet().iterator().next();
         Hash someHash = new Hash("PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS");
         Map<Hash, Long> diff = new HashMap<>();
@@ -41,7 +50,7 @@ public class SnapshotTest {
     }
 
     @Test
-    public void applyShouldFail() throws Exception {
+    public void applyShouldFail() {
         Snapshot latestSnapshot = initSnapshot.clone();
         Map<Hash, Long> badMap = new HashMap<>();
         badMap.put(new Hash("PSRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), 100L);

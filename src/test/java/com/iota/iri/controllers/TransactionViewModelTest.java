@@ -1,6 +1,7 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.conf.Configuration;
+import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
@@ -406,6 +407,30 @@ public class TransactionViewModelTest {
                 TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branch.trits(), 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
                 TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
+        return trits;
+    }
+    public static int[] getRandomTransactionWithTrunkAndBranchValidBundle(Hash trunk, Hash branch) {
+        int[] trits = getRandomTransactionTrits();
+        System.arraycopy(trunk.trits(), 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
+                TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
+        System.arraycopy(branch.trits(), 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
+                TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
+        System.arraycopy(Hash.NULL_HASH.trits(), 0, trits, TransactionViewModel.CURRENT_INDEX_TRINARY_OFFSET,
+                TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE);
+        System.arraycopy(Hash.NULL_HASH.trits(), 0, trits, TransactionViewModel.LAST_INDEX_TRINARY_OFFSET,
+                TransactionViewModel.LAST_INDEX_TRINARY_SIZE);
+        System.arraycopy(Hash.NULL_HASH.trits(), 0, trits, TransactionViewModel.VALUE_TRINARY_OFFSET,
+                TransactionViewModel.VALUE_TRINARY_SIZE);
+
+        final Sponge curlInstance = SpongeFactory.create(SpongeFactory.Mode.KERL);
+        final int[] bundleHashTrits = new int[TransactionViewModel.BUNDLE_TRINARY_SIZE];
+        curlInstance.reset();
+        curlInstance.absorb(trits, TransactionViewModel.ESSENCE_TRINARY_OFFSET, TransactionViewModel.ESSENCE_TRINARY_SIZE);
+        curlInstance.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
+
+        System.arraycopy(bundleHashTrits, 0, trits, TransactionViewModel.BUNDLE_TRINARY_OFFSET,
+                TransactionViewModel.BUNDLE_TRINARY_SIZE);
+
         return trits;
     }
     public static int[] getRandomTransactionTrits() {

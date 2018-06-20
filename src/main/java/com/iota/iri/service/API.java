@@ -17,6 +17,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
@@ -30,7 +31,6 @@ import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +43,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
-import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -74,7 +73,7 @@ public class API {
     private final static int HASH_SIZE = 81;
     private final static int TRYTES_SIZE = 2673;
 
-    private final static long MAX_TIMESTAMP_VALUE = (3^27 - 1) / 2;
+    private final static long MAX_TIMESTAMP_VALUE = (long) (Math.pow(3, 27) - 1) / 2; // max positive 27-trits value
 
     private final int minRandomWalks;
     private final int maxRandomWalks;
@@ -145,7 +144,7 @@ public class API {
         server.start();
     }
 
-    private void readPreviousEpochsSpentAddresses(boolean isTestnet) {
+    private void readPreviousEpochsSpentAddresses(boolean isTestnet) throws IOException {
         if (isTestnet) {
             return;
         }
@@ -173,7 +172,7 @@ public class API {
         exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
 
         final long beginningTime = System.currentTimeMillis();
-        final String body = IOUtils.toString(cis, StandardCharsets.UTF_8);
+        final String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
         final AbstractResponse response;
 
         if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
@@ -255,7 +254,7 @@ public class API {
                 case "getBalances": {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                     final List<String> tips = request.containsKey("tips") ?
-                            getParameterAsList(request,"tips ", HASH_SIZE):
+                            getParameterAsList(request,"tips", HASH_SIZE):
                             null;
                     final int threshold = getParameterAsInt(request, "threshold");
                     return getBalancesStatement(addresses, tips, threshold);
@@ -278,7 +277,7 @@ public class API {
                     return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                             Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
                             Runtime.getRuntime().totalMemory(), instance.milestone.latestMilestone, instance.milestone.latestMilestoneIndex,
-                            instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex,
+                            instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex, instance.milestone.milestoneStartIndex,
                             instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                             System.currentTimeMillis(), instance.tipsViewModel.size(),
                             instance.transactionRequester.numberOfTransactionsToRequest());
@@ -287,26 +286,18 @@ public class API {
                     return getTipsStatement();
                 }
                 case "getTransactionsToApprove": {
-                    if (invalidSubtangleStatus()) {
-                        return ErrorResponse
-                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
-                    }
-
-                    final String reference = request.containsKey("reference") ? getParameterAsStringAndValidate(request,"reference", HASH_SIZE) : null;
+                    final Optional<Hash> reference = request.containsKey("reference") ?
+                            Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
+                            : Optional.empty();
                     final int depth = getParameterAsInt(request, "depth");
-                    if(depth < 0 || (reference == null && depth == 0)) {
+                    if (depth < 0 || depth > instance.tipsSelector.getMaxDepth()) {
                         return ErrorResponse.create("Invalid depth input");
                     }
-                    int numWalks = request.containsKey("numWalks") ? getParameterAsInt(request,"numWalks") : 1;
-                    if(numWalks < minRandomWalks) {
-                        numWalks = minRandomWalks;
-                    }
+
                     try {
-                        final Hash[] tips = getTransactionToApproveStatement(depth, reference, numWalks);
-                        if(tips == null) {
-                            return ErrorResponse.create("The subtangle is not solid");
-                        }
-                        return GetTransactionsToApproveResponse.create(tips[0], tips[1]);
+                        List<Hash> tips = getTransactionToApproveStatement(depth, reference);
+                        return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
+
                     } catch (RuntimeException e) {
                         log.info("Tip selection failed: " + e.getLocalizedMessage());
                         return ErrorResponse.create(e.getLocalizedMessage());
@@ -477,7 +468,7 @@ public class API {
 
         return CheckConsistency.create(state,info);
     }
-    
+
     private double getParameterAsDouble(Map<String, Object> request, String paramName) throws ValidationException {
         validateParamExists(request, paramName);
         final double result;
@@ -587,57 +578,29 @@ public class API {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
-    public synchronized Hash[] getTransactionToApproveStatement(int depth, final String reference, final int numWalks) throws Exception {
-        int tipsToApprove = 2;
-        Hash[] tips = new Hash[tipsToApprove];
-        final SecureRandom random = new SecureRandom();
-        final int randomWalkCount = numWalks > maxRandomWalks || numWalks < 1 ? maxRandomWalks:numWalks;
-        Hash referenceHash = null;
-        int maxDepth = instance.tipsManager.getMaxDepth();
-        if (depth > maxDepth) {
-            depth = maxDepth;
-        }
-        if(reference != null) {
-            referenceHash = new Hash(reference);
-            if (!TransactionViewModel.exists(instance.tangle, referenceHash)) {
-                throw new RuntimeException(REFERENCE_TRANSACTION_NOT_FOUND);
-            } else {
-                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, referenceHash);
-                if (transactionViewModel.snapshotIndex() != 0
-                        && transactionViewModel.snapshotIndex() < instance.milestone.latestSolidSubtangleMilestoneIndex - depth) {
-                    throw new RuntimeException(REFERENCE_TRANSACTION_TOO_OLD);
-                }
-            }
+    public synchronized List<Hash> getTransactionToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
+
+        if (invalidSubtangleStatus()) {
+            throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
         }
 
-        instance.milestone.latestSnapshot.rwlock.readLock().lock();
-        try {
-            Set<Hash> visitedHashes = new HashSet<>();
-            Map<Hash, Long> diff = new HashMap<>();
-            for (int i = 0; i < tipsToApprove; i++) {
-                tips[i] = instance.tipsManager.transactionToApprove(visitedHashes, diff, referenceHash, tips[0], depth, randomWalkCount, random);
-                //update world view, so next tips selected will be inter-consistent
-                if (tips[i] == null || !instance.ledgerValidator.updateDiff(visitedHashes, diff, tips[i])) {
-                    return null;
-                }
-            }
-            API.incCounter_getTxToApprove();
-            if ((getCounter_getTxToApprove() % 100) == 0) {
-                String sb = "Last 100 getTxToApprove consumed " +
-                        API.getEllapsedTime_getTxToApprove() / 1000000000L +
-                        " seconds processing time.";
-                log.info(sb);
-                counter_getTxToApprove = 0;
-                ellapsedTime_getTxToApprove = 0L;
-            }
+        List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(depth, reference);
 
-            if (instance.ledgerValidator.checkConsistency(Arrays.asList(tips))) {
-                return tips;
-            }
-        } finally {
-            instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+        if (log.isDebugEnabled()) {
+            gatherStatisticsOnTipSelection();
         }
-        throw new RuntimeException("inconsistent tips pair selected");
+
+        return tips;
+    }
+
+    private void gatherStatisticsOnTipSelection() {
+        API.incCounter_getTxToApprove();
+        if ((getCounter_getTxToApprove() % 100) == 0) {
+            String sb = "Last 100 getTxToApprove consumed " + API.getEllapsedTime_getTxToApprove() / 1000000000L + " seconds processing time.";
+            log.debug(sb);
+            counter_getTxToApprove = 0;
+            ellapsedTime_getTxToApprove = 0L;
+        }
     }
 
     private synchronized AbstractResponse getTipsStatement() throws Exception {
@@ -1113,7 +1076,7 @@ public class API {
 
     //only available on testnet
     private synchronized void storeMessageStatement(final String address, final String message) throws Exception {
-        final Hash[] txToApprove = getTransactionToApproveStatement(3, null, 5);
+        final List<Hash> txToApprove = getTransactionToApproveStatement(3, Optional.empty());
 
         final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
 
@@ -1173,8 +1136,7 @@ public class API {
         transactions = transactions.stream().map(tx -> StringUtils.rightPad(tx + bundleHash, TRYTES_SIZE, '9')).collect(Collectors.toList());
 
 // do pow
-        List<String> powResult = attachToTangleStatement(txToApprove[0], txToApprove[1], 9, transactions);
+        List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
         broadcastTransactionStatement(powResult);
     }
 }
-

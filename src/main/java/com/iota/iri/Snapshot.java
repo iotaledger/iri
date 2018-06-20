@@ -2,7 +2,8 @@ package com.iota.iri;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import org.apache.commons.io.IOUtils;
+
+import com.iota.iri.utils.IotaIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,7 +28,7 @@ public class Snapshot {
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
 
-    public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) {
+    public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) throws IOException {
         //This is not thread-safe (and it is ok)
         if (initialSnapshot == null) {
             if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,
@@ -91,7 +92,7 @@ public class Snapshot {
             System.exit(-1);
         }
         finally {
-            IOUtils.closeQuietly(reader);
+            IotaIOUtils.closeQuietly(reader);
         }
         return state;
     }

@@ -7,10 +7,11 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Converter;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 
-public final class Hash implements Serializable, Indexable {
+public final class Hash implements Serializable, Indexable, HashId {
 
     public static final int SIZE_IN_TRITS = 243;
     public static final int SIZE_IN_BYTES = 49;

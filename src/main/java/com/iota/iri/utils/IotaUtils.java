@@ -1,11 +1,23 @@
 package com.iota.iri.utils;
 
 import com.iota.iri.model.Hash;
+import org.apache.commons.lang3.StringUtils;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 public class IotaUtils {
+
+    public static List<String> splitStringToImmutableList(String string, String regexSplit) {
+        return Arrays.stream(string.split(regexSplit))
+                .filter(StringUtils::isNoneBlank)
+                .collect(Collectors
+                        .collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+    }
+
     /**
      * Used to create low-memory index keys.
      *

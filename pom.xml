@@ -184,11 +184,6 @@
             <version>1.72</version>
         </dependency>
 
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-properties</artifactId>
-        </dependency>
-
     </dependencies>
 
     <build>
@@ -328,6 +323,12 @@
                                         </urn>
                                         <urn>
                                             org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12
+                                        </urn>
+                                        <urn>
+                                            com.fasterxml.jackson.core:jackson-databind:2.9.6:jar:null:compile:cfa4f316351a91bfd95cb0644c6a2c95f52db1fc
+                                        </urn>
+                                        <urn>
+                                            com.beust:jcommander:1.72:jar:null:compile:6375e521c1e11d6563d4f25a07ce124ccf8cd171
                                         </urn>
 
                                         <!-- A check for the rules themselves -->

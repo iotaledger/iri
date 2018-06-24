@@ -361,7 +361,7 @@ public class API {
             log.info("API Validation failed: " + e.getLocalizedMessage());
             return ErrorResponse.create(e.getLocalizedMessage());
         } catch (final Exception e) {
-            log.error("API Exception: " + e.getLocalizedMessage())
+            log.error("API Exception: " + e.getLocalizedMessage());
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
     }

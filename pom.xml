@@ -119,13 +119,6 @@
             <version>${undertow.version}</version>
         </dependency>
 
-        <!-- CLI -->
-        <dependency>
-            <groupId>com.sanityinc</groupId>
-            <artifactId>jargs</artifactId>
-            <version>2.0-SNAPSHOT</version>
-        </dependency>
-
         <!-- test dependencies -->
 
         <!-- https://mvnrepository.com/artifact/com.jayway.restassured/rest-assured -->
@@ -308,7 +301,6 @@
                                         <!--
                                         not used anymore
                                         <urn>org.reflections:reflections:0.9.10:jar:null:compile:3812159b1b4b7c296fa80f53eed6362961eb85da</urn>
-                                        TODO <urn>com.sanityinc:jargs:2.0-SNAPSHOT:jar:null:compile:</urn>
                                         -->
                                         <urn>
                                             com.jayway.restassured:rest-assured:2.9.0:jar:null:test:d0d5b6720a58472ab99287c931a8205373d6e7b2

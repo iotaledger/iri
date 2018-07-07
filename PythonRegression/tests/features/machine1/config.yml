@@ -1,0 +1,12 @@
+seeds: # For internal use by the regression system. 
+    - SEED
+    - SIID
+
+nodeA: #name
+  host: "178.128.236.6" #host ip
+  db: 
+  db_checksum: 
+  snapshot: "./snapshot.txt" #snapshot path
+  snapshot_checksum: "55ab291af8d197f7c16e1b87d3ce96b11f39d903435f37205bea52953c74bbf5" #snapshot checksum
+  
+

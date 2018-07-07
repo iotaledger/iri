@@ -32,7 +32,7 @@ aloe -a utilTests
 ``` 
 and:
 ```
-aloe -a !utilTests
+aloe -a '!utilTests'
 ```
 
 Will run all tests that include or don't include the utilTests tag respectively (run the second command if you would like to only run the main tests) 

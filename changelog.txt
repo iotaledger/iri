@@ -1,3 +1,6 @@
+1.5.1
+    - Update snapshot to 2018-07-09 8:00 UTC (#855)
+
 1.5.0
     - Rework of the Tip Selection algorithm (#778)
     - Validate the alpha value (#817)

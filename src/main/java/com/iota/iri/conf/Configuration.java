@@ -38,7 +38,7 @@ public class Configuration {
     public static final String TESTNET_MILESTONE_START_INDEX = "434525";
     public static final String MAINNET_NUM_KEYS_IN_MILESTONE = "20";
     public static final String TESTNET_NUM_KEYS_IN_MILESTONE = "22";
-    public static final String GLOBAL_SNAPSHOT_TIME = "1531155600";
+    public static final String GLOBAL_SNAPSHOT_TIME = "1531148400";
     public static final String TESTNET_GLOBAL_SNAPSHOT_TIME = "1522306500";
 
 

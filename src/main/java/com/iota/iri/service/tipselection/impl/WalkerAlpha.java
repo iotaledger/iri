@@ -57,11 +57,14 @@ public class WalkerAlpha implements Walker {
         Deque<Hash> traversedTails = new LinkedList<>();
         traversedTails.add(entryPoint);
 
+        long counttails = 0;
+        
         //Walk
         do {
             nextStep = selectApprover(traversedTails.getLast(), ratings, walkValidator);
             nextStep.ifPresent(traversedTails::add);
-         } while (nextStep.isPresent());
+            counttails++;
+        } while (nextStep.isPresent() && counttails< 1000);
         
         log.debug("{} tails traversed to find tip", traversedTails.size());
         messageQ.publish("mctn %d", traversedTails.size());

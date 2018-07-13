@@ -28,6 +28,8 @@ public class WalkerAlpha implements Walker {
     private final Tangle tangle;
     private final MessageQ messageQ;
     private final Logger log = LoggerFactory.getLogger(Walker.class);
+    
+    private final long maxTraversedTailSize = 10000; 
 
     private final TailFinder tailFinder;
 
@@ -57,13 +59,14 @@ public class WalkerAlpha implements Walker {
         Deque<Hash> traversedTails = new LinkedList<>();
         traversedTails.add(entryPoint);
 
-        long counttails = 0;
-        
         //Walk
         do {
             nextStep = selectApprover(traversedTails.getLast(), ratings, walkValidator);
             nextStep.ifPresent(traversedTails::add);
-        } while (nextStep.isPresent() && counttails++< 1000);
+            
+            if (traversedTails.size()>= maxTraversedTailSize) break;
+            
+        } while (nextStep.isPresent());
         
         log.debug("{} tails traversed to find tip", traversedTails.size());
         messageQ.publish("mctn %d", traversedTails.size());

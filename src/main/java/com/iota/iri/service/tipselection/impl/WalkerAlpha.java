@@ -63,8 +63,7 @@ public class WalkerAlpha implements Walker {
         do {
             nextStep = selectApprover(traversedTails.getLast(), ratings, walkValidator);
             nextStep.ifPresent(traversedTails::add);
-            counttails++;
-        } while (nextStep.isPresent() && counttails< 1000);
+        } while (nextStep.isPresent() && counttails++< 1000);
         
         log.debug("{} tails traversed to find tip", traversedTails.size());
         messageQ.publish("mctn %d", traversedTails.size());

@@ -1,14 +1,10 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.hash.Curl;
-import com.iota.iri.hash.Sponge;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Tag;
-import com.iota.iri.model.Transaction;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
-import com.iota.iri.utils.Converter;
-import com.iota.iri.controllers.TransactionViewModel;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -19,9 +15,6 @@ import java.util.Arrays;
 import java.util.Random;
 import java.util.Set;
 
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
-import static org.junit.Assert.assertTrue;
-
 public class TangleTest {
     private final TemporaryFolder dbFolder = new TemporaryFolder();
     private final TemporaryFolder logFolder = new TemporaryFolder();
@@ -31,7 +24,6 @@ public class TangleTest {
 
     @Before
     public void setUp() throws Exception {
-        TemporaryFolder dbFolder = new TemporaryFolder(), logFolder = new TemporaryFolder();
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;

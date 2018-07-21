@@ -17,6 +17,7 @@ import java.util.Random;
 public class KerlTest {
     final static Random seed = new Random();
     Logger log = LoggerFactory.getLogger(CurlTest.class);
+    final static Random rnd_seed = new Random();
 
     //Test conversion functions:
     @Test
@@ -197,7 +198,6 @@ public class KerlTest {
         String hash = Converter.trytes(hash_value);
         Assert.assertEquals("LUCKQVACOGBFYSPPVSSOXJEKNSQQRQKPZC9NXFSMQNRQCGGUL9OHVVKBDSKEQEBKXRNUJSRXYVHJTXBPDWQGNSCDCBAIRHAQCOWZEBSNHIJIGPZQITIBJQ9LNTDIBTCQ9EUWKHFLGFUVGGUWJONK9GBCDUIMAYMMQX", hash);
     }
-    final static Random rnd_seed = new Random();
 
     public static byte[] getRandomTrits(int length) {
         byte[] out = new byte[length];

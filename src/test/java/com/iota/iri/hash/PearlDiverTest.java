@@ -19,12 +19,12 @@ public class PearlDiverTest {
     private static final int NUM_CORES = -1; // use n-1 cores
 
     private PearlDiver pearlDiver;
-    private int[] hashTrits;
+    private byte[] hashTrits;
 
     @Before
     public void setUp() throws Exception {
         pearlDiver = new PearlDiver();
-        hashTrits = new int[Curl.HASH_LENGTH];
+        hashTrits = new byte[Curl.HASH_LENGTH];
     }
 
     @Test
@@ -41,19 +41,19 @@ public class PearlDiverTest {
 
     @Test(expected = RuntimeException.class)
     public void testInvalidMagnitude() {
-        pearlDiver.search(new int[8019], -1, NUM_CORES);
+        pearlDiver.search(new byte[8019], -1, NUM_CORES);
     }
 
     @Test(expected = RuntimeException.class)
     public void testInvalidTritsLength() {
-        pearlDiver.search(new int[0], MIN_WEIGHT_MAGNITUDE, NUM_CORES);
+        pearlDiver.search(new byte[0], MIN_WEIGHT_MAGNITUDE, NUM_CORES);
     }
 
     @Test
     @Ignore("to test pearlDiver iteratively")
     public void testNoRandomFail() {
         for (int i = 0; i < 10000; i++) {
-            int[] trits = TransactionViewModelTest.getRandomTransactionTrits();
+            byte[] trits = TransactionViewModelTest.getRandomTransactionTrits();
             pearlDiver.search(trits, MIN_WEIGHT_MAGNITUDE, NUM_CORES);
             Hash hash = Hash.calculate(SpongeFactory.Mode.CURLP81, trits);
             for (int j = Hash.SIZE_IN_TRITS - 1; j > Hash.SIZE_IN_TRITS - MIN_WEIGHT_MAGNITUDE; j--) {
@@ -67,7 +67,7 @@ public class PearlDiverTest {
 
     private String getHashFor(String trytes) {
         Sponge curl = new Curl(SpongeFactory.Mode.CURLP81);
-        int[] myTrits = Converter.allocateTritsForTrytes(trytes.length());
+        byte[] myTrits = Converter.allocateTritsForTrytes(trytes.length());
         Converter.trits(trytes, myTrits, 0);
         pearlDiver.search(myTrits, MIN_WEIGHT_MAGNITUDE, NUM_CORES);
         curl.absorb(myTrits, 0, myTrits.length);

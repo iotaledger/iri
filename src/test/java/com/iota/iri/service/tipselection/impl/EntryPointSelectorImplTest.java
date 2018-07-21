@@ -26,7 +26,7 @@ public class EntryPointSelectorImplTest {
 
     @Test
     public void testEntryPointWithTangleData() throws Exception {
-        Hash milestoneHash = Hash.calculate(SpongeFactory.Mode.CURLP81, new int[]{1});
+        Hash milestoneHash = Hash.calculate(SpongeFactory.Mode.CURLP81, new byte[]{1});
         mockTangleBehavior(milestoneHash);
         mockMilestoneTrackerBehavior(0, Hash.NULL_HASH);
 

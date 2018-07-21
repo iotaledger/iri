@@ -16,7 +16,7 @@ public class ISSInPlace {
   private static final int MIN_TRIT_VALUE = -1, MAX_TRIT_VALUE = 1;
   private static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
 
-  public static void subseed(SpongeFactory.Mode mode, int[] subseed, int index) {
+  public static void subseed(SpongeFactory.Mode mode, byte[] subseed, int index) {
 
     if (index < 0) {
       throw new RuntimeException("Invalid subseed index: " + index);
@@ -43,7 +43,7 @@ public class ISSInPlace {
     hash.squeeze(subseed, 0, subseed.length);
   }
 
-  public static void key(SpongeFactory.Mode mode, final int[] subseed, int[] key) {
+  public static void key(SpongeFactory.Mode mode, final byte[] subseed, byte[] key) {
 
     if (subseed.length != Kerl.HASH_LENGTH) {
       throw new RuntimeException("Invalid subseed length: " + subseed.length);
@@ -64,7 +64,7 @@ public class ISSInPlace {
     hash.squeeze(key, 0, key.length);
   }
 
-  public static void digests(SpongeFactory.Mode mode, final int[] key, int[] digests) {
+  public static void digests(SpongeFactory.Mode mode, final byte[] key, byte[] digests) {
 
     if (key.length == 0 || key.length % FRAGMENT_LENGTH != 0) {
       throw new RuntimeException("Invalid key length: " + key.length);
@@ -78,7 +78,7 @@ public class ISSInPlace {
 
     for (int i = 0; i < key.length / FRAGMENT_LENGTH; i++) {
 
-      final int[] buffer = Arrays.copyOfRange(key, i * FRAGMENT_LENGTH, (i + 1) * FRAGMENT_LENGTH);
+      final byte[] buffer = Arrays.copyOfRange(key, i * FRAGMENT_LENGTH, (i + 1) * FRAGMENT_LENGTH);
       for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
 
         for (int k = MAX_TRYTE_VALUE - MIN_TRYTE_VALUE; k-- > 0; ) {
@@ -93,7 +93,7 @@ public class ISSInPlace {
     }
   }
 
-  public static void address(SpongeFactory.Mode mode, final int[] digests, int[] address) {
+  public static void address(SpongeFactory.Mode mode, final byte[] digests, byte[] address) {
 
     if (digests.length == 0 || digests.length % Kerl.HASH_LENGTH != 0) {
       throw new RuntimeException("Invalid digests length: " + digests.length);
@@ -109,7 +109,7 @@ public class ISSInPlace {
   }
 
 
-  public static void digest(SpongeFactory.Mode mode, final int[] normalizedBundleFragment, int nbOff, final int[] signatureFragment, int sfOff, int[] digest) {
+  public static void digest(SpongeFactory.Mode mode, final byte[] normalizedBundleFragment, int nbOff, final byte[] signatureFragment, int sfOff, byte[] digest) {
 
     if (normalizedBundleFragment.length - nbOff < (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS)) {
       throw new RuntimeException("Invalid normalized bundleValidator fragment length: " + normalizedBundleFragment.length);
@@ -122,7 +122,7 @@ public class ISSInPlace {
       throw new IllegalArgumentException("Invalid digest array length.");
     }
 
-    final int[] buffer = Arrays.copyOfRange(signatureFragment, sfOff, sfOff + FRAGMENT_LENGTH);
+    final byte[] buffer = Arrays.copyOfRange(signatureFragment, sfOff, sfOff + FRAGMENT_LENGTH);
     final Sponge hash = SpongeFactory.create(mode);
 
     for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
@@ -139,7 +139,7 @@ public class ISSInPlace {
   }
 
 
-  public static void normalizedBundle(final int[] bundle, int[] normalizedBundle) {
+  public static void normalizedBundle(final byte[] bundle, byte[] normalizedBundle) {
     if (bundle.length != Curl.HASH_LENGTH) {
       throw new RuntimeException("Invalid bundleValidator length: " + bundle.length);
     }
@@ -148,7 +148,7 @@ public class ISSInPlace {
       int sum = 0;
       for (int j = i * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j < (i + 1) * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j++) {
 
-        normalizedBundle[j] = bundle[j * TRYTE_WIDTH] + bundle[j * TRYTE_WIDTH + 1] * 3 + bundle[j * TRYTE_WIDTH + 2] * 9;
+        normalizedBundle[j] = (byte) (bundle[j * TRYTE_WIDTH] + bundle[j * TRYTE_WIDTH + 1] * 3 + bundle[j * TRYTE_WIDTH + 2] * 9);
         sum += normalizedBundle[j];
       }
       if (sum > 0) {

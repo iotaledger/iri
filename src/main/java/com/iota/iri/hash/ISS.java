@@ -18,13 +18,13 @@ public class ISS {
     private static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
     public static final int NORMALIZED_FRAGMENT_LENGTH = Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS;
 
-    public static int[] subseed(SpongeFactory.Mode mode, final int[] seed, int index) {
+    public static byte[] subseed(SpongeFactory.Mode mode, final byte[] seed, int index) {
 
         if (index < 0) {
             throw new RuntimeException("Invalid subseed index: " + index);
         }
 
-        final int[] subseedPreimage = Arrays.copyOf(seed, seed.length);
+        final byte[] subseedPreimage = Arrays.copyOf(seed, seed.length);
 
         while (index-- > 0) {
 
@@ -38,7 +38,7 @@ public class ISS {
             }
         }
 
-        final int[] subseed = new int[Curl.HASH_LENGTH];
+        final byte[] subseed = new byte[Curl.HASH_LENGTH];
 
         final Sponge hash = SpongeFactory.create(mode);
         hash.absorb(subseedPreimage, 0, subseedPreimage.length);
@@ -46,7 +46,7 @@ public class ISS {
         return subseed;
     }
 
-    public static int[] key(SpongeFactory.Mode mode, final int[] subseed, final int numberOfFragments) {
+    public static byte[] key(SpongeFactory.Mode mode, final byte[] subseed, final int numberOfFragments) {
 
         if (subseed.length != Curl.HASH_LENGTH) {
             throw new RuntimeException("Invalid subseed length: " + subseed.length);
@@ -55,7 +55,7 @@ public class ISS {
             throw new RuntimeException("Invalid number of key fragments: " + numberOfFragments);
         }
 
-        final int[] key = new int[FRAGMENT_LENGTH * numberOfFragments];
+        final byte[] key = new byte[FRAGMENT_LENGTH * numberOfFragments];
 
         final Sponge hash = SpongeFactory.create(mode);
         hash.absorb(subseed, 0, subseed.length);
@@ -63,18 +63,18 @@ public class ISS {
         return key;
     }
 
-    public static int[] digests(SpongeFactory.Mode mode, final int[] key) {
+    public static byte[] digests(SpongeFactory.Mode mode, final byte[] key) {
 
         if (key.length == 0 || key.length % FRAGMENT_LENGTH != 0) {
             throw new RuntimeException("Invalid key length: " + key.length);
         }
 
-        final int[] digests = new int[key.length / FRAGMENT_LENGTH * Curl.HASH_LENGTH];
+        final byte[] digests = new byte[key.length / FRAGMENT_LENGTH * Curl.HASH_LENGTH];
         final Sponge hash = SpongeFactory.create(mode);
 
         for (int i = 0; i < key.length / FRAGMENT_LENGTH; i++) {
 
-            final int[] buffer = Arrays.copyOfRange(key, i * FRAGMENT_LENGTH, (i + 1) * FRAGMENT_LENGTH);
+            final byte[] buffer = Arrays.copyOfRange(key, i * FRAGMENT_LENGTH, (i + 1) * FRAGMENT_LENGTH);
             for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
 
                 for (int k = MAX_TRYTE_VALUE - MIN_TRYTE_VALUE; k-- > 0; ) {
@@ -91,13 +91,13 @@ public class ISS {
         return digests;
     }
 
-    public static int[] address(SpongeFactory.Mode mode, final int[] digests) {
+    public static byte[] address(SpongeFactory.Mode mode, final byte[] digests) {
 
         if (digests.length == 0 || digests.length % Curl.HASH_LENGTH != 0) {
             throw new RuntimeException("Invalid digests length: " + digests.length);
         }
 
-        final int[] address = new int[Curl.HASH_LENGTH];
+        final byte[] address = new byte[Curl.HASH_LENGTH];
 
         final Sponge hash = SpongeFactory.create(mode);
         hash.absorb(digests, 0, digests.length);
@@ -106,19 +106,19 @@ public class ISS {
         return address;
     }
 
-    public static int[] normalizedBundle(final int[] bundle) {
+    public static byte[] normalizedBundle(final byte[] bundle) {
 
         if (bundle.length != Curl.HASH_LENGTH) {
             throw new RuntimeException("Invalid bundleValidator length: " + bundle.length);
         }
 
-        final int[] normalizedBundle = new int[Curl.HASH_LENGTH / TRYTE_WIDTH];
+        final byte[] normalizedBundle = new byte[Curl.HASH_LENGTH / TRYTE_WIDTH];
 
         ISSInPlace.normalizedBundle(bundle, normalizedBundle);
         return normalizedBundle;
     }
 
-    public static int[] signatureFragment(SpongeFactory.Mode mode, final int[] normalizedBundleFragment, final int[] keyFragment) {
+    public static byte[] signatureFragment(SpongeFactory.Mode mode, final byte[] normalizedBundleFragment, final byte[] keyFragment) {
 
         if (normalizedBundleFragment.length != NORMALIZED_FRAGMENT_LENGTH) {
             throw new RuntimeException("Invalid normalized bundleValidator fragment length: " + normalizedBundleFragment.length);
@@ -127,7 +127,7 @@ public class ISS {
             throw new RuntimeException("Invalid key fragment length: " + keyFragment.length);
         }
 
-        final int[] signatureFragment = Arrays.copyOf(keyFragment, keyFragment.length);
+        final byte[] signatureFragment = Arrays.copyOf(keyFragment, keyFragment.length);
         final Sponge hash = SpongeFactory.create(mode);
 
         for (int j = 0; j < NUMBER_OF_FRAGMENT_CHUNKS; j++) {
@@ -142,7 +142,7 @@ public class ISS {
         return signatureFragment;
     }
 
-    public static int[] digest(SpongeFactory.Mode mode, final int[] normalizedBundleFragment, final int[] signatureFragment) {
+    public static byte[] digest(SpongeFactory.Mode mode, final byte[] normalizedBundleFragment, final byte[] signatureFragment) {
 
         if (normalizedBundleFragment.length != Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS) {
             throw new RuntimeException("Invalid normalized bundleValidator fragment length: " + normalizedBundleFragment.length);
@@ -151,12 +151,12 @@ public class ISS {
             throw new RuntimeException("Invalid signature fragment length: " + signatureFragment.length);
         }
 
-        final int[] digest = new int[Curl.HASH_LENGTH];
+        final byte[] digest = new byte[Curl.HASH_LENGTH];
         ISSInPlace.digest(mode, normalizedBundleFragment, 0, signatureFragment, 0, digest);
         return digest;
     }
 
-    public static int[] getMerkleRoot(SpongeFactory.Mode mode, int[] hash, int[] trits, int offset, final int indexIn, int size) {
+    public static byte[] getMerkleRoot(SpongeFactory.Mode mode, byte[] hash, byte[] trits, int offset, final int indexIn, int size) {
         int index = indexIn;
         final Sponge curl = SpongeFactory.create(mode);
         for (int i = 0; i < size; i++) {

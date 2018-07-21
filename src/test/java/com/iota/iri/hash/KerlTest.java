@@ -23,10 +23,10 @@ public class KerlTest {
     public void tritsFromBigInt() throws Exception {
         long value = 1433452143;
         int size = 50;
-        int[] trits = new int[size];
+        byte[] trits = new byte[size];
         Converter.copyTrits(value, trits, 0, trits.length);
         BigInteger bigInteger = Kerl.bigIntFromTrits(trits, 0, trits.length);
-        int[] outTrits = new int[size];
+        byte[] outTrits = new byte[size];
         Kerl.tritsFromBigInt(bigInteger, outTrits, 0, size);
         Assert.assertTrue(Arrays.equals(trits, outTrits));
     }
@@ -47,7 +47,7 @@ public class KerlTest {
         int byte_size = 48;
         int trit_size = 243;
         byte[] inBytes = new byte[byte_size];
-        int[] trits = new int[Kerl.HASH_LENGTH];
+        byte[] trits = new byte[Kerl.HASH_LENGTH];
         byte[] outBytes = new byte[Kerl.BYTE_HASH_LENGTH];
         for (int i = 0; i < 10_000; i++) {
             seed.nextBytes(inBytes);
@@ -67,9 +67,9 @@ public class KerlTest {
         //generate random bytes, turn them to trits and back
         int byte_size = 48;
         int trit_size = 243;
-        int[] inTrits;
+        byte[] inTrits;
         byte[] bytes = new byte[Kerl.BYTE_HASH_LENGTH];
-        int[] outTrits = new int[Kerl.HASH_LENGTH];
+        byte[] outTrits = new byte[Kerl.HASH_LENGTH];
         for (int i = 0; i < 10_000; i++) {
             inTrits = getRandomTrits(trit_size);
             inTrits[242] = 0;
@@ -89,16 +89,16 @@ public class KerlTest {
     @Test
     public void limitBigIntFromTrits() {
         // this confirms that the long math does not produce an overflow.
-        int[] trits = new int[Kerl.MAX_POWERS_LONG];
-        
-        Arrays.fill(trits, 1);
+        byte[] trits = new byte[Kerl.MAX_POWERS_LONG];
+
+        Arrays.fill(trits, (byte) 1);
         BigInteger result = Kerl.bigIntFromTrits(trits, 0, trits.length);
 
-        Arrays.fill(trits, 1);
+        Arrays.fill(trits, (byte) 1);
         BigInteger expected = BigInteger.ZERO;
         for (int i = trits.length; i-- > 0; ) {
             expected = expected.multiply(BigInteger.valueOf(Converter.RADIX)).add(BigInteger.valueOf(trits[i]));
-        }        
+        }
         Assert.assertTrue("Overflow in long math", expected.equals(result));
     }
 
@@ -128,8 +128,8 @@ public class KerlTest {
         for (i = 0; i++ < max; ) {
             //pre
             int size = 8019;
-            int[] in_trits = getRandomTrits(size);
-            int[] hash_trits = new int[Curl.HASH_LENGTH];
+            byte[] in_trits = getRandomTrits(size);
+            byte[] hash_trits = new byte[Curl.HASH_LENGTH];
 
             start = System.nanoTime();
             //measured
@@ -167,10 +167,10 @@ public class KerlTest {
 
     @Test
     public void kerlOneAbsorb() throws Exception {
-        int[] initial_value = Converter.allocatingTritsFromTrytes("EMIDYNHBWMBCXVDEFOFWINXTERALUKYYPPHKP9JJFGJEIUY9MUDVNFZHMMWZUYUSWAIOWEVTHNWMHANBH");
+        byte[] initial_value = Converter.allocatingTritsFromTrytes("EMIDYNHBWMBCXVDEFOFWINXTERALUKYYPPHKP9JJFGJEIUY9MUDVNFZHMMWZUYUSWAIOWEVTHNWMHANBH");
         Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
         k.absorb(initial_value, 0, initial_value.length);
-        int[] hash_value = new int[Curl.HASH_LENGTH];
+        byte[] hash_value = new byte[Curl.HASH_LENGTH];
         k.squeeze(hash_value, 0, hash_value.length);
         String hash = Converter.trytes(hash_value);
         Assert.assertEquals("EJEAOOZYSAWFPZQESYDHZCGYNSTWXUMVJOVDWUNZJXDGWCLUFGIMZRMGCAZGKNPLBRLGUNYWKLJTYEAQX", hash);
@@ -178,10 +178,10 @@ public class KerlTest {
 
     @Test
     public void kerlMultiSqueeze() throws Exception {
-        int[] initial_value = Converter.allocatingTritsFromTrytes("9MIDYNHBWMBCXVDEFOFWINXTERALUKYYPPHKP9JJFGJEIUY9MUDVNFZHMMWZUYUSWAIOWEVTHNWMHANBH");
+        byte[] initial_value = Converter.allocatingTritsFromTrytes("9MIDYNHBWMBCXVDEFOFWINXTERALUKYYPPHKP9JJFGJEIUY9MUDVNFZHMMWZUYUSWAIOWEVTHNWMHANBH");
         Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
         k.absorb(initial_value, 0, initial_value.length);
-        int[] hash_value = new int[Curl.HASH_LENGTH * 2];
+        byte[] hash_value = new byte[Curl.HASH_LENGTH * 2];
         k.squeeze(hash_value, 0, hash_value.length);
         String hash = Converter.trytes(hash_value);
         Assert.assertEquals("G9JYBOMPUXHYHKSNRNMMSSZCSHOFYOYNZRSZMAAYWDYEIMVVOGKPJBVBM9TDPULSFUNMTVXRKFIDOHUXXVYDLFSZYZTWQYTE9SPYYWYTXJYQ9IFGYOLZXWZBKWZN9QOOTBQMWMUBLEWUEEASRHRTNIQWJQNDWRYLCA", hash);
@@ -189,17 +189,24 @@ public class KerlTest {
 
     @Test
     public void kerlMultiAbsorbMultiSqueeze() throws Exception {
-        int[] initial_value = Converter.allocatingTritsFromTrytes("G9JYBOMPUXHYHKSNRNMMSSZCSHOFYOYNZRSZMAAYWDYEIMVVOGKPJBVBM9TDPULSFUNMTVXRKFIDOHUXXVYDLFSZYZTWQYTE9SPYYWYTXJYQ9IFGYOLZXWZBKWZN9QOOTBQMWMUBLEWUEEASRHRTNIQWJQNDWRYLCA");
+        byte[] initial_value = Converter.allocatingTritsFromTrytes("G9JYBOMPUXHYHKSNRNMMSSZCSHOFYOYNZRSZMAAYWDYEIMVVOGKPJBVBM9TDPULSFUNMTVXRKFIDOHUXXVYDLFSZYZTWQYTE9SPYYWYTXJYQ9IFGYOLZXWZBKWZN9QOOTBQMWMUBLEWUEEASRHRTNIQWJQNDWRYLCA");
         Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
         k.absorb(initial_value, 0, initial_value.length);
-        int[] hash_value = new int[Curl.HASH_LENGTH * 2];
+        byte[] hash_value = new byte[Curl.HASH_LENGTH * 2];
         k.squeeze(hash_value, 0, hash_value.length);
         String hash = Converter.trytes(hash_value);
         Assert.assertEquals("LUCKQVACOGBFYSPPVSSOXJEKNSQQRQKPZC9NXFSMQNRQCGGUL9OHVVKBDSKEQEBKXRNUJSRXYVHJTXBPDWQGNSCDCBAIRHAQCOWZEBSNHIJIGPZQITIBJQ9LNTDIBTCQ9EUWKHFLGFUVGGUWJONK9GBCDUIMAYMMQX", hash);
     }
+    final static Random rnd_seed = new Random();
 
-    public static int[] getRandomTrits(int length) {
-        return Arrays.stream(new int[length]).map(i -> seed.nextInt(3) - 1).toArray();
+    public static byte[] getRandomTrits(int length) {
+        byte[] out = new byte[length];
+
+        for(int i = 0; i < out.length; i++) {
+            out[i] = (byte) (rnd_seed.nextInt(3) - 1);
+        }
+
+        return out;
     }
 
     public static Hash getRandomTransactionHash() {
@@ -211,10 +218,10 @@ public class KerlTest {
         System.out.println("trytes,Kerl_hash");
         for (int i = 0; i < 10000; i++) {
             Hash trytes = getRandomTransactionHash();
-            int[] initial_value = trytes.trits();
+            byte[] initial_value = trytes.trits();
             Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
             k.absorb(initial_value, 0, initial_value.length);
-            int[] hash_value = new int[Curl.HASH_LENGTH];
+            byte[] hash_value = new byte[Curl.HASH_LENGTH];
             k.squeeze(hash_value, 0, hash_value.length);
             String hash = Converter.trytes(hash_value);
             System.out.println(String.format("%s,%s", trytes, hash));
@@ -226,10 +233,10 @@ public class KerlTest {
         System.out.println("trytes,Kerl_squeeze1,Kerl_squeeze2,Kerl_squeeze3");
         for (int i = 0; i < 10000; i++) {
             Hash trytes = getRandomTransactionHash();
-            int[] initial_value = trytes.trits();
+            byte[] initial_value = trytes.trits();
             Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
             k.absorb(initial_value, 0, initial_value.length);
-            int[] hash_value = new int[Curl.HASH_LENGTH];
+            byte[] hash_value = new byte[Curl.HASH_LENGTH];
             k.squeeze(hash_value, 0, hash_value.length);
             String hash1 = Converter.trytes(hash_value);
             k.squeeze(hash_value, 0, hash_value.length);
@@ -245,10 +252,10 @@ public class KerlTest {
         System.out.println("multiTrytes,Kerl_hash");
         for (int i = 0; i < 10000; i++) {
             String multi = String.format("%s%s%s", getRandomTransactionHash(), getRandomTransactionHash(), getRandomTransactionHash());
-            int[] initial_value = Converter.allocatingTritsFromTrytes(multi);
+            byte[] initial_value = Converter.allocatingTritsFromTrytes(multi);
             Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
             k.absorb(initial_value, 0, initial_value.length);
-            int[] hash_value = new int[Curl.HASH_LENGTH];
+            byte[] hash_value = new byte[Curl.HASH_LENGTH];
             k.squeeze(hash_value, 0, hash_value.length);
             String hash = Converter.trytes(hash_value);
             System.out.println(String.format("%s,%s", multi, hash));
@@ -261,10 +268,10 @@ public class KerlTest {
         //System.out.println("trytes,Kerl_hash");
         for (int i = 0; i < 1_000_000; i++) {
             Hash trytes = getRandomTransactionHash();
-            int[] initial_value = trytes.trits();
+            byte[] initial_value = trytes.trits();
             Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
             k.absorb(initial_value, 0, initial_value.length);
-            int[] hash_value = new int[Curl.HASH_LENGTH];
+            byte[] hash_value = new byte[Curl.HASH_LENGTH];
             k.squeeze(hash_value, 0, hash_value.length);
             String hash = Converter.trytes(hash_value);
             //System.out.println(String.format("%s,%s",trytes,hash));

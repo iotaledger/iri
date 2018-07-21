@@ -22,9 +22,9 @@ public class CurlTest {
     @Test
     public void normalHashWorks() {
         int size = 8019;
-        int[] in_trits = new int[size];
+        byte[] in_trits = new byte[size];
         Converter.trits(trytes, in_trits, 0);
-        int[] hash_trits = new int[Curl.HASH_LENGTH];
+        byte[] hash_trits = new byte[Curl.HASH_LENGTH];
         Sponge curl;
         curl = new Curl(SpongeFactory.Mode.CURLP81);
         curl.absorb(in_trits, 0, in_trits.length);
@@ -36,14 +36,14 @@ public class CurlTest {
     @Test
     public void pairHashWorks() {
         int size = 8019;
-        int[] in_trits = new int[size];
+        byte[] in_trits = new byte[size];
         Converter.trits(trytes, in_trits, 0);
         Pair<long[], long[]> hashPair = new Pair<>(new long[Curl.HASH_LENGTH], new long[Curl.HASH_LENGTH]);
         Curl curl;
         curl = new Curl(true, SpongeFactory.Mode.CURLP81);
         curl.absorb(Converter.longPair(in_trits), 0, in_trits.length);
         curl.squeeze(hashPair, 0, Curl.HASH_LENGTH);
-        int[] hash_trits = Converter.trits(hashPair.low, hashPair.hi);
+        byte[] hash_trits = Converter.trits(hashPair.low, hashPair.hi);
         String out_trytes = Converter.trytes(hash_trits);
         Assert.assertEquals(hash, out_trytes);
     }
@@ -52,9 +52,9 @@ public class CurlTest {
     public void pairHashIsFasterThanNormalHash() {
         int size = 8019;
         long start1, diff1, start2, diff2;
-        int[] in_trits = new int[size];
+        byte[] in_trits = new byte[size];
         Converter.trits(trytes, in_trits, 0);
-        final int[] hash_trits = new int[Curl.HASH_LENGTH];
+        final byte[] hash_trits = new byte[Curl.HASH_LENGTH];
         Curl curl, curl1;
         curl = new Curl(true, SpongeFactory.Mode.CURLP81);
         curl1 = new Curl(SpongeFactory.Mode.CURLP81);

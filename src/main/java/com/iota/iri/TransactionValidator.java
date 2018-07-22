@@ -104,17 +104,17 @@ public class TransactionValidator {
         }
     }
 
-    public static TransactionViewModel validate(final byte[] trits, int minWeightMagnitude) {
-        if(trits.length == 8019) {
-            TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
-            runValidation(transactionViewModel, minWeightMagnitude);
-            return transactionViewModel;
-        } else {
-            return validate(trits, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
-        }
+    public static TransactionViewModel validateTrits(final byte[] trits, int minWeightMagnitude) {
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
+        runValidation(transactionViewModel, minWeightMagnitude);
+        return transactionViewModel;
     }
 
-    public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
+    public static TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude) {
+        return validateBytes(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
+    }
+
+    public static TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;

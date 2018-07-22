@@ -614,7 +614,7 @@ public class API {
         for (final String trytes : trys) {
             //validate all trytes
             Converter.trits(trytes, txTrits, 0);
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(txTrits,
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
@@ -834,7 +834,7 @@ public class API {
         for (final String tryte : trytes2) {
             //validate all trytes
             Converter.trits(tryte, txTrits, 0);
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(txTrits, instance.transactionValidator.getMinWeightMagnitude());
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits, instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
         for (final TransactionViewModel transactionViewModel : elements) {
@@ -953,7 +953,7 @@ public class API {
                     break;
                 }
                 //validate PoW - throws exception if invalid
-                final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(transactionTrits, instance.transactionValidator.getMinWeightMagnitude());
+                final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(transactionTrits, instance.transactionValidator.getMinWeightMagnitude());
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();

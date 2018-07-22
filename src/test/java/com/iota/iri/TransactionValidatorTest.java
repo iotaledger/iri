@@ -69,20 +69,20 @@ public class TransactionValidatorTest {
     Converter.copyTrits(0, trits, 0, trits.length);
     byte[] bytes = Converter.allocateBytesForTrits(trits.length);
     Converter.bytes(trits, bytes);
-    TransactionValidator.validate(bytes, MAINNET_MWM);
+    TransactionValidator.validateBytes(bytes, MAINNET_MWM);
   }
 
   @Test
   public void validateTrits() {
     byte[] trits = getRandomTransactionTrits();
     Converter.copyTrits(0, trits, 0, trits.length);
-    TransactionValidator.validate(trits, MAINNET_MWM);
+    TransactionValidator.validateTrits(trits, MAINNET_MWM);
   }
 
   @Test(expected = RuntimeException.class)
   public void validateTritsWithInvalidMetadata() {
     byte[] trits = getRandomTransactionTrits();
-    TransactionValidator.validate(trits, MAINNET_MWM);
+    TransactionValidator.validateTrits(trits, MAINNET_MWM);
   }
 
   @Test
@@ -91,7 +91,7 @@ public class TransactionValidatorTest {
     Converter.copyTrits(0, trits, 0, trits.length);
     byte[] bytes = Converter.allocateBytesForTrits(trits.length);
     Converter.bytes(trits, 0, bytes, 0, trits.length);
-    TransactionValidator.validate(bytes, txValidator.getMinWeightMagnitude(), SpongeFactory.create(SpongeFactory.Mode.CURLP81));
+    TransactionValidator.validateBytes(bytes, txValidator.getMinWeightMagnitude(), SpongeFactory.create(SpongeFactory.Mode.CURLP81));
   }
 
   @Test

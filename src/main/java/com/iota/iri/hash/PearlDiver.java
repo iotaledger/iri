@@ -30,7 +30,7 @@ public class PearlDiver {
         }
     }
 
-    private static void validateParameters(int[] transactionTrits, int minWeightMagnitude) {
+    private static void validateParameters(byte[] transactionTrits, int minWeightMagnitude) {
         if (transactionTrits.length != TRANSACTION_LENGTH) {
             throw new RuntimeException(
                 "Invalid transaction trits length: " + transactionTrits.length);
@@ -40,7 +40,7 @@ public class PearlDiver {
         }
     }
 
-    public synchronized boolean search(final int[] transactionTrits, final int minWeightMagnitude,
+    public synchronized boolean search(final byte[] transactionTrits, final int minWeightMagnitude,
                                        int numberOfThreads) {
 
         validateParameters(transactionTrits, minWeightMagnitude);
@@ -79,7 +79,7 @@ public class PearlDiver {
         return state == COMPLETED;
     }
 
-    private Runnable getRunnable(final int threadIndex, final int[] transactionTrits, final int minWeightMagnitude,
+    private Runnable getRunnable(final int threadIndex, final byte[] transactionTrits, final int minWeightMagnitude,
                                  final long[] midStateCopyLow, final long[] midStateCopyHigh) {
         return () -> {
             for (int i = 0; i < threadIndex; i++) {
@@ -119,7 +119,7 @@ public class PearlDiver {
                         for (int i = 0; i < CURL_HASH_LENGTH; i++) {
                             transactionTrits[TRANSACTION_LENGTH - CURL_HASH_LENGTH + i] =
                                 (midStateCopyLow[i] & outMask) == 0 ? 1
-                                    : (midStateCopyHigh[i] & outMask) == 0 ? -1 : 0;
+                                    : (midStateCopyHigh[i] & outMask) == 0 ? (byte) -1 : (byte) 0;
                         }
                     }
                 }
@@ -132,7 +132,7 @@ public class PearlDiver {
         System.arraycopy(srcHigh, 0, destHigh, 0, CURL_STATE_LENGTH);
     }
 
-    private static void initializeMidCurlStates(int[] transactionTrits, long[] midStateLow, long[] midStateHigh) {
+    private static void initializeMidCurlStates(byte[] transactionTrits, long[] midStateLow, long[] midStateHigh) {
         for (int i = CURL_HASH_LENGTH; i < CURL_STATE_LENGTH; i++) {
             midStateLow[i] = HIGH_BITS;
             midStateHigh[i] = HIGH_BITS;

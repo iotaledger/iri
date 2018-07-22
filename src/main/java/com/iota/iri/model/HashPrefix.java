@@ -54,7 +54,7 @@ public final class HashPrefix implements HashId {
     }
 
     private static String trytes(byte[] bytes) {
-        int[] dest = new int[Curl.HASH_LENGTH];
+        byte[] dest = new byte[Curl.HASH_LENGTH];
         Converter.getTrits(bytes, dest);
         return Converter.trytes(dest);
     }

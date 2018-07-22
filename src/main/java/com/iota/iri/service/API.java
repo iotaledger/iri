@@ -49,6 +49,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static io.undertow.Handlers.path;
 
@@ -609,11 +610,11 @@ public class API {
 
     public void storeTransactionStatement(final List<String> trys) throws Exception {
         final List<TransactionViewModel> elements = new LinkedList<>();
-        int[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+        byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String trytes : trys) {
             //validate all trytes
             Converter.trits(trytes, txTrits, 0);
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(txTrits,
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
@@ -636,7 +637,7 @@ public class API {
         final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
         final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
         int numberOfNonMetTransactions = transactions.size();
-        final int[] inclusionStates = new int[numberOfNonMetTransactions];
+        final byte[] inclusionStates = new byte[numberOfNonMetTransactions];
 
         List<Integer> tipsIndex = new LinkedList<>();
         {
@@ -701,7 +702,7 @@ public class API {
             return GetInclusionStatesResponse.create(inclusionStatesBoolean);
         }
     }
-    private boolean exhaustiveSearchWithinIndex(Queue<Hash> nonAnalyzedTransactions, Set<Hash> analyzedTips, List<Hash> transactions, int[] inclusionStates, int count, int index) throws Exception {
+    private boolean exhaustiveSearchWithinIndex(Queue<Hash> nonAnalyzedTransactions, Set<Hash> analyzedTips, List<Hash> transactions, byte[] inclusionStates, int count, int index) throws Exception {
         Hash pointer;
         MAIN_LOOP:
         while ((pointer = nonAnalyzedTransactions.poll()) != null) {
@@ -829,11 +830,11 @@ public class API {
 
     public void broadcastTransactionStatement(final List<String> trytes2) {
         final List<TransactionViewModel> elements = new LinkedList<>();
-        int[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+        byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String tryte : trytes2) {
             //validate all trytes
             Converter.trits(tryte, txTrits, 0);
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(txTrits, instance.transactionValidator.getMinWeightMagnitude());
+            final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits, instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
         for (final TransactionViewModel transactionViewModel : elements) {
@@ -917,7 +918,7 @@ public class API {
         Hash prevTransaction = null;
         pearlDiver = new PearlDiver();
 
-        int[] transactionTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+        byte[] transactionTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
 
         for (final String tryte : trytes) {
             long startTime = System.nanoTime();
@@ -934,10 +935,10 @@ public class API {
 
                 //attachment fields: tag and timestamps
                 //tag - copy the obsolete tag to the attachment tag field only if tag isn't set.
-                if(Arrays.stream(transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET, TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE).allMatch(s -> s == 0)) {
+                if(IntStream.range(TransactionViewModel.TAG_TRINARY_OFFSET, TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE).allMatch(idx -> transactionTrits[idx]  == ((byte) 0))) {
                     System.arraycopy(transactionTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
-                        transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
-                        TransactionViewModel.TAG_TRINARY_SIZE);
+                    transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
+                    TransactionViewModel.TAG_TRINARY_SIZE);
                 }
 
                 Converter.copyTrits(timestamp,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
@@ -952,7 +953,7 @@ public class API {
                     break;
                 }
                 //validate PoW - throws exception if invalid
-                final TransactionViewModel transactionViewModel = instance.transactionValidator.validate(transactionTrits, instance.transactionValidator.getMinWeightMagnitude());
+                final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(transactionTrits, instance.transactionValidator.getMinWeightMagnitude());
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
@@ -1082,12 +1083,12 @@ public class API {
 
         final int txCount = (message.length() + txMessageSize - 1) / txMessageSize;
 
-        final int[] timestampTrits = new int[TransactionViewModel.TIMESTAMP_TRINARY_SIZE];
+        final byte[] timestampTrits = new byte[TransactionViewModel.TIMESTAMP_TRINARY_SIZE];
         Converter.copyTrits(System.currentTimeMillis(), timestampTrits, 0, timestampTrits.length);
         final String timestampTrytes = StringUtils.rightPad(Converter.trytes(timestampTrits), timestampTrits.length / 3, '9');
 
-        final int[] lastIndexTrits = new int[TransactionViewModel.LAST_INDEX_TRINARY_SIZE];
-        int[] currentIndexTrits = new int[TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE];
+        final byte[] lastIndexTrits = new byte[TransactionViewModel.LAST_INDEX_TRINARY_SIZE];
+        byte[] currentIndexTrits = new byte[TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE];
 
         Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
         final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
@@ -1124,12 +1125,12 @@ public class API {
 
         for (String tx : transactions) {
             String essence = tx.substring(startIdx);
-            int[] essenceTrits = new int[essence.length() * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
+            byte[] essenceTrits = new byte[essence.length() * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
             Converter.trits(essence, essenceTrits, 0);
             sponge.absorb(essenceTrits, 0, essenceTrits.length);
         }
 
-        int[] essenceTrits = new int[243];
+        byte[] essenceTrits = new byte[243];
         sponge.squeeze(essenceTrits, 0, essenceTrits.length);
         final String bundleHash = Converter.trytes(essenceTrits, 0, essenceTrits.length);
 

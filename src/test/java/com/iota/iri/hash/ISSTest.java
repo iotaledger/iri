@@ -30,28 +30,28 @@ public class ISSTest {
         int nof = 1;
         SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
 
-        int[] seedTrits = new int[Sponge.HASH_LENGTH];
+        byte[] seedTrits = new byte[Sponge.HASH_LENGTH];
 
         for (SpongeFactory.Mode mode: modes) {
             Converter.trits(seed, seedTrits, 0);
-            int[] subseed = ISS.subseed(mode, seedTrits, index);
-            int[] key = ISS.key(mode, subseed, nof);
+            byte[] subseed = ISS.subseed(mode, seedTrits, index);
+            byte[] key = ISS.key(mode, subseed, nof);
 
 
             Kerl curl = new Kerl();
-            int[] messageTrits = Converter.allocateTritsForTrytes(message.length());
+            byte[] messageTrits = Converter.allocateTritsForTrytes(message.length());
             Converter.trits(message, messageTrits, 0);
             curl.absorb(messageTrits, 0, messageTrits.length);
-            int[] messageHash = new int[Curl.HASH_LENGTH];
+            byte[] messageHash = new byte[Curl.HASH_LENGTH];
             curl.squeeze(messageHash, 0, Curl.HASH_LENGTH);
-            int[] normalizedFragment =
+            byte[] normalizedFragment =
                     Arrays.copyOf(ISS.normalizedBundle(messageHash),
                             ISS.NUMBER_OF_FRAGMENT_CHUNKS);
-            int[] signature = ISS.signatureFragment(mode, normalizedFragment, key);
-            int[] sigDigest = ISS.digest(mode, normalizedFragment, signature);
-            int[] signedAddress = ISS.address(mode, sigDigest);
-            int[] digest = ISS.digests(mode, key);
-            int[] address = ISS.address(mode, digest);
+            byte[] signature = ISS.signatureFragment(mode, normalizedFragment, key);
+            byte[] sigDigest = ISS.digest(mode, normalizedFragment, signature);
+            byte[] signedAddress = ISS.address(mode, sigDigest);
+            byte[] digest = ISS.digests(mode, key);
+            byte[] address = ISS.address(mode, digest);
             assertTrue(Arrays.equals(address, signedAddress));
         }
     }
@@ -65,13 +65,13 @@ public class ISSTest {
                          new Hash("MDWYEJJHJDIUVPKDY9EACGDJUOP9TLYDWETUBOYCBLYXYYYJYUXYUTCTPTDGJYFKMQMCNZDQPTBE9AFIW")};
         for (int i=0;i<modes.length;i++) {
             SpongeFactory.Mode mode = modes[i];
-            int[] seedTrits = Converter.allocateTritsForTrytes(seed.length());
+            byte[] seedTrits = Converter.allocateTritsForTrytes(seed.length());
             Converter.trits(seed, seedTrits, 0);
 
-            int[] subseed = ISS.subseed(mode, seedTrits, index);
-            int[] key = ISS.key(mode, subseed, nof);
-            int[] digest = ISS.digests(mode, key);
-            int[] address = ISS.address(mode, digest);
+            byte[] subseed = ISS.subseed(mode, seedTrits, index);
+            byte[] key = ISS.key(mode, subseed, nof);
+            byte[] digest = ISS.digests(mode, key);
+            byte[] address = ISS.address(mode, digest);
             Hash addressTrytes = new Hash(address);
             assertEquals(hashes[i].toString(), addressTrytes.toString());
         }
@@ -82,8 +82,14 @@ public class ISSTest {
     }
     final static Random rnd_seed = new Random();
 
-    public static int[] getRandomTrits(int length) {
-        return Arrays.stream(new int[length]).map(i -> rnd_seed.nextInt(3)-1).toArray();
+    public static byte[] getRandomTrits(int length) {
+        byte[] out = new byte[length];
+
+        for(int i = 0; i < out.length; i++) {
+            out[i] = (byte) (rnd_seed.nextInt(3) - 1);
+        }
+
+        return out;
     }
 
     //@Test
@@ -96,16 +102,13 @@ public class ISSTest {
             Hash[] addresses = new Hash[4];
 
             for (int j = 0; j< 4 ; j++) {
-                int[] subseed = ISS.subseed(mode, seed.trits(), j);
-                int[] key = ISS.key(mode, subseed, nof);
-                int[] digest = ISS.digests(mode, key);
-                int[] address = ISS.address(mode, digest);
+                byte[] subseed = ISS.subseed(mode, seed.trits(), j);
+                byte[] key = ISS.key(mode, subseed, nof);
+                byte[] digest = ISS.digests(mode, key);
+                byte[] address = ISS.address(mode, digest);
                 addresses[j] = new Hash(address);
             }
             System.out.println(String.format("%s,%s,%s,%s,%s", seed, addresses[0],addresses[1],addresses[2],addresses[3]));
-
         }
-
     }
-
 }

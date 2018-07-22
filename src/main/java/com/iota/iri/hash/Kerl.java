@@ -29,7 +29,7 @@ public final class Kerl implements Sponge {
     }
 
     @Override
-    public void absorb(final int[] trits, final int offset, final int length) {
+    public void absorb(final byte[] trits, final int offset, final int length) {
         if (length % 243 != 0) {
             throw new RuntimeException("Illegal length: " + length);
         }
@@ -43,7 +43,7 @@ public final class Kerl implements Sponge {
     }
 
     @Override
-    public void squeeze(final int[] trits, final int offset, final int length) {
+    public void squeeze(final byte[] trits, final int offset, final int length) {
         if (length % 243 != 0) {
             throw new IllegalArgumentException("Illegal length: " + length);
         }
@@ -70,7 +70,7 @@ public final class Kerl implements Sponge {
         }
     }
 
-    public static BigInteger bigIntFromTrits(final int[] trits, final int offset, final int size) {
+    public static BigInteger bigIntFromTrits(final byte[] trits, final int offset, final int size) {
         for (int i = offset; i < offset + size; i++) {
             if (trits[i] < -1 || trits[i] > 1) {
                 throw new IllegalArgumentException("not a trit: " + trits[i]);
@@ -89,14 +89,14 @@ public final class Kerl implements Sponge {
         return value;
     }
 
-    public static void tritsFromBigInt(final BigInteger value, final int[] destination, final int offset, final int size) {
+    public static void tritsFromBigInt(final BigInteger value, final byte[] destination, final int offset, final int size) {
 
         if (destination.length - offset < size) {
             throw new IllegalArgumentException("Destination array has invalid size");
         }
         final int signum = value.signum();
         if (signum == 0) {
-            Arrays.fill(destination, offset, size, 0);
+            Arrays.fill(destination, offset, size, (byte) 0);
             return;
         }
         BigInteger absoluteValue = value.abs();
@@ -104,12 +104,12 @@ public final class Kerl implements Sponge {
             BigInteger[] divRemainder = absoluteValue.divideAndRemainder(RADIX);
             absoluteValue = divRemainder[0];
 
-            int remainder = divRemainder[1].intValue();
+            byte remainder = divRemainder[1].byteValue();
             if (remainder > Converter.MAX_TRIT_VALUE) {
                 remainder = Converter.MIN_TRIT_VALUE;
                 absoluteValue = absoluteValue.add(BigInteger.ONE);
             }
-            destination[offset + i] = signum < 0 ? -remainder : remainder;
+            destination[offset + i] = signum < 0 ? (byte) -remainder : remainder;
         }
     }
 

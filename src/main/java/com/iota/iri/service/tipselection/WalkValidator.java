@@ -1,12 +1,22 @@
 package com.iota.iri.service.tipselection;
 
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.utils.collections.impl.BoundedHashSet;
+import com.iota.iri.utils.collections.interfaces.BoundedSet;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 /**
  * Validates consistency of tails.
  */
 @FunctionalInterface
 public interface WalkValidator {
+
+    int MAX_CACHE_SIZE = 2_000_000;
+    //As long as tip selection is synchronized we are fine with the collection not being thread safe
+    BoundedSet<Hash> FAILED_BELOW_MAX_DEPTH_CACHE = new BoundedHashSet<>(20_000, MAX_CACHE_SIZE);
 
     /**
      * Validation

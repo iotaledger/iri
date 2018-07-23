@@ -7,6 +7,8 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.Milestone;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.collections.impl.BoundedSetWrapper;
+import com.iota.iri.utils.collections.interfaces.BoundedSet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -25,6 +27,12 @@ import java.util.*;
  *      </ol>
  */
 public class WalkValidatorImpl implements WalkValidator {
+
+    public static final int MAX_CACHE_SIZE = 2_000_000;
+    //As long as tip selection is synchronized we are fine with the collection not being thread safe
+    private static final BoundedSet<Hash> FAILED_BELOW_MAX_DEPTH_CACHE = new BoundedSetWrapper<>(
+            new LinkedHashSet<>(10_000), MAX_CACHE_SIZE);
+    public static final int MAX_ANALYZED_TXS = 10_000;
 
     private final Tangle tangle;
     private final Logger log = LoggerFactory.getLogger(WalkValidator.class);
@@ -55,7 +63,6 @@ public class WalkValidatorImpl implements WalkValidator {
     public boolean isValid(Hash transactionHash) throws Exception {
 
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, transactionHash);
-
         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
             log.debug("Validation failed: {} is missing in db", transactionHash);
             return false;
@@ -75,9 +82,9 @@ public class WalkValidatorImpl implements WalkValidator {
         return true;
     }
 
-    private boolean belowMaxDepth(Hash tip, int depth) throws Exception {
+    private boolean belowMaxDepth(Hash tip, int allowedSnapshotIndex) throws Exception {
         //if tip is confirmed stop
-        if (TransactionViewModel.fromHash(tangle, tip).snapshotIndex() >= depth) {
+        if (TransactionViewModel.fromHash(tangle, tip).snapshotIndex() >= allowedSnapshotIndex) {
             return false;
         }
         //if tip unconfirmed, check if any referenced tx is confirmed below maxDepth
@@ -85,9 +92,20 @@ public class WalkValidatorImpl implements WalkValidator {
         Set<Hash> analyzedTransactions = new HashSet<>();
         Hash hash;
         while ((hash = nonAnalyzedTransactions.poll()) != null) {
+            if (FAILED_BELOW_MAX_DEPTH_CACHE.contains(hash)) {
+                updateCache(analyzedTransactions);
+                return true;
+            }
+            if (analyzedTransactions.size() == MAX_ANALYZED_TXS) {
+                updateCache(analyzedTransactions);
+                return true;
+            }
+
             if (analyzedTransactions.add(hash)) {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-                if (transaction.snapshotIndex() != 0 && transaction.snapshotIndex() < depth) {
+                if ((transaction.snapshotIndex() != 0 || Objects.equals(Hash.NULL_HASH, transaction.getHash()))
+                        && transaction.snapshotIndex() < allowedSnapshotIndex) {
+                    updateCache(analyzedTransactions);
                     return true;
                 }
                 if (transaction.snapshotIndex() == 0) {
@@ -101,4 +119,9 @@ public class WalkValidatorImpl implements WalkValidator {
         maxDepthOkMemoization.add(tip);
         return false;
     }
+
+    private void updateCache(Set<Hash> txsToBeAdded) {
+        FAILED_BELOW_MAX_DEPTH_CACHE.addAll(txsToBeAdded);
+    }
+
 }

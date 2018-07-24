@@ -1,10 +1,10 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.LedgerValidator;
+import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.Milestone;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.collections.impl.BoundedSetWrapper;
@@ -30,7 +30,7 @@ public class WalkValidatorImpl implements WalkValidator {
 
     public static final int INITIAL_CACHE_CAPACITY = 10_000;
     //As long as tip selection is synchronized we are fine with the collection not being thread safe
-    private static BoundedSet<Hash> failedBelowMaxDepthCache;
+    static BoundedSet<Hash> failedBelowMaxDepthCache;
     private int maxAnalyzedTxs;
 
     private final Tangle tangle;

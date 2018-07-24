@@ -28,11 +28,12 @@ import java.util.*;
  */
 public class WalkValidatorImpl implements WalkValidator {
 
+    //calculate this magic number
     public static final int MAX_CACHE_SIZE = 2_000_000;
     //As long as tip selection is synchronized we are fine with the collection not being thread safe
     private static final BoundedSet<Hash> FAILED_BELOW_MAX_DEPTH_CACHE = new BoundedSetWrapper<>(
             new LinkedHashSet<>(10_000), MAX_CACHE_SIZE);
-    public static final int MAX_ANALYZED_TXS = 10_000;
+    private int maxAnalyzedTxs = 10_000;
 
     private final Tangle tangle;
     private final Logger log = LoggerFactory.getLogger(WalkValidator.class);
@@ -93,10 +94,13 @@ public class WalkValidatorImpl implements WalkValidator {
         Hash hash;
         while ((hash = nonAnalyzedTransactions.poll()) != null) {
             if (FAILED_BELOW_MAX_DEPTH_CACHE.contains(hash)) {
+                log.debug("failed below max depth because of a previously failed tx cache hit");
                 updateCache(analyzedTransactions);
                 return true;
             }
-            if (analyzedTransactions.size() == MAX_ANALYZED_TXS) {
+            if (analyzedTransactions.size() == maxAnalyzedTxs) {
+                log.debug("failed below max depth because of exceeding max threshold of {} analyzed transactions",
+                        maxAnalyzedTxs);
                 updateCache(analyzedTransactions);
                 return true;
             }
@@ -106,6 +110,8 @@ public class WalkValidatorImpl implements WalkValidator {
                 if ((transaction.snapshotIndex() != 0 || Objects.equals(Hash.NULL_HASH, transaction.getHash()))
                         && transaction.snapshotIndex() < lowerAllowedSnapshotIndex) {
                     updateCache(analyzedTransactions);
+                    log.debug("failed below max depth because of reaching a tx below the allowed snapshot index {}",
+                            lowerAllowedSnapshotIndex);
                     return true;
                 }
                 if (transaction.snapshotIndex() == 0) {

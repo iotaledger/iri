@@ -1,7 +1,6 @@
 package com.iota.iri.utils.collections.impl;
 
 import com.iota.iri.utils.collections.interfaces.BoundedSet;
-import org.apache.commons.collections4.SetUtils;
 
 import java.util.*;
 import java.util.function.Consumer;

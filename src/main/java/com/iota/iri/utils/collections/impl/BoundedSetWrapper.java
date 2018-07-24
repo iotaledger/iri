@@ -31,10 +31,7 @@ public class BoundedSetWrapper<E> implements BoundedSet<E>{
      */
     public BoundedSetWrapper(Set<E> c, int maxSize) {
         Objects.requireNonNull(c, "trying to wrap a null set");
-        if (c.size() > maxSize) {
-            throw new IllegalArgumentException(String.format("The given set size %d is larger then maxSize %d", c.size(),
-                    maxSize));
-        }
+        requireCollectionIsNotAboveMaxSize(c, maxSize);
         this.maxSize = maxSize;
         this.delegate = c;
     }
@@ -102,17 +99,12 @@ public class BoundedSetWrapper<E> implements BoundedSet<E>{
 
     @Override
     public boolean addAll(Collection<? extends E> c) {
+        requireCollectionIsNotAboveMaxSize(c, getMaxSize());
         if (canCollectionBeFullyAdded(c)) {
             return delegate.addAll(c);
         }
         else {
-            Set<E> transform = new HashSet<>(c);
-            Set<E> difference = SetUtils.difference(delegate, transform).toSet();
-            if (difference.size() > getMaxSize()) {
-                throw new IllegalArgumentException(String.format("The given set size %d is larger then maxSize %d",
-                        difference.size(), maxSize));
-            }
-            int itemsToDelete = delegate.size() + difference.size() - getMaxSize();
+            int itemsToDelete = delegate.size() + c.size() - getMaxSize();
             Iterator<E> iterator = delegate.iterator();
             for (int i = 0; i < itemsToDelete; i++) {
                 iterator.next();
@@ -170,5 +162,12 @@ public class BoundedSetWrapper<E> implements BoundedSet<E>{
     @Override
     public String toString() {
         return delegate.toString();
+    }
+
+    private void requireCollectionIsNotAboveMaxSize(Collection<? extends E> c, int maxSize) {
+        if (c.size() > maxSize) {
+            throw new IllegalArgumentException(String.format("The given collection size %d is larger then maxSize %d", c.size(),
+                    maxSize));
+        }
     }
 }

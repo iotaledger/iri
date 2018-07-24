@@ -6,7 +6,6 @@ import org.junit.Test;
 import org.mockito.internal.util.collections.Sets;
 
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 

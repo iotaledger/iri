@@ -16,6 +16,7 @@ import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
+import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
@@ -457,17 +458,22 @@ public class API {
         if (state) {
             instance.milestone.latestSnapshot.rwlock.readLock().lock();
             try {
-
-                if (!instance.ledgerValidator.checkConsistency(transactions)) {
-                    state = false;
-                    info = "tails are not consistent (would lead to inconsistent ledger state)";
+                WalkValidatorImpl walkValidator = new WalkValidatorImpl(instance.tangle, instance.ledgerValidator,
+                        instance.transactionValidator, instance.milestone, instance.tipsSelector.getMaxDepth(),
+                        instance.configuration.integer(DefaultConfSettings.BELOW_MAX_DEPTH_TRANSACTION_LIMIT));
+                for (Hash transaction : transactions) {
+                    if (!walkValidator.isValid(transaction)) {
+                        state = false;
+                        info = "tails are not consistent (would lead to inconsistent ledger state or below max depth)";
+                        break;
+                    }
                 }
             } finally {
                 instance.milestone.latestSnapshot.rwlock.readLock().unlock();
             }
         }
 
-        return CheckConsistency.create(state,info);
+        return CheckConsistency.create(state, info);
     }
 
     private double getParameterAsDouble(Map<String, Object> request, String paramName) throws ValidationException {

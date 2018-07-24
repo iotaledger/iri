@@ -82,9 +82,9 @@ public class WalkValidatorImpl implements WalkValidator {
         return true;
     }
 
-    private boolean belowMaxDepth(Hash tip, int allowedSnapshotIndex) throws Exception {
+    private boolean belowMaxDepth(Hash tip, int lowerAllowedSnapshotIndex) throws Exception {
         //if tip is confirmed stop
-        if (TransactionViewModel.fromHash(tangle, tip).snapshotIndex() >= allowedSnapshotIndex) {
+        if (TransactionViewModel.fromHash(tangle, tip).snapshotIndex() >= lowerAllowedSnapshotIndex) {
             return false;
         }
         //if tip unconfirmed, check if any referenced tx is confirmed below maxDepth
@@ -104,7 +104,7 @@ public class WalkValidatorImpl implements WalkValidator {
             if (analyzedTransactions.add(hash)) {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
                 if ((transaction.snapshotIndex() != 0 || Objects.equals(Hash.NULL_HASH, transaction.getHash()))
-                        && transaction.snapshotIndex() < allowedSnapshotIndex) {
+                        && transaction.snapshotIndex() < lowerAllowedSnapshotIndex) {
                     updateCache(analyzedTransactions);
                     return true;
                 }

@@ -217,7 +217,7 @@ public class API {
                         return ErrorResponse.create("Invalid params");
                     }
 
-                    if (invalidSubtangleStatus()) {
+                    if (!isValidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
@@ -261,7 +261,7 @@ public class API {
                     return getBalancesStatement(addresses, tips, threshold);
                 }
                 case "getInclusionStates": {
-                    if (invalidSubtangleStatus()) {
+                    if (!isValidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
@@ -339,7 +339,7 @@ public class API {
                     }
                 }
                 case "checkConsistency": {
-                    if (invalidSubtangleStatus()) {
+                    if (!isValidSubtangleStatus()) {
                         return ErrorResponse
                                 .create("This operations cannot be executed: The subtangle has not been updated yet.");
                     }
@@ -530,8 +530,9 @@ public class API {
 
     }
 
-    public boolean invalidSubtangleStatus() {
-        return (instance.milestone.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
+    public boolean isValidSubtangleStatus() {
+        return (instance.milestone.latestSolidSubtangleMilestoneIndex != milestoneStartIndex &&
+            instance.milestone.latestSolidSubtangleMilestoneIndex + instance.tipsSelector.getMaxDepth() >= instance.milestone.latestMilestoneIndex);
     }
 
     private AbstractResponse removeNeighborsStatement(List<String> uris) {
@@ -581,7 +582,7 @@ public class API {
 
     public synchronized List<Hash> getTransactionToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
 
-        if (invalidSubtangleStatus()) {
+        if (!isValidSubtangleStatus()) {
             throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
         }
 

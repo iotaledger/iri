@@ -20,7 +20,7 @@ public class BoundedSetWrapperTest {
     @Test
     public void createSetAndAssertEquals() {
         Set<Integer> set = Sets.newSet(1, 2, 3, 4, 5, 6);
-        BoundedSet<Integer> boundedSetWrapper = new BoundedSetWrapper<>(set, 4);
+        BoundedSet<Integer> boundedSetWrapper = new BoundedSetWrapper<>(set, 6);
         Assert.assertEquals("sets should be equal", set, boundedSetWrapper);
 
     }

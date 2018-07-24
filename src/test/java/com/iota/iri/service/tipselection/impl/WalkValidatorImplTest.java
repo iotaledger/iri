@@ -4,6 +4,7 @@ import com.iota.iri.LedgerValidator;
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
@@ -64,7 +65,9 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = depth;
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, depth);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator,
+                milestoneTracker, depth, Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT) ,
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertTrue("Validation failed", walkValidator.isValid(hash));
     }
 
@@ -80,7 +83,9 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = depth;
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, depth);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator,
+                milestoneTracker, depth, Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT),
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertFalse("Validation succeded but should have failed since tx is missing", walkValidator.isValid(hash));
     }
 
@@ -95,7 +100,9 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, 15);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator,
+                milestoneTracker, 15, Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT),
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertFalse("Validation succeded but should have failed since we are not on a tail", walkValidator.isValid(hash));
     }
 
@@ -110,7 +117,9 @@ public class WalkValidatorImplTest {
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, 15);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator,transactionValidator,
+                milestoneTracker, 15, Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT) ,
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertFalse("Validation succeded but should have failed since tx is not solid",
                 walkValidator.isValid(hash));
     }
@@ -126,7 +135,9 @@ public class WalkValidatorImplTest {
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, 15);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator,
+                milestoneTracker, 15, Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT),
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertFalse("Validation succeeded but should have failed tx is below max depth",
                 walkValidator.isValid(hash));
     }
@@ -149,19 +160,23 @@ public class WalkValidatorImplTest {
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = 100;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, 15);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator,
+                milestoneTracker, 15, Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT) ,
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertTrue("Validation failed but should have succeeded since tx is above max depth",
                 walkValidator.isValid(hash));
     }
 
     @Test
     public void failBelowMaxDepthWithFreshMilestoneDueToLongChain() throws Exception {
+        final int maxAnalyzedTxs = Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT);
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
         tx.store(tangle);
         tx.setSnapshot(tangle, 92);
         Hash hash = tx.getHash();
-        for (int i = 0; i < WalkValidatorImpl.MAX_ANALYZED_TXS ; i++) {
-            tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash), TransactionViewModelTest.getRandomTransactionHash());
+        for (int i = 0; i < maxAnalyzedTxs ; i++) {
+            tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash),
+                    TransactionViewModelTest.getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             hash = tx.getHash();
@@ -172,7 +187,9 @@ public class WalkValidatorImplTest {
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = 100;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, 15);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator,
+                milestoneTracker, 15, maxAnalyzedTxs,
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertFalse("Validation succeeded but should have failed since tx is below max depth",
                 walkValidator.isValid(hash));
     }
@@ -180,8 +197,9 @@ public class WalkValidatorImplTest {
     @Test
     public void belowMaxDepthOnGenesis() throws Exception {
         TransactionViewModel tx = null;
+        final int maxAnalyzedTxs = Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT);
         Hash hash = Hash.NULL_HASH;
-        for (int i = 0; i < WalkValidatorImpl.MAX_ANALYZED_TXS - 2 ; i++) {
+        for (int i = 0; i < maxAnalyzedTxs - 2 ; i++) {
             tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash), TransactionViewModelTest.getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
@@ -193,7 +211,9 @@ public class WalkValidatorImplTest {
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), tx.getHash()))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = 15;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, 15);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator,
+                milestoneTracker, 15, maxAnalyzedTxs,
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertTrue("Validation failed but should have succeeded. We didn't exceed the maximal amount of" +
                         "transactions that may be analyzed.",
                 walkValidator.isValid(tx.getHash()));
@@ -201,10 +221,12 @@ public class WalkValidatorImplTest {
 
     @Test
     public void failBelowMaxDepthOnGenesisDueToLongChain() throws Exception {
+        final int maxAnalyzedTxs = Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT);
         TransactionViewModel tx = null;
         Hash hash = Hash.NULL_HASH;
-        for (int i = 0; i < WalkValidatorImpl.MAX_ANALYZED_TXS ; i++) {
-            tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash), TransactionViewModelTest.getRandomTransactionHash());
+        for (int i = 0; i < maxAnalyzedTxs; i++) {
+            tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash),
+                    TransactionViewModelTest.getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             tx.store(tangle);
@@ -215,7 +237,9 @@ public class WalkValidatorImplTest {
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), tx.getHash()))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = 17;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, 15);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator,
+                milestoneTracker, 15, maxAnalyzedTxs,
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertFalse("Validation succeeded but should have failed. We exceeded the maximal amount of" +
                         "transactions that may be analyzed.",
                 walkValidator.isValid(tx.getHash()));
@@ -232,7 +256,9 @@ public class WalkValidatorImplTest {
                 .thenReturn(false);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestoneTracker, 15);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator,
+                milestoneTracker, 15, Integer.parseInt(Configuration.BELOW_MAX_DEPTH_LIMIT),
+                Integer.parseInt(Configuration.WALK_VALIDATOR_CACHE));
         Assert.assertFalse("Validation succeded but should have failed due to inconsistent ledger state",
                 walkValidator.isValid(hash));
     }

@@ -1,18 +1,19 @@
 package com.iota.iri.utils.collections.impl;
 
-import com.iota.iri.utils.collections.interfaces.BoundedCollection;
 import com.iota.iri.utils.collections.interfaces.BoundedSet;
 import org.apache.commons.collections4.SetUtils;
 
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
 /**
- * A set that doesn't allow to add elements to it once it is full
+ * A wrapper for a set that allows up to {@code maxsize} elements.
+ * Old elements are removed once it is full and new elements are added.
+ * The way old elements are chosen depends on the underlying set implementation.
+ *
  *
  * @param <E> the type parameter
  */

@@ -49,7 +49,7 @@ public class Configuration {
     public static final String REQ_HASH_SIZE = "46";
     public static final String TESTNET_REQ_HASH_SIZE = "49";
     public static final String BELOW_MAX_DEPTH_LIMIT = "20000";
-    public static final String WALK_VALIDATOR_CACHE = "20000";
+    public static final String WALK_VALIDATOR_CACHE = "200000";
 
 
 

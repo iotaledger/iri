@@ -28,11 +28,9 @@ import java.util.*;
  */
 public class WalkValidatorImpl implements WalkValidator {
 
-    //calculate this magic number
-    public static final int MAX_CACHE_SIZE = 2_000_000;
+    public static final int INITIAL_CACHE_CAPACITY = 10_000;
     //As long as tip selection is synchronized we are fine with the collection not being thread safe
-    private static final BoundedSet<Hash> FAILED_BELOW_MAX_DEPTH_CACHE = new BoundedSetWrapper<>(
-            new LinkedHashSet<>(10_000), MAX_CACHE_SIZE);
+    private static BoundedSet<Hash> failedBelowMaxDepthCache;
     private int maxAnalyzedTxs;
 
     private final Tangle tangle;
@@ -48,7 +46,7 @@ public class WalkValidatorImpl implements WalkValidator {
     private Set<Hash> myApprovedHashes;
 
     public WalkValidatorImpl(Tangle tangle, LedgerValidator ledgerValidator, TransactionValidator transactionValidator,
-                             Milestone milestone, int maxDepth, int maxAnalyzedTxs) {
+                             Milestone milestone, int maxDepth, int maxAnalyzedTxs, int cacheSize) {
         this.tangle = tangle;
         this.ledgerValidator = ledgerValidator;
         this.transactionValidator = transactionValidator;
@@ -56,9 +54,18 @@ public class WalkValidatorImpl implements WalkValidator {
         this.maxDepth = maxDepth;
         this.maxAnalyzedTxs = maxAnalyzedTxs;
 
+        failedBelowMaxDepthCache = fetchCache(cacheSize);
         maxDepthOkMemoization = new HashSet<>();
         myDiff = new HashMap<>();
         myApprovedHashes = new HashSet<>();
+    }
+
+    private BoundedSet<Hash> fetchCache(int cacheSize) {
+        if (failedBelowMaxDepthCache == null) {
+            failedBelowMaxDepthCache = new BoundedSetWrapper<>(
+                    new LinkedHashSet<>(INITIAL_CACHE_CAPACITY), cacheSize);
+        }
+        return failedBelowMaxDepthCache;
     }
 
     @Override
@@ -94,7 +101,7 @@ public class WalkValidatorImpl implements WalkValidator {
         Set<Hash> analyzedTransactions = new HashSet<>();
         Hash hash;
         while ((hash = nonAnalyzedTransactions.poll()) != null) {
-            if (FAILED_BELOW_MAX_DEPTH_CACHE.contains(hash)) {
+            if (failedBelowMaxDepthCache.contains(hash)) {
                 log.debug("failed below max depth because of a previously failed tx cache hit");
                 updateCache(analyzedTransactions);
                 return true;
@@ -128,7 +135,7 @@ public class WalkValidatorImpl implements WalkValidator {
     }
 
     private void updateCache(Set<Hash> txsToBeAdded) {
-        FAILED_BELOW_MAX_DEPTH_CACHE.addAll(txsToBeAdded);
+        failedBelowMaxDepthCache.addAll(txsToBeAdded);
     }
 
 }

@@ -49,9 +49,9 @@ public class MapIdentityManager implements IdentityManager {
         if (credential instanceof PasswordCredential) {
             char[] givenPassword = ((PasswordCredential) credential).getPassword();            
             String trytes = Converter.asciiToTrytes(new String(givenPassword));
-            int[] in_trits = Converter.allocateTritsForTrytes(trytes.length());
+            byte[] in_trits = Converter.allocateTritsForTrytes(trytes.length());
             Converter.trits(trytes, in_trits, 0);
-            int[] hash_trits = new int[Curl.HASH_LENGTH];
+            byte[] hash_trits = new byte[Curl.HASH_LENGTH];
             Sponge curl;
             curl = SpongeFactory.create(SpongeFactory.Mode.CURLP81);
             curl.absorb(in_trits, 0, in_trits.length);

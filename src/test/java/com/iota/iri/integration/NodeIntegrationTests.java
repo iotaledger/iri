@@ -139,8 +139,8 @@ public class NodeIntegrationTests {
     }
 
     private void newMilestone(API api, List<Hash> tips, long index) throws Exception {
-        List<int[]> transactions = new ArrayList<>();
-        transactions.add(new int[TRINARY_SIZE]);
+        List<byte[]> transactions = new ArrayList<>();
+        transactions.add(new byte[TRINARY_SIZE]);
         Converter.copyTrits(index, transactions.get(0), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE);
         transactions.add(Arrays.copyOf(transactions.get(0), TRINARY_SIZE));
         Hash coordinator = new Hash(Configuration.TESTNET_COORDINATOR_ADDRESS);
@@ -151,31 +151,31 @@ public class NodeIntegrationTests {
         api.broadcastTransactionStatement(elements);
     }
 
-    public void setBundleHash(List<int[]> transactions, Curl customCurl) {
+    public void setBundleHash(List<byte[]> transactions, Curl customCurl) {
 
-        int[] hash = new int[Curl.HASH_LENGTH];
+        byte[] hash = new byte[Curl.HASH_LENGTH];
 
         Sponge curl = customCurl == null ? SpongeFactory.create(SpongeFactory.Mode.CURLP81) : customCurl;
         curl.reset();
 
         for (int i = 0; i < transactions.size(); i++) {
-            int[] t = Arrays.copyOfRange(transactions.get(i), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_OFFSET + ADDRESS_TRINARY_SIZE);
+            byte[] t = Arrays.copyOfRange(transactions.get(i), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_OFFSET + ADDRESS_TRINARY_SIZE);
 
-            int[] valueTrits = Arrays.copyOfRange(transactions.get(i), VALUE_TRINARY_OFFSET, VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE);
+            byte[] valueTrits = Arrays.copyOfRange(transactions.get(i), VALUE_TRINARY_OFFSET, VALUE_TRINARY_OFFSET + VALUE_TRINARY_SIZE);
             t = ArrayUtils.addAll(t, valueTrits);
 
-            int[] tagTrits = Arrays.copyOfRange(transactions.get(i), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_OFFSET + OBSOLETE_TAG_TRINARY_SIZE);
+            byte[] tagTrits = Arrays.copyOfRange(transactions.get(i), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_OFFSET + OBSOLETE_TAG_TRINARY_SIZE);
             t = ArrayUtils.addAll(t, tagTrits);
 
-            int[] timestampTrits  = Arrays.copyOfRange(transactions.get(i), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_OFFSET + TIMESTAMP_TRINARY_SIZE);
+            byte[] timestampTrits  = Arrays.copyOfRange(transactions.get(i), TIMESTAMP_TRINARY_OFFSET, TIMESTAMP_TRINARY_OFFSET + TIMESTAMP_TRINARY_SIZE);
             t = ArrayUtils.addAll(t, timestampTrits);
 
             Converter.copyTrits(i, transactions.get(i), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_SIZE);
-            int[] currentIndexTrits = Arrays.copyOfRange(transactions.get(i), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_OFFSET + CURRENT_INDEX_TRINARY_SIZE);
+            byte[] currentIndexTrits = Arrays.copyOfRange(transactions.get(i), CURRENT_INDEX_TRINARY_OFFSET, CURRENT_INDEX_TRINARY_OFFSET + CURRENT_INDEX_TRINARY_SIZE);
             t = ArrayUtils.addAll(t, currentIndexTrits);
 
             Converter.copyTrits(transactions.size(), transactions.get(i), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_SIZE);
-            int[] lastIndexTrits = Arrays.copyOfRange(transactions.get(i), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_OFFSET + LAST_INDEX_TRINARY_SIZE);
+            byte[] lastIndexTrits = Arrays.copyOfRange(transactions.get(i), LAST_INDEX_TRINARY_OFFSET, LAST_INDEX_TRINARY_OFFSET + LAST_INDEX_TRINARY_SIZE);
             t = ArrayUtils.addAll(t, lastIndexTrits);
 
             curl.absorb(t, 0, t.length);

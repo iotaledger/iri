@@ -167,8 +167,8 @@ public class FileExportProvider implements PersistenceProvider {
         }
         return now;
     }
-    int[] trits(Transaction transaction) {
-        int[] trits = new int[TRINARY_SIZE];
+    byte[] trits(Transaction transaction) {
+        byte[] trits = new byte[TRINARY_SIZE];
         if(transaction.bytes != null) {
             Converter.getTrits(transaction.bytes, trits);
         }

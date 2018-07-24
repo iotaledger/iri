@@ -2,14 +2,14 @@ FROM ubuntu:18.04 as local_stage_java
 MAINTAINER giorgio@iota.org
 
 # Install Java
-ARG JAVA_VERSION=8u171-1
+ARG JAVA_VERSION=8u181-1
 RUN \
   apt-get update && \
   apt-get install -y software-properties-common --no-install-recommends && \
   echo oracle-java8-installer shared/accepted-oracle-license-v1-1 select true | debconf-set-selections && \
   add-apt-repository -y ppa:webupd8team/java && \
   apt-get update && \
-  apt-get install -y oracle-java8-installer=${JAVA_VERSION}~webupd8~0 --no-install-recommends && \
+  apt-get install -y oracle-java8-installer=${JAVA_VERSION}~webupd8~1 --no-install-recommends && \
   rm -rf /var/lib/apt/lists/* && \
   rm -rf /var/cache/oracle-jdk8-installer
 

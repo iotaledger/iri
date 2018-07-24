@@ -33,7 +33,7 @@ public class WalkValidatorImpl implements WalkValidator {
     //As long as tip selection is synchronized we are fine with the collection not being thread safe
     private static final BoundedSet<Hash> FAILED_BELOW_MAX_DEPTH_CACHE = new BoundedSetWrapper<>(
             new LinkedHashSet<>(10_000), MAX_CACHE_SIZE);
-    private int maxAnalyzedTxs = 10_000;
+    private int maxAnalyzedTxs;
 
     private final Tangle tangle;
     private final Logger log = LoggerFactory.getLogger(WalkValidator.class);
@@ -48,12 +48,13 @@ public class WalkValidatorImpl implements WalkValidator {
     private Set<Hash> myApprovedHashes;
 
     public WalkValidatorImpl(Tangle tangle, LedgerValidator ledgerValidator, TransactionValidator transactionValidator,
-                             Milestone milestone, int maxDepth) {
+                             Milestone milestone, int maxDepth, int maxAnalyzedTxs) {
         this.tangle = tangle;
         this.ledgerValidator = ledgerValidator;
         this.transactionValidator = transactionValidator;
         this.milestone = milestone;
         this.maxDepth = maxDepth;
+        this.maxAnalyzedTxs = maxAnalyzedTxs;
 
         maxDepthOkMemoization = new HashSet<>();
         myDiff = new HashMap<>();

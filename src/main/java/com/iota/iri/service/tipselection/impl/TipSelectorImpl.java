@@ -33,6 +33,7 @@ public class TipSelectorImpl implements TipSelector {
     private final TransactionValidator transactionValidator;
     private final Tangle tangle;
     private final Milestone milestone;
+    private final int belowMaxDepthTxLimit;
 
     @Override
     public int getMaxDepth() {
@@ -46,7 +47,9 @@ public class TipSelectorImpl implements TipSelector {
                            RatingCalculator ratingCalculator,
                            Walker walkerAlpha,
                            Milestone milestone,
-                           int maxDepth) {
+                           int maxDepth,
+                           int belowMaxDepthTxLimit) {
+
 
         this.entryPointSelector = entryPointSelector;
         this.ratingCalculator = ratingCalculator;
@@ -55,6 +58,7 @@ public class TipSelectorImpl implements TipSelector {
 
         //used by walkValidator
         this.maxDepth = maxDepth;
+        this.belowMaxDepthTxLimit = belowMaxDepthTxLimit;
         this.ledgerValidator = ledgerValidator;
         this.transactionValidator = transactionValidator;
         this.tangle = tangle;
@@ -89,7 +93,7 @@ public class TipSelectorImpl implements TipSelector {
             //random walk
             List<Hash> tips = new LinkedList<>();
             WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestone,
-                    maxDepth);
+                    maxDepth, belowMaxDepthTxLimit);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 

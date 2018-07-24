@@ -154,6 +154,7 @@ public class IRI {
             final Option<Integer> milestoneStartIndex = parser.addIntegerOption("milestone-start");
             final Option<Integer> milestoneKeys = parser.addIntegerOption("milestone-keys");
             final Option<Long> snapshotTime = parser.addLongOption("snapshot-timestamp");
+            final Option<Integer> belowMaxDepthTxLimit = parser.addIntegerOption("below-max-depth");
 
 
             try {
@@ -330,7 +331,15 @@ public class IRI {
             if (vmaxPeers != null) {
                 configuration.put(DefaultConfSettings.MAX_PEERS, vmaxPeers);
             }
+
+            final Integer belowMaxDepthLimit = parser.getOptionValue(belowMaxDepthTxLimit);
+            if (belowMaxDepthLimit != null) {
+                configuration.put(DefaultConfSettings.BELOW_MAX_DEPTH_TRANSACTION_LIMIT,
+                        String.valueOf(belowMaxDepthLimit));
+            }
+
             return true;
+
         }
 
         private static void printUsage() {

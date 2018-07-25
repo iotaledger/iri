@@ -76,8 +76,7 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
         tx.store(tangle);
         Hash hash = tx.getTrunkTransactionHash();
-        Mockito.when(transactionValidator.checkSolidity(hash, false))
-                .thenReturn(true);
+        tx.updateSolid(true);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = depth;
@@ -128,8 +127,7 @@ public class WalkValidatorImplTest {
         tx.store(tangle);
         tx.setSnapshot(tangle, 2);
         Hash hash = tx.getHash();
-        Mockito.when(transactionValidator.checkSolidity(hash, false))
-                .thenReturn(true);
+        tx.updateSolid(true);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;

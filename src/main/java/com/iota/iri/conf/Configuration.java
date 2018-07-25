@@ -48,7 +48,8 @@ public class Configuration {
     public static final String TESTNET_PACKET_SIZE = "1653";
     public static final String REQ_HASH_SIZE = "46";
     public static final String TESTNET_REQ_HASH_SIZE = "49";
-
+    public static final String BELOW_MAX_DEPTH_LIMIT = "20000";
+    public static final String WALK_VALIDATOR_CACHE = "200000";
 
 
 
@@ -104,7 +105,9 @@ public class Configuration {
         TRANSACTION_PACKET_SIZE,
         REQUEST_HASH_SIZE,
         SNAPSHOT_TIME,
-        TIPSELECTION_ALPHA
+        TIPSELECTION_ALPHA,
+        BELOW_MAX_DEPTH_TRANSACTION_LIMIT,
+        WALK_VALIDATOR_CACHE_SIZE
     }
 
 
@@ -170,7 +173,8 @@ public class Configuration {
         conf.put(DefaultConfSettings.REQUEST_HASH_SIZE.name(), REQ_HASH_SIZE);
         conf.put(DefaultConfSettings.SNAPSHOT_TIME.name(), GLOBAL_SNAPSHOT_TIME);
         conf.put(DefaultConfSettings.TIPSELECTION_ALPHA.name(), "0.001");
-
+        conf.put(DefaultConfSettings.BELOW_MAX_DEPTH_TRANSACTION_LIMIT.name(), BELOW_MAX_DEPTH_LIMIT);
+        conf.put(DefaultConfSettings.WALK_VALIDATOR_CACHE_SIZE.name(), WALK_VALIDATOR_CACHE);
     }
 
     public boolean init() throws IOException {

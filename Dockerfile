@@ -2,7 +2,7 @@ FROM ubuntu:18.04 as local_stage_java
 MAINTAINER giorgio@iota.org
 
 # Install Java
-ARG JAVA_VERSION=8u171-1
+ARG JAVA_VERSION=8u181-1
 RUN \
   apt-get update && \
   apt-get install -y software-properties-common --no-install-recommends && \

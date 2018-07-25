@@ -54,7 +54,7 @@ public class TransactionValidator {
 
     public void init(boolean testnet, int mwm) {
         MIN_WEIGHT_MAGNITUDE = mwm;
-        
+
         //lowest allowed MWM encoded in 46 bytes.
         if (!testnet && MIN_WEIGHT_MAGNITUDE<13){
             MIN_WEIGHT_MAGNITUDE = 13;
@@ -104,17 +104,17 @@ public class TransactionValidator {
         }
     }
 
-    public static TransactionViewModel validate(final int[] trits, int minWeightMagnitude) {
+    public static TransactionViewModel validateTrits(final byte[] trits, int minWeightMagnitude) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
-    public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude) {
-        return validate(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
 
+    public static TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude) {
+        return validateBytes(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
     }
 
-    public static TransactionViewModel validate(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
+    public static TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
@@ -186,7 +186,7 @@ public class TransactionValidator {
                         for(Hash h: approvers) {
                             TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
                             if(quietQuickSetSolid(tx)) {
-                                    tx.update(tangle, "solid");
+                                tx.update(tangle, "solid");
                             } else {
                                 if (transaction.isSolid()) {
                                     addSolidTransaction(hash);

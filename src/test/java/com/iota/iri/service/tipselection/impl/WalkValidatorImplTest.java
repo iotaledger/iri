@@ -57,10 +57,9 @@ public class WalkValidatorImplTest {
     public void shouldPassValidation() throws Exception {
         int depth = 15;
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
+        tx.updateSolid(true);
         tx.store(tangle);
         Hash hash = tx.getHash();
-        Mockito.when(transactionValidator.checkSolidity(hash, false))
-                .thenReturn(true);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = depth;
@@ -111,8 +110,7 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
         tx.store(tangle);
         Hash hash = tx.getHash();
-        Mockito.when(transactionValidator.checkSolidity(hash, false))
-                .thenReturn(false);
+        tx.updateSolid(false);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
@@ -152,11 +150,10 @@ public class WalkValidatorImplTest {
             tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash), TransactionViewModelTest.getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
+            tx.updateSolid(true);
             hash = tx.getHash();
             tx.store(tangle);
         }
-        Mockito.when(transactionValidator.checkSolidity(hash, false))
-                .thenReturn(true);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = 100;
@@ -203,11 +200,10 @@ public class WalkValidatorImplTest {
             tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash), TransactionViewModelTest.getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
+            tx.updateSolid(true);
             hash = tx.getHash();
             tx.store(tangle);
         }
-        Mockito.when(transactionValidator.checkSolidity(tx.getHash(), false))
-                .thenReturn(true);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), tx.getHash()))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = 15;

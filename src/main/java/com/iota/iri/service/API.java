@@ -444,7 +444,7 @@ public class API {
             }
 
 
-            if (!instance.transactionValidator.checkSolidity(txVM.getHash(), false)) {
+            if (!txVM.isSolid()) {
                 state = false;
                 info = "tails are not solid (missing a referenced tx): " + transaction;
                 break;
@@ -737,6 +737,7 @@ public class API {
     }
 
     private synchronized AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {
+
         final Set<Hash> foundTransactions =  new HashSet<>();
         boolean containsKey = false;
 

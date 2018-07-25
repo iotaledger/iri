@@ -78,7 +78,7 @@ public class WalkValidatorImpl implements WalkValidator {
         } else if (transactionViewModel.getCurrentIndex() != 0) {
             log.debug("Validation failed: {} not a tail", transactionHash);
             return false;
-        } else if (!transactionValidator.checkSolidity(transactionViewModel.getHash(), false)) {
+        } else if (!transactionViewModel.isSolid()) {
             log.debug("Validation failed: {} is not solid", transactionHash);
             return false;
         } else if (belowMaxDepth(transactionViewModel.getHash(), milestone.latestSolidSubtangleMilestoneIndex - maxDepth)) {

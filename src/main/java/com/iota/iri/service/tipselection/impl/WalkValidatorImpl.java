@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implementation of <tt>WalkValidator</tt> that checks consistency of the ledger as part of validity checks.
@@ -64,7 +64,7 @@ public class WalkValidatorImpl implements WalkValidator {
     private BoundedSet<Hash> fetchCache(int cacheSize) {
         if (failedBelowMaxDepthCache == null) {
             failedBelowMaxDepthCache = new BoundedSetWrapper<>(
-                    new ConcurrentSkipListSet<>(), cacheSize);
+                    ConcurrentHashMap.newKeySet(INITIAL_CACHE_CAPACITY), cacheSize);
         }
         return failedBelowMaxDepthCache;
     }

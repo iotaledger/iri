@@ -155,7 +155,6 @@ public class IRI {
             final Option<Integer> milestoneKeys = parser.addIntegerOption("milestone-keys");
             final Option<Long> snapshotTime = parser.addLongOption("snapshot-timestamp");
             final Option<Integer> belowMaxDepthTxLimit = parser.addIntegerOption("max-depth-tx-limit");
-            final Option<Integer> walkValidatorCacheSize = parser.addIntegerOption("walk-validator-cache");
 
             try {
                 parser.parse(args);
@@ -332,19 +331,7 @@ public class IRI {
                 configuration.put(DefaultConfSettings.MAX_PEERS, vmaxPeers);
             }
 
-            final Integer belowMaxDepthLimit = parser.getOptionValue(belowMaxDepthTxLimit);
-            if (belowMaxDepthLimit != null) {
-                configuration.put(DefaultConfSettings.BELOW_MAX_DEPTH_TRANSACTION_LIMIT,
-                        String.valueOf(belowMaxDepthLimit));
-            }
-
-            final Integer walkValidatorCache = parser.getOptionValue(walkValidatorCacheSize);
-            if (walkValidatorCache != null) {
-                configuration.put(DefaultConfSettings.WALK_VALIDATOR_CACHE_SIZE, String.valueOf(walkValidatorCache));
-            }
-
             return true;
-
         }
 
         private static void printUsage() {

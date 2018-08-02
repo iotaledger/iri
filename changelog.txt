@@ -1,3 +1,6 @@
+1.5.3
+   - Remove WalkValidator cache of tips that are below max depth (#903)
+
 1.5.2
    - Fail early on below max depth and don't solidify on api calls (#883)
    - Two new configurations added: "max-depth-tx-limit" and "--walk-validator-cache"

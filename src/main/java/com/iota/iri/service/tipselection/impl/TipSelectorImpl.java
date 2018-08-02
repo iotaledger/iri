@@ -8,11 +8,11 @@ import com.iota.iri.model.HashId;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import com.iota.iri.zmq.MessageQ;
 
 import java.security.InvalidAlgorithmParameterException;
-import java.security.SecureRandom;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Implementation of <tt>TipSelector</tt> that selects 2 tips,
@@ -34,7 +34,6 @@ public class TipSelectorImpl implements TipSelector {
     private final Tangle tangle;
     private final Milestone milestone;
     private final int belowMaxDepthTxLimit;
-    private final int validatorCacheSize;
 
     @Override
     public int getMaxDepth() {
@@ -49,8 +48,7 @@ public class TipSelectorImpl implements TipSelector {
                            Walker walkerAlpha,
                            Milestone milestone,
                            int maxDepth,
-                           int belowMaxDepthTxLimit,
-                           int validatorCacheSize) {
+                           int belowMaxDepthTxLimit) {
 
 
         this.entryPointSelector = entryPointSelector;
@@ -65,7 +63,6 @@ public class TipSelectorImpl implements TipSelector {
         this.transactionValidator = transactionValidator;
         this.tangle = tangle;
         this.milestone = milestone;
-        this.validatorCacheSize = validatorCacheSize;
     }
 
     /**
@@ -96,7 +93,7 @@ public class TipSelectorImpl implements TipSelector {
             //random walk
             List<Hash> tips = new LinkedList<>();
             WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestone,
-                    maxDepth, belowMaxDepthTxLimit, validatorCacheSize);
+                    maxDepth, belowMaxDepthTxLimit);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 

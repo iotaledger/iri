@@ -89,8 +89,7 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(2);
         tx.store(tangle);
         Hash hash = tx.getHash();
-        Mockito.when(transactionValidator.checkSolidity(hash, false))
-                .thenReturn(true);
+        tx.updateSolid(true);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
@@ -168,10 +167,9 @@ public class WalkValidatorImplTest {
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             hash = tx.getHash();
+            tx.updateSolid(true);
             tx.store(tangle);
         }
-        Mockito.when(transactionValidator.checkSolidity(hash, false))
-                .thenReturn(true);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = 100;
@@ -214,11 +212,10 @@ public class WalkValidatorImplTest {
                     TransactionViewModelTest.getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
+            tx.updateSolid(true);
             tx.store(tangle);
             hash = tx.getHash();
         }
-        Mockito.when(transactionValidator.checkSolidity(tx.getHash(), false))
-                .thenReturn(true);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), tx.getHash()))
                 .thenReturn(true);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = 17;
@@ -234,8 +231,7 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = TransactionTestUtils.createBundleHead(0);
         tx.store(tangle);
         Hash hash = tx.getHash();
-        Mockito.when(transactionValidator.checkSolidity(hash, false))
-                .thenReturn(true);
+        tx.updateSolid(true);
         Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(false);
         milestoneTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;

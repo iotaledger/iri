@@ -62,8 +62,8 @@ public class TransactionValidator {
         MIN_WEIGHT_MAGNITUDE = mwm;
 
         //lowest allowed MWM encoded in 46 bytes.
-        if (!testnet && MIN_WEIGHT_MAGNITUDE<13){
-            MIN_WEIGHT_MAGNITUDE = 13;
+        if (!testnet){
+            MIN_WEIGHT_MAGNITUDE = Math.max(MIN_WEIGHT_MAGNITUDE, 13);
         }
     }
 

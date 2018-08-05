@@ -291,7 +291,7 @@ public class API {
                             Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
                             : Optional.empty();
                     final int depth = getParameterAsInt(request, "depth");
-                    if (depth < 0 || depth > instance.tipsSelector.getMaxDepth()) {
+                    if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
                         return ErrorResponse.create("Invalid depth input");
                     }
 
@@ -458,8 +458,7 @@ public class API {
             instance.milestone.latestSnapshot.rwlock.readLock().lock();
             try {
                 WalkValidatorImpl walkValidator = new WalkValidatorImpl(instance.tangle, instance.ledgerValidator,
-                        instance.transactionValidator, instance.milestone, instance.tipsSelector.getMaxDepth(),
-                        instance.configuration.integer(DefaultConfSettings.BELOW_MAX_DEPTH_TRANSACTION_LIMIT));
+                        instance.milestone, instance.configuration);
                 for (Hash transaction : transactions) {
                     if (!walkValidator.isValid(transaction)) {
                         state = false;

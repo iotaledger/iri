@@ -2,7 +2,6 @@ package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.LedgerValidator;
 import com.iota.iri.Milestone;
-import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
@@ -11,7 +10,9 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 import java.security.InvalidAlgorithmParameterException;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Implementation of <tt>TipSelector</tt> that selects 2 tips,
@@ -27,20 +28,13 @@ public class TipSelectorImpl implements TipSelector {
     private final RatingCalculator ratingCalculator;
     private final Walker walker;
 
-    private final int maxDepth;
     private final LedgerValidator ledgerValidator;
-    private final TransactionValidator transactionValidator;
     private final Tangle tangle;
     private final Milestone milestone;
-
-    @Override
-    public int getMaxDepth() {
-        return maxDepth;
-    }
+    private final TipSelConfig config;
 
     public TipSelectorImpl(Tangle tangle,
                            LedgerValidator ledgerValidator,
-                           TransactionValidator transactionValidator,
                            EntryPointSelector entryPointSelector,
                            RatingCalculator ratingCalculator,
                            Walker walkerAlpha,
@@ -53,11 +47,10 @@ public class TipSelectorImpl implements TipSelector {
         this.walker = walkerAlpha;
 
         //used by walkValidator
-        this.maxDepth = config.getMaxDepth();
         this.ledgerValidator = ledgerValidator;
-        this.transactionValidator = transactionValidator;
         this.tangle = tangle;
         this.milestone = milestone;
+        this.config = config;
     }
 
     /**
@@ -87,8 +80,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //random walk
             List<Hash> tips = new LinkedList<>();
-            WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, transactionValidator, milestone,
-                    maxDepth);
+            WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, milestone, config);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 

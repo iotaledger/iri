@@ -68,6 +68,7 @@ public class MainnetConfig implements IotaConfig {
     //Tip Selection
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
+    private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
 
     public MainnetConfig() {
         //empty constructor
@@ -553,6 +554,16 @@ public class MainnetConfig implements IotaConfig {
         this.alpha = alpha;
     }
 
+    @Override
+    public int getBelowMaxDepthTransactionLimit() {
+        return maxAnalyzedTransactions;
+    }
+
+    @Parameter(names = "--max-analyzed-transactions", description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
+    protected void setBelowMaxDepthTransactionLimit(int maxAnalyzedTransactions) {
+        this.maxAnalyzedTransactions = maxAnalyzedTransactions;
+    }
+
     //TODO change to private after refactoring ReplicatorSourceProcessor
     public interface Defaults {
         //API
@@ -620,7 +631,8 @@ public class MainnetConfig implements IotaConfig {
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT = "/previousEpochsSpentAddresses.txt";
         String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = "/previousEpochsSpentAddresses.sig";
         long GLOBAL_SNAPSHOT_TIME = 1517180400;
-        int MILESTONE_START_INDEX = 426550;
+        int MILESTONE_START_INDEX = 426_550;
         int NUM_KEYS_IN_MILESTONE = 20;
+        int MAX_ANALYZED_TXS = 20_000;
     }
 }

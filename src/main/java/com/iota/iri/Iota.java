@@ -5,7 +5,6 @@ import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.model.Hash;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
@@ -18,7 +17,6 @@ import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.NotImplementedException;
-import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,12 +43,6 @@ public class Iota {
     public final TipsViewModel tipsViewModel;
     public final MessageQ messageQ;
     public final TipSelector tipsSelector;
-
-    public final boolean testnet;
-    public final int maxPeers;
-    public final int udpPort;
-    public final int tcpPort;
-    public final int maxTipSearchDepth;
 
     public Iota(IotaConfig configuration) throws IOException {
         this.configuration = configuration;
@@ -156,7 +148,7 @@ public class Iota {
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
-        return new TipSelectorImpl(tangle, ledgerValidator, transactionValidator, entryPointSelector, ratingCalculator,
+        return new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
                 walker, milestone, config);
     }
 }

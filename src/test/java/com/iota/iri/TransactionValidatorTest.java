@@ -164,9 +164,9 @@ public class TransactionValidatorTest {
         }
 
         parent = TransactionViewModel.fromHash(tangle, parent.getHash());
-        Assert.assertTrue("tx3 was expected to be solid", parent.isSolid());
+        Assert.assertTrue("Parent tx was expected to be solid", parent.isSolid());
         grandParent = TransactionViewModel.fromHash(tangle, grandParent.getHash());
-        Assert.assertTrue("tx5 was expected to be solid", grandParent.isSolid());
+        Assert.assertTrue("Grandparent  was expected to be solid", grandParent.isSolid());
     }
 
   @Test
@@ -199,9 +199,9 @@ public class TransactionValidatorTest {
     }
 
     parent = TransactionViewModel.fromHash(tangle, parent.getHash());
-    Assert.assertTrue("parent tx was expected to be solid", parent.isSolid());
+    Assert.assertTrue("Parent tx was expected to be solid", parent.isSolid());
     grandParent = TransactionViewModel.fromHash(tangle, grandParent.getHash());
-    Assert.assertFalse("grandParent tx was expected to be not solid", grandParent.isSolid());
+    Assert.assertFalse("GrandParent tx was expected to be not solid", grandParent.isSolid());
   }
 
   private TransactionViewModel getTxWithoutBranchAndTrunk() throws Exception {

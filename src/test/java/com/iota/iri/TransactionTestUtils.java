@@ -38,14 +38,14 @@ public class TransactionTestUtils {
     }
 
     public static TransactionViewModel createTransactionWithTrytes(String trytes) {
-        trytes  = expandTrytes(trytes);
-        byte[] trits = Converter.allocatingTritsFromTrytes(trytes);
+        String expandedTrytes  = expandTrytes(trytes);
+        byte[] trits = Converter.allocatingTritsFromTrytes(expandedTrytes);
         return new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURLP81, trits));
     }
 
     public static TransactionViewModel createTransactionWithTrunkAndBranch(String trytes, Hash trunk, Hash branch) {
-        trytes = expandTrytes(trytes);
-        byte[] trits =  Converter.allocatingTritsFromTrytes(trytes);
+        String expandedTrytes = expandTrytes(trytes);
+        byte[] trits =  Converter.allocatingTritsFromTrytes(expandedTrytes);
         System.arraycopy(trunk.trits(), 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
                 TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branch.trits(), 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,

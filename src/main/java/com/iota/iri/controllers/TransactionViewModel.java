@@ -1,7 +1,5 @@
 package com.iota.iri.controllers;
 
-import java.util.*;
-
 import com.iota.iri.model.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -9,11 +7,14 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 
+import java.util.*;
+
 public class TransactionViewModel {
 
     private final com.iota.iri.model.Transaction transaction;
 
     public static final int SIZE = 1604;
+    public static final int TRYTES_SIZE = 2673;
     private static final int TAG_SIZE_IN_BYTES = 17; // = ceil(81 TRITS / 5 TRITS_PER_BYTE)
 
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2

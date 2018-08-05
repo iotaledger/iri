@@ -178,11 +178,14 @@ public class TransactionValidator {
     void propagateSolidTransactions() {
         Set<Hash> newSolidHashes = new HashSet<>();
         useFirst.set(!useFirst.get());
+        //synchronized to make sure no one is changing the newSolidTransactions collections during addAll
         synchronized (cascadeSync) {
             if (useFirst.get()) {
                 newSolidHashes.addAll(newSolidTransactionsTwo);
+                newSolidTransactionsTwo.clear();
             } else {
                 newSolidHashes.addAll(newSolidTransactionsOne);
+                newSolidTransactionsOne.clear();
             }
         }
         Iterator<Hash> cascadeIterator = newSolidHashes.iterator();
@@ -200,13 +203,6 @@ public class TransactionValidator {
                 }
             } catch (Exception e) {
                 log.error("Error while propagating solidity upwards", e);
-            }
-        }
-        synchronized (cascadeSync) {
-            if (useFirst.get()) {
-                newSolidTransactionsTwo.clear();
-            } else {
-                newSolidTransactionsOne.clear();
             }
         }
         try {

@@ -14,7 +14,6 @@ public class TransactionViewModel {
     private final com.iota.iri.model.Transaction transaction;
 
     public static final int SIZE = 1604;
-    public static final int TRYTES_SIZE = 2673;
     private static final int TAG_SIZE_IN_BYTES = 17; // = ceil(81 TRITS / 5 TRITS_PER_BYTE)
 
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2
@@ -37,6 +36,7 @@ public class TransactionViewModel {
     private static final int NONCE_TRINARY_OFFSET = ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET + ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE, NONCE_TRINARY_SIZE = 81;
 
     public static final int TRINARY_SIZE = NONCE_TRINARY_OFFSET + NONCE_TRINARY_SIZE;
+    public static final int TRYTES_SIZE = TRINARY_SIZE / 3;
 
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + OBSOLETE_TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 

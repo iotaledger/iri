@@ -2,13 +2,11 @@ package com.iota.iri.integration;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.iota.iri.IRI;
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
 import com.iota.iri.conf.ConfigUtils;
 import com.iota.iri.conf.IXIConfig;
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.conf.TestnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
@@ -78,7 +76,7 @@ public class APIIntegrationTests {
             logFolder.create();
 
             configuration = ConfigUtils.createIotaConfig(true);
-            String[] args = {"-p", portStr, "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
+            String[] args = {"-p", portStr, "--testnet", "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
             logFolder.getRoot().getAbsolutePath(), "--mwm", "1"};
             configuration = ConfigUtils.parseFromArgs(args, configuration);
 

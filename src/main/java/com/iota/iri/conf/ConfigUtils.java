@@ -20,7 +20,7 @@ public class ConfigUtils {
         if (ArrayUtils.isNotEmpty(args)) {
             JCommander jCommander = JCommander.newBuilder()
                     .addObject(iotaConfig)
-                    //This is in order to enable the `--conf` option
+                    //This is in order to enable the `--conf` and `--testnet` option
                     .acceptUnknownOptions(true)
                     .allowParameterOverwriting(true)
                     //This is the first line of JCommander Usage
@@ -56,6 +56,8 @@ public class ConfigUtils {
             props.remove("[IRI]");
             boolean isTestnet = testnet || Boolean.parseBoolean(props.getProperty("TESTNET", "false"));
             Class<? extends IotaConfig> iotaConfigClass = isTestnet ? TestnetConfig.class : MainnetConfig.class;
+            //This is not a config property
+            props.remove("TESTNET");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);

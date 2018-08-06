@@ -26,6 +26,11 @@ public class TestnetConfig extends NetConfig {
     }
 
     @Override
+    public boolean isTestnet() {
+        return true;
+    }
+
+    @Override
     public String getCoordinator() {
         return coordinator;
     }
@@ -149,7 +154,7 @@ public class TestnetConfig extends NetConfig {
         boolean VALIDATE_MILESTONE_SIG = true;
         String SNAPSHOT_FILE = "/snapshotTestnet.txt";
         int REQUEST_HASH_SIZE = 49;
-        String SNAPSHOT_SIG = "/snapshotMainnet.sig";
+        String SNAPSHOT_SIG = "/snapshotTestnet.sig";
         int SNAPSHOT_TIME = 1522306500;
         int MWM = 9;
         int MILESTONE_START_INDEX = 434525;

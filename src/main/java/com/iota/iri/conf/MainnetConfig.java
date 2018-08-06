@@ -6,4 +6,9 @@ public class MainnetConfig extends NetConfig {
         //All the configs are defined in the super class
         super();
     }
+
+    @Override
+    public boolean isTestnet() {
+        return false;
+    }
 }

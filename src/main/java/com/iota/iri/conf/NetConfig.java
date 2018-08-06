@@ -34,9 +34,6 @@ public abstract class NetConfig implements IotaConfig {
     protected boolean dnsResolutionEnabled = Defaults.DNS_RESOLUTION_ENABLED;
     protected List<String> neighbors = new ArrayList<>();
 
-    //General
-    protected boolean testnet = false;
-
     //IXI
     protected String ixiDir = Defaults.IXI_DIR;
 
@@ -239,19 +236,9 @@ public abstract class NetConfig implements IotaConfig {
         return neighbors;
     }
 
-    @Override
-    public boolean isTestnet() {
-        return testnet;
-    }
-
     @Parameter(names = {"-n", "--neighbors"}, description = NetworkConfig.Descriptions.NEIGHBORS)
     protected void setNeighbors(String neighbors) {
         this.neighbors = IotaUtils.splitStringToImmutableList(neighbors, SPLIT_STRING_TO_LIST_REGEX);
-    }
-
-    @Parameter(names = {TESTNET_FLAG}, description = Config.Descriptions.TESTNET)
-    protected void setTestnet(boolean testnet) {
-        this.testnet = testnet;
     }
 
     @Override

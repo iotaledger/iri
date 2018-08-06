@@ -2,15 +2,14 @@ package com.iota.iri;
 
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.zmq.MessageQ;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
-
+import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,15 +53,19 @@ public class TransactionValidator {
     }
 
     public void init(boolean testnet, int mwm) {
-        MIN_WEIGHT_MAGNITUDE = mwm;
-
-        //lowest allowed MWM encoded in 46 bytes.
-        if (!testnet && MIN_WEIGHT_MAGNITUDE<13){
-            MIN_WEIGHT_MAGNITUDE = 13;
-        }
+        setMwm(testnet, mwm);
 
         newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
         newSolidThread.start();
+    }
+
+    void setMwm(boolean testnet, int mwm) {
+        MIN_WEIGHT_MAGNITUDE = mwm;
+
+        //lowest allowed MWM encoded in 46 bytes.
+        if (!testnet){
+            MIN_WEIGHT_MAGNITUDE = Math.max(MIN_WEIGHT_MAGNITUDE, 13);
+        }
     }
 
     public void shutdown() throws InterruptedException {
@@ -168,44 +171,7 @@ public class TransactionValidator {
     private Runnable spawnSolidTransactionsPropagation() {
         return () -> {
             while(!shuttingDown.get()) {
-                Set<Hash> newSolidHashes = new HashSet<>();
-                useFirst.set(!useFirst.get());
-                synchronized (cascadeSync) {
-                    if (useFirst.get()) {
-                        newSolidHashes.addAll(newSolidTransactionsTwo);
-                    } else {
-                        newSolidHashes.addAll(newSolidTransactionsOne);
-                    }
-                }
-                Iterator<Hash> cascadeIterator = newSolidHashes.iterator();
-                Set<Hash> hashesToCascade = new HashSet<>();
-                while(cascadeIterator.hasNext() && !shuttingDown.get()) {
-                    try {
-                        Hash hash = cascadeIterator.next();
-                        TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-                        Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
-                        for(Hash h: approvers) {
-                            TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
-                            if(quietQuickSetSolid(tx)) {
-                                tx.update(tangle, "solid");
-                            } else {
-                                if (transaction.isSolid()) {
-                                    addSolidTransaction(hash);
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        log.error("Some error", e);
-                        // TODO: Do something, maybe, or do nothing.
-                    }
-                }
-                synchronized (cascadeSync) {
-                    if (useFirst.get()) {
-                        newSolidTransactionsTwo.clear();
-                    } else {
-                        newSolidTransactionsOne.clear();
-                    }
-                }
+                propagateSolidTransactions();
                 try {
                     Thread.sleep(500);
                 } catch (InterruptedException e) {
@@ -213,6 +179,38 @@ public class TransactionValidator {
                 }
             }
         };
+    }
+
+    void propagateSolidTransactions() {
+        Set<Hash> newSolidHashes = new HashSet<>();
+        useFirst.set(!useFirst.get());
+        //synchronized to make sure no one is changing the newSolidTransactions collections during addAll
+        synchronized (cascadeSync) {
+            if (useFirst.get()) {
+                newSolidHashes.addAll(newSolidTransactionsTwo);
+                newSolidTransactionsTwo.clear();
+            } else {
+                newSolidHashes.addAll(newSolidTransactionsOne);
+                newSolidTransactionsOne.clear();
+            }
+        }
+        Iterator<Hash> cascadeIterator = newSolidHashes.iterator();
+        while(cascadeIterator.hasNext() && !shuttingDown.get()) {
+            try {
+                Hash hash = cascadeIterator.next();
+                TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
+                Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
+                for(Hash h: approvers) {
+                    TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
+                    if(quietQuickSetSolid(tx)) {
+                        tx.update(tangle, "solid");
+                        addSolidTransaction(h);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error while propagating solidity upwards", e);
+            }
+        }
     }
 
     public void updateStatus(TransactionViewModel transactionViewModel) throws Exception {
@@ -265,6 +263,11 @@ public class TransactionValidator {
             return true;
         }
         return approovee.isSolid();
+    }
+
+    //for testing
+    boolean isNewSolidTxSetsEmpty () {
+        return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }
 
     public static class StaleTimestampException extends RuntimeException {

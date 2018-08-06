@@ -202,6 +202,7 @@ public class TransactionValidator {
                 for(Hash h: approvers) {
                     TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
                     if(quietQuickSetSolid(tx)) {
+			tx.update(tangle, "solid");
                         addSolidTransaction(h);
                     }
                     updateTipsView(tx);
@@ -215,7 +216,8 @@ public class TransactionValidator {
     public void updateStatus(TransactionViewModel transactionViewModel) throws Exception {
         transactionRequester.clearTransactionRequest(transactionViewModel.getHash());
       
-	    if(quickSetSolid(transactionViewModel)) {
+	if(quickSetSolid(transactionViewModel)) {
+	    transactionViewModel.update(tangle, "solid");
             addSolidTransaction(transactionViewModel.getHash());
         }
         updateTipsView(transactionViewModel);

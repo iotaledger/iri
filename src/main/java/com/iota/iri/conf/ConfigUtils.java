@@ -26,6 +26,7 @@ public class ConfigUtils {
             log.info("Parsing configuration from cmd args: {}", Arrays.toString(args));
             JCommander jCommander = JCommander.newBuilder()
                     .addObject(iotaConfig)
+                    .acceptUnknownOptions(true)
                     .allowParameterOverwriting(true)
                     .programName("java -jar iri-" + IRI.VERSION + ".jar")
                     .build();

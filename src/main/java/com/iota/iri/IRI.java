@@ -119,13 +119,18 @@ public class IRI {
 
         private static IotaConfig createConfiguration(String[] args) {
             IotaConfig iotaConfig = null;
+            boolean testnet = ArrayUtils.contains(args, Config.TESTNET_FLAG);
+            File configFile = chooseConfigFile(args);
+            String message = "Configuration is created using ";
+
             try {
-                boolean testnet = ArrayUtils.contains(args, Config.TESTNET_FLAG);
-                if (IotaConfig.CONFIG_FILE.exists()) {
-                    iotaConfig = ConfigUtils.createFromFile(IotaConfig.CONFIG_FILE, testnet);
+                if (configFile.exists()) {
+                    iotaConfig = ConfigUtils.createFromFile(configFile, testnet);
+                    message+= configFile.getName() + " and command line args";
                 }
                 else {
                     iotaConfig = ConfigUtils.createIotaConfig(testnet);
+                    message+= "command line args only";
                 }
                 iotaConfig = ConfigUtils.parseFromArgs(args, iotaConfig);
             }
@@ -139,7 +144,16 @@ public class IRI {
                 log.debug("", e);
                 System.exit(-1);
             }
+            log.info(message);
             return iotaConfig;
+        }
+
+        private static File chooseConfigFile(String[] args) {
+            int index = Math.max(ArrayUtils.indexOf(args, "-c"), ArrayUtils.indexOf(args, "--config"));
+            if (index == -1) {
+                return IotaConfig.CONFIG_FILE;
+            }
+            return new File(args[++index]);
         }
     }
 }

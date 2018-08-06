@@ -53,14 +53,12 @@ public class ConfigUtils {
         try (FileInputStream confStream = new FileInputStream(configFile)) {
             Properties props = new Properties();
             props.load(confStream);
-            props.remove("[IRI]");
             boolean isTestnet = testnet || Boolean.parseBoolean(props.getProperty("TESTNET", "false"));
             Class<? extends IotaConfig> iotaConfigClass = isTestnet ? TestnetConfig.class : MainnetConfig.class;
-            //This is not a config property
-            props.remove("TESTNET");
             ObjectMapper objectMapper = new ObjectMapper();
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
+            objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
             iotaConfig = objectMapper.convertValue(props, iotaConfigClass);
         }

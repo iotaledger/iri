@@ -11,12 +11,12 @@ import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.zmq.MessageQ;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
-import static org.junit.Assert.assertEquals;
+import static com.iota.iri.controllers.TransactionViewModelTest.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -43,12 +43,11 @@ public class TransactionValidatorTest {
     TransactionRequester txRequester = new TransactionRequester(tangle, messageQ);
     txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ,
             Long.parseLong(Configuration.GLOBAL_SNAPSHOT_TIME));
-    txValidator.init(false, MAINNET_MWM);
+    txValidator.setMwm(false, MAINNET_MWM);
   }
 
   @AfterClass
   public static void tearDown() throws Exception {
-    txValidator.shutdown();
     tangle.shutdown();
     dbFolder.delete();
     logFolder.delete();
@@ -56,7 +55,6 @@ public class TransactionValidatorTest {
 
   @Test
   public void testMinMwm() throws InterruptedException {
-    txValidator.shutdown();
     txValidator.init(false, 5);
     assertTrue(txValidator.getMinWeightMagnitude() == 13);
     txValidator.shutdown();
@@ -134,6 +132,76 @@ public class TransactionValidatorTest {
     tx.store(tangle);
 
     return tx;
+  }
+
+    @Test
+    public void testTransactionPropagation() throws Exception {
+        TransactionViewModel leftChildLeaf = TransactionTestUtils.createTransactionWithTrytes("CHILDTX");
+        leftChildLeaf.updateSolid(true);
+        leftChildLeaf.store(tangle);
+
+        TransactionViewModel rightChildLeaf = TransactionTestUtils.createTransactionWithTrytes("CHILDTWOTX");
+        rightChildLeaf.updateSolid(true);
+        rightChildLeaf.store(tangle);
+
+        TransactionViewModel parent = TransactionTestUtils.createTransactionWithTrunkAndBranch("PARENT",
+                leftChildLeaf.getHash(), rightChildLeaf.getHash());
+        parent.updateSolid(false);
+        parent.store(tangle);
+
+        TransactionViewModel parentSibling = TransactionTestUtils.createTransactionWithTrytes("PARENTLEAF");
+        parentSibling.updateSolid(true);
+        parentSibling.store(tangle);
+
+        TransactionViewModel grandParent = TransactionTestUtils.createTransactionWithTrunkAndBranch("GRANDPARENT", parent.getHash(),
+                        parentSibling.getHash());
+        grandParent.updateSolid(false);
+        grandParent.store(tangle);
+
+        txValidator.addSolidTransaction(leftChildLeaf.getHash());
+        while (!txValidator.isNewSolidTxSetsEmpty()) {
+            txValidator.propagateSolidTransactions();
+        }
+
+        parent = TransactionViewModel.fromHash(tangle, parent.getHash());
+        Assert.assertTrue("Parent tx was expected to be solid", parent.isSolid());
+        grandParent = TransactionViewModel.fromHash(tangle, grandParent.getHash());
+        Assert.assertTrue("Grandparent  was expected to be solid", grandParent.isSolid());
+    }
+
+  @Test
+  public void testTransactionPropagationFailure() throws Exception {
+    TransactionViewModel leftChildLeaf = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+    leftChildLeaf.updateSolid(true);
+    leftChildLeaf.store(tangle);
+
+    TransactionViewModel rightChildLeaf = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+    rightChildLeaf.updateSolid(true);
+    rightChildLeaf.store(tangle);
+
+    TransactionViewModel parent = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(leftChildLeaf.getHash(),
+            rightChildLeaf.getHash()), getRandomTransactionHash());
+    parent.updateSolid(false);
+    parent.store(tangle);
+
+    TransactionViewModel parentSibling = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+    parentSibling.updateSolid(false);
+    parentSibling.store(tangle);
+
+    TransactionViewModel grandParent = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(parent.getHash(),
+            parentSibling.getHash()), getRandomTransactionHash());
+    grandParent.updateSolid(false);
+    grandParent.store(tangle);
+
+    txValidator.addSolidTransaction(leftChildLeaf.getHash());
+    while (!txValidator.isNewSolidTxSetsEmpty()) {
+      txValidator.propagateSolidTransactions();
+    }
+
+    parent = TransactionViewModel.fromHash(tangle, parent.getHash());
+    Assert.assertTrue("Parent tx was expected to be solid", parent.isSolid());
+    grandParent = TransactionViewModel.fromHash(tangle, grandParent.getHash());
+    Assert.assertFalse("GrandParent tx was expected to be not solid", grandParent.isSolid());
   }
 
   private TransactionViewModel getTxWithoutBranchAndTrunk() throws Exception {

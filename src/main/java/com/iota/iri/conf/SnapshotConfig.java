@@ -20,9 +20,9 @@ public interface SnapshotConfig extends Config {
     interface Descriptions {
 
         String SNAPSHOT_TIME = "Epoch time of the last snapshot.";
-        String SNAPSHOT_FILE = "Path of the file that contains the state of the ledger since the last snapshot";
-        String SNAPSHOT_SIGNATURE_FILE = "Path to the file that validates the snapshot used is indeed valid";
+        String SNAPSHOT_FILE = "Path of the file that contains the state of the ledger at the last snapshot.";
+        String SNAPSHOT_SIGNATURE_FILE = "Path to the file that contains a signature for the snapshot file.";
         String MILESTONE_START_INDEX = "The start index of the milestones. This index is encoded in each milestone transaction by the coordinator.";
-        String NUMBER_OF_KEYS_IN_A_MILESTONE = "The height of the merkle tree which in turn determines the number leaves (private keys) that the coordinator can use to sign a message.";
+        String NUMBER_OF_KEYS_IN_A_MILESTONE = "The depth of the merkle tree which in turn determines the number leaves (private keys) that the coordinator can use to sign a message.";
     }
 }

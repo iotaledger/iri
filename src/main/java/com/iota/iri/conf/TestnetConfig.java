@@ -5,7 +5,7 @@ import com.beust.jcommander.ParameterException;
 
 import java.util.Objects;
 
-public class TestnetConfig extends MainnetConfig {
+public class TestnetConfig extends NetConfig {
 
     protected String coordinator = Defaults.COORDINATOR_ADDRESS;
     protected boolean validateTestnetMilestoneSig = Defaults.VALIDATE_MILESTONE_SIG;

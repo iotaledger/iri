@@ -388,12 +388,6 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public int getMinimumWeightMagnitude() {
-       return Defaults.MWM;
-    }
-
-
-    @Override
     public long getSnapshotTime() {
         return Defaults.GLOBAL_SNAPSHOT_TIME;
     }

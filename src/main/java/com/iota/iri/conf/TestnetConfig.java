@@ -13,7 +13,7 @@ public class TestnetConfig extends NetConfig {
     //TODO should default testnet file be the same as mainnet?
     protected String snapshotSignatureFile = Defaults.SNAPSHOT_SIG;
     protected long snapshotTime = Defaults.SNAPSHOT_TIME;
-    protected int minimumWeightMagnitude = Defaults.MWM;
+    protected int mwm = Defaults.MWM;
     protected int milestoneStartIndex = Defaults.MILESTONE_START_INDEX;
     protected int numberOfKeysInMilestone = Defaults.KEYS_IN_MILESTONE;
     protected int transactionPacketSize = Defaults.PACKET_SIZE;
@@ -83,13 +83,13 @@ public class TestnetConfig extends NetConfig {
     }
 
     @Override
-    public int getMinimumWeightMagnitude() {
-        return minimumWeightMagnitude;
+    public int getMwm() {
+        return mwm;
     }
 
     @Parameter(names = {"--mwm"}, description = ProtocolConfig.Descriptions.MWM)
-    protected void setMinimumWeightMagnitude(int minimumWeightMagnitude) {
-        this.minimumWeightMagnitude = minimumWeightMagnitude;
+    protected void setMwm(int mwm) {
+        this.mwm = mwm;
     }
 
     @Override

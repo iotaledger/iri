@@ -368,7 +368,7 @@ public class APIIntegrationTests {
         request.put("trytes", TRYTES);
         request.put("trunkTransaction", NULL_HASH);
         request.put("branchTransaction", NULL_HASH);
-        request.put("minWeightMagnitude", configuration.getMinimumWeightMagnitude());
+        request.put("minWeightMagnitude", configuration.getMwm());
 
         given().
                 body(gson().toJson(request)).
@@ -390,7 +390,7 @@ public class APIIntegrationTests {
         request.put("trytes", trytesArray);
         request.put("trunkTransaction", branch);
         request.put("branchTransaction", trunk);
-        request.put("minWeightMagnitude", configuration.getMinimumWeightMagnitude());
+        request.put("minWeightMagnitude", configuration.getMwm());
 
         Response response = given().
                 body(gson().toJson(request)).

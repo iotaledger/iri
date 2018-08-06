@@ -18,8 +18,6 @@ public interface ProtocolConfig extends Config {
 
     double getPPropagateRequest();
 
-    int getMinimumWeightMagnitude();
-
     interface Descriptions {
         String MWM = "The minimum weight magnitude is the number of trailing 0s that must appear in the end of a transaction hash. Increasing this number by 1 will result in proof of work that is 3 times as hard.";
         String TRANSACTION_PACKET_SIZE = "The size of the packet in bytes recieved by a node. In the mainnet the packet size should always be 1650. It consists of 1604 bytes of a received transaction and 46 bytes of a requested transaction hash. This value can be changed in order to create testnets with different rules.";

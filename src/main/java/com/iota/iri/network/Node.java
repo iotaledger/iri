@@ -3,7 +3,6 @@ package com.iota.iri.network;
 import com.iota.iri.Milestone;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
-import com.iota.iri.conf.ProtocolConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
@@ -215,13 +214,14 @@ public class Node {
 
         boolean addressMatch = false;
         boolean cached = false;
+        double pDropTransaction = configuration.getPDropTransaction();
 
         for (final Neighbor neighbor : getNeighbors()) {
             addressMatch = neighbor.matches(senderAddress);
             if (addressMatch) {
                 //Validate transaction
                 neighbor.incAllTransactions();
-                if (rnd.nextDouble() < configuration.getPDropTransaction()) {
+                if (rnd.nextDouble() < pDropTransaction) {
                     //log.info("Randomly dropping transaction. Stand by... ");
                     break;
                 }
@@ -696,7 +696,8 @@ public class Node {
 
     private void parseNeighborsConfig() {
         configuration.getNeighbors().stream().distinct()
-                .filter(s -> !s.isEmpty()).map(Node::uri).map(Optional::get)
+                .filter(s -> !s.isEmpty())
+                .map(Node::uri).map(Optional::get)
                 .filter(u -> isUriValid(u))
                 .map(u -> newNeighbor(u, true))
                 .peek(u -> {

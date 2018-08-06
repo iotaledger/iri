@@ -172,6 +172,11 @@ public class TransactionValidator {
             while(!shuttingDown.get()) {
                 propagateSolidTransactions();
             }
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         };
     }
 
@@ -204,11 +209,6 @@ public class TransactionValidator {
             } catch (Exception e) {
                 log.error("Error while propagating solidity upwards", e);
             }
-        }
-        try {
-            Thread.sleep(500);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
         }
     }
 

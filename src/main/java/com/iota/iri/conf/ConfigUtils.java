@@ -8,8 +8,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.iota.iri.IRI;
 import org.apache.commons.lang3.ArrayUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -18,14 +16,14 @@ import java.util.Properties;
 
 public class ConfigUtils {
 
-    private static final Logger log = LoggerFactory.getLogger(ConfigUtils.class);
-
     public static IotaConfig parseFromArgs(String[] args, IotaConfig iotaConfig) throws ParameterException {
         if (ArrayUtils.isNotEmpty(args)) {
             JCommander jCommander = JCommander.newBuilder()
                     .addObject(iotaConfig)
+                    //This is in order to enable the `--conf` option
                     .acceptUnknownOptions(true)
                     .allowParameterOverwriting(true)
+                    //This is the first line of JCommander Usage
                     .programName("java -jar iri-" + IRI.VERSION + ".jar")
                     .build();
             jCommander.parse(args);

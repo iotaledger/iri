@@ -109,16 +109,10 @@ public abstract class NetConfig implements IotaConfig {
         return remoteLimitApi;
     }
 
-    @Parameter(names = {"--remote-limit-api"}, variableArity = true, description = APIConfig.Descriptions.REMOTE_LIMIT_API)
-    protected void setRemoteLimitApi(List<String> remoteLimitApi) {
-        this.remoteLimitApi = remoteLimitApi;
-    }
-
-    //  For Jackson file serializer
+    @Parameter(names = {"--remote-limit-api"}, description = APIConfig.Descriptions.REMOTE_LIMIT_API)
     protected void setRemoteLimitApi(String remoteLimitApi) {
         this.remoteLimitApi = IotaUtils.splitStringToImmutableList(remoteLimitApi, SPLIT_STRING_TO_LIST_REGEX);
     }
-
 
     @Override
     public int getMaxFindTransactions() {
@@ -245,19 +239,14 @@ public abstract class NetConfig implements IotaConfig {
         return neighbors;
     }
 
-    @Parameter(names = {"-n", "--neighbors"}, variableArity = true, description = NetworkConfig.Descriptions.NEIGHBORS)
-    protected void setNeighbors(List<String> neighbors) {
-        this.neighbors = neighbors;
-    }
-
-//  For Jackson file serializer
-    protected void setNeighbors(String neighbors) {
-        this.neighbors = IotaUtils.splitStringToImmutableList(neighbors, SPLIT_STRING_TO_LIST_REGEX);
-    }
-
     @Override
     public boolean isTestnet() {
         return testnet;
+    }
+
+    @Parameter(names = {"-n", "--neighbors"}, description = NetworkConfig.Descriptions.NEIGHBORS)
+    protected void setNeighbors(String neighbors) {
+        this.neighbors = IotaUtils.splitStringToImmutableList(neighbors, SPLIT_STRING_TO_LIST_REGEX);
     }
 
     @Parameter(names = {TESTNET_FLAG}, description = Config.Descriptions.TESTNET)

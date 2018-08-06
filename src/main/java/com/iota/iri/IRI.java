@@ -130,7 +130,7 @@ public class IRI {
                 iotaConfig = ConfigUtils.parseFromArgs(args, iotaConfig);
             }
             catch (IOException | IllegalArgumentException e) {
-                log.error("There was a problem reading configuration from file" , e);
+                log.error("There was a problem reading configuration from file" , e.getMessage());
                 log.debug("" ,e);
                 System.exit(-1);
             }

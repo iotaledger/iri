@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 
 /**
  * Main IOTA Reference Implementation starting class.
@@ -145,6 +146,7 @@ public class IRI {
                 System.exit(-1);
             }
             log.info(message);
+            log.info("parsed the following cmd args: {}", Arrays.toString(args));
             return iotaConfig;
         }
 

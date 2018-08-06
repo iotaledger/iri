@@ -14,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Properties;
 
 public class ConfigUtils {
@@ -23,7 +22,6 @@ public class ConfigUtils {
 
     public static IotaConfig parseFromArgs(String[] args, IotaConfig iotaConfig) throws ParameterException {
         if (ArrayUtils.isNotEmpty(args)) {
-            log.info("Parsing configuration from cmd args: {}", Arrays.toString(args));
             JCommander jCommander = JCommander.newBuilder()
                     .addObject(iotaConfig)
                     .acceptUnknownOptions(true)
@@ -55,7 +53,6 @@ public class ConfigUtils {
         IotaConfig iotaConfig;
 
         try (FileInputStream confStream = new FileInputStream(configFile)) {
-            log.info("Parsing configuration from {}", configFile.getName());
             Properties props = new Properties();
             props.load(confStream);
             props.remove("[IRI]");

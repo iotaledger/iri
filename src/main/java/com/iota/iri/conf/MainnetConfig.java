@@ -14,7 +14,7 @@ public class MainnetConfig implements IotaConfig {
 
     //API
     protected int port = Defaults.API_PORT;
-    protected String apiHost = Defaults.API_HOST;
+    protected String host = Defaults.API_HOST;
     protected List<String> remoteLimitApi = new ArrayList<>();
     protected int maxFindTransactions = Defaults.MAX_FIND_TRANSACTIONS;
     protected int maxRequestList = Defaults.MAX_REQUEST_LIST;
@@ -95,13 +95,13 @@ public class MainnetConfig implements IotaConfig {
     }
 
     @Override
-    public String getApiHost() {
-        return apiHost;
+    public String getHost() {
+        return host;
     }
 
-    @Parameter(names = {"--host"}, description = APIConfig.Descriptions.API_HOST)
-    protected void setApiHost(String apiHost) {
-        this.apiHost = apiHost;
+    @Parameter(names = {"--host"}, description = APIConfig.Descriptions.HOST)
+    protected void setHost(String host) {
+        this.host = host;
     }
 
     @Override

@@ -111,7 +111,7 @@ public class API {
 
         APIConfig configuration = instance.configuration;
         final int apiPort = configuration.getPort();
-        final String apiHost = configuration.getApiHost();
+        final String apiHost = configuration.getHost();
 
         log.debug("Binding JSON-REST API Undertow server on {}:{}", apiHost, apiPort);
 

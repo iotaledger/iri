@@ -6,6 +6,11 @@ import com.iota.iri.utils.IotaUtils;
 import java.util.ArrayList;
 import java.util.List;
 
+/*
+  Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
+  Meaning that every field must have a getter that is prefixed with `get` unless it is a boolean and then it should be
+  prefixed with `is`.
+ */
 public abstract class NetConfig implements IotaConfig {
 
     protected static final String SPLIT_STRING_TO_LIST_REGEX = ",| ";

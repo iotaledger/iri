@@ -46,8 +46,7 @@ public class Iota {
 
     public Iota(IotaConfig configuration) throws IOException {
         this.configuration = configuration;
-        Snapshot initialSnapshot = Snapshot.init(configuration.getSnapshotFile(),
-                configuration.getSnapshotSignatureFile(), configuration.isTestnet()).clone();
+        Snapshot initialSnapshot = Snapshot.init(configuration).clone();
         tangle = new Tangle();
         messageQ = MessageQ.createWith(configuration);
         tipsViewModel = new TipsViewModel();

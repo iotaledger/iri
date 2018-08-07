@@ -97,7 +97,7 @@ public class TestnetConfig extends NetConfig {
         return milestoneStartIndex;
     }
 
-    @Parameter(names = "--milestone-start-index", description = SnapshotConfig.Descriptions.MILESTONE_START_INDEX)
+    @Parameter(names = "--milestone-start", description = SnapshotConfig.Descriptions.MILESTONE_START_INDEX)
     protected void setMilestoneStartIndex(int milestoneStartIndex) {
         this.milestoneStartIndex = milestoneStartIndex;
     }

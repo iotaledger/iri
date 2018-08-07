@@ -198,14 +198,14 @@ public class TransactionValidator {
             try {
                 Hash hash = cascadeIterator.next();
                 TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-		transaction.update(tangle, "solid|height"); //update to db here
-		updateTipsView(transaction);
                 Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
                 for(Hash h: approvers) {
                     TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
                     if(quietQuickSetSolid(tx)) {
+			transaction.update(tangle, "solid|height"); //update to db here
                         addSolidTransaction(h);
-                    }                
+                    }     
+		    updateTipsView(transaction);
                 }
             } catch (Exception e) {
                 log.error("Error while propagating solidity upwards", e);
@@ -217,6 +217,7 @@ public class TransactionValidator {
         transactionRequester.clearTransactionRequest(transactionViewModel.getHash());
       
 	if(quickSetSolid(transactionViewModel)) {
+	    transaction.update(tangle, "solid|height"); //update to db here
             addSolidTransaction(transactionViewModel.getHash());
         }
         updateTipsView(transactionViewModel);
@@ -230,7 +231,7 @@ public class TransactionValidator {
 	    	}
         }
         else{
-	        tipsViewModel.removeTipHash(transactionViewModel.getHash());
+	        tipsViewModel.removeTipHash(transactionViewModel.getHash()); //won't happen in practice i think ????
 	}
         tipsViewModel.removeTipHash(transactionViewModel.getTrunkTransactionHash());
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());

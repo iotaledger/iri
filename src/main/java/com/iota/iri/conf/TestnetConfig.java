@@ -77,7 +77,7 @@ public class TestnetConfig extends NetConfig {
         return snapshotTime;
     }
 
-    @Parameter(names = "--snapshot-time", description = SnapshotConfig.Descriptions.SNAPSHOT_TIME)
+    @Parameter(names = "--snapshot-timestamp", description = SnapshotConfig.Descriptions.SNAPSHOT_TIME)
     protected void setSnapshotTime(long snapshotTime) {
         this.snapshotTime = snapshotTime;
     }

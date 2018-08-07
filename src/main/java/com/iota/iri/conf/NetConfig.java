@@ -76,7 +76,7 @@ public abstract class NetConfig implements IotaConfig {
         return help;
     }
 
-    @Parameter(names = "--help", help = true, hidden = true)
+    @Parameter(names = {"--help", "-h"} , help = true, hidden = true)
     public void setHelp(boolean help) {
         this.help = help;
     }
@@ -216,7 +216,7 @@ public abstract class NetConfig implements IotaConfig {
         return dnsRefresherEnabled;
     }
 
-    @Parameter(names = {"--dns--refresher"}, description = NetworkConfig.Descriptions.DNS_REFRESHER_ENABLED)
+    @Parameter(names = {"--dns-refresher"}, description = NetworkConfig.Descriptions.DNS_REFRESHER_ENABLED)
     protected void setDnsRefresherEnabled(boolean dnsRefresherEnabled) {
         this.dnsRefresherEnabled = dnsRefresherEnabled;
     }

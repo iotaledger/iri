@@ -198,11 +198,11 @@ public class TransactionValidator {
             try {
                 Hash hash = cascadeIterator.next();
                 TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
+		transaction.update(tangle, "solid|height"); //update to db here
                 Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
                 for(Hash h: approvers) {
                     TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
                     if(quietQuickSetSolid(tx)) {
-			tx.update(tangle, "solid");
                         addSolidTransaction(h);
                     }
                     updateTipsView(tx);
@@ -217,22 +217,21 @@ public class TransactionValidator {
         transactionRequester.clearTransactionRequest(transactionViewModel.getHash());
       
 	if(quickSetSolid(transactionViewModel)) {
-	    transactionViewModel.update(tangle, "solid");
             addSolidTransaction(transactionViewModel.getHash());
         }
         updateTipsView(transactionViewModel);
     }
     
     private void updateTipsView(TransactionViewModel transactionViewModel) throws Exception {
-	    if(transactionViewModel.getApprovers(tangle).size() == 0){
-            tipsViewModel.addTipHash(transactionViewModel.getHash());
-            if(transactionViewModel.isSolid()){
-		        tipsViewModel.setSolid(transactionViewModel.getHash());
-	        }
+	if(transactionViewModel.getApprovers(tangle).size() == 0){
+        	tipsViewModel.addTipHash(transactionViewModel.getHash());
+            	if(transactionViewModel.isSolid()){
+			tipsViewModel.setSolid(transactionViewModel.getHash());
+	    	}
         }
         else{
 	        tipsViewModel.removeTipHash(transactionViewModel.getHash());
-	    }
+	}
         tipsViewModel.removeTipHash(transactionViewModel.getTrunkTransactionHash());
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
     }

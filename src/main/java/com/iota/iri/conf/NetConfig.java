@@ -216,7 +216,7 @@ public abstract class NetConfig implements IotaConfig {
         return dnsRefresherEnabled;
     }
 
-    @Parameter(names = {"--dns-refresher"}, description = NetworkConfig.Descriptions.DNS_REFRESHER_ENABLED)
+    @Parameter(names = {"--dns-refresher"}, description = NetworkConfig.Descriptions.DNS_REFRESHER_ENABLED, arity = 1)
     protected void setDnsRefresherEnabled(boolean dnsRefresherEnabled) {
         this.dnsRefresherEnabled = dnsRefresherEnabled;
     }
@@ -226,7 +226,7 @@ public abstract class NetConfig implements IotaConfig {
         return dnsResolutionEnabled;
     }
 
-    @Parameter(names = {"--dns-resolution"}, description = NetworkConfig.Descriptions.DNS_RESOLUTION_ENABLED)
+    @Parameter(names = {"--dns-resolution"}, description = NetworkConfig.Descriptions.DNS_RESOLUTION_ENABLED, arity = 1)
     protected void setDnsResolutionEnabled(boolean dnsResolutionEnabled) {
         this.dnsResolutionEnabled = dnsResolutionEnabled;
     }

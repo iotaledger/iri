@@ -97,7 +97,7 @@ public class API {
         this.ixi = ixi;
         APIConfig configuration = instance.configuration;
         maxFindTxs = configuration.getMaxFindTransactions();
-        maxRequestList = configuration.getMaxRequestList();
+        maxRequestList = configuration.getMaxRequestsList();
         maxGetTrytes = configuration.getMaxGetTrytes();
         maxBodyLength = configuration.getMaxBodyLength();
         testNet = configuration.isTestnet();

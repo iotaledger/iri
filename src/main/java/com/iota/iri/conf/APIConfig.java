@@ -16,7 +16,7 @@ public interface APIConfig extends Config {
 
     int getMaxFindTransactions();
 
-    int getMaxRequestList();
+    int getMaxRequestsList();
 
     int getMaxGetTrytes();
 

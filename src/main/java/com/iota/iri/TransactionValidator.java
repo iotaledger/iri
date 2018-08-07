@@ -199,13 +199,13 @@ public class TransactionValidator {
                 Hash hash = cascadeIterator.next();
                 TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
 		transaction.update(tangle, "solid|height"); //update to db here
+		updateTipsView(transaction);
                 Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
                 for(Hash h: approvers) {
                     TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
                     if(quietQuickSetSolid(tx)) {
                         addSolidTransaction(h);
-                    }
-                    updateTipsView(tx);
+                    }                
                 }
             } catch (Exception e) {
                 log.error("Error while propagating solidity upwards", e);

@@ -53,9 +53,9 @@ public class Iota {
         transactionRequester = new TransactionRequester(tangle, messageQ);
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ,
                 configuration);
-        milestone = new Milestone(tangle, transactionValidator, messageQ, configuration, initialSnapshot);
-        node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone,
-                messageQ);
+        milestone = new Milestone(tangle, transactionValidator, messageQ, initialSnapshot, configuration);
+        node = new Node(tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ,
+                configuration);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);

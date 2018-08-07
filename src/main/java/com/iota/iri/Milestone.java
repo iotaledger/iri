@@ -59,9 +59,8 @@ public class Milestone {
     public Milestone(Tangle tangle,
                      TransactionValidator transactionValidator,
                      MessageQ messageQ,
-                     ConsensusConfig config,
-                     Snapshot initialSnapshot
-                     ) {
+                     Snapshot initialSnapshot, ConsensusConfig config
+    ) {
         this.tangle = tangle;
         this.transactionValidator = transactionValidator;
         this.messageQ = messageQ;

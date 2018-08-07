@@ -74,13 +74,7 @@ public class Node {
     public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
     private DatagramSocket udpSocket;
 
-    public Node(final NodeConfig configuration,
-                final Tangle tangle,
-                final TransactionValidator transactionValidator,
-                final TransactionRequester transactionRequester,
-                final TipsViewModel tipsViewModel,
-                final Milestone milestone,
-                final MessageQ messageQ
+    public Node(final Tangle tangle, final TransactionValidator transactionValidator, final TransactionRequester transactionRequester, final TipsViewModel tipsViewModel, final Milestone milestone, final MessageQ messageQ, final NodeConfig configuration
     ) {
         this.configuration = configuration;
         this.tangle = tangle;

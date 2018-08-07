@@ -8,11 +8,11 @@ public interface ProtocolConfig extends Config {
 
     int getRequestHashSize();
 
-    double getpReplyRandomTip();
+    double getPReplyRandomTip();
 
     double getPDropTransaction();
 
-    double getpSelectMilestoneChild();
+    double getPSelectMilestoneChild();
 
     double getPSendMilestone();
 

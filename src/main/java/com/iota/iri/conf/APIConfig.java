@@ -10,7 +10,7 @@ public interface APIConfig extends Config {
      */
     int getPort();
 
-    String getHost();
+    String getApiHost();
 
     List<String> getRemoteLimitApi();
 
@@ -26,7 +26,7 @@ public interface APIConfig extends Config {
 
     interface Descriptions {
         String PORT = "The port that will be used by the API.";
-        String HOST = "The host on which the API will listen to. Set to 0.0.0.0 to accept any host.";
+        String API_HOST = "The host on which the API will listen to. Set to 0.0.0.0 to accept any host.";
         String REMOTE_LIMIT_API = "Commands that should be ignored by API.";
         String REMOTE_AUTH = "A string in the form of <user>:<password>. Used to access the API";
         String MAX_FIND_TRANSACTIONS = "The maximal number of transactions that may be returned by the \"findTransactions\" API call. If the number of transactions found exceeds this number an error will be returned.";

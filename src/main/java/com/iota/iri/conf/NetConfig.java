@@ -14,7 +14,7 @@ public abstract class NetConfig implements IotaConfig {
 
     //API
     protected int port = Defaults.API_PORT;
-    protected String host = Defaults.API_HOST;
+    protected String apiHost = Defaults.API_HOST;
     protected List<String> remoteLimitApi = new ArrayList<>();
     protected int maxFindTransactions = Defaults.MAX_FIND_TRANSACTIONS;
     protected int maxRequestList = Defaults.MAX_REQUEST_LIST;
@@ -92,13 +92,13 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public String getHost() {
-        return host;
+    public String getApiHost() {
+        return apiHost;
     }
 
-    @Parameter(names = {"--host"}, description = APIConfig.Descriptions.HOST)
-    protected void setHost(String host) {
-        this.host = host;
+    @Parameter(names = {"--api-host"}, description = APIConfig.Descriptions.API_HOST)
+    protected void setApiHost(String apiHost) {
+        this.apiHost = apiHost;
     }
 
     @Override

@@ -202,7 +202,7 @@ public class TransactionValidator {
                 for(Hash h: approvers) {
                     TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
                     if(quietQuickSetSolid(tx)) {
-			transaction.update(tangle, "solid|height"); //update to db here
+			tx.update(tangle, "solid|height"); //update to db here
                         addSolidTransaction(h);
                     }     
 		    updateTipsView(transaction);
@@ -217,7 +217,7 @@ public class TransactionValidator {
         transactionRequester.clearTransactionRequest(transactionViewModel.getHash());
       
 	if(quickSetSolid(transactionViewModel)) {
-	    transaction.update(tangle, "solid|height"); //update to db here
+	    transactionViewModel.update(tangle, "solid|height"); //update to db here
             addSolidTransaction(transactionViewModel.getHash());
         }
         updateTipsView(transactionViewModel);
@@ -231,7 +231,8 @@ public class TransactionValidator {
 	    	}
         }
         else{
-	        tipsViewModel.removeTipHash(transactionViewModel.getHash()); //won't happen in practice i think ????
+	        tipsViewModel.removeTipHash(transactionViewModel.getHash()); 
+		//hash should already have been removed as soon parent attaches
 	}
         tipsViewModel.removeTipHash(transactionViewModel.getTrunkTransactionHash());
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());

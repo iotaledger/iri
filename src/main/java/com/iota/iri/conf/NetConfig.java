@@ -500,7 +500,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public boolean isValidateTestnetMilestoneSig() {
+    public boolean isDontValidateTestnetMilestoneSig() {
         return true;
     }
 

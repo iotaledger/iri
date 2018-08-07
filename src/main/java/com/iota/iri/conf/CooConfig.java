@@ -4,7 +4,7 @@ public interface CooConfig extends Config {
 
     String getCoordinator();
 
-    boolean isValidateTestnetMilestoneSig();
+    boolean isDontValidateTestnetMilestoneSig();
 
     interface Descriptions {
 

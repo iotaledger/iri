@@ -8,7 +8,7 @@ import java.util.Objects;
 public class TestnetConfig extends NetConfig {
 
     protected String coordinator = Defaults.COORDINATOR_ADDRESS;
-    protected boolean validateTestnetMilestoneSig = Defaults.VALIDATE_MILESTONE_SIG;
+    protected boolean dontValidateTestnetMilestoneSig = Defaults.VALIDATE_MILESTONE_SIG;
     protected String snapshotFile = Defaults.SNAPSHOT_FILE;
     //TODO should default testnet file be the same as mainnet?
     protected String snapshotSignatureFile = Defaults.SNAPSHOT_SIG;
@@ -41,13 +41,13 @@ public class TestnetConfig extends NetConfig {
     }
 
     @Override
-    public boolean isValidateTestnetMilestoneSig() {
-        return validateTestnetMilestoneSig;
+    public boolean isDontValidateTestnetMilestoneSig() {
+        return dontValidateTestnetMilestoneSig;
     }
 
-    @Parameter(names = "--validate--testnet--milestone", description = CooConfig.Descriptions.VALIDATE_TESTNET_MILESTONE_SIG)
-    protected void setValidateTestnetMilestoneSig(boolean validateTestnetMilestoneSig) {
-        this.validateTestnetMilestoneSig = validateTestnetMilestoneSig;
+    @Parameter(names = "--testnet-no-coo-validation", description = CooConfig.Descriptions.VALIDATE_TESTNET_MILESTONE_SIG)
+    protected void setDontValidateTestnetMilestoneSig(boolean dontValidateTestnetMilestoneSig) {
+        this.dontValidateTestnetMilestoneSig = dontValidateTestnetMilestoneSig;
     }
 
     @Override
@@ -56,7 +56,7 @@ public class TestnetConfig extends NetConfig {
         return snapshotFile;
     }
 
-    @Parameter(names = "--snapshot-file", description = SnapshotConfig.Descriptions.SNAPSHOT_FILE)
+    @Parameter(names = "--snapshot", description = SnapshotConfig.Descriptions.SNAPSHOT_FILE)
     protected void setSnapshotFile(String snapshotFile) {
         this.snapshotFile = snapshotFile;
     }
@@ -67,7 +67,7 @@ public class TestnetConfig extends NetConfig {
         return snapshotSignatureFile;
     }
 
-    @Parameter(names = "--snapshot-signature", description = SnapshotConfig.Descriptions.SNAPSHOT_SIGNATURE_FILE)
+    @Parameter(names = "--snapshot-sig", description = SnapshotConfig.Descriptions.SNAPSHOT_SIGNATURE_FILE)
     protected void setSnapshotSignatureFile(String snapshotSignatureFile) {
         this.snapshotSignatureFile = snapshotSignatureFile;
     }
@@ -87,7 +87,7 @@ public class TestnetConfig extends NetConfig {
         return mwm;
     }
 
-    @Parameter(names = {"--mwm"}, description = ProtocolConfig.Descriptions.MWM)
+    @Parameter(names = "--mwm", description = ProtocolConfig.Descriptions.MWM)
     protected void setMwm(int mwm) {
         this.mwm = mwm;
     }

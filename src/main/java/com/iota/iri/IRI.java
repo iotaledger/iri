@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigUtils;
@@ -133,7 +134,11 @@ public class IRI {
                     iotaConfig = ConfigUtils.createIotaConfig(testnet);
                     message+= "command line args only";
                 }
-                iotaConfig = ConfigUtils.parseFromArgs(args, iotaConfig);
+                JCommander jCommander = ConfigUtils.parseConfigFromArgs(args, iotaConfig);
+                if (iotaConfig.isHelp()) {
+                    jCommander.usage();
+                    System.exit(0);
+                }
             }
             catch (IOException | IllegalArgumentException e) {
                 log.error("There was a problem reading configuration from file" , e.getMessage());

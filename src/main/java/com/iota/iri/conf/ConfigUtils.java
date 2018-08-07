@@ -16,8 +16,8 @@ import java.util.Properties;
 
 public class ConfigUtils {
 
-    public static IotaConfig parseFromArgs(String[] args, IotaConfig iotaConfig) throws ParameterException {
-        if (ArrayUtils.isNotEmpty(args)) {
+    public static JCommander parseConfigFromArgs(String[] args, IotaConfig iotaConfig) throws ParameterException {
+            //One can invoke help via INI file (feature/bug) so we always create JCommander even if args is empty
             JCommander jCommander = JCommander.newBuilder()
                     .addObject(iotaConfig)
                     //This is in order to enable the `--conf` and `--testnet` option
@@ -26,13 +26,11 @@ public class ConfigUtils {
                     //This is the first line of JCommander Usage
                     .programName("java -jar iri-" + IRI.VERSION + ".jar")
                     .build();
+        if (ArrayUtils.isNotEmpty(args)) {
             jCommander.parse(args);
-            if (iotaConfig.isHelp()) {
-                jCommander.usage();
-                System.exit(0);
-            }
         }
-        return iotaConfig;
+        return jCommander;
+
     }
 
     public static IotaConfig createIotaConfig(boolean isTestnet) {

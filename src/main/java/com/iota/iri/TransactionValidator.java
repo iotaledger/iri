@@ -205,7 +205,7 @@ public class TransactionValidator {
 			tx.update(tangle, "solid|height"); //update to db here
                         addSolidTransaction(h);
                     }     
-		    updateTipsView(transaction);
+		    updateTipsView(tx);
                 }
             } catch (Exception e) {
                 log.error("Error while propagating solidity upwards", e);

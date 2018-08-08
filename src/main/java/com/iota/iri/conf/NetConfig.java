@@ -1,7 +1,11 @@
 package com.iota.iri.conf;
 
+import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
+import com.beust.jcommander.ParameterException;
+import com.iota.iri.IRI;
 import com.iota.iri.utils.IotaUtils;
+import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -74,6 +78,23 @@ public abstract class NetConfig implements IotaConfig {
 
     public NetConfig() {
         //empty constructor
+    }
+
+    @Override
+    public JCommander parseConfigFromArgs(String[] args) throws ParameterException {
+        //One can invoke help via INI file (feature/bug) so we always create JCommander even if args is empty
+        JCommander jCommander = JCommander.newBuilder()
+                .addObject(this)
+                //This is in order to enable the `--conf` and `--testnet` option
+                .acceptUnknownOptions(true)
+                .allowParameterOverwriting(true)
+                //This is the first line of JCommander Usage
+                .programName("java -jar iri-" + IRI.VERSION + ".jar")
+                .build();
+        if (ArrayUtils.isNotEmpty(args)) {
+            jCommander.parse(args);
+        }
+        return jCommander;
     }
 
     @Override

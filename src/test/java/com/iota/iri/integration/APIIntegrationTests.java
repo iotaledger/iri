@@ -78,7 +78,7 @@ public class APIIntegrationTests {
             configuration = ConfigUtils.createIotaConfig(true);
             String[] args = {"-p", portStr, "--testnet", "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
             logFolder.getRoot().getAbsolutePath(), "--mwm", "1"};
-            ConfigUtils.parseConfigFromArgs(args, configuration);
+            configuration.parseConfigFromArgs(args);
 
             //create node
             iota = new Iota(configuration);

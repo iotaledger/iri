@@ -134,7 +134,7 @@ public class IRI {
                     iotaConfig = ConfigUtils.createIotaConfig(testnet);
                     message+= "command line args only";
                 }
-                JCommander jCommander = ConfigUtils.parseConfigFromArgs(args, iotaConfig);
+                JCommander jCommander = iotaConfig.parseConfigFromArgs(args);
                 if (iotaConfig.isHelp()) {
                     jCommander.usage();
                     System.exit(0);

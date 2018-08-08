@@ -1,6 +1,7 @@
 package com.iota.iri.service.dto;
 
 import java.util.List;
+import java.net.InetSocketAddress;
 
 public class GetNeighborsResponse extends AbstractResponse {
 
@@ -42,7 +43,7 @@ public class GetNeighborsResponse extends AbstractResponse {
 
         public static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
             Neighbor ne = new Neighbor();
-            java.net.InetSocketAddress socketAddress = n.getAddress();
+            InetSocketAddress socketAddress = n.getAddress();
             int port = n.getPort();
             ne.address = socketAddress.getHostString() + ":" + port;
             ne.ip = socketAddress.getAddress().getHostAddress();

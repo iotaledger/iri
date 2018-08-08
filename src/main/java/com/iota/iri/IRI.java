@@ -3,7 +3,7 @@ package com.iota.iri;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 import com.iota.iri.conf.Config;
-import com.iota.iri.conf.ConfigUtils;
+import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.service.API;
 import org.apache.commons.lang3.ArrayUtils;
@@ -127,11 +127,11 @@ public class IRI {
 
             try {
                 if (configFile.exists()) {
-                    iotaConfig = ConfigUtils.createFromFile(configFile, testnet);
+                    iotaConfig = ConfigFactory.createFromFile(configFile, testnet);
                     message+= configFile.getName() + " and command line args";
                 }
                 else {
-                    iotaConfig = ConfigUtils.createIotaConfig(testnet);
+                    iotaConfig = ConfigFactory.createIotaConfig(testnet);
                     message+= "command line args only";
                 }
                 JCommander jCommander = iotaConfig.parseConfigFromArgs(args);

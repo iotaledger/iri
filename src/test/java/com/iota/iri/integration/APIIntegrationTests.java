@@ -4,7 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
-import com.iota.iri.conf.ConfigUtils;
+import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IXIConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -75,7 +75,7 @@ public class APIIntegrationTests {
             TemporaryFolder logFolder = new TemporaryFolder();
             logFolder.create();
 
-            configuration = ConfigUtils.createIotaConfig(true);
+            configuration = ConfigFactory.createIotaConfig(true);
             String[] args = {"-p", portStr, "--testnet", "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
             logFolder.getRoot().getAbsolutePath(), "--mwm", "1"};
             configuration.parseConfigFromArgs(args);

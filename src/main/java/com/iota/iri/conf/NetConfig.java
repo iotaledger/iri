@@ -22,7 +22,7 @@ public abstract class NetConfig implements IotaConfig {
     protected String apiHost = Defaults.API_HOST;
     protected List<String> remoteLimitApi = new ArrayList<>();
     protected int maxFindTransactions = Defaults.MAX_FIND_TRANSACTIONS;
-    protected int maxRequestList = Defaults.MAX_REQUEST_LIST;
+    protected int maxRequestsList = Defaults.MAX_REQUESTS_LIST;
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
@@ -127,13 +127,13 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public int getMaxRequestList() {
-        return maxRequestList;
+    public int getMaxRequestsList() {
+        return maxRequestsList;
     }
 
-    @Parameter(names = {"--max-request-list"}, description = APIConfig.Descriptions.MAX_REQUESTS_LIST)
-    protected void setMaxRequestList(int maxRequestList) {
-        this.maxRequestList = maxRequestList;
+    @Parameter(names = {"--max-requests-list"}, description = APIConfig.Descriptions.MAX_REQUESTS_LIST)
+    protected void setMaxRequestsList(int maxRequestsList) {
+        this.maxRequestsList = maxRequestsList;
     }
 
     @Override
@@ -545,7 +545,7 @@ public abstract class NetConfig implements IotaConfig {
         int API_PORT = 14265;
         String API_HOST = "localhost";
         int MAX_FIND_TRANSACTIONS = 100_000;
-        int MAX_REQUEST_LIST = 1_000;
+        int MAX_REQUESTS_LIST = 1_000;
         int MAX_GET_TRYTES = 10_000;
         int MAX_BODY_LENGTH = 1_000_000;
         String REMOTE_AUTH = "";

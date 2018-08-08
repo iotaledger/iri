@@ -396,7 +396,7 @@ public class Node {
             //Random Tip Request
             try {
                 if (transactionRequester.numberOfTransactionsToRequest() > 0
-                        && rnd.nextDouble() < configuration.getPReplyRandomTip()) {
+                        && rnd.nextDouble() < configuration.getpReplyRandomTip()) {
                     neighbor.incRandomTransactionRequests();
                     transactionPointer = getRandomTipPointer();
                     transactionViewModel = TransactionViewModel.fromHash(tangle, transactionPointer);
@@ -464,7 +464,7 @@ public class Node {
 
         synchronized (sendingPacket) {
             System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
-            Hash hash = transactionRequester.transactionToRequest(rnd.nextDouble() < configuration.getPSelectMilestoneChild());
+            Hash hash = transactionRequester.transactionToRequest(rnd.nextDouble() < configuration.getpSelectMilestoneChild());
             System.arraycopy(hash != null ? hash.bytes() : transactionViewModel.getHash().bytes(), 0,
                     sendingPacket.getData(), TransactionViewModel.SIZE, reqHashSize);
             neighbor.send(sendingPacket);

@@ -213,7 +213,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Parameter(names = {"--p-remove-request"}, description = NetworkConfig.Descriptions.P_REMOVE_REQUEST)
-    protected void setPRemoveRequest(double pRemoveRequest) {
+    protected void setpRemoveRequest(double pRemoveRequest) {
         this.pRemoveRequest = pRemoveRequest;
     }
 
@@ -364,12 +364,12 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public double getPReplyRandomTip() {
+    public double getpReplyRandomTip() {
         return pReplyRandomTip;
     }
 
     @Parameter(names = {"--p-reply-random"}, description = ProtocolConfig.Descriptions.P_REPLY_RANDOM_TIP)
-    protected void setPReplyRandomTip(double pReplyRandomTip) {
+    protected void setpReplyRandomTip(double pReplyRandomTip) {
         this.pReplyRandomTip = pReplyRandomTip;
     }
 
@@ -379,17 +379,17 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Parameter(names = {"--p-drop-transaction"}, description = ProtocolConfig.Descriptions.P_DROP_TRANSACTION)
-    protected void setPDropTransaction(double pDropTransaction) {
+    protected void setpDropTransaction(double pDropTransaction) {
         this.pDropTransaction = pDropTransaction;
     }
 
     @Override
-    public double getPSelectMilestoneChild() {
+    public double getpSelectMilestoneChild() {
         return pSelectMilestoneChild;
     }
 
     @Parameter(names = {"--p-select-milestone"}, description = ProtocolConfig.Descriptions.P_SELECT_MILESTONE)
-    protected void setPSelectMilestoneChild(double pSelectMilestoneChild) {
+    protected void setpSelectMilestoneChild(double pSelectMilestoneChild) {
         this.pSelectMilestoneChild = pSelectMilestoneChild;
     }
 
@@ -399,7 +399,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Parameter(names = {"--p-send-milestone"}, description = ProtocolConfig.Descriptions.P_SEND_MILESTONE)
-    protected void setPSendMilestone(double pSendMilestone) {
+    protected void setpSendMilestone(double pSendMilestone) {
         this.pSendMilestone = pSendMilestone;
     }
 
@@ -409,7 +409,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Parameter(names = {"--p-propagate-request"}, description = ProtocolConfig.Descriptions.P_PROPAGATE_REQUEST)
-    protected void setPPropagateRequest(double pPropagateRequest) {
+    protected void setpPropagateRequest(double pPropagateRequest) {
         this.pPropagateRequest = pPropagateRequest;
     }
 
@@ -506,7 +506,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Parameter(names = "--p-drop-cache", description = ProtocolConfig.Descriptions.P_DROP_CACHE_ENTRY)
-    protected void setPDropCacheEntry(double pDropCacheEntry) {
+    protected void setpDropCacheEntry(double pDropCacheEntry) {
         this.pDropCacheEntry = pDropCacheEntry;
     }
 

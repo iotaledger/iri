@@ -491,12 +491,12 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public int getQSizeNode() {
+    public int getqSizeNode() {
         return qSizeNode;
     }
 
     @Parameter(names = "--queue-size", description = ProtocolConfig.Descriptions.Q_SIZE_NODE)
-    protected void setQSizeNode(int qSizeNode) {
+    protected void setqSizeNode(int qSizeNode) {
         this.qSizeNode = qSizeNode;
     }
 

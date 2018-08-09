@@ -20,7 +20,7 @@ public interface NetworkConfig extends Config {
 
     List<String> getNeighbors();
 
-    int getQSizeNode();
+    int getqSizeNode();
 
     double getPDropCacheEntry();
 

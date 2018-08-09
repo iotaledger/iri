@@ -1,20 +1,44 @@
 package com.iota.iri.conf;
 
+/**
+ * Configurations for handling global snapshot data
+ */
 public interface SnapshotConfig extends Config {
 
+    /**
+     * @return {@value Descriptions#SNAPSHOT_TIME}
+     */
     long getSnapshotTime();
 
     //TODO should return File not String
+    /**
+     * return {@value Descriptions#SNAPSHOT_FILE}
+     */
     String getSnapshotFile();
 
+    /**
+     * @return {@value Descriptions#SNAPSHOT_SIGNATURE_FILE}
+     */
     String getSnapshotSignatureFile();
 
+    /**
+     * @return {@value Descriptions#MILESTONE_START_INDEX}
+     */
     int getMilestoneStartIndex();
 
+    /**
+     * @return {@value Descriptions#NUMBER_OF_KEYS_IN_A_MILESTONE}
+     */
     int getNumberOfKeysInMilestone();
 
+    /**
+     * @return {@value Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE}
+     */
     String getPreviousEpochSpentAddressesFile();
 
+    /**
+     * @return {@value Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG_FILE}
+     */
     String getPreviousEpochSpentAddressesSigFile();
 
     interface Descriptions {
@@ -22,7 +46,14 @@ public interface SnapshotConfig extends Config {
         String SNAPSHOT_TIME = "Epoch time of the last snapshot.";
         String SNAPSHOT_FILE = "Path of the file that contains the state of the ledger at the last snapshot.";
         String SNAPSHOT_SIGNATURE_FILE = "Path to the file that contains a signature for the snapshot file.";
-        String MILESTONE_START_INDEX = "The start index of the milestones. This index is encoded in each milestone transaction by the coordinator.";
-        String NUMBER_OF_KEYS_IN_A_MILESTONE = "The depth of the merkle tree which in turn determines the number leaves (private keys) that the coordinator can use to sign a message.";
+        String MILESTONE_START_INDEX = "The start index of the milestones. This index is encoded in each milestone " +
+                "transaction by the coordinator.";
+        String NUMBER_OF_KEYS_IN_A_MILESTONE = "The depth of the merkle tree which in turn determines the number " +
+                "leaves (private keys) that the coordinator can use to sign a message.";
+        String PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE = "The file that contains the list of all used addresses " +
+                "from previous epochs";
+        String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG_FILE = "The file that contains the signature to validate the" +
+                "authenticity of the PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE";
+
     }
 }

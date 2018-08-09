@@ -220,7 +220,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public double getPRemoveRequest() {
+    public double getpRemoveRequest() {
         return pRemoveRequest;
     }
 
@@ -401,7 +401,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public double getPDropTransaction() {
+    public double getpDropTransaction() {
         return pDropTransaction;
     }
 
@@ -423,7 +423,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public double getPSendMilestone() {
+    public double getpSendMilestone() {
         return pSendMilestone;
     }
 
@@ -434,7 +434,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @Override
-    public double getPPropagateRequest() {
+    public double getpPropagateRequest() {
         return pPropagateRequest;
     }
 
@@ -531,18 +531,18 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--queue-size", description = ProtocolConfig.Descriptions.Q_SIZE_NODE)
+    @Parameter(names = "--queue-size", description = NetworkConfig.Descriptions.Q_SIZE_NODE)
     protected void setqSizeNode(int qSizeNode) {
         this.qSizeNode = qSizeNode;
     }
 
     @Override
-    public double getPDropCacheEntry() {
+    public double getpDropCacheEntry() {
         return pDropCacheEntry;
     }
 
     @JsonProperty
-    @Parameter(names = "--p-drop-cache", description = ProtocolConfig.Descriptions.P_DROP_CACHE_ENTRY)
+    @Parameter(names = "--p-drop-cache", description = NetworkConfig.Descriptions.P_DROP_CACHE_ENTRY)
     protected void setpDropCacheEntry(double pDropCacheEntry) {
         this.pDropCacheEntry = pDropCacheEntry;
     }
@@ -553,7 +553,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--cache-size", description = ProtocolConfig.Descriptions.P_CACHE_SIZE_BYTES)
+    @Parameter(names = "--cache-size", description = NetworkConfig.Descriptions.CACHE_SIZE_BYTES)
     protected void setCacheSizeBytes(int cacheSizeBytes) {
         this.cacheSizeBytes = cacheSizeBytes;
     }

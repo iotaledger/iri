@@ -96,7 +96,7 @@ public class Node {
         sendLimit = (long) ((configuration.getSendLimit() * 1000000) / (configuration.getTransactionPacketSize() * 8));
 
         BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.getqSizeNode();
-        recentSeenBytes = new FIFOCache<>(configuration.getCacheSizeBytes(), configuration.getPDropCacheEntry());
+        recentSeenBytes = new FIFOCache<>(configuration.getCacheSizeBytes(), configuration.getpDropCacheEntry());
 
         parseNeighborsConfig();
 
@@ -208,7 +208,7 @@ public class Node {
 
         boolean addressMatch = false;
         boolean cached = false;
-        double pDropTransaction = configuration.getPDropTransaction();
+        double pDropTransaction = configuration.getpDropTransaction();
 
         for (final Neighbor neighbor : getNeighbors()) {
             addressMatch = neighbor.matches(senderAddress);
@@ -428,7 +428,7 @@ public class Node {
             }
         } else {
             //trytes not found
-            if (!requestedHash.equals(Hash.NULL_HASH) && rnd.nextDouble() < configuration.getPPropagateRequest()) {
+            if (!requestedHash.equals(Hash.NULL_HASH) && rnd.nextDouble() < configuration.getpPropagateRequest()) {
                 //request is an actual transaction and missing in request queue add it.
                 try {
                     transactionRequester.requestTransaction(requestedHash, false);
@@ -443,7 +443,7 @@ public class Node {
     }
 
     private Hash getRandomTipPointer() throws Exception {
-        Hash tip = rnd.nextDouble() < configuration.getPSendMilestone() ? milestone.latestMilestone : tipsViewModel.getRandomSolidTipHash();
+        Hash tip = rnd.nextDouble() < configuration.getpSendMilestone() ? milestone.latestMilestone : tipsViewModel.getRandomSolidTipHash();
         return tip == null ? Hash.NULL_HASH : tip;
     }
 

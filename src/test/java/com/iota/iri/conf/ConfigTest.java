@@ -94,7 +94,7 @@ public class ConfigTest {
         Assert.assertEquals("max get trytes", 4000, iotaConfig.getMaxGetTrytes());
         Assert.assertEquals("max body length", 220, iotaConfig.getMaxBodyLength());
         Assert.assertEquals("remote-auth", "2.2.2.2", iotaConfig.getRemoteAuth());
-        Assert.assertEquals("p remove request", 0.23d, iotaConfig.getPRemoveRequest(), 0d);
+        Assert.assertEquals("p remove request", 0.23d, iotaConfig.getpRemoveRequest(), 0d);
         Assert.assertEquals("send limit", 1000, iotaConfig.getSendLimit());
         Assert.assertEquals("max peers", 10, iotaConfig.getMaxPeers());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
@@ -154,7 +154,7 @@ public class ConfigTest {
         Assert.assertEquals("max get trytes", 4000, iotaConfig.getMaxGetTrytes());
         Assert.assertEquals("max body length", 220, iotaConfig.getMaxBodyLength());
         Assert.assertEquals("remote-auth", "2.2.2.2", iotaConfig.getRemoteAuth());
-        Assert.assertEquals("p remove request", 0.23d, iotaConfig.getPRemoveRequest(), 0d);
+        Assert.assertEquals("p remove request", 0.23d, iotaConfig.getpRemoveRequest(), 0d);
         Assert.assertEquals("send limit", 1000, iotaConfig.getSendLimit());
         Assert.assertEquals("max peers", 10, iotaConfig.getMaxPeers());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
@@ -190,7 +190,7 @@ public class ConfigTest {
         Assert.assertEquals("NEIGHBORS", Arrays.asList("udp://neighbor1", "neighbor", "tcp://neighbor2"),
                 iotaConfig.getNeighbors());
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());
-        Assert.assertEquals("P_REMOVE_REQUEST", 0.4d, iotaConfig.getPRemoveRequest(), 0);
+        Assert.assertEquals("P_REMOVE_REQUEST", 0.4d, iotaConfig.getpRemoveRequest(), 0);
         Assert.assertNotEquals("MWM", 4, iotaConfig.getMwm());
     }
 
@@ -221,7 +221,7 @@ public class ConfigTest {
         Assert.assertEquals("NEIGHBORS", Arrays.asList("udp://neighbor1", "neighbor", "tcp://neighbor2"),
                 iotaConfig.getNeighbors());
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());
-        Assert.assertEquals("P_REMOVE_REQUEST", 0.4d, iotaConfig.getPRemoveRequest(), 0);
+        Assert.assertEquals("P_REMOVE_REQUEST", 0.4d, iotaConfig.getpRemoveRequest(), 0);
         Assert.assertEquals("MWM", 4, iotaConfig.getMwm());
         Assert.assertEquals("NUMBER_OF_KEYS_IN_A_MILESTONE", 3, iotaConfig.getNumberOfKeysInMilestone());
         Assert.assertEquals("TIPSELECTION_ALPHA", 1.1d, iotaConfig.getAlpha(), 0);

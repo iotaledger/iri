@@ -2,28 +2,65 @@ package com.iota.iri.conf;
 
 import java.util.List;
 
+/**
+ * Configurations for the node networking. Including ports, DNS settings, list of neighbors,
+ * and various optimization parameters.
+ */
 public interface NetworkConfig extends Config {
 
+    /**
+     * @return Descriptions#UDP_RECIEVER_PORT
+     */
     int getUdpReceiverPort();
 
+    /**
+     * @return Descriptions#TCP_RECIEVER_PORT
+     */
     int getTcpReceiverPort();
 
-    double getPRemoveRequest();
+    /**
+     * @return Descriptions#P_REMOVE_REQUEST
+     */
+    double getpRemoveRequest();
 
+    /**
+     * @return Descriptions#SEND_LIMIT
+     */
     int getSendLimit();
 
+    /**
+     * @return Descriptions#MAX_PEERS
+     */
     int getMaxPeers();
 
+    /**
+     * @return Descriptions#DNS_REFRESHER_ENABLED
+     */
     boolean isDnsRefresherEnabled();
 
+    /**
+     * @return Descriptions#DNS_RESOLUTION_ENABLED
+     */
     boolean isDnsResolutionEnabled();
 
+    /**
+     * @return Descriptions#NEIGHBORS
+     */
     List<String> getNeighbors();
 
+    /**
+     * @return Descriptions#Q_SIZE_NODE
+     */
     int getqSizeNode();
 
-    double getPDropCacheEntry();
+    /**
+     * @return Descriptions#P_DROP_CACHE_ENTRY
+     */
+    double getpDropCacheEntry();
 
+    /**
+     * @return Descriptions#CACHE_SIZE_BYTES
+     */
     int getCacheSizeBytes();
 
     interface Descriptions {
@@ -36,5 +73,8 @@ public interface NetworkConfig extends Config {
         String DNS_REFRESHER_ENABLED = "Reconnect to neighbors that have dynamic IPs.";
         String DNS_RESOLUTION_ENABLED = "Enable using DNS for neighbor peering.";
         String NEIGHBORS = "Urls of peer iota nodes.";
+        String Q_SIZE_NODE = "The size of the REPLY, BROADCAST, and RECIEVE network queues.";
+        String P_DROP_CACHE_ENTRY = DescriptionHelper.PROB_OF + "dropping recently seen transactions out of the network cache.";
+        String CACHE_SIZE_BYTES = "The size of the network cache in bytes";
     }
 }

@@ -1,11 +1,25 @@
 package com.iota.iri.conf;
 
+/**
+ * Configuration for how we perform tip selections. Tip selection is invoked when a client wants to find tips to
+ * attach its transactions to. The tips are invoked via random walks that start at a certain point in the tangle.
+ * The parameters here affect the length and randomness of this walk.
+ */
 public interface TipSelConfig extends Config {
 
+    /**
+     * @return Descriptions#MAX_DEPTH
+     */
     int getMaxDepth();
 
+     /**
+     * @return Descriptions#ALPHA
+     */
     double getAlpha();
 
+    /**
+     * @return Descriptions#BELOW_MAX_DEPTH_TRANSACTION_LIMIT
+     */
     int getBelowMaxDepthTransactionLimit();
 
     interface Descriptions {

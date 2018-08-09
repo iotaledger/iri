@@ -48,7 +48,7 @@ public class TestnetConfig extends NetConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--testnet-no-coo-validation", description = CooConfig.Descriptions.VALIDATE_TESTNET_MILESTONE_SIG)
+    @Parameter(names = "--testnet-no-coo-validation", description = CooConfig.Descriptions.DONT_VALIDATE_TESTNET_MILESTONE_SIG)
     protected void setDontValidateTestnetMilestoneSig(boolean dontValidateTestnetMilestoneSig) {
         this.dontValidateTestnetMilestoneSig = dontValidateTestnetMilestoneSig;
     }

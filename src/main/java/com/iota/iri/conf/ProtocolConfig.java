@@ -1,22 +1,41 @@
 package com.iota.iri.conf;
 
+/**
+ * Configuration for protocol rules. Controls what transactions will be accepted by the network, and how they will
+ * be propagated to other nodes.
+ **/
 public interface ProtocolConfig extends Config {
 
+    /**
+     * @return Descriptions#MWM
+     */
     int getMwm();
 
+    /**
+     * @return Descriptions#TRANSACTION_PACKET_SIZE
+     */
     int getTransactionPacketSize();
 
+    /**
+     * @return Descriptions#REQUEST_HASH_SIZE
+     */
     int getRequestHashSize();
 
+    /**
+     * @return Descriptions#P_REPLY_RANDOM_TIP
+     */
     double getpReplyRandomTip();
 
-    double getPDropTransaction();
+    double getpDropTransaction();
 
+    /**
+     * @return Descriptions#P_SELECT_MILESTONE
+     */
     double getpSelectMilestoneChild();
 
-    double getPSendMilestone();
+    double getpSendMilestone();
 
-    double getPPropagateRequest();
+    double getpPropagateRequest();
 
     interface Descriptions {
         String MWM = "The minimum weight magnitude is the number of trailing 0s that must appear in the end of a transaction hash. Increasing this number by 1 will result in proof of work that is 3 times as hard.";
@@ -27,9 +46,5 @@ public interface ProtocolConfig extends Config {
         String P_SEND_MILESTONE = DescriptionHelper.PROB_OF + "sending a milestone transaction when the node looks for a random transaction to send to a neighbor.";
         String P_REPLY_RANDOM_TIP = DescriptionHelper.PROB_OF + "replying to a random transaction request, even though your node doesn't have anything to request.";
         String P_PROPAGATE_REQUEST = DescriptionHelper.PROB_OF + "propagating the request of a transaction to a neighbor node if it can't be found. This should be low since we don't want to propagate non-existing transactions that spam the network.";
-        String Q_SIZE_NODE = "The size of the REPLY, BROADCAST, and RECIEVE network queues.";
-        //TODO ask Alon about why we use both LRU and Random cache replacement
-        String P_DROP_CACHE_ENTRY = DescriptionHelper.PROB_OF + "dropping recently seen transactions out of the network cache.";
-        String P_CACHE_SIZE_BYTES = "The size of the network cache in bytes";
     }
 }

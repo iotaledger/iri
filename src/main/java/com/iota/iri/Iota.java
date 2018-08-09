@@ -79,7 +79,7 @@ public class Iota {
         milestone.init(SpongeFactory.Mode.CURLP27, ledgerValidator);
         transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
         tipsSolidifier.init();
-        transactionRequester.init(configuration.getPRemoveRequest());
+        transactionRequester.init(configuration.getpRemoveRequest());
         udpReceiver.init();
         replicator.init();
         node.init();

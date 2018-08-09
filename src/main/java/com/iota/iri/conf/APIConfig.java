@@ -2,6 +2,9 @@ package com.iota.iri.conf;
 
 import java.util.List;
 
+/**
+ * Configurations for node API
+ */
 public interface APIConfig extends Config {
 
 
@@ -10,18 +13,40 @@ public interface APIConfig extends Config {
      */
     int getPort();
 
+    /**
+     * @return {@value Descriptions#API_HOST}
+     */
     String getApiHost();
 
+
+    /**
+     * @return {@value Descriptions#REMOTE_LIMIT_API}
+     */
     List<String> getRemoteLimitApi();
 
+    /**
+     * @return {@value Descriptions#MAX_FIND_TRANSACTIONS}
+     */
     int getMaxFindTransactions();
 
+    /**
+     * @return {@value Descriptions#MAX_REQUESTS_LIST}
+     */
     int getMaxRequestsList();
 
+    /**
+     * @return {@value Descriptions#MAX_GET_TRYTES}
+     */
     int getMaxGetTrytes();
 
+    /**
+     * @return {@value Descriptions#MAX_BODY_LENGTH}
+     */
     int getMaxBodyLength();
 
+    /**
+     * @return {@value Descriptions#REMOTE_AUTH}
+     */
     String getRemoteAuth();
 
     interface Descriptions {

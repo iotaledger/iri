@@ -1,5 +1,8 @@
 package com.iota.iri.conf;
 
+/**
+ *  General configuration parameters that every module in IRI needs.
+ */
 public interface Config  {
 
     String TESTNET_FLAG = "--testnet";

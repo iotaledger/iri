@@ -5,6 +5,10 @@ import com.beust.jcommander.ParameterException;
 
 import java.io.File;
 
+/**
+ *  A container for all possible configuration parameters of IRI.
+ *  In charge of how we parse the configuration from given inputs.
+ */
 public interface IotaConfig extends APIConfig, NodeConfig,
         IXIConfig, DbConfig, ConsensusConfig, ZMQConfig, TipSelConfig {
     File CONFIG_FILE = new File("iota.ini");
@@ -13,7 +17,7 @@ public interface IotaConfig extends APIConfig, NodeConfig,
      * Parses the args to populate the configuration object
      *
      * @param args command line args
-     * @return Jcommander instance that was used for parsing. It contains metadata about the parsing.
+     * @return {@link JCommander} instance that was used for parsing. It contains metadata about the parsing.
      * @throws ParameterException if the parsing failed
      */
     JCommander parseConfigFromArgs(String[] args) throws ParameterException;

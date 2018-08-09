@@ -3,6 +3,7 @@ package com.iota.iri.conf;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.iota.iri.IRI;
 import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -545,6 +546,7 @@ public abstract class NetConfig implements IotaConfig {
         return alpha;
     }
 
+    @JsonProperty("TIPSELECTION_ALPHA")
     @Parameter(names = "--alpha", description = TipSelConfig.Descriptions.ALPHA)
     protected void setAlpha(double alpha) {
         this.alpha = alpha;

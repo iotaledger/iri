@@ -2,6 +2,17 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
+/**
+ * This class represents the core API request 'getNeighbors'.
+ * Returns the set of neighbors you are connected with, as well as their activity count. 
+ * The activity counter is reset after restarting IRI.
+ *
+ * Return Values
+ * <code>address</code>: address of your peer
+ * <code>numberOfAllTransactions</code>: Number of all transactions sent (invalid, valid, already-seen)
+ * <code>numberOfInvalidTransactions</code>: Invalid transactions your peer has sent you. These are transactions with invalid signatures or overall schema.
+ * <code>numberOfNewTransactions</code>: New transactions which were transmitted.
+ **/
 public class GetNeighborsResponse extends AbstractResponse {
 
     private Neighbor[] neighbors;

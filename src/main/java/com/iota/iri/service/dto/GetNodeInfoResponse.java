@@ -2,6 +2,27 @@ package com.iota.iri.service.dto;
 
 import com.iota.iri.model.Hash;
 
+/**
+  * This class represents the core API request 'getNodeInfo'.
+  * Returns information about your node.
+  * 
+  * Return Values
+  * <code>appName</code>: Name of the IOTA software you're currently using (IRI stands for Initial Reference Implementation).
+  * <code>appVersion</code>: The version of the IOTA software you're currently running.
+  * <code>jreAvailableProcesses</code>: Available cores on your machine for JRE.
+  * <code>jreFreeMemory</code>: Returns the amount of free memory in the Java Virtual Machine.
+  * <code>jreMaxMemory</code>: Returns the maximum amount of memory that the Java virtual machine will attempt to use.
+  * <code>jreTotalMemory</code>: Returns the total amount of memory in the Java virtual machine.
+  * <code>latestMilestone</code>: The hash of the latest transaction that was signed off by the coordinator.
+  * <code>latestMilestoneIndex</code>: Index of the latest milestone.
+  * <code>latestSolidSubtangleMilestone</code>: The hash of the latest transaction which is solid and is used for sending transactions. For a milestone to become solid your local node must basically approve the subtangle of coordinator-approved transactions, and have a consistent view of all referenced transactions.
+  * <code>latestSolidSubtangleMilestoneIndex</code>: Index of the latest solid subtangle.
+  * <code>neighbors</code>: Number of neighbors you are directly connected with.
+  * <code>packetsQueueSize</code>: Packets which are currently queued up.
+  * <code>time</code>: Current UNIX timestamp.
+  * <code>tips</code>: Number of tips in the network.
+  * <code>transactionsToRequest</code>: When a node receives a transaction from one of its neighbors, this transaction is referencing two other transactions t1 and t2 (trunk and branch transaction). If either t1 or t2 (or both) is not in the node's local database, then the transaction hash of t1 (or t2 or both) is added to the queue of the "transactions to request". At some point, the node will process this queue and ask for details about transactions in the "transaction to request" queue from one of its neighbors. By this means, nodes solidify their view of the tangle (i.e. filling in the unknown parts).
+  **/
 public class GetNodeInfoResponse extends AbstractResponse {
 
 	private String appName;
@@ -56,70 +77,155 @@ public class GetNodeInfoResponse extends AbstractResponse {
 		return res;
 	}
 
+    /**
+     * Gets the app name
+     *
+     * @return The app name.
+     */
 	public String getAppName() {
 		return appName;
 	}
-
+    
+    /**
+     * Gets the app version
+     *
+     * @return The app version.
+     */
 	public String getAppVersion() {
 		return appVersion;
 	}
 
+    /**
+     * Gets the available processors of the JRE
+     *
+     * @return The available processors of the JRE.
+     */
 	public int getJreAvailableProcessors() {
 		return jreAvailableProcessors;
 	}
 
+    /**
+     * Gets the free memory of the JRE
+     *
+     * @return The free memory of the JRE.
+     */
 	public long getJreFreeMemory() {
 		return jreFreeMemory;
 	}
 
+    /**
+     * Gets the maximum memory of the JRE
+     *
+     * @return The maximum memory of the JRE.
+     */
 	public long getJreMaxMemory() {
 		return jreMaxMemory;
 	}
 
+    /**
+     * Gets the total memory of the JRE
+     *
+     * @return The total memory of the JRE.
+     */
 	public long getJreTotalMemory() {
 		return jreTotalMemory;
 	}
 
+    /**
+     * Gets the JRE version
+     *
+     * @return The JRE version.
+     */
 	public String getJreVersion() {
 		return jreVersion;
 	}
 
+    /**
+     * Gets the latest milestone
+     *
+     * @return The latest milestone.
+     */
 	public String getLatestMilestone() {
 		return latestMilestone;
 	}
 
+    /**
+     * Gets the latest milestone index
+     *
+     * @return The latest milestone index.
+     */
 	public int getLatestMilestoneIndex() {
 		return latestMilestoneIndex;
 	}
 
+    /**
+     * Gets the latest subtangle milestone
+     *
+     * @return The latest subtangle milestone index.
+     */
 	public String getLatestSolidSubtangleMilestone() {
 		return latestSolidSubtangleMilestone;
 	}
 
+    /**
+     * Gets the latest subtangle milestone index
+     *
+     * @return The latest subtangle milestone index.
+     */
 	public int getLatestSolidSubtangleMilestoneIndex() {
 		return latestSolidSubtangleMilestoneIndex;
 	}
 
+    /**
+     * Gets the start of the milestone index
+     *
+     * @return The start of the milestone index.
+     */
 	public int getMilestoneStartIndex() {
 		return milestoneStartIndex;
 	}
 
+    /**
+     * Gets the neighbors
+     *
+     * @return The neighbors.
+     */
 	public int getNeighbors() {
 		return neighbors;
 	}
 
+    /**
+     * Gets the the packets queue
+     *
+     * @return The size of the packets queue.
+     */
 	public int getPacketsQueueSize() {
 		return packetsQueueSize;
 	}
 
+    /**
+     * Gets the time
+     *
+     * @return The time.
+     */
 	public long getTime() {
 		return time;
 	}
 
+    /**
+     * Gets the tips
+     *
+     * @return The tips.
+     */
 	public int getTips() {
 		return tips;
 	}
 
+    /**
+     * Gets the transactions to tequest
+     *
+     * @return The transactions to tequest.
+     */
 	public int getTransactionsToRequest() {
 		return transactionsToRequest;
 	}

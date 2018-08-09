@@ -245,14 +245,16 @@ public class ConfigTest {
     }
 
     private String deriveNameFromSetter(Method setter) {
-        JsonProperty annotation = setter.getAnnotation(JsonProperty.class);
-        if (annotation == null || StringUtils.isEmpty(annotation.value())) {
+        JsonProperty jsonProperty = setter.getAnnotation(JsonProperty.class);
+        //Code works w/o annotation but we wish to enforce its usage
+        Assert.assertNotNull("Setter " + setter.getName() + "must have JsonProperty annotation", jsonProperty);
+        if (StringUtils.isEmpty(jsonProperty.value())) {
             String name = setter.getName().substring(3);
             name = PropertyNamingStrategy.SNAKE_CASE.nameForSetterMethod(null, null, name);
             return StringUtils.upperCase(name);
         }
 
-        return annotation.value();
+        return jsonProperty.value();
     }
 
     public enum LegacyDefaultConf {

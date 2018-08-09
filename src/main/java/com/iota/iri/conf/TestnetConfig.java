@@ -2,6 +2,7 @@ package com.iota.iri.conf;
 
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
@@ -107,6 +108,7 @@ public class TestnetConfig extends NetConfig {
         return numberOfKeysInMilestone;
     }
 
+    @JsonProperty("NUMBER_OF_KEYS_IN_A_MILESTONE")
     @Parameter(names = "--milestone-keys", description = SnapshotConfig.Descriptions.NUMBER_OF_KEYS_IN_A_MILESTONE)
     protected void setNumberOfKeysInMilestone(int numberOfKeysInMilestone) {
         this.numberOfKeysInMilestone = numberOfKeysInMilestone;

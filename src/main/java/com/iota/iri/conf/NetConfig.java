@@ -103,6 +103,7 @@ public abstract class NetConfig implements IotaConfig {
         return help;
     }
 
+    @JsonProperty
     @Parameter(names = {"--help", "-h"} , help = true, hidden = true)
     public void setHelp(boolean help) {
         this.help = help;
@@ -113,6 +114,7 @@ public abstract class NetConfig implements IotaConfig {
         return port;
     }
 
+    @JsonProperty
     @Parameter(names = {"--port", "-p"}, description = APIConfig.Descriptions.PORT)
     public void setPort(int port) {
         this.port = port;
@@ -123,6 +125,7 @@ public abstract class NetConfig implements IotaConfig {
         return apiHost;
     }
 
+    @JsonProperty
     @Parameter(names = {"--api-host"}, description = APIConfig.Descriptions.API_HOST)
     protected void setApiHost(String apiHost) {
         this.apiHost = apiHost;
@@ -133,6 +136,7 @@ public abstract class NetConfig implements IotaConfig {
         return remoteLimitApi;
     }
 
+    @JsonProperty
     @Parameter(names = {"--remote-limit-api"}, description = APIConfig.Descriptions.REMOTE_LIMIT_API)
     protected void setRemoteLimitApi(String remoteLimitApi) {
         this.remoteLimitApi = IotaUtils.splitStringToImmutableList(remoteLimitApi, SPLIT_STRING_TO_LIST_REGEX);
@@ -143,6 +147,7 @@ public abstract class NetConfig implements IotaConfig {
         return maxFindTransactions;
     }
 
+    @JsonProperty
     @Parameter(names = {"--max-find-transactions"}, description = APIConfig.Descriptions.MAX_FIND_TRANSACTIONS)
     protected void setMaxFindTransactions(int maxFindTransactions) {
         this.maxFindTransactions = maxFindTransactions;
@@ -153,6 +158,7 @@ public abstract class NetConfig implements IotaConfig {
         return maxRequestsList;
     }
 
+    @JsonProperty
     @Parameter(names = {"--max-requests-list"}, description = APIConfig.Descriptions.MAX_REQUESTS_LIST)
     protected void setMaxRequestsList(int maxRequestsList) {
         this.maxRequestsList = maxRequestsList;
@@ -163,6 +169,7 @@ public abstract class NetConfig implements IotaConfig {
         return maxGetTrytes;
     }
 
+    @JsonProperty
     @Parameter(names = {"--max-get-trytes"}, description = APIConfig.Descriptions.MAX_GET_TRYTES)
     protected void setMaxGetTrytes(int maxGetTrytes) {
         this.maxGetTrytes = maxGetTrytes;
@@ -173,6 +180,7 @@ public abstract class NetConfig implements IotaConfig {
         return maxBodyLength;
     }
 
+    @JsonProperty
     @Parameter(names = {"--max-body-length"}, description = APIConfig.Descriptions.MAX_BODY_LENGTH)
     protected void setMaxBodyLength(int maxBodyLength) {
         this.maxBodyLength = maxBodyLength;
@@ -183,6 +191,7 @@ public abstract class NetConfig implements IotaConfig {
         return remoteAuth;
     }
 
+    @JsonProperty
     @Parameter(names = {"--remote-auth"}, description = APIConfig.Descriptions.REMOTE_AUTH)
     protected void setRemoteAuth(String remoteAuth) {
         this.remoteAuth = remoteAuth;
@@ -193,6 +202,7 @@ public abstract class NetConfig implements IotaConfig {
         return udpReceiverPort;
     }
 
+    @JsonProperty
     @Parameter(names = {"-u", "--udp-reciever-port"}, description = NetworkConfig.Descriptions.UDP_RECIEVER_PORT)
     public void setUdpReceiverPort(int udpReceiverPort) {
         this.udpReceiverPort = udpReceiverPort;
@@ -203,6 +213,7 @@ public abstract class NetConfig implements IotaConfig {
         return tcpReceiverPort;
     }
 
+    @JsonProperty
     @Parameter(names = {"-t", "--tcp-reciever-port"}, description = NetworkConfig.Descriptions.TCP_RECIEVER_PORT)
     protected void setTcpReceiverPort(int tcpReceiverPort) {
         this.tcpReceiverPort = tcpReceiverPort;
@@ -213,6 +224,7 @@ public abstract class NetConfig implements IotaConfig {
         return pRemoveRequest;
     }
 
+    @JsonProperty
     @Parameter(names = {"--p-remove-request"}, description = NetworkConfig.Descriptions.P_REMOVE_REQUEST)
     protected void setpRemoveRequest(double pRemoveRequest) {
         this.pRemoveRequest = pRemoveRequest;
@@ -223,6 +235,7 @@ public abstract class NetConfig implements IotaConfig {
         return sendLimit;
     }
 
+    @JsonProperty
     @Parameter(names = {"--send-limit"}, description = NetworkConfig.Descriptions.SEND_LIMIT)
     protected void setSendLimit(int sendLimit) {
         this.sendLimit = sendLimit;
@@ -233,6 +246,7 @@ public abstract class NetConfig implements IotaConfig {
         return maxPeers;
     }
 
+    @JsonProperty
     @Parameter(names = {"--max-peers"}, description = NetworkConfig.Descriptions.MAX_PEERS)
     protected void setMaxPeers(int maxPeers) {
         this.maxPeers = maxPeers;
@@ -243,6 +257,7 @@ public abstract class NetConfig implements IotaConfig {
         return dnsRefresherEnabled;
     }
 
+    @JsonProperty
     @Parameter(names = {"--dns-refresher"}, description = NetworkConfig.Descriptions.DNS_REFRESHER_ENABLED, arity = 1)
     protected void setDnsRefresherEnabled(boolean dnsRefresherEnabled) {
         this.dnsRefresherEnabled = dnsRefresherEnabled;
@@ -253,6 +268,7 @@ public abstract class NetConfig implements IotaConfig {
         return dnsResolutionEnabled;
     }
 
+    @JsonProperty
     @Parameter(names = {"--dns-resolution"}, description = NetworkConfig.Descriptions.DNS_RESOLUTION_ENABLED, arity = 1)
     protected void setDnsResolutionEnabled(boolean dnsResolutionEnabled) {
         this.dnsResolutionEnabled = dnsResolutionEnabled;
@@ -263,6 +279,7 @@ public abstract class NetConfig implements IotaConfig {
         return neighbors;
     }
 
+    @JsonProperty
     @Parameter(names = {"-n", "--neighbors"}, description = NetworkConfig.Descriptions.NEIGHBORS)
     protected void setNeighbors(String neighbors) {
         this.neighbors = IotaUtils.splitStringToImmutableList(neighbors, SPLIT_STRING_TO_LIST_REGEX);
@@ -273,6 +290,7 @@ public abstract class NetConfig implements IotaConfig {
         return ixiDir;
     }
 
+    @JsonProperty
     @Parameter(names = {"--ixi-dir"}, description = IXIConfig.Descriptions.IXI_DIR)
     protected void setIxiDir(String ixiDir) {
         this.ixiDir = ixiDir;
@@ -283,6 +301,7 @@ public abstract class NetConfig implements IotaConfig {
         return dbPath;
     }
 
+    @JsonProperty
     @Parameter(names = {"--db-path"}, description = DbConfig.Descriptions.DB_PATH)
     protected void setDbPath(String dbPath) {
         this.dbPath = dbPath;
@@ -293,6 +312,7 @@ public abstract class NetConfig implements IotaConfig {
         return dbLogPath;
     }
 
+    @JsonProperty
     @Parameter(names = {"--db-log-path"}, description = DbConfig.Descriptions.DB_LOG_PATH)
     protected void setDbLogPath(String dbLogPath) {
         this.dbLogPath = dbLogPath;
@@ -303,6 +323,7 @@ public abstract class NetConfig implements IotaConfig {
         return dbCacheSize;
     }
 
+    @JsonProperty
     @Parameter(names = {"--db-cache-size"}, description = DbConfig.Descriptions.DB_CACHE_SIZE)
     protected void setDbCacheSize(int dbCacheSize) {
         this.dbCacheSize = dbCacheSize;
@@ -313,6 +334,7 @@ public abstract class NetConfig implements IotaConfig {
         return mainDb;
     }
 
+    @JsonProperty
     @Parameter(names = {"--db"}, description = DbConfig.Descriptions.MAIN_DB)
     protected void setMainDb(String mainDb) {
         this.mainDb = mainDb;
@@ -324,6 +346,7 @@ public abstract class NetConfig implements IotaConfig {
     }
 
 
+    @JsonProperty
     @Parameter(names = {"--export"}, description = DbConfig.Descriptions.EXPORT)
     protected void setExport(boolean export) {
         this.export = export;
@@ -334,6 +357,7 @@ public abstract class NetConfig implements IotaConfig {
         return revalidate;
     }
 
+    @JsonProperty
     @Parameter(names = {"--revalidate"}, description = DbConfig.Descriptions.REVALIDATE)
     protected void setRevalidate(boolean revalidate) {
         this.revalidate = revalidate;
@@ -344,6 +368,7 @@ public abstract class NetConfig implements IotaConfig {
         return rescanDb;
     }
 
+    @JsonProperty
     @Parameter(names = {"--rescan"}, description = DbConfig.Descriptions.RESCAN_DB)
     protected void setRescanDb(boolean rescanDb) {
         this.rescanDb = rescanDb;
@@ -369,6 +394,7 @@ public abstract class NetConfig implements IotaConfig {
         return pReplyRandomTip;
     }
 
+    @JsonProperty
     @Parameter(names = {"--p-reply-random"}, description = ProtocolConfig.Descriptions.P_REPLY_RANDOM_TIP)
     protected void setpReplyRandomTip(double pReplyRandomTip) {
         this.pReplyRandomTip = pReplyRandomTip;
@@ -379,6 +405,7 @@ public abstract class NetConfig implements IotaConfig {
         return pDropTransaction;
     }
 
+    @JsonProperty
     @Parameter(names = {"--p-drop-transaction"}, description = ProtocolConfig.Descriptions.P_DROP_TRANSACTION)
     protected void setpDropTransaction(double pDropTransaction) {
         this.pDropTransaction = pDropTransaction;
@@ -389,6 +416,7 @@ public abstract class NetConfig implements IotaConfig {
         return pSelectMilestoneChild;
     }
 
+    @JsonProperty
     @Parameter(names = {"--p-select-milestone"}, description = ProtocolConfig.Descriptions.P_SELECT_MILESTONE)
     protected void setpSelectMilestoneChild(double pSelectMilestoneChild) {
         this.pSelectMilestoneChild = pSelectMilestoneChild;
@@ -399,6 +427,7 @@ public abstract class NetConfig implements IotaConfig {
         return pSendMilestone;
     }
 
+    @JsonProperty
     @Parameter(names = {"--p-send-milestone"}, description = ProtocolConfig.Descriptions.P_SEND_MILESTONE)
     protected void setpSendMilestone(double pSendMilestone) {
         this.pSendMilestone = pSendMilestone;
@@ -409,6 +438,7 @@ public abstract class NetConfig implements IotaConfig {
         return pPropagateRequest;
     }
 
+    @JsonProperty
     @Parameter(names = {"--p-propagate-request"}, description = ProtocolConfig.Descriptions.P_PROPAGATE_REQUEST)
     protected void setpPropagateRequest(double pPropagateRequest) {
         this.pPropagateRequest = pPropagateRequest;
@@ -456,6 +486,7 @@ public abstract class NetConfig implements IotaConfig {
         return zmqEnabled;
     }
 
+    @JsonProperty
     @Parameter(names = "--zmq-enabled", description = ZMQConfig.Descriptions.ZMQ_ENABLED)
     protected void setZmqEnabled(boolean zmqEnabled) {
         this.zmqEnabled = zmqEnabled;
@@ -466,6 +497,7 @@ public abstract class NetConfig implements IotaConfig {
         return zmqPort;
     }
 
+    @JsonProperty
     @Parameter(names = "--zmq-port", description = ZMQConfig.Descriptions.ZMQ_PORT)
     protected void setZmqPort(int zmqPort) {
         this.zmqPort = zmqPort;
@@ -476,6 +508,7 @@ public abstract class NetConfig implements IotaConfig {
         return zmqThreads;
     }
 
+    @JsonProperty
     @Parameter(names = "--zmq-threads", description = ZMQConfig.Descriptions.ZMQ_PORT)
     protected void setZmqThreads(int zmqThreads) {
         this.zmqThreads = zmqThreads;
@@ -486,6 +519,7 @@ public abstract class NetConfig implements IotaConfig {
         return zmqIpc;
     }
 
+    @JsonProperty
     @Parameter(names = "--zmq-ipc", description = ZMQConfig.Descriptions.ZMQ_IPC)
     protected void setZmqIpc(String zmqIpc) {
         this.zmqIpc = zmqIpc;
@@ -496,6 +530,7 @@ public abstract class NetConfig implements IotaConfig {
         return qSizeNode;
     }
 
+    @JsonProperty
     @Parameter(names = "--queue-size", description = ProtocolConfig.Descriptions.Q_SIZE_NODE)
     protected void setqSizeNode(int qSizeNode) {
         this.qSizeNode = qSizeNode;
@@ -506,6 +541,7 @@ public abstract class NetConfig implements IotaConfig {
         return pDropCacheEntry;
     }
 
+    @JsonProperty
     @Parameter(names = "--p-drop-cache", description = ProtocolConfig.Descriptions.P_DROP_CACHE_ENTRY)
     protected void setpDropCacheEntry(double pDropCacheEntry) {
         this.pDropCacheEntry = pDropCacheEntry;
@@ -516,6 +552,7 @@ public abstract class NetConfig implements IotaConfig {
         return cacheSizeBytes;
     }
 
+    @JsonProperty
     @Parameter(names = "--cache-size", description = ProtocolConfig.Descriptions.P_CACHE_SIZE_BYTES)
     protected void setCacheSizeBytes(int cacheSizeBytes) {
         this.cacheSizeBytes = cacheSizeBytes;
@@ -536,6 +573,7 @@ public abstract class NetConfig implements IotaConfig {
         return maxDepth;
     }
 
+    @JsonProperty
     @Parameter(names = "--max-depth", description = TipSelConfig.Descriptions.MAX_DEPTH)
     protected void setMaxDepth(int maxDepth) {
         this.maxDepth = maxDepth;
@@ -557,6 +595,7 @@ public abstract class NetConfig implements IotaConfig {
         return maxAnalyzedTransactions;
     }
 
+    @JsonProperty
     @Parameter(names = "--max-analyzed-transactions", description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
     protected void setBelowMaxDepthTransactionLimit(int maxAnalyzedTransactions) {
         this.maxAnalyzedTransactions = maxAnalyzedTransactions;

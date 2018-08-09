@@ -36,6 +36,7 @@ public class TestnetConfig extends NetConfig {
         return coordinator;
     }
 
+    @JsonProperty
     @Parameter(names = "--testnet-coordinator", description = CooConfig.Descriptions.COORDINATOR)
     protected void setCoordinator(String coordinator) {
         this.coordinator = coordinator;
@@ -46,6 +47,7 @@ public class TestnetConfig extends NetConfig {
         return dontValidateTestnetMilestoneSig;
     }
 
+    @JsonProperty
     @Parameter(names = "--testnet-no-coo-validation", description = CooConfig.Descriptions.VALIDATE_TESTNET_MILESTONE_SIG)
     protected void setDontValidateTestnetMilestoneSig(boolean dontValidateTestnetMilestoneSig) {
         this.dontValidateTestnetMilestoneSig = dontValidateTestnetMilestoneSig;
@@ -57,6 +59,7 @@ public class TestnetConfig extends NetConfig {
         return snapshotFile;
     }
 
+    @JsonProperty
     @Parameter(names = "--snapshot", description = SnapshotConfig.Descriptions.SNAPSHOT_FILE)
     protected void setSnapshotFile(String snapshotFile) {
         this.snapshotFile = snapshotFile;
@@ -68,6 +71,7 @@ public class TestnetConfig extends NetConfig {
         return snapshotSignatureFile;
     }
 
+    @JsonProperty
     @Parameter(names = "--snapshot-sig", description = SnapshotConfig.Descriptions.SNAPSHOT_SIGNATURE_FILE)
     protected void setSnapshotSignatureFile(String snapshotSignatureFile) {
         this.snapshotSignatureFile = snapshotSignatureFile;
@@ -78,6 +82,7 @@ public class TestnetConfig extends NetConfig {
         return snapshotTime;
     }
 
+    @JsonProperty
     @Parameter(names = "--snapshot-timestamp", description = SnapshotConfig.Descriptions.SNAPSHOT_TIME)
     protected void setSnapshotTime(long snapshotTime) {
         this.snapshotTime = snapshotTime;
@@ -88,6 +93,7 @@ public class TestnetConfig extends NetConfig {
         return mwm;
     }
 
+    @JsonProperty
     @Parameter(names = "--mwm", description = ProtocolConfig.Descriptions.MWM)
     protected void setMwm(int mwm) {
         this.mwm = mwm;
@@ -98,6 +104,7 @@ public class TestnetConfig extends NetConfig {
         return milestoneStartIndex;
     }
 
+    @JsonProperty
     @Parameter(names = "--milestone-start", description = SnapshotConfig.Descriptions.MILESTONE_START_INDEX)
     protected void setMilestoneStartIndex(int milestoneStartIndex) {
         this.milestoneStartIndex = milestoneStartIndex;
@@ -119,6 +126,7 @@ public class TestnetConfig extends NetConfig {
         return transactionPacketSize;
     }
 
+    @JsonProperty
     @Parameter(names = {"--packet-size"}, description = ProtocolConfig.Descriptions.TRANSACTION_PACKET_SIZE)
     protected void setTransactionPacketSize(int transactionPacketSize) {
         this.transactionPacketSize = transactionPacketSize;
@@ -129,11 +137,13 @@ public class TestnetConfig extends NetConfig {
         return requestHashSize;
     }
 
+    @JsonProperty
     @Parameter(names = {"--request-hash-size"}, description = ProtocolConfig.Descriptions.REQUEST_HASH_SIZE)
     public void setRequestHashSize(int requestHashSize) {
         this.requestHashSize = requestHashSize;
     }
 
+    @JsonProperty
     @Override
     public void setDbPath(String dbPath) {
         if (Objects.equals(MainnetConfig.Defaults.DB_PATH, dbPath)) {
@@ -142,6 +152,7 @@ public class TestnetConfig extends NetConfig {
             super.setDbPath(dbPath);
     }
 
+    @JsonProperty
     @Override
     public void setDbLogPath(String dbLogPath) {
         if (Objects.equals(MainnetConfig.Defaults.DB_LOG_PATH, dbLogPath)) {

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 
 import java.util.Objects;
 
-public class TestnetConfig extends NetConfig {
+public class TestnetConfig extends BaseIotaConfig {
 
     protected String coordinator = Defaults.COORDINATOR_ADDRESS;
     protected boolean dontValidateTestnetMilestoneSig = Defaults.VALIDATE_MILESTONE_SIG;

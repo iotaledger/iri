@@ -221,7 +221,7 @@ public class API {
 
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
-                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                                .create("This operation cannot be executed: The subtangle has not been updated yet.");
                     }
 
                     final String address = (String) request.get("address");
@@ -265,7 +265,7 @@ public class API {
                 case "getInclusionStates": {
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
-                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                                .create("This operation cannot be executed: The subtangle has not been updated yet.");
                     }
                     final List<String> transactions = getParameterAsList(request,"transactions", HASH_SIZE);
                     final List<String> tips = getParameterAsList(request,"tips", HASH_SIZE);
@@ -343,7 +343,7 @@ public class API {
                 case "checkConsistency": {
                     if (invalidSubtangleStatus()) {
                         return ErrorResponse
-                                .create("This operations cannot be executed: The subtangle has not been updated yet.");
+                                .create("This operation cannot be executed: The subtangle has not been updated yet.");
                     }
                     final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
                     return checkConsistencyStatement(transactions);
@@ -681,7 +681,7 @@ public class API {
         for (final Hash tip : tips) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, tip);
             if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
-                return ErrorResponse.create("One of the tips absents");
+                return ErrorResponse.create("One of the tips is absent");
             }
             int snapshotIndex = transactionViewModel.snapshotIndex();
             sameIndexTips.putIfAbsent(snapshotIndex, new LinkedList<>());

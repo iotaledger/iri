@@ -51,6 +51,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.security.InvalidAlgorithmParameterException;
 
 import static io.undertow.Handlers.path;
 
@@ -362,8 +363,11 @@ public class API {
         } catch (final ValidationException e) {
             log.info("API Validation failed: " + e.getLocalizedMessage());
             return ErrorResponse.create(e.getLocalizedMessage());
+        } catch (final InvalidAlgorithmParameterException e) {
+             log.info("API InvalidAlgorithmParameter passed: " + e.getLocalizedMessage());
+             return ErrorResponse.create(e.getLocalizedMessage());
         } catch (final Exception e) {
-            log.error("API Exception: ", e);
+            log.error("API Exception: {}", e.getLocalizedMessage(), e);
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
     }

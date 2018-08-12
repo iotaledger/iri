@@ -76,7 +76,7 @@ public class TransactionValidator {
         return MIN_WEIGHT_MAGNITUDE;
     }
 
-    private static boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
+    private boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
         if (transactionViewModel.getAttachmentTimestamp() == 0) {
             return transactionViewModel.getTimestamp() < snapshotTimestamp && !Objects.equals(transactionViewModel.getHash(), Hash.NULL_HASH)
                     || transactionViewModel.getTimestamp() > (System.currentTimeMillis() / 1000) + MAX_TIMESTAMP_FUTURE;
@@ -85,7 +85,7 @@ public class TransactionValidator {
                 || transactionViewModel.getAttachmentTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
     }
 
-    public static void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
+    public void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
         transactionViewModel.setAttachmentData();
         if(hasInvalidTimestamp(transactionViewModel)) {
@@ -107,17 +107,17 @@ public class TransactionValidator {
         }
     }
 
-    public static TransactionViewModel validateTrits(final byte[] trits, int minWeightMagnitude) {
+    public TransactionViewModel validateTrits(final byte[] trits, int minWeightMagnitude) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
 
-    public static TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude) {
+    public TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude) {
         return validateBytes(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
     }
 
-    public static TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
+    public TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
@@ -200,18 +200,18 @@ public class TransactionValidator {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
                 Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
                 for(Hash h: approvers) {
-					TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
-					if(quietQuickSetSolid(tx)) {
-						tx.update(tangle, "solid|height");
-						tipsViewModel.setSolid(h);
-						addSolidTransaction(h);
-					}
-				}
-			} catch (Exception e) {
-				log.error("Error while propagating solidity upwards", e);
-			}
-		}
-	}
+                    TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
+                    if(quietQuickSetSolid(tx)) {
+                        tx.update(tangle, "solid|height");
+                        tipsViewModel.setSolid(h);
+                        addSolidTransaction(h);
+                    }
+                }
+            } catch (Exception e) {
+                log.error("Error while propagating solidity upwards", e);
+            }
+        }
+    }
 
     public void updateStatus(TransactionViewModel transactionViewModel) throws Exception {
         transactionRequester.clearTransactionRequest(transactionViewModel.getHash());
@@ -220,13 +220,13 @@ public class TransactionValidator {
         }
         tipsViewModel.removeTipHash(transactionViewModel.getTrunkTransactionHash());
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
-		
-		if(quickSetSolid(transactionViewModel)) {
-			transactionViewModel.update(tangle,"solid|height");
-			tipsViewModel.setSolid(transactionViewModel.getHash());
-			addSolidTransaction(transactionViewModel.getHash());
-		}
-	}
+
+        if(quickSetSolid(transactionViewModel)) {
+            transactionViewModel.update(tangle,"solid|height");
+            tipsViewModel.setSolid(transactionViewModel.getHash());
+            addSolidTransaction(transactionViewModel.getHash());
+        }
+    }
 
     public boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
         try {

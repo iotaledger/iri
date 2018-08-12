@@ -29,6 +29,7 @@ public class TipsSolidifier {
 
     public void init() {
         solidityRescanHandle = new Thread(() -> {
+            
             long lastTime = 0;
             while (!shuttingDown) {
                 try {

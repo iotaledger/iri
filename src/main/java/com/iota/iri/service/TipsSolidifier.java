@@ -52,8 +52,7 @@ public class TipsSolidifier {
     }
 
     private void scanTipsForSolidity() throws Exception {
-        int size = tipsViewModel.nonSolidSize();
-        
+        int size = tipsViewModel.nonSolidSize();        
         if (size != 0) {
             Hash hash = tipsViewModel.getRandomNonSolidTipHash();
             boolean isTip = true;
@@ -65,8 +64,7 @@ public class TipsSolidifier {
                 //if(hash != null && TransactionViewModel.fromHash(hash).isSolid() && isTip) {
                 tipsViewModel.setSolid(hash);
             }
-        }
-        
+        }        
     }
 
     public void shutdown() {

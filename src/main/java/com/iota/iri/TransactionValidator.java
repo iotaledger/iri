@@ -201,10 +201,10 @@ public class TransactionValidator {
                 Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
                 for(Hash h: approvers) {
                     TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
-                    if(quietQuickSetSolid(tx)) {
-                        tx.update(tangle, "solid|height");
-			tipsViewModel.setSolid(h);
-                        addSolidTransaction(h);
+                    if(quietQuickSetSolid(tx)) {			    
+                    	tx.update(tangle, "solid|height");
+						tipsViewModel.setSolid(h);
+                    	addSolidTransaction(h);
                     }
                 }
             } catch (Exception e) {
@@ -222,8 +222,8 @@ public class TransactionValidator {
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
 
         if(quickSetSolid(transactionViewModel)) {
-	    transactionViewModel.update(tangle,"solid|height");
-	    tipsViewModel.setSolid(transactionViewModel.getHash());
+	    	transactionViewModel.update(tangle,"solid|height");
+	    	tipsViewModel.setSolid(transactionViewModel.getHash());
             addSolidTransaction(transactionViewModel.getHash());
         }
     }

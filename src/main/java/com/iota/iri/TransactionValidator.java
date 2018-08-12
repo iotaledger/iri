@@ -200,13 +200,13 @@ public class TransactionValidator {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
                 Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
                 for(Hash h: approvers) {
-                    TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
-                    if(quietQuickSetSolid(tx)) {
-			tx.update(tangle, "solid|height");
-			tipsViewModel.setSolid(h);
-			addSolidTransaction(h);
-		    }
-                }
+					TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
+					if(quietQuickSetSolid(tx)) {
+						tx.update(tangle, "solid|height");
+						tipsViewModel.setSolid(h);
+						addSolidTransaction(h);
+					}
+				}
             } catch (Exception e) {
                 log.error("Error while propagating solidity upwards", e);
             }
@@ -220,13 +220,13 @@ public class TransactionValidator {
         }
         tipsViewModel.removeTipHash(transactionViewModel.getTrunkTransactionHash());
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
-
-        if(quickSetSolid(transactionViewModel)) {
-		transactionViewModel.update(tangle,"solid|height");
-		tipsViewModel.setSolid(transactionViewModel.getHash());
-		addSolidTransaction(transactionViewModel.getHash());
+		
+		if(quickSetSolid(transactionViewModel)) {
+			transactionViewModel.update(tangle,"solid|height");
+			tipsViewModel.setSolid(transactionViewModel.getHash());
+			addSolidTransaction(transactionViewModel.getHash());
+		}
 	}
-    }
 
     public boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
         try {

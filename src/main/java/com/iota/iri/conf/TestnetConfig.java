@@ -37,7 +37,7 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--testnet-coordinator", description = CooConfig.Descriptions.COORDINATOR)
+    @Parameter(names = "--testnet-coordinator", description = MilestoneConfig.Descriptions.COORDINATOR)
     protected void setCoordinator(String coordinator) {
         this.coordinator = coordinator;
     }
@@ -48,7 +48,7 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--testnet-no-coo-validation", description = CooConfig.Descriptions.DONT_VALIDATE_TESTNET_MILESTONE_SIG)
+    @Parameter(names = "--testnet-no-coo-validation", description = MilestoneConfig.Descriptions.DONT_VALIDATE_TESTNET_MILESTONE_SIG)
     protected void setDontValidateTestnetMilestoneSig(boolean dontValidateTestnetMilestoneSig) {
         this.dontValidateTestnetMilestoneSig = dontValidateTestnetMilestoneSig;
     }

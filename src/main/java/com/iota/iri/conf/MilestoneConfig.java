@@ -3,7 +3,7 @@ package com.iota.iri.conf;
 /**
  * Configs that should be used for tracking milestones
  */
-public interface CooConfig extends Config {
+public interface MilestoneConfig extends Config {
 
     /**
      * @return Descriptions#COORDINATOR

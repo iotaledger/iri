@@ -207,11 +207,11 @@ public class TransactionValidator {
 						addSolidTransaction(h);
 					}
 				}
-            } catch (Exception e) {
-                log.error("Error while propagating solidity upwards", e);
-            }
-        }
-    }
+			} catch (Exception e) {
+				log.error("Error while propagating solidity upwards", e);
+			}
+		}
+	}
 
     public void updateStatus(TransactionViewModel transactionViewModel) throws Exception {
         transactionRequester.clearTransactionRequest(transactionViewModel.getHash());

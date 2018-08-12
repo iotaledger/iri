@@ -29,10 +29,15 @@ public class TipsSolidifier {
 
     public void init() {
         solidityRescanHandle = new Thread(() -> {
-
+            long lastTime = 0;
             while (!shuttingDown) {
                 try {
                     scanTipsForSolidity();
+                    long now = System.currentTimeMillis();
+                    if ((now - lastTime) > 10000L) {
+                        lastTime = now;
+                        log.debug("#Solid/NonSolid: {}/{}",tipsViewModel.solidSize(),tipsViewModel.nonSolidSize());
+                    } 
                 } catch (Exception e) {
                     log.error("Error during solidity scan : {}", e);
                 }
@@ -48,7 +53,6 @@ public class TipsSolidifier {
 
     private void scanTipsForSolidity() throws Exception {
         int size = tipsViewModel.nonSolidSize();
-        log.info("#Solid/NonSolid: {}/{}",tipsViewModel.size()-size,size);
         
         if (size != 0) {
             Hash hash = tipsViewModel.getRandomNonSolidTipHash();

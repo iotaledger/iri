@@ -110,6 +110,7 @@ public class Milestone {
             log.info("Tracker started.");
             while (!shuttingDown) {
                 long scanTime = System.currentTimeMillis();
+                long lastLogTime = System.currentTimeMillis();
 
                 try {
                     final int previousLatestMilestoneIndex = latestMilestoneIndex;
@@ -117,6 +118,13 @@ public class Milestone {
                     { // Update Milestone
                         { // find new milestones
                             for(Hash hash: hashes) {
+                                // show the scanning progress, since the first scan can potentially take a lot of time
+                                if(firstRun && (System.currentTimeMillis() - lastLogTime) >= 5000) {
+                                    log.info("Scanning milestones: " + ((int) (((double) analyzedMilestoneCandidates.size() / (double) hashes.size()) * 100)) + "% done ...");
+
+                                    lastLogTime = System.currentTimeMillis();
+                                }
+
                                 if(analyzedMilestoneCandidates.add(hash)) {
                                     TransactionViewModel t = TransactionViewModel.fromHash(tangle, hash);
                                     if (t.getCurrentIndex() == 0) {

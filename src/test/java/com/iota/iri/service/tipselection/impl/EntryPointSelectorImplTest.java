@@ -1,54 +1,75 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.Milestone;
+import com.iota.iri.Snapshot;
+import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.service.tipselection.EntryPointSelector;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Pair;
-import org.junit.Assert;
-import org.junit.Test;
+import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import java.util.HashMap;
+
 @RunWith(MockitoJUnitRunner.class)
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class EntryPointSelectorImplTest {
+    private static final TemporaryFolder dbFolder = new TemporaryFolder();
+    private static final TemporaryFolder logFolder = new TemporaryFolder();
+    private static Tangle tangle;
 
     @Mock
     private Milestone milestone;
-    @Mock
-    private Tangle tangle;
 
-    @Test
-    public void testEntryPointWithTangleData() throws Exception {
-        Hash milestoneHash = Hash.calculate(SpongeFactory.Mode.CURLP81, new byte[]{1});
-        mockTangleBehavior(milestoneHash);
-        mockMilestoneTrackerBehavior(0, Hash.NULL_HASH);
+    @BeforeClass
+    public static void setUp() throws Exception {
+        tangle = new Tangle();
+        dbFolder.create();
+        logFolder.create();
+        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
+                                                                                                           .getRoot().getAbsolutePath(), 1000));
+        tangle.init();
+        MilestoneViewModel.clear();
+    }
 
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, false, 0);
-        Hash entryPoint = entryPointSelector.getEntryPoint(10);
-
-        Assert.assertEquals("The entry point should be the milestone in the Tangle", milestoneHash, entryPoint);
+    @AfterClass
+    public static void tearDown() throws Exception {
+        tangle.shutdown();
+        dbFolder.delete();
+        logFolder.delete();
     }
 
     @Test
-    public void testEntryPointWithoutTangleData() throws Exception {
+    public void testEntryPointAWithoutTangleData() throws Exception {
         mockMilestoneTrackerBehavior(0, Hash.NULL_HASH);
 
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, false, 0);
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone);
         Hash entryPoint = entryPointSelector.getEntryPoint(10);
 
         Assert.assertEquals("The entry point should be the last tracked solid milestone", Hash.NULL_HASH, entryPoint);
     }
 
+    @Test
+    public void testEntryPointBWithTangleData() throws Exception {
+        Hash milestoneHash = Hash.calculate(SpongeFactory.Mode.CURLP81, new byte[]{1});
+        mockTangleBehavior(milestoneHash);
+        mockMilestoneTrackerBehavior(0, Hash.NULL_HASH);
+
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone);
+        Hash entryPoint = entryPointSelector.getEntryPoint(10);
+
+        Assert.assertEquals("The entry point should be the milestone in the Tangle", milestoneHash, entryPoint);
+    }
 
     private void mockMilestoneTrackerBehavior(int latestSolidSubtangleMilestoneIndex, Hash latestSolidSubtangleMilestone) {
-        milestone.latestSolidSubtangleMilestoneIndex = latestSolidSubtangleMilestoneIndex;
+        milestone.latestSnapshot = new Snapshot(new HashMap<Hash, Long>(), latestSolidSubtangleMilestoneIndex);
         milestone.latestSolidSubtangleMilestone = latestSolidSubtangleMilestone;
     }
 
@@ -56,8 +77,6 @@ public class EntryPointSelectorImplTest {
         com.iota.iri.model.Milestone milestoneModel = new com.iota.iri.model.Milestone();
         milestoneModel.index = new IntegerIndex(0);
         milestoneModel.hash = milestoneModelHash;
-        Pair<Indexable, Persistable> indexMilestoneModel = new Pair<>(new IntegerIndex(0), milestoneModel);
-        Mockito.when(tangle.getFirst(com.iota.iri.model.Milestone.class, IntegerIndex.class))
-                .thenReturn(indexMilestoneModel);
+        tangle.save(milestoneModel, new IntegerIndex(0));
     }
 }

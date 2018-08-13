@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.Configuration;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 
@@ -28,7 +29,12 @@ public class Snapshot {
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
 
-    public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) throws IOException {
+    public static Snapshot init(Configuration configuration) throws IOException {
+        // read the config vars for the built in snapshot files
+        boolean testnet = configuration.booling(Configuration.DefaultConfSettings.TESTNET);
+        String snapshotPath = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_FILE);
+        String snapshotSigPath = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE);
+
         //This is not thread-safe (and it is ok)
         if (initialSnapshot == null) {
             if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,
@@ -36,7 +42,7 @@ public class Snapshot {
                 throw new RuntimeException("Snapshot signature failed.");
             }
             Map<Hash, Long> initialState = initInitialState(snapshotPath);
-            initialSnapshot = new Snapshot(initialState, 0);
+            initialSnapshot = new Snapshot(initialState, testnet ? 0 : configuration.integer(Configuration.DefaultConfSettings.MILESTONE_START_INDEX));
             checkStateHasCorrectSupply(initialState);
             checkInitialSnapshotIsConsistent(initialState);
 
@@ -108,7 +114,7 @@ public class Snapshot {
         return i;
     }
 
-    private Snapshot(Map<Hash, Long> initialState, int index) {
+    public Snapshot(Map<Hash, Long> initialState, int index) {
         state = new HashMap<>(initialState);
         this.index = index;
     }

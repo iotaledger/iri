@@ -59,9 +59,7 @@ public class Iota {
         udpPort = configuration.integer(Configuration.DefaultConfSettings.UDP_RECEIVER_PORT);
         tcpPort = configuration.integer(Configuration.DefaultConfSettings.TCP_RECEIVER_PORT);
 
-        String snapshotFile = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_FILE);
-        String snapshotSigFile = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE);
-        Snapshot initialSnapshot = Snapshot.init(snapshotFile, snapshotSigFile, testnet).clone();
+        Snapshot initialSnapshot = Snapshot.init(configuration).clone();
         long snapshotTimestamp = configuration.longNum(Configuration.DefaultConfSettings.SNAPSHOT_TIME);
         int milestoneStartIndex = configuration.integer(Configuration.DefaultConfSettings.MILESTONE_START_INDEX);
         int numKeysMilestone = configuration.integer(Configuration.DefaultConfSettings.NUMBER_OF_KEYS_IN_A_MILESTONE);
@@ -97,13 +95,13 @@ public class Iota {
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ,
                 snapshotTimestamp);
         milestone = new Milestone(tangle, coordinator, initialSnapshot, transactionValidator, testnet, messageQ,
-                numKeysMilestone, milestoneStartIndex, dontValidateMilestoneSig);
+                numKeysMilestone, dontValidateMilestoneSig);
         node = new Node(configuration, tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ);
         replicator = new Replicator(node, tcpPort, maxPeers, testnet, transactionPacketSize);
         udpReceiver = new UDPReceiver(udpPort, node, configuration.integer(Configuration.DefaultConfSettings.TRANSACTION_PACKET_SIZE));
         ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
-        tipsSelector = createTipSelector(milestoneStartIndex, alpha, belowMaxDepthTxLimit);
+        tipsSelector = createTipSelector(alpha, belowMaxDepthTxLimit);
     }
 
     public void init() throws Exception {
@@ -200,8 +198,8 @@ public class Iota {
         }
     }
 
-    private TipSelector createTipSelector(int milestoneStartIndex, double alpha, int belowMaxDepthTxLimit) {
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, testnet, milestoneStartIndex);
+    private TipSelector createTipSelector(double alpha, int belowMaxDepthTxLimit) {
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone);
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(alpha, new SecureRandom(), tangle, messageQ, tailFinder);

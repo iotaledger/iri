@@ -20,9 +20,14 @@ public class SnapshotTest {
 
     @BeforeClass
     public static void beforeClass() {
+        Configuration configuration = new Configuration();
+
+        configuration.put(Configuration.DefaultConfSettings.SNAPSHOT_FILE, Configuration.MAINNET_SNAPSHOT_FILE);
+        configuration.put(Configuration.DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE, Configuration.MAINNET_SNAPSHOT_SIG_FILE);
+        configuration.put(Configuration.DefaultConfSettings.TESTNET, "false");
+
         try {
-            initSnapshot = Snapshot.init(Configuration.MAINNET_SNAPSHOT_FILE,
-                Configuration.MAINNET_SNAPSHOT_SIG_FILE, false);
+            initSnapshot = Snapshot.init(configuration);
         } catch (IOException e) {
             throw new UncheckedIOException("Problem initiating snapshot", e);
         }

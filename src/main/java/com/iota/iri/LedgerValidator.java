@@ -144,7 +144,7 @@ public class LedgerValidator {
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(tangle, hashPointer);
-                if(transactionViewModel2.snapshotIndex() == 0) {
+                if(transactionViewModel2.snapshotIndex() == 0 || transactionViewModel2.snapshotIndex() > index) {
                     transactionViewModel2.setSnapshot(tangle, index);
                     messageQ.publish("%s %s %d sn", transactionViewModel2.getAddressHash(), transactionViewModel2.getHash(), index);
                     messageQ.publish("sn %d %s %s %s %s %s", index, transactionViewModel2.getHash(),
@@ -220,6 +220,15 @@ public class LedgerValidator {
 
                     log.info(logMessage.toString());
                 }
+
+                // if we face a milestone that wasn't processed by updateSnapshot, correctly -> abort and let the
+                // "Solid Milestone Tracker" do it's magic
+                //
+                // NOTE: this can happen if a new subtangle becomes solid before a previous one while syncing
+                if(TransactionViewModel.fromHash(tangle, candidateMilestone.getHash()).snapshotIndex() != candidateMilestone.index()) {
+                    break;
+                }
+
                 if (StateDiffViewModel.maybeExists(tangle, candidateMilestone.getHash())) {
                     StateDiffViewModel stateDiffViewModel = StateDiffViewModel.load(tangle, candidateMilestone.getHash());
 
@@ -232,7 +241,9 @@ public class LedgerValidator {
                         }
                     }
                 }
-                candidateMilestone = candidateMilestone.next(tangle);
+
+                // iterate to the next milestone
+                candidateMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, candidateMilestone.index());
             }
         } finally {
             milestone.latestSnapshot.rwlock.writeLock().unlock();
@@ -242,11 +253,19 @@ public class LedgerValidator {
 
     public boolean updateSnapshot(MilestoneViewModel milestoneVM) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestoneVM.getHash());
-        milestone.latestSnapshot.rwlock.writeLock().lock();
-        try {
-            final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
-            boolean hasSnapshot = transactionSnapshotIndex != 0;
-            if (!hasSnapshot) {
+        final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
+        boolean hasSnapshot = transactionSnapshotIndex == milestoneVM.index();
+        if (!hasSnapshot) {
+            // if the snapshotIndex of our transaction was set already, we have processed our milestones in
+            // the wrong order (i.e. while rescanning the db)
+            if(transactionSnapshotIndex != 0) {
+                milestone.hardReset(milestoneVM, "milestones processed in the wrong order (#" + transactionSnapshotIndex +" before #" + milestoneVM.index() + ")");
+
+                return false;
+            }
+
+            milestone.latestSnapshot.rwlock.writeLock().lock();
+            try {
                 Hash tail = transactionViewModel.getHash();
                 Map<Hash, Long> currentState = getLatestDiff(new HashSet<>(), tail, milestone.latestSnapshot.index(), true);
                 hasSnapshot = currentState != null && Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(currentState));
@@ -259,11 +278,11 @@ public class LedgerValidator {
                     }
                     milestone.latestSnapshot.apply(currentState, milestoneVM.index());
                 }
+            } finally {
+                milestone.latestSnapshot.rwlock.writeLock().unlock();
             }
-            return hasSnapshot;
-        } finally {
-            milestone.latestSnapshot.rwlock.writeLock().unlock();
         }
+        return hasSnapshot;
     }
 
     public boolean checkConsistency(List<Hash> hashes) throws Exception {

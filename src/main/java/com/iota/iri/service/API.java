@@ -62,7 +62,6 @@ public class API {
     public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
     private static final Logger log = LoggerFactory.getLogger(API.class);
     private final IXI ixi;
-    private final int milestoneStartIndex;
 
     private Undertow server;
 
@@ -105,7 +104,6 @@ public class API {
         maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
         maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
         testNet = instance.configuration.booling(DefaultConfSettings.TESTNET);
-        milestoneStartIndex = instance.configuration.integer(DefaultConfSettings.MILESTONE_START_INDEX);
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
@@ -280,7 +278,7 @@ public class API {
                     return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                             Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
                             Runtime.getRuntime().totalMemory(), instance.milestone.latestMilestone, instance.milestone.latestMilestoneIndex,
-                            instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex, instance.milestone.milestoneStartIndex,
+                            instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex, instance.milestone.initialSnapshot.index(),
                             instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                             System.currentTimeMillis(), instance.tipsViewModel.size(),
                             instance.transactionRequester.numberOfTransactionsToRequest());
@@ -541,7 +539,7 @@ public class API {
     }
 
     public boolean invalidSubtangleStatus() {
-        return (instance.milestone.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
+        return (instance.milestone.latestSolidSubtangleMilestoneIndex == instance.milestone.initialSnapshot.index());
     }
 
     private AbstractResponse removeNeighborsStatement(List<String> uris) {

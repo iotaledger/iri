@@ -15,6 +15,13 @@ import java.util.concurrent.ConcurrentHashMap;
  * Created by paul on 4/11/17.
  */
 public class MilestoneViewModel {
+    /**
+     * This value represents the maximum amount of milestone indexes that can be skipped by the coordinator.
+     *
+     * Note: This is in fact 1 already but, to be able to deal with databases before the adjustment we set this to 50.
+     */
+    private final static int MAX_MILESTONE_INDEX_GAP = 50;
+
     private final Milestone milestone;
     private static final Map<Integer, MilestoneViewModel> milestones = new ConcurrentHashMap<>();
 
@@ -93,16 +100,31 @@ public class MilestoneViewModel {
         return null;
     }
 
-    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index, boolean testnet,
-                                                              int milestoneStartIndex) throws Exception {
-        if(!testnet && index <= milestoneStartIndex) {
-            return first(tangle);
+    /**
+     * This method looks for the next milestone after a given index.
+     *
+     * In contrast to the {@code next} method we do not rely on the insertion order in the database but actively search
+     * for the milestone that was issued next by the coordinator (coo-order preserved).
+     *
+     * @param tangle Tangle object which acts as a database interface
+     * @param index milestone index where the search shall start
+     * @return the milestone which follows directly after the given index
+     * @throws Exception if anything goes wrong while loading entries from the database
+     */
+    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index) throws Exception {
+        // create a variable that will contain our search result
+        MilestoneViewModel nextMilestoneViewModel = null;
+
+        // create a counter variable
+        int currentIndex = index;
+
+        // try to find the next milestone by index rather than db insertion order until we are successfull
+        while(nextMilestoneViewModel == null && ++currentIndex <= index + MAX_MILESTONE_INDEX_GAP) {
+            nextMilestoneViewModel = MilestoneViewModel.get(tangle, currentIndex);
         }
-        Pair<Indexable, Persistable> milestonePair = tangle.next(Milestone.class, new IntegerIndex(index));
-        if(milestonePair != null && milestonePair.hi != null) {
-            return new MilestoneViewModel((Milestone) milestonePair.hi);
-        }
-        return null;
+
+        // return our result
+        return nextMilestoneViewModel;
     }
 
     public boolean store(Tangle tangle) throws Exception {

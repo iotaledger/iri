@@ -169,6 +169,9 @@ public class Milestone {
 
                 // if we processed all milestone candidates once
                 if(firstRun) {
+                    // dump a final log message when we are done
+                    log.info("Scanning milestones: 100% done ...");
+
                     // allow the "Solid Milestone Tracker" to continue
                     solidMilestoneTrackerTasks.decrementAndGet();
 

@@ -119,7 +119,7 @@ public class MilestoneViewModel {
         int currentIndex = index;
 
         // adjust the max milestone gap according to the index (the coo ensures no gaps after milestone 650000)
-        int maxMilestoneGap = index >= 650000 ? 1 : MAX_MILESTONE_INDEX_GAP
+        int maxMilestoneGap = index >= 650000 ? 1 : MAX_MILESTONE_INDEX_GAP;
 
         // try to find the next milestone by index rather than db insertion order until we are successfull
         while(nextMilestoneViewModel == null && ++currentIndex <= index + maxMilestoneGap) {

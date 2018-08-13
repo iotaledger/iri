@@ -225,7 +225,7 @@ public class Milestone {
     }
 
     /**
-     * This method allows us to hard reset the ledger state, in case we detect that  milestones were processed in the
+     * This method allows us to hard reset the ledger state, in case we detect that milestones were processed in the
      * wrong order.
      *
      * It resets the snapshotIndex of all milestones following the one provided in the parameters, removes all
@@ -336,7 +336,7 @@ public class Milestone {
     void updateLatestSolidSubtangleMilestone() throws Exception {
         // introduce some variables that help us to emit log messages while processing the milestones
         int previousSolidSubtangleLatestMilestoneIndex = latestSolidSubtangleMilestoneIndex;
-        long scanStart = System.currentTimeMillis() / 1000L;
+        long scanStart = System.currentTimeMillis();
 
         // get the next milestone
         MilestoneViewModel nextMilestone = MilestoneViewModel.findClosestNextMilestone(
@@ -356,15 +356,15 @@ public class Milestone {
                 latestSolidSubtangleMilestone = nextMilestone.getHash();
                 latestSolidSubtangleMilestoneIndex = nextMilestone.index();
 
-                // dump a log message every second
-                if((System.currentTimeMillis() / 1000L) - scanStart >= 1) {
+                // dump a log message every 5 seconds
+                if(System.currentTimeMillis() - scanStart >= 5000) {
                     messageQ.publish("lmsi %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
                     messageQ.publish("lmhs %s", latestSolidSubtangleMilestone);
                     log.info("Latest SOLID SUBTANGLE milestone has changed from #"
                              + previousSolidSubtangleLatestMilestoneIndex + " to #"
                              + latestSolidSubtangleMilestoneIndex);
 
-                    scanStart = System.currentTimeMillis() / 1000L;
+                    scanStart = System.currentTimeMillis();
                     previousSolidSubtangleLatestMilestoneIndex = nextMilestone.index();
                 }
 

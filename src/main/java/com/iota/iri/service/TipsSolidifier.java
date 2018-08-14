@@ -34,11 +34,13 @@ public class TipsSolidifier {
             while (!shuttingDown) {
                 try {
                     scanTipsForSolidity();
-                    long now = System.currentTimeMillis();
-                    if ((now - lastTime) > 10000L) {
-                        lastTime = now;
-                        log.debug("#Solid/NonSolid: {}/{}", tipsViewModel.solidSize(), tipsViewModel.nonSolidSize());
-                    } 
+                    if(log.isDebugEnabled()) {
+                        long now = System.currentTimeMillis();
+                        if ((now - lastTime) > 10000L) {
+                            lastTime = now;
+                            log.debug("#Solid/NonSolid: {}/{}", tipsViewModel.solidSize(), tipsViewModel.nonSolidSize());
+                        }
+                    }
                 } catch (Exception e) {
                     log.error("Error during solidity scan : {}", e);
                 }

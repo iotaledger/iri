@@ -34,7 +34,7 @@ public class TipsSolidifier {
             while (!shuttingDown) {
                 try {
                     scanTipsForSolidity();
-                    if(log.isDebugEnabled()) {
+                    if (log.isDebugEnabled()) {
                         long now = System.currentTimeMillis();
                         if ((now - lastTime) > 10000L) {
                             lastTime = now;

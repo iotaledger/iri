@@ -6,6 +6,7 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.Pair;
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.SystemUtils;
 import org.rocksdb.*;
 import org.rocksdb.util.SizeUnit;
@@ -315,6 +316,29 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
             db.write(writeOptions, writeBatch);
             return true;
+        }
+    }
+
+    public void deleteBatch(Collection<? extends Indexable> keys, Class<? extends Persistable> type)
+            throws RocksDBException {
+        ColumnFamilyHandle handle = classTreeMap.get(type);
+        ColumnFamilyHandle metadataHandle = metadataReference.get(type);
+
+        try (WriteBatch writeBatch = new WriteBatch()) {
+            for (Indexable key : CollectionUtils.emptyIfNull(keys)) {
+                byte[] keyBytes = key.bytes();
+                writeBatch.remove(handle, keyBytes);
+                if (metadataReference != null) {
+                    writeBatch.remove(metadataHandle, keyBytes);
+                }
+            }
+
+            WriteOptions writeOptions = new WriteOptions()
+                    //We are explicit about what happens if the node reboots before a flush to the db
+                    .setDisableWAL(false)
+                    //We want to make sure deleted data was indeed deleted
+                    .setSync(false);
+            db.write(writeOptions, writeBatch);
         }
     }
 

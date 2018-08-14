@@ -202,7 +202,8 @@ public class TransactionValidator {
                 for(Hash h: approvers) {
                     TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
                     if(quietQuickSetSolid(tx)) {
-                        tx.update(tangle, "solid");
+                        tx.update(tangle, "solid|height");
+                        tipsViewModel.setSolid(h);
                         addSolidTransaction(h);
                     }
                 }
@@ -221,6 +222,8 @@ public class TransactionValidator {
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
 
         if(quickSetSolid(transactionViewModel)) {
+            transactionViewModel.update(tangle, "solid|height");
+            tipsViewModel.setSolid(transactionViewModel.getHash());
             addSolidTransaction(transactionViewModel.getHash());
         }
     }

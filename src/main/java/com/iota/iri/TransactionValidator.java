@@ -222,7 +222,7 @@ public class TransactionValidator {
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
 
         if(quickSetSolid(transactionViewModel)) {
-            transactionViewModel.update(tangle,"solid|height");
+            transactionViewModel.update(tangle, "solid|height");
             tipsViewModel.setSolid(transactionViewModel.getHash());
             addSolidTransaction(transactionViewModel.getHash());
         }

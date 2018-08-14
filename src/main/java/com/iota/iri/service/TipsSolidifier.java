@@ -37,7 +37,7 @@ public class TipsSolidifier {
                     long now = System.currentTimeMillis();
                     if ((now - lastTime) > 10000L) {
                         lastTime = now;
-                        log.debug("#Solid/NonSolid: {}/{}",tipsViewModel.solidSize(),tipsViewModel.nonSolidSize());
+                        log.debug("#Solid/NonSolid: {}/{}", tipsViewModel.solidSize(), tipsViewModel.nonSolidSize());
                     } 
                 } catch (Exception e) {
                     log.error("Error during solidity scan : {}", e);

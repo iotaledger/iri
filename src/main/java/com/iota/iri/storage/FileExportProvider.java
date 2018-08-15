@@ -1,10 +1,9 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
+import org.rocksdb.RocksDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,8 +12,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static com.iota.iri.controllers.TransactionViewModel.TRINARY_SIZE;
@@ -152,6 +151,12 @@ public class FileExportProvider implements PersistenceProvider {
     @Override
     public void clearMetadata(Class<?> column) throws Exception {
 
+    }
+
+    @Override
+    public void deleteBatch(Collection<? extends Indexable> keys, Class<? extends Persistable> type)
+            throws RocksDBException {
+        throw new UnsupportedOperationException();
     }
 
     private static long lastFileNumber = 0L;

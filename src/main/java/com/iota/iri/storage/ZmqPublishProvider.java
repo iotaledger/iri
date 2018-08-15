@@ -1,17 +1,18 @@
 package com.iota.iri.storage;
 
-import java.util.List;
-import java.util.Set;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
+import org.rocksdb.RocksDBException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 public class ZmqPublishProvider implements PersistenceProvider {
 
@@ -175,4 +176,9 @@ public class ZmqPublishProvider implements PersistenceProvider {
 
     }
 
+    @Override
+    public void deleteBatch(Collection<? extends Indexable> keys, Class<? extends Persistable> type)
+            throws RocksDBException {
+        throw new UnsupportedOperationException();
+    }
 }

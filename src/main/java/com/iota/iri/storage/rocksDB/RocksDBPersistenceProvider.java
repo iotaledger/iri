@@ -337,7 +337,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     //We are explicit about what happens if the node reboots before a flush to the db
                     .setDisableWAL(false)
                     //We want to make sure deleted data was indeed deleted
-                    .setSync(false);
+                    .setSync(true);
             db.write(writeOptions, writeBatch);
         }
     }

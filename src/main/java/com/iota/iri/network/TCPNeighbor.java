@@ -84,11 +84,14 @@ public class TCPNeighbor extends Neighbor {
      */
     @Override
     public void send(DatagramPacket packet) {
-        if (sendQueue.remainingCapacity() == 0) {
-            sendQueue.poll();
+        synchronized (sendQueue) {
+            if (sendQueue.remainingCapacity() == 0) {
+                sendQueue.poll();
+            }
+            byte[] bytes = packet.getData().clone();
+            sendQueue.add(ByteBuffer.wrap(bytes));
         }
-        byte[] bytes = packet.getData().clone();
-        sendQueue.add(ByteBuffer.wrap(bytes));
+            
     }
 
     @Override

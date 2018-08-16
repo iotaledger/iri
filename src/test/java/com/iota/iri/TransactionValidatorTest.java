@@ -1,6 +1,6 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
@@ -15,6 +15,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mockito;
 
 import static com.iota.iri.controllers.TransactionViewModelTest.*;
 import static org.junit.Assert.assertFalse;
@@ -39,10 +40,9 @@ public class TransactionValidatorTest {
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
-    MessageQ messageQ = new MessageQ(0, "", 0, false);
+    MessageQ messageQ = Mockito.mock(MessageQ.class);
     TransactionRequester txRequester = new TransactionRequester(tangle, messageQ);
-    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ,
-            Long.parseLong(Configuration.GLOBAL_SNAPSHOT_TIME));
+    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ, new MainnetConfig());
     txValidator.setMwm(false, MAINNET_MWM);
   }
 
@@ -67,20 +67,20 @@ public class TransactionValidatorTest {
     Converter.copyTrits(0, trits, 0, trits.length);
     byte[] bytes = Converter.allocateBytesForTrits(trits.length);
     Converter.bytes(trits, bytes);
-    TransactionValidator.validateBytes(bytes, MAINNET_MWM);
+    txValidator.validateBytes(bytes, MAINNET_MWM);
   }
 
   @Test
   public void validateTrits() {
     byte[] trits = getRandomTransactionTrits();
     Converter.copyTrits(0, trits, 0, trits.length);
-    TransactionValidator.validateTrits(trits, MAINNET_MWM);
+    txValidator.validateTrits(trits, MAINNET_MWM);
   }
 
   @Test(expected = RuntimeException.class)
   public void validateTritsWithInvalidMetadata() {
     byte[] trits = getRandomTransactionTrits();
-    TransactionValidator.validateTrits(trits, MAINNET_MWM);
+    txValidator.validateTrits(trits, MAINNET_MWM);
   }
 
   @Test
@@ -89,7 +89,7 @@ public class TransactionValidatorTest {
     Converter.copyTrits(0, trits, 0, trits.length);
     byte[] bytes = Converter.allocateBytesForTrits(trits.length);
     Converter.bytes(trits, 0, bytes, 0, trits.length);
-    TransactionValidator.validateBytes(bytes, txValidator.getMinWeightMagnitude(), SpongeFactory.create(SpongeFactory.Mode.CURLP81));
+    txValidator.validateBytes(bytes, txValidator.getMinWeightMagnitude(), SpongeFactory.create(SpongeFactory.Mode.CURLP81));
   }
 
   @Test

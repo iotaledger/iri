@@ -1,5 +1,6 @@
 package com.iota.iri.network;
 
+import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
@@ -37,10 +38,10 @@ public class UDPReceiver {
 
     private Thread receivingThread;
 
-    public UDPReceiver(final int port, final Node node, int packetSize) {
-        this.port = port;
+    public UDPReceiver(Node node, NodeConfig config) {
         this.node = node;
-        this.packetSize = packetSize;
+        this.port = config.getUdpReceiverPort();
+        this.packetSize = config.getTransactionPacketSize();
         this.receivingPacket = new DatagramPacket(new byte[packetSize], packetSize);
     }
 

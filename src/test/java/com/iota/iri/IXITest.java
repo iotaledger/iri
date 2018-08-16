@@ -1,6 +1,5 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.Configuration;
 import com.iota.iri.service.dto.AbstractResponse;
 import com.iota.iri.service.dto.ErrorResponse;
 import com.iota.iri.service.dto.IXIResponse;

@@ -1,7 +1,6 @@
 package com.iota.iri;
 
 import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;

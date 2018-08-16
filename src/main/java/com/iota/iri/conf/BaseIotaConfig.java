@@ -34,8 +34,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
 
     //Network
-    protected int udpReceiverPort = Defaults.UDP_RECIEVER_PORT;
-    protected int tcpReceiverPort = Defaults.TCP_RECIEVER_PORT;
+    protected int udpReceiverPort = Defaults.UDP_RECEIVER_PORT;
+    protected int tcpReceiverPort = Defaults.TCP_RECEIVER_PORT;
     protected double pRemoveRequest = Defaults.P_REMOVE_REQUEST;
     protected double pDropCacheEntry = Defaults.P_DROP_CACHE_ENTRY;
     protected int sendLimit = Defaults.SEND_LIMIT;
@@ -203,7 +203,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"-u", "--udp-reciever-port"}, description = NetworkConfig.Descriptions.UDP_RECIEVER_PORT)
+    @Parameter(names = {"-u", "--udp-receiver-port"}, description = NetworkConfig.Descriptions.UDP_RECEIVER_PORT)
     public void setUdpReceiverPort(int udpReceiverPort) {
         this.udpReceiverPort = udpReceiverPort;
     }
@@ -214,7 +214,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"-t", "--tcp-reciever-port"}, description = NetworkConfig.Descriptions.TCP_RECIEVER_PORT)
+    @Parameter(names = {"-t", "--tcp-receiver-port"}, description = NetworkConfig.Descriptions.TCP_RECEIVER_PORT)
     protected void setTcpReceiverPort(int tcpReceiverPort) {
         this.tcpReceiverPort = tcpReceiverPort;
     }
@@ -613,8 +613,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String REMOTE_AUTH = "";
 
         //Network
-        int UDP_RECIEVER_PORT = 14600;
-        int TCP_RECIEVER_PORT = 15600;
+        int UDP_RECEIVER_PORT = 14600;
+        int TCP_RECEIVER_PORT = 15600;
         double P_REMOVE_REQUEST = 0.01d;
         int SEND_LIMIT = -1;
         int MAX_PEERS = 0;

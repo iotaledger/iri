@@ -62,8 +62,6 @@ public class IRI {
         public static API api;
         public static IXI ixi;
 
-        private static final String TESTNET_FLAG_REQUIRED = "--testnet flag must be turned on to use ";
-
         public static void main(String [] args) throws Exception {
             IotaConfig config = createConfiguration(args);
             log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, VERSION);

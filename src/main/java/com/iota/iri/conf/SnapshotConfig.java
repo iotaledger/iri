@@ -48,7 +48,7 @@ public interface SnapshotConfig extends Config {
         String SNAPSHOT_SIGNATURE_FILE = "Path to the file that contains a signature for the snapshot file.";
         String MILESTONE_START_INDEX = "The start index of the milestones. This index is encoded in each milestone " +
                 "transaction by the coordinator.";
-        String NUMBER_OF_KEYS_IN_A_MILESTONE = "The depth of the merkle tree which in turn determines the number " +
+        String NUMBER_OF_KEYS_IN_A_MILESTONE = "The depth of the Merkle tree which in turn determines the number of" +
                 "leaves (private keys) that the coordinator can use to sign a message.";
         String PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE = "The file that contains the list of all used addresses " +
                 "from previous epochs";

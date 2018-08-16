@@ -45,8 +45,8 @@ public class ConfigTest {
     }
 
     /*
-                Test that goe over common configs. It also attempts to check different types of types (double, boolean, string)
-             */
+    Test that iterates over common configs. It also attempts to check different types of types (double, boolean, string)
+    */
     @Test
     public void testArgsParsingMainnet() {
         String[] args = {

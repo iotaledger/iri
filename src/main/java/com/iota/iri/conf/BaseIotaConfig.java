@@ -450,13 +450,11 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    //TODO maybe change string to file. Experiment with Jackson before
     public String getSnapshotFile() {
         return Defaults.SNAPSHOT_FILE;
     }
 
     @Override
-    //TODO maybe change string to file. Experiment with Jackson before
     public String getSnapshotSignatureFile() {
         return Defaults.SNAPSHOT_SIG_FILE;
     }
@@ -601,7 +599,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.maxAnalyzedTransactions = maxAnalyzedTransactions;
     }
 
-    //TODO change to private after refactoring ReplicatorSourceProcessor
     public interface Defaults {
         //API
         int API_PORT = 14265;

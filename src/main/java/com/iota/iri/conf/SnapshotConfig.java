@@ -10,7 +10,6 @@ public interface SnapshotConfig extends Config {
      */
     long getSnapshotTime();
 
-    //TODO should return File not String
     /**
      * return {@value Descriptions#SNAPSHOT_FILE}
      */

@@ -11,7 +11,6 @@ public class TestnetConfig extends BaseIotaConfig {
     protected String coordinator = Defaults.COORDINATOR_ADDRESS;
     protected boolean dontValidateTestnetMilestoneSig = Defaults.VALIDATE_MILESTONE_SIG;
     protected String snapshotFile = Defaults.SNAPSHOT_FILE;
-    //TODO should default testnet file be the same as mainnet?
     protected String snapshotSignatureFile = Defaults.SNAPSHOT_SIG;
     protected long snapshotTime = Defaults.SNAPSHOT_TIME;
     protected int mwm = Defaults.MWM;
@@ -54,7 +53,6 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @Override
-    //TODO maybe change string to file. Experiment with Jackson before
     public String getSnapshotFile() {
         return snapshotFile;
     }
@@ -66,7 +64,6 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @Override
-    //TODO maybe change string to file. Experiment with Jackson before
     public String getSnapshotSignatureFile() {
         return snapshotSignatureFile;
     }
@@ -161,7 +158,6 @@ public class TestnetConfig extends BaseIotaConfig {
             super.setDbLogPath(dbLogPath);
     }
 
-    //TODO change to private after refactoring ReplicatorSourceProcessor
     public interface Defaults {
         String COORDINATOR_ADDRESS = "EQQFCZBIHRHWPXKMTOLMYUYPCN9XLMJPYZVFJSAY9FQHCCLWTOLLUGKKMXYFDBOOYFBLBI9WUEILGECYM";
         boolean VALIDATE_MILESTONE_SIG = true;

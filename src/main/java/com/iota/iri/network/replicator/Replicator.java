@@ -1,5 +1,6 @@
 package com.iota.iri.network.replicator;
 
+import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.network.Node;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,10 +14,11 @@ public class Replicator {
     private final int port;
     private ReplicatorSourcePool replicatorSourcePool;
 
-    public Replicator(final Node node, int port, final int maxPeers, final boolean testnet, int transactionPacketSize) {
-        this.port = port;
-        replicatorSinkPool = new ReplicatorSinkPool(node, port, transactionPacketSize);
-        replicatorSourcePool = new ReplicatorSourcePool(replicatorSinkPool, node, maxPeers, testnet);
+    public Replicator(Node node, NodeConfig configuration) {
+        this.port = configuration.getTcpReceiverPort();
+        replicatorSinkPool = new ReplicatorSinkPool(node, port, configuration.getTransactionPacketSize());
+        replicatorSourcePool = new ReplicatorSourcePool(replicatorSinkPool, node, configuration.getMaxPeers(),
+                configuration.isTestnet());
     }
 
     public void init() {

@@ -3,8 +3,8 @@ package com.iota.iri.service;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iota.iri.*;
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.conf.Configuration.DefaultConfSettings;
+import com.iota.iri.conf.APIConfig;
+import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TagViewModel;
@@ -78,8 +78,6 @@ public class API {
 
     private final static long MAX_TIMESTAMP_VALUE = (long) (Math.pow(3, 27) - 1) / 2; // max positive 27-trits value
 
-    private final int minRandomWalks;
-    private final int maxRandomWalks;
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
@@ -98,24 +96,23 @@ public class API {
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
         this.ixi = ixi;
-        minRandomWalks = instance.configuration.integer(DefaultConfSettings.MIN_RANDOM_WALKS);
-        maxRandomWalks = instance.configuration.integer(DefaultConfSettings.MAX_RANDOM_WALKS);
-        maxFindTxs = instance.configuration.integer(DefaultConfSettings.MAX_FIND_TRANSACTIONS);
-        maxRequestList = instance.configuration.integer(DefaultConfSettings.MAX_REQUESTS_LIST);
-        maxGetTrytes = instance.configuration.integer(DefaultConfSettings.MAX_GET_TRYTES);
-        maxBodyLength = instance.configuration.integer(DefaultConfSettings.MAX_BODY_LENGTH);
-        testNet = instance.configuration.booling(DefaultConfSettings.TESTNET);
-        milestoneStartIndex = instance.configuration.integer(DefaultConfSettings.MILESTONE_START_INDEX);
+        APIConfig configuration = instance.configuration;
+        maxFindTxs = configuration.getMaxFindTransactions();
+        maxRequestList = configuration.getMaxRequestsList();
+        maxGetTrytes = configuration.getMaxGetTrytes();
+        maxBodyLength = configuration.getMaxBodyLength();
+        testNet = configuration.isTestnet();
+        milestoneStartIndex = ((ConsensusConfig) configuration).getMilestoneStartIndex();
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
-
     }
 
     public void init() throws IOException {
         readPreviousEpochsSpentAddresses(testNet);
 
-        final int apiPort = instance.configuration.integer(DefaultConfSettings.PORT);
-        final String apiHost = instance.configuration.string(DefaultConfSettings.API_HOST);
+        APIConfig configuration = instance.configuration;
+        final int apiPort = configuration.getPort();
+        final String apiHost = configuration.getApiHost();
 
         log.debug("Binding JSON-REST API Undertow server on {}:{}", apiHost, apiPort);
 
@@ -151,14 +148,16 @@ public class API {
         if (isTestnet) {
             return;
         }
+        String previousEpochSpentAddressesFile = instance.configuration.getPreviousEpochSpentAddressesFile();
+        String previousEpochSpentAddressesSigFile = instance.configuration.getPreviousEpochSpentAddressesSigFile();
 
-        if (!SignedFiles.isFileSignatureValid(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT,
-                Configuration.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
+        if (!SignedFiles.isFileSignatureValid(previousEpochSpentAddressesFile,
+                previousEpochSpentAddressesSigFile,
                 Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
             throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
         }
 
-        InputStream in = Snapshot.class.getResourceAsStream(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT);
+        InputStream in = Snapshot.class.getResourceAsStream(previousEpochSpentAddressesFile);
         BufferedReader reader = new BufferedReader(new InputStreamReader(in));
         String line;
         try {
@@ -202,7 +201,7 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            if (instance.configuration.string(DefaultConfSettings.REMOTE_LIMIT_API).contains(command) &&
+            if (instance.configuration.getRemoteLimitApi().contains(command) &&
                     !sourceAddress.getAddress().isLoopbackAddress()) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
@@ -276,7 +275,7 @@ public class API {
                     return getNeighborsStatement();
                 }
                 case "getNodeInfo": {
-                    String name = instance.configuration.booling(Configuration.DefaultConfSettings.TESTNET) ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
+                    String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
                     return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                             Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
                             Runtime.getRuntime().totalMemory(), instance.milestone.latestMilestone, instance.milestone.latestMilestoneIndex,
@@ -293,7 +292,7 @@ public class API {
                             Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
                             : Optional.empty();
                     final int depth = getParameterAsInt(request, "depth");
-                    if (depth < 0 || depth > instance.tipsSelector.getMaxDepth()) {
+                    if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
                         return ErrorResponse.create("Invalid depth input");
                     }
 
@@ -463,8 +462,7 @@ public class API {
             instance.milestone.latestSnapshot.rwlock.readLock().lock();
             try {
                 WalkValidatorImpl walkValidator = new WalkValidatorImpl(instance.tangle, instance.ledgerValidator,
-                        instance.transactionValidator, instance.milestone, instance.tipsSelector.getMaxDepth(),
-                        instance.configuration.integer(DefaultConfSettings.BELOW_MAX_DEPTH_TRANSACTION_LIMIT));
+                        instance.milestone, instance.configuration);
                 for (Hash transaction : transactions) {
                     if (!walkValidator.isValid(transaction)) {
                         state = false;
@@ -1062,7 +1060,7 @@ public class API {
     }
 
     private HttpHandler addSecurity(final HttpHandler toWrap) {
-        String credentials = instance.configuration.string(DefaultConfSettings.REMOTE_AUTH);
+        String credentials = instance.configuration.getRemoteAuth();
         if (credentials == null || credentials.isEmpty()) {
             return toWrap;
         }

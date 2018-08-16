@@ -6,7 +6,6 @@ import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
-import org.rocksdb.RocksDBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,6 +166,11 @@ public class ZmqPublishProvider implements PersistenceProvider {
     }
 
     @Override
+    public void deleteBatch(Collection<Pair<Indexable, Class<Persistable>>> models) throws Exception {
+
+    }
+
+    @Override
     public void clear(Class<?> column) throws Exception {
 
     }
@@ -174,11 +178,5 @@ public class ZmqPublishProvider implements PersistenceProvider {
     @Override
     public void clearMetadata(Class<?> column) throws Exception {
 
-    }
-
-    @Override
-    public void deleteBatch(Collection<? extends Indexable> keys, Class<? extends Persistable> type)
-            throws RocksDBException {
-        throw new UnsupportedOperationException();
     }
 }

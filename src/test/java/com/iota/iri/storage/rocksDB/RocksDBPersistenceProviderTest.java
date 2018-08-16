@@ -40,31 +40,33 @@ public class RocksDBPersistenceProviderTest {
         rocksDBPersistenceProvider.clear(Transaction.class);
     }
 
+    @SuppressWarnings("unchecked")
     @Test
     public void testDeleteBatch() throws Exception {
         Persistable tx = new Transaction();
         byte[] bytes = new byte[Transaction.SIZE];
-                Arrays.fill(bytes, (byte) 1);
+        Arrays.fill(bytes, (byte) 1);
         tx.read(bytes);
         tx.readMetadata(bytes);
-        List<Pair<Indexable, Persistable>> pairs = IntStream.range(1, 1000)
+        List<Pair<Indexable, Persistable>> models = IntStream.range(1, 1000)
                 .mapToObj(i -> new Pair<>((Indexable) new IntegerIndex(i), tx))
                 .collect(Collectors.toList());
 
-        rocksDBPersistenceProvider.saveBatch(pairs);
+        rocksDBPersistenceProvider.saveBatch(models);
 
-        List<IntegerIndex> indexes = IntStream.range(1, 900)
-                .mapToObj(i -> new IntegerIndex(i))
+        List<Pair<Indexable, Class<Persistable>>> modelsToDelete = models.stream()
+                .filter(entry -> ((IntegerIndex) entry.low).getValue() < 900)
+                .map(entry -> new Pair<>(entry.low, (Class<Persistable>) entry.hi.getClass()))
                 .collect(Collectors.toList());
 
-        rocksDBPersistenceProvider.deleteBatch(indexes, Transaction.class);
+        rocksDBPersistenceProvider.deleteBatch(modelsToDelete);
 
-        for (IntegerIndex index : indexes) {
-            Assert.assertNull("value at index " + index.getValue() + " should be deleted",
-                    rocksDBPersistenceProvider.get(Transaction.class, index).bytes());
+        for (Pair<Indexable, Class<Persistable>> model : modelsToDelete) {
+            Assert.assertNull("value at index " + ((IntegerIndex) model.low).getValue() + " should be deleted",
+                    rocksDBPersistenceProvider.get(model.hi, model.low).bytes());
         }
 
-        indexes = IntStream.range(900, 1000)
+        List<IntegerIndex> indexes = IntStream.range(900, 1000)
                 .mapToObj(i -> new IntegerIndex(i))
                 .collect(Collectors.toList());
 

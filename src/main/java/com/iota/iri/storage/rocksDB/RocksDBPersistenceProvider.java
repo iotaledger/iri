@@ -319,26 +319,27 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         }
     }
 
-    public void deleteBatch(Collection<? extends Indexable> keys, Class<? extends Persistable> type)
-            throws RocksDBException {
-        ColumnFamilyHandle handle = classTreeMap.get(type);
-        ColumnFamilyHandle metadataHandle = metadataReference.get(type);
+    public void deleteBatch(Collection<Pair<Indexable, Class<Persistable>>> models)
+            throws Exception {
+        if (CollectionUtils.isNotEmpty(models)) {
+            try (WriteBatch writeBatch = new WriteBatch()) {
+                models.forEach(entry -> {
+                    byte[] keyBytes = entry.low.bytes();
+                    ColumnFamilyHandle handle = classTreeMap.get(entry.hi);
+                    writeBatch.remove(handle, keyBytes);
+                    ColumnFamilyHandle metadataHandle = metadataReference.get(entry.hi);
+                    if (metadataReference != null) {
+                        writeBatch.remove(metadataHandle, keyBytes);
+                    }
+                });
 
-        try (WriteBatch writeBatch = new WriteBatch()) {
-            for (Indexable key : CollectionUtils.emptyIfNull(keys)) {
-                byte[] keyBytes = key.bytes();
-                writeBatch.remove(handle, keyBytes);
-                if (metadataReference != null) {
-                    writeBatch.remove(metadataHandle, keyBytes);
-                }
+                WriteOptions writeOptions = new WriteOptions()
+                        //We are explicit about what happens if the node reboots before a flush to the db
+                        .setDisableWAL(false)
+                        //We want to make sure deleted data was indeed deleted
+                        .setSync(true);
+                db.write(writeOptions, writeBatch);
             }
-
-            WriteOptions writeOptions = new WriteOptions()
-                    //We are explicit about what happens if the node reboots before a flush to the db
-                    .setDisableWAL(false)
-                    //We want to make sure deleted data was indeed deleted
-                    .setSync(true);
-            db.write(writeOptions, writeBatch);
         }
     }
 

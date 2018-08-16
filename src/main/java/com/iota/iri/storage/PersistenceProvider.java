@@ -1,7 +1,6 @@
 package com.iota.iri.storage;
 
 import com.iota.iri.utils.Pair;
-import org.rocksdb.RocksDBException;
 
 import java.util.Collection;
 import java.util.List;
@@ -43,7 +42,12 @@ public interface PersistenceProvider {
 
     boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception;
 
-    void deleteBatch(Collection<? extends Indexable> keys, Class<? extends Persistable> type) throws RocksDBException;
+    /**
+     * Atomically delete all {@code models}.
+     * @param models key value pairs that to be expunged from the db
+     * @throws Exception
+     */
+    void deleteBatch(Collection<Pair<Indexable, Class<Persistable>>> models) throws Exception;
 
     void clear(Class<?> column) throws Exception;
     void clearMetadata(Class<?> column) throws Exception;

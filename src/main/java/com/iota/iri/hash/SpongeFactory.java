@@ -16,7 +16,7 @@ public abstract class SpongeFactory {
             case CURLP27: return new Curl(mode);
             case KERL: return new Kerl();
             //case BCURLT: return new Curl(true, mode);
-            default: return null;
+            default: throw new IllegalArgumentException("Illegal Mode provided to SpongeFactory.create!");
         }
     }
 }

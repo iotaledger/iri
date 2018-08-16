@@ -324,7 +324,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         if (CollectionUtils.isNotEmpty(models)) {
             try (WriteBatch writeBatch = new WriteBatch()) {
                 models.forEach(entry -> {
-                    byte[] keyBytes = entry.low.bytes();
+                    Indexable indexable = entry.low;
+                    byte[] keyBytes = indexable.bytes();
                     ColumnFamilyHandle handle = classTreeMap.get(entry.hi);
                     writeBatch.remove(handle, keyBytes);
                     ColumnFamilyHandle metadataHandle = metadataReference.get(entry.hi);

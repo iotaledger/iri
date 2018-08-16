@@ -121,35 +121,33 @@ public class IRI {
 
         private static IotaConfig createConfiguration(String[] args) {
             IotaConfig iotaConfig = null;
-            boolean testnet = ArrayUtils.contains(args, Config.TESTNET_FLAG);
-            File configFile = chooseConfigFile(args);
             String message = "Configuration is created using ";
-
             try {
+                boolean testnet = ArrayUtils.contains(args, Config.TESTNET_FLAG);
+                File configFile = chooseConfigFile(args);
                 if (configFile != null) {
                     iotaConfig = ConfigFactory.createFromFile(configFile, testnet);
-                    message+= configFile.getName() + " and command line args";
+                    message += configFile.getName() + " and command line args";
                 }
                 else {
                     iotaConfig = ConfigFactory.createIotaConfig(testnet);
-                    message+= "command line args only";
+                    message += "command line args only";
                 }
                 JCommander jCommander = iotaConfig.parseConfigFromArgs(args);
                 if (iotaConfig.isHelp()) {
                     jCommander.usage();
                     System.exit(0);
                 }
-            }
-            catch (IOException | IllegalArgumentException e) {
-                log.error("There was a problem reading configuration from file: {}" , e.getMessage());
-                log.debug("" ,e);
+            } catch (IOException | IllegalArgumentException e) {
+                log.error("There was a problem reading configuration from file: {}", e.getMessage());
+                log.debug("", e);
                 System.exit(-1);
-            }
-            catch (ParameterException e) {
+            } catch (ParameterException e) {
                 log.error("There was a problem parsing commandline arguments: {}", e.getMessage());
                 log.debug("", e);
                 System.exit(-1);
             }
+
             log.info(message);
             log.info("parsed the following cmd args: {}", Arrays.toString(args));
             return iotaConfig;
@@ -158,7 +156,13 @@ public class IRI {
         private static File chooseConfigFile(String[] args) {
             int index = Math.max(ArrayUtils.indexOf(args, "-c"), ArrayUtils.indexOf(args, "--config"));
             if (index != -1) {
-                return new File(args[++index]);
+                try {
+                    String fileName = args[++index];
+                    return new File(fileName);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(
+                            "The file after `-c` or `--config` isn't specified or can't be parsed.", e);
+                }
             }
             else if (IotaConfig.CONFIG_FILE.exists()) {
                 return IotaConfig.CONFIG_FILE;

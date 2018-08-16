@@ -126,7 +126,7 @@ public class IRI {
             String message = "Configuration is created using ";
 
             try {
-                if (configFile.exists()) {
+                if (configFile != null) {
                     iotaConfig = ConfigFactory.createFromFile(configFile, testnet);
                     message+= configFile.getName() + " and command line args";
                 }
@@ -141,7 +141,7 @@ public class IRI {
                 }
             }
             catch (IOException | IllegalArgumentException e) {
-                log.error("There was a problem reading configuration from file" , e.getMessage());
+                log.error("There was a problem reading configuration from file: {}" , e.getMessage());
                 log.debug("" ,e);
                 System.exit(-1);
             }
@@ -157,10 +157,13 @@ public class IRI {
 
         private static File chooseConfigFile(String[] args) {
             int index = Math.max(ArrayUtils.indexOf(args, "-c"), ArrayUtils.indexOf(args, "--config"));
-            if (index == -1) {
+            if (index != -1) {
+                return new File(args[++index]);
+            }
+            else if (IotaConfig.CONFIG_FILE.exists()) {
                 return IotaConfig.CONFIG_FILE;
             }
-            return new File(args[++index]);
+            return null;
         }
     }
 }

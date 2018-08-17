@@ -277,7 +277,7 @@ public class Milestone {
                             TransactionViewModel branchTransaction = currentTransaction.getBranchTransaction(tangle);
 
                             // if the branch transaction still belongs to our current or a following milestone -> add it
-                            if(branchTransaction.snapshotIndex() >= currentMilestone.index()) {
+                            if(branchTransaction.getType() != TransactionViewModel.PREFILLED_SLOT && branchTransaction.snapshotIndex() >= currentMilestone.index()) {
                                 transactionsToExamine.add(branchTransaction);
                             }
                         }
@@ -288,7 +288,7 @@ public class Milestone {
                             TransactionViewModel trunkTransaction = currentTransaction.getTrunkTransaction(tangle);
 
                             // if the trunk transaction still belongs to our current or a following milestone -> add it
-                            if(trunkTransaction.snapshotIndex() >= currentMilestone.index()) {
+                            if(trunkTransaction.getType() != TransactionViewModel.PREFILLED_SLOT && trunkTransaction.snapshotIndex() >= currentMilestone.index()) {
                                 transactionsToExamine.add(trunkTransaction);
                             }
                         }

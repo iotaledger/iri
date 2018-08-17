@@ -8,10 +8,7 @@ import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -255,8 +252,50 @@ public class Milestone {
         try {
             MilestoneViewModel currentMilestone = targetMilestone;
             while(currentMilestone != null) {
-                // reset the snapshotIndex() of all following milestones to recalculate the corresponding values
-                TransactionViewModel.fromHash(tangle, currentMilestone.getHash()).setSnapshot(tangle, 0);
+                //region RESET THE SNAPSHOT INDEX //////////////////////////////////////////////////////////////////////
+
+                // retrieve the transaction belonging to our current milestone
+                TransactionViewModel milestoneTransaction = TransactionViewModel.fromHash(tangle, currentMilestone.getHash());
+
+                // create a set where we keep track of the processed transactions
+                Set<Hash> seenMilestoneTransactions = new HashSet<>();
+
+                // create a queue where we collect the transactions that shall be examined (starting with our milestone)
+                final Queue<TransactionViewModel> transactionsToExamine = new LinkedList<>(Collections.singleton(milestoneTransaction));
+
+                // iterate through our queue and process all elements (while we iterate we add more)
+                TransactionViewModel currentTransaction;
+                while((currentTransaction = transactionsToExamine.poll()) != null) {
+                    // only process transactions that we haven't seen yet
+                    if(seenMilestoneTransactions.add(currentTransaction.getHash())) {
+                        // reset the snapshotIndex to allow a repair
+                        currentTransaction.setSnapshot(tangle, 0);
+
+                        // only examine transactions that are not part of the solid entry points
+                        if(!Hash.NULL_HASH.equals(currentTransaction.getBranchTransactionHash())) {
+                            // retrieve the branch transaction of our current transaction
+                            TransactionViewModel branchTransaction = currentTransaction.getBranchTransaction(tangle);
+
+                            // if the branch transaction still belongs to our current or a following milestone -> add it
+                            if(branchTransaction.snapshotIndex() >= currentMilestone.index()) {
+                                transactionsToExamine.add(branchTransaction);
+                            }
+                        }
+
+                        // only examine transactions that are not part of the solid entry points
+                        if(!Hash.NULL_HASH.equals(currentTransaction.getTrunkTransactionHash())) {
+                            // retrieve the trunk transaction of our current transaction
+                            TransactionViewModel trunkTransaction = currentTransaction.getTrunkTransaction(tangle);
+
+                            // if the trunk transaction still belongs to our current or a following milestone -> add it
+                            if(trunkTransaction.snapshotIndex() >= currentMilestone.index()) {
+                                transactionsToExamine.add(trunkTransaction);
+                            }
+                        }
+                    }
+                }
+
+                //endregion ////////////////////////////////////////////////////////////////////////////////////////////
 
                 // remove the following StateDiffs
                 tangle.delete(StateDiff.class, currentMilestone.getHash());
@@ -377,13 +416,14 @@ public class Milestone {
                 nextMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
             }
 
-            // otherwise if we didn't reset yet in the updateSnapshot method ... (fallback of last resort)
-            else if(latestSnapshot.index() != initialSnapshot.index()) {
-                // reset the ledger to the initial snapshot and rescan
-                softReset();
+            // otherwise -> try to repair and abort our loop
+            else {
+                // do a soft reset if we didn't do a hard reset yet
+                if(latestSnapshot.index() != initialSnapshot.index()) {
+                    softReset();
+                }
 
-                // and abort our loop
-                break;
+                nextMilestone = null;
             }
         }
 

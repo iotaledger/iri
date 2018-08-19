@@ -1,6 +1,7 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.model.Hash;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -21,8 +22,8 @@ public class SnapshotTest {
     @BeforeClass
     public static void beforeClass() {
         try {
-            initSnapshot = Snapshot.init(Configuration.MAINNET_SNAPSHOT_FILE,
-                Configuration.MAINNET_SNAPSHOT_SIG_FILE, false);
+            IotaConfig config = new MainnetConfig();
+            initSnapshot = Snapshot.init(config);
         } catch (IOException e) {
             throw new UncheckedIOException("Problem initiating snapshot", e);
         }

@@ -1,5 +1,6 @@
 package com.iota.iri.service.tipselection.impl;
 
+import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
@@ -31,12 +32,12 @@ public class WalkerAlpha implements Walker {
 
     private final TailFinder tailFinder;
 
-    public WalkerAlpha(double alpha, Random random, Tangle tangle, MessageQ messageQ, TailFinder tailFinder) {
-        this.alpha = alpha;
-        this.random = random;
+    public WalkerAlpha(TailFinder tailFinder, Tangle tangle, MessageQ messageQ, Random random, TipSelConfig config) {
         this.tangle = tangle;
         this.messageQ = messageQ;
         this.tailFinder = tailFinder;
+        this.random = random;
+        this.alpha = config.getAlpha();
     }
 
     public double getAlpha() {

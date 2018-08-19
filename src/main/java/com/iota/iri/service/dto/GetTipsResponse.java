@@ -17,7 +17,7 @@ public class GetTipsResponse extends AbstractResponse {
 	}
 	
     /**
-     * Gets the hashes
+     * The list of current tips
      *
      * @return The hashes.
      */

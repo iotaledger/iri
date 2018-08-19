@@ -23,7 +23,7 @@ public class GetBalancesResponse extends AbstractResponse {
 	}
 	
     /**
-     * Gets the references
+     * The referencing tips
      *
      * @return The references.
      */
@@ -32,7 +32,7 @@ public class GetBalancesResponse extends AbstractResponse {
 	}
 	
     /**
-     * Gets the milestoneIndex
+     * The index with which the confirmed balance was determined
      *
      * @return The milestoneIndex.
      */
@@ -41,7 +41,7 @@ public class GetBalancesResponse extends AbstractResponse {
 	}
 	
     /**
-     * Gets the balances
+     * The balances as a list in the same order as the addresses were provided as input
      *
      * @return The balances.
      */

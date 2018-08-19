@@ -9,7 +9,7 @@ package com.iota.iri.service.dto;
  * This API call simply returns a list of boolean values in the same order as the transaction list you submitted, thus you get a true/false whether a transaction is confirmed or not.
  **/
 public class GetInclusionStatesResponse extends AbstractResponse {
-	
+
 	private boolean [] states; 
 
 	public static AbstractResponse create(boolean[] inclusionStates) {
@@ -19,7 +19,8 @@ public class GetInclusionStatesResponse extends AbstractResponse {
 	}
 	
     /**
-     * Gets the states
+     * List of boolean values in the same order as the transaction list you submitted, 
+	 * thus you get a true/false whether a transaction is confirmed or not.
      *
      * @return The states.
      */

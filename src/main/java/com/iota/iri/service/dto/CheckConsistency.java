@@ -24,7 +24,7 @@ public class CheckConsistency extends AbstractResponse {
     }
 
     /**
-     * Gets the state
+     * The state of the transaction
      *
      * @return The state.
      */
@@ -33,7 +33,7 @@ public class CheckConsistency extends AbstractResponse {
     }
     
     /**
-     * Gets the info
+     * Information about the state
      *
      * @return The info.
      */

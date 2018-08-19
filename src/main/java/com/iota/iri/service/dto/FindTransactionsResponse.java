@@ -20,7 +20,12 @@ public class FindTransactionsResponse extends AbstractResponse {
 	}
 	
     /**
-     * Gets the hashes
+      * The transaction hashes which are returned depend on your input. 
+      * For each specified input value, the command will return the following:
+      * <code>bundles</code>: returns the list of transactions which contain the specified bundle hash.
+      * <code>addresses</code>: returns the list of transactions which have the specified address as an input/output field.
+      * <code>tags</code>: returns the list of transactions which contain the specified tag value.
+      * <code>approvees</code>: returns the list of transaction which reference (i.e. confirm) the specified transaction.
      *
      * @return The hashes.
      */

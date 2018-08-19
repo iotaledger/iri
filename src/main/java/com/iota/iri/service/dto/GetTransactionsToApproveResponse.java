@@ -24,16 +24,16 @@ public class GetTransactionsToApproveResponse extends AbstractResponse {
 	}
 	
     /**
-     * Gets the branch transaction
+     * The branch transaction
      *
-     * @return The Gets the branch transaction.
+     * @return The branch transaction.
      */
 	public String getBranchTransaction() {
 		return branchTransaction;
 	}
 	
     /**
-     * Gets the trunk transaction
+     * The trunk transaction
      *
      * @return The trunk transaction.
      */

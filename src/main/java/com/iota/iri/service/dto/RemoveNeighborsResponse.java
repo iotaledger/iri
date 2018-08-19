@@ -18,7 +18,7 @@ public class RemoveNeighborsResponse extends AbstractResponse {
 	}
 	
     /**
-     * Gets the number of removed neighbors.
+     * The number of removed neighbors.
      *
      * @return The number of removed neighbors.
      */

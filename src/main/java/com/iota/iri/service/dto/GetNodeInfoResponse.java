@@ -6,22 +6,6 @@ import com.iota.iri.model.Hash;
   * This class represents the core API request 'getNodeInfo'.
   * Returns information about your node.
   * 
-  * Return Values
-  * <code>appName</code>: Name of the IOTA software you're currently using (IRI stands for Initial Reference Implementation).
-  * <code>appVersion</code>: The version of the IOTA software you're currently running.
-  * <code>jreAvailableProcesses</code>: Available cores on your machine for JRE.
-  * <code>jreFreeMemory</code>: Returns the amount of free memory in the Java Virtual Machine.
-  * <code>jreMaxMemory</code>: Returns the maximum amount of memory that the Java virtual machine will attempt to use.
-  * <code>jreTotalMemory</code>: Returns the total amount of memory in the Java virtual machine.
-  * <code>latestMilestone</code>: The hash of the latest transaction that was signed off by the coordinator.
-  * <code>latestMilestoneIndex</code>: Index of the latest milestone.
-  * <code>latestSolidSubtangleMilestone</code>: The hash of the latest transaction which is solid and is used for sending transactions. For a milestone to become solid your local node must basically approve the subtangle of coordinator-approved transactions, and have a consistent view of all referenced transactions.
-  * <code>latestSolidSubtangleMilestoneIndex</code>: Index of the latest solid subtangle.
-  * <code>neighbors</code>: Number of neighbors you are directly connected with.
-  * <code>packetsQueueSize</code>: Packets which are currently queued up.
-  * <code>time</code>: Current UNIX timestamp.
-  * <code>tips</code>: Number of tips in the network.
-  * <code>transactionsToRequest</code>: When a node receives a transaction from one of its neighbors, this transaction is referencing two other transactions t1 and t2 (trunk and branch transaction). If either t1 or t2 (or both) is not in the node's local database, then the transaction hash of t1 (or t2 or both) is added to the queue of the "transactions to request". At some point, the node will process this queue and ask for details about transactions in the "transaction to request" queue from one of its neighbors. By this means, nodes solidify their view of the tangle (i.e. filling in the unknown parts).
   **/
 public class GetNodeInfoResponse extends AbstractResponse {
 
@@ -87,7 +71,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
     
     /**
-     * Gets the app version
+     * Name of the IOTA software you're currently using (IRI stands for Initial Reference Implementation)
      *
      * @return The app version.
      */
@@ -96,7 +80,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the available processors of the JRE
+     * Available cores on your machine for JRE.
      *
      * @return The available processors of the JRE.
      */
@@ -105,7 +89,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the free memory of the JRE
+     * The amount of free memory in the Java Virtual Machine.
      *
      * @return The free memory of the JRE.
      */
@@ -114,7 +98,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the maximum memory of the JRE
+     * The maximum amount of memory that the Java virtual machine will attempt to use.
      *
      * @return The maximum memory of the JRE.
      */
@@ -123,7 +107,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the total memory of the JRE
+     * The total amount of memory in the Java virtual machine.
      *
      * @return The total memory of the JRE.
      */
@@ -132,7 +116,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the JRE version
+     * The JRE version this node runs on
      *
      * @return The JRE version.
      */
@@ -141,7 +125,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the latest milestone
+     * The hash of the latest transaction that was signed off by the coordinator.
      *
      * @return The latest milestone.
      */
@@ -150,7 +134,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the latest milestone index
+     * Index of the latest milestone.
      *
      * @return The latest milestone index.
      */
@@ -159,7 +143,9 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the latest subtangle milestone
+     * The hash of the latest transaction which is solid and is used for sending transactions. 
+     * For a milestone to become solid your local node must basically approve the subtangle of coordinator-approved transactions, 
+     *  and have a consistent view of all referenced transactions.
      *
      * @return The latest subtangle milestone index.
      */
@@ -168,8 +154,8 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the latest subtangle milestone index
-     *
+     * Index of the latest solid subtangle.
+     * 
      * @return The latest subtangle milestone index.
      */
 	public int getLatestSolidSubtangleMilestoneIndex() {
@@ -186,7 +172,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the neighbors
+     * Number of neighbors you are directly connected with.
      *
      * @return The neighbors.
      */
@@ -195,7 +181,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the the packets queue
+     * Packets which are currently queued up.
      *
      * @return The size of the packets queue.
      */
@@ -204,7 +190,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the time
+     * Current UNIX timestamp.
      *
      * @return The time.
      */
@@ -213,7 +199,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the tips
+     * Number of tips in the network.
      *
      * @return The tips.
      */
@@ -222,7 +208,10 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the transactions to tequest
+     * When a node receives a transaction from one of its neighbors, this transaction is referencing two other transactions t1 and t2 (trunk and branch transaction). 
+     * If either t1 or t2 (or both) is not in the node's local database, then the transaction hash of t1 (or t2 or both) is added to the queue of the "transactions to request".
+     * At some point, the node will process this queue and ask for details about transactions in the "transaction to request" queue from one of its neighbors. 
+     * By this means, nodes solidify their view of the tangle (i.e. filling in the unknown parts).
      *
      * @return The transactions to tequest.
      */

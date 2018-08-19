@@ -247,11 +247,11 @@ public class API {
                 }
                 case "broadcastTransactions": {
                     final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
-                    broadcastTransactionStatement(trytes);
+                    broadcastTransactionsStatement(trytes);
                     return AbstractResponse.createEmptyResponse();
                 }
                 case "findTransactions": {
-                    return findTransactionStatement(request);
+                    return findTransactionsStatement(request);
                 }
                 case "getBalances": {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
@@ -269,7 +269,7 @@ public class API {
                     final List<String> transactions = getParameterAsList(request,"transactions", HASH_SIZE);
                     final List<String> tips = getParameterAsList(request,"tips", HASH_SIZE);
 
-                    return getNewInclusionStateStatement(transactions, tips);
+                    return getInclusionStatesStatement(transactions, tips);
                 }
                 case "getNeighbors": {
                     return getNeighborsStatement();
@@ -299,7 +299,7 @@ public class API {
                     }
 
                     try {
-                        List<Hash> tips = getTransactionToApproveStatement(depth, reference);
+                        List<Hash> tips = getTransactionsToApproveStatement(depth, reference);
                         return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
 
                     } catch (RuntimeException e) {
@@ -324,7 +324,7 @@ public class API {
                 case "storeTransactions": {
                     try {
                         final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
-                        storeTransactionStatement(trytes);
+                        storeTransactionsStatement(trytes);
                         return AbstractResponse.createEmptyResponse();
                     } catch (RuntimeException e) {
                         //transaction not valid
@@ -374,8 +374,7 @@ public class API {
       * Check if a list of addresses was ever spent from, in the current epoch, or in previous epochs.
       *
       * @param addressesStr List of addresses to check if they were ever spent from.
-      * @throws Exception //TODO
-      * @returns {@link com.iota.iri.service.dto.wereAddressesSpentFrom}
+      * @return {@link com.iota.iri.service.dto.wereAddressesSpentFrom}
       **/
     private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
         final List<Hash> addresses = addressesStr.stream().map(Hash::new).collect(Collectors.toList());
@@ -438,18 +437,16 @@ public class API {
 
 
     /**
-      * Removes a list of neighbors to your node. 
       * Checks the consistency of the transactions. 
-      * Marks state as false on the following checks
-      * - Transaction does not exist
-      * - Transaction is not a tail
-      * - Missing a reference transaction
-      * - Invalid bundle
-      * - Tails of tails are invalid
+      * Marks state as false on the following checks<br/>
+      * - Transaction does not exist<br/>
+      * - Transaction is not a tail<br/>
+      * - Missing a reference transaction<br/>
+      * - Invalid bundle<br/>
+      * - Tails of tails are invalid<br/>
       *
       * @param transactionsList List of transactions you want to get the consistency for
-      * @throws Exception //TODO
-      * @returns {@link com.iota.iri.service.dto.CheckConsistency}
+      * @return {@link com.iota.iri.service.dto.CheckConsistency}
       **/
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
@@ -566,11 +563,14 @@ public class API {
     /**
       * Removes a list of neighbors to your node. 
       * This is only temporary, and if you have your neighbors added via the command line, they will be retained after you restart your node.
+      *
       * The URI (Unique Resource Identification) for removing neighbors is:
       * <b>udp://IPADDRESS:PORT</b>
+      * 
+      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if the URI scheme is wrong
       *
       * @param uris List of URI elements.
-      * @returns {@link com.iota.iri.service.dto.RemoveNeighborsResponse} or an {@link com.iota.iri.service.dto.ErrorResponse} if the URI scheme is wrong
+      * @return {@link com.iota.iri.service.dto.RemoveNeighborsResponse}
       **/
     private AbstractResponse removeNeighborsStatement(List<String> uris) {
         int numberOfRemovedNeighbors = 0;
@@ -593,8 +593,7 @@ public class API {
       * See utility functions for more details.
       *
       * @param hashes List of transaction hashes of which you want to get trytes from.
-      * @throws Exception //TODO
-      * @returns {@link com.iota.iri.service.dto.GetTrytesResponse}
+      * @return {@link com.iota.iri.service.dto.GetTrytesResponse}
       **/
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
@@ -637,9 +636,9 @@ public class API {
       * @param depth Number of bundles to go back to determine the transactions for approval.
       * @param reference Hash of transaction to start random-walk from, used to make sure the tips returned reference a given transaction in their past.
       * @throws IllegalStateException if the subtangle has not yet been updated
-      * @returns list of tips (branch and trunk)
+      * @return {@link com.iota.iri.service.dto.GetTransactionsToApproveResponse}
       **/
-    public synchronized List<Hash> getTransactionToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
+    public synchronized List<Hash> getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
 
         if (invalidSubtangleStatus()) {
             throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
@@ -666,8 +665,8 @@ public class API {
 
     /**
       * Returns the list of tips.
-      * @throws Exception //TODO
-      * @returns {@link com.iota.iri.service.dto.GetTipsResponse}
+      * 
+      * @return {@link com.iota.iri.service.dto.GetTipsResponse}
       **/
     private synchronized AbstractResponse getTipsStatement() throws Exception {
         return GetTipsResponse.create(instance.tipsViewModel.getTips().stream().map(Hash::toString).collect(Collectors.toList()));
@@ -678,9 +677,8 @@ public class API {
       * The trytes to be used for this call are returned by <code>attachToTangle</code>.
       *
       * @param trys List of raw data of transactions to be rebroadcast.
-      * @throws Exception //TODO
       **/
-    public void storeTransactionStatement(final List<String> trys) throws Exception {
+    public void storeTransactionsStatement(final List<String> trys) throws Exception {
         final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String trytes : trys) {
@@ -705,12 +703,7 @@ public class API {
       * Returns the set of neighbors you are connected with, as well as their activity count. 
       * The activity counter is reset after restarting IRI.
       *
-      * Return Values
-      * <code>address</code>: address of your peer
-      * <code>numberOfAllTransactions</code>: Number of all transactions sent (invalid, valid, already-seen)
-      * <code>numberOfInvalidTransactions</code>: Invalid transactions your peer has sent you. These are transactions with invalid signatures or overall schema.
-      * <code>numberOfNewTransactions</code>: New transactions which were transmitted.
-      * @returns {@link com.iota.iri.service.dto.GetNeighborsResponse}
+      * @return {@link com.iota.iri.service.dto.GetNeighborsResponse}
       **/
     private AbstractResponse getNeighborsStatement() {
         return GetNeighborsResponse.create(instance.node.getNeighbors());
@@ -719,7 +712,7 @@ public class API {
     /**
       * Interrupts and completely aborts the <code>attachToTangle</code> process.
       *
-      * @returns {@link com.iota.iri.service.dto.AbstractResponse}
+      * @return {@link com.iota.iri.service.dto.AbstractResponse}
       **/
     private AbstractResponse interruptAttachingToTangleStatement(){
         pearlDiver.cancel();
@@ -729,23 +722,7 @@ public class API {
     /**
       * Returns information about your node.
       * 
-      * Return Values
-      * <code>appName</code>: Name of the IOTA software you're currently using (IRI stands for Initial Reference Implementation).
-      * <code>appVersion</code>: The version of the IOTA software you're currently running.
-      * <code>jreAvailableProcesses</code>: Available cores on your machine for JRE.
-      * <code>jreFreeMemory</code>: Returns the amount of free memory in the Java Virtual Machine.
-      * <code>jreMaxMemory</code>: Returns the maximum amount of memory that the Java virtual machine will attempt to use.
-      * <code>jreTotalMemory</code>: Returns the total amount of memory in the Java virtual machine.
-      * <code>latestMilestone</code>: The hash of the latest transaction that was signed off by the coordinator.
-      * <code>latestMilestoneIndex</code>: Index of the latest milestone.
-      * <code>latestSolidSubtangleMilestone</code>: The hash of the latest transaction which is solid and is used for sending transactions. For a milestone to become solid your local node must basically approve the subtangle of coordinator-approved transactions, and have a consistent view of all referenced transactions.
-      * <code>latestSolidSubtangleMilestoneIndex</code>: Index of the latest solid subtangle.
-      * <code>neighbors</code>: Number of neighbors you are directly connected with.
-      * <code>packetsQueueSize</code>: Packets which are currently queued up.
-      * <code>time</code>: Current UNIX timestamp.
-      * <code>tips</code>: Number of tips in the network.
-      * <code>transactionsToRequest</code>: When a node receives a transaction from one of its neighbors, this transaction is referencing two other transactions t1 and t2 (trunk and branch transaction). If either t1 or t2 (or both) is not in the node's local database, then the transaction hash of t1 (or t2 or both) is added to the queue of the "transactions to request". At some point, the node will process this queue and ask for details about transactions in the "transaction to request" queue from one of its neighbors. By this means, nodes solidify their view of the tangle (i.e. filling in the unknown parts).
-      * @returns {@link com.iota.iri.service.dto.GetNodeInfoResponse}
+      * @return {@link com.iota.iri.service.dto.GetNodeInfoResponse}
       **/
     private AbstractResponse getNodeInfoStatement(){
         String name = instance.configuration.booling(Configuration.DefaultConfSettings.TESTNET) ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
@@ -764,13 +741,13 @@ public class API {
       * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
       *
       * This API call simply returns a list of boolean values in the same order as the transaction list you submitted, thus you get a true/false whether a transaction is confirmed or not.
-      *
+      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
+      * 
       * @param trans List of transactions you want to get the inclusion state for.
       * @param tps List of tips (including milestones) you want to search for the inclusion state.
-      * @throws Exception //TODO
-      * @returns {@link com.iota.iri.service.dto.GetInclusionStatesResponse} or an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
+      * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse} 
       **/
-    private AbstractResponse getNewInclusionStateStatement(final List<String> trans, final List<String> tps) throws Exception {
+    private AbstractResponse getInclusionStatesStatement(final List<String> trans, final List<String> tps) throws Exception {
         final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
         final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
         int numberOfNonMetTransactions = transactions.size();
@@ -871,20 +848,13 @@ public class API {
       * All input values are lists, for which a list of return values (transaction hashes), in the same order, is returned for all individual elements. 
       * The input fields can either be <code>bundles<code>, <code>addresses</code>, <code>tags</code> or <code>approvees</code>. 
       * <b>Using multiple of these input fields returns the intersection of the values.</b>
-      *
-      * <h4>Return Values</h4>
-      * The transaction hashes which are returned depend on your input. 
-      * For each specified input value, the command will return the following:
-      * <code>bundles</code>: returns the list of transactions which contain the specified bundle hash.
-      * <code>addresses</code>: returns the list of transactions which have the specified address as an input/output field.
-      * <code>tags</code>: returns the list of transactions which contain the specified tag value.
-      * <code>approvees</code>: returns the list of transaction which reference (i.e. confirm) the specified transaction.
+      * 
+      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if more then maxFindTxs was found
       *
       * @param request the map with input fields
-      * @throws ValidationException if no valid input field was provided
-      * @returns {@link com.iota.iri.service.dto.FindTransactionsResponse} or an {@link com.iota.iri.service.dto.ErrorResponse} if more then maxFindTxs was found
+      * @return {@link com.iota.iri.service.dto.FindTransactionsResponse}
       **/
-    private synchronized AbstractResponse findTransactionStatement(final Map<String, Object> request) throws Exception {
+    private synchronized AbstractResponse findTransactionsStatement(final Map<String, Object> request) throws Exception {
 
         final Set<Hash> foundTransactions =  new HashSet<>();
         boolean containsKey = false;
@@ -986,11 +956,11 @@ public class API {
 
     /**
       * Broadcast a list of transactions to all neighbors. 
-      * The input trytes for this call are provided by <ode>attachToTangle</code>.
+      * The input trytes for this call are provided by <code>attachToTangle</code>.
       *
       * @param trytes2 the list of transaction
       **/
-    public void broadcastTransactionStatement(final List<String> trytes2) {
+    public void broadcastTransactionsStatement(final List<String> trytes2) {
         final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String tryte : trytes2) {
@@ -1011,12 +981,13 @@ public class API {
       * Returns the confirmed balance, as viewed by tips, in case tips is not supplied, the balance is based on the latest confirmed milestone.
       * In addition to the balances, it also returns the referencing tips (or milestone), as well as the index with which the confirmed balance was determined. 
       * The balances is returned as a list in the same order as the addresses were provided as input.
+      * 
+      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if tips are not found or inconsistent, or the treshold is invalid
       *
       * @param addrss the address to get the balance for
       * @param tips the tips to find the balance through
       * @param threshold the confirmation threshold between 0 and 100(incl)
-      * @throws Exception //TODO
-      * @returns {@link com.iota.iri.service.dto.GetBalancesResponse} or an {@link com.iota.iri.service.dto.ErrorResponse} if tips are not found or inconsistent, or the treshold is invalid
+      * @return {@link com.iota.iri.service.dto.GetBalancesResponse}
       **/
     private AbstractResponse getBalancesStatement(final List<String> addrss, final List<String> tips, final int threshold) throws Exception {
 
@@ -1092,12 +1063,12 @@ public class API {
       * The returned value is a different set of tryte values which you can input into <code>broadcastTransactions</code> and <code>storeTransactions</code>.
       * The returned tryte value, the last 243 trytes basically consist of the: <code>trunkTransaction</code> + <code>branchTransaction</code> + <code>nonce</code>. 
       * These are valid trytes which are then accepted by the network.
-      *
+      * 
       * @param trunkTransaction the trunk transaction
       * @param branchTransaction the branch transaction
       * @param minWeightMagnitude the minimum weight magnitute
       * @param trytes the list of trytes to attach
-      * @returns the list of transactions in trytes
+      * @return trytes the list of transactions in trytes
       **/
     public synchronized List<String> attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,
                                                                   final int minWeightMagnitude, final List<String> trytes) {
@@ -1174,7 +1145,7 @@ public class API {
       * <b>udp://IPADDRESS:PORT</b>
       *
       * @param uris list of neighbors to add
-      * @returns {@link com.iota.iri.service.dto.AddedNeighborsResponse}
+      * @return {@link com.iota.iri.service.dto.AddedNeighborsResponse}
       **/
     private AbstractResponse addNeighborsStatement(final List<String> uris) {
         int numberOfAddedNeighbors = 0;
@@ -1279,10 +1250,9 @@ public class API {
       *
       * @param address The address to add the message to 
       * @param message The message to store
-      * @throws Exception //TODO
       **/
     private synchronized void storeMessageStatement(final String address, final String message) throws Exception {
-        final List<Hash> txToApprove = getTransactionToApproveStatement(3, Optional.empty());
+        final List<Hash> txToApprove = getTransactionsToApproveStatement(3, Optional.empty());
 
         final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
 
@@ -1343,6 +1313,6 @@ public class API {
 
 // do pow
         List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
-        broadcastTransactionStatement(powResult);
+        broadcastTransactionsStatement(powResult);
     }
 }

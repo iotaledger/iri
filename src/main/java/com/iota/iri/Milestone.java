@@ -1,5 +1,20 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.ConsensusConfig;
+import com.iota.iri.controllers.AddressViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.hash.ISS;
+import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.StateDiff;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Converter;
+import com.iota.iri.zmq.MessageQ;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -11,20 +26,6 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import javax.net.ssl.HttpsURLConnection;
-
-import com.iota.iri.controllers.*;
-import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.model.StateDiff;
-import com.iota.iri.zmq.MessageQ;
-import com.iota.iri.storage.Tangle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.hash.ISS;
-import com.iota.iri.model.Hash;
-import com.iota.iri.utils.Converter;
 
 import static com.iota.iri.Milestone.Validity.*;
 
@@ -61,32 +62,30 @@ public class Milestone {
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
 
-    public Milestone(final Tangle tangle,
-                     final Hash coordinator,
-                     final Snapshot initialSnapshot,
-                     final TransactionValidator transactionValidator,
-                     final boolean testnet,
-                     final MessageQ messageQ,
-                     final int numOfKeysInMilestone,
-                     final boolean acceptAnyTestnetCoo
-                     ) {
+    public Milestone(Tangle tangle,
+                     TransactionValidator transactionValidator,
+                     MessageQ messageQ,
+                     Snapshot initialSnapshot, ConsensusConfig config
+    ) {
         this.tangle = tangle;
-        this.coordinator = coordinator;
+        this.transactionValidator = transactionValidator;
+        this.messageQ = messageQ;
         this.initialSnapshot = initialSnapshot;
         this.latestSnapshot = initialSnapshot.clone();
-        this.transactionValidator = transactionValidator;
-        this.testnet = testnet;
-        this.messageQ = messageQ;
-        this.numOfKeysInMilestone = numOfKeysInMilestone;
+
+        //configure
+        this.testnet = config.isTestnet();
+        this.coordinator = new Hash(config.getCoordinator());
+        this.numOfKeysInMilestone = config.getNumberOfKeysInMilestone();
         this.latestMilestoneIndex = latestSnapshot.index();
         this.latestSolidSubtangleMilestoneIndex = latestSnapshot.index();
-        this.acceptAnyTestnetCoo = acceptAnyTestnetCoo;
+        this.acceptAnyTestnetCoo = config.isDontValidateTestnetMilestoneSig();
     }
 
     private boolean shuttingDown;
     private static int RESCAN_INTERVAL = 5000;
 
-    public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) throws Exception {
+    public void init (SpongeFactory.Mode mode, LedgerValidator ledgerValidator) {
         // to be able to process the milestones in the correct order (i.e. after a rescan of the database), we initialize
         // this variable with 1 and wait for the "Latest Milestone Tracker" to process all milestones at least once and
         // create the corresponding MilestoneViewModels to our transactions

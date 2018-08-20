@@ -3,6 +3,7 @@ package com.iota.iri.service.tipselection.impl;
 import com.iota.iri.Milestone;
 import com.iota.iri.Snapshot;
 import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
@@ -50,7 +51,7 @@ public class EntryPointSelectorImplTest {
     public void testEntryPointAWithoutTangleData() throws Exception {
         mockMilestoneTrackerBehavior(0, Hash.NULL_HASH);
 
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone);
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, new MainnetConfig());
         Hash entryPoint = entryPointSelector.getEntryPoint(10);
 
         Assert.assertEquals("The entry point should be the last tracked solid milestone", Hash.NULL_HASH, entryPoint);
@@ -62,7 +63,7 @@ public class EntryPointSelectorImplTest {
         mockTangleBehavior(milestoneHash);
         mockMilestoneTrackerBehavior(0, Hash.NULL_HASH);
 
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone);
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, new MainnetConfig());
         Hash entryPoint = entryPointSelector.getEntryPoint(10);
 
         Assert.assertEquals("The entry point should be the milestone in the Tangle", milestoneHash, entryPoint);

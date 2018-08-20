@@ -1,9 +1,8 @@
 package com.iota.iri;
 
-import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-
 import com.iota.iri.utils.IotaIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,23 +28,19 @@ public class Snapshot {
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
 
-    public static Snapshot init(Configuration configuration) throws IOException {
-        // read the config vars for the built in snapshot files
-        boolean testnet = configuration.booling(Configuration.DefaultConfSettings.TESTNET);
-        String snapshotPath = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_FILE);
-        String snapshotSigPath = configuration.string(Configuration.DefaultConfSettings.SNAPSHOT_SIGNATURE_FILE);
-
+    public static Snapshot init(SnapshotConfig config) throws IOException {
         //This is not thread-safe (and it is ok)
         if (initialSnapshot == null) {
-            if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,
-                    SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
+            String snapshotFile = config.getSnapshotFile();
+            if (!config.isTestnet() && !SignedFiles.isFileSignatureValid(snapshotFile, config.getSnapshotSignatureFile(),
+                    SNAPSHOT_PUBKEY, SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
                 throw new RuntimeException("Snapshot signature failed.");
             }
-            Map<Hash, Long> initialState = initInitialState(snapshotPath);
-            initialSnapshot = new Snapshot(initialState, testnet ? 0 : configuration.integer(Configuration.DefaultConfSettings.MILESTONE_START_INDEX));
+
+            Map<Hash, Long> initialState = initInitialState(snapshotFile);
+            initialSnapshot = new Snapshot(initialState, config.isTestnet() ? 0 : config.getMilestoneStartIndex());
             checkStateHasCorrectSupply(initialState);
             checkInitialSnapshotIsConsistent(initialState);
-
         }
         return initialSnapshot;
     }

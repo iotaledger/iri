@@ -93,6 +93,13 @@
             <version>2.8.1</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>2.9.6</version>
+        </dependency>
+
         <!-- undertow server -->
         <dependency>
             <groupId>io.undertow</groupId>
@@ -110,13 +117,6 @@
             <groupId>io.undertow</groupId>
             <artifactId>undertow-websockets-jsr</artifactId>
             <version>${undertow.version}</version>
-        </dependency>
-
-        <!-- CLI -->
-        <dependency>
-            <groupId>com.sanityinc</groupId>
-            <artifactId>jargs</artifactId>
-            <version>2.0-SNAPSHOT</version>
         </dependency>
 
         <!-- test dependencies -->
@@ -169,6 +169,12 @@
             <groupId>org.zeromq</groupId>
             <artifactId>jeromq</artifactId>
             <version>0.4.3</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.beust</groupId>
+            <artifactId>jcommander</artifactId>
+            <version>1.72</version>
         </dependency>
 
     </dependencies>
@@ -295,7 +301,6 @@
                                         <!--
                                         not used anymore
                                         <urn>org.reflections:reflections:0.9.10:jar:null:compile:3812159b1b4b7c296fa80f53eed6362961eb85da</urn>
-                                        TODO <urn>com.sanityinc:jargs:2.0-SNAPSHOT:jar:null:compile:</urn>
                                         -->
                                         <urn>
                                             com.jayway.restassured:rest-assured:2.9.0:jar:null:test:d0d5b6720a58472ab99287c931a8205373d6e7b2
@@ -310,6 +315,12 @@
                                         </urn>
                                         <urn>
                                             org.bouncycastle:bcprov-jdk15on:1.58:jar:null:compile:2c9aa1c4e3372b447ba5daabade4adf2a2264b12
+                                        </urn>
+                                        <urn>
+                                            com.fasterxml.jackson.core:jackson-databind:2.9.6:jar:null:compile:cfa4f316351a91bfd95cb0644c6a2c95f52db1fc
+                                        </urn>
+                                        <urn>
+                                            com.beust:jcommander:1.72:jar:null:compile:6375e521c1e11d6563d4f25a07ce124ccf8cd171
                                         </urn>
 
                                         <!-- A check for the rules themselves -->

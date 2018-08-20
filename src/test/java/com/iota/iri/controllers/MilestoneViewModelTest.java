@@ -1,7 +1,7 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.Milestone;
-import com.iota.iri.conf.Configuration;
+import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -168,7 +168,7 @@ public class MilestoneViewModelTest {
 
     @Test
     public void nextGreaterThan() throws Exception {
-        int milestoneStartIndex = Integer.parseInt(Configuration.MAINNET_MILESTONE_START_INDEX);
+        int milestoneStartIndex = new MainnetConfig().getMilestoneStartIndex();
         int first = milestoneStartIndex + 1;
         int next = first + 1;
         new MilestoneViewModel(next, new Hash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);

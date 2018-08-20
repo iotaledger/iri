@@ -194,7 +194,8 @@
 			        <doclet>com.iota.mdxdoclet.MDXDoclet</doclet>
 			        <sourcepath>src/main/java</sourcepath>
 			        <useStandardDocletOptions>false</useStandardDocletOptions>
-			        <destDir>docs</destDir>
+			        <reportOutputDirectory>${project.basedir}</reportOutputDirectory>
+          			<destDir>apidocs</destDir>
 			        <additionalOptions>
 			            <additionalOption>-version "${project.version}"</additionalOption>
 			        </additionalOptions>

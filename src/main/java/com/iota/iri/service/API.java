@@ -276,7 +276,6 @@ public class API {
                 }
                 case "getNodeInfo": {
                     return getNodeInfoStatement();
-                    
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -331,7 +330,6 @@ public class API {
                         return ErrorResponse.create("Invalid trytes input");
                     }
                 }
-                //TODO: This one is not documented anywhere
                 case "getMissingTransactions": {
                     //TransactionRequester.instance().rescanTransactionsToRequest();
                     synchronized (instance.transactionRequester) {
@@ -373,15 +371,15 @@ public class API {
     /**
       * Check if a list of addresses was ever spent from, in the current epoch, or in previous epochs.
       *
-      * @param addressesStr List of addresses to check if they were ever spent from.
+      * @param addresses List of addresses to check if they were ever spent from.
       * @return {@link com.iota.iri.service.dto.wereAddressesSpentFrom}
       **/
-    private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
-        final List<Hash> addresses = addressesStr.stream().map(Hash::new).collect(Collectors.toList());
-        final boolean[] states = new boolean[addresses.size()];
+    private AbstractResponse wereAddressesSpentFromStatement(List<String> addresses) throws Exception {
+        final List<Hash> addressesHash = addresses.stream().map(Hash::new).collect(Collectors.toList());
+        final boolean[] states = new boolean[addressesHash.size()];
         int index = 0;
 
-        for (Hash address : addresses) {
+        for (Hash address : addressesHash) {
             states[index++] = wasAddressSpentFrom(address);
         }
         return wereAddressesSpentFrom.create(states);
@@ -445,11 +443,11 @@ public class API {
       * - Invalid bundle<br/>
       * - Tails of tails are invalid<br/>
       *
-      * @param transactionsList List of transactions you want to get the consistency for
+      * @param tails List of transactions you want to check the consistency for
       * @return {@link com.iota.iri.service.dto.CheckConsistency}
       **/
-    private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
-        final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
+    private AbstractResponse checkConsistencyStatement(List<String> tails) throws Exception {
+        final List<Hash> transactions = tails.stream().map(Hash::new).collect(Collectors.toList());
         boolean state = true;
         String info = "";
 
@@ -635,7 +633,6 @@ public class API {
       *
       * @param depth Number of bundles to go back to determine the transactions for approval.
       * @param reference Hash of transaction to start random-walk from, used to make sure the tips returned reference a given transaction in their past.
-      * @throws IllegalStateException if the subtangle has not yet been updated
       * @return {@link com.iota.iri.service.dto.GetTransactionsToApproveResponse}
       **/
     public synchronized List<Hash> getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
@@ -676,14 +673,14 @@ public class API {
       * Store transactions into the local storage. 
       * The trytes to be used for this call are returned by <code>attachToTangle</code>.
       *
-      * @param trys List of raw data of transactions to be rebroadcast.
+      * @param trytes List of raw data of transactions to be rebroadcast.
       **/
-    public void storeTransactionsStatement(final List<String> trys) throws Exception {
+    public void storeTransactionsStatement(final List<String> trytes) throws Exception {
         final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
-        for (final String trytes : trys) {
+        for (final String trytesPart : trytes) {
             //validate all trytes
-            Converter.trits(trytes, txTrits, 0);
+            Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
@@ -1061,7 +1058,7 @@ public class API {
       * You need to supply <code>branchTransaction</code> as well as <code>trunkTransaction</code> (basically the tips which you're going to validate and reference with this transaction) - both of which you'll get through the <code>getTransactionsToApprove</code> API call.
       *
       * The returned value is a different set of tryte values which you can input into <code>broadcastTransactions</code> and <code>storeTransactions</code>.
-      * The returned tryte value, the last 243 trytes basically consist of the: <code>trunkTransaction</code> + <code>branchTransaction</code> + <code>nonce</code>. 
+      * The last 243 trytes of the return value basically consist of the: <code>trunkTransaction</code> + <code>branchTransaction</code> + <code>nonce</code>. 
       * These are valid trytes which are then accepted by the network.
       * 
       * @param trunkTransaction the trunk transaction

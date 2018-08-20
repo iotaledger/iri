@@ -38,7 +38,7 @@ public abstract class AbstractResponse {
     }
 
     /**
-     * The duration it took to process this command
+     * The duration it took to process this command in milliseconds
      *
      * @return The duration.
      */

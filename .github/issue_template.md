@@ -1,8 +1,8 @@
 <!--- Remove text and sections that do not apply -->
 
-The issue tracker is only for reporting bugs or asking for feature requests and bugs.
-If you need technical assistance for running a node please consult the #fullnode channel on discord (https://discord.gg/jrxApWC) or https://forum.helloiota.com/Technology/Help.
-If you have general questions on IOTA you can go to https://iota.stackexchange.com/, or https://helloiota.com/, or browse discord channels (https://discord.gg/C88Wexg).
+The issue tracker is only for reporting bugs or submitting feature requests.
+If you need technical assistance for running a node please consult the #fullnode channel on Discord (https://discord.gg/jrxApWC) or https://forum.helloiota.com/Technology/Help.
+If you have general questions on IOTA you can go to https://iota.stackexchange.com/, https://helloiota.com/, or browse Discord channels (https://discord.gg/C88Wexg).
 
 
 <!----Format For Reporting Bugs------->
@@ -20,7 +20,7 @@ On what hardware is the node running on?
 ### Expected behaviour
 What should happen.
 
-### Actual behavior
+### Actual behaviour
 What really happened.
 
 ### Errors

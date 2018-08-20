@@ -98,6 +98,12 @@ public class TipsViewModel {
             return tips.size();
         }
     }
+    
+    public int solidSize() {
+        synchronized (sync) {
+            return solidTips.size();
+        }
+    }
 
     public int size() {
         synchronized (sync) {

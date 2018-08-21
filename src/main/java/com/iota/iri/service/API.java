@@ -561,8 +561,9 @@ public class API {
     }
 
     /**
-      * Removes a list of neighbors to your node. 
-      * This is only temporary, and if you have your neighbors added via the command line, they will be retained after you restart your node.
+      * Temporarily removes a list of neighbors from your node.
+      * The added neighbors will be added again after relaunching IRI. 
+      * Remove the neighbors from your config file or make sure you don't supply them in the -n command line option if you want to keep them removed after restart.
       *
       * The URI (Unique Resource Identification) for removing neighbors is:
       * <b>udp://IPADDRESS:PORT</b>
@@ -592,7 +593,7 @@ public class API {
       * These trytes can then be easily converted into the actual transaction object. 
       * See utility functions for more details.
       *
-      * @param hashes List of transaction hashes of which you want to get trytes from.
+      * @param hashes List of transaction hashes you want to get trytes from.
       * @return {@link com.iota.iri.service.dto.GetTrytesResponse}
       **/
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
@@ -627,7 +628,7 @@ public class API {
 
     /**
       * Tip selection which returns <code>trunkTransaction</code> and <code>branchTransaction</code>. 
-      * The input value <code>depth</code> determines how many milestones to go back to for finding the transactions to approve. 
+      * The input value <code>depth</code> determines how many milestones to go back for finding the transactions to approve. 
       * The higher your <code>depth</code> value, the more work you have to do as you are confirming more transactions. 
       * If the <code>depth</code> is too large (usually above 15, it depends on the node's configuration) an error will be returned. 
       * The <code>reference</code> is an optional hash of a transaction you want to approve. 
@@ -699,8 +700,8 @@ public class API {
     }
 
     /**
-      * Returns the set of neighbors you are connected with, as well as their activity count. 
-      * The activity counter is reset after restarting IRI.
+      * Returns the set of neighbors you are connected with, as well as their activity statistics (or counters). 
+      * The activity counters are reset after restarting IRI.
       *
       * @return {@link com.iota.iri.service.dto.GetNeighborsResponse}
       **/
@@ -742,19 +743,19 @@ public class API {
       * This API call simply returns a list of boolean values in the same order as the transaction list you submitted, thus you get a true/false whether a transaction is confirmed or not.
       * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
       * 
-      * @param trans List of transactions you want to get the inclusion state for.
-      * @param tps List of tips (including milestones) you want to search for the inclusion state.
+      * @param transactions List of transactions you want to get the inclusion state for.
+      * @param tips List of tips (including milestones) you want to search for the inclusion state.
       * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse} 
       **/
-    private AbstractResponse getInclusionStatesStatement(final List<String> trans, final List<String> tps) throws Exception {
-        final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
-        final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
+    private AbstractResponse getInclusionStatesStatement(final List<String> transactions, final List<String> tips) throws Exception {
+        final List<Hash> trans = transactions.stream().map(Hash::new).collect(Collectors.toList());
+        final List<Hash> tps = tips.stream().map(Hash::new).collect(Collectors.toList());
         int numberOfNonMetTransactions = transactions.size();
         final byte[] inclusionStates = new byte[numberOfNonMetTransactions];
 
         List<Integer> tipsIndex = new LinkedList<>();
         {
-            for(Hash tip: tips) {
+            for(Hash tip: tps) {
                 TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, tip);
                 if (tx.getType() != TransactionViewModel.PREFILLED_SLOT) {
                     tipsIndex.add(tx.snapshotIndex());
@@ -765,7 +766,7 @@ public class API {
         if(minTipsIndex > 0) {
             int maxTipsIndex = tipsIndex.stream().reduce((a,b) -> a > b ? a : b).orElse(0);
             int count = 0;
-            for(Hash hash: transactions) {
+            for(Hash hash: trans) {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(instance.tangle, hash);
                 if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
                     inclusionStates[count] = -1;
@@ -781,7 +782,7 @@ public class API {
         Set<Hash> analyzedTips = new HashSet<>();
         Map<Integer, Integer> sameIndexTransactionCount = new HashMap<>();
         Map<Integer, Queue<Hash>> sameIndexTips = new HashMap<>();
-        for (final Hash tip : tips) {
+        for (final Hash tip : tps) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, tip);
             if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
                 return ErrorResponse.create("One of the tips is absent");
@@ -792,7 +793,7 @@ public class API {
         }
         for(int i = 0; i < inclusionStates.length; i++) {
             if(inclusionStates[i] == 0) {
-                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, transactions.get(i));
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, trans.get(i));
                 int snapshotIndex = transactionViewModel.snapshotIndex();
                 sameIndexTransactionCount.putIfAbsent(snapshotIndex, 0);
                 sameIndexTransactionCount.put(snapshotIndex, sameIndexTransactionCount.get(snapshotIndex) + 1);
@@ -802,7 +803,7 @@ public class API {
             Queue<Hash> sameIndexTip = sameIndexTips.get(index);
             if (sameIndexTip != null) {
                 //has tips in the same index level
-                if (!exhaustiveSearchWithinIndex(sameIndexTip, analyzedTips, transactions, inclusionStates, sameIndexTransactionCount.get(index), index)) {
+                if (!exhaustiveSearchWithinIndex(sameIndexTip, analyzedTips, trans, inclusionStates, sameIndexTransactionCount.get(index), index)) {
                     return ErrorResponse.create("The subtangle is not solid");
                 }
             }
@@ -848,7 +849,7 @@ public class API {
       * The input fields can either be <code>bundles<code>, <code>addresses</code>, <code>tags</code> or <code>approvees</code>. 
       * <b>Using multiple of these input fields returns the intersection of the values.</b>
       * 
-      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if more then maxFindTxs was found
+      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if more than maxFindTxs was found
       *
       * @param request the map with input fields
       * @return {@link com.iota.iri.service.dto.FindTransactionsResponse}
@@ -957,12 +958,12 @@ public class API {
       * Broadcast a list of transactions to all neighbors. 
       * The input trytes for this call are provided by <code>attachToTangle</code>.
       *
-      * @param trytes2 the list of transaction
+      * @param trytes the list of transaction
       **/
-    public void broadcastTransactionsStatement(final List<String> trytes2) {
+    public void broadcastTransactionsStatement(final List<String> trytes) {
         final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
-        for (final String tryte : trytes2) {
+        for (final String tryte : trytes) {
             //validate all trytes
             Converter.trits(tryte, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits, instance.transactionValidator.getMinWeightMagnitude());
@@ -977,24 +978,24 @@ public class API {
     
 
     /**
-      * Returns the confirmed balance, as viewed by tips, in case tips is not supplied, the balance is based on the latest confirmed milestone.
-      * In addition to the balances, it also returns the referencing tips (or milestone), as well as the index with which the confirmed balance was determined. 
-      * The balances is returned as a list in the same order as the addresses were provided as input.
+      * Returns the confirmed balance, as viewed by the specified <code>tips</code>. If you do not specify the referencing <code>tips</code>, the returned balance is based on the latest confirmed milestone.
+      * In addition to the balances, it also returns the referencing <code>tips</code> (or milestone), as well as the index with which the confirmed balance was determined. 
+      * The balances are returned as a list in the same order as the addresses were provided as input.
       * 
       * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if tips are not found or inconsistent, or the treshold is invalid
       *
-      * @param addrss the address to get the balance for
+      * @param addresses the address to get the balance for
       * @param tips the tips to find the balance through
       * @param threshold the confirmation threshold between 0 and 100(incl)
       * @return {@link com.iota.iri.service.dto.GetBalancesResponse}
-      **/
-    private AbstractResponse getBalancesStatement(final List<String> addrss, final List<String> tips, final int threshold) throws Exception {
+      **/	
+    private AbstractResponse getBalancesStatement(final List<String> addresses, final List<String> tips, final int threshold) throws Exception {
 
         if (threshold <= 0 || threshold > 100) {
             return ErrorResponse.create("Illegal 'threshold'");
         }
 
-        final List<Hash> addresses = addrss.stream().map(address -> (new Hash(address)))
+        final List<Hash> addressList = addresses.stream().map(address -> (new Hash(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
         final List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
@@ -1007,7 +1008,7 @@ public class API {
                     .collect(Collectors.toCollection(LinkedList::new));
         }
         try {
-            for (final Hash address : addresses) {
+            for (final Hash address : addressList) {
                 Long value = instance.milestone.latestSnapshot.getBalance(address);
                 if (value == null) {
                     value = 0L;
@@ -1057,10 +1058,10 @@ public class API {
 
     /**
       * Attaches the specified transactions (trytes) to the Tangle by doing Proof of Work. 
-      * You need to supply <code>branchTransaction</code> as well as <code>trunkTransaction</code> (basically the tips which you're going to validate and reference with this transaction) - both of which you'll get through the <code>getTransactionsToApprove</code> API call.
+      * You need to supply <code>branchTransaction</code> as well as <code>trunkTransaction</code> (the tips which you're going to validate and reference with this transaction) - both of which you'll get through the <code>getTransactionsToApprove</code> API call.
       *
       * The returned value is a different set of tryte values which you can input into <code>broadcastTransactions</code> and <code>storeTransactions</code>.
-      * The last 243 trytes of the return value basically consist of the: <code>trunkTransaction</code> + <code>branchTransaction</code> + <code>nonce</code>. 
+      * The last 243 trytes of the return value consist of the: <code>trunkTransaction</code> + <code>branchTransaction</code> + <code>nonce</code>. 
       * These are valid trytes which are then accepted by the network.
       * 
       * @param trunkTransaction the trunk transaction
@@ -1137,8 +1138,9 @@ public class API {
     }
 
     /**
-      * Add a list of neighbors to your node. 
-      * It should be noted that this is only temporary, and the added neighbors will be removed from your set of neighbors after you relaunch IRI.
+      * Temporarily add a list of neighbors to your node. 
+      * The added neighbors will be removed after relaunching IRI. 
+      * Add the neighbors to your config file or supply them in the -n command line option if you want to keep them after restart.
       *
       * The URI (Unique Resource Identification) for adding neighbors is:
       * <b>udp://IPADDRESS:PORT</b>

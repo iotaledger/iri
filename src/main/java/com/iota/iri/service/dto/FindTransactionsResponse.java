@@ -25,7 +25,7 @@ public class FindTransactionsResponse extends AbstractResponse {
       * <code>bundles</code>: returns the list of transactions which contain the specified bundle hash.
       * <code>addresses</code>: returns the list of transactions which have the specified address as an input/output field.
       * <code>tags</code>: returns the list of transactions which contain the specified tag value.
-      * <code>approvees</code>: returns the list of transaction which reference (i.e. confirm) the specified transaction.
+      * <code>approvees</code>: returns the list of transactions which reference (i.e. confirm) the specified transaction.
      *
      * @return The hashes.
      */

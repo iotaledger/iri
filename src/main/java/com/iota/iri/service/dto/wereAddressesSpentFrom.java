@@ -15,7 +15,7 @@ public class wereAddressesSpentFrom extends AbstractResponse {
     }
 
     /**
-     * States for the specified addresses
+     * States of the specified addresses in Boolean
      *
      * @return The states.
      */

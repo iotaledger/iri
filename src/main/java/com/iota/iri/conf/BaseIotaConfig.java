@@ -9,6 +9,7 @@ import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /*
@@ -25,7 +26,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //API
     protected int port = Defaults.API_PORT;
     protected String apiHost = Defaults.API_HOST;
-    protected List<String> remoteLimitApi = new ArrayList<>();
+    protected List<String> remoteLimitApi = new ArrayList<>(Arrays.asList(Defaults.REMOTE_LIMIT_API));
     protected int maxFindTransactions = Defaults.MAX_FIND_TRANSACTIONS;
     protected int maxRequestsList = Defaults.MAX_REQUESTS_LIST;
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
@@ -600,9 +601,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     public interface Defaults {
-        //API
+		//API
         int API_PORT = 14265;
         String API_HOST = "localhost";
+        String[] REMOTE_LIMIT_API = new String[] {"addNeighbors", "getNeighbors", "removeNeighbors"};
         int MAX_FIND_TRANSACTIONS = 100_000;
         int MAX_REQUESTS_LIST = 1_000;
         int MAX_GET_TRYTES = 10_000;

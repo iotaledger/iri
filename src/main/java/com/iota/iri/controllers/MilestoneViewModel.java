@@ -22,6 +22,12 @@ public class MilestoneViewModel {
      */
     private final static int MAX_MILESTONE_INDEX_GAP = 50;
 
+    /**
+     * This value represents the milestone index where the coordinator changed its behaviour and doesn't skip milestones
+     * anymore.
+     */
+    private final static int MILESTONE_GAP_PATCH_INDEX = 650000;
+
     private final Milestone milestone;
     private static final Map<Integer, MilestoneViewModel> milestones = new ConcurrentHashMap<>();
 
@@ -103,30 +109,25 @@ public class MilestoneViewModel {
     /**
      * This method looks for the next milestone after a given index.
      *
-     * In contrast to the {@code next} method we do not rely on the insertion order in the database but actively search
+     * In contrast to the {@link #next} method we do not rely on the insertion order in the database but actively search
      * for the milestone that was issued next by the coordinator (coo-order preserved).
      *
      * @param tangle Tangle object which acts as a database interface
      * @param index milestone index where the search shall start
-     * @return the milestone which follows directly after the given index
+     * @return the milestone which follows directly after the given index or null if none was found
      * @throws Exception if anything goes wrong while loading entries from the database
      */
     public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index) throws Exception {
-        // create a variable that will contain our search result
+        // adjust the max milestone gap according to the index (the coo ensures no gaps after a certain milestone index)
+        int maxMilestoneGap = index >= MILESTONE_GAP_PATCH_INDEX ? 1 : MAX_MILESTONE_INDEX_GAP;
+
+        // search for the next milestone following our index
         MilestoneViewModel nextMilestoneViewModel = null;
-
-        // create a counter variable
         int currentIndex = index;
-
-        // adjust the max milestone gap according to the index (the coo ensures no gaps after milestone 650000)
-        int maxMilestoneGap = index >= 650000 ? 1 : MAX_MILESTONE_INDEX_GAP;
-
-        // try to find the next milestone by index rather than db insertion order until we are successfull
         while(nextMilestoneViewModel == null && ++currentIndex <= index + maxMilestoneGap) {
             nextMilestoneViewModel = MilestoneViewModel.get(tangle, currentIndex);
         }
 
-        // return our result
         return nextMilestoneViewModel;
     }
 

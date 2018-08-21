@@ -17,12 +17,12 @@ public class LedgerValidator {
 
     private final Logger log = LoggerFactory.getLogger(LedgerValidator.class);
     private final Tangle tangle;
-    private final Milestone milestone;
+    private final MilestoneTracker milestone;
     private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
     private volatile int numberOfConfirmedTransactions;
 
-    public LedgerValidator(Tangle tangle, Milestone milestone, TransactionRequester transactionRequester, MessageQ messageQ) {
+    public LedgerValidator(Tangle tangle, MilestoneTracker milestone, TransactionRequester transactionRequester, MessageQ messageQ) {
         this.tangle = tangle;
         this.milestone = milestone;
         this.transactionRequester = transactionRequester;

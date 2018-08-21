@@ -31,7 +31,7 @@ public class Iota {
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
     public final LedgerValidator ledgerValidator;
-    public final Milestone milestone;
+    public final MilestoneTracker milestoneTracker;
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
     public final TipsSolidifier tipsSolidifier;
@@ -53,12 +53,12 @@ public class Iota {
         transactionRequester = new TransactionRequester(tangle, messageQ);
         transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ,
                 configuration);
-        milestone = new Milestone(tangle, transactionValidator, messageQ, initialSnapshot, configuration);
-        node = new Node(tangle, transactionValidator, transactionRequester, tipsViewModel, milestone, messageQ,
+        milestoneTracker = new MilestoneTracker(tangle, transactionValidator, messageQ, initialSnapshot, configuration);
+        node = new Node(tangle, transactionValidator, transactionRequester, tipsViewModel, milestoneTracker, messageQ,
                 configuration);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
-        ledgerValidator = new LedgerValidator(tangle, milestone, transactionRequester, messageQ);
+        ledgerValidator = new LedgerValidator(tangle, milestoneTracker, transactionRequester, messageQ);
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
         tipsSelector = createTipSelector(configuration);
     }
@@ -76,8 +76,8 @@ public class Iota {
             tangle.clearColumn(com.iota.iri.model.StateDiff.class);
             tangle.clearMetadata(com.iota.iri.model.Transaction.class);
         }
-        milestone.init(SpongeFactory.Mode.CURLP27, ledgerValidator);
-        transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
+        milestoneTracker.init(SpongeFactory.Mode.CURLP27, ledgerValidator);
+        transactionValidator.init(configuration.isTestnet(), configuration.getMwm(), milestoneTracker);
         tipsSolidifier.init();
         transactionRequester.init(configuration.getpRemoveRequest());
         udpReceiver.init();
@@ -111,7 +111,7 @@ public class Iota {
     }
 
     public void shutdown() throws Exception {
-        milestone.shutDown();
+        milestoneTracker.shutDown();
         tipsSolidifier.shutdown();
         node.shutdown();
         udpReceiver.shutdown();
@@ -143,11 +143,11 @@ public class Iota {
     }
 
     private TipSelector createTipSelector(TipSelConfig config) {
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestone, config);
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestoneTracker, config);
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
         return new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
-                walker, milestone, config);
+                walker, milestoneTracker, config);
     }
 }

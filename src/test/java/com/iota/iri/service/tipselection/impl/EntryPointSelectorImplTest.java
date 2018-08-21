@@ -1,6 +1,6 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.Milestone;
+import com.iota.iri.MilestoneTracker;
 import com.iota.iri.Snapshot;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.conf.MainnetConfig;
@@ -27,7 +27,7 @@ public class EntryPointSelectorImplTest {
     private static Tangle tangle;
 
     @Mock
-    private Milestone milestone;
+    private MilestoneTracker milestone;
 
     @BeforeClass
     public static void setUp() throws Exception {

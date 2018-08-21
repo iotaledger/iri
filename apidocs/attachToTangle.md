@@ -1,13 +1,13 @@
 
 ---
-### [attachToTangle](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L1070)
+### [attachToTangle](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L1073)
  java.util.List attachToTangleStatement([Hash](/javadoc/com/iota/iri/model/hash/) trunkTransaction, [Hash](/javadoc/com/iota/iri/model/hash/) branchTransaction, int minWeightMagnitude, java.util.List trytes)
 
 Attaches the specified transactions (trytes) to the Tangle by doing Proof of Work. 
- You need to supply `branchTransaction` as well as `trunkTransaction` (basically the tips which you're going to validate and reference with this transaction) - both of which you'll get through the `getTransactionsToApprove` API call.
+ You need to supply `branchTransaction` as well as `trunkTransaction` (the tips which you're going to validate and reference with this transaction) - both of which you'll get through the `getTransactionsToApprove` API call.
 
  The returned value is a different set of tryte values which you can input into `broadcastTransactions` and `storeTransactions`.
- The last 243 trytes of the return value basically consist of the: `trunkTransaction` + `branchTransaction` + `nonce`. 
+ The last 243 trytes of the return value consist of the: `trunkTransaction` + `branchTransaction` + `nonce`. 
  These are valid trytes which are then accepted by the network.
 
 <Tabs> 
@@ -36,7 +36,7 @@ print jsonData
 </Section>
 
 <Section type="response">
-{"duration": 494, "trytes": "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
+{"duration": 301, "trytes": "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
 </Section>
 
 <Section type="error">
@@ -69,7 +69,7 @@ request(options, function (error, response, data) {
 </Section>
 
 <Section type="response">
-{"duration": 653, "trytes": "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
+{"duration": 439, "trytes": "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
 </Section>
 
 <Section type="error">
@@ -87,7 +87,7 @@ curl http://localhost:14265
 </Section>
 
 <Section type="response">
-{"duration": 780, "trytes": "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
+{"duration": 133, "trytes": "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
 </Section>
 
 <Section type="error">

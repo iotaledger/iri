@@ -1,6 +1,6 @@
 
 ---
-### [getTrytes](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L596)
+### [getTrytes](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L599)
  [AbstractResponse](/javadoc/com/iota/iri/service/dto/abstractresponse/) getTrytesStatement(java.util.List hashes)
 
 Returns the raw transaction data (trytes) of a specific transaction. 
@@ -33,7 +33,7 @@ print jsonData
 </Section>
 
 <Section type="response">
-{"duration": "166", "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
+{"duration": "560", "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
 </Section>
 
 <Section type="error">
@@ -66,7 +66,7 @@ request(options, function (error, response, data) {
 </Section>
 
 <Section type="response">
-{"duration": "629", "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
+{"duration": "214", "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
 </Section>
 
 <Section type="error">
@@ -84,7 +84,7 @@ curl http://localhost:14265
 </Section>
 
 <Section type="response">
-{"duration": "944", "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
+{"duration": "237", "trytes": ["P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"]}
 </Section>
 
 <Section type="error">
@@ -98,7 +98,7 @@ curl http://localhost:14265
 	
 |Parameters | Description |
 |--|--|
-| hashes | List of transaction hashes of which you want to get trytes from. |
+| hashes | List of transaction hashes you want to get trytes from. |
 
 ***
 

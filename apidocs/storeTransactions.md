@@ -1,6 +1,6 @@
 
 ---
-### [storeTransactions](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L678)
+### [storeTransactions](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L681)
  void storeTransactionsStatement(java.util.List trytes)
 
 Store transactions into the local storage. 
@@ -32,7 +32,7 @@ print jsonData
 </Section>
 
 <Section type="response">
-{"duration": 287}
+{"duration": 669}
 </Section>
 
 <Section type="error">
@@ -65,7 +65,7 @@ request(options, function (error, response, data) {
 </Section>
 
 <Section type="response">
-{"duration": 748}
+{"duration": 306}
 </Section>
 
 <Section type="error">
@@ -83,7 +83,7 @@ curl http://localhost:14265
 </Section>
 
 <Section type="response">
-{"duration": 204}
+{"duration": 141}
 </Section>
 
 <Section type="error">

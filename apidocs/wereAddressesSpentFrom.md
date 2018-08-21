@@ -1,6 +1,6 @@
 
 ---
-### [wereAddressesSpentFrom](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L377)
+### [wereAddressesSpentFrom](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L380)
  [AbstractResponse](/javadoc/com/iota/iri/service/dto/abstractresponse/) wereAddressesSpentFromStatement(java.util.List addresses)
 
 Check if a list of addresses was ever spent from, in the current epoch, or in previous epochs.
@@ -31,7 +31,7 @@ print jsonData
 </Section>
 
 <Section type="response">
-{"duration": "861", "states": ["true", "true"]}
+{"duration": "806", "states": ["true", "true"]}
 </Section>
 
 <Section type="error">
@@ -64,7 +64,7 @@ request(options, function (error, response, data) {
 </Section>
 
 <Section type="response">
-{"duration": "852", "states": ["true", "true"]}
+{"duration": "585", "states": ["true", "true"]}
 </Section>
 
 <Section type="error">
@@ -82,7 +82,7 @@ curl http://localhost:14265
 </Section>
 
 <Section type="response">
-{"duration": "38", "states": ["true", "true"]}
+{"duration": "956", "states": ["true", "true"]}
 </Section>
 
 <Section type="error">
@@ -105,5 +105,5 @@ Returns [wereAddressesSpentFrom](/javadoc/com/iota/iri/service/dto/wereaddresses
 |Return | Description |
 |--|--|
 | duration | The duration it took to process this command in milliseconds |
-| states | States for the specified addresses |
+| states | States of the specified addresses in Boolean |
 ***

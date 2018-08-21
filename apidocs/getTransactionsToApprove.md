@@ -1,10 +1,10 @@
 
 ---
-### [getTransactionsToApprove](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L638)
+### [getTransactionsToApprove](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L641)
  java.util.List getTransactionsToApproveStatement(int depth, java.util.Optional reference)
 
 Tip selection which returns `trunkTransaction` and `branchTransaction`. 
- The input value `depth` determines how many milestones to go back to for finding the transactions to approve. 
+ The input value `depth` determines how many milestones to go back for finding the transactions to approve. 
  The higher your `depth` value, the more work you have to do as you are confirming more transactions. 
  If the `depth` is too large (usually above 15, it depends on the node's configuration) an error will be returned. 
  The `reference` is an optional hash of a transaction you want to approve. 
@@ -36,7 +36,7 @@ print jsonData
 </Section>
 
 <Section type="response">
-{"duration": "468", "branchTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "trunkTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"}
+{"duration": "609", "branchTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "trunkTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"}
 </Section>
 
 <Section type="error">
@@ -69,7 +69,7 @@ request(options, function (error, response, data) {
 </Section>
 
 <Section type="response">
-{"duration": "219", "branchTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "trunkTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"}
+{"duration": "925", "branchTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "trunkTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"}
 </Section>
 
 <Section type="error">
@@ -87,7 +87,7 @@ curl http://localhost:14265
 </Section>
 
 <Section type="response">
-{"duration": "831", "branchTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "trunkTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"}
+{"duration": "581", "branchTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999", "trunkTransaction": "P9KFSJVGSPLXAEBJSHWFZLGP9GGJTIO9YITDEHATDTGAFLPLBZ9FOFWWTKMAZXZHFGQHUOXLXUALY9999"}
 </Section>
 
 <Section type="error">

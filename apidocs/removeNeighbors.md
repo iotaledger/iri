@@ -1,10 +1,11 @@
 
 ---
-### [removeNeighbors](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L573)
+### [removeNeighbors](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L576)
  [AbstractResponse](/javadoc/com/iota/iri/service/dto/abstractresponse/) removeNeighborsStatement(java.util.List uris)
 
-Removes a list of neighbors to your node. 
- This is only temporary, and if you have your neighbors added via the command line, they will be retained after you restart your node.
+Temporarily removes a list of neighbors from your node.
+ The added neighbors will be added again after relaunching IRI. 
+ Remove the neighbors from your config file or make sure you don't supply them in the -n command line option if you want to keep them removed after restart.
 
  The URI (Unique Resource Identification) for removing neighbors is:
  **udp://IPADDRESS:PORT**
@@ -37,7 +38,7 @@ print jsonData
 </Section>
 
 <Section type="response">
-{"duration": "23", "removedNeighbors": "48"}
+{"duration": "724", "removedNeighbors": "734"}
 </Section>
 
 <Section type="error">
@@ -70,7 +71,7 @@ request(options, function (error, response, data) {
 </Section>
 
 <Section type="response">
-{"duration": "877", "removedNeighbors": "187"}
+{"duration": "843", "removedNeighbors": "771"}
 </Section>
 
 <Section type="error">
@@ -88,7 +89,7 @@ curl http://localhost:14265
 </Section>
 
 <Section type="response">
-{"duration": "3", "removedNeighbors": "137"}
+{"duration": "363", "removedNeighbors": "989"}
 </Section>
 
 <Section type="error">

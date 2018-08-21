@@ -1,6 +1,6 @@
 
 ---
-### [interruptAttachingToTangle](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L714)
+### [interruptAttachingToTangle](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L717)
  [AbstractResponse](/javadoc/com/iota/iri/service/dto/abstractresponse/) interruptAttachingToTangleStatement()
 
 Interrupts and completely aborts the `attachToTangle` process.
@@ -31,7 +31,7 @@ print jsonData
 </Section>
 
 <Section type="response">
-{"duration": "759"}
+{"duration": "137"}
 </Section>
 
 <Section type="error">
@@ -64,7 +64,7 @@ request(options, function (error, response, data) {
 </Section>
 
 <Section type="response">
-{"duration": "615"}
+{"duration": "888"}
 </Section>
 
 <Section type="error">
@@ -82,7 +82,7 @@ curl http://localhost:14265
 </Section>
 
 <Section type="response">
-{"duration": "267"}
+{"duration": "689"}
 </Section>
 
 <Section type="error">

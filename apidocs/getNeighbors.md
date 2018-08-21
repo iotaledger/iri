@@ -1,10 +1,10 @@
 
 ---
-### [getNeighbors](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L705)
+### [getNeighbors](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L708)
  [AbstractResponse](/javadoc/com/iota/iri/service/dto/abstractresponse/) getNeighborsStatement()
 
-Returns the set of neighbors you are connected with, as well as their activity count. 
- The activity counter is reset after restarting IRI.
+Returns the set of neighbors you are connected with, as well as their activity statistics (or counters). 
+ The activity counters are reset after restarting IRI.
 
 <Tabs> 
 
@@ -32,16 +32,16 @@ print jsonData
 </Section>
 
 <Section type="response">
-{"duration": "944", "neighbors": ["{ 
+{"duration": "588", "neighbors": ["{ 
 "address": "/8.8.8.8:14265", 
-"numberOfAllTransactions": 394, 
-"numberOfInvalidTransactions": 683, 
-"numberOfNewTransactions": 209 
+"numberOfAllTransactions": 397, 
+"numberOfInvalidTransactions": 157, 
+"numberOfNewTransactions": 192 
 }", "{ 
 "address": "/8.8.8.8:14265", 
-"numberOfAllTransactions": 769, 
-"numberOfInvalidTransactions": 7, 
-"numberOfNewTransactions": 62 
+"numberOfAllTransactions": 334, 
+"numberOfInvalidTransactions": 331, 
+"numberOfNewTransactions": 32 
 }"]}
 </Section>
 
@@ -75,16 +75,16 @@ request(options, function (error, response, data) {
 </Section>
 
 <Section type="response">
-{"duration": "677", "neighbors": ["{ 
+{"duration": "393", "neighbors": ["{ 
 "address": "/8.8.8.8:14265", 
-"numberOfAllTransactions": 629, 
-"numberOfInvalidTransactions": 775, 
-"numberOfNewTransactions": 245 
+"numberOfAllTransactions": 915, 
+"numberOfInvalidTransactions": 432, 
+"numberOfNewTransactions": 285 
 }", "{ 
 "address": "/8.8.8.8:14265", 
-"numberOfAllTransactions": 965, 
-"numberOfInvalidTransactions": 562, 
-"numberOfNewTransactions": 59 
+"numberOfAllTransactions": 52, 
+"numberOfInvalidTransactions": 223, 
+"numberOfNewTransactions": 197 
 }"]}
 </Section>
 
@@ -103,16 +103,16 @@ curl http://localhost:14265
 </Section>
 
 <Section type="response">
-{"duration": "441", "neighbors": ["{ 
+{"duration": "963", "neighbors": ["{ 
 "address": "/8.8.8.8:14265", 
-"numberOfAllTransactions": 920, 
-"numberOfInvalidTransactions": 359, 
-"numberOfNewTransactions": 227 
+"numberOfAllTransactions": 366, 
+"numberOfInvalidTransactions": 682, 
+"numberOfNewTransactions": 673 
 }", "{ 
 "address": "/8.8.8.8:14265", 
-"numberOfAllTransactions": 1, 
-"numberOfInvalidTransactions": 804, 
-"numberOfNewTransactions": 900 
+"numberOfAllTransactions": 748, 
+"numberOfInvalidTransactions": 678, 
+"numberOfNewTransactions": 722 
 }"]}
 </Section>
 

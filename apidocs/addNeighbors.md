@@ -1,10 +1,11 @@
 
 ---
-### [addNeighbors](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L1147)
+### [addNeighbors](https://github.com/iotaledger/iri/blob/dev/src/main/java/com/iota/iri/service/API.java#L1151)
  [AbstractResponse](/javadoc/com/iota/iri/service/dto/abstractresponse/) addNeighborsStatement(java.util.List uris)
 
-Add a list of neighbors to your node. 
- It should be noted that this is only temporary, and the added neighbors will be removed from your set of neighbors after you relaunch IRI.
+Temporarily add a list of neighbors to your node. 
+ The added neighbors will be removed after relaunching IRI. 
+ Add the neighbors to your config file or supply them in the -n command line option if you want to keep them after restart.
 
  The URI (Unique Resource Identification) for adding neighbors is:
  **udp://IPADDRESS:PORT**
@@ -35,7 +36,7 @@ print jsonData
 </Section>
 
 <Section type="response">
-{"duration": "621", "addedNeighbors": "530"}
+{"duration": "497", "addedNeighbors": "238"}
 </Section>
 
 <Section type="error">
@@ -68,7 +69,7 @@ request(options, function (error, response, data) {
 </Section>
 
 <Section type="response">
-{"duration": "779", "addedNeighbors": "754"}
+{"duration": "583", "addedNeighbors": "522"}
 </Section>
 
 <Section type="error">
@@ -86,7 +87,7 @@ curl http://localhost:14265
 </Section>
 
 <Section type="response">
-{"duration": "667", "addedNeighbors": "630"}
+{"duration": "612", "addedNeighbors": "742"}
 </Section>
 
 <Section type="error">

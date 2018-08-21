@@ -53,6 +53,10 @@ public class ProgressLogger {
         return this;
     }
 
+    public int getStepCount() {
+        return stepCount;
+    }
+
     private ProgressLogger dumpMessage() {
         long currentTime = System.currentTimeMillis();
 
@@ -88,7 +92,20 @@ public class ProgressLogger {
         return setCurrentStep(currentStep++).dumpMessage();
     }
 
+    public ProgressLogger progress(int currentStep) {
+        return setCurrentStep(currentStep).dumpMessage();
+    }
+
     public ProgressLogger finish() {
         return setCurrentStep(stepCount).dumpMessage();
+    }
+
+    public ProgressLogger abort(Exception e) {
+        double progress = (double) currentStep / (double) stepCount * 100;
+        String logMessage = taskName + ": " + new DecimalFormat("#.00").format(progress) + "% done ... [FAILED]";
+
+        logger.error(logMessage, e);
+
+        return this;
     }
 }

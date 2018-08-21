@@ -76,7 +76,7 @@ public class Iota {
             tangle.clearColumn(com.iota.iri.model.StateDiff.class);
             tangle.clearMetadata(com.iota.iri.model.Transaction.class);
         }
-        milestoneTracker.init(SpongeFactory.Mode.CURLP27, ledgerValidator);
+        milestoneTracker.init(ledgerValidator);
         transactionValidator.init(configuration.isTestnet(), configuration.getMwm(), milestoneTracker);
         tipsSolidifier.init();
         transactionRequester.init(configuration.getpRemoveRequest());

@@ -93,10 +93,10 @@ public class MilestoneTracker {
      */
     private static int STATUS_LOG_INTERVAL = 5000;
 
-    public void init (SpongeFactory.Mode mode, LedgerValidator ledgerValidator) {
+    public void init (LedgerValidator ledgerValidator) {
         // to be able to process the milestones in the correct order (i.e. after a rescan of the database), we initialize
-        // this variable with 1 and wait for the "Latest Milestone Tracker" to process all milestones at least once and
-        // create the corresponding MilestoneViewModels to our transactions
+        // this variable with 1 and wait for the "Latest Milestone Tracker" to process all milestones at least once if
+        // we are rescanning or revalidating the database
         blockingSolidMilestoneTrackerTasks = new AtomicInteger(isRescanning ? 1 : 0);
 
         this.ledgerValidator = ledgerValidator;
@@ -109,21 +109,20 @@ public class MilestoneTracker {
                 } catch (InterruptedException e) { /* do nothing */ }
             }
 
-            // keep track if we run the first time
-            boolean firstRun = true;
-
             ProgressLogger scanningMilestonesProgress = new ProgressLogger("Scanning Latest Milestones", log);
 
             log.info("Tracker started.");
+            boolean firstRun = true;
             while (!shuttingDown) {
                 long scanTime = System.currentTimeMillis();
 
                 try {
                     Set<Hash> hashes = AddressViewModel.load(tangle, coordinator).getHashes();
 
+                    // analyze all found milestone candidates
                     scanningMilestonesProgress.setEnabled(firstRun && isRescanning).start(hashes.size());
                     for(Hash hash: hashes) {
-                        if(analyzedMilestoneCandidates.add(hash) && analyzeMilestoneCandidate(hash) == INCOMPLETE) {
+                        if(!shuttingDown && analyzedMilestoneCandidates.add(hash) && analyzeMilestoneCandidate(hash) == INCOMPLETE) {
                             analyzedMilestoneCandidates.remove(hash);
                         }
 
@@ -274,81 +273,80 @@ public class MilestoneTracker {
         // increase a counter for the background tasks to pause the "Solid Milestone Tracker"
         blockingSolidMilestoneTrackerTasks.incrementAndGet();
 
-        // log a message when we are resetting
-        log.info("Resetting ledger to milestone " + targetMilestone.index() + " due to: " + reason + " ...");
+        // create a progress logger and start the logging
+        ProgressLogger hardResetLogger = new ProgressLogger(
+            "Resetting ledger to milestone " + targetMilestone.index() + " due to \"" + reason + "\"", log
+        ).start(latestMilestoneIndex - targetMilestone.index() + 2); // +1 for softReset and +1 for starting milestone
 
         // prune all potentially invalid database fields
         try {
             MilestoneViewModel currentMilestone = targetMilestone;
             while(currentMilestone != null) {
-                //region RESET THE SNAPSHOT INDEX //////////////////////////////////////////////////////////////////////
-
-                // retrieve the transaction belonging to our current milestone
-                TransactionViewModel milestoneTransaction = TransactionViewModel.fromHash(tangle, currentMilestone.getHash());
-
-                // create a set where we keep track of the processed transactions
-                Set<Hash> seenMilestoneTransactions = new HashSet<>();
-
-                // create a queue where we collect the transactions that shall be examined (starting with our milestone)
-                final Queue<TransactionViewModel> transactionsToExamine = new LinkedList<>(Collections.singleton(milestoneTransaction));
-
-                // iterate through our queue and process all elements (while we iterate we add more)
-                TransactionViewModel currentTransaction;
-                while((currentTransaction = transactionsToExamine.poll()) != null) {
-                    // only process transactions that we haven't seen yet
-                    if(seenMilestoneTransactions.add(currentTransaction.getHash())) {
-                        // reset the snapshotIndex to allow a repair
-                        currentTransaction.setSnapshot(tangle, 0);
-
-                        // only examine transactions that are not part of the solid entry points
-                        if(!Hash.NULL_HASH.equals(currentTransaction.getBranchTransactionHash())) {
-                            // retrieve the branch transaction of our current transaction
-                            TransactionViewModel branchTransaction = currentTransaction.getBranchTransaction(tangle);
-
-                            // if the branch transaction still belongs to our current or a following milestone -> add it
-                            if(branchTransaction.getType() != TransactionViewModel.PREFILLED_SLOT && branchTransaction.snapshotIndex() >= currentMilestone.index()) {
-                                transactionsToExamine.add(branchTransaction);
-                            }
-                        }
-
-                        // only examine transactions that are not part of the solid entry points
-                        if(!Hash.NULL_HASH.equals(currentTransaction.getTrunkTransactionHash())) {
-                            // retrieve the trunk transaction of our current transaction
-                            TransactionViewModel trunkTransaction = currentTransaction.getTrunkTransaction(tangle);
-
-                            // if the trunk transaction still belongs to our current or a following milestone -> add it
-                            if(trunkTransaction.getType() != TransactionViewModel.PREFILLED_SLOT && trunkTransaction.snapshotIndex() >= currentMilestone.index()) {
-                                transactionsToExamine.add(trunkTransaction);
-                            }
-                        }
-                    }
-                }
-
-                //endregion ////////////////////////////////////////////////////////////////////////////////////////////
-
-                // remove the following StateDiffs
+                // reset the snapshotIndex of the milestone and its referenced approvees + it's StateDiff
+                resetSnapshotIndexOfMilestone(currentMilestone);
                 tangle.delete(StateDiff.class, currentMilestone.getHash());
+
+                int currentStep = latestMilestoneIndex - currentMilestone.index() + 2 - hardResetLogger.getStepCount();
+                hardResetLogger.progress(currentStep);
 
                 // iterate to the next milestone
                 currentMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, currentMilestone.index());
             }
         } catch(Exception e) {
-            // create a string representation of the stacktrace
-            StringWriter stackTraceStringWriter = new StringWriter();
-            e.printStackTrace(new PrintWriter(stackTraceStringWriter));
-
-            // dump the error message
-            log.error("Error while resetting the ledger: " + e.getMessage() + "\n" + stackTraceStringWriter.toString());
+            hardResetLogger.abort(e);
         }
 
-        // after we have cleaned up the database we do a soft reset to rescan
+        // after we have cleaned up the database we do a soft reset to rescan the existing data
         softReset();
+
+        // dump message when we are done
+        hardResetLogger.finish();
 
         // decrease the counter for the background tasks to unpause the "Solid Milestone Tracker"
         blockingSolidMilestoneTrackerTasks.decrementAndGet();
+    }
 
-        // dump message when we are done
-        log.info("Resetting ledger to milestone " + targetMilestone.index() + " ... done");
+    /**
+     * This method resets the snapshotIndex of all transactions that "belong" to a milestone.
+     *
+     * While traversing the graph we use the snapshotIndex value to check if it still belongs to the given milestone and
+     * ignore all transactions that where referenced by a previous one. Since we check if the snapshotIndex is bigger or
+     * equal to the one of the targetMilestone, we can ignore the case that a previous milestone was not processed, yet
+     * since it's milestoneIndex would still be 0.
+     *
+     * @param currentMilestone the milestone that shall have its confirmed transactions reset
+     * @throws Exception if something goes wrong while accessing the database
+     */
+    public void resetSnapshotIndexOfMilestone(MilestoneViewModel currentMilestone) throws Exception {
+        // initialize variables used for traversing the graph
+        TransactionViewModel milestoneTransaction = TransactionViewModel.fromHash(tangle, currentMilestone.getHash());
+        Set<Hash> seenMilestoneTransactions = new HashSet<>();
+        Queue<TransactionViewModel> transactionsToExamine = new LinkedList<>(Collections.singleton(milestoneTransaction));
+
+        // iterate through our queue and process all elements (while we iterate we add more)
+        TransactionViewModel currentTransaction;
+        while((currentTransaction = transactionsToExamine.poll()) != null) {
+            if(seenMilestoneTransactions.add(currentTransaction.getHash())) {
+                // reset the snapshotIndex to allow a repair
+                currentTransaction.setSnapshot(tangle, 0);
+
+                // only examine transactions that still belong to our milestone
+                if(!Hash.NULL_HASH.equals(currentTransaction.getBranchTransactionHash())) {
+                    TransactionViewModel branchTransaction = currentTransaction.getBranchTransaction(tangle);
+                    if(branchTransaction.getType() != TransactionViewModel.PREFILLED_SLOT && branchTransaction.snapshotIndex() >= currentMilestone.index()) {
+                        transactionsToExamine.add(branchTransaction);
+                    }
+                }
+
+                // only examine transactions that still belong to our milestone
+                if(!Hash.NULL_HASH.equals(currentTransaction.getTrunkTransactionHash())) {
+                    TransactionViewModel trunkTransaction = currentTransaction.getTrunkTransaction(tangle);
+                    if(trunkTransaction.getType() != TransactionViewModel.PREFILLED_SLOT && trunkTransaction.snapshotIndex() >= currentMilestone.index()) {
+                        transactionsToExamine.add(trunkTransaction);
+                    }
+                }
+            }
+        }
     }
 
     public Validity validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {

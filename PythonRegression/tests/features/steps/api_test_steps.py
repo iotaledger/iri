@@ -267,7 +267,7 @@ def check_transaction_response(step):
                     
     
 def prepare_api_call(nodeName):
-    host = world.machine[nodeName]['host']
+    host = world.machine['nodes'][nodeName]['host']
     address ="http://"+ host + ":14265"
     api = Iota(address)
     logger.info('API call prepared for %s',address)

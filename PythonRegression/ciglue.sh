@@ -10,7 +10,6 @@ git clone --depth 1 --branch yaml_configuration https://github.com/karimodm/iri-
 cd iri-network-tests
 git pull
 echo "iri-network-tests revision: "; git rev-parse HEAD
-/iri-regression into glue
 virtualenv venv
 source venv/bin/activate
 pip install -r requirements.txt

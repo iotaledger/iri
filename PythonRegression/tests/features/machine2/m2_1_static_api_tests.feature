@@ -27,7 +27,6 @@ Feature: Test API calls on Machine 2
 		|tips								|
 		|transactionsToRequest				|
 	
-	
 	@neighbors
 	Scenario: GetNeighbors is called
 		Given "getNeighbors" is called on each node in "machine2"
@@ -56,13 +55,10 @@ Feature: Test API calls on Machine 2
 	
 	
 	@transactionsToApprove	
- 	Scenario: GetTransactionsToApprove is called
-    	Given "getTransactionsToApprove" is called on each node in "machine1"
+	Scenario: GetTransactionsToApprove is called
+		Given "getTransactionsToApprove" is called on each node
 		Then a response with the following is returned: 
 		|keys								|
 		|trunkTransaction					|
 		|branchTransaction					|
 		|duration							|
-		
-
-		

@@ -37,28 +37,22 @@ Feature: Test API calls on Machine 1
 	Scenario: GetNeighbors is called
 		Given "getNeighbors" is called on "nodeA"
 		Then a response with the following is returned:
-		|keys							|
-		|address						|
-		|numberOfAllTransactions		|
-		|numberOfAllTransactionRequests	|
-		|numberOfNewTransactions		|
-		|numberOfInvalidTransactions	|
-		|numberOfSentTransactions		|
-		|connectionType					|
-		
-	@neighbors
-	Scenario: Log GetNeighbors
-		Given a response for "getNeighbors" exists
-		Then create the log directory "./tests/features/machine1/static_test_logs/get_neighbors_logs/"
-		And log the neighbor response to the file "getNeighborsLog.txt"		 
+		|keys								|
+		|address							|
+		|numberOfAllTransactions			|
+		|numberOfAllTransactionRequests		|
+		|numberOfNewTransactions			|
+		|numberOfInvalidTransactions		|
+		|numberOfSentTransactions			|
+		|connectionType						|	 
 		
 	@getTips	
 	Scenario: GetTips is called
 		Given "getTips" is called on "nodeA"
 		Then a response with the following is returned:
-		|keys 		|
-		|hashes		|
-		|duration	|
+		|keys 								|
+		|hashes								|
+		|duration							|
 
 	@getTrytes
 	Scenario: GetTrytes is called 
@@ -70,12 +64,12 @@ Feature: Test API calls on Machine 1
 	Scenario: GetTransactionsToApprove is called
 		Given "getTransactionsToApprove" is called on "nodeA"
 		Then a response with the following is returned: 
-		|keys				|
-		|trunkTransaction	|
-		|branchTransaction	|
-		|duration			|
+		|keys								|
+		|trunkTransaction					|
+		|branchTransaction					|
+		|duration							|
 		
-		
+
 ###
 # To be replaced with a new neighbor test linking nodes within a given topology together 
 ### 
@@ -92,4 +86,12 @@ Feature: Test API calls on Machine 1
 #			|178.128.236.6:14600 	|
 #			|167.99.178.3:14600		|		
 
+	@transactionDemo
+	Scenario: Broadcast a test transacion
+		Send a test transaction from one node in a machine, and find that transaction
+		through a different node in the same machine
+ 		Given "nodeA" and "nodeB" are neighbors
+		When a transaction with the tag "TEST9TRANSACTION" is sent from "nodeA"
+		And findTransaction is called with the same tag on "nodeB" 
+		Then the transaction should be found 
 		

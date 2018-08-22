@@ -1,6 +1,5 @@
 from aloe import step
 from tests.features.steps import api_test_steps
-from util.test_logic import api_test_logic
 import os 
 
 import logging
@@ -27,11 +26,11 @@ def create_log_file(step,fileName):
     file = config[1]
     response = config[0]
         
-    for i in response:
-        nodeName = i
+    for node in response:
+        nodeName = node
         responseVals = ""   
-        for x in response[i]:
-            responseVals += "\t" + x + ": " + str(response[i][x]) + "\n"
+        for key in response[node]:
+            responseVals += "\t" + key + ": " + str(response[node][key]) + "\n"
         statement = nodeName + ":\n" + responseVals
         logging.debug('Statement to write: %s',statement)
         file.write(statement)      
@@ -40,10 +39,37 @@ def create_log_file(step,fileName):
     file.close()
     
     
+    
 @step(r'log the duration and responses to the file "([^"]*)"')
 def log_gtta_response(step,fileName):
-    logging.info('Attempting to log response in %s',fileName) 
     logConfig['apiCall'] = 'getTransactionsToApprove'
+
+    config = setup_logs(fileName)
+    file = config[1]
+    response = config[0] 
+
+    durationTotal = 0
+    numTests = 0   
+    responseVals = ""
+    
+    for i in response:
+        nodeName = i 
+        responseVals += nodeName + ":"
+        for y in range(len(response[i])):
+            numTests = len(response[i])
+            keys = response[i][y].keys() 
+            responseVals += "\n\n\tResponse {}: ".format(y + 1)
+            durationTotal += response[i][y]['duration']
+            for x in response[i][y]:
+                responseVal = x + ": " + str(response[i][y][x])
+                responseVals += "\n\t\t" + responseVal   
+                            
+        responseVals += "\n\n\tAverage duration: " + str(durationTotal/numTests) + "\n\n"
+    
+    file.write(responseVals)        
+    file.close()
+
+
 
 
 
@@ -62,4 +88,5 @@ def setup_logs(fileName):
     
     logging.info('Log file and response set up')
     return config
+
 

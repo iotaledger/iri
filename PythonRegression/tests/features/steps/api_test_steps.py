@@ -271,6 +271,16 @@ def check_responses_for_call(apiCall):
     else:
         return False
     
+
+def fill_response(apiCall,response):
+    responses[apiCall] = response
+
+def fill_config(key,value):
+    config[key] = value
+
+def fetch_config(key):
+    return config[key]  
+    
 def fetch_response(apiCall):
     return responses[apiCall]
 

@@ -21,7 +21,6 @@ responses = {'getNodeInfo':{},'getNeighbors':{},'getTips':{},'getTransactionsToA
 @step(r'"([^"]*)" is called on "([^"]*)"')
 def api_method_is_called(step,apiCall,nodeName):
     logger.info('%s is called on %s',apiCall,nodeName)
-    
     config['apiCall'] = apiCall
     config['nodeId'] = nodeName
      
@@ -49,6 +48,7 @@ def api_method_is_called(step,apiCall,nodeName):
     responses[apiCall][nodeName] = response
 
 
+
 ###
 #Response testing    
 @step(r'a response with the following is returned:')
@@ -57,24 +57,26 @@ def compare_response(step):
     keys = step.hashes
     nodeId = config['nodeId']
     apiCall = config['apiCall']
+    machine = config['machine']
     
     if apiCall == 'getNodeInfo' or apiCall == 'getTransactionsToApprove':
-        response = responses['getNodeInfo'][nodeId]
+        response = responses[apiCall][machine][nodeId]
         responseKeys = list(response.keys())
         responseKeys.sort()
         logger.debug('Response Keys: %s', responseKeys)
-        for i in range(len(response)):
-            assert str(responseKeys[i]) == str(keys[i]['keys']), "There was an error with the response" 
+    
+        for response_key_val in range(len(response)):
+            assert str(responseKeys[response_key_val]) == str(keys[response_key_val]['keys']), "There was an error with the response" 
     
     elif apiCall == 'getNeighbors' or apiCall == 'getTips':
-        response = responses['getNeighbors'][nodeId] 
-        responseKeys = list(response.keys())
+        responseList = responses[apiCall][machine][nodeId] 
+        responseKeys = list(responseList.keys())
         logger.debug('Response Keys: %s', responseKeys)
-
-        for x in range(len(response)):
+        
+        for responseNumber in range(len(responseList)):
             try:
-                for i in range(len(response[x])):
-                    assert str(responseKeys[i]) == str(keys[i])
+                for responseKeyVal in range(len(responseList[responseNumber])):
+                    assert str(responseKeys[responseKeyVal]) == str(keys[responseKeyVal])
             except:
                 logger.debug("No values to verify response with")        
  
@@ -94,6 +96,7 @@ def call_getTrytes(step):
     responses['getTrytes'][nodeId] = response
 
 
+
 @step(r'the response should be equal to static_vals.TEST_TRYTES')
 def check_trytes(step):
     logger.info('Validating response')
@@ -102,6 +105,7 @@ def check_trytes(step):
     response = responses['getTrytes'][nodeId]
     if 'trytes' in response:
         assert response['trytes'][0] == testTrytes, "Trytes do not match"
+
 
 
 ###
@@ -153,13 +157,13 @@ def prepare_api_call(nodeName):
 
 
 def check_responses_for_call(apiCall):
-    if len(responses[apiCall]) > 0:
+    if len(responses[apiCall][config['machine']]) > 0:
         return True
     else:
         return False
     
 def fetch_response(apiCall):
-    return responses[apiCall]
+    return responses[apiCall][config['machine']]
 
 
 def check_neighbors(step):

@@ -1,5 +1,6 @@
 from aloe import step
 from tests.features.steps import api_test_steps
+from util.test_logic import api_test_logic
 import os 
 
 import logging
@@ -33,8 +34,8 @@ def create_log_file(step,fileName):
             responseVals += "\t" + x + ": " + str(response[i][x]) + "\n"
         statement = nodeName + ":\n" + responseVals
         logging.debug('Statement to write: %s',statement)
-        file.write(statement)
-                
+        file.write(statement)      
+                  
     logging.info('Response logged')
     file.close()
     

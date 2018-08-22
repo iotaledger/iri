@@ -1,4 +1,4 @@
-@machine1
+@machine1 @static
 Feature: Test API calls on Machine 1
 	Test various api calls to make sure they are responding
 	correctly 
@@ -75,16 +75,21 @@ Feature: Test API calls on Machine 1
 		|branchTransaction	|
 		|duration			|
 		
-	@neighbors
-	Scenario: Add and remove Neighbors
-		Given 2 neighbors are added with "addNeighbors" on "nodeA"
-		When "getNeighbors" is called, it should return the following neighbors:
-			|neighbors 				|
-			|178.128.236.6:14600 	|
-			|167.99.178.3:14600		|
-		Then "removeNeighbors" will be called to remove the same neighbors 
-		And "getNeighbors" should not return the following neighbors:
-			|neighbors 				|
-			|178.128.236.6:14600 	|
-			|167.99.178.3:14600		|		
+		
+###
+# To be replaced with a new neighbor test linking nodes within a given topology together 
+### 
+#	@neighbors
+#	Scenario: Add and remove Neighbors
+#		Given 2 neighbors are added with "addNeighbors" on "nodeA"
+#		When "getNeighbors" is called, it should return the following neighbors:
+#			|neighbors 				|
+#			|178.128.236.6:14600 	|
+#			|167.99.178.3:14600		|
+#		Then "removeNeighbors" will be called to remove the same neighbors 
+#		And "getNeighbors" should not return the following neighbors:
+#			|neighbors 				|
+#			|178.128.236.6:14600 	|
+#			|167.99.178.3:14600		|		
+
 		

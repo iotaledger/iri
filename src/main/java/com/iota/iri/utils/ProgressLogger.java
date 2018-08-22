@@ -89,7 +89,7 @@ public class ProgressLogger {
     }
 
     public ProgressLogger progress() {
-        return setCurrentStep(currentStep++).dumpMessage();
+        return setCurrentStep(++currentStep).dumpMessage();
     }
 
     public ProgressLogger progress(int currentStep) {

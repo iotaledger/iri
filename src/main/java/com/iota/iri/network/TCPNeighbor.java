@@ -19,7 +19,7 @@ public class TCPNeighbor extends Neighbor {
     private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
     private int tcpPort;
 
-    private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(1000);
+    private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(10);
     private boolean stopped = false;
 
     public TCPNeighbor(InetSocketAddress address, boolean isConfigured) {
@@ -87,7 +87,9 @@ public class TCPNeighbor extends Neighbor {
         synchronized (sendQueue) {
             if (sendQueue.remainingCapacity() == 0) {
                 sendQueue.poll();
+                log.info("Sendqueue full...dropped 1 tx");
             }
+            log.info("Sendqueue size: {}",sendQueue.size());
             byte[] bytes = packet.getData().clone();
             sendQueue.add(ByteBuffer.wrap(bytes));
         }

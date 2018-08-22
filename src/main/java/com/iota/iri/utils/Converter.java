@@ -53,7 +53,7 @@ public class Converter {
     }
 
     public static byte[] allocateTritsForTrytes(int tryteCount) {
-        return new byte[tryteCount * NUMBER_OF_TRITS_IN_A_TRYTE];
+        return allocateBytesForTrits(tryteCount * NUMBER_OF_TRITS_IN_A_TRYTE);
     }
 
     public static void bytes(final byte[] trits, final int srcPos, byte[] dest, int destPos, final int tritsLength) {

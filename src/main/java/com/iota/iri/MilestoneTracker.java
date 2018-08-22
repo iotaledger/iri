@@ -23,6 +23,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -61,7 +62,7 @@ public class MilestoneTracker {
     public int latestSolidSubtangleMilestoneIndex;
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
-    private final Set<Hash> unsolidMilestones = new HashSet<>();
+    private final Set<Hash> unsolidMilestones = ConcurrentHashMap.newKeySet();
 
     public MilestoneTracker(Tangle tangle,
                             TransactionValidator transactionValidator,

@@ -59,11 +59,6 @@ Feature: Test API calls on Machine 1
 		|keys 		|
 		|hashes		|
 		|duration	|
-	@getTips 	
-	Scenario: Log GetTips
-		Given a response for "getTips" exists
-		Then create the log directory "./tests/features/machine1/static_test_logs/get_tips_logs/"
-		And log the tips response to the file "getTipsLog.txt"
 
 	@getTrytes
 	Scenario: GetTrytes is called 

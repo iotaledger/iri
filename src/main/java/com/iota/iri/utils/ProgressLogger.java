@@ -70,7 +70,9 @@ public class ProgressLogger {
 
             // only log when the message changes
             if (!lastLogMessage.equals(logMessage)) {
-                if(enabled) logger.info(logMessage);
+                if(enabled) {
+                    logger.info(logMessage);
+                }
 
                 lastLogTime = currentTime;
                 lastLogMessage = logMessage;

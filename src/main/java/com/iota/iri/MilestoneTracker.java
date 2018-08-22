@@ -19,8 +19,6 @@ import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -63,6 +61,7 @@ public class MilestoneTracker {
     public int latestSolidSubtangleMilestoneIndex;
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
+    private final Set<Hash> unsolidMilestones = new HashSet<>();
 
     public MilestoneTracker(Tangle tangle,
                             TransactionValidator transactionValidator,
@@ -101,6 +100,13 @@ public class MilestoneTracker {
 
         this.ledgerValidator = ledgerValidator;
         AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
+
+        spawnLatestMilestoneTracker(ledgerValidatorInitialized);
+        spawnSolidMilestoneTracker(ledgerValidatorInitialized);
+        spawnMilestoneSolidifier();
+    }
+
+    private void spawnLatestMilestoneTracker(AtomicBoolean ledgerValidatorInitialized) {
         (new Thread(() -> {
             log.info("Waiting for Ledger Validator initialization ...");
             while(!ledgerValidatorInitialized.get()) {
@@ -143,7 +149,9 @@ public class MilestoneTracker {
                 firstRun = false;
             }
         }, "Latest Milestone Tracker")).start();
+    }
 
+    private void spawnSolidMilestoneTracker(AtomicBoolean ledgerValidatorInitialized) {
         (new Thread(() -> {
             log.info("Initializing Ledger Validator...");
             try {
@@ -167,8 +175,24 @@ public class MilestoneTracker {
                 }
             }
         }, "Solid Milestone Tracker")).start();
+    }
 
+    private void spawnMilestoneSolidifier() {
+        new Thread(() -> {
+            while(!shuttingDown) {
+                unsolidMilestones.forEach(milestoneHash -> {
+                    try {
+                        if(transactionValidator.checkSolidity(milestoneHash, true)) {
+                            unsolidMilestones.remove(milestoneHash);
+                        }
+                    } catch(Exception e) {
+                        e.printStackTrace();
+                    }
+                });
 
+                try { Thread.sleep(500); } catch (InterruptedException e) { e.printStackTrace(); }
+            }
+        }, "Milestone Solidifier").start();
     }
 
     /**
@@ -219,14 +243,15 @@ public class MilestoneTracker {
                         latestMilestoneIndex = milestoneIndex;
                     }
 
+                    if(!potentialMilestoneTransaction.isSolid()) {
+                        unsolidMilestones.add(potentialMilestoneTransaction.getHash());
+                    }
+
                     return VALID;
 
                 case INCOMPLETE:
                     // issue a solidity check to solidify incomplete milestones
-                    // Note: otherwise a milestone that was followed by a coo-snapshot might
-                    //       never get solidified again since it doesn't have connections to
-                    //       the tips after an IRI restart
-                    transactionValidator.checkSolidity(potentialMilestoneTransaction.getHash(), true);
+                    unsolidMilestones.add(potentialMilestoneTransaction.getHash());
 
                     return INCOMPLETE;
             }

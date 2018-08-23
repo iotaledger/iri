@@ -30,17 +30,28 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static com.iota.iri.MilestoneTracker.Validity.*;
 
 public class MilestoneTracker {
-
+    /**
+     * Validity states of transactions regarding their milestone status.
+     */
     enum Validity {
         VALID,
         INVALID,
         INCOMPLETE
     }
 
+    private static int RESCAN_INTERVAL = 5000;
+
+    /**
+     * How often (in milliseconds) to dump log messages about status updates.
+     */
+    private static int STATUS_LOG_INTERVAL = 5000;
+
     /**
      * This variable is used to keep track of the asynchronous tasks, that the "Solid Milestone Tracker" should wait for.
      */
-    private AtomicInteger blockingSolidMilestoneTrackerTasks;
+    private AtomicInteger blockingSolidMilestoneTrackerTasks = new AtomicInteger(0);
+
+    private AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
 
     private final Logger log = LoggerFactory.getLogger(MilestoneTracker.class);
     private final Tangle tangle;
@@ -62,7 +73,9 @@ public class MilestoneTracker {
     public int latestSolidSubtangleMilestoneIndex;
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
-    private final Set<Hash> unsolidMilestones = ConcurrentHashMap.newKeySet();
+    private final ConcurrentHashMap<Hash, Integer> unsolidMilestones = new ConcurrentHashMap<>();
+
+    private boolean shuttingDown;
 
     public MilestoneTracker(Tangle tangle,
                             TransactionValidator transactionValidator,
@@ -85,29 +98,22 @@ public class MilestoneTracker {
         this.isRescanning = config.isRescanDb() || config.isRevalidate();
     }
 
-    private boolean shuttingDown;
-    private static int RESCAN_INTERVAL = 5000;
-
-    /**
-     * How often (in milliseconds) to dump log messages about status updates.
-     */
-    private static int STATUS_LOG_INTERVAL = 5000;
-
     public void init (LedgerValidator ledgerValidator) {
-        // to be able to process the milestones in the correct order (i.e. after a rescan of the database), we initialize
-        // this variable with 1 and wait for the "Latest Milestone Tracker" to process all milestones at least once if
-        // we are rescanning or revalidating the database
-        blockingSolidMilestoneTrackerTasks = new AtomicInteger(isRescanning ? 1 : 0);
-
         this.ledgerValidator = ledgerValidator;
-        AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
 
-        spawnLatestMilestoneTracker(ledgerValidatorInitialized);
-        spawnSolidMilestoneTracker(ledgerValidatorInitialized);
+        // to be able to process the milestones in the correct order after a rescan of the database, we initialize
+        // this variable with 1 and wait for the "Latest Milestone Tracker" to process all milestones at least once
+        if(isRescanning) {
+            blockingSolidMilestoneTrackerTasks.incrementAndGet();
+        }
+
+        // start the threads
+        spawnLatestMilestoneTracker();
+        spawnSolidMilestoneTracker();
         spawnMilestoneSolidifier();
     }
 
-    private void spawnLatestMilestoneTracker(AtomicBoolean ledgerValidatorInitialized) {
+    private void spawnLatestMilestoneTracker() {
         (new Thread(() -> {
             log.info("Waiting for Ledger Validator initialization ...");
             while(!ledgerValidatorInitialized.get()) {
@@ -118,16 +124,20 @@ public class MilestoneTracker {
 
             ProgressLogger scanningMilestonesProgress = new ProgressLogger("Scanning Latest Milestones", log);
 
+            // bootstrap our latestMilestone with the last milestone in the database (faster startup)
+            try {
+                analyzeMilestoneCandidate(MilestoneViewModel.latest(tangle).getHash());
+            } catch(Exception e) { /* do nothing */ }
+
             log.info("Tracker started.");
             boolean firstRun = true;
             while (!shuttingDown) {
                 long scanTime = System.currentTimeMillis();
 
                 try {
-                    Set<Hash> hashes = AddressViewModel.load(tangle, coordinator).getHashes();
-
                     // analyze all found milestone candidates
-                    scanningMilestonesProgress.setEnabled(firstRun && isRescanning).start(hashes.size());
+                    Set<Hash> hashes = AddressViewModel.load(tangle, coordinator).getHashes();
+                    scanningMilestonesProgress.setEnabled(firstRun).start(hashes.size());
                     for(Hash hash: hashes) {
                         if(!shuttingDown && analyzedMilestoneCandidates.add(hash) && analyzeMilestoneCandidate(hash) == INCOMPLETE) {
                             analyzedMilestoneCandidates.remove(hash);
@@ -152,7 +162,7 @@ public class MilestoneTracker {
         }, "Latest Milestone Tracker")).start();
     }
 
-    private void spawnSolidMilestoneTracker(AtomicBoolean ledgerValidatorInitialized) {
+    private void spawnSolidMilestoneTracker() {
         (new Thread(() -> {
             log.info("Initializing Ledger Validator...");
             try {
@@ -181,10 +191,19 @@ public class MilestoneTracker {
     private void spawnMilestoneSolidifier() {
         new Thread(() -> {
             while(!shuttingDown) {
-                unsolidMilestones.forEach(milestoneHash -> {
+                unsolidMilestones.forEach((milestoneHash, milestoneIndex) -> {
                     try {
-                        if(transactionValidator.checkSolidity(milestoneHash, true)) {
+                        // remove old milestones that are not relevant anymore
+                        if(milestoneIndex <= latestSolidSubtangleMilestoneIndex) {
                             unsolidMilestones.remove(milestoneHash);
+                        }
+
+                        // check milestones that are within our check range
+                        else if(milestoneIndex < latestSolidSubtangleMilestoneIndex + 50) {
+                            // remove milestones that have become solid
+                            if(transactionValidator.checkSolidity(milestoneHash, true)) {
+                                unsolidMilestones.remove(milestoneHash);
+                            }
                         }
                     } catch(Exception e) {
                         e.printStackTrace();
@@ -244,15 +263,17 @@ public class MilestoneTracker {
                         latestMilestoneIndex = milestoneIndex;
                     }
 
-                    if(!potentialMilestoneTransaction.isSolid()) {
-                        unsolidMilestones.add(potentialMilestoneTransaction.getHash());
+                    if(!potentialMilestoneTransaction.isSolid() && milestoneIndex >= latestSolidSubtangleMilestoneIndex) {
+                        unsolidMilestones.put(potentialMilestoneTransaction.getHash(), milestoneIndex);
                     }
 
                     return VALID;
 
                 case INCOMPLETE:
                     // issue a solidity check to solidify incomplete milestones
-                    unsolidMilestones.add(potentialMilestoneTransaction.getHash());
+                    if(milestoneIndex >= latestSolidSubtangleMilestoneIndex) {
+                        unsolidMilestones.put(potentialMilestoneTransaction.getHash(), milestoneIndex);
+                    }
 
                     return INCOMPLETE;
             }

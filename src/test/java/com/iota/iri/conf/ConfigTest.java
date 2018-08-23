@@ -1,5 +1,6 @@
 package com.iota.iri.conf;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.iota.iri.utils.IotaUtils;
@@ -108,6 +109,14 @@ public class ConfigTest {
     }
 
     @Test
+    public void testRemoteFlag() {
+        String[] args = {"--remote"};
+        IotaConfig iotaConfig = ConfigFactory.createIotaConfig(false);
+        iotaConfig.parseConfigFromArgs(args);
+        Assert.assertEquals("The api interface should be open to the public", "0.0.0.0", iotaConfig.getApiHost());
+    }
+
+    @Test
     public void testArgsParsingTestnet() {
         String[] args = {
                 "-p", "14000",
@@ -207,6 +216,8 @@ public class ConfigTest {
                 .append("NUMBER_OF_KEYS_IN_A_MILESTONE = 3").append(System.lineSeparator())
                 .append("DONT_VALIDATE_TESTNET_MILESTONE_SIG = true").append(System.lineSeparator())
                 .append("TIPSELECTION_ALPHA = 1.1").append(System.lineSeparator())
+                //doesn't do anything
+                .append("REMOTE")
                 .append("FAKE").append(System.lineSeparator())
                 .append("FAKE2 = lies")
                 .toString();
@@ -227,6 +238,8 @@ public class ConfigTest {
         Assert.assertEquals("TIPSELECTION_ALPHA", 1.1d, iotaConfig.getAlpha(), 0);
         Assert.assertEquals("DONT_VALIDATE_TESTNET_MILESTONE_SIG",
                 iotaConfig.isDontValidateTestnetMilestoneSig(), true);
+        //prove that REMOTE did nothing
+        Assert.assertEquals("API_HOST", iotaConfig.getApiHost(), "localhost");
     }
 
     @Test
@@ -245,6 +258,11 @@ public class ConfigTest {
     }
 
     private String deriveNameFromSetter(Method setter) {
+        JsonIgnore jsonIgnore = setter.getAnnotation(JsonIgnore.class);
+        if (jsonIgnore != null) {
+            return null;
+        }
+
         JsonProperty jsonProperty = setter.getAnnotation(JsonProperty.class);
         //Code works w/o annotation but we wish to enforce its usage
         Assert.assertNotNull("Setter " + setter.getName() + "must have JsonProperty annotation", jsonProperty);

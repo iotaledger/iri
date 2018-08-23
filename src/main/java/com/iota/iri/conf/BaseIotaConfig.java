@@ -3,6 +3,7 @@ package com.iota.iri.conf;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.iota.iri.IRI;
 import com.iota.iri.utils.IotaUtils;
@@ -31,6 +32,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
+    //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
+    private boolean remote;
 
 
     //Network
@@ -129,6 +132,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--api-host"}, description = APIConfig.Descriptions.API_HOST)
     protected void setApiHost(String apiHost) {
         this.apiHost = apiHost;
+    }
+
+    @JsonIgnore
+    @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE)
+    protected void setRemote(boolean remote) {
+        this.apiHost = "0.0.0.0";
     }
 
     @Override

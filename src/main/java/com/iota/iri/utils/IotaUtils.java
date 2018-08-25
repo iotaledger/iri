@@ -51,4 +51,8 @@ public class IotaUtils {
         }
         return Collections.unmodifiableList(setters);
     }
+
+	public static <T> List<T> createImmutableList(T... values) {
+		return Collections.unmodifiableList(Arrays.asList(values));
+	}
 }

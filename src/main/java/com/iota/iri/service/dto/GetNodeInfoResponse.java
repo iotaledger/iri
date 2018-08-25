@@ -147,7 +147,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
      * For a milestone to become solid your local node must basically approve the subtangle of coordinator-approved transactions, 
      *  and have a consistent view of all referenced transactions.
      *
-     * @return The latest subtangle milestone index.
+     * @return The latest subtangle milestone hash.
      */
 	public String getLatestSolidSubtangleMilestone() {
 		return latestSolidSubtangleMilestone;
@@ -163,9 +163,9 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the start of the milestone index
+     * Gets the start milestone index
      *
-     * @return The start of the milestone index.
+     * @return The start milestone index.
      */
 	public int getMilestoneStartIndex() {
 		return milestoneStartIndex;

@@ -54,14 +54,14 @@ public class RocksDBPersistenceProviderTest {
 
         rocksDBPersistenceProvider.saveBatch(models);
 
-        List<Pair<Indexable, Class<Persistable>>> modelsToDelete = models.stream()
+        List<Pair<Indexable, ? extends Class<? extends Persistable>>> modelsToDelete = models.stream()
                 .filter(entry -> ((IntegerIndex) entry.low).getValue() < 900)
-                .map(entry -> new Pair<>(entry.low, (Class<Persistable>) entry.hi.getClass()))
+                .map(entry -> new Pair<>(entry.low, entry.hi.getClass()))
                 .collect(Collectors.toList());
 
         rocksDBPersistenceProvider.deleteBatch(modelsToDelete);
 
-        for (Pair<Indexable, Class<Persistable>> model : modelsToDelete) {
+        for (Pair<Indexable, ? extends Class<? extends Persistable>> model : modelsToDelete) {
             Assert.assertNull("value at index " + ((IntegerIndex) model.low).getValue() + " should be deleted",
                     rocksDBPersistenceProvider.get(model.hi, model.low).bytes());
         }

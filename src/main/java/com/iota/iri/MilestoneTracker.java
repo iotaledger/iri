@@ -47,6 +47,11 @@ public class MilestoneTracker {
     private static int STATUS_LOG_INTERVAL = 5000;
 
     /**
+     * How many milestones after the latest solid one will try to be actively solidified.
+     */
+    private static int MILESTONE_SOLIDIFY_AHEAD_RANGE = 50;
+
+    /**
      * This variable is used to keep track of the asynchronous tasks, that the "Solid Milestone Tracker" should wait for.
      */
     private AtomicInteger blockingSolidMilestoneTrackerTasks = new AtomicInteger(0);
@@ -198,12 +203,9 @@ public class MilestoneTracker {
                             unsolidMilestones.remove(milestoneHash);
                         }
 
-                        // check milestones that are within our check range
-                        else if(milestoneIndex < latestSolidSubtangleMilestoneIndex + 50) {
-                            // remove milestones that have become solid
-                            if(transactionValidator.checkSolidity(milestoneHash, true)) {
-                                unsolidMilestones.remove(milestoneHash);
-                            }
+                        // remove milestones that have become solid and are in our check range
+                        else if(milestoneIndex < latestSolidSubtangleMilestoneIndex + MILESTONE_SOLIDIFY_AHEAD_RANGE && transactionValidator.checkSolidity(milestoneHash, true)) {
+                            unsolidMilestones.remove(milestoneHash);
                         }
                     } catch(Exception e) {
                         e.printStackTrace();
@@ -451,7 +453,7 @@ public class MilestoneTracker {
         return INVALID;
     }
 
-    void updateLatestSolidSubtangleMilestone() throws Exception {
+    public void updateLatestSolidSubtangleMilestone() throws Exception {
         // introduce some variables that help us to emit log messages while processing the milestones
         int previousSolidSubtangleLatestMilestoneIndex = latestSolidSubtangleMilestoneIndex;
         long scanStart = System.currentTimeMillis();
@@ -515,14 +517,12 @@ public class MilestoneTracker {
         return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET, 15);
     }
 
-    void shutDown() {
+    public void shutDown() {
         shuttingDown = true;
     }
 
     public void reportToSlack(final int milestoneIndex, final int depth, final int nextDepth) {
-
         try {
-
             final String request = "token=" + URLEncoder.encode("<botToken>", "UTF-8") + "&channel=" + URLEncoder.encode("#botbox", "UTF-8") + "&text=" + URLEncoder.encode("TESTNET: ", "UTF-8") + "&as_user=true";
 
             final HttpURLConnection connection = (HttpsURLConnection) (new URL("https://slack.com/api/chat.postMessage")).openConnection();

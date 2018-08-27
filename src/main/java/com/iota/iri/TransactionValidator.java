@@ -255,7 +255,7 @@ public class TransactionValidator {
                 transactionViewModel.updateHeights(tangle);
 
                 if(milestone.analyzeMilestoneCandidate(transactionViewModel) == MilestoneTracker.Validity.VALID) {
-                    // do some other milestone specific updates (check for latestSolidMilestone)
+                    milestone.updateLatestSolidSubtangleMilestone();
                 }
 
                 return true;

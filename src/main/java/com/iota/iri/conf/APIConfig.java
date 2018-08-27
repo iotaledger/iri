@@ -58,5 +58,6 @@ public interface APIConfig extends Config {
         String MAX_REQUESTS_LIST = "The maximal number of parameters one can place in an API call. If the number parameters exceeds this number an error will be returned";
         String MAX_GET_TRYTES = "The maximal number of trytes that may be returned by the \"getTrytes\" API call. If the number of transactions found exceeds this number an error will be returned.";
         String MAX_BODY_LENGTH = "The maximal number of characters the body of an API call may hold. If a request body length exceeds this number an error will be returned.";
+        String REMOTE = "Open the API interface to any host. Equivalent to \"--api-host 0.0.0.0\"";
     }
 }

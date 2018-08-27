@@ -284,6 +284,9 @@ public class API {
                             System.currentTimeMillis(), instance.tipsViewModel.size(),
                             instance.transactionRequester.numberOfTransactionsToRequest());
                 }
+                case "getApiConfiguration": {
+                    return GetAPIConfigurationResponse.create(this);
+                }
                 case "getTips": {
                     return getTipsStatement();
                 }
@@ -918,6 +921,30 @@ public class API {
     }
     public static void incEllapsedTime_PoW(long ellapsedTime) {
         ellapsedTime_PoW += ellapsedTime;
+    }
+
+    public int getMinRandomWalks() {
+        return minRandomWalks;
+    }
+
+    public int getMaxRandomWalks() {
+        return maxRandomWalks;
+    }
+
+    public int getMaxFindTxs() {
+        return maxFindTxs;
+    }
+
+    public int getMaxRequestList() {
+        return maxRequestList;
+    }
+
+    public int getMaxGetTrytes() {
+        return maxGetTrytes;
+    }
+
+    public int getMaxBodyLength() {
+        return maxBodyLength;
     }
 
     public synchronized List<String> attachToTangleStatement(final Hash trunkTransaction, final Hash branchTransaction,

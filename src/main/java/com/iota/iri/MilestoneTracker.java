@@ -26,6 +26,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.locks.ReadWriteLock;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 import static com.iota.iri.MilestoneTracker.Validity.*;
 
@@ -50,11 +52,6 @@ public class MilestoneTracker {
      * How many milestones after the latest solid one will try to be actively solidified.
      */
     private static int MILESTONE_SOLIDIFY_AHEAD_RANGE = 50;
-
-    /**
-     * This variable is used to keep track of the asynchronous tasks, that the "Solid Milestone Tracker" should wait for.
-     */
-    private AtomicInteger blockingSolidMilestoneTrackerTasks = new AtomicInteger(0);
 
     private AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
 
@@ -82,6 +79,11 @@ public class MilestoneTracker {
 
     private boolean shuttingDown;
 
+    /**
+     * This variable is used to keep track of the asynchronous tasks, that the "Solid Milestone Tracker" should wait for.
+     */
+    private ReadWriteLock lock = new ReentrantReadWriteLock();
+
     public MilestoneTracker(Tangle tangle,
                             TransactionValidator transactionValidator,
                             MessageQ messageQ,
@@ -106,12 +108,6 @@ public class MilestoneTracker {
     public void init (LedgerValidator ledgerValidator) {
         this.ledgerValidator = ledgerValidator;
 
-        // to be able to process the milestones in the correct order after a rescan of the database, we initialize
-        // this variable with 1 and wait for the "Latest Milestone Tracker" to process all milestones at least once
-        if(isRescanning) {
-            blockingSolidMilestoneTrackerTasks.incrementAndGet();
-        }
-
         // start the threads
         spawnLatestMilestoneTracker();
         spawnSolidMilestoneTracker();
@@ -125,6 +121,12 @@ public class MilestoneTracker {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) { /* do nothing */ }
+            }
+
+            // to be able to process the milestones in the correct order after a rescan of the database, we initialize
+            // this variable with 1 and wait for the "Latest Milestone Tracker" to process all milestones at least once
+            if(isRescanning) {
+                lock.writeLock().lock();
             }
 
             ProgressLogger scanningMilestonesProgress = new ProgressLogger("Scanning Latest Milestones", log);
@@ -154,7 +156,7 @@ public class MilestoneTracker {
 
                     // allow the "Solid Milestone Tracker" to continue if we finished the first run in rescanning mode
                     if(firstRun && isRescanning) {
-                        blockingSolidMilestoneTrackerTasks.decrementAndGet();
+                        lock.writeLock().unlock();
                     }
 
                     Thread.sleep(Math.max(1, RESCAN_INTERVAL - (System.currentTimeMillis() - scanTime)));
@@ -208,11 +210,11 @@ public class MilestoneTracker {
                             unsolidMilestones.remove(milestoneHash);
                         }
                     } catch(Exception e) {
-                        e.printStackTrace();
+                        log.error("Error while trying to solidify milestones", e);
                     }
                 });
 
-                try { Thread.sleep(500); } catch (InterruptedException e) { e.printStackTrace(); }
+                try { Thread.sleep(500); } catch (InterruptedException e) { /* do nothing */ }
             }
         }, "Milestone Solidifier").start();
     }
@@ -291,16 +293,15 @@ public class MilestoneTracker {
      * updateLatestSolidSubtangleMilestone trigger again and give it a chance to detect corruptions.
      */
     public void softReset() {
-        // increase a counter for the background tasks to pause the "Solid Milestone Tracker"
-        blockingSolidMilestoneTrackerTasks.incrementAndGet();
+        lock.writeLock().lock();
 
-        // reset the ledger state to the initial state
-        latestSnapshot = initialSnapshot.clone();
-        latestSolidSubtangleMilestone = Hash.NULL_HASH;
-        latestSolidSubtangleMilestoneIndex = initialSnapshot.index();
-
-        // decrease the counter for the background tasks to unpause the "Solid Milestone Tracker"
-        blockingSolidMilestoneTrackerTasks.decrementAndGet();
+        try {
+            latestSnapshot = initialSnapshot.clone();
+            latestSolidSubtangleMilestone = Hash.NULL_HASH;
+            latestSolidSubtangleMilestoneIndex = initialSnapshot.index();
+        } finally {
+            lock.writeLock().unlock();
+        }
     }
 
     /**
@@ -319,8 +320,8 @@ public class MilestoneTracker {
             return;
         }
 
-        // increase a counter for the background tasks to pause the "Solid Milestone Tracker"
-        blockingSolidMilestoneTrackerTasks.incrementAndGet();
+        // block write access to the ledger from other threads
+        lock.writeLock().lock();
 
         // create a progress logger and start the logging
         ProgressLogger hardResetLogger = new ProgressLogger(
@@ -351,8 +352,8 @@ public class MilestoneTracker {
         // dump message when we are done
         hardResetLogger.finish();
 
-        // decrease the counter for the background tasks to unpause the "Solid Milestone Tracker"
-        blockingSolidMilestoneTrackerTasks.decrementAndGet();
+        // unblock write access to the ledger from other threads
+        lock.writeLock().unlock();
     }
 
     /**
@@ -465,11 +466,12 @@ public class MilestoneTracker {
 
         // while we have a milestone which is solid
         while(
-            blockingSolidMilestoneTrackerTasks.get() == 0 &&
             !shuttingDown &&
             nextMilestone != null &&
             transactionValidator.checkSolidity(nextMilestone.getHash(), true)
         ) {
+            lock.writeLock().lock();
+
             // if we can update the ledger state with our current milestone
             if(ledgerValidator.updateSnapshot(nextMilestone)) {
                 // update our internal variables
@@ -501,6 +503,8 @@ public class MilestoneTracker {
 
                 nextMilestone = null;
             }
+
+            lock.writeLock().unlock();
         }
 
         // dump a final log message when we are done

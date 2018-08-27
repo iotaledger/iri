@@ -319,7 +319,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         }
     }
 
-    public void deleteBatch(Collection<Pair<Indexable, Class<Persistable>>> models)
+    public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models)
             throws Exception {
         if (CollectionUtils.isNotEmpty(models)) {
             try (WriteBatch writeBatch = new WriteBatch()) {

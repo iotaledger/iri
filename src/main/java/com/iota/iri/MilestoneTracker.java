@@ -122,8 +122,8 @@ public class MilestoneTracker {
                 } catch (InterruptedException e) { /* do nothing */ }
             }
 
-            // to be able to process the milestones in the correct order after a rescan of the database, we initialize
-            // this variable with 1 and wait for the "Latest Milestone Tracker" to process all milestones at least once
+            // to be able to process the milestones in the correct order after a rescan of the database, we block write
+            // access until the scan finished at least once
             if(isRescanning) {
                 lock.writeLock().lock();
             }
@@ -478,18 +478,6 @@ public class MilestoneTracker {
                     latestSolidSubtangleMilestone = nextMilestone.getHash();
                     latestSolidSubtangleMilestoneIndex = nextMilestone.index();
 
-                    // dump a log message every 5 seconds
-                    if(System.currentTimeMillis() - scanStart >= STATUS_LOG_INTERVAL) {
-                        messageQ.publish("lmsi %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
-                        messageQ.publish("lmhs %s", latestSolidSubtangleMilestone);
-                        log.info("Latest SOLID SUBTANGLE milestone has changed from #"
-                                + previousSolidSubtangleLatestMilestoneIndex + " to #"
-                                + latestSolidSubtangleMilestoneIndex);
-
-                        scanStart = System.currentTimeMillis();
-                        previousSolidSubtangleLatestMilestoneIndex = nextMilestone.index();
-                    }
-
                     // iterate to the next milestone
                     nextMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
                 }
@@ -503,15 +491,20 @@ public class MilestoneTracker {
 
                     nextMilestone = null;
                 }
-            }
 
-            // dump a final log message when we are done
-            if(previousSolidSubtangleLatestMilestoneIndex != latestSolidSubtangleMilestoneIndex) {
-                messageQ.publish("lmsi %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
-                messageQ.publish("lmhs %s", latestSolidSubtangleMilestone);
-                log.info("Latest SOLID SUBTANGLE milestone has changed from #"
-                        + previousSolidSubtangleLatestMilestoneIndex + " to #"
-                        + latestSolidSubtangleMilestoneIndex);
+                // dump a log message periodically and if we are done
+                if(previousSolidSubtangleLatestMilestoneIndex != latestSolidSubtangleMilestoneIndex && (
+                    System.currentTimeMillis() - scanStart >= STATUS_LOG_INTERVAL || nextMilestone == null
+                )) {
+                    messageQ.publish("lmsi %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
+                    messageQ.publish("lmhs %s", latestSolidSubtangleMilestone);
+                    log.info("Latest SOLID SUBTANGLE milestone has changed from #"
+                            + previousSolidSubtangleLatestMilestoneIndex + " to #"
+                            + latestSolidSubtangleMilestoneIndex);
+
+                    scanStart = System.currentTimeMillis();
+                    previousSolidSubtangleLatestMilestoneIndex = nextMilestone.index();
+                }
             }
         } finally {
             lock.writeLock().unlock();

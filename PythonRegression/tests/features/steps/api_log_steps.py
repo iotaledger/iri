@@ -8,16 +8,6 @@ logger = logging.getLogger(__name__)
 
 logConfig = {}
  
-@step(r'create the log directory "([^"]*)"')
-def create_log_directory(step,path):
-    logger.info('Creating Log directory %s',path)
-    logConfig['logDirPath'] = path
-    try:
-        os.makedirs(path)
-        logger.info('Log directory created')
-    except:
-        logger.info('%s already exists',path)
-       
         
 @step(r'log the response to the file "([^"]*)"')
 def create_log_file(step,fileName):

@@ -17,6 +17,8 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
+import java.util.HashMap;
+
 import static com.iota.iri.controllers.TransactionViewModelTest.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -28,6 +30,7 @@ public class TransactionValidatorTest {
   private static final TemporaryFolder dbFolder = new TemporaryFolder();
   private static final TemporaryFolder logFolder = new TemporaryFolder();
   private static Tangle tangle;
+  private static MilestoneTracker milestoneTracker;
   private static TransactionValidator txValidator;
 
   @BeforeClass
@@ -42,8 +45,11 @@ public class TransactionValidatorTest {
     TipsViewModel tipsViewModel = new TipsViewModel();
     MessageQ messageQ = Mockito.mock(MessageQ.class);
     TransactionRequester txRequester = new TransactionRequester(tangle, messageQ);
-    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ, new MainnetConfig());
+    MainnetConfig config = new MainnetConfig();
+    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ, config);
     txValidator.setMwm(false, MAINNET_MWM);
+    milestoneTracker = new MilestoneTracker(tangle, txValidator, messageQ, new Snapshot(new HashMap<>(), 0), config);
+    txValidator.init(false, MAINNET_MWM, milestoneTracker);
   }
 
   @AfterClass
@@ -55,10 +61,10 @@ public class TransactionValidatorTest {
 
   @Test
   public void testMinMwm() throws InterruptedException {
-    txValidator.init(false, 5);
+    txValidator.init(false, 5, milestoneTracker);
     assertTrue(txValidator.getMinWeightMagnitude() == 13);
     txValidator.shutdown();
-    txValidator.init(false, MAINNET_MWM);
+    txValidator.init(false, MAINNET_MWM, milestoneTracker);
   }
 
   @Test
@@ -193,6 +199,7 @@ public class TransactionValidatorTest {
     grandParent.updateSolid(false);
     grandParent.store(tangle);
 
+    txValidator.milestone = milestoneTracker;
     txValidator.addSolidTransaction(leftChildLeaf.getHash());
     while (!txValidator.isNewSolidTxSetsEmpty()) {
       txValidator.propagateSolidTransactions();

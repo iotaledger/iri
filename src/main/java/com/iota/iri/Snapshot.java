@@ -36,8 +36,9 @@ public class Snapshot {
                     SNAPSHOT_PUBKEY, SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
                 throw new RuntimeException("Snapshot signature failed.");
             }
+
             Map<Hash, Long> initialState = initInitialState(snapshotFile);
-            initialSnapshot = new Snapshot(initialState, 0);
+            initialSnapshot = new Snapshot(initialState, config.isTestnet() ? 0 : config.getMilestoneStartIndex());
             checkStateHasCorrectSupply(initialState);
             checkInitialSnapshotIsConsistent(initialState);
         }
@@ -108,7 +109,7 @@ public class Snapshot {
         return i;
     }
 
-    private Snapshot(Map<Hash, Long> initialState, int index) {
+    public Snapshot(Map<Hash, Long> initialState, int index) {
         state = new HashMap<>(initialState);
         this.index = index;
     }

@@ -1,7 +1,7 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.LedgerValidator;
-import com.iota.iri.Milestone;
+import com.iota.iri.MilestoneTracker;
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.MainnetConfig;
@@ -36,7 +36,7 @@ public class WalkValidatorImplTest {
     @Mock
     private TransactionValidator transactionValidator;
     @Mock
-    private Milestone milestoneTracker;
+    private MilestoneTracker milestoneTracker;
 
     @AfterClass
     public static void tearDown() throws Exception {

@@ -157,7 +157,6 @@ def check_neighbors_post_addition(step):
 @step(r'"removeNeighbors" will be called to remove the same neighbors')
 def remove_neighbors(step):
     api = prepare_api_call(config['nodeId'])
-    logger.info('Removing neighbors')
     response = api.remove_neighbors(neighbors)
     logger.debug('Response: %s',response)
     

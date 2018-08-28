@@ -88,6 +88,7 @@ Feature: Test API calls on Machine 1
 	Scenario: Broadcast a test transacion
 		Send a test transaction from one node in a machine, and find that transaction
 		through a different node in the same machine
+		
  		Given "nodeA" and "nodeB" are neighbors
 		When a transaction with the tag "TEST9TRANSACTION" is sent from "nodeA"
 		And findTransaction is called with the same tag on "nodeB" 

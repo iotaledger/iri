@@ -3,7 +3,7 @@ Feature: Test API calls on Machine 2
 	correctly 
 	
 	Scenario: GetNodeInfo is called
-		Given "getNodeInfo" is called on each node in "machine2" 
+		Given "getNodeInfo" is called on "nodeA"
 		Then a response with the following is returned:
 		|keys								|
 		|appName							|	
@@ -27,7 +27,7 @@ Feature: Test API calls on Machine 2
 	
 	
 	Scenario: GetNeighbors is called
-		Given "getNeighbors" is called on each node in "machine2"
+		Given "getNeighbors" is called on "nodeA"
 		Then a response with the following is returned:
 		|keys								|
 		|address							|
@@ -40,7 +40,7 @@ Feature: Test API calls on Machine 2
 		
 		
 	Scenario: GetTips is called
-		Given "getTips" is called on each node in "machine2"
+		Given "getTips" is called on "nodeA"
 		Then a response with the following is returned:
 		|keys 								|
 		|hashes								|
@@ -54,7 +54,7 @@ Feature: Test API calls on Machine 2
 	
 		
 	Scenario: GetTransactionsToApprove is called
-		Given "getTransactionsToApprove" is called on each node
+		Given "getTransactionsToApprove" is called on "nodeA"
 		Then a response with the following is returned: 
 		|keys								|
 		|trunkTransaction					|

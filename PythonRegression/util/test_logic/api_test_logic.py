@@ -7,10 +7,10 @@ logger = logging.getLogger(__name__)
 
 
 
-def prepare_api_call(nodeName,machine):
+def prepare_api_call(nodeName):
     logger.info('Preparing api call')
-    host = world.machines[machine][nodeName]['host']
-    port = world.machines[machine][nodeName]['port']
+    host = world.machine[nodeName]['host']
+    port = world.machine[nodeName]['port']
     address ="http://"+ host + ":" + port
     api = Iota(address)
     logger.info('API call prepared for %s',address)
@@ -19,19 +19,19 @@ def prepare_api_call(nodeName,machine):
 
 def check_responses_for_call(apiCall):
     steps = import_steps()
-    if len(steps.responses[apiCall][steps.config['machine']]) > 0:
+    if len(steps.responses[apiCall]) > 0:
         return True
     else:
         return False
     
 def fetch_response(apiCall):
     steps = import_steps()
-    return steps.responses[apiCall][steps.config['machine']]
+    return steps.responses[apiCall]
 
 
 def check_neighbors(step,node):
     steps = import_steps()
-    api = prepare_api_call(node,steps.config['machine'])
+    api = prepare_api_call(node)
     response = api.getNeighbors()
     logger.info('Response: %s',response)
     containsNeighbor = [False,False]

@@ -3,14 +3,13 @@ from iota import Iota,ProposedTransaction,Address,Tag,TryteString,BundleHash
 
 from util import static_vals
 from time import sleep
+import importlib
 
 import logging 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 neighbors = static_vals.TEST_NEIGHBORS
-testHash = static_vals.TEST_HASH
-testTrytes = static_vals.TEST_TRYTES
 testAddress = static_vals.TEST_ADDRESS
 
 config = {}
@@ -110,27 +109,20 @@ def compare_response(step):
  
  ###
  #Test GetTrytes 
-@step(r'getTrytes is called with the hash static_vals.TEST_HASH')
-def call_getTrytes(step):
+@step(r'getTrytes is called with the hash ([^"]+)')
+def call_getTrytes(step,hash):
     api = prepare_api_call(config['nodeId'])
-    logger.info('Testing getTrytes on static transaction')
-    nodeId = config['nodeId']
-      
-    api = prepare_api_call(nodeId)
+    testHash = getattr(static_vals, hash)
     response = api.get_trytes(testHash)
     logger.debug("Call may not have responded correctly: \n%s",response)
-    assert type(response) is dict 
-    responses['getTrytes'] = {}
-    responses['getTrytes'][nodeId] = response
+    assert type(response) is dict
+    responses['getTrytes'][config['nodeId']] = response
 
 
-
-@step(r'the response should be equal to static_vals.TEST_TRYTES')
-def check_trytes(step):
-    logger.info('Validating response')
-    nodeId = config['nodeId']  
-    
-    response = responses['getTrytes'][nodeId]
+@step(r'the response should be equal to ([^"]+)')
+def check_trytes(step,trytes):
+    response = responses['getTrytes'][config['nodeId']]
+    testTrytes = getattr(static_vals,trytes)  
     if 'trytes' in response:
         assert response['trytes'][0] == testTrytes, "Trytes do not match"
 

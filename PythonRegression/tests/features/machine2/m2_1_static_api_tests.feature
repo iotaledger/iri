@@ -47,11 +47,13 @@ Feature: Test API calls on Machine 2
 		|duration							|
 
 	
-	Scenario: GetTrytes is called 
-		Given getTrytes is called with the hash static_vals.TEST_HASH
-		Then the response should be equal to static_vals.TEST_TRYTES
-	
-	
+	Scenario Outline: GetTrytes is called 
+		Given getTrytes is called with the hash <hash>
+		Then the response should be equal to <trytes>
+		
+		Examples:
+			|hash 					| trytes 					| 
+			|static_vals.TEST_HASH	| static_vals.TEST_TRYTES	|
 		
 	Scenario: GetTransactionsToApprove is called
 		Given "getTransactionsToApprove" is called on "nodeA"

@@ -25,7 +25,6 @@ import java.net.URLEncoder;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -455,65 +454,67 @@ public class MilestoneTracker {
     }
 
     public void updateLatestSolidSubtangleMilestone() throws Exception {
-        // introduce some variables that help us to emit log messages while processing the milestones
-        int previousSolidSubtangleLatestMilestoneIndex = latestSolidSubtangleMilestoneIndex;
-        long scanStart = System.currentTimeMillis();
+        lock.writeLock().lock();
 
-        // get the next milestone
-        MilestoneViewModel nextMilestone = MilestoneViewModel.findClosestNextMilestone(
-            tangle, previousSolidSubtangleLatestMilestoneIndex
-        );
+        try {
+            // introduce some variables that help us to emit log messages while processing the milestones
+            int previousSolidSubtangleLatestMilestoneIndex = latestSolidSubtangleMilestoneIndex;
+            long scanStart = System.currentTimeMillis();
 
-        // while we have a milestone which is solid
-        while(
-            !shuttingDown &&
-            nextMilestone != null &&
-            transactionValidator.checkSolidity(nextMilestone.getHash(), true)
-        ) {
-            lock.writeLock().lock();
+            // get the next milestone
+            MilestoneViewModel nextMilestone = MilestoneViewModel.findClosestNextMilestone(
+                tangle, previousSolidSubtangleLatestMilestoneIndex
+            );
 
-            // if we can update the ledger state with our current milestone
-            if(ledgerValidator.updateSnapshot(nextMilestone)) {
-                // update our internal variables
-                latestSolidSubtangleMilestone = nextMilestone.getHash();
-                latestSolidSubtangleMilestoneIndex = nextMilestone.index();
+            // while we have a milestone which is solid
+            while(
+                !shuttingDown &&
+                nextMilestone != null &&
+                transactionValidator.checkSolidity(nextMilestone.getHash(), true)
+            ) {
+                // if we can update the ledger state with our current milestone
+                if(ledgerValidator.updateSnapshot(nextMilestone)) {
+                    // update our internal variables
+                    latestSolidSubtangleMilestone = nextMilestone.getHash();
+                    latestSolidSubtangleMilestoneIndex = nextMilestone.index();
 
-                // dump a log message every 5 seconds
-                if(System.currentTimeMillis() - scanStart >= STATUS_LOG_INTERVAL) {
-                    messageQ.publish("lmsi %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
-                    messageQ.publish("lmhs %s", latestSolidSubtangleMilestone);
-                    log.info("Latest SOLID SUBTANGLE milestone has changed from #"
-                             + previousSolidSubtangleLatestMilestoneIndex + " to #"
-                             + latestSolidSubtangleMilestoneIndex);
+                    // dump a log message every 5 seconds
+                    if(System.currentTimeMillis() - scanStart >= STATUS_LOG_INTERVAL) {
+                        messageQ.publish("lmsi %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
+                        messageQ.publish("lmhs %s", latestSolidSubtangleMilestone);
+                        log.info("Latest SOLID SUBTANGLE milestone has changed from #"
+                                + previousSolidSubtangleLatestMilestoneIndex + " to #"
+                                + latestSolidSubtangleMilestoneIndex);
 
-                    scanStart = System.currentTimeMillis();
-                    previousSolidSubtangleLatestMilestoneIndex = nextMilestone.index();
+                        scanStart = System.currentTimeMillis();
+                        previousSolidSubtangleLatestMilestoneIndex = nextMilestone.index();
+                    }
+
+                    // iterate to the next milestone
+                    nextMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
                 }
 
-                // iterate to the next milestone
-                nextMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, latestSolidSubtangleMilestoneIndex);
-            }
+                // otherwise -> try to repair and abort our loop
+                else {
+                    // do a soft reset if we didn't do a hard reset yet
+                    if(latestSnapshot.index() != initialSnapshot.index()) {
+                        softReset();
+                    }
 
-            // otherwise -> try to repair and abort our loop
-            else {
-                // do a soft reset if we didn't do a hard reset yet
-                if(latestSnapshot.index() != initialSnapshot.index()) {
-                    softReset();
+                    nextMilestone = null;
                 }
-
-                nextMilestone = null;
             }
 
+            // dump a final log message when we are done
+            if(previousSolidSubtangleLatestMilestoneIndex != latestSolidSubtangleMilestoneIndex) {
+                messageQ.publish("lmsi %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
+                messageQ.publish("lmhs %s", latestSolidSubtangleMilestone);
+                log.info("Latest SOLID SUBTANGLE milestone has changed from #"
+                        + previousSolidSubtangleLatestMilestoneIndex + " to #"
+                        + latestSolidSubtangleMilestoneIndex);
+            }
+        } finally {
             lock.writeLock().unlock();
-        }
-
-        // dump a final log message when we are done
-        if(previousSolidSubtangleLatestMilestoneIndex != latestSolidSubtangleMilestoneIndex) {
-            messageQ.publish("lmsi %d %d", previousSolidSubtangleLatestMilestoneIndex, latestSolidSubtangleMilestoneIndex);
-            messageQ.publish("lmhs %s", latestSolidSubtangleMilestone);
-            log.info("Latest SOLID SUBTANGLE milestone has changed from #"
-                     + previousSolidSubtangleLatestMilestoneIndex + " to #"
-                     + latestSolidSubtangleMilestoneIndex);
         }
     }
 

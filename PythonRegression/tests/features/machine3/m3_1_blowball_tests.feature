@@ -6,12 +6,12 @@ Feature: Test GTTA for blowballs
 		milestones. The total percentage of returned milestones should 
 		be less than 5%. 
 		
-		Given GTTA is called 10 times on "nodeA"
+		Given GTTA is called 1000 times on "nodeA"
 		And find transaction is called with the address: 
 		"""
-		TESTNET9TESTING9COO9TESTNET9TESTING9COO9TESTNET9TESTING9COO9TESTNET9TESTING9COO99
+		EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH
 		""" 
+		#Insert your testnet coordinator address above
 		Then the returned GTTA transactions will be compared with the milestones
 		And less than 5 percent of the returned transactions should reference milestones
-	
 	

@@ -1,6 +1,7 @@
 from aloe import world, step 
 from util.test_logic import api_test_logic
 from iota import *
+import io
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -24,6 +25,8 @@ def compare_gtta_with_milestones(step):
     
     transactions = []
     transactions_count = []
+    milestone_transactions = []
+    milestone_transactions_count = []
     test_vars['milestone_count'] = 0
     
     for node in gtta_responses:
@@ -32,25 +35,48 @@ def compare_gtta_with_milestones(step):
                 branch_transaction = gtta_responses[node][response]['branchTransaction']
                 trunk_transaction = gtta_responses[node][response]['trunkTransaction']
                 
-                compare_responses(branch_transaction,milestones,transactions,transactions_count)
-                compare_responses(trunk_transaction,milestones,transactions,transactions_count)
+                compare_responses(branch_transaction,milestones,transactions,transactions_count,
+                                  milestone_transactions,milestone_transactions_count)
+                compare_responses(trunk_transaction,milestones,transactions,transactions_count,
+                                  milestone_transactions,milestone_transactions_count)
     
         logger.info("Milestone count: " + str(test_vars['milestone_count']))
     
+    f = open('blowball_log.txt','w')
     for transaction in range(len(transactions)):
-        logger.debug('Transaction: ' + str(transactions[transaction]) + " : " + str(transactions_count[transaction]))
- 
+        transaction_string = 'Transaction: ' + str(transactions[transaction]) + " : " + str(transactions_count[transaction])
+        logger.debug(transaction_string)
+        f.write(transaction_string + "\n")
+        
+    for milestone in range(len(milestone_transactions)):
+        milestone_string = 'Milestone: ' + str(milestone_transactions[milestone]) + \
+        " : " + str(milestone_transactions_count[milestone])
+        logger.debug(milestone_string)
+        f.write(milestone_string + "\n")
+    
+    f.close()
+    logger.info('Transactions logged in /tests/features/machine3/blowball_logs.txt')    
     
 
 @step(r'less than (\d+) percent of the returned transactions should reference milestones')
 def less_than_max_percent(step,max_percent):
     percentage = test_vars['milestone_count']/config['max'] * 100.00
-    assert percentage < 5
     logger.info(str(percentage) + "% milestones")
+    assert percentage < 5
+    
+    
     
         
-def compare_responses(value,milestone_list,transaction_list,transaction_counter_list):
+def compare_responses(value,milestone_list,transaction_list,transaction_counter_list,
+                      milestone_transaction_list,milestone_transaction_count):
     if value in milestone_list:
+        if value in milestone_transaction_list:
+            milestone_transaction_count[milestone_transaction_list.index(value)] += 1
+        else:
+            milestone_transaction_list.append(value)
+            milestone_transaction_count.append(1)
+            logger.debug('added transaction "{}" to milestone list'.format(value))
+            
         test_vars['milestone_count'] += 1
         logger.debug('"{}" is a milestone'.format(value))    
     else: 

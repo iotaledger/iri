@@ -503,7 +503,7 @@ public class MilestoneTracker {
                             + latestSolidSubtangleMilestoneIndex);
 
                     scanStart = System.currentTimeMillis();
-                    previousSolidSubtangleLatestMilestoneIndex = nextMilestone.index();
+                    previousSolidSubtangleLatestMilestoneIndex = latestSolidSubtangleMilestoneIndex;
                 }
             }
         } finally {

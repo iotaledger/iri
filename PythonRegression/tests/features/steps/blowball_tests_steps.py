@@ -60,9 +60,9 @@ def compare_gtta_with_milestones(step):
 
 @step(r'less than (\d+) percent of the returned transactions should reference milestones')
 def less_than_max_percent(step,max_percent):
-    percentage = test_vars['milestone_count']/config['max'] * 100.00
+    percentage = (float(test_vars['milestone_count'])/(config['max'] * 2)) * 100.00
     logger.info(str(percentage) + "% milestones")
-    assert percentage < 5
+    assert percentage < float(max_percent)
     
     
     

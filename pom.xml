@@ -203,6 +203,7 @@
                     <target>${java-version}</target>
                     <testSource>${java-version}</testSource>
                     <testTarget>${java-version}</testTarget>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
                 </configuration>
             </plugin>
             <plugin>

@@ -25,12 +25,6 @@ Feature: Test API calls on Machine 1
 		|tips								|
 		|transactionsToRequest				|
 	
-	@nodeInfo	
-	Scenario: Log GetNodeInfo
-		Given a response for "getNodeInfo" exists
-		Then create the log directory "./tests/features/machine1/static_test_logs/get_node_info_logs/"
-		And log the response to the file "getNodeInfoLog.txt"		 
-		
 
 	Scenario: GetNeighbors is called
 		Given "getNeighbors" is called on "nodeA"

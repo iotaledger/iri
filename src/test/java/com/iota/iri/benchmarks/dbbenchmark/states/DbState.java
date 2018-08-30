@@ -43,7 +43,7 @@ public abstract class DbState {
         System.out.println("numTxsToTest = [" + numTxsToTest + "]");
         transactions = new ArrayList<>(numTxsToTest);
         for (int i = 0; i < numTxsToTest; i++) {
-            trytes = nextWord(trytes);
+            trytes = TransactionTestUtils.nextWord(trytes);
             TransactionViewModel tvm = TransactionTestUtils.createTransactionWithTrytes(trytes);
             transactions.add(tvm);
         }
@@ -61,21 +61,6 @@ public abstract class DbState {
         System.out.println("-----------------------iteration teardown--------------------------------");
         tangle.clearColumn(Transaction.class);
         tangle.clearMetadata(Transaction.class);
-    }
-
-    private String nextWord(String trytes) {
-        if ("".equals(trytes)) {
-            return "A";
-        }
-        trytes = trytes.toUpperCase();
-        char[] chars = trytes.toCharArray();
-        for (int i = chars.length -1; i>=0; --i) {
-            if (chars[i] != 'Z') {
-                ++chars[i];
-                return new String(chars);
-            }
-        }
-        return trytes + 'A';
     }
 
     public Tangle getTangle() {

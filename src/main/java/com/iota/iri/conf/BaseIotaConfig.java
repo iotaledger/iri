@@ -601,7 +601,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     public interface Defaults {
-		//API
+        //API
         int API_PORT = 14265;
         String API_HOST = "localhost";
         List<String> REMOTE_LIMIT_API = IotaUtils.createImmutableList("addNeighbors", "getNeighbors", "removeNeighbors", "attachToTangle", "interruptAttachingToTangle");

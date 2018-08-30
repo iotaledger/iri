@@ -38,7 +38,7 @@ public class RocksDbBenchmark {
     }
 
     @Benchmark
-    public void fetchBatch(FullState state) throws Exception {
+    public void fetchOneByOne(FullState state) throws Exception {
         for (Pair<Indexable, ? extends Class<? extends Persistable>> pair : state.getPairs()) {
             state.getTangle().load(pair.hi, pair.low);
         }

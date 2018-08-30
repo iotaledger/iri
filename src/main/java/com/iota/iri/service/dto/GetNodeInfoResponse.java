@@ -62,7 +62,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Gets the app name
+     * Name of the IOTA software you're currently using (IRI stands for Initial Reference Implementation)
      *
      * @return The app name.
      */
@@ -71,8 +71,8 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
     
     /**
-     * Name of the IOTA software you're currently using (IRI stands for Initial Reference Implementation)
-     *
+     * The version of the IOTA software you're currently running.
+     * 
      * @return The app version.
      */
 	public String getAppVersion() {

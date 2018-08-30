@@ -1,12 +1,11 @@
 package com.iota.iri.service.dto;
 
 /**
- * This class represents the core API request 'removeNeighbors'.
- * Removes a list of neighbors to your node. 
- * This is only temporary, and if you have your neighbors added via the command line, they will be retained after you restart your node.
- * The URI (Unique Resource Identification) for removing neighbors is:
- * <b>udp://IPADDRESS:PORT</b>
- **/
+  * Temporarily removes a list of neighbors from your node.
+  * The added neighbors will be added again after relaunching IRI. 
+  * Remove the neighbors from your config file or make sure you don't supply them in the -n command line option if you 
+  * want to keep them removed after restart.
+  */
 public class RemoveNeighborsResponse extends AbstractResponse {
 	
 	private int removedNeighbors;

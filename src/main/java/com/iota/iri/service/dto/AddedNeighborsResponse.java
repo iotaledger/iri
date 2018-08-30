@@ -1,10 +1,11 @@
 package com.iota.iri.service.dto;
 
 /**
- * This class represents the core API request 'addNeighbors'.
- * Add a list of neighbors to your node. 
- * It should be noted that this is only temporary, and the added neighbors will be removed from your set of neighbors after you relaunch IRI.
- **/
+  * Temporarily add a list of neighbors to your node. 
+  * The added neighbors will be removed after relaunching IRI. 
+  * Add the neighbors to your config file or supply them in the -n command line option if you want to keep them after 
+  * restart.
+  */
 public class AddedNeighborsResponse extends AbstractResponse {
 	
 	private int addedNeighbors;

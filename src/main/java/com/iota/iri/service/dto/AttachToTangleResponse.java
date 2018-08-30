@@ -2,11 +2,6 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
-/**
- * This class represents the core API request 'attachToTangle'.
- * Attaches the specified transactions (trytes) to the Tangle by doing Proof of Work. 
- * You need to supply branchTransaction as well as trunkTransaction (basically the tips which you're going to validate and reference with this transaction) - both of which you'll get through the getTransactionsToApprove API call.
- **/
 public class AttachToTangleResponse extends AbstractResponse {
 
 	private List<String> trytes;

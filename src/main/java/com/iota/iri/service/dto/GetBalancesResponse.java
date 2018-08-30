@@ -2,12 +2,6 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
-/**
- * This class represents the core API request 'getBalances'.
- * Returns the confirmed balance, as viewed by tips, in case tips is not supplied, the balance is based on the latest confirmed milestone.
- * In addition to the balances, it also returns the referencing tips (or milestone), as well as the index with which the confirmed balance was determined. 
- * The balances is returned as a list in the same order as the addresses were provided as input.
- **/
 public class GetBalancesResponse extends AbstractResponse {
 	
 	private List<String> balances;

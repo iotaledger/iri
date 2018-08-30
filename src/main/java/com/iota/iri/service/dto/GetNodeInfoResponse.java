@@ -2,11 +2,6 @@ package com.iota.iri.service.dto;
 
 import com.iota.iri.model.Hash;
 
-/**
-  * This class represents the core API request 'getNodeInfo'.
-  * Returns information about your node.
-  * 
-  **/
 public class GetNodeInfoResponse extends AbstractResponse {
 
 	private String appName;

@@ -2,10 +2,6 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
-/**
- * This class represents the core API request 'getTips'.
- * Returns the list of tips.
- **/
 public class GetTipsResponse extends AbstractResponse {
 	
 	private String [] hashes;

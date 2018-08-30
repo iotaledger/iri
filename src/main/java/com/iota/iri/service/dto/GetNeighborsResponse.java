@@ -2,12 +2,6 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
-/**
- * This class represents the core API request 'getNeighbors'.
- * Returns the set of neighbors you are connected with, as well as their activity count. 
- * The activity counter is reset after restarting IRI.
- *
- **/
 public class GetNeighborsResponse extends AbstractResponse {
 
     private Neighbor[] neighbors;

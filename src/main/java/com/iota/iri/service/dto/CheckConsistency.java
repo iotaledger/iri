@@ -1,15 +1,5 @@
 package com.iota.iri.service.dto;
 
-/**
- * This class represents the core API request 'checkConsistency'.
- * Checks the consistency of the transactions. 
- * Marks state as false on the following checks
- * - Transaction does not exist
- * - Transaction is not a tail
- * - Missing a reference transaction
- * - Invalid bundle
- * - Tails of tails are invalid
- **/
 public class CheckConsistency extends AbstractResponse {
 
     private boolean state;

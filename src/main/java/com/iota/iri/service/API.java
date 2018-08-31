@@ -281,14 +281,6 @@ public class API {
                     return getTipsStatement();
                 }
                 case "getTransactionsToApprove": {
-                    //TODO: Make this equal to the rest: abcStatement(param) -> abcResponse
-                    /*
-                    final Optional<Hash> reference = request.containsKey("reference") ?
-                            Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
-                            : Optional.empty();
-                    final int depth = getParameterAsInt(request, "depth");
-                    return getTransactionToApproveStatement(depth, reference)*/
-                    
                     final Optional<Hash> reference = request.containsKey("reference") ?
                             Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
                             : Optional.empty();

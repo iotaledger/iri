@@ -57,7 +57,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	}
 
     /**
-     * Name of the IOTA software you're currently using (IRI stands for Initial Reference Implementation)
+     * Name of the IOTA software you're currently using (IRI stands for IOTA Reference Implementation)
      *
      * @return The app name.
      */

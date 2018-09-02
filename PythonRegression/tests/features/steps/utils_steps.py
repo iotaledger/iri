@@ -1,3 +1,4 @@
+from aloe import step,world
 from aloe import step, world
 from util.file_handling import directory_handling,file_handling
 from util.logging import file_editing
@@ -123,4 +124,5 @@ def check_log_files(step,output):
         lines = edit.read_from_file(logFile)
         assert lines == output, "Lines = {}\nOutput = {}".format(lines,output) 
         
+   
         

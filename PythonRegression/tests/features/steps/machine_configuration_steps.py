@@ -1,4 +1,4 @@
-from aloe import step,world
+from aloe import before,world
 from yaml import load, Loader
 
 
@@ -6,25 +6,22 @@ from yaml import load, Loader
 config = {}
 
 #Configuration
-@step(r'the node configuration outlined in "([^"]*)"')
-def configuration(step,yamlPath):
+@before.all
+def configuration():
+    machine = []   
+         
+    yamlPath = './output.yml'
     stream = open(yamlPath,'r')
-    machine1 = load(stream,Loader=Loader)
-    config['seeds'] = machine1.get('seeds')
+    yamlFile = load(stream,Loader=Loader)
+    world.seeds = yamlFile.get('seeds')
     
     nodes = {}
-    keys = machine1.keys()    
-    for i in keys:
-        if i != 'seeds':
-            name = i
-            host = machine1[i]['host']
-            nodes[name] = host
-            
-                
-    config['nodes'] = nodes
-    
-@step(r'include this node in the global environment')
-def set_up_global(step):
-    world.machines = config['nodes']
-    world.seeds = config['seeds']
+    keys = yamlFile.keys()  
+    for key in keys:
+        if key != 'seeds' and key != 'defaults':
+            nodes[key] = yamlFile[key]
+
+        machine = nodes
+          
+    world.machine = machine
     

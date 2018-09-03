@@ -21,8 +21,12 @@ public class CustomBoolDeserializer extends StdDeserializer<Boolean>{
     @Override
     public Boolean deserialize(JsonParser parser, DeserializationContext ctxt) throws IOException {
         JsonToken t = parser.getCurrentToken();
-        if (t == JsonToken.VALUE_TRUE) return true;
-        if (t == JsonToken.VALUE_FALSE) return false;
+        if (t == JsonToken.VALUE_TRUE) {
+            return true;
+        }
+        if (t == JsonToken.VALUE_FALSE) {
+            return false;
+        }
         if (t == JsonToken.VALUE_NULL) {
             return parseNull(ctxt);
         }

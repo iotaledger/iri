@@ -211,6 +211,10 @@ public class ConfigTest {
                 .append("PORT = 17000").append(System.lineSeparator())
                 .append("NEIGHBORS = udp://neighbor1 neighbor, tcp://neighbor2").append(System.lineSeparator())
                 .append("ZMQ_ENABLED = true").append(System.lineSeparator())
+                .append("DNS_RESOLUTION_ENABLED = TRUE").append(System.lineSeparator())
+                //this should be false
+                .append("REVALIDATE").append(System.lineSeparator())
+                .append("EXPORT = FALSE").append(System.lineSeparator())
                 .append("P_REMOVE_REQUEST = 0.4").append(System.lineSeparator())
                 .append("MWM = 4").append(System.lineSeparator())
                 .append("NUMBER_OF_KEYS_IN_A_MILESTONE = 3").append(System.lineSeparator())
@@ -232,6 +236,13 @@ public class ConfigTest {
         Assert.assertEquals("NEIGHBORS", Arrays.asList("udp://neighbor1", "neighbor", "tcp://neighbor2"),
                 iotaConfig.getNeighbors());
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());
+        Assert.assertEquals("DNS_RESOLUTION_ENABLED", true, iotaConfig.isDnsResolutionEnabled());
+        Assert.assertEquals("REVALIDATE", false, iotaConfig.isRevalidate());
+        Assert.assertEquals("EXPORT", false, iotaConfig.isExport());
+        //true by default
+        Assert.assertEquals("DNS_REFRESHER_ENABLED", true, iotaConfig.isDnsRefresherEnabled());
+        //false by default
+        Assert.assertEquals("RESCAN", false, iotaConfig.isRescanDb());
         Assert.assertEquals("P_REMOVE_REQUEST", 0.4d, iotaConfig.getpRemoveRequest(), 0);
         Assert.assertEquals("MWM", 4, iotaConfig.getMwm());
         Assert.assertEquals("NUMBER_OF_KEYS_IN_A_MILESTONE", 3, iotaConfig.getNumberOfKeysInMilestone());

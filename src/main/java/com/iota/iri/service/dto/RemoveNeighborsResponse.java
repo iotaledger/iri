@@ -10,6 +10,11 @@ public class RemoveNeighborsResponse extends AbstractResponse {
 		return res;
 	}
 	
+    /**
+     * The number of removed neighbors.
+     *
+     * @return The number of removed neighbors.
+     */
 	public int getRemovedNeighbors() {
 		return removedNeighbors;
 	}

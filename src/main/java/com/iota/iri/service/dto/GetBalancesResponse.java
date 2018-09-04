@@ -16,14 +16,29 @@ public class GetBalancesResponse extends AbstractResponse {
 		return res;
 	}
 	
+    /**
+     * The referencing tips
+     *
+     * @return The references.
+     */
 	public List<String> getReferences() {
 		return references;
 	}
 	
+    /**
+     * The index with which the confirmed balance was determined
+     *
+     * @return The milestoneIndex.
+     */
 	public int getMilestoneIndex() {
 		return milestoneIndex;
 	}
 	
+    /**
+     * The balances as a list in the same order as the addresses were provided as input
+     *
+     * @return The balances.
+     */
 	public List<String> getBalances() {
 		return balances;
 	}

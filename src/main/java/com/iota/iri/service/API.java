@@ -281,22 +281,12 @@ public class API {
                     return getTipsStatement();
                 }
                 case "getTransactionsToApprove": {
-                    final Optional<Hash> reference = request.containsKey("reference") ?
-                            Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
+                    Optional<Hash> reference = request.containsKey("reference") ? 
+                            Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE))) 
                             : Optional.empty();
-                    final int depth = getParameterAsInt(request, "depth");
-                    if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
-                        return ErrorResponse.create("Invalid depth input");
-                    }
+                    int depth = getParameterAsInt(request, "depth");
+                    return getTransactionsToApproveStatement(depth, reference);
 
-                    try {
-                        List<Hash> tips = getTransactionsToApproveStatement(depth, reference);
-                        return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
-
-                    } catch (RuntimeException e) {
-                        log.info("Tip selection failed: " + e.getLocalizedMessage());
-                        return ErrorResponse.create(e.getLocalizedMessage());
-                    }
                 }
                 case "getTrytes": {
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
@@ -630,18 +620,31 @@ public class API {
       * @param reference Hash of transaction to start random-walk from, used to make sure the tips returned reference a given transaction in their past.
       * @return {@link com.iota.iri.service.dto.GetTransactionsToApproveResponse}
       **/
-    public synchronized List<Hash> getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
+    public synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference){
+        if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
+            return ErrorResponse.create("Invalid depth input");
+        }
 
+        try {
+            List<Hash> tips = getTransactionToApproveTips(depth, reference);
+            return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
+            
+        } catch (Exception e) {
+            log.info("Tip selection failed: " + e.getLocalizedMessage());
+            return ErrorResponse.create(e.getLocalizedMessage());
+        }
+    }
+    
+    private List<Hash> getTransactionToApproveTips(int depth, Optional<Hash> reference) throws Exception{
         if (invalidSubtangleStatus()) {
             throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
         }
-
+        
         List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(depth, reference);
-
+        
         if (log.isDebugEnabled()) {
             gatherStatisticsOnTipSelection();
         }
-
         return tips;
     }
 
@@ -1245,7 +1248,7 @@ public class API {
       * @param message The message to store
       **/
     private synchronized void storeMessageStatement(final String address, final String message) throws Exception {
-        final List<Hash> txToApprove = getTransactionsToApproveStatement(3, Optional.empty());
+        final List<Hash> txToApprove = getTransactionToApproveTips(3, Optional.empty());
 
         final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
 

@@ -1,4 +1,4 @@
-package com.iota.iri.conf.IniDeserializers;
+package com.iota.iri.conf.deserializers;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonToken;

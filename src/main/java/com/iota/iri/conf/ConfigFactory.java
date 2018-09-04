@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
-import com.iota.iri.conf.IniDeserializers.CustomBoolDeserializer;
+import com.iota.iri.conf.deserializers.CustomBoolDeserializer;
 
 import java.io.File;
 import java.io.FileInputStream;

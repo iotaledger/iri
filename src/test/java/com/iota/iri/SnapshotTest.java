@@ -3,6 +3,7 @@ package com.iota.iri;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
 
 import org.junit.Assert;
@@ -44,7 +45,7 @@ public class SnapshotTest {
     @Test
     public void patch() {
         Map.Entry<Hash, Long> firstOne = initSnapshot.state.entrySet().iterator().next();
-        Hash someHash = new TransactionHash("PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS");
+        Hash someHash = HashFactory.TRANSACTION.create("PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS");
         Map<Hash, Long> diff = new HashMap<>();
         diff.put(firstOne.getKey(), -firstOne.getValue());
         diff.put(someHash, firstOne.getValue());
@@ -56,14 +57,14 @@ public class SnapshotTest {
     public void applyShouldFail() {
         Snapshot latestSnapshot = initSnapshot.clone();
         Map<Hash, Long> badMap = new HashMap<>();
-        badMap.put(new TransactionHash("PSRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), 100L);
-        badMap.put(new TransactionHash("ESRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), -100L);
+        badMap.put(HashFactory.TRANSACTION.create("PSRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), 100L);
+        badMap.put(HashFactory.TRANSACTION.create("ESRQPWWIECDGDDZEHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS"), -100L);
         Map<Hash, Long> patch = latestSnapshot.patchedDiff(badMap);
         assertFalse("should be inconsistent", Snapshot.isConsistent(latestSnapshot.patchedDiff(badMap)));
     }
 
     private Map<Hash, Long> getModifiedMap() {
-        Hash someHash = new TransactionHash("PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS");
+        Hash someHash = HashFactory.TRANSACTION.create("PSRQPWWIECDGDDZXHGJNMEVJNSVOSMECPPVRPEVRZFVIZYNNXZNTOTJOZNGCZNQVSPXBXTYUJUOXYASLS");
         Map<Hash, Long> newMap;
         newMap = new HashMap<>();
         Iterator<Map.Entry<Hash, Long>> iterator = newMap.entrySet().iterator();

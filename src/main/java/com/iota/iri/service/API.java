@@ -16,6 +16,7 @@ import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.BundleHash;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.ObsoleteTagHash;
 import com.iota.iri.model.TagHash;
 import com.iota.iri.model.TransactionHash;
@@ -167,7 +168,7 @@ public class API {
         String line;
         try {
             while((line = reader.readLine()) != null) {
-                previousEpochsSpentAddresses.put(new AddressHash(line),true);
+                previousEpochsSpentAddresses.put(HashFactory.ADDRESS.create(line),true);
             }
         } catch (IOException e) {
             log.error("Failed to load previousEpochsSpentAddresses.");
@@ -377,7 +378,7 @@ public class API {
     }
 
     private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
-        final List<Hash> addresses = addressesStr.stream().map(AddressHash::new).collect(Collectors.toList());
+        final List<Hash> addresses = addressesStr.stream().map(HashFactory.ADDRESS::create).collect(Collectors.toList());
         final boolean[] states = new boolean[addresses.size()];
         int index = 0;
 
@@ -751,7 +752,7 @@ public class API {
         if (request.containsKey("bundles")) {
             final HashSet<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);
             for (final String bundle : bundles) {
-                bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, new BundleHash(bundle)).getHashes());
+                bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, HashFactory.BUNDLE.create(bundle)).getHashes());
             }
             foundTransactions.addAll(bundlesTransactions);
             containsKey = true;
@@ -761,7 +762,7 @@ public class API {
         if (request.containsKey("addresses")) {
             final HashSet<String> addresses = getParameterAsSet(request,"addresses",HASH_SIZE);
             for (final String address : addresses) {
-                addressesTransactions.addAll(AddressViewModel.load(instance.tangle, new AddressHash(address)).getHashes());
+                addressesTransactions.addAll(AddressViewModel.load(instance.tangle, HashFactory.ADDRESS.create(address)).getHashes());
             }
             foundTransactions.addAll(addressesTransactions);
             containsKey = true;
@@ -772,12 +773,12 @@ public class API {
             final HashSet<String> tags = getParameterAsSet(request,"tags",0);
             for (String tag : tags) {
                 tag = padTag(tag);
-                tagsTransactions.addAll(TagViewModel.load(instance.tangle, new TagHash(tag)).getHashes());
+                tagsTransactions.addAll(TagViewModel.load(instance.tangle, HashFactory.TAG.create(tag)).getHashes());
             }
             if (tagsTransactions.isEmpty()) {
                 for (String tag : tags) {
                     tag = padTag(tag);
-                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, new ObsoleteTagHash(tag)).getHashes());
+                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, HashFactory.OBSOLETETAG.create(tag)).getHashes());
                 }
             }
             foundTransactions.addAll(tagsTransactions);
@@ -864,7 +865,7 @@ public class API {
             return ErrorResponse.create("Illegal 'threshold'");
         }
 
-        final List<Hash> addresses = addrss.stream().map(address -> (new AddressHash(address)))
+        final List<Hash> addresses = addrss.stream().map(address -> (HashFactory.ADDRESS.create(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
         final List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
@@ -873,7 +874,7 @@ public class API {
         if (tips == null || tips.size() == 0) {
             hashes = Collections.singletonList(instance.milestone.latestSolidSubtangleMilestone);
         } else {
-            hashes = tips.stream().map(address -> (new AddressHash(address)))
+            hashes = tips.stream().map(address -> (HashFactory.ADDRESS.create(address)))
                     .collect(Collectors.toCollection(LinkedList::new));
         }
         try {

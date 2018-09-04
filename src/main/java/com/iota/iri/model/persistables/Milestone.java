@@ -1,6 +1,7 @@
 package com.iota.iri.model.persistables;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Persistable;
@@ -18,7 +19,7 @@ public class Milestone implements Persistable {
     public void read(byte[] bytes) {
         if(bytes != null) {
             index = new IntegerIndex(Serializer.getInteger(bytes));
-            hash = new TransactionHash(bytes, Integer.BYTES, Hash.SIZE_IN_BYTES);
+            hash = HashFactory.TRANSACTION.create(bytes, Integer.BYTES, Hash.SIZE_IN_BYTES);
         }
     }
 

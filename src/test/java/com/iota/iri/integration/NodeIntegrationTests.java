@@ -11,6 +11,7 @@ import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.Node;
 import com.iota.iri.service.API;
 import com.iota.iri.utils.Converter;
@@ -144,7 +145,7 @@ public class NodeIntegrationTests {
         transactions.add(new byte[TRINARY_SIZE]);
         Converter.copyTrits(index, transactions.get(0), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE);
         transactions.add(Arrays.copyOf(transactions.get(0), TRINARY_SIZE));
-        Hash coordinator = new AddressHash(new TestnetConfig().getCoordinator());
+        Hash coordinator = HashFactory.ADDRESS.create(new TestnetConfig().getCoordinator());
         System.arraycopy(coordinator.trits(), 0, transactions.get(0), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         setBundleHash(transactions, null);
         List<String> elements = api.attachToTangleStatement(tips.get(0), tips.get(0), 13, transactions.stream().map(Converter::trytes).collect(Collectors.toList()));

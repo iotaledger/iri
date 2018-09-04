@@ -26,7 +26,7 @@ public class StateDiff implements Persistable {
         state = new HashMap<>();
         if(bytes != null) {
             for (i = 0; i < bytes.length; i += Hash.SIZE_IN_BYTES + Long.BYTES) {
-                state.put(new TransactionHash(bytes, i, Hash.SIZE_IN_BYTES),
+                state.put(HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES),
                         Serializer.getLong(Arrays.copyOfRange(bytes, i + Hash.SIZE_IN_BYTES, i + Hash.SIZE_IN_BYTES + Long.BYTES)));
             }
         }

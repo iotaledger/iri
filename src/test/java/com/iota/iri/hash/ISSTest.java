@@ -64,8 +64,8 @@ public class ISSTest {
         int index = 0;
         int nof = 2;
         SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
-        Hash[] hashes = {new AddressHash("D9XCNSCCAJGLWSQOQAQNFWANPYKYMCQ9VCOMROLDVLONPPLDFVPIZNAPVZLQMPFYJPAHUKIAEKNCQIYJZ"),
-                         new AddressHash("MDWYEJJHJDIUVPKDY9EACGDJUOP9TLYDWETUBOYCBLYXYYYJYUXYUTCTPTDGJYFKMQMCNZDQPTBE9AFIW")};
+        Hash[] hashes = {HashFactory.ADDRESS.create("D9XCNSCCAJGLWSQOQAQNFWANPYKYMCQ9VCOMROLDVLONPPLDFVPIZNAPVZLQMPFYJPAHUKIAEKNCQIYJZ"),
+                HashFactory.ADDRESS.create("MDWYEJJHJDIUVPKDY9EACGDJUOP9TLYDWETUBOYCBLYXYYYJYUXYUTCTPTDGJYFKMQMCNZDQPTBE9AFIW")};
         for (int i=0;i<modes.length;i++) {
             SpongeFactory.Mode mode = modes[i];
             byte[] seedTrits = Converter.allocateTritsForTrytes(seed.length());

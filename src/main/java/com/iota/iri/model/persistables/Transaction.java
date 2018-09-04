@@ -4,6 +4,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.BundleHash;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TagHash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Persistable;
@@ -93,15 +94,15 @@ public class Transaction implements Persistable {
     public void readMetadata(byte[] bytes) {
         int i = 0;
         if(bytes != null) {
-            address = new AddressHash(bytes, i, Hash.SIZE_IN_BYTES);
+            address = HashFactory.ADDRESS.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
-            bundle = new BundleHash(bytes, i, Hash.SIZE_IN_BYTES);
+            bundle = HashFactory.BUNDLE.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
-            trunk = new TransactionHash(bytes, i, Hash.SIZE_IN_BYTES);
+            trunk = HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
-            branch = new TransactionHash(bytes, i, Hash.SIZE_IN_BYTES);
+            branch = HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
-            obsoleteTag = new TagHash(bytes, i, Hash.SIZE_IN_BYTES);
+            obsoleteTag = HashFactory.OBSOLETETAG.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
             value = Serializer.getLong(bytes, i);
             i += Long.BYTES;
@@ -112,7 +113,7 @@ public class Transaction implements Persistable {
             timestamp = Serializer.getLong(bytes, i);
             i += Long.BYTES;
 
-            tag = new TagHash(bytes, i, Hash.SIZE_IN_BYTES);
+            tag = HashFactory.TAG.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
             attachmentTimestamp = Serializer.getLong(bytes, i);
             i += Long.BYTES;

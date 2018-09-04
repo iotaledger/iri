@@ -635,7 +635,7 @@ public class API {
         }
     }
     
-    private List<Hash> getTransactionToApproveTips(int depth, Optional<Hash> reference) throws Exception{
+    public List<Hash> getTransactionToApproveTips(int depth, Optional<Hash> reference) throws Exception{
         if (invalidSubtangleStatus()) {
             throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
         }

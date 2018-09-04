@@ -17,6 +17,7 @@ public enum HashFactory {
     ADDRESS(AddressHash.class),
     BUNDLE(BundleHash.class),
     TAG(TagHash.class),
+    OBSOLETETAG(ObsoleteTagHash.class),
     
     /**
      * Creates from generic class, should be passed in the create() function. 

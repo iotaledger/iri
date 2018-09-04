@@ -217,17 +217,10 @@ public class API {
                     if (!request.containsKey("address") || !request.containsKey("message")) {
                         return ErrorResponse.create("Invalid params");
                     }
-
-                    if (invalidSubtangleStatus()) {
-                        return ErrorResponse
-                                .create("This operation cannot be executed: The subtangle has not been updated yet.");
-                    }
-
-                    final String address = (String) request.get("address");
-                    final String message = (String) request.get("message");
-
-                    storeMessageStatement(address, message);
-                    return AbstractResponse.createEmptyResponse();
+                    
+                    String address = (String) request.get("address");
+                    String message = (String) request.get("message");
+                    return storeMessageStatement(address, message);
                 }
 
                 case "addNeighbors": {
@@ -1085,68 +1078,76 @@ public class API {
     }
 
     //only available on testnet
-    private synchronized void storeMessageStatement(final String address, final String message) throws Exception {
-        final List<Hash> txToApprove = getTransactionToApproveStatement(3, Optional.empty());
+    private synchronized AbstractResponse storeMessageStatement(final String address, final String message) throws Exception {
+        try {
+            final List<Hash> txToApprove = getTransactionToApproveStatement(3, Optional.empty());
+        
 
-        final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
-
-        final int txCount = (message.length() + txMessageSize - 1) / txMessageSize;
-
-        final byte[] timestampTrits = new byte[TransactionViewModel.TIMESTAMP_TRINARY_SIZE];
-        Converter.copyTrits(System.currentTimeMillis(), timestampTrits, 0, timestampTrits.length);
-        final String timestampTrytes = StringUtils.rightPad(Converter.trytes(timestampTrits), timestampTrits.length / 3, '9');
-
-        final byte[] lastIndexTrits = new byte[TransactionViewModel.LAST_INDEX_TRINARY_SIZE];
-        byte[] currentIndexTrits = new byte[TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE];
-
-        Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
-        final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
-
-        List<String> transactions = new ArrayList<>();
-        for (int i = 0; i < txCount; i++) {
-            String tx;
-            if (i != txCount - 1) {
-                tx = message.substring(i * txMessageSize, (i + 1) * txMessageSize);
-            } else {
-                tx = message.substring(i * txMessageSize);
+            final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
+    
+            final int txCount = (message.length() + txMessageSize - 1) / txMessageSize;
+    
+            final byte[] timestampTrits = new byte[TransactionViewModel.TIMESTAMP_TRINARY_SIZE];
+            Converter.copyTrits(System.currentTimeMillis(), timestampTrits, 0, timestampTrits.length);
+            final String timestampTrytes = StringUtils.rightPad(Converter.trytes(timestampTrits), timestampTrits.length / 3, '9');
+    
+            final byte[] lastIndexTrits = new byte[TransactionViewModel.LAST_INDEX_TRINARY_SIZE];
+            byte[] currentIndexTrits = new byte[TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE];
+    
+            Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
+            final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
+    
+            List<String> transactions = new ArrayList<>();
+            for (int i = 0; i < txCount; i++) {
+                String tx;
+                if (i != txCount - 1) {
+                    tx = message.substring(i * txMessageSize, (i + 1) * txMessageSize);
+                } else {
+                    tx = message.substring(i * txMessageSize);
+                }
+    
+                Converter.copyTrits(i, currentIndexTrits, 0, currentIndexTrits.length);
+    
+                tx = StringUtils.rightPad(tx, txMessageSize, '9');
+                tx += address.substring(0, 81);
+                // value
+                tx += StringUtils.repeat('9', 27);
+                // obsolete tag
+                tx += StringUtils.repeat('9', 27);
+                // timestamp
+                tx += timestampTrytes;
+                // current index
+                tx += StringUtils.rightPad(Converter.trytes(currentIndexTrits), currentIndexTrits.length / 3, '9');
+                // last index
+                tx += StringUtils.rightPad(lastIndexTrytes, lastIndexTrits.length / 3, '9');
+                transactions.add(tx);
             }
-
-            Converter.copyTrits(i, currentIndexTrits, 0, currentIndexTrits.length);
-
-            tx = StringUtils.rightPad(tx, txMessageSize, '9');
-            tx += address.substring(0, 81);
-// value
-            tx += StringUtils.repeat('9', 27);
-// obsolete tag
-            tx += StringUtils.repeat('9', 27);
-// timestamp
-            tx += timestampTrytes;
-// current index
-            tx += StringUtils.rightPad(Converter.trytes(currentIndexTrits), currentIndexTrits.length / 3, '9');
-// last index
-            tx += StringUtils.rightPad(lastIndexTrytes, lastIndexTrits.length / 3, '9');
-            transactions.add(tx);
+    
+            // let's calculate the bundle essence :S
+            int startIdx = TransactionViewModel.ESSENCE_TRINARY_OFFSET / 3;
+            Sponge sponge = SpongeFactory.create(SpongeFactory.Mode.KERL);
+    
+            for (String tx : transactions) {
+                String essence = tx.substring(startIdx);
+                byte[] essenceTrits = new byte[essence.length() * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
+                Converter.trits(essence, essenceTrits, 0);
+                sponge.absorb(essenceTrits, 0, essenceTrits.length);
+            }
+    
+            byte[] essenceTrits = new byte[243];
+            sponge.squeeze(essenceTrits, 0, essenceTrits.length);
+            final String bundleHash = Converter.trytes(essenceTrits, 0, essenceTrits.length);
+    
+            transactions = transactions.stream().map(tx -> StringUtils.rightPad(tx + bundleHash, TRYTES_SIZE, '9')).collect(Collectors.toList());
+    
+            // do pow
+            List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
+            broadcastTransactionStatement(powResult);
+            return AbstractResponse.createEmptyResponse();
+            
+        } catch (RuntimeException e) {
+            log.info("Storing message failed: " + e.getLocalizedMessage());
+            return ErrorResponse.create(e.getLocalizedMessage());
         }
-
-// let's calculate the bundle essence :S
-        int startIdx = TransactionViewModel.ESSENCE_TRINARY_OFFSET / 3;
-        Sponge sponge = SpongeFactory.create(SpongeFactory.Mode.KERL);
-
-        for (String tx : transactions) {
-            String essence = tx.substring(startIdx);
-            byte[] essenceTrits = new byte[essence.length() * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
-            Converter.trits(essence, essenceTrits, 0);
-            sponge.absorb(essenceTrits, 0, essenceTrits.length);
-        }
-
-        byte[] essenceTrits = new byte[243];
-        sponge.squeeze(essenceTrits, 0, essenceTrits.length);
-        final String bundleHash = Converter.trytes(essenceTrits, 0, essenceTrits.length);
-
-        transactions = transactions.stream().map(tx -> StringUtils.rightPad(tx + bundleHash, TRYTES_SIZE, '9')).collect(Collectors.toList());
-
-// do pow
-        List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
-        broadcastTransactionStatement(powResult);
     }
 }

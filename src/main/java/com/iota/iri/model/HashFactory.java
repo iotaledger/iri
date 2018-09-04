@@ -50,7 +50,9 @@ public enum HashFactory {
     }
 
     private Hash createFromReflection(byte[] source, int sourceOffset, int sourceSize) {
-        if (constructor == null) return Hash.NULL_HASH;
+        if (constructor == null) {
+            return Hash.NULL_HASH;
+        }
         
         try {
             return constructor.newInstance(source, sourceOffset, sourceSize);
@@ -66,7 +68,9 @@ public enum HashFactory {
      * @return the hash
      */
     public Hash create(String trits) {
-        if (stringConstructor == null) return Hash.NULL_HASH;
+        if (stringConstructor == null) {
+            return Hash.NULL_HASH;
+        }
       
         try {
             return stringConstructor.newInstance(trits);

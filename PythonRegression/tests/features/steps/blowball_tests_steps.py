@@ -16,7 +16,7 @@ test_vars = {}
 
 @step(r'the returned GTTA transactions will be compared with the milestones')
 def compare_gtta_with_milestones(step):
-    logger.info("Compare")
+    logger.info("Compare GTTA response with milestones")
     gtta_responses = tests.fetch_response('getTransactionsToApprove')
     find_transactions_responses = tests.fetch_response('findTransactions')
     milestones = list(find_transactions_responses['hashes'])

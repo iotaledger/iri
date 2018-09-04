@@ -255,6 +255,17 @@ def check_transaction_response(step):
     assert len(response['hashes']) != 0, 'Transactions not found'
     logger.info("{} Transactions found".format(len(response['hashes'])))  
                                   
+## Find Transactions
+@step(r'find transaction is called with the address:')
+def find_transactions_from_address(step):
+    logger.info('Finding milestones')
+    node = config('nodeId')       
+    
+    api = prepare_api_call(node)
+    transactions = api.find_transactions(addresses = [step.multiline])
+    responses['findTransactions'] = transactions 
+
+  
                     
     
 def prepare_api_call(nodeName):

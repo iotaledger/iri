@@ -10,6 +10,7 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.service.API;
 import com.iota.iri.utils.Converter;
 import com.jayway.restassured.RestAssured;
@@ -464,7 +465,7 @@ public class APIIntegrationTests {
     }
 
     private String getHash(String temp) {
-        return Hash.calculate(Converter.allocatingTritsFromTrytes(temp), 0, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)).toString();
+        return TransactionHash.calculate(Converter.allocatingTritsFromTrytes(temp), 0, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)).toString();
     }
 
 }

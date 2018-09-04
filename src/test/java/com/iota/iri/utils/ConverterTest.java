@@ -4,6 +4,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Kerl;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+
 import org.junit.Assert;
 import org.junit.Test;
 

@@ -4,7 +4,9 @@ package com.iota.iri.service.tipselection.impl;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.HashId;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
@@ -297,7 +299,7 @@ public class CumulativeWeightCalculatorTest {
         byte[] bytes = transactionHash1.bytes();
         bytes =  Arrays.copyOf(bytes, bytes.length);
         Arrays.fill(bytes, bytes.length-5, bytes.length-1, (byte)1);
-        return new Hash(bytes);
+        return HashFactory.TRANSACTION.create(bytes);
     }
 
 

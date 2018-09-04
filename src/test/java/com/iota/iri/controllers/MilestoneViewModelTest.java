@@ -3,6 +3,7 @@ package com.iota.iri.controllers;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.*;
@@ -39,7 +40,7 @@ public class MilestoneViewModelTest {
 
     @Test
     public void getMilestone() throws Exception {
-        Hash milestoneHash = new Hash("ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
+        Hash milestoneHash = new TransactionHash("ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(++index, milestoneHash);
         assertTrue(milestoneViewModel.store(tangle));
         MilestoneViewModel.clear();
@@ -55,7 +56,7 @@ public class MilestoneViewModelTest {
 
     @Test
     public void snapshot() throws Exception {
-        Hash milestoneHash = new Hash("BBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
+        Hash milestoneHash = new TransactionHash("BBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         long value = 3;
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(++index, milestoneHash);
     }
@@ -67,7 +68,7 @@ public class MilestoneViewModelTest {
 
     @Test
     public void updateSnapshot() throws Exception {
-        Hash milestoneHash = new Hash("CBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
+        Hash milestoneHash = new TransactionHash("CBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(++index, milestoneHash);
         assertTrue(milestoneViewModel.store(tangle));
         MilestoneViewModel.clear();
@@ -77,14 +78,14 @@ public class MilestoneViewModelTest {
 
     @Test
     public void getHash() throws Exception {
-        Hash milestoneHash = new Hash("DBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
+        Hash milestoneHash = new TransactionHash("DBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(++index, milestoneHash);
         assertEquals(milestoneHash, milestoneViewModel.getHash());
     }
 
     @Test
     public void index() throws Exception {
-        Hash milestoneHash = new Hash("EBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
+        Hash milestoneHash = new TransactionHash("EBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(++index, milestoneHash);
         assertTrue(index == milestoneViewModel.index());
     }
@@ -92,7 +93,7 @@ public class MilestoneViewModelTest {
     @Test
     public void latest() throws Exception {
         int top = 100;
-        Hash milestoneHash = new Hash("ZBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
+        Hash milestoneHash = new TransactionHash("ZBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(top, milestoneHash);
         milestoneViewModel.store(tangle);
         assertTrue(top == MilestoneViewModel.latest(tangle).index());
@@ -101,7 +102,7 @@ public class MilestoneViewModelTest {
     @Test
     public void first() throws Exception {
         int first = 1;
-        Hash milestoneHash = new Hash("99CDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
+        Hash milestoneHash = new TransactionHash("99CDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999");
         MilestoneViewModel milestoneViewModel = new MilestoneViewModel(first, milestoneHash);
         milestoneViewModel.store(tangle);
         assertTrue(first == MilestoneViewModel.first(tangle).index());
@@ -111,9 +112,9 @@ public class MilestoneViewModelTest {
     public void next() throws Exception {
         int first = 1;
         int next = 2;
-        MilestoneViewModel firstMilestone = new MilestoneViewModel(first, new Hash("99CDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        MilestoneViewModel firstMilestone = new MilestoneViewModel(first, new TransactionHash("99CDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
         firstMilestone.store(tangle);
-        new MilestoneViewModel(next, new Hash("9ACDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
+        new MilestoneViewModel(next, new TransactionHash("9ACDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
 
         assertTrue(next == MilestoneViewModel.first(tangle).next(tangle).index());
     }
@@ -122,9 +123,9 @@ public class MilestoneViewModelTest {
     public void previous() throws Exception {
         int first = 1;
         int next = 2;
-        MilestoneViewModel nextMilestone = new MilestoneViewModel(next, new Hash("99CDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        MilestoneViewModel nextMilestone = new MilestoneViewModel(next, new TransactionHash("99CDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
         nextMilestone.store(tangle);
-        new MilestoneViewModel(first, new Hash("9ACDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
+        new MilestoneViewModel(first, new TransactionHash("9ACDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
 
         assertTrue(first == nextMilestone.previous(tangle).index());
     }
@@ -134,10 +135,10 @@ public class MilestoneViewModelTest {
         int nosnapshot = 90;
         int topSnapshot = 80;
         int mid = 50;
-        new MilestoneViewModel(nosnapshot, new Hash("FBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
-        MilestoneViewModel milestoneViewModelmid = new MilestoneViewModel(mid, new Hash("GBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        new MilestoneViewModel(nosnapshot, new TransactionHash("FBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
+        MilestoneViewModel milestoneViewModelmid = new MilestoneViewModel(mid, new TransactionHash("GBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
         milestoneViewModelmid.store(tangle);
-        MilestoneViewModel milestoneViewModeltopSnapshot = new MilestoneViewModel(topSnapshot, new Hash("GBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        MilestoneViewModel milestoneViewModeltopSnapshot = new MilestoneViewModel(topSnapshot, new TransactionHash("GBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
         milestoneViewModeltopSnapshot.store(tangle);
         //assertTrue(topSnapshot == MilestoneViewModel.latestWithSnapshot().index());
     }
@@ -147,10 +148,10 @@ public class MilestoneViewModelTest {
         int first = 5;
         int firstSnapshot = 6;
         int next = 7;
-        new MilestoneViewModel(first, new Hash("FBCDEFGHIJ9LMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
-        MilestoneViewModel milestoneViewModelmid = new MilestoneViewModel(next, new Hash("GBCDE9GHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        new MilestoneViewModel(first, new TransactionHash("FBCDEFGHIJ9LMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
+        MilestoneViewModel milestoneViewModelmid = new MilestoneViewModel(next, new TransactionHash("GBCDE9GHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
         milestoneViewModelmid.store(tangle);
-        MilestoneViewModel milestoneViewModeltopSnapshot = new MilestoneViewModel(firstSnapshot, new Hash("GBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYA9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        MilestoneViewModel milestoneViewModeltopSnapshot = new MilestoneViewModel(firstSnapshot, new TransactionHash("GBCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYA9ABCDEFGHIJKLMNOPQRSTUV99999"));
         milestoneViewModeltopSnapshot.store(tangle);
         //assertTrue(firstSnapshot == MilestoneViewModel.firstWithSnapshot().index());
     }
@@ -159,9 +160,9 @@ public class MilestoneViewModelTest {
     public void nextWithSnapshot() throws Exception {
         int firstSnapshot = 8;
         int next = 9;
-        MilestoneViewModel milestoneViewModelmid = new MilestoneViewModel(next, new Hash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        MilestoneViewModel milestoneViewModelmid = new MilestoneViewModel(next, new TransactionHash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
         milestoneViewModelmid.store(tangle);
-        MilestoneViewModel milestoneViewModel = new MilestoneViewModel(firstSnapshot, new Hash("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
+        MilestoneViewModel milestoneViewModel = new MilestoneViewModel(firstSnapshot, new TransactionHash("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999"));
         milestoneViewModel.store(tangle);
         //assertTrue(next == milestoneViewModel.nextWithSnapshot().index());
     }
@@ -171,8 +172,8 @@ public class MilestoneViewModelTest {
         int milestoneStartIndex = new MainnetConfig().getMilestoneStartIndex();
         int first = milestoneStartIndex + 1;
         int next = first + 1;
-        new MilestoneViewModel(next, new Hash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
-        new MilestoneViewModel(first, new Hash("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
+        new MilestoneViewModel(next, new TransactionHash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
+        new MilestoneViewModel(first, new TransactionHash("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
         assertEquals(next, MilestoneViewModel.findClosestNextMilestone(
                 tangle, first, false, milestoneStartIndex).index().intValue());
     }
@@ -181,8 +182,8 @@ public class MilestoneViewModelTest {
     public void PrevBefore() throws Exception {
         int first = 8;
         int next = 9;
-        new MilestoneViewModel(next, new Hash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
-        new MilestoneViewModel(first, new Hash("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
+        new MilestoneViewModel(next, new TransactionHash("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
+        new MilestoneViewModel(first, new TransactionHash("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
         assertEquals(first, MilestoneViewModel.findClosestPrevMilestone(tangle, next).index().intValue());
     }
 }

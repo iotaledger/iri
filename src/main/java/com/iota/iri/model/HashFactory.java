@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Approvee;
 import com.iota.iri.model.persistables.Bundle;
 import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
@@ -129,7 +130,7 @@ public enum HashFactory {
      */
     public Hash create(Class<?> modelClass, byte[] source, int sourceOffset, int sourceSize) {
         //Transaction is first since its the most used
-        if (modelClass.equals(Transaction.class)) {
+        if (modelClass.equals(Transaction.class) || modelClass.equals(Approvee.class)) {
             return new TransactionHash(source, sourceOffset, sourceSize);
             
         } else if (modelClass.equals(Address.class)) {

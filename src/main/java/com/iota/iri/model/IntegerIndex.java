@@ -3,9 +3,6 @@ package com.iota.iri.model;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Serializer;
 
-/**
- * Created by paul on 5/6/17.
- */
 public class IntegerIndex implements Indexable{
     int value;
     public IntegerIndex(int value) {

@@ -72,9 +72,9 @@ public class Iota {
         }
 
         if (configuration.isRevalidate()) {
-            tangle.clearColumn(com.iota.iri.model.Milestone.class);
+            tangle.clearColumn(com.iota.iri.model.persistables.Milestone.class);
             tangle.clearColumn(com.iota.iri.model.StateDiff.class);
-            tangle.clearMetadata(com.iota.iri.model.Transaction.class);
+            tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
         }
         milestone.init(SpongeFactory.Mode.CURLP27, ledgerValidator);
         transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
@@ -87,14 +87,14 @@ public class Iota {
 
     private void rescan_db() throws Exception {
         //delete all transaction indexes
-        tangle.clearColumn(com.iota.iri.model.Address.class);
-        tangle.clearColumn(com.iota.iri.model.Bundle.class);
-        tangle.clearColumn(com.iota.iri.model.Approvee.class);
-        tangle.clearColumn(com.iota.iri.model.ObsoleteTag.class);
-        tangle.clearColumn(com.iota.iri.model.Tag.class);
-        tangle.clearColumn(com.iota.iri.model.Milestone.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Address.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Bundle.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Approvee.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.ObsoleteTag.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Tag.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Milestone.class);
         tangle.clearColumn(com.iota.iri.model.StateDiff.class);
-        tangle.clearMetadata(com.iota.iri.model.Transaction.class);
+        tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
 
         //rescan all tx & refill the columns
         TransactionViewModel tx = TransactionViewModel.first(tangle);

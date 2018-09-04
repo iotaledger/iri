@@ -7,6 +7,8 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.ISS;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.zmq.MessageQ;
@@ -68,7 +70,7 @@ public class Milestone {
 
         //configure
         this.testnet = config.isTestnet();
-        this.coordinator = new Hash(config.getCoordinator());
+        this.coordinator = HashFactory.ADDRESS.create(config.getCoordinator());
         this.numOfKeysInMilestone = config.getNumberOfKeysInMilestone();
         this.milestoneStartIndex = config.getMilestoneStartIndex();
         this.latestMilestoneIndex = milestoneStartIndex;
@@ -214,7 +216,7 @@ public class Milestone {
                                         ISS.NUMBER_OF_FRAGMENT_CHUNKS),
                                 signatureFragmentTrits)),
                                 transactionViewModel2.trits(), 0, index, numOfKeysInMilestone);
-                        if ((testnet && acceptAnyTestnetCoo) || (new Hash(merkleRoot)).equals(coordinator)) {
+                        if ((testnet && acceptAnyTestnetCoo) || (HashFactory.ADDRESS.create(merkleRoot)).equals(coordinator)) {
                             new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
                             return VALID;
                         } else {

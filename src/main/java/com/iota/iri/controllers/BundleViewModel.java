@@ -1,8 +1,7 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.model.Bundle;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.model.persistables.Bundle;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -12,9 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * Created by paul on 5/15/17.
- */
 public class BundleViewModel implements HashesViewModel {
     private Bundle self;
     private Indexable hash;

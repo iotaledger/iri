@@ -2,7 +2,7 @@ package com.iota.iri.storage;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;

@@ -13,7 +13,12 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.model.AddressHash;
+import com.iota.iri.model.BundleHash;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.ObsoleteTagHash;
+import com.iota.iri.model.TagHash;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
@@ -162,7 +167,7 @@ public class API {
         String line;
         try {
             while((line = reader.readLine()) != null) {
-                previousEpochsSpentAddresses.put(new Hash(line),true);
+                previousEpochsSpentAddresses.put(new AddressHash(line),true);
             }
         } catch (IOException e) {
             log.error("Failed to load previousEpochsSpentAddresses.");
@@ -236,8 +241,8 @@ public class API {
                     return addNeighborsStatement(uris);
                 }
                 case "attachToTangle": {
-                    final Hash trunkTransaction  = new Hash(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
-                    final Hash branchTransaction = new Hash(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
+                    final Hash trunkTransaction  = new TransactionHash(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
+                    final Hash branchTransaction = new TransactionHash(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
                     final int minWeightMagnitude = getParameterAsInt(request,"minWeightMagnitude");
 
                     final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
@@ -289,7 +294,7 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final Optional<Hash> reference = request.containsKey("reference") ?
-                            Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
+                            Optional.of(new TransactionHash(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
                             : Optional.empty();
                     final int depth = getParameterAsInt(request, "depth");
                     if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
@@ -372,7 +377,7 @@ public class API {
     }
 
     private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
-        final List<Hash> addresses = addressesStr.stream().map(Hash::new).collect(Collectors.toList());
+        final List<Hash> addresses = addressesStr.stream().map(AddressHash::new).collect(Collectors.toList());
         final boolean[] states = new boolean[addresses.size()];
         int index = 0;
 
@@ -432,7 +437,7 @@ public class API {
 
 
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
-        final List<Hash> transactions = transactionsList.stream().map(Hash::new).collect(Collectors.toList());
+        final List<Hash> transactions = transactionsList.stream().map(TransactionHash::new).collect(Collectors.toList());
         boolean state = true;
         String info = "";
 
@@ -560,7 +565,7 @@ public class API {
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
-            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, new Hash(hash));
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, new TransactionHash(hash));
             if (transactionViewModel != null) {
                 elements.add(Converter.trytes(transactionViewModel.trits()));
             }
@@ -642,8 +647,8 @@ public class API {
     }
 
     private AbstractResponse getNewInclusionStateStatement(final List<String> trans, final List<String> tps) throws Exception {
-        final List<Hash> transactions = trans.stream().map(Hash::new).collect(Collectors.toList());
-        final List<Hash> tips = tps.stream().map(Hash::new).collect(Collectors.toList());
+        final List<Hash> transactions = trans.stream().map(TransactionHash::new).collect(Collectors.toList());
+        final List<Hash> tips = tps.stream().map(TransactionHash::new).collect(Collectors.toList());
         int numberOfNonMetTransactions = transactions.size();
         final byte[] inclusionStates = new byte[numberOfNonMetTransactions];
 
@@ -746,7 +751,7 @@ public class API {
         if (request.containsKey("bundles")) {
             final HashSet<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);
             for (final String bundle : bundles) {
-                bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, new Hash(bundle)).getHashes());
+                bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, new BundleHash(bundle)).getHashes());
             }
             foundTransactions.addAll(bundlesTransactions);
             containsKey = true;
@@ -756,7 +761,7 @@ public class API {
         if (request.containsKey("addresses")) {
             final HashSet<String> addresses = getParameterAsSet(request,"addresses",HASH_SIZE);
             for (final String address : addresses) {
-                addressesTransactions.addAll(AddressViewModel.load(instance.tangle, new Hash(address)).getHashes());
+                addressesTransactions.addAll(AddressViewModel.load(instance.tangle, new AddressHash(address)).getHashes());
             }
             foundTransactions.addAll(addressesTransactions);
             containsKey = true;
@@ -767,12 +772,12 @@ public class API {
             final HashSet<String> tags = getParameterAsSet(request,"tags",0);
             for (String tag : tags) {
                 tag = padTag(tag);
-                tagsTransactions.addAll(TagViewModel.load(instance.tangle, new Hash(tag)).getHashes());
+                tagsTransactions.addAll(TagViewModel.load(instance.tangle, new TagHash(tag)).getHashes());
             }
             if (tagsTransactions.isEmpty()) {
                 for (String tag : tags) {
                     tag = padTag(tag);
-                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, new Hash(tag)).getHashes());
+                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, new ObsoleteTagHash(tag)).getHashes());
                 }
             }
             foundTransactions.addAll(tagsTransactions);
@@ -784,7 +789,7 @@ public class API {
         if (request.containsKey("approvees")) {
             final HashSet<String> approvees = getParameterAsSet(request,"approvees",HASH_SIZE);
             for (final String approvee : approvees) {
-                approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, new Hash(approvee)).getApprovers(instance.tangle).getHashes());
+                approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, new TransactionHash(approvee)).getApprovers(instance.tangle).getHashes());
             }
             foundTransactions.addAll(approveeTransactions);
             containsKey = true;
@@ -859,7 +864,7 @@ public class API {
             return ErrorResponse.create("Illegal 'threshold'");
         }
 
-        final List<Hash> addresses = addrss.stream().map(address -> (new Hash(address)))
+        final List<Hash> addresses = addrss.stream().map(address -> (new AddressHash(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
         final List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
@@ -868,7 +873,7 @@ public class API {
         if (tips == null || tips.size() == 0) {
             hashes = Collections.singletonList(instance.milestone.latestSolidSubtangleMilestone);
         } else {
-            hashes = tips.stream().map(address -> (new Hash(address)))
+            hashes = tips.stream().map(address -> (new AddressHash(address)))
                     .collect(Collectors.toCollection(LinkedList::new));
         }
         try {

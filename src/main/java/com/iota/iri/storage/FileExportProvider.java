@@ -1,6 +1,6 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.model.Transaction;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;

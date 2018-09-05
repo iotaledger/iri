@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.iota.iri.conf.deserializers.CustomBoolDeserializer;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -36,7 +39,12 @@ public class ConfigFactory {
             objectMapper.configure(MapperFeature.ACCEPT_CASE_INSENSITIVE_PROPERTIES, true);
             objectMapper.configure(DeserializationFeature.ACCEPT_SINGLE_VALUE_AS_ARRAY, true);
             objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+            objectMapper.configure(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES, true);
             objectMapper.setPropertyNamingStrategy(PropertyNamingStrategy.SNAKE_CASE);
+            SimpleModule booleanParser = new SimpleModule("BooleanParser");
+            StdDeserializer<Boolean> booleanDeserializer = new CustomBoolDeserializer();
+            booleanParser.addDeserializer(Boolean.TYPE, booleanDeserializer);
+            objectMapper.registerModule(booleanParser);
             iotaConfig = objectMapper.convertValue(props, iotaConfigClass);
         }
         return iotaConfig;

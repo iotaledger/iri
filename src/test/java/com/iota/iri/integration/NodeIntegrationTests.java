@@ -135,7 +135,7 @@ public class NodeIntegrationTests {
     }
 
     private void sendMilestone(API api, long index) throws Exception {
-        newMilestone(api, api.getTransactionToApproveStatement(10, Optional.empty()), index);
+        newMilestone(api, api.getTransactionsToApproveStatement(10, Optional.empty()), index);
     }
 
     private void newMilestone(API api, List<Hash> tips, long index) throws Exception {
@@ -147,8 +147,8 @@ public class NodeIntegrationTests {
         System.arraycopy(coordinator.trits(), 0, transactions.get(0), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         setBundleHash(transactions, null);
         List<String> elements = api.attachToTangleStatement(tips.get(0), tips.get(0), 13, transactions.stream().map(Converter::trytes).collect(Collectors.toList()));
-        api.storeTransactionStatement(elements);
-        api.broadcastTransactionStatement(elements);
+        api.storeTransactionsStatement(elements);
+        api.broadcastTransactionsStatement(elements);
     }
 
     public void setBundleHash(List<byte[]> transactions, Curl customCurl) {

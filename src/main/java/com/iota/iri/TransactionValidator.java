@@ -20,9 +20,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;
 
-/**
- * Created by paul on 4/17/17.
- */
 public class TransactionValidator {
     private final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
     private final Tangle tangle;

@@ -4,14 +4,10 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by paul on 5/6/17.
- */
 public class StateDiff implements Persistable {
     public Map<Hash, Long> state;
 

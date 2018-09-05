@@ -3,7 +3,6 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.IntegerIndex;
-import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;

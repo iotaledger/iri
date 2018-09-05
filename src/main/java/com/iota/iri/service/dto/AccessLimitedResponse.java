@@ -1,7 +1,7 @@
 package com.iota.iri.service.dto;
 
 /**
- * Created by Adrian on 07.01.2017.
+ * This class represents the core API error for accessing a command which is limited by this Node.
  */
 public class AccessLimitedResponse extends AbstractResponse {
 
@@ -13,6 +13,11 @@ public class AccessLimitedResponse extends AbstractResponse {
         return res;
     }
 
+    /**
+     * Gets the error
+     *
+     * @return The error.
+     */
     public String getError() {
         return error;
     }

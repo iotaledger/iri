@@ -11,7 +11,13 @@ public class AttachToTangleResponse extends AbstractResponse {
 		res.trytes = elements;
 		return res;
 	}
-	
+    
+	/**
+     * The processed transactions which you can input into broadcastTransactions and storeTransactions
+     * The last 243 trytes basically consist of the: trunkTransaction + branchTransaction + nonce.
+     * 
+     * @return The trytes.
+     */
 	public List<String> getTrytes() {
 		return trytes;
 	}

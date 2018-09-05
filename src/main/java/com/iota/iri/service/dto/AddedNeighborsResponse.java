@@ -10,6 +10,11 @@ public class AddedNeighborsResponse extends AbstractResponse {
 		return res;
 	}
 
+    /**
+     * Gets the number of added neighbors.
+     *
+     * @return The number of added neighbors.
+     */
 	public int getAddedNeighbors() {
 		return addedNeighbors;
 	}

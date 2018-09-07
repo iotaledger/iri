@@ -12,6 +12,11 @@ public class GetTipsResponse extends AbstractResponse {
 		return res;
 	}
 	
+    /**
+     * The list of current tips
+     *
+     * @return The hashes.
+     */
 	public String[] getHashes() {
 		return hashes;
 	}

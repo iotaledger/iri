@@ -34,8 +34,12 @@ If you want to get tokens for your testcase, please just ask in one of the commu
 
 ## Reporting Issues
 
-If you notice any bugs, problems or other irregularities with this release,
-please submit an issue on github [[submit new issue]](https://github.com/iotaledger/iri/issues/new).
+If you'd like to contribute to IRI, report bugs, problems or irregularities with this release,
+please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
+
+# Documentation
+
+This page contains basic instructions for setting up an IRI node. You can find the full documentation on our [documentation website](https://docs.iota.org/iri). Also see the [IRI API refernece](https://iota.readme.io/reference). 
 
 # Installing
 

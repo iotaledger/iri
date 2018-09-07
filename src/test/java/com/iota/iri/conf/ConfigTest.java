@@ -1,5 +1,6 @@
 package com.iota.iri.conf;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.iota.iri.utils.IotaUtils;
@@ -108,6 +109,14 @@ public class ConfigTest {
     }
 
     @Test
+    public void testRemoteFlag() {
+        String[] args = {"--remote"};
+        IotaConfig iotaConfig = ConfigFactory.createIotaConfig(false);
+        iotaConfig.parseConfigFromArgs(args);
+        Assert.assertEquals("The api interface should be open to the public", "0.0.0.0", iotaConfig.getApiHost());
+    }
+
+    @Test
     public void testArgsParsingTestnet() {
         String[] args = {
                 "-p", "14000",
@@ -194,7 +203,6 @@ public class ConfigTest {
         Assert.assertNotEquals("MWM", 4, iotaConfig.getMwm());
     }
 
-
     @Test
     public void testIniParsingTestnet() throws Exception {
         String iniContent = new StringBuilder()
@@ -202,11 +210,15 @@ public class ConfigTest {
                 .append("PORT = 17000").append(System.lineSeparator())
                 .append("NEIGHBORS = udp://neighbor1 neighbor, tcp://neighbor2").append(System.lineSeparator())
                 .append("ZMQ_ENABLED = true").append(System.lineSeparator())
+                .append("DNS_RESOLUTION_ENABLED = TRUE").append(System.lineSeparator())
+                .append("EXPORT = FALSE").append(System.lineSeparator())
                 .append("P_REMOVE_REQUEST = 0.4").append(System.lineSeparator())
                 .append("MWM = 4").append(System.lineSeparator())
                 .append("NUMBER_OF_KEYS_IN_A_MILESTONE = 3").append(System.lineSeparator())
                 .append("DONT_VALIDATE_TESTNET_MILESTONE_SIG = true").append(System.lineSeparator())
                 .append("TIPSELECTION_ALPHA = 1.1").append(System.lineSeparator())
+                //doesn't do anything
+                .append("REMOTE")
                 .append("FAKE").append(System.lineSeparator())
                 .append("FAKE2 = lies")
                 .toString();
@@ -221,12 +233,34 @@ public class ConfigTest {
         Assert.assertEquals("NEIGHBORS", Arrays.asList("udp://neighbor1", "neighbor", "tcp://neighbor2"),
                 iotaConfig.getNeighbors());
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());
+        Assert.assertEquals("DNS_RESOLUTION_ENABLED", true, iotaConfig.isDnsResolutionEnabled());
+        Assert.assertEquals("EXPORT", false, iotaConfig.isExport());
+        //true by default
+        Assert.assertEquals("DNS_REFRESHER_ENABLED", true, iotaConfig.isDnsRefresherEnabled());
+        //false by default
+        Assert.assertEquals("RESCAN", false, iotaConfig.isRescanDb());
+        //false by default
+        Assert.assertEquals("REVALIDATE", false, iotaConfig.isRevalidate());
         Assert.assertEquals("P_REMOVE_REQUEST", 0.4d, iotaConfig.getpRemoveRequest(), 0);
         Assert.assertEquals("MWM", 4, iotaConfig.getMwm());
         Assert.assertEquals("NUMBER_OF_KEYS_IN_A_MILESTONE", 3, iotaConfig.getNumberOfKeysInMilestone());
         Assert.assertEquals("TIPSELECTION_ALPHA", 1.1d, iotaConfig.getAlpha(), 0);
         Assert.assertEquals("DONT_VALIDATE_TESTNET_MILESTONE_SIG",
                 iotaConfig.isDontValidateTestnetMilestoneSig(), true);
+        //prove that REMOTE did nothing
+        Assert.assertEquals("API_HOST", iotaConfig.getApiHost(), "localhost");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidIni() throws IOException {
+        String iniContent = new StringBuilder()
+                .append("[IRI]").append(System.lineSeparator())
+                .append("REVALIDATE")
+                .toString();
+        try (Writer writer = new FileWriter(configFile)) {
+            writer.write(iniContent);
+        }
+        ConfigFactory.createFromFile(configFile, false);
     }
 
     @Test
@@ -245,6 +279,11 @@ public class ConfigTest {
     }
 
     private String deriveNameFromSetter(Method setter) {
+        JsonIgnore jsonIgnore = setter.getAnnotation(JsonIgnore.class);
+        if (jsonIgnore != null) {
+            return null;
+        }
+
         JsonProperty jsonProperty = setter.getAnnotation(JsonProperty.class);
         //Code works w/o annotation but we wish to enforce its usage
         Assert.assertNotNull("Setter " + setter.getName() + "must have JsonProperty annotation", jsonProperty);

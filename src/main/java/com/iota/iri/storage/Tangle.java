@@ -67,7 +67,7 @@ public class Tangle {
             return exists;
     }
 
-    public void deleteBatch(Collection<Pair<Indexable, Class<Persistable>>> models) throws Exception {
+    public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
         for(PersistenceProvider provider: persistenceProviders) {
             provider.deleteBatch(models);
         }

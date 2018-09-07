@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.iota.iri.service.CallableRequest;
 import com.iota.iri.service.dto.AbstractResponse;
+import com.sun.nio.file.SensitivityWatchEventModifier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
+import com.sun.nio.file.SensitivityWatchEventModifier;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;

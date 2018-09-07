@@ -12,6 +12,11 @@ public class GetTrytesResponse extends AbstractResponse {
 		return res;
 	}
 
+    /**
+     * The raw transaction data (trytes) of the specified transactions
+     *
+     * @return The trytes
+     */
 	public String [] getTrytes() {
 		return trytes;
 	}

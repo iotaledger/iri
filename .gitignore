@@ -4,15 +4,22 @@
 /.settings
 /tomcat.*
 /.idea
+/bin
+/mainnetdb
+/mainnet.log
 /*.iml
 .classpath
 .project
 *.class
-target/*
+target/
+mainnet.log/
+mainnetdb/
+bin/
 *.iri
 *.jar
 src/main/ixi/
 dependency-reduced-pom.xml
+
 
 # Created by https://www.gitignore.io/api/osx,linux,windows
 

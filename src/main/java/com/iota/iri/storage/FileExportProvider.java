@@ -143,7 +143,7 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public void deleteBatch(Collection<Pair<Indexable, Class<Persistable>>> models) throws Exception {
+    public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
 
     }
 

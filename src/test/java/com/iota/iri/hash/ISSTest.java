@@ -1,9 +1,7 @@
 package com.iota.iri.hash;
 
-import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.model.TransactionHash;
 import com.iota.iri.utils.Converter;
 import org.junit.Test;
 

@@ -9,7 +9,6 @@ import com.iota.iri.conf.*;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.Node;
@@ -24,9 +23,6 @@ import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
-/**
- * Created by paul on 5/19/17.
- */
 public class NodeIntegrationTests {
 
     final Object waitObj = new Object();

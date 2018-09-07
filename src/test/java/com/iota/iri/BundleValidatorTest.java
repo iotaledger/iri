@@ -1,7 +1,6 @@
 package com.iota.iri;
 
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -16,9 +15,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-/**
- * Created by paul on 3/5/17 for iri.
- */
 public class BundleValidatorTest {
     private static Tangle tangle = new Tangle();
 

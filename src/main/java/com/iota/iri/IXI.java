@@ -18,7 +18,6 @@ import java.io.IOException;
 import java.io.Reader;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
-import com.sun.nio.file.SensitivityWatchEventModifier;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.TimeUnit;

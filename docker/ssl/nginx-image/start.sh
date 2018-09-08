@@ -71,6 +71,4 @@ sed -i "s/___APPLICATION_PORT___/$PORT/g" /etc/nginx/nginx-secure.conf
 kill $(ps aux | grep '[n]ginx' | awk '{print $2}')
 cp /etc/nginx/nginx-secure.conf /etc/nginx/nginx.conf
 
-netstat -tulpn
-
 nginx -g 'daemon off;'

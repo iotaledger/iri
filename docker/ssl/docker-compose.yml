@@ -1,0 +1,30 @@
+nginx:
+  build: nginx-image
+  links:
+    - letsencrypt
+    - iri
+  environment:
+    - MY_DOMAIN_NAME=__DOMAIN__
+    - PORT=__PORT__
+  ports:
+    - "80:80"
+    - "443:443"
+  volumes_from:
+    - letsencrypt
+letsencrypt:
+  image: quay.io/letsencrypt/letsencrypt:latest
+  command:  bash -c "sleep 6 && certbot certonly --staging --standalone --email "__EMAIL__" -d "__DOMAIN__" -n --agree-tos"
+  entrypoint: ""
+  volumes:
+    - /etc/letsencrypt
+    - /var/lib/letsencrypt
+  ports:
+    - "80"
+    - "443"
+  environment:
+    - TERM=xterm
+iri:
+  image: iotaledger/iri:v1.5.3
+  command: -p __PORT__
+  ports:
+    - "__PORT__:__PORT__"

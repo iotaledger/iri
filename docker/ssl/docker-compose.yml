@@ -13,7 +13,7 @@ nginx:
     - letsencrypt
 letsencrypt:
   image: quay.io/letsencrypt/letsencrypt:latest
-  command:  bash -c "sleep 6 && certbot certonly --staging --standalone --email "__EMAIL__" -d "__DOMAIN__" -n --agree-tos"
+  command:  bash -c "sleep 6 && certbot certonly --standalone --email "__EMAIL__" -d "__DOMAIN__" -n --agree-tos"
   entrypoint: ""
   volumes:
     - /etc/letsencrypt

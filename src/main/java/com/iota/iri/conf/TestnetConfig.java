@@ -18,6 +18,7 @@ public class TestnetConfig extends BaseIotaConfig {
     protected int numberOfKeysInMilestone = Defaults.KEYS_IN_MILESTONE;
     protected int transactionPacketSize = Defaults.PACKET_SIZE;
     protected int requestHashSize = Defaults.REQUEST_HASH_SIZE;
+    protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
 
     public TestnetConfig() {
         super();
@@ -161,6 +162,7 @@ public class TestnetConfig extends BaseIotaConfig {
     public interface Defaults {
         String COORDINATOR_ADDRESS = "EQQFCZBIHRHWPXKMTOLMYUYPCN9XLMJPYZVFJSAY9FQHCCLWTOLLUGKKMXYFDBOOYFBLBI9WUEILGECYM";
         boolean VALIDATE_MILESTONE_SIG = true;
+        String LOCAL_SNAPSHOTS_BASE_PATH = "testnet";
         String SNAPSHOT_FILE = "/snapshotTestnet.txt";
         int REQUEST_HASH_SIZE = 49;
         String SNAPSHOT_SIG = "/snapshotTestnet.sig";

@@ -469,10 +469,10 @@ public class API {
         }
 
         if (state) {
-            instance.milestone.latestSnapshot.rwlock.readLock().lock();
+            instance.milestoneTracker.latestSnapshot.rwlock.readLock().lock();
             try {
                 WalkValidatorImpl walkValidator = new WalkValidatorImpl(instance.tangle, instance.ledgerValidator,
-                        instance.milestone, instance.configuration);
+                        instance.milestoneTracker, instance.configuration);
                 for (Hash transaction : transactions) {
                     if (!walkValidator.isValid(transaction)) {
                         state = false;
@@ -481,7 +481,7 @@ public class API {
                     }
                 }
             } finally {
-                instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+                instance.milestoneTracker.latestSnapshot.rwlock.readLock().unlock();
             }
         }
 
@@ -549,7 +549,7 @@ public class API {
     }
 
     public boolean invalidSubtangleStatus() {
-        return (instance.milestone.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
+        return (instance.milestoneTracker.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
     }
 
     /**
@@ -720,8 +720,8 @@ public class API {
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
         return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                 Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
-                Runtime.getRuntime().totalMemory(), instance.milestone.latestMilestone, instance.milestone.latestMilestoneIndex,
-                instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex, instance.milestone.milestoneStartIndex,
+                Runtime.getRuntime().totalMemory(), instance.milestoneTracker.latestMilestone, instance.milestoneTracker.latestMilestoneIndex,
+                instance.milestoneTracker.latestSolidSubtangleMilestone, instance.milestoneTracker.latestSolidSubtangleMilestoneIndex, instance.milestoneTracker.milestoneStartIndex,
                 instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                 System.currentTimeMillis(), instance.tipsViewModel.size(),
                 instance.transactionRequester.numberOfTransactionsToRequest());
@@ -991,17 +991,17 @@ public class API {
                 .collect(Collectors.toCollection(LinkedList::new));
         final List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
-        instance.milestone.latestSnapshot.rwlock.readLock().lock();
-        final int index = instance.milestone.latestSnapshot.index();
+        instance.milestoneTracker.latestSnapshot.rwlock.readLock().lock();
+        final int index = instance.milestoneTracker.latestSnapshot.index();
         if (tips == null || tips.size() == 0) {
-            hashes = Collections.singletonList(instance.milestone.latestSolidSubtangleMilestone);
+            hashes = Collections.singletonList(instance.milestoneTracker.latestSolidSubtangleMilestone);
         } else {
             hashes = tips.stream().map(address -> (new Hash(address)))
                     .collect(Collectors.toCollection(LinkedList::new));
         }
         try {
             for (final Hash address : addressList) {
-                Long value = instance.milestone.latestSnapshot.getBalance(address);
+                Long value = instance.milestoneTracker.latestSnapshot.getBalance(address);
                 if (value == null) {
                     value = 0L;
                 }
@@ -1023,7 +1023,7 @@ public class API {
             }
             diff.forEach((key, value) -> balances.computeIfPresent(key, (hash, aLong) -> value + aLong));
         } finally {
-            instance.milestone.latestSnapshot.rwlock.readLock().unlock();
+            instance.milestoneTracker.latestSnapshot.rwlock.readLock().unlock();
         }
 
         final List<String> elements = addresses.stream().map(address -> balances.get(address).toString())

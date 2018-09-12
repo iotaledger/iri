@@ -1,7 +1,7 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.LedgerValidator;
-import com.iota.iri.Milestone;
+import com.iota.iri.MilestoneTracker;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
@@ -30,7 +30,7 @@ public class TipSelectorImpl implements TipSelector {
 
     private final LedgerValidator ledgerValidator;
     private final Tangle tangle;
-    private final Milestone milestone;
+    private final MilestoneTracker milestoneTracker;
     private final TipSelConfig config;
 
     public TipSelectorImpl(Tangle tangle,
@@ -38,7 +38,7 @@ public class TipSelectorImpl implements TipSelector {
                            EntryPointSelector entryPointSelector,
                            RatingCalculator ratingCalculator,
                            Walker walkerAlpha,
-                           Milestone milestone,
+                           MilestoneTracker milestoneTracker,
                            TipSelConfig config) {
 
         this.entryPointSelector = entryPointSelector;
@@ -49,7 +49,7 @@ public class TipSelectorImpl implements TipSelector {
         //used by walkValidator
         this.ledgerValidator = ledgerValidator;
         this.tangle = tangle;
-        this.milestone = milestone;
+        this.milestoneTracker = milestoneTracker;
         this.config = config;
     }
 
@@ -72,7 +72,7 @@ public class TipSelectorImpl implements TipSelector {
     @Override
     public List<Hash> getTransactionsToApprove(int depth, Optional<Hash> reference) throws Exception {
         try {
-            milestone.latestSnapshot.rwlock.readLock().lock();
+            milestoneTracker.latestSnapshot.rwlock.readLock().lock();
 
             //preparation
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
@@ -80,7 +80,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //random walk
             List<Hash> tips = new LinkedList<>();
-            WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, milestone, config);
+            WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, milestoneTracker, config);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 
@@ -100,7 +100,7 @@ public class TipSelectorImpl implements TipSelector {
 
             return tips;
         } finally {
-            milestone.latestSnapshot.rwlock.readLock().unlock();
+            milestoneTracker.latestSnapshot.rwlock.readLock().unlock();
         }
     }
 

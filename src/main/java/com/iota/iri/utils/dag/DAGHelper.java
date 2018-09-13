@@ -16,7 +16,7 @@ public class DAGHelper {
     /**
      * Holds references to the singleton DAGHelper instances.
      */
-    protected static HashMap<Tangle, DAGHelper> instances = new HashMap<>();
+    protected static final HashMap<Tangle, DAGHelper> instances = new HashMap<>();
 
     /**
      * Holds a reference to the tangle instance which acts as an interface to the used database.

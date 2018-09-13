@@ -5,16 +5,18 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Tangle;
 
 import java.util.*;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * This class offers generic functions for recurring tasks that are related to the tangle and that otherwise would have
  * to be implemented over and over again in different parts of the code.
  */
-public class DAGUtils {
+public class DAGHelper {
     /**
-     * Holds references to the singleton DAGUtils instances.
+     * Holds references to the singleton DAGHelper instances.
      */
-    protected static HashMap<Tangle, DAGUtils> instances = new HashMap<>();
+    protected static HashMap<Tangle, DAGHelper> instances = new HashMap<>();
 
     /**
      * Holds a reference to the tangle instance which acts as an interface to the used database.
@@ -22,20 +24,22 @@ public class DAGUtils {
     protected Tangle tangle;
 
     /**
-     * This method allows us to retrieve the DAGUtils instance that corresponds to the given parameters.
+     * This method allows us to retrieve the DAGHelper instance that corresponds to the given parameters.
      *
      * To save memory and to be able to use things like caches effectively, we do not allow to create multiple instances
      * of this class for the same set of parameters, but create a singleton instance of it.
      *
      * @param tangle database interface used to retrieve data
-     * @return DAGUtils instance that allows to use the implemented methods.
+     * @return DAGHelper instance that allows to use the implemented methods.
      */
-    public static DAGUtils get(Tangle tangle) {
-        DAGUtils instance = instances.get(tangle);
-        if(instance == null) {
-            instance = new DAGUtils(tangle);
-
-            instances.put(tangle, instance);
+    public static DAGHelper get(Tangle tangle) {
+        DAGHelper instance;
+        if((instance = instances.get(tangle)) == null) {
+            synchronized(DAGHelper.class) {
+                if((instance = instances.get(tangle)) == null) {
+                    instance = instances.put(tangle, new DAGHelper(tangle));
+                }
+            }
         }
 
         return instance;
@@ -49,7 +53,7 @@ public class DAGUtils {
      *
      * @param tangle database interface used to retrieve data
      */
-    protected DAGUtils(Tangle tangle) {
+    protected DAGHelper(Tangle tangle) {
         this.tangle = tangle;
     }
 
@@ -78,10 +82,10 @@ public class DAGUtils {
      * @throws TraversalException if anything goes wrong while traversing the graph and processing the transactions
      */
     public void traverseApprovers(Hash startingTransactionHash,
-                                  TraversalCondition condition,
-                                  TraversalConsumer currentTransactionConsumer,
+                                  Predicate<TransactionViewModel> condition,
+                                  Consumer<TransactionViewModel> currentTransactionConsumer,
                                   Set<Hash> processedTransactions) throws TraversalException {
-        final Queue<Hash> transactionsToExamine = new LinkedList<>(Collections.singleton(startingTransactionHash));
+        Queue<Hash> transactionsToExamine = new LinkedList<>(Collections.singleton(startingTransactionHash));
         try {
             Hash currentTransactionHash;
             while((currentTransactionHash = transactionsToExamine.poll()) != null) {
@@ -89,14 +93,14 @@ public class DAGUtils {
                     TransactionViewModel currentTransaction = TransactionViewModel.fromHash(tangle, currentTransactionHash);
                     if(
                         currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT && (
-                            // do not "check" the starting transaction since it is not an "approver"
+                            // do not "test" the starting transaction since it is not an "approver"
                             currentTransactionHash == startingTransactionHash ||
-                            condition.check(currentTransaction)
+                            condition.test(currentTransaction)
                         )
                     ) {
                         // do not consume the starting transaction since it is not an "approver"
                         if(currentTransactionHash != startingTransactionHash) {
-                            currentTransactionConsumer.consume(currentTransaction);
+                            currentTransactionConsumer.accept(currentTransaction);
                         }
 
                         currentTransaction.getApprovers(tangle).getHashes().stream().forEach(approverHash -> transactionsToExamine.add(approverHash));
@@ -109,10 +113,10 @@ public class DAGUtils {
     }
 
     /**
-     * Works like {@link DAGUtils#traverseApprovers(Hash, TraversalCondition, TraversalConsumer, Set)}
-     * but defaults to an empty set of processed transactions to consider all transactions.
+     * Works like {@link DAGHelper#traverseApprovers(Hash, Predicate, Consumer, Set)} but defaults to an empty
+     * set of processed transactions to consider all transactions.
      *
-     * @see DAGUtils#traverseApprovers(Hash, TraversalCondition, TraversalConsumer, Set)
+     * @see DAGHelper#traverseApprovers(Hash, Predicate, Consumer, Set)
      *
      * @param startingTransactionHash the starting point of the traversal
      * @param condition predicate that allows to control how long the traversal should continue (receives the current
@@ -121,8 +125,8 @@ public class DAGUtils {
      * @throws TraversalException if anything goes wrong while traversing the graph and processing the transactions
      */
     public void traverseApprovers(Hash startingTransactionHash,
-                                  TraversalCondition condition,
-                                  TraversalConsumer currentTransactionConsumer) throws TraversalException {
+                                  Predicate<TransactionViewModel> condition,
+                                  Consumer<TransactionViewModel> currentTransactionConsumer) throws TraversalException {
         traverseApprovers(startingTransactionHash, condition, currentTransactionConsumer, new HashSet<>());
     }
 
@@ -153,10 +157,10 @@ public class DAGUtils {
      * @throws TraversalException if anything goes wrong while traversing the graph and processing the transactions
      */
     public void traverseApprovees(Hash startingTransactionHash,
-                                  TraversalCondition condition,
-                                  TraversalConsumer currentTransactionConsumer,
+                                  Predicate<TransactionViewModel> condition,
+                                  Consumer<TransactionViewModel> currentTransactionConsumer,
                                   Set<Hash> processedTransactions) throws TraversalException {
-        final Queue<Hash> transactionsToExamine = new LinkedList<>(Collections.singleton(startingTransactionHash));
+        Queue<Hash> transactionsToExamine = new LinkedList<>(Collections.singleton(startingTransactionHash));
         try {
             Hash currentTransactionHash;
             while((currentTransactionHash = transactionsToExamine.poll()) != null) {
@@ -164,14 +168,14 @@ public class DAGUtils {
                     TransactionViewModel currentTransaction = TransactionViewModel.fromHash(tangle, currentTransactionHash);
                     if(
                         currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT &&(
-                            // do not "check" the starting transaction since it is not an "approvee"
+                            // do not "test" the starting transaction since it is not an "approvee"
                             currentTransactionHash == startingTransactionHash ||
-                            condition.check(currentTransaction)
+                            condition.test(currentTransaction)
                         )
                     ) {
                         // do not consume the starting transaction since it is not an "approvee"
                         if(currentTransactionHash != startingTransactionHash) {
-                            currentTransactionConsumer.consume(currentTransaction);
+                            currentTransactionConsumer.accept(currentTransaction);
                         }
 
                         transactionsToExamine.add(currentTransaction.getBranchTransactionHash());
@@ -185,10 +189,10 @@ public class DAGUtils {
     }
 
     /**
-     * Works like {@link DAGUtils#traverseApprovees(Hash, TraversalCondition, TraversalConsumer, Set)}
-     * but defaults to an empty set of processed transactions to consider all transactions.
+     * Works like {@link DAGHelper#traverseApprovees(Hash, Predicate, Consumer, Set)} but defaults to an empty
+     * set of processed transactions to consider all transactions.
      *
-     * @see DAGUtils#traverseApprovees(Hash, TraversalCondition, TraversalConsumer, Set)
+     * @see DAGHelper#traverseApprovees(Hash, Predicate, Consumer, Set)
      *
      * @param startingTransactionHash the starting point of the traversal
      * @param condition predicate that allows to control how long the traversal should continue (receives the current
@@ -197,8 +201,8 @@ public class DAGUtils {
      * @throws TraversalException if anything goes wrong while traversing the graph and processing the transactions
      */
     public void traverseApprovees(Hash startingTransactionHash,
-                                  TraversalCondition condition,
-                                  TraversalConsumer currentTransactionConsumer) throws TraversalException {
+                                  Predicate<TransactionViewModel> condition,
+                                  Consumer<TransactionViewModel> currentTransactionConsumer) throws TraversalException {
         traverseApprovees(startingTransactionHash, condition, currentTransactionConsumer, new HashSet<>());
     }
 

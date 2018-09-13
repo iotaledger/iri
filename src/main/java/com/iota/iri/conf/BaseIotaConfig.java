@@ -80,6 +80,15 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected double alpha = Defaults.ALPHA;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
 
+    //Snapshot
+    protected boolean localSnapshotsEnabled = Defaults.LOCAL_SNAPSHOTS_ENABLED;
+    protected boolean localSnapshotsPruningEnabled = Defaults.LOCAL_SNAPSHOTS_PRUNING_ENABLED;
+    protected int localSnapshotsPruningDelay = Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY;
+    protected int localSnapshotsIntervalSynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_SYNCED;
+    protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
+    protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
+    protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
+
     public BaseIotaConfig() {
         //empty constructor
     }
@@ -454,6 +463,83 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public boolean getLocalSnapshotsEnabled() {
+        return this.localSnapshotsEnabled;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--local-snapshots-enabled"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_ENABLED)
+    protected void setLocalSnapshotsEnabled(boolean localSnapshotsEnabled) {
+        this.localSnapshotsEnabled = localSnapshotsEnabled;
+    }
+
+    @Override
+    public boolean getLocalSnapshotsPruningEnabled() {
+        return this.localSnapshotsPruningEnabled;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--local-snapshots-pruning-enabled"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_ENABLED)
+    protected void setLocalSnapshotsPruningEnabled(boolean localSnapshotsPruningEnabled) {
+        this.localSnapshotsPruningEnabled = localSnapshotsPruningEnabled;
+    }
+
+    @Override
+    public int getLocalSnapshotsPruningDelay() {
+        return this.localSnapshotsPruningDelay;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--local-snapshots-pruning-delay"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
+    protected void setLocalSnapshotsPruningDelay(int localSnapshotsPruningDelay) {
+        this.localSnapshotsPruningDelay = localSnapshotsPruningDelay;
+    }
+
+    @Override
+    public int getLocalSnapshotsIntervalSynced() {
+        return this.localSnapshotsIntervalSynced;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--local-snapshots-interval-synced"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_SYNCED)
+    protected void setLocalSnapshotsIntervalSynced(int localSnapshotsIntervalSynced) {
+        this.localSnapshotsIntervalSynced = localSnapshotsIntervalSynced;
+    }
+
+    @Override
+    public int getLocalSnapshotsIntervalUnsynced() {
+        return this.localSnapshotsIntervalUnsynced;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--local-snapshots-interval-unsynced"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED)
+    protected void setLocalSnapshotsIntervalUnsynced(int localSnapshotsIntervalUnsynced) {
+        this.localSnapshotsIntervalUnsynced = localSnapshotsIntervalUnsynced;
+    }
+
+    @Override
+    public int getLocalSnapshotsDepth() {
+        return this.localSnapshotsDepth;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--local-snapshots-depth"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DEPTH)
+    protected void setLocalSnapshotsDepth(int localSnapshotsDepth) {
+        this.localSnapshotsDepth = localSnapshotsDepth;
+    }
+
+    @Override
+    public String getLocalSnapshotsBasePath() {
+        return this.localSnapshotsBasePath;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--local-snapshots-base-path"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_BASE_PATH)
+    protected void setLocalSnapshotsBasePath(String localSnapshotsBasePath) {
+        this.localSnapshotsBasePath = localSnapshotsBasePath;
+    }
+
+    @Override
     public long getSnapshotTime() {
         return Defaults.GLOBAL_SNAPSHOT_TIME;
     }
@@ -669,6 +755,13 @@ public abstract class BaseIotaConfig implements IotaConfig {
                 "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
 
         //Snapshot
+        boolean LOCAL_SNAPSHOTS_ENABLED = true;
+        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
+        int LOCAL_SNAPSHOTS_PRUNING_DELAY = 1000;
+        int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
+        int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 5000;
+        String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
+        int LOCAL_SNAPSHOTS_DEPTH = 500;
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT = "/previousEpochsSpentAddresses.txt";

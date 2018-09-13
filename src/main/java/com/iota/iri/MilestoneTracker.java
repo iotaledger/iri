@@ -27,9 +27,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.iota.iri.Milestone.Validity.*;
+import static com.iota.iri.MilestoneTracker.Validity.*;
 
-public class Milestone {
+public class MilestoneTracker {
 
     enum Validity {
         VALID,
@@ -37,7 +37,7 @@ public class Milestone {
         INCOMPLETE
     }
 
-    private final Logger log = LoggerFactory.getLogger(Milestone.class);
+    private final Logger log = LoggerFactory.getLogger(MilestoneTracker.class);
     private final Tangle tangle;
     private final Hash coordinator;
     private final TransactionValidator transactionValidator;
@@ -57,10 +57,10 @@ public class Milestone {
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
 
-    public Milestone(Tangle tangle,
-                     TransactionValidator transactionValidator,
-                     MessageQ messageQ,
-                     Snapshot initialSnapshot, ConsensusConfig config
+    public MilestoneTracker(Tangle tangle,
+                            TransactionValidator transactionValidator,
+                            MessageQ messageQ,
+                            Snapshot initialSnapshot, ConsensusConfig config
     ) {
         this.tangle = tangle;
         this.transactionValidator = transactionValidator;

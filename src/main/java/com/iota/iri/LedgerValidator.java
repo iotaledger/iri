@@ -14,14 +14,14 @@ public class LedgerValidator {
 
     private final Logger log = LoggerFactory.getLogger(LedgerValidator.class);
     private final Tangle tangle;
-    private final Milestone milestone;
+    private final MilestoneTracker milestoneTracker;
     private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
     private volatile int numberOfConfirmedTransactions;
 
-    public LedgerValidator(Tangle tangle, Milestone milestone, TransactionRequester transactionRequester, MessageQ messageQ) {
+    public LedgerValidator(Tangle tangle, MilestoneTracker milestoneTracker, TransactionRequester transactionRequester, MessageQ messageQ) {
         this.tangle = tangle;
-        this.milestone = milestone;
+        this.milestoneTracker = milestoneTracker;
         this.transactionRequester = transactionRequester;
         this.messageQ = messageQ;
     }
@@ -189,8 +189,8 @@ public class LedgerValidator {
         if(latestConsistentMilestone != null) {
             log.info("Loaded consistent milestone: #" + latestConsistentMilestone.index());
 
-            milestone.latestSolidSubtangleMilestone = latestConsistentMilestone.getHash();
-            milestone.latestSolidSubtangleMilestoneIndex = latestConsistentMilestone.index();
+            milestoneTracker.latestSolidSubtangleMilestone = latestConsistentMilestone.getHash();
+            milestoneTracker.latestSolidSubtangleMilestoneIndex = latestConsistentMilestone.index();
         }
     }
 
@@ -203,7 +203,7 @@ public class LedgerValidator {
      */
     private MilestoneViewModel buildSnapshot() throws Exception {
         MilestoneViewModel consistentMilestone = null;
-        milestone.latestSnapshot.rwlock.writeLock().lock();
+        milestoneTracker.latestSnapshot.rwlock.writeLock().lock();
         try {
             MilestoneViewModel candidateMilestone = MilestoneViewModel.first(tangle);
             while (candidateMilestone != null) {
@@ -221,8 +221,8 @@ public class LedgerValidator {
                     StateDiffViewModel stateDiffViewModel = StateDiffViewModel.load(tangle, candidateMilestone.getHash());
 
                     if (stateDiffViewModel != null && !stateDiffViewModel.isEmpty()) {
-                        if (Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(stateDiffViewModel.getDiff()))) {
-                            milestone.latestSnapshot.apply(stateDiffViewModel.getDiff(), candidateMilestone.index());
+                        if (Snapshot.isConsistent(milestoneTracker.latestSnapshot.patchedDiff(stateDiffViewModel.getDiff()))) {
+                            milestoneTracker.latestSnapshot.apply(stateDiffViewModel.getDiff(), candidateMilestone.index());
                             consistentMilestone = candidateMilestone;
                         } else {
                             break;
@@ -232,21 +232,21 @@ public class LedgerValidator {
                 candidateMilestone = candidateMilestone.next(tangle);
             }
         } finally {
-            milestone.latestSnapshot.rwlock.writeLock().unlock();
+            milestoneTracker.latestSnapshot.rwlock.writeLock().unlock();
         }
         return consistentMilestone;
     }
 
     public boolean updateSnapshot(MilestoneViewModel milestoneVM) throws Exception {
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestoneVM.getHash());
-        milestone.latestSnapshot.rwlock.writeLock().lock();
+        milestoneTracker.latestSnapshot.rwlock.writeLock().lock();
         try {
             final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
             boolean hasSnapshot = transactionSnapshotIndex != 0;
             if (!hasSnapshot) {
                 Hash tail = transactionViewModel.getHash();
-                Map<Hash, Long> currentState = getLatestDiff(new HashSet<>(), tail, milestone.latestSnapshot.index(), true);
-                hasSnapshot = currentState != null && Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(currentState));
+                Map<Hash, Long> currentState = getLatestDiff(new HashSet<>(), tail, milestoneTracker.latestSnapshot.index(), true);
+                hasSnapshot = currentState != null && Snapshot.isConsistent(milestoneTracker.latestSnapshot.patchedDiff(currentState));
                 if (hasSnapshot) {
                     updateSnapshotMilestone(milestoneVM.getHash(), milestoneVM.index());
                     StateDiffViewModel stateDiffViewModel;
@@ -254,12 +254,12 @@ public class LedgerValidator {
                     if (currentState.size() != 0) {
                         stateDiffViewModel.store(tangle);
                     }
-                    milestone.latestSnapshot.apply(currentState, milestoneVM.index());
+                    milestoneTracker.latestSnapshot.apply(currentState, milestoneVM.index());
                 }
             }
             return hasSnapshot;
         } finally {
-            milestone.latestSnapshot.rwlock.writeLock().unlock();
+            milestoneTracker.latestSnapshot.rwlock.writeLock().unlock();
         }
     }
 
@@ -282,7 +282,7 @@ public class LedgerValidator {
             return true;
         }
         Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
-        Map<Hash, Long> currentState = getLatestDiff(visitedHashes, tip, milestone.latestSnapshot.index(), false);
+        Map<Hash, Long> currentState = getLatestDiff(visitedHashes, tip, milestoneTracker.latestSnapshot.index(), false);
         if (currentState == null) {
             return false;
         }
@@ -291,7 +291,7 @@ public class LedgerValidator {
                 currentState.putIfAbsent(key, value);
             }
         });
-        boolean isConsistent = Snapshot.isConsistent(milestone.latestSnapshot.patchedDiff(currentState));
+        boolean isConsistent = Snapshot.isConsistent(milestoneTracker.latestSnapshot.patchedDiff(currentState));
         if (isConsistent) {
             diff.putAll(currentState);
             approvedHashes.addAll(visitedHashes);

@@ -88,10 +88,16 @@ public class DAGUtils {
                 if(processedTransactions.add(currentTransactionHash)) {
                     TransactionViewModel currentTransaction = TransactionViewModel.fromHash(tangle, currentTransactionHash);
                     if(
-                        currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT &&
-                        condition.check(currentTransaction)
+                        currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT && (
+                            // do not "check" the starting transaction since it is not an "approver"
+                            currentTransactionHash == startingTransactionHash ||
+                            condition.check(currentTransaction)
+                        )
                     ) {
-                        currentTransactionConsumer.consume(currentTransaction);
+                        // do not consume the starting transaction since it is not an "approver"
+                        if(currentTransactionHash != startingTransactionHash) {
+                            currentTransactionConsumer.consume(currentTransaction);
+                        }
 
                         currentTransaction.getApprovers(tangle).getHashes().stream().forEach(approverHash -> transactionsToExamine.add(approverHash));
                     }
@@ -157,10 +163,16 @@ public class DAGUtils {
                 if(processedTransactions.add(currentTransactionHash)) {
                     TransactionViewModel currentTransaction = TransactionViewModel.fromHash(tangle, currentTransactionHash);
                     if(
-                        currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT &&
-                        condition.check(currentTransaction)
+                        currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT &&(
+                            // do not "check" the starting transaction since it is not an "approvee"
+                            currentTransactionHash == startingTransactionHash ||
+                            condition.check(currentTransaction)
+                        )
                     ) {
-                        currentTransactionConsumer.consume(currentTransaction);
+                        // do not consume the starting transaction since it is not an "approvee"
+                        if(currentTransactionHash != startingTransactionHash) {
+                            currentTransactionConsumer.consume(currentTransaction);
+                        }
 
                         transactionsToExamine.add(currentTransaction.getBranchTransactionHash());
                         transactionsToExamine.add(currentTransaction.getTrunkTransactionHash());

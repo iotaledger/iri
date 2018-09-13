@@ -85,7 +85,7 @@ public class DAGHelper {
                                   Predicate<TransactionViewModel> condition,
                                   Consumer<TransactionViewModel> currentTransactionConsumer,
                                   Set<Hash> processedTransactions) throws TraversalException {
-        Queue<Hash> transactionsToExamine = new LinkedList<>(Collections.singleton(startingTransactionHash));
+        Queue<Hash> transactionsToExamine = new ArrayDeque<>(Collections.singleton(startingTransactionHash));
         try {
             Hash currentTransactionHash;
             while((currentTransactionHash = transactionsToExamine.poll()) != null) {
@@ -160,7 +160,7 @@ public class DAGHelper {
                                   Predicate<TransactionViewModel> condition,
                                   Consumer<TransactionViewModel> currentTransactionConsumer,
                                   Set<Hash> processedTransactions) throws TraversalException {
-        Queue<Hash> transactionsToExamine = new LinkedList<>(Collections.singleton(startingTransactionHash));
+        Queue<Hash> transactionsToExamine = new ArrayDeque<>(Collections.singleton(startingTransactionHash));
         try {
             Hash currentTransactionHash;
             while((currentTransactionHash = transactionsToExamine.poll()) != null) {

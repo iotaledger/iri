@@ -12,6 +12,10 @@ public class HashSafeObject extends SafeObject {
         this.hashcode = Arrays.hashCode(getData());
 	}
 	
+	/**
+	 * Returns the hash code from the contained data
+	 * @return the hashcode
+	 */
 	public Integer getHashcode() {
 		return hashcode;
 	}

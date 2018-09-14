@@ -64,7 +64,6 @@ public enum HashFactory {
     /**
      * Creates a Hash using the provided trits
      * @param trits the source data
-     * @param sourceOffset the offset we start reading from
      * @return the hash
      */
     public Hash create(String trits) {
@@ -81,7 +80,7 @@ public enum HashFactory {
 
     /**
      * Creates a Hash using the provided trits
-     * @param trits the source data
+     * @param source the source data
      * @param sourceOffset the offset we start reading from
      * @param sourceSize the size this hash is in bytes, starting from offset
      * @return the hash

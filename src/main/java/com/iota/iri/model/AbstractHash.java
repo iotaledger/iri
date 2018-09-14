@@ -13,11 +13,11 @@ import com.iota.iri.utils.Converter;
 
 public abstract class AbstractHash implements Hash, Serializable {
     private final Object lock = new Object();
-    
+
     private ByteSafe byteSafe;
-	private TritSafe tritSafe;
-    
-	public AbstractHash(byte[] source, int sourceOffset, int sourceSize) {
+    private TritSafe tritSafe;
+
+    public AbstractHash(byte[] source, int sourceOffset, int sourceSize) {
         if(sourceSize < SIZE_IN_TRITS) {
             byte[] dest = new byte[SIZE_IN_BYTES];
             System.arraycopy(source, sourceOffset, dest, 0, sourceSize - sourceOffset > source.length ? source.length - sourceOffset : sourceSize);
@@ -33,9 +33,9 @@ public abstract class AbstractHash implements Hash, Serializable {
         this.tritSafe = new TritSafe(new byte[SIZE_IN_TRITS]);
         Converter.trits(trytes, this.tritSafe.getData(), 0);
     }
-    
+
     @Override
-	public void read(byte[] bytes) {
+    public void read(byte[] bytes) {
         if (bytes != null) {
             synchronized (lock) {
                 if (byteSafe != null || tritSafe != null) {
@@ -46,11 +46,11 @@ public abstract class AbstractHash implements Hash, Serializable {
                 byteSafe = new ByteSafe(dest);
             }
         }
-	}
+    }
 
-	@Override
-	public byte[] bytes() {
-		ByteSafe safe = byteSafe;
+    @Override
+    public byte[] bytes() {
+        ByteSafe safe = byteSafe;
         if (safe == null) {
             synchronized (lock) {
                 if (byteSafe == null) {
@@ -64,11 +64,11 @@ public abstract class AbstractHash implements Hash, Serializable {
             }
         }
         return safe.getData();
-	}
+    }
 
-	@Override
-	public byte[] trits() {
-		TritSafe safe = tritSafe;
+    @Override
+    public byte[] trits() {
+        TritSafe safe = tritSafe;
         if (safe == null) {
             synchronized (lock) {
                 if (tritSafe == null) {
@@ -82,30 +82,30 @@ public abstract class AbstractHash implements Hash, Serializable {
             }
         }
         return safe.getData();
-	}
+    }
 
-	@Override
-	public int trailingZeros() {
-		byte[] trits = trits();
+    @Override
+    public int trailingZeros() {
+        byte[] trits = trits();
         int index = SIZE_IN_TRITS;
         int zeros = 0;
         while (index-- > 0 && trits[index] == 0) {
             zeros++;
         }
         return zeros;
-	}
+    }
 
-	@Override
-	public Indexable incremented() {
-		return null;
-	}
+    @Override
+    public Indexable incremented() {
+        return null;
+    }
 
-	@Override
-	public Indexable decremented() {
-		return null;
-	}
+    @Override
+    public Indexable decremented() {
+        return null;
+    }
 
-	@Override
+    @Override
     public int hashCode() {
         bytes();
         return byteSafe.getHashcode();
@@ -115,7 +115,7 @@ public abstract class AbstractHash implements Hash, Serializable {
     public String toString() {
         return Converter.trytes(trits());
     }
-    
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -127,7 +127,7 @@ public abstract class AbstractHash implements Hash, Serializable {
         Hash hash = (Hash) obj;
         return Arrays.equals(bytes(), hash.bytes());
     }
-    
+
     @Override
     public int compareTo(Indexable indexable) {
         Hash hash = (indexable instanceof Hash) ? (Hash) indexable : HashFactory.GENERIC.create(Transaction.class, indexable.bytes());

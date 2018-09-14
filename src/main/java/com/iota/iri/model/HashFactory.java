@@ -120,7 +120,7 @@ public enum HashFactory {
      * @param source the source data, bytes or trits. Based on the length of source data
      * @return the hash of the correct type
      */
-    public Hash create(Class<? extends Persistable> modelClass, byte[] source) {
+    public Hash create(Class<?> modelClass, byte[] source) {
         return create(modelClass, source, 0, source.length == AbstractHash.SIZE_IN_TRITS ? AbstractHash.SIZE_IN_TRITS : AbstractHash.SIZE_IN_BYTES);
     }
 
@@ -132,7 +132,7 @@ public enum HashFactory {
      * @param sourceSize the size this hash is in bytes, starting from offset
      * @return the hash of the correct type
      */
-    public Hash create(Class<? extends Persistable> modelClass, byte[] source, int sourceOffset, int sourceSize) {
+    public Hash create(Class<?> modelClass, byte[] source, int sourceOffset, int sourceSize) {
         //Transaction is first since its the most used
         if (modelClass.equals(Transaction.class) || modelClass.equals(Approvee.class)) {
             return new TransactionHash(source, sourceOffset, sourceSize);

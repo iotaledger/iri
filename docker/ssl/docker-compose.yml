@@ -12,7 +12,7 @@ nginx:
   volumes_from:
     - letsencrypt
 letsencrypt:
-  image: quay.io/letsencrypt/letsencrypt:latest
+  image: certbot/certbot:v0.27.1
   command:  bash -c "sleep 6 && certbot certonly --standalone --email "__EMAIL__" -d "__DOMAIN__" -n --agree-tos"
   entrypoint: ""
   volumes:
@@ -24,7 +24,7 @@ letsencrypt:
   environment:
     - TERM=xterm
 iri:
-  image: iotaledger/iri:v1.5.3
+  image: iotaledger/iri:latest
   command: -p __PORT__
   ports:
     - "__PORT__:__PORT__"

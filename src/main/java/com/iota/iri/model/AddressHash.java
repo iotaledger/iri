@@ -2,11 +2,11 @@ package com.iota.iri.model;
 
 public class AddressHash extends AbstractHash {
 
-    public AddressHash(byte[] bytes, int offset, int sizeInBytes) {
+    protected AddressHash(byte[] bytes, int offset, int sizeInBytes) {
         super(bytes, offset, sizeInBytes);
     }
 
-    public AddressHash(String string) {
+    protected AddressHash(String string) {
         super(string);
     }
 }

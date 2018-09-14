@@ -35,7 +35,7 @@ public enum HashFactory {
     private Constructor<Hash> stringConstructor;
 
     @SuppressWarnings("unchecked")
-    private HashFactory(Class<?> clazz) {
+    HashFactory(Class<?> clazz) {
         try {
             this.constructor = (Constructor<Hash>) clazz.getConstructor(byte[].class, int.class, int.class);
             this.stringConstructor = (Constructor<Hash>) clazz.getConstructor(String.class);
@@ -45,7 +45,7 @@ public enum HashFactory {
         }
     }
     
-    private HashFactory() {
+    HashFactory() {
         this.constructor = null;
     }
 

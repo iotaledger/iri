@@ -2,11 +2,11 @@ package com.iota.iri.model;
 
 public class BundleHash extends AbstractHash {
 
-    public BundleHash(byte[] bytes, int offset, int sizeInBytes) {
+    protected BundleHash(byte[] bytes, int offset, int sizeInBytes) {
         super(bytes, offset, sizeInBytes);
     }
 
-    public BundleHash(String bundle) {
+    protected BundleHash(String bundle) {
         super(bundle);
     }
 }

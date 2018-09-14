@@ -15,11 +15,11 @@ public class TransactionHash extends AbstractHash {
 	
     /**
      * Calculates a transaction hash from an array of bytes. Uses the entire trits array
-     * @param trits
      * @param mode The mode we absorb the trits with
+     * @param trits array of trits we calculate the hash with
      * @return The {@link TransactionHash}
      */
-    public static TransactionHash calculate(byte[] trits, SpongeFactory.Mode mode) {
+    public static TransactionHash calculate(SpongeFactory.Mode mode, byte[] trits) {
         return calculate(trits, 0, trits.length, SpongeFactory.create(mode));
     }
 

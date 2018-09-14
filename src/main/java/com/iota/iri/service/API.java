@@ -238,8 +238,8 @@ public class API {
                     return addNeighborsStatement(uris);
                 }
                 case "attachToTangle": {
-                    final Hash trunkTransaction  = new TransactionHash(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
-                    final Hash branchTransaction = new TransactionHash(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
+                    final Hash trunkTransaction  = HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
+                    final Hash branchTransaction = HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
                     final int minWeightMagnitude = getParameterAsInt(request,"minWeightMagnitude");
 
                     final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
@@ -284,7 +284,7 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     final Optional<Hash> reference = request.containsKey("reference") ?
-                            Optional.of(new TransactionHash(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
+                            Optional.of(HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
                             : Optional.empty();
                     final int depth = getParameterAsInt(request, "depth");
                     if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
@@ -444,7 +444,7 @@ public class API {
      * @return {@link com.iota.iri.service.dto.CheckConsistency}
      **/
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
-        final List<Hash> transactions = transactionsList.stream().map(TransactionHash::new).collect(Collectors.toList());
+        final List<Hash> transactions = transactionsList.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
         boolean state = true;
         String info = "";
 
@@ -593,7 +593,7 @@ public class API {
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
-            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, new TransactionHash(hash));
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(hash));
             if (transactionViewModel != null) {
                 elements.add(Converter.trytes(transactionViewModel.trits()));
             }
@@ -742,8 +742,8 @@ public class API {
      * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse} 
      **/
     private AbstractResponse getInclusionStatesStatement(final List<String> trans, final List<String> tips) throws Exception {
-        final List<Hash> transactions = trans.stream().map(TransactionHash::new).collect(Collectors.toList());
-        final List<Hash> tps = tips.stream().map(TransactionHash::new).collect(Collectors.toList());
+        final List<Hash> transactions = trans.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
+        final List<Hash> tps = tips.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
 
         int numberOfNonMetTransactions = transactions.size();
         final byte[] inclusionStates = new byte[numberOfNonMetTransactions];
@@ -896,7 +896,7 @@ public class API {
         if (request.containsKey("approvees")) {
             final HashSet<String> approvees = getParameterAsSet(request,"approvees",HASH_SIZE);
             for (final String approvee : approvees) {
-                approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, new TransactionHash(approvee)).getApprovers(instance.tangle).getHashes());
+                approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(approvee)).getApprovers(instance.tangle).getHashes());
             }
             foundTransactions.addAll(approveeTransactions);
             containsKey = true;

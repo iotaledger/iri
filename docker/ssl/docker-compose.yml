@@ -13,7 +13,7 @@ nginx:
     - letsencrypt
 letsencrypt:
   image: certbot/certbot@sha256:8a73ec490fc75a29b75552dc328258c74162b204c232e0fc47fe163a2d3aefea
-  command: sh -c "sleep 6 && certbot certonly --staging --standalone --email "__EMAIL__" -d "__DOMAIN__" -n --agree-tos"
+  command: sh -c "certbot certonly --staging --standalone --email "__EMAIL__" -d "__DOMAIN__" -n --agree-tos"
   entrypoint: ""
   volumes:
     - /etc/letsencrypt
@@ -26,5 +26,3 @@ letsencrypt:
 iri:
   image: iotaledger/iri:latest
   command: -p __PORT__
-  ports:
-    - "__PORT__:__PORT__"

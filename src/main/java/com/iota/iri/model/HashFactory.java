@@ -37,8 +37,8 @@ public enum HashFactory {
     @SuppressWarnings("unchecked")
     HashFactory(Class<?> clazz) {
         try {
-            this.constructor = (Constructor<Hash>) clazz.getConstructor(byte[].class, int.class, int.class);
-            this.stringConstructor = (Constructor<Hash>) clazz.getConstructor(String.class);
+            this.constructor = (Constructor<Hash>) clazz.getDeclaredConstructor(byte[].class, int.class, int.class);
+            this.stringConstructor = (Constructor<Hash>) clazz.getDeclaredConstructor(String.class);
         } catch (NoSuchMethodException | SecurityException e) {
             e.printStackTrace();
             this.constructor = null;

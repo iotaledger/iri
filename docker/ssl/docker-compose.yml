@@ -12,8 +12,8 @@ nginx:
   volumes_from:
     - letsencrypt
 letsencrypt:
-  image: certbot/certbot:v0.27.1
-  command:  bash -c "sleep 6 && certbot certonly --standalone --email "__EMAIL__" -d "__DOMAIN__" -n --agree-tos"
+  image: certbot/certbot@sha256:8a73ec490fc75a29b75552dc328258c74162b204c232e0fc47fe163a2d3aefea
+  command: sh -c "sleep 6 && certbot certonly --staging --standalone --email "__EMAIL__" -d "__DOMAIN__" -n --agree-tos"
   entrypoint: ""
   volumes:
     - /etc/letsencrypt

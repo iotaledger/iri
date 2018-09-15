@@ -4,16 +4,21 @@ sleep 3
 
 echo build starting nginx config
 
+NET_IF=`netstat -rn | awk '/^0.0.0.0/ {thif=substr($0,74,10); print thif;} /^default.*UG/ {thif=substr($0,65,10); print thif;}'`
+IRI_IP=`ifconfig ${NET_IF} | grep -Eo 'inet (addr:)?([0-9]*\.){3}[0-9]*' | grep -Eo '([0-9]*\.){3}[0-9]*' | grep -v '127.0.0.1'`
+
+echo $IRI_IP
+
 echo replacing ___my.example.com___/$MY_DOMAIN_NAME
 echo replacing ___LETSENCRYPT_IP___/$LETSENCRYPT_PORT_80_TCP_ADDR
 echo replacing ___LETSENCRYPT_PORT___/$LETSENCRYPT_PORT_80_TCP_PORT
-echo replacing ___APPLICATION_IP___/$MY_DOMAIN_NAME
+echo replacing ___APPLICATION_IP___/$IRI_IP
 echo replacing ___APPLICATION_PORT___/$PORT
 
 # Put your domain name into the nginx reverse proxy config.
 sed -i "s/___my.example.com___/$MY_DOMAIN_NAME/g" /etc/nginx/nginx.conf
 # Add your app's container IP and port into config
-sed -i "s/___APPLICATION_IP___/$MY_DOMAIN_NAME/g" /etc/nginx/nginx.conf
+sed -i "s/___APPLICATION_IP___/$IRI_IP/g" /etc/nginx/nginx.conf
 sed -i "s/___APPLICATION_PORT___/$PORT/g" /etc/nginx/nginx.conf
 sed -i "s/___LETSENCRYPT_IP___/$LETSENCRYPT_PORT_80_TCP_ADDR/g" /etc/nginx/nginx.conf
 sed -i "s/___LETSENCRYPT_PORT___/$LETSENCRYPT_PORT_80_TCP_PORT/g" /etc/nginx/nginx.conf
@@ -52,7 +57,7 @@ echo replacing ___LETSENCRYPT_IP___/$LETSENCRYPT_PORT_80_TCP_ADDR
 echo replacing ___LETSENCRYPT_PORT___/$LETSENCRYPT_PORT_80_TCP_PORT
 echo replacing ___LETSENCRYPT_HTTPS_IP___/$LETSENCRYPT_PORT_443_TCP_ADDR
 echo replacing ___LETSENCRYPT_HTTPS_PORT___/$LETSENCRYPT_PORT_443_TCP_PORT
-echo replacing ___APPLICATION_IP___/$MY_DOMAIN_NAME
+echo replacing ___APPLICATION_IP___/$IRI_IP
 echo replacing ___APPLICATION_PORT___/$PORT
 
 
@@ -66,7 +71,7 @@ sed -i "s/___LETSENCRYPT_HTTPS_IP___/$LETSENCRYPT_PORT_443_TCP_ADDR/g" /etc/ngin
 sed -i "s/___LETSENCRYPT_HTTPS_PORT___/$LETSENCRYPT_PORT_443_TCP_PORT/g" /etc/nginx/nginx-secure.conf
 
 # Add your app's container IP and port into config
-sed -i "s/___APPLICATION_IP___/$MY_DOMAIN_NAME/g" /etc/nginx/nginx-secure.conf
+sed -i "s/___APPLICATION_IP___/$IRI_IP/g" /etc/nginx/nginx-secure.conf
 sed -i "s/___APPLICATION_PORT___/$PORT/g" /etc/nginx/nginx-secure.conf
 
 #go!

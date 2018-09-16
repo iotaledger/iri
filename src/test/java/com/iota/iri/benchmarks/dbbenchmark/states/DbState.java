@@ -8,7 +8,6 @@ import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.apache.commons.io.FileUtils;
-import org.junit.Assert;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Scope;
 import org.openjdk.jmh.annotations.State;
@@ -20,8 +19,8 @@ import java.util.List;
 
 @State(Scope.Benchmark)
 public abstract class DbState {
-    private final File dbFolder = new File("db-bench");
-    private final File logFolder = new File("db-log-bench");
+    private final File dbFolder = new File("db-clean");
+    private final File logFolder = new File("db-log-clean");
 
     private Tangle tangle;
     private List<TransactionViewModel> transactions;
@@ -33,8 +32,7 @@ public abstract class DbState {
     public void setup() throws Exception {
         System.out.println("-----------------------trial setup--------------------------------");
         boolean mkdirs = dbFolder.mkdirs();
-        Assert.assertTrue("We want to start our test with a brand new folder " + dbFolder.getName()
-                + " but it already exists or its creation failed", mkdirs);
+        System.out.println("mkdirs success: " + mkdirs );
         logFolder.mkdirs();
         PersistenceProvider dbProvider = new RocksDBPersistenceProvider(dbFolder.getPath(), logFolder.getPath(),
                 BaseIotaConfig.Defaults.DB_CACHE_SIZE);

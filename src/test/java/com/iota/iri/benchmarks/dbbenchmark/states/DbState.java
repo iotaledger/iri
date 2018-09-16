@@ -32,7 +32,10 @@ public abstract class DbState {
     public void setup() throws Exception {
         System.out.println("-----------------------trial setup--------------------------------");
         boolean mkdirs = dbFolder.mkdirs();
-        System.out.println("mkdirs success: " + mkdirs );
+        if (!mkdirs) {
+            throw new IllegalStateException("db didn't start with a clean slate. Please delete "
+                    + dbFolder.getAbsolutePath());
+        }
         logFolder.mkdirs();
         PersistenceProvider dbProvider = new RocksDBPersistenceProvider(dbFolder.getPath(), logFolder.getPath(),
                 BaseIotaConfig.Defaults.DB_CACHE_SIZE);

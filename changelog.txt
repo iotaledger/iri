@@ -1,3 +1,29 @@
+1.5.3
+   - Remove WalkValidator cache of tips that are below max depth (#903)
+
+1.5.2
+   - Fail early on below max depth and don't solidify on api calls (#883)
+   - Two new configurations added: "max-depth-tx-limit" and "--walk-validator-cache"
+   - Replace all trit representations from int[] to byte[] (#879)
+
+1.5.1
+    - Update snapshot to 2018-07-09 8:00 UTC (#855)
+
+1.5.0
+    - Rework of the Tip Selection algorithm (#778)
+    - Validate the alpha value (#817)
+    - TipSelection: update API reference (#773)
+    - Inserted check for number of available processors. (#758)
+    - Improved Docker support (#744)
+    - Faster PearlDiver (PoW) (#733)
+    - Kerl hashing speed improvement (#628)
+    - Logging routing rework (#727)
+
+    Minor changes and fixes
+    - Fixed `attachmentTimestampUpperBound` value (#777)
+    - Fixed `getBalances` `tips` parameter parsing (#776)
+    - Added hash to `tx_trytes` ZMQ topic (#739)
+
 1.4.2.4
     - Tag indexing (#728)
     - TCP networking issues fixed (#592)

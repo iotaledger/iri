@@ -1,13 +1,13 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.Hashes;
 import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by paul on 3/3/17 for iri.
@@ -65,6 +65,12 @@ public class Tangle {
                 }
             }
             return exists;
+    }
+
+    public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
+        for(PersistenceProvider provider: persistenceProviders) {
+            provider.deleteBatch(models);
+        }
     }
 
     public void delete(Class<?> model, Indexable index) throws Exception {

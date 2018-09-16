@@ -1,5 +1,13 @@
 package com.iota.iri.network.replicator;
 
+import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.conf.TestnetConfig;
+import com.iota.iri.network.Neighbor;
+import com.iota.iri.network.Node;
+import com.iota.iri.network.TCPNeighbor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.InetSocketAddress;
@@ -7,17 +15,6 @@ import java.net.Socket;
 import java.net.SocketAddress;
 import java.util.List;
 import java.util.zip.CRC32;
-
-import com.iota.iri.network.TCPNeighbor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.network.Neighbor;
-import com.iota.iri.conf.Configuration;
-import com.iota.iri.hash.Curl;
-import com.iota.iri.model.Hash;
-import com.iota.iri.network.Node;
-import com.iota.iri.controllers.TransactionViewModel;
 
 class ReplicatorSourceProcessor implements Runnable {
 
@@ -47,8 +44,8 @@ class ReplicatorSourceProcessor implements Runnable {
         this.testnet = testnet;
         this.replicatorSinkPool = replicatorSinkPool;
         this.packetSize = testnet
-                ? Integer.parseInt(Configuration.TESTNET_PACKET_SIZE)
-                : Integer.parseInt(Configuration.PACKET_SIZE);
+                ? TestnetConfig.Defaults.PACKET_SIZE
+                : MainnetConfig.Defaults.PACKET_SIZE;
     }
 
     @Override

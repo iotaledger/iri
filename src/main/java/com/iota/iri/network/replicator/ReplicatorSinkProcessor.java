@@ -1,15 +1,15 @@
 package com.iota.iri.network.replicator;
 
+import com.iota.iri.network.TCPNeighbor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.util.zip.CRC32;
-
-import com.iota.iri.network.TCPNeighbor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 class ReplicatorSinkProcessor implements Runnable {
 
@@ -124,7 +124,7 @@ class ReplicatorSinkProcessor implements Runnable {
             if (reason == null || reason.equals("null")) {
                 reason = "closed";
             }
-            log.error("***** NETWORK ALERT ***** No sink to host {}:{}, reason: {}", remoteAddress, neighbor.getPort(),
+            log.error("***** NETWORK ALERT ***** No sink to apiHost {}:{}, reason: {}", remoteAddress, neighbor.getPort(),
                     reason);
             synchronized (neighbor) {
                 Socket sourceSocket = neighbor.getSource();

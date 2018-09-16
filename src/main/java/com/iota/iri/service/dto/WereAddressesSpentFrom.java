@@ -10,6 +10,11 @@ public class WereAddressesSpentFrom extends AbstractResponse {
         return res;
     }
 
+    /**
+     * States of the specified addresses in Boolean
+     *
+     * @return The states.
+     */
     public boolean[] getStates() {
         return states;
     }

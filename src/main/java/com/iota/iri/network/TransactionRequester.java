@@ -23,8 +23,6 @@ public class TransactionRequester {
 
     public static final int MAX_TX_REQ_QUEUE_SIZE = 10000;
 
-    private static volatile long lastTime = System.currentTimeMillis();
-
     private static double P_REMOVE_REQUEST;
     private static boolean initialized = false;
     private final SecureRandom random = new SecureRandom();
@@ -84,48 +82,49 @@ public class TransactionRequester {
 
 
     public Hash transactionToRequest(boolean milestone) throws Exception {
-        final long beginningTime = System.currentTimeMillis();
+        // determine which set of transactions to operate on
+        Set<Hash> primarySet = milestone ? milestoneTransactionsToRequest : transactionsToRequest;
+        Set<Hash> alternativeSet = milestone ? transactionsToRequest : milestoneTransactionsToRequest;
+        Set<Hash> requestSet = primarySet.size() == 0 ? alternativeSet : primarySet;
+
+        // determine the first hash in our set that needs to be processed
         Hash hash = null;
-        Set<Hash> requestSet;
-        if(milestone) {
-             requestSet = milestoneTransactionsToRequest;
-             if(requestSet.size() == 0) {
-                 requestSet = transactionsToRequest;
-             }
-        } else {
-            requestSet = transactionsToRequest;
-            if(requestSet.size() == 0) {
-                requestSet = milestoneTransactionsToRequest;
-            }
-        }
         synchronized (syncObj) {
+            // repeat while we have transactions that shall be requested
             while (requestSet.size() != 0) {
+                // remove the first item in our set for further examination
                 Iterator<Hash> iterator = requestSet.iterator();
                 hash = iterator.next();
                 iterator.remove();
+
+                // if we have received the transaction in the mean time ....
                 if (TransactionViewModel.exists(tangle, hash)) {
+                    // ... dump a log message ...
                     log.info("Removed existing tx from request list: " + hash);
                     messageQ.publish("rtl %s", hash);
-                } else {
-                    if (!transactionsToRequestIsFull()) {
-                        requestSet.add(hash);
-                    }
-                    break;
+
+                    // ... and continue to the next element in the set
+                    continue;
                 }
+
+                // ... otherwise -> re-add it at the end of the set ...
+                //
+                // Note: we always have enough space since we removed the element before
+                requestSet.add(hash);
+
+                // ... and abort our loop to continue processing with the element we found
+                break;
             }
         }
 
+        // randomly drop "non-milestone" transactions so we don't keep on asking for non-existent transactions forever
         if(random.nextDouble() < P_REMOVE_REQUEST && !requestSet.equals(milestoneTransactionsToRequest)) {
             synchronized (syncObj) {
                 transactionsToRequest.remove(hash);
             }
         }
 
-        long now = System.currentTimeMillis();
-        if ((now - lastTime) > 10000L) {
-            lastTime = now;
-            //log.info("Transactions to request = {}", numberOfTransactionsToRequest() + " / " + TransactionViewModel.getNumberOfStoredTransactions() + " (" + (now - beginningTime) + " ms ). " );
-        }
+        // return our result
         return hash;
     }
 

@@ -12,8 +12,8 @@ public class Converter {
     public static final int NUMBER_OF_TRITS_IN_A_BYTE = 5;
     public static final int NUMBER_OF_TRITS_IN_A_TRYTE = 3;
 
-    static final int[][] BYTE_TO_TRITS_MAPPINGS = new int[243][];
-    static final int[][] TRYTE_TO_TRITS_MAPPINGS = new int[27][];
+    static final byte[][] BYTE_TO_TRITS_MAPPINGS = new byte[243][];
+    static final byte[][] TRYTE_TO_TRITS_MAPPINGS = new byte[27][];
 
     public static final int HIGH_INTEGER_BITS = 0xFFFFFFFF;
     public static final long HIGH_LONG_BITS = 0xFFFFFFFFFFFFFFFFL;
@@ -25,7 +25,7 @@ public class Converter {
 
     static {
 
-        final int[] trits = new int[NUMBER_OF_TRITS_IN_A_BYTE];
+        final byte[] trits = new byte[NUMBER_OF_TRITS_IN_A_BYTE];
 
         for (int i = 0; i < 243; i++) {
             BYTE_TO_TRITS_MAPPINGS[i] = Arrays.copyOf(trits, NUMBER_OF_TRITS_IN_A_BYTE);
@@ -38,7 +38,7 @@ public class Converter {
         }
     }
 
-    public static long longValue(final int[] trits, final int srcPos, final int size) {
+    public static long longValue(final byte[] trits, final int srcPos, final int size) {
 
         long value = 0;
         for (int i = size; i-- > 0; ) {
@@ -52,11 +52,11 @@ public class Converter {
         return new byte[expectedLength];
     }
 
-    public static int[] allocateTritsForTrytes(int tryteCount) {
-        return new int[tryteCount * NUMBER_OF_TRITS_IN_A_TRYTE];
+    public static byte[] allocateTritsForTrytes(int tryteCount) {
+        return new byte[tryteCount * NUMBER_OF_TRITS_IN_A_TRYTE];
     }
 
-    public static void bytes(final int[] trits, final int srcPos, byte[] dest, int destPos, final int tritsLength) {
+    public static void bytes(final byte[] trits, final int srcPos, byte[] dest, int destPos, final int tritsLength) {
 
         final int expectedLength = (tritsLength + NUMBER_OF_TRITS_IN_A_BYTE - 1) / NUMBER_OF_TRITS_IN_A_BYTE;
 
@@ -73,11 +73,11 @@ public class Converter {
         }
     }
 
-    public static void bytes(final int[] trits, byte[] dest) {
+    public static void bytes(final byte[] trits, byte[] dest) {
         bytes(trits, 0, dest, 0, trits.length);
     }
 
-    public static void getTrits(final byte[] bytes, final int[] trits) {
+    public static void getTrits(final byte[] bytes, final byte[] trits) {
 
         int offset = 0;
         for (int i = 0; i < bytes.length && offset < trits.length; i++) {
@@ -89,7 +89,7 @@ public class Converter {
         }
     }
 
-    public static void trits(final String trytes, int[] dest, int destOffset) {
+    public static void trits(final String trytes, byte[] dest, int destOffset) {
         if((dest.length - destOffset) < trytes.length() * NUMBER_OF_TRITS_IN_A_TRYTE) {
             throw new IllegalArgumentException("Destination array is not large enough.");
         }
@@ -100,7 +100,7 @@ public class Converter {
         }
     }
 
-    public static void copyTrits(final long value, final int[] destination, final int offset, final int size) {
+    public static void copyTrits(final long value, final byte[] destination, final int offset, final int size) {
 
         long absoluteValue = value < 0 ? -value : value;
         for (int i = 0; i < size; i++) {
@@ -112,18 +112,18 @@ public class Converter {
                 remainder = MIN_TRIT_VALUE;
                 absoluteValue++;
             }
-            destination[offset + i] = remainder;
+            destination[offset + i] = (byte) remainder;
         }
 
         if (value < 0) {
             for (int i = 0; i < size; i++) {
-                destination[offset + i] = -destination[offset + i];
+                destination[offset + i] = (byte) -destination[offset + i];
             }
         }
     }
 
 
-    public static String trytes(final int[] trits, final int offset, final int size) {
+    public static String trytes(final byte[] trits, final int offset, final int size) {
 
         final StringBuilder trytes = new StringBuilder();
         for (int i = 0; i < (size + NUMBER_OF_TRITS_IN_A_TRYTE - 1) / NUMBER_OF_TRITS_IN_A_TRYTE; i++) {
@@ -136,25 +136,25 @@ public class Converter {
         return trytes.toString();
     }
 
-    public static String trytes(final int[] trits) {
+    public static String trytes(final byte[] trits) {
         return trytes(trits, 0, trits.length);
     }
 
-    public static int tryteValue(final int[] trits, final int offset) {
+    public static int tryteValue(final byte[] trits, final int offset) {
         return trits[offset] + trits[offset + 1] * 3 + trits[offset + 2] * 9;
     }
 
-    public static Pair<int[], int[]> intPair(int[] trits) {
-        int[] low = new int[trits.length];
-        int[] hi = new int[trits.length];
+    public static Pair<byte[], byte[]> intPair(byte[] trits) {
+        byte[] low = new byte[trits.length];
+        byte[] hi = new byte[trits.length];
         for(int i = 0; i< trits.length; i++) {
-            low[i] = trits[i] != 1 ? HIGH_INTEGER_BITS: 0;
-            hi[i] = trits[i] != -1 ? HIGH_INTEGER_BITS: 0;
+            low[i] = trits[i] != (byte) 1 ? HIGH_INTEGER_BITS: (byte) 0;
+            hi[i] = trits[i] != (byte) -1 ? HIGH_INTEGER_BITS: (byte) 0;
         }
         return new Pair<>(low, hi);
     }
 
-    public static Pair<long[], long[]> longPair(int[] trits) {
+    public static Pair<long[], long[]> longPair(byte[] trits) {
         long[] low = new long[trits.length];
         long[] hi = new long[trits.length];
         for(int i = 0; i< trits.length; i++) {
@@ -177,14 +177,14 @@ public class Converter {
         }
     }
 
-    public static int[] trits(final Pair<long[], long[]> pair, final int bitIndex) {
+    public static byte[] trits(final Pair<long[], long[]> pair, final int bitIndex) {
         final int length;
         if(pair.low.length == pair.hi.length || pair.low.length < pair.hi.length) {
             length = pair.low.length;
         } else {
             length = pair.hi.length;
         }
-        final int[] trits = new int[length];
+        final byte[] trits = new byte[length];
         long low;
         long hi;
         int mask = 1 << bitIndex;
@@ -202,23 +202,23 @@ public class Converter {
         return trits;
     }
 
-    public static int[] trits(long[] low, long[] hi) {
-        int[] trits = new int[low.length];
+    public static byte[] trits(long[] low, long[] hi) {
+        byte[] trits = new byte[low.length];
         for(int i = 0; i < trits.length; i++) {
-            trits[i] = low[i] == 0 ? 1 : hi[i] == 0 ? -1 : 0;
+            trits[i] = low[i] == 0 ? 1 : hi[i] == 0 ? (byte) -1 : (byte) 0;
         }
         return trits;
     }
 
-    public static int[] trits(int[] low, int[] hi) {
-        int[] trits = new int[low.length];
+    public static byte[] trits(byte[] low, byte[] hi) {
+        byte[] trits = new byte[low.length];
         for(int i = 0; i < trits.length; i++) {
-            trits[i] = low[i] == 0 ? 1 : hi[i] == 0 ? -1 : 0;
+            trits[i] = low[i] == 0 ? 1 : hi[i] == 0 ? (byte) -1 : (byte) 0;
         }
         return trits;
     }
 
-    private static void increment(final int[] trits, final int size) {
+    private static void increment(final byte[] trits, final int size) {
         for (int i = 0; i < size; i++) {
             if (++trits[i] > Converter.MAX_TRIT_VALUE) {
                 trits[i] = Converter.MIN_TRIT_VALUE;
@@ -244,8 +244,8 @@ public class Converter {
         return sb.toString();
     }
 
-  public static int[] allocatingTritsFromTrytes(String trytes) {
-        int[] trits = allocateTritsForTrytes(trytes.length());
+  public static byte[] allocatingTritsFromTrytes(String trytes) {
+        byte[] trits = allocateTritsForTrytes(trytes.length());
         trits(trytes, trits, 0);
         return trits;
   }

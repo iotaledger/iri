@@ -7,15 +7,16 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Converter;
 
 import java.io.Serializable;
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Objects;
 
-public final class Hash implements Serializable, Indexable {
+public final class Hash implements Serializable, Indexable, HashId {
 
     public static final int SIZE_IN_TRITS = 243;
     public static final int SIZE_IN_BYTES = 49;
 
-    public static final Hash NULL_HASH = new Hash(new int[Curl.HASH_LENGTH]);
+    public static final Hash NULL_HASH = new Hash(new byte[Curl.HASH_LENGTH]);
 
     private final Object lock = new Object();
     private ByteSafe byteSafe;
@@ -33,59 +34,57 @@ public final class Hash implements Serializable, Indexable {
     }
 
     private final class TritSafe {
-        private final int[] trits;
+        private final byte[] trits;
 
-        private TritSafe(int[] trits) {
+        private TritSafe(byte[] trits) {
             this.trits = Objects.requireNonNull(trits, "TritSafe is attempted to be initialized with a null int array");
         }
     }
 
 
-    public static Hash calculate(SpongeFactory.Mode mode, int[] trits) {
+    public static Hash calculate(SpongeFactory.Mode mode, byte[] trits) {
         return calculate(trits, 0, trits.length, SpongeFactory.create(mode));
     }
 
     public static Hash calculate(byte[] bytes, int tritsLength, final Sponge curl) {
-        int[] trits = new int[tritsLength];
+        byte[] trits = new byte[tritsLength];
         Converter.getTrits(bytes, trits);
         return calculate(trits, 0, tritsLength, curl);
     }
 
-    public static Hash calculate(final int[] tritsToCalculate, int offset, int length, final Sponge curl) {
-        int[] hashTrits = new int[SIZE_IN_TRITS];
+    public static Hash calculate(final byte[] tritsToCalculate, int offset, int length, final Sponge curl) {
+        byte[] hashTrits = new byte[SIZE_IN_TRITS];
         curl.reset();
         curl.absorb(tritsToCalculate, offset, length);
         curl.squeeze(hashTrits, 0, SIZE_IN_TRITS);
         return new Hash(hashTrits);
     }
 
-
     public Hash() {
     }
 
-
     public Hash(final byte[] source, final int sourceOffset, final int sourceSize) {
-        byte[] dest = new byte[SIZE_IN_BYTES];
-        System.arraycopy(source, sourceOffset, dest, 0, sourceSize - sourceOffset > source.length ? source.length - sourceOffset : sourceSize);
-        this.byteSafe = new ByteSafe(dest);
+        if(sourceSize < SIZE_IN_TRITS) {
+            byte[] dest = new byte[SIZE_IN_BYTES];
+            System.arraycopy(source, sourceOffset, dest, 0, sourceSize - sourceOffset > source.length ? source.length - sourceOffset : sourceSize);
+            this.byteSafe = new ByteSafe(dest);
+        } else {
+            byte[] dest = new byte[SIZE_IN_TRITS];
+            System.arraycopy(source, sourceOffset, dest, 0, dest.length);
+            this.tritSafe = new TritSafe(dest);
+        }
     }
 
     public Hash(final byte[] bytes) {
-        this(bytes, 0, SIZE_IN_BYTES);
+        this(bytes, 0, bytes.length == 243 ? SIZE_IN_TRITS : SIZE_IN_BYTES);
     }
 
-    public Hash(final int[] trits, final int offset) {
-        int[] dest = new int[SIZE_IN_TRITS];
-        System.arraycopy(trits, offset, dest, 0, dest.length);
-        this.tritSafe = new TritSafe(dest);
-    }
-
-    public Hash(final int[] trits) {
-        this(trits, 0);
+    public Hash(final byte[] trits, final int offset) {
+        this(trits, offset, SIZE_IN_TRITS);
     }
 
     public Hash(final String trytes) {
-        this.tritSafe = new TritSafe(new int[SIZE_IN_TRITS]);
+        this.tritSafe = new TritSafe(new byte[SIZE_IN_TRITS]);
         Converter.trits(trytes, this.tritSafe.trits, 0);
     }
 
@@ -103,7 +102,7 @@ public final class Hash implements Serializable, Indexable {
     }
 
     public int trailingZeros() {
-        final int[] trits = trits();
+        final byte[] trits = trits();
         int index = SIZE_IN_TRITS;
         int zeros = 0;
         while (index-- > 0 && trits[index] == 0) {
@@ -112,14 +111,14 @@ public final class Hash implements Serializable, Indexable {
         return zeros;
     }
 
-    public int[] trits() {
+    public byte[] trits() {
         TritSafe safe = tritSafe;
         if (safe == null) {
             synchronized (lock) {
                 if (tritSafe == null) {
                     Objects.requireNonNull(byteSafe, "I need my bytes to be initialized in order to construct trits.");
                     byte[] src = bytes();
-                    int[] dest = new int[Curl.HASH_LENGTH];
+                    byte[] dest = new byte[Curl.HASH_LENGTH];
                     Converter.getTrits(src, dest);
                     tritSafe = new TritSafe(dest);
                 }
@@ -158,7 +157,7 @@ public final class Hash implements Serializable, Indexable {
             synchronized (lock) {
                 if (byteSafe == null) {
                     Objects.requireNonNull(tritSafe, "I need my trits to be initialized in order to construct bytes.");
-                    int[] src = trits();
+                    byte[] src = trits();
                     byte[] dest = new byte[SIZE_IN_BYTES];
                     Converter.bytes(src, 0, dest, 0, src.length);
                     byteSafe = new ByteSafe(dest);

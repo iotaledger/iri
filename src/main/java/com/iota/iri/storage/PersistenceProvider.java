@@ -1,10 +1,9 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.model.*;
 import com.iota.iri.utils.Pair;
 
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -42,6 +41,13 @@ public interface PersistenceProvider {
     Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) throws Exception;
 
     boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception;
+
+    /**
+     * Atomically delete all {@code models}.
+     * @param models key value pairs that to be expunged from the db
+     * @throws Exception
+     */
+    void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception;
 
     void clear(Class<?> column) throws Exception;
     void clearMetadata(Class<?> column) throws Exception;

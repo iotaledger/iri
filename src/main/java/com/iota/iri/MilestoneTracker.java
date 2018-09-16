@@ -1,5 +1,19 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.ConsensusConfig;
+import com.iota.iri.controllers.AddressViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.hash.ISS;
+import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Converter;
+import com.iota.iri.zmq.MessageQ;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.net.ssl.HttpsURLConnection;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -12,22 +26,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.net.ssl.HttpsURLConnection;
+import static com.iota.iri.MilestoneTracker.Validity.*;
 
-import com.iota.iri.controllers.*;
-import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.zmq.MessageQ;
-import com.iota.iri.storage.Tangle;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.iota.iri.hash.ISS;
-import com.iota.iri.model.Hash;
-import com.iota.iri.utils.Converter;
-
-import static com.iota.iri.Milestone.Validity.*;
-
-public class Milestone {
+public class MilestoneTracker {
 
     enum Validity {
         VALID,
@@ -35,7 +36,7 @@ public class Milestone {
         INCOMPLETE
     }
 
-    private final Logger log = LoggerFactory.getLogger(Milestone.class);
+    private final Logger log = LoggerFactory.getLogger(MilestoneTracker.class);
     private final Tangle tangle;
     private final Hash coordinator;
     private final TransactionValidator transactionValidator;
@@ -55,33 +56,30 @@ public class Milestone {
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
 
-    public Milestone(final Tangle tangle,
-                     final Hash coordinator,
-                     final Snapshot initialSnapshot,
-                     final TransactionValidator transactionValidator,
-                     final boolean testnet,
-                     final MessageQ messageQ,
-                     final int numOfKeysInMilestone,
-                     final int milestoneStartIndex,
-                     final boolean acceptAnyTestnetCoo
-                     ) {
+    public MilestoneTracker(Tangle tangle,
+                            TransactionValidator transactionValidator,
+                            MessageQ messageQ,
+                            Snapshot initialSnapshot, ConsensusConfig config
+    ) {
         this.tangle = tangle;
-        this.coordinator = coordinator;
-        this.latestSnapshot = initialSnapshot;
         this.transactionValidator = transactionValidator;
-        this.testnet = testnet;
         this.messageQ = messageQ;
-        this.numOfKeysInMilestone = numOfKeysInMilestone;
-        this.milestoneStartIndex = milestoneStartIndex;
+        this.latestSnapshot = initialSnapshot;
+
+        //configure
+        this.testnet = config.isTestnet();
+        this.coordinator = new Hash(config.getCoordinator());
+        this.numOfKeysInMilestone = config.getNumberOfKeysInMilestone();
+        this.milestoneStartIndex = config.getMilestoneStartIndex();
         this.latestMilestoneIndex = milestoneStartIndex;
         this.latestSolidSubtangleMilestoneIndex = milestoneStartIndex;
-        this.acceptAnyTestnetCoo = acceptAnyTestnetCoo;
+        this.acceptAnyTestnetCoo = config.isDontValidateTestnetMilestoneSig();
     }
 
     private boolean shuttingDown;
     private static final int RESCAN_INTERVAL = 5000;
 
-    public void init(final SpongeFactory.Mode mode, final LedgerValidator ledgerValidator, final boolean revalidate) throws Exception {
+    public void init (SpongeFactory.Mode mode, LedgerValidator ledgerValidator) {
         this.ledgerValidator = ledgerValidator;
         AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
         (new Thread(() -> {
@@ -179,6 +177,10 @@ public class Milestone {
 
     }
 
+    public int getMilestoneStartIndex() {
+        return milestoneStartIndex;
+    }
+
     private Validity validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {
         if (index < 0 || index >= 0x200000) {
             return INVALID;
@@ -204,10 +206,10 @@ public class Milestone {
                             && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())
                             && transactionViewModel.getBundleHash().equals(transactionViewModel2.getBundleHash())) {
 
-                        final int[] trunkTransactionTrits = transactionViewModel.getTrunkTransactionHash().trits();
-                        final int[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
+                        final byte[] trunkTransactionTrits = transactionViewModel.getTrunkTransactionHash().trits();
+                        final byte[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
-                        final int[] merkleRoot = ISS.getMerkleRoot(mode, ISS.address(mode, ISS.digest(mode,
+                        final byte[] merkleRoot = ISS.getMerkleRoot(mode, ISS.address(mode, ISS.digest(mode,
                                 Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits),
                                         ISS.NUMBER_OF_FRAGMENT_CHUNKS),
                                 signatureFragmentTrits)),

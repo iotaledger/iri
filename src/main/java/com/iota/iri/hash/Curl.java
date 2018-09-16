@@ -20,7 +20,7 @@ public class Curl implements Sponge {
     private static final int STATE_LENGTH = 3 * HASH_LENGTH;
     private static final int HALF_LENGTH = 364;
 
-    private static final int[] TRUTH_TABLE = {1, 0, -1, 2, 1, -1, 0, 2, -1, 1, 0};
+    private static final byte[] TRUTH_TABLE = {1, 0, -1, 2, 1, -1, 0, 2, -1, 1, 0};
     /*
     private static final IntPair[] TRANSFORM_INDICES = IntStream.range(0, STATE_LENGTH)
             .mapToObj(i -> new IntPair(i == 0 ? 0 : (((i - 1) % 2) + 1) * HALF_LENGTH - ((i - 1) >> 1),
@@ -28,11 +28,11 @@ public class Curl implements Sponge {
             .toArray(IntPair[]::new);
             */
 
-    private final int[] state;
+    private final byte[] state;
     private final long[] stateLow;
     private final long[] stateHigh;
 
-    private final int[] scratchpad = new int[STATE_LENGTH];
+    private final byte[] scratchpad = new byte[STATE_LENGTH];
 
 
     protected Curl(SpongeFactory.Mode mode) {
@@ -45,7 +45,7 @@ public class Curl implements Sponge {
             } break;
             default: throw new NoSuchElementException("Only Curl-P-27 and Curl-P-81 are supported.");
         }
-        state = new int[STATE_LENGTH];
+        state = new byte[STATE_LENGTH];
         stateHigh = null;
         stateLow = null;
     }
@@ -66,7 +66,7 @@ public class Curl implements Sponge {
             state = null;
             set();
         } else {
-            state = new int[STATE_LENGTH];
+            state = new byte[STATE_LENGTH];
             stateHigh = null;
             stateLow = null;
         }
@@ -76,7 +76,7 @@ public class Curl implements Sponge {
 
     }
 
-    public void absorb(final int[] trits, int offset, int length) {
+    public void absorb(final byte[] trits, int offset, int length) {
 
         do {
             System.arraycopy(trits, offset, state, 0, length < HASH_LENGTH ? length : HASH_LENGTH);
@@ -86,7 +86,7 @@ public class Curl implements Sponge {
     }
 
 
-    public void squeeze(final int[] trits, int offset, int length) {
+    public void squeeze(final byte[] trits, int offset, int length) {
 
         do {
             System.arraycopy(state, 0, trits, offset, length < HASH_LENGTH ? length : HASH_LENGTH);
@@ -113,7 +113,7 @@ public class Curl implements Sponge {
         }
     }
     public void reset() {
-        Arrays.fill(state, 0);
+        Arrays.fill(state, (byte) 0);
     }
     public void reset(boolean pair) {
         if(pair) {

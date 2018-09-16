@@ -1,8 +1,9 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import org.apache.commons.io.IOUtils;
+import com.iota.iri.utils.IotaIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,28 +18,28 @@ import java.util.stream.Collectors;
 
 public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
-    public static final String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
-    public static final int SNAPSHOT_PUBKEY_DEPTH = 6;
-    public static final int SNAPSHOT_INDEX = 4;
-    public static final int SPENT_ADDRESSES_INDEX = 5;
+    public static String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
+    public static int SNAPSHOT_PUBKEY_DEPTH = 6;
+    public static int SNAPSHOT_INDEX = 6;
+    public static int SPENT_ADDRESSES_INDEX = 7;
     private static Snapshot initialSnapshot;
 
 
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
 
-    public static Snapshot init(String snapshotPath, String snapshotSigPath, boolean testnet) throws IOException {
+    public static Snapshot init(SnapshotConfig config) throws IOException {
         //This is not thread-safe (and it is ok)
         if (initialSnapshot == null) {
-            if (!testnet && !SignedFiles.isFileSignatureValid(snapshotPath, snapshotSigPath, SNAPSHOT_PUBKEY,
-                    SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
+            String snapshotFile = config.getSnapshotFile();
+            if (!config.isTestnet() && !SignedFiles.isFileSignatureValid(snapshotFile, config.getSnapshotSignatureFile(),
+                    SNAPSHOT_PUBKEY, SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
                 throw new RuntimeException("Snapshot signature failed.");
             }
-            Map<Hash, Long> initialState = initInitialState(snapshotPath);
+            Map<Hash, Long> initialState = initInitialState(snapshotFile);
             initialSnapshot = new Snapshot(initialState, 0);
             checkStateHasCorrectSupply(initialState);
             checkInitialSnapshotIsConsistent(initialState);
-
         }
         return initialSnapshot;
     }
@@ -91,7 +92,7 @@ public class Snapshot {
             System.exit(-1);
         }
         finally {
-            IOUtils.closeQuietly(reader);
+            IotaIOUtils.closeQuietly(reader);
         }
         return state;
     }

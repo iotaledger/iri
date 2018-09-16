@@ -22,7 +22,8 @@ public class Snapshot {
     private static final int SNAPSHOT_INDEX = 6;
     public static final int SPENT_ADDRESSES_INDEX = 7;
     private static Snapshot initialSnapshot;
-
+    protected final Map<Hash, Long> state;
+    private int index;
 
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
@@ -91,9 +92,6 @@ public class Snapshot {
         return state;
     }
 
-    protected final Map<Hash, Long> state;
-    private int index;
-
     public int index() {
         int i;
         rwlock.readLock().lock();
@@ -131,12 +129,12 @@ public class Snapshot {
 
     void apply(Map<Hash, Long> patch, int newIndex) {
         if (!patch.entrySet().stream().map(Map.Entry::getValue).reduce(Math::addExact).orElse(0L).equals(0L)) {
-            throw new RuntimeException("Diff is not consistent.");
+            throw new IllegalStateException("Diff is not consistent.");
         }
         rwlock.writeLock().lock();
-        patch.entrySet().forEach(hashLongEntry -> {
-            if (state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong) == null) {
-                state.putIfAbsent(hashLongEntry.getKey(), hashLongEntry.getValue());
+        patch.forEach((key, value) -> {
+            if (state.computeIfPresent(key, (hash, aLong) -> value + aLong) == null) {
+                state.putIfAbsent(key, value);
             }
         });
         index = newIndex;
@@ -151,7 +149,7 @@ public class Snapshot {
             if (entry.getValue() <= 0) {
 
                 if (entry.getValue() < 0) {
-                    log.info("Skipping negative value for address: {0}: {1}", entry.getKey(), entry.getValue());
+                    log.info("Skipping negative value for address: %s: %d", entry.getKey(), entry.getValue());
                     return false;
                 }
 

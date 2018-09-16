@@ -367,7 +367,7 @@ public class API {
       * Check if a list of addresses was ever spent from, in the current epoch, or in previous epochs.
       *
       * @param addresses List of addresses to check if they were ever spent from.
-      * @return {@link com.iota.iri.service.dto.wereAddressesSpentFrom}
+      * @return {@link com.iota.iri.service.dto.WereAddressesSpentFrom}
       **/
     private AbstractResponse wereAddressesSpentFromStatement(List<String> addresses) throws Exception {
         final List<Hash> addressesHash = addresses.stream().map(Hash::new).collect(Collectors.toList());
@@ -377,7 +377,7 @@ public class API {
         for (Hash address : addressesHash) {
             states[index++] = wasAddressSpentFrom(address);
         }
-        return wereAddressesSpentFrom.create(states);
+        return WereAddressesSpentFrom.create(states);
     }
 
     private boolean wasAddressSpentFrom(Hash address) throws Exception {
@@ -602,19 +602,19 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    private static int counter_getTxToApprove = 0;
-    public static int getCounter_getTxToApprove() {
-        return counter_getTxToApprove;
+    private static int counterGetTxToApprove = 0;
+    public static int getCounterGetTxToApprove() {
+        return counterGetTxToApprove;
     }
-    public static void incCounter_getTxToApprove() {
-        counter_getTxToApprove++;
+    public static void incCounteGetTxToApprove() {
+        counterGetTxToApprove++;
     }
 
     private static long ellapsedTime_getTxToApprove = 0L;
-    public static long getEllapsedTime_getTxToApprove() {
+    public static long getEllapsedTimeGetTxToApprove() {
         return ellapsedTime_getTxToApprove;
     }
-    public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
+    public static void incEllapsedTimeGetTxToApprove(long ellapsedTime) {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
@@ -646,11 +646,11 @@ public class API {
     }
 
     private void gatherStatisticsOnTipSelection() {
-        API.incCounter_getTxToApprove();
-        if ((getCounter_getTxToApprove() % 100) == 0) {
-            String sb = "Last 100 getTxToApprove consumed " + API.getEllapsedTime_getTxToApprove() / 1000000000L + " seconds processing time.";
+        API.incCounteGetTxToApprove();
+        if ((getCounterGetTxToApprove() % 100) == 0) {
+            String sb = "Last 100 getTxToApprove consumed " + API.getEllapsedTimeGetTxToApprove() / 1000000000L + " seconds processing time.";
             log.debug(sb);
-            counter_getTxToApprove = 0;
+            counterGetTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
     }
@@ -1033,18 +1033,18 @@ public class API {
     }
 
     private static int counter_PoW = 0;
-    public static int getCounter_PoW() {
+    public static int getCounterPoW() {
         return counter_PoW;
     }
-    public static void incCounter_PoW() {
+    public static void incCounterPoW() {
         API.counter_PoW++;
     }
 
     private static long ellapsedTime_PoW = 0L;
-    public static long getEllapsedTime_PoW() {
+    public static long getEllapsedTimePoW() {
         return ellapsedTime_PoW;
     }
-    public static void incEllapsedTime_PoW(long ellapsedTime) {
+    public static void incEllapsedTimePoW(long ellapsedTime) {
         ellapsedTime_PoW += ellapsedTime;
     }
 
@@ -1109,11 +1109,11 @@ public class API {
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {
-                API.incEllapsedTime_PoW(System.nanoTime() - startTime);
-                API.incCounter_PoW();
-                if ( ( API.getCounter_PoW() % 100) == 0 ) {
+                API.incEllapsedTimePoW(System.nanoTime() - startTime);
+                API.incCounterPoW();
+                if ( ( API.getCounterPoW() % 100) == 0 ) {
                     String sb = "Last 100 PoW consumed " +
-                            API.getEllapsedTime_PoW() / 1000000000L +
+                            API.getEllapsedTimePoW() / 1000000000L +
                             " seconds processing time.";
                     log.info(sb);
                     counter_PoW = 0;

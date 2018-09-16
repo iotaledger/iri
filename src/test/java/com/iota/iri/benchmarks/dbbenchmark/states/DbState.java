@@ -19,8 +19,8 @@ import java.util.List;
 
 @State(Scope.Benchmark)
 public abstract class DbState {
-    private final File dbFolder = new File("db-clean");
-    private final File logFolder = new File("db-log-clean");
+    private final File dbFolder = new File("db-bench");
+    private final File logFolder = new File("db-log-bench");
 
     private Tangle tangle;
     private List<TransactionViewModel> transactions;

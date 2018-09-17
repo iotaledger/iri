@@ -31,6 +31,12 @@ public class IRI {
         IRILauncher.main(args);
     }
 
+    /**
+     * Reads the logging configuration file and logging level from system properties. You can set this values as
+     * arguments to the jvm by passing "-Dlogback.configurationFile=/path/to/config.xml -Dlogging-level=DEBUG" to
+     * the Java VM. If no system properties are specified the logback default values and logging-level INFO will
+     * be used.
+     */
     private static void configureLogging() {
         String config = System.getProperty("logback.configurationFile");
         String level = System.getProperty("logging-level", "").toUpperCase();

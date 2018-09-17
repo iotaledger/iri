@@ -613,7 +613,7 @@ public class API {
       * @param reference Hash of transaction to start random-walk from, used to make sure the tips returned reference a given transaction in their past.
       * @return {@link com.iota.iri.service.dto.GetTransactionsToApproveResponse}
       **/
-    public synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
+    private synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
         if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
             return ErrorResponse.create("Invalid depth input");
         }

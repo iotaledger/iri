@@ -9,9 +9,9 @@ logger = logging.getLogger(__name__)
 
 def prepare_api_call(nodeName):
     logger.info('Preparing api call')
-    host = world.machine[nodeName]['host']
-    port = world.machine[nodeName]['ports']['api']
-    address ="http://"+ host + ":" + port
+    host = world.machine['nodes'][nodeName]['host']
+    port = world.machine['nodes'][nodeName]['ports']['api']
+    address ="http://"+ host + ":" + str(port)
     api = Iota(address)
     logger.info('API call prepared for %s',address)
     return api

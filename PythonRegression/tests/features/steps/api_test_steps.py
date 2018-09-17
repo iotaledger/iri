@@ -2,6 +2,7 @@ from aloe import *
 from iota import Iota,ProposedTransaction,Address,Tag,TryteString,BundleHash
 
 from util import static_vals
+from util.test_logic import api_test_logic as tests
 from time import sleep
 import importlib
 
@@ -26,7 +27,7 @@ def api_method_is_called(step,apiCall,nodeName):
     responses[apiCall] = {}
         
      
-    api = prepare_api_call(nodeName)
+    api = tests.prepare_api_call(nodeName)
         
     logger.debug('Assigning call list...')
         
@@ -66,7 +67,7 @@ def spam_call_gtta(step,numTests,node):
     config['apiCall'] = apiCall
     config['nodeId'] = node
     
-    api = prepare_api_call(node)
+    api = tests.prepare_api_call(node)
     logging.info('Calls being made to %s',node)
     responseVal = []
     for i in range(int(numTests)):
@@ -111,7 +112,7 @@ def compare_response(step):
  #Test GetTrytes 
 @step(r'getTrytes is called with the hash ([^"]+)')
 def call_getTrytes(step,hash):
-    api = prepare_api_call(config['nodeId'])
+    api = tests.prepare_api_call(config['nodeId'])
     testHash = getattr(static_vals, hash)
     response = api.get_trytes(testHash)
     logger.debug("Call may not have responded correctly: \n%s",response)
@@ -133,7 +134,7 @@ def check_trytes(step,trytes):
 @step(r'2 neighbors are added with "([^"]*)" on "([^"]*)"')
 def add_neighbors(step,apiCall,nodeName):
     config['nodeId'] = nodeName
-    api = prepare_api_call(nodeName)
+    api = tests.prepare_api_call(nodeName)
     response = api.add_neighbors(neighbors)
     logger.debug('Response: %s',response)
 
@@ -148,7 +149,7 @@ def check_neighbors_post_addition(step):
     
 @step(r'"removeNeighbors" will be called to remove the same neighbors')
 def remove_neighbors(step):
-    api = prepare_api_call(config['nodeId'])
+    api = tests.prepare_api_call(config['nodeId'])
     response = api.remove_neighbors(neighbors)
     logger.debug('Response: %s',response)
     
@@ -164,16 +165,16 @@ def check_neighbors_post_removal(step):
 #Test transactions
 @step(r'"([^"]*)" and "([^"]*)" are neighbors')
 def make_neighbors(step,node1,node2):
-    host1 = world.machine[node1]['host']
-    port1 = world.machine[node1]['udpPort']
-    host2 = world.machine[node2]['host']
-    port2 = world.machine[node2]['udpPort']
+    host1 = world.machine['nodes'][node1]['host']
+    port1 = world.machine['nodes'][node1]['ports']['gossip-udp']
+    host2 = world.machine['nodes'][node2]['host']
+    port2 = world.machine['nodes'][node2]['ports']['gossip-udp']
     
     hosts = [host1,host2]
     ports = [port1,port2]
     
-    api1 = prepare_api_call(node1)
-    api2 = prepare_api_call(node2)
+    api1 = tests.prepare_api_call(node1)
+    api2 = tests.prepare_api_call(node2)
         
     response1 = api1.get_neighbors()
     response2 = api2.get_neighbors()
@@ -181,10 +182,10 @@ def make_neighbors(step,node1,node2):
     neighbors2 = list(response2['neighbors'])
     host = hosts[0]
     port = ports[0]
-    address1 = "udp://" + str(host) + ":" + port     
+    address1 = "udp://" + str(host) + ":" + str(port)     
     host = hosts[1]
     port = ports[1]
-    address2 = "udp://" + str(host) + ":" + port 
+    address2 = "udp://" + str(host) + ":" + str(port) 
     
     logger.debug("Checking if nodes are paired")
     
@@ -224,7 +225,7 @@ def send_transaction(step,tag,nodeName):
     logger.debug('Preparing Transaction...')
     logger.debug('Node: %s',nodeName)
     config['tag'] = tag
-    api = prepare_api_call(nodeName)  
+    api = tests.prepare_api_call(nodeName)  
     txn = \
         ProposedTransaction(
             address = 
@@ -243,7 +244,7 @@ def send_transaction(step,tag,nodeName):
 @step(r'findTransaction is called with the same tag on "([^"]*)"')
 def find_transaction_is_called(step,nodeName):
     logger.debug(nodeName)
-    api = prepare_api_call(nodeName)    
+    api = tests.prepare_api_call(nodeName)    
     logger.info("Searching for Transaction with the tag: {} on {}".format(config['tag'],nodeName))
     response = api.find_transactions(tags=[config['tag']])    
     config['findTransactionResponse'] = response
@@ -261,19 +262,9 @@ def find_transactions_from_address(step):
     logger.info('Finding milestones')
     node = config('nodeId')       
     
-    api = prepare_api_call(node)
+    api = tests.prepare_api_call(node)
     transactions = api.find_transactions(addresses = [step.multiline])
     responses['findTransactions'] = transactions 
-
-  
-                    
-    
-def prepare_api_call(nodeName):
-    host = world.machine['nodes'][nodeName]['host']
-    address ="http://"+ host + ":14265"
-    api = Iota(address)
-    logger.info('API call prepared for %s',address)
-    return api
 
 
 def check_responses_for_call(apiCall):

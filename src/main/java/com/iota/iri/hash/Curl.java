@@ -98,17 +98,17 @@ public class Curl implements Sponge {
     private void transform() {
 
         int scratchpadIndex = 0;
-        int prev_scratchpadIndex = 0;
+        int prevScratchpadIndex = 0;
         for (int round = 0; round < numberOfRounds; round++) {
             System.arraycopy(state, 0, scratchpad, 0, STATE_LENGTH);
             for (int stateIndex = 0; stateIndex < STATE_LENGTH; stateIndex++) {
-                prev_scratchpadIndex = scratchpadIndex;
+                prevScratchpadIndex = scratchpadIndex;
                 if (scratchpadIndex < 365) {
                     scratchpadIndex += 364;
                 } else {
                     scratchpadIndex += -365;
                 }
-                state[stateIndex] = TRUTH_TABLE[scratchpad[prev_scratchpadIndex] + (scratchpad[scratchpadIndex] << 2) + 5];
+                state[stateIndex] = TRUTH_TABLE[scratchpad[prevScratchpadIndex] + (scratchpad[scratchpadIndex] << 2) + 5];
             }
         }
     }

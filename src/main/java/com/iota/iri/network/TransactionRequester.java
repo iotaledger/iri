@@ -35,10 +35,10 @@ public class TransactionRequester {
         this.messageQ = messageQ;
     }
 
-    public void init(double p_REMOVE_REQUEST) {
+    public void init(double pRemoveRequest) {
         if(!initialized) {
             initialized = true;
-            P_REMOVE_REQUEST = p_REMOVE_REQUEST;
+            P_REMOVE_REQUEST = pRemoveRequest;
         }
     }
 

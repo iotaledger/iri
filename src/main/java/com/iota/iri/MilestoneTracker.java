@@ -77,7 +77,7 @@ public class MilestoneTracker {
     }
 
     private boolean shuttingDown;
-    private static int RESCAN_INTERVAL = 5000;
+    private static final int RESCAN_INTERVAL = 5000;
 
     public void init (SpongeFactory.Mode mode, LedgerValidator ledgerValidator) {
         this.ledgerValidator = ledgerValidator;

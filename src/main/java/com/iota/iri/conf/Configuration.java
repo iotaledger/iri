@@ -34,11 +34,11 @@ public class Configuration {
 
     public static final String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT = "/previousEpochsSpentAddresses.txt";
     public static final String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = "/previousEpochsSpentAddresses.sig";
-    public static final String MAINNET_MILESTONE_START_INDEX = "590000";
+    public static final String MAINNET_MILESTONE_START_INDEX = "774805";
     public static final String TESTNET_MILESTONE_START_INDEX = "434525";
     public static final String MAINNET_NUM_KEYS_IN_MILESTONE = "20";
     public static final String TESTNET_NUM_KEYS_IN_MILESTONE = "22";
-    public static final String GLOBAL_SNAPSHOT_TIME = "1531148400";
+    public static final String GLOBAL_SNAPSHOT_TIME = "1537203600";
     public static final String TESTNET_GLOBAL_SNAPSHOT_TIME = "1522306500";
 
 

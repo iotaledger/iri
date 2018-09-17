@@ -151,21 +151,17 @@ public class API {
             return;
         }
 
-        if (!SignedFiles.isFileSignatureValid(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT,
-                Configuration.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG,
-                Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
-            throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
-        }
-
-        InputStream in = Snapshot.class.getResourceAsStream(Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        String line;
-        try {
-            while((line = reader.readLine()) != null) {
-                previousEpochsSpentAddresses.put(new Hash(line),true);
+        String[] previousEpochsSpentAddressesFiles = Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT.split(" ");
+        for (String previousEpochsSpentAddressesFile : previousEpochsSpentAddressesFiles) {
+            InputStream in = Snapshot.class.getResourceAsStream(previousEpochsSpentAddressesFile);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    this.previousEpochsSpentAddresses.put(new Hash(line), true);
+                }
+            } catch (Exception e) {
+                log.error("Failed to load resource: {}.", previousEpochsSpentAddressesFile, e);
             }
-        } catch (IOException e) {
-            log.error("Failed to load previousEpochsSpentAddresses.");
         }
     }
 

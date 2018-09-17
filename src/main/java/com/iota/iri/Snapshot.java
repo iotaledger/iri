@@ -34,7 +34,7 @@ public class Snapshot {
             String snapshotFile = config.getSnapshotFile();
             if (!config.isTestnet() && !SignedFiles.isFileSignatureValid(snapshotFile, config.getSnapshotSignatureFile(),
                     SNAPSHOT_PUBKEY, SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
-                throw new IOException("Snapshot signature failed.");
+                throw new IllegalStateException("Snapshot signature failed.");
             }
             Map<Hash, Long> initialState = initInitialState(snapshotFile);
             initialSnapshot = new Snapshot(initialState, 0);
@@ -75,7 +75,8 @@ public class Snapshot {
         try (InputStream snapshotStream = getSnapshotStream(snapshotFile)) {
             bufferedInputStream = new BufferedInputStream(snapshotStream);
             BufferedReader reader = new BufferedReader(new InputStreamReader(bufferedInputStream));
-            for (String line = reader.readLine(); line != null; line = reader.readLine()) {
+            String line;
+            while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(";", 2);
                 if (parts.length >= 2) {
                     String key = parts[0];
@@ -149,7 +150,7 @@ public class Snapshot {
             if (entry.getValue() <= 0) {
 
                 if (entry.getValue() < 0) {
-                    log.info("Skipping negative value for address: %s: %d", entry.getKey(), entry.getValue());
+                    log.info("Skipping negative value for address: {}: {}", entry.getKey(), entry.getValue());
                     return false;
                 }
 

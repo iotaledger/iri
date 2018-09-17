@@ -42,7 +42,7 @@ public class TransactionValidatorTest {
     TipsViewModel tipsViewModel = new TipsViewModel();
     MessageQ messageQ = Mockito.mock(MessageQ.class);
     TransactionRequester txRequester = new TransactionRequester(tangle, messageQ);
-    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ, new MainnetConfig());
+    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, new MainnetConfig());
     txValidator.setMwm(false, MAINNET_MWM);
   }
 

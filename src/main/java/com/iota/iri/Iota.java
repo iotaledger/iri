@@ -51,7 +51,7 @@ public class Iota {
         messageQ = MessageQ.createWith(configuration);
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
-        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ,
+        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester,
                 configuration);
         milestoneTracker = new MilestoneTracker(tangle, transactionValidator, messageQ, initialSnapshot, configuration);
         node = new Node(tangle, transactionValidator, transactionRequester, tipsViewModel, milestoneTracker, messageQ,

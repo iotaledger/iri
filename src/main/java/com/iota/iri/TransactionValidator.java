@@ -31,8 +31,8 @@ public class TransactionValidator {
     private int MIN_WEIGHT_MAGNITUDE = 81;
     private static long snapshotTimestamp;
     private static long snapshotTimestampMs;
-    private static long MAX_TIMESTAMP_FUTURE = 2 * 60 * 60;
-    private static long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1000;
+    private static final long MAX_TIMESTAMP_FUTURE = 2 * 60 * 60;
+    private static final long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1000;
 
     private Thread newSolidThread;
 

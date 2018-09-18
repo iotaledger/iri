@@ -12,7 +12,7 @@ public class GetNeighborsResponse extends AbstractResponse {
      *  numberOfAllTransactions, numberOfRandomTransactionRequests, 
      *  numberOfNewTransactions, numberOfInvalidTransactions, numberOfSentTransactions
      * 
-     * @see {@link com.iota.iri.service.dto.GetNeighborsResponse.Neighbor}
+     * @see com.iota.iri.service.dto.GetNeighborsResponse.Neighbor
      * @return the neighbors
      */
     public Neighbor[] getNeighbors() {

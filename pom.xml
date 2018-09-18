@@ -20,6 +20,9 @@
         <java-version>1.8</java-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <undertow.version>1.4.6.Final</undertow.version>
+        <javadoc-version>3.0.1</javadoc-version>
+        <checkstyle-version>3.0.0</checkstyle-version>
+
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
              configLocation attribute on every maven goal. -->
@@ -210,25 +213,34 @@
                     <useIncrementalCompilation>false</useIncrementalCompilation>
                 </configuration>
             </plugin>
+            <!-- The javadoc plugin can be called by running "mvn javadoc:javadoc" and will generate the classic javadoc
+                 files in folder "target/site/apidocs" -->
             <plugin>
-			    <groupId>org.apache.maven.plugins</groupId>
-			    <artifactId>maven-javadoc-plugin</artifactId>
-			    <version>3.0.0</version>
-			    <configuration>
-			        <doclet>com.iota.mdxdoclet.MDXDoclet</doclet>
-			        <sourcepath>src/main/java</sourcepath>
-			        <useStandardDocletOptions>false</useStandardDocletOptions>
-			        <additionalOptions>
-			            <additionalOption>-version "${project.version}"</additionalOption>
-			        </additionalOptions>
-			        <quiet>true</quiet>
-			        <docletArtifact>
-			            <groupId>com.iota</groupId>
-			            <artifactId>mdxdoclet</artifactId>
-			            <version>0.1</version>
-			        </docletArtifact>
-			    </configuration>
-			</plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${javadoc-version}</version>
+                <configuration>
+                    <!-- These tags are not defined by the default javadoc configuration. They must be defined here
+                         or maven will break with unknown parameter @implNote for example. -->
+                    <tags>
+                        <tag>
+                            <name>apiNote</name>
+                            <placement>a</placement>
+                            <head>API Note:</head>
+                        </tag>
+                        <tag>
+                            <name>implSpec</name>
+                            <placement>a</placement>
+                            <head>Implementation Requirements:</head>
+                        </tag>
+                        <tag>
+                            <name>implNote</name>
+                            <placement>a</placement>
+                            <head>Implementation Note:</head>
+                        </tag>
+                    </tags>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -268,7 +280,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>${checkstyle-version}</version>
                 <executions>
                     <execution>
                         <id>validate</id>
@@ -568,14 +580,28 @@
             </build>
         </profile>
     </profiles>
+    <!-- The reporting section is called during the maven site goal.
+         It can be called manually by running mvn clean site -->
     <reporting>
         <plugins>
+            <!-- The site plugin can be called by "mvn site". This is the classic configuration and recommended
+                 configuration format. for more details visit:
+
+                 https://maven.apache.org/plugins/maven-site-plugin/maven-3.html and
+                 https://maven.apache.org/plugins/maven-site-plugin/usage.html
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-project-info-reports-plugin</artifactId>
+                <version>2.9</version>
+            </plugin>
+
             <!-- This checkstyle goal is indirectly called during report generation or by
                  running "mvn checkstyle:checkstyle" manually-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.0.0</version>
+                <version>${checkstyle-version}</version>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -583,6 +609,36 @@
                         </reports>
                     </reportSet>
                 </reportSets>
+            </plugin>
+
+            <!-- The javadoc for the report can be called by running "mvn site" and will generate the the iota
+                 documentation in Markdown format. To compile this report you need the iri-mdx-doclet files from:
+                 https://github.com/iotaledger/iri-mdx-doclet. Follow the documentation on the github site to compile
+                 and install the iri-mdx-doclet locally in your maven repository.
+
+                 Note: If you need the classic api documentation run "mvn javadoc:javadoc" instead.
+                 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>${javadoc-version}</version>
+                <configuration>
+
+                    <!-- This dependency can be found at: https://github.com/iotaledger/iri-mdx-doclet -->
+                    <doclet>com.iota.mdxdoclet.MDXDoclet</doclet>
+                    <sourcepath>src/main/java</sourcepath>
+                    <useStandardDocletOptions>false</useStandardDocletOptions>
+                    <additionalOptions>
+                        <additionalOption>-version "${project.version}"</additionalOption>
+                    </additionalOptions>
+                    <quiet>true</quiet>
+                    <docletArtifact>
+                        <groupId>com.iota</groupId>
+                        <artifactId>mdxdoclet</artifactId>
+                        <version>0.1</version>
+                    </docletArtifact>
+                </configuration>
+                
             </plugin>
         </plugins>
     </reporting>

@@ -469,7 +469,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getPreviousEpochSpentAddressesFile() {
+    public String getPreviousEpochSpentAddressesFiles() {
         return Defaults.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT;
     }
 
@@ -671,7 +671,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //Snapshot
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
-        String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT = "/previousEpochsSpentAddresses.txt";
+        String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
+                "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt";
         String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = "/previousEpochsSpentAddresses.sig";
         long GLOBAL_SNAPSHOT_TIME = 1517180400;
         int MILESTONE_START_INDEX = 590_000;

@@ -33,7 +33,7 @@ public interface SnapshotConfig extends Config {
     /**
      * @return {@value Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE}
      */
-    String getPreviousEpochSpentAddressesFile();
+    String getPreviousEpochSpentAddressesFiles();
 
     /**
      * @return {@value Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG_FILE}

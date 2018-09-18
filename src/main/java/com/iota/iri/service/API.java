@@ -612,6 +612,7 @@ public class API {
       * @param depth Number of bundles to go back to determine the transactions for approval.
       * @param reference Hash of transaction to start random-walk from, used to make sure the tips returned reference a given transaction in their past.
       * @return {@link com.iota.iri.service.dto.GetTransactionsToApproveResponse}
+      * @throws Exception if DB fails to retrieve transaction to be approved.
       **/
     private synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
         if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
@@ -665,6 +666,7 @@ public class API {
       * The trytes to be used for this call are returned by <code>attachToTangle</code>.
       *
       * @param trytes List of raw data of transactions to be rebroadcast.
+      * @throws Exception if transaction could not be stored.
       **/
     public void storeTransactionsStatement(final List<String> trytes) throws Exception {
         final List<TransactionViewModel> elements = new LinkedList<>();

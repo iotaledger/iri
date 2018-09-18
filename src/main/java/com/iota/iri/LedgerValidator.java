@@ -45,7 +45,7 @@ public class LedgerValidator {
      * @param latestSnapshotIndex                index of the latest snapshot to traverse to
      * @param milestone                          marker to indicate whether to stop only at confirmed transactions
      * @return {state}                           the addresses that have a balance changed since the last diff check
-     * @throws Exception
+     * @throws Exception                         if transaction could not be found by hash
      */
     public Map<Hash,Long> getLatestDiff(final Set<Hash> visitedNonMilestoneSubtangleHashes, Hash tip, int latestSnapshotIndex, boolean milestone) throws Exception {
         Map<Hash, Long> state = new HashMap<>();
@@ -132,7 +132,7 @@ public class LedgerValidator {
      * // old @param hash start of the update tree
      * @param hash tail to traverse from
      * @param index milestone index
-     * @throws Exception
+     * @throws Exception if transaction could not be loaded from hash
      */
     private void updateSnapshotMilestone(Hash hash, int index) throws Exception {
         Set<Hash> visitedHashes = new HashSet<>();
@@ -159,8 +159,8 @@ public class LedgerValidator {
     /**
      * Descends through transactions, trunk and branch, beginning at {tip}, until it reaches a transaction marked as
      * confirmed, or until it reaches a transaction that has already been added to the transient consistent set.
-     * @param tip
-     * @throws Exception
+     * @param tip the tip for that a confirmed/already added transaction should be found.
+     * @throws Exception if transaction could not be found by hash.
      */
     private void updateConsistentHashes(final Set<Hash> visitedHashes, Hash tip, int index) throws Exception {
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(tip));
@@ -182,7 +182,7 @@ public class LedgerValidator {
      * perhaps by database corruption, it will delete the milestone confirmed and all that follow.
      * It then starts at the earliest consistent milestone index with a confirmed, and analyzes the tangle until it
      * either reaches the latest solid subtangle milestone, or until it reaches an inconsistent milestone.
-     * @throws Exception
+     * @throws Exception if snapshot could not be build.
      */
     protected void init() throws Exception {
         MilestoneViewModel latestConsistentMilestone = buildSnapshot();
@@ -199,7 +199,7 @@ public class LedgerValidator {
      * solid milestone confirmed. It gets the earliest confirmed, and while checking for consistency, patches the next
      * newest confirmed diff into its map.
      * @return              the most recent consistent milestone with a confirmed.
-     * @throws Exception
+     * @throws Exception    if first milestone could not be found in tangle.
      */
     private MilestoneViewModel buildSnapshot() throws Exception {
         MilestoneViewModel consistentMilestone = null;

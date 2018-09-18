@@ -13,12 +13,10 @@ import com.iota.iri.utils.dag.DAGHelper;
 import java.util.*;
 
 /**
- * This class represents a cleanup job for the local snapshots {@link GarbageCollector}.
+ * This class represents a cleanup job for the {@link GarbageCollector} that removes milestones and all of their
+ * directly and indirectly referenced transactions.
  *
- * Since the {@code GarbageCollector} always cleans up the current job from the {@code startingIndex} to the
- * {@code startingIndex} of the previous job (or the milestone start index of the last global snapshot if no previous
- * job is found), we only need two values to fully describe a job and its progress ({@code startingIndex} and
- * {@code currentIndex}).
+ * It gets processed one milestone at a time persisting the progress after each step.
  */
 public class MilestonePrunerJob extends GarbageCollectorJob {
     /**

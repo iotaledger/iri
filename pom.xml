@@ -211,24 +211,31 @@
                 </configuration>
             </plugin>
             <plugin>
-			    <groupId>org.apache.maven.plugins</groupId>
-			    <artifactId>maven-javadoc-plugin</artifactId>
-			    <version>3.0.0</version>
-			    <configuration>
-			        <doclet>com.iota.mdxdoclet.MDXDoclet</doclet>
-			        <sourcepath>src/main/java</sourcepath>
-			        <useStandardDocletOptions>false</useStandardDocletOptions>
-			        <additionalOptions>
-			            <additionalOption>-version "${project.version}"</additionalOption>
-			        </additionalOptions>
-			        <quiet>true</quiet>
-			        <docletArtifact>
-			            <groupId>com.iota</groupId>
-			            <artifactId>mdxdoclet</artifactId>
-			            <version>0.1</version>
-			        </docletArtifact>
-			    </configuration>
-			</plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <!-- These tags are not defined by the default javadoc configuration. They must be defined here
+                         or maven will break with unknown parameter @implNote for example. -->
+                    <tags>
+                        <tag>
+                            <name>apiNote</name>
+                            <placement>a</placement>
+                            <head>API Note:</head>
+                        </tag>
+                        <tag>
+                            <name>implSpec</name>
+                            <placement>a</placement>
+                            <head>Implementation Requirements:</head>
+                        </tag>
+                        <tag>
+                            <name>implNote</name>
+                            <placement>a</placement>
+                            <head>Implementation Note:</head>
+                        </tag>
+                    </tags>
+                </configuration>
+            </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -568,6 +575,8 @@
             </build>
         </profile>
     </profiles>
+    <!-- The reporting section is called during the maven site goal.
+         It can be called manually by running mvn clean site -->
     <reporting>
         <plugins>
             <!-- This checkstyle goal is indirectly called during report generation or by

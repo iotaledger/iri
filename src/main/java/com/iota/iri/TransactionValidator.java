@@ -126,16 +126,57 @@ public class TransactionValidator {
 
     private final AtomicInteger nextSubSolidGroup = new AtomicInteger(1);
 
+    /**
+     * This method does the same as {@link #checkSolidity(Hash, boolean, int)} but defaults to an unlimited amount
+     * of transactions that are allowed to be traversed.
+     *
+     *
+     * @param hash hash of the transactions that shall get checked
+     * @param milestone true if the solidity check was issued while trying to solidify a milestone and false otherwise
+     * @return true if the transaction is solid and false otherwise
+     * @throws Exception if anything goes wrong while trying to solidify the transaction
+     */
     public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
+        return checkSolidity(hash, milestone, Integer.MAX_VALUE);
+    }
+
+    /**
+     * This method checks transactions for solidity and marks them accordingly if they are found to be solid.
+     *
+     * It iterates through all approved transactions until it finds one that is missing in the database or until it
+     * reached solid transactions on all traversed subtangles. In case of a missing transactions it issues a transaction
+     * request and returns false. If no missing transaction is found, it marks the processed transactions as solid in
+     * the database and returns true.
+     *
+     * Since this operation can potentially take a long time to terminate if it would have to traverse big parts of the
+     * tangle, it is possible to limit the amount of transactions that are allowed to be processed, while looking for
+     * unsolid / missing approvees. This can be useful when trying to "interrupt" the solidification of one transaction
+     * (if it takes too many steps) to give another one the chance to be solidified instead (i.e. prevent blocks in the
+     * solidification threads).
+     *
+     * @param hash hash of the transactions that shall get checked
+     * @param milestone true if the solidity check was issued while trying to solidify a milestone and false otherwise
+     * @param maxProcessedTransactions the maximum amount of transactions that are allowed to be traversed
+     * @return true if the transaction is solid and false otherwise
+     * @throws Exception if anything goes wrong while trying to solidify the transaction
+     */
+    public boolean checkSolidity(Hash hash, boolean milestone, int maxProcessedTransactions) throws Exception {
         if(TransactionViewModel.fromHash(tangle, hash).isSolid()) {
             return true;
         }
         Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
+        if(maxProcessedTransactions != Integer.MAX_VALUE) {
+            maxProcessedTransactions += analyzedHashes.size();
+        }
         boolean solid = true;
         final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(hash));
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (analyzedHashes.add(hashPointer)) {
+                if(analyzedHashes.size() >= maxProcessedTransactions) {
+                    return false;
+                }
+
                 final TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hashPointer);
                 if(!transaction.isSolid()) {
                     if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {

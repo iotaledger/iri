@@ -1,4 +1,4 @@
-package com.iota.iri.service.garbageCollector;
+package com.iota.iri.service.garbagecollector;
 
 /**
  * This class is a template for a {@link GarbageCollector} job.

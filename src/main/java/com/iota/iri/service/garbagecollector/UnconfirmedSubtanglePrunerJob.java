@@ -1,4 +1,4 @@
-package com.iota.iri.service.garbageCollector;
+package com.iota.iri.service.garbagecollector;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;

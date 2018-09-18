@@ -29,7 +29,7 @@ public class MilestoneViewModel {
     /**
      * This method removes a {@link MilestoneViewModel} from the cache.
      *
-     * It is used by the {@link com.iota.iri.service.garbageCollector.GarbageCollector} to remove milestones that were
+     * It is used by the {@link com.iota.iri.service.garbagecollector.GarbageCollector} to remove milestones that were
      * deleted in the database, so that the runtime environment correctly reflects the database state.
      *
      * @param milestoneIndex the index of the milestone

@@ -1,4 +1,4 @@
-package com.iota.iri.service.garbageCollector;
+package com.iota.iri.service.garbagecollector;
 
 /**
  * Functional interface for the lambda function that takes care of parsing a specific job from its serialized String

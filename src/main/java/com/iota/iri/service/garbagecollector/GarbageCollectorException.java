@@ -1,4 +1,4 @@
-package com.iota.iri.service.garbageCollector;
+package com.iota.iri.service.garbagecollector;
 
 /**
  * This class is used to wrap exceptions that are specific to the garbage collector logic.

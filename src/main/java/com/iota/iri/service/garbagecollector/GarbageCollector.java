@@ -1,4 +1,4 @@
-package com.iota.iri.service.garbageCollector;
+package com.iota.iri.service.garbagecollector;
 
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.service.snapshot.SnapshotManager;

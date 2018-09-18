@@ -130,7 +130,6 @@ public class TransactionValidator {
      * This method does the same as {@link #checkSolidity(Hash, boolean, int)} but defaults to an unlimited amount
      * of transactions that are allowed to be traversed.
      *
-     *
      * @param hash hash of the transactions that shall get checked
      * @param milestone true if the solidity check was issued while trying to solidify a milestone and false otherwise
      * @return true if the transaction is solid and false otherwise

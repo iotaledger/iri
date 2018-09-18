@@ -109,8 +109,8 @@ public class MilestoneSolidifier {
      * @param milestoneIndex index of the milestone that shall be solidified
      */
     public void add(Hash milestoneHash, int milestoneIndex) {
-        if(milestoneIndex > snapshotManager.getInitialSnapshot().getIndex()) {
-            if(milestoneIndex < earliestMilestoneIndex) {
+        if (milestoneIndex > snapshotManager.getInitialSnapshot().getIndex()) {
+            if (milestoneIndex < earliestMilestoneIndex) {
                 earliestMilestoneHash = milestoneHash;
                 earliestMilestoneIndex = milestoneIndex;
                 earliestMilestoneTries = 0;
@@ -131,7 +131,7 @@ public class MilestoneSolidifier {
 
         new Thread(() -> {
             while(running) {
-                if(processSolidificationTask() && running) {
+                if (processSolidificationTask() && running) {
                     continue;
                 }
 
@@ -200,11 +200,11 @@ public class MilestoneSolidifier {
      * @return true if there are no unsolid milestones that have to be processed or if the earliest milestone is solid
      */
     private boolean earliestMilestoneIsSolid() {
-        if(earliestMilestoneHash == null) {
+        if (earliestMilestoneHash == null) {
             return true;
         }
 
-        if ( unsolidMilestones.size() > 1 ) {
+        if (unsolidMilestones.size() > 1) {
             statusLogger.status("Solidifying milestone #" + earliestMilestoneIndex + " [" + unsolidMilestones.size() + " left]");
         }
 
@@ -233,7 +233,7 @@ public class MilestoneSolidifier {
      * @return true if the current solidification task was successful and the next milestone is due or false otherwise
      */
     private boolean processSolidificationTask() {
-        if(earliestMilestoneHash != null && (
+        if (earliestMilestoneHash != null && (
             earliestMilestoneIndex <= snapshotManager.getInitialSnapshot().getIndex() ||
             earliestMilestoneIsSolid()
         )) {

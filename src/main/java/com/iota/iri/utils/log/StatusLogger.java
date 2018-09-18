@@ -70,7 +70,7 @@ public class StatusLogger {
                 printStatusMessage();
             } else if (outputThread == null) {
                 synchronized(this) {
-                    if(outputThread == null) {
+                    if (outputThread == null) {
                         outputThread = new Thread(() -> {
                             try {
                                 Thread.sleep(Math.max(LOG_INTERVAL - (System.currentTimeMillis() - lastLogTime), 1));
@@ -123,7 +123,7 @@ public class StatusLogger {
      * next message accordingly.
      */
     private void printStatusMessage() {
-        if(!statusMessage.equals(lastPrintedStatusMessage)) {
+        if (!statusMessage.equals(lastPrintedStatusMessage)) {
             logger.info(statusMessage);
 
             lastLogTime = System.currentTimeMillis();

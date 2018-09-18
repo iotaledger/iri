@@ -474,11 +474,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getPreviousEpochSpentAddressesSigFile () {
-        return Defaults.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG;
-    }
-
-    @Override
     public int getMilestoneStartIndex() {
         return Defaults.MILESTONE_START_INDEX;
     }
@@ -673,7 +668,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
                 "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt";
-        String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = "/previousEpochsSpentAddresses.sig";
         long GLOBAL_SNAPSHOT_TIME = 1537203600;
         int MILESTONE_START_INDEX = 774_805;
         int NUM_KEYS_IN_MILESTONE = 20;

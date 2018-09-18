@@ -44,6 +44,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -51,7 +52,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.security.InvalidAlgorithmParameterException;
 
 import static io.undertow.Handlers.path;
 
@@ -149,7 +149,10 @@ public class API {
             return;
         }
 
-        String[] previousEpochsSpentAddressesFiles = Configuration.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT.split(" ");
+        String[] previousEpochsSpentAddressesFiles = instance
+                .configuration
+                .getPreviousEpochSpentAddressesFiles()
+                .split(" ");
         for (String previousEpochsSpentAddressesFile : previousEpochsSpentAddressesFiles) {
             InputStream in = Snapshot.class.getResourceAsStream(previousEpochsSpentAddressesFile);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {

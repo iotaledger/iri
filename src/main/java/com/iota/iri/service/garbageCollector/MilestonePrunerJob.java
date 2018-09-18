@@ -13,8 +13,11 @@ import com.iota.iri.utils.dag.DAGHelper;
 import java.util.*;
 
 /**
- * This class represents a cleanup job for the {@link GarbageCollector} that removes milestones and all of their
- * directly and indirectly referenced transactions.
+ * This class represents a cleanup job for the {@link GarbageCollector}.
+ *
+ * It removes milestones and all of their directly and indirectly referenced transactions ( and the orphaned subtangles
+ * branching off of the deleted transactions). Therefore it is used by the
+ * {@link com.iota.iri.service.snapshot.SnapshotManager} to clean up milestones prior to a snapshot.
  *
  * It gets processed one milestone at a time persisting the progress after each step.
  */

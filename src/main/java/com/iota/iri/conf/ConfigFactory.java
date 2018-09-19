@@ -42,7 +42,7 @@ public class ConfigFactory {
      *
      * @param configFile A property file with configuration options.
      * @param testnet When true a {@link TestnetConfig} is created.
-     * @return return the {@link IotaConfig} configuration.
+     * @return the {@link IotaConfig} configuration.
      *
      * @throws IOException When config file could not be found.
      */

@@ -162,7 +162,7 @@ public class LedgerValidator {
     /**
      * Descends through transactions, trunk and branch, beginning at {tip}, until it reaches a transaction marked as
      * confirmed, or until it reaches a transaction that has already been added to the transient consistent set.
-     * @param tip the tip for that a confirmed/already added transaction should be found.
+     * @param tip for which a confirmed/already added transaction should be found.
      * @throws Exception if transaction could not be found by hash.
      */
     private void updateConsistentHashes(final Set<Hash> visitedHashes, Hash tip, int index) throws Exception {

@@ -33,7 +33,7 @@ public class IRI {
 
     /**
      * Reads the logging configuration file and logging level from system properties. You can set this values as
-     * arguments to the jvm by passing <code>-Dlogback.configurationFile=/path/to/config.xml -Dlogging-level=DEBUG</code>
+     * arguments to the Java VM by passing <code>-Dlogback.configurationFile=/path/to/config.xml -Dlogging-level=DEBUG</code>
      * to the Java VM. If no system properties are specified the logback default values and logging-level INFO will
      * be used.
      */
@@ -162,9 +162,8 @@ public class IRI {
          * or parameter <code>--config</code>. If no filename was provided we fall back to <code>iota.ini</code> file.
          * If no <code>iota.ini</code> file can be found return null.
          *
-         * @param args command line arguments passed to main method
-         * @return File given by command line argument. If no file was provided return <code>iota.ini</code>. Returns
-         * null, if <code>iota.ini</code> does not exist.
+         * @param args command line arguments passed to main method.
+         * @return File the chosen file to use as config, or null.
          */
         private static File chooseConfigFile(String[] args) {
             int index = Math.max(ArrayUtils.indexOf(args, "-c"), ArrayUtils.indexOf(args, "--config"));

@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static java.util.Comparator.comparingDouble;
+import static java.util.Comparator.comparingInt;
 
 /**
  * This class implements the logic for solidifying unsolid milestones.
@@ -68,17 +68,17 @@ public class MilestoneSolidifier {
     /**
      * The earliest unsolid milestone hash which is the one that is actively tried to get solidified.
      */
-    private Hash earliestMilestoneHash = null;
+    private Hash earliestUnsolidMilestoneHash = null;
 
     /**
      * The earliest unsolid milestone index which is the one that is actively tried to get solidified.
      */
-    private int earliestMilestoneIndex = Integer.MAX_VALUE;
+    private int earliestUnsolidMilestoneIndex = Integer.MAX_VALUE;
 
     /**
      * Holds the amount of solidity checks issued for the earliest milestone.
      */
-    private int earliestMilestoneTries = 0;
+    private int earliestUnsolidMilestoneSolidificationAttempts = 0;
 
     /**
      * A flag indicating if the solidifier thread is running.
@@ -110,10 +110,10 @@ public class MilestoneSolidifier {
      */
     public void add(Hash milestoneHash, int milestoneIndex) {
         if (milestoneIndex > snapshotManager.getInitialSnapshot().getIndex()) {
-            if (milestoneIndex < earliestMilestoneIndex) {
-                earliestMilestoneHash = milestoneHash;
-                earliestMilestoneIndex = milestoneIndex;
-                earliestMilestoneTries = 0;
+            if (milestoneIndex < earliestUnsolidMilestoneIndex) {
+                earliestUnsolidMilestoneHash = milestoneHash;
+                earliestUnsolidMilestoneIndex = milestoneIndex;
+                earliestUnsolidMilestoneSolidificationAttempts = 0;
             }
 
             unsolidMilestones.put(milestoneHash, milestoneIndex);
@@ -131,7 +131,7 @@ public class MilestoneSolidifier {
 
         new Thread(() -> {
             while(running) {
-                if (processSolidificationTask() && running) {
+                if (processSolidificationTask()) {
                     continue;
                 }
 
@@ -160,7 +160,7 @@ public class MilestoneSolidifier {
      */
     private Map.Entry<Hash, Integer> getEarliestUnsolidMilestoneEntry() {
         try {
-            return Collections.min(unsolidMilestones.entrySet(), comparingDouble(Map.Entry::getValue));
+            return Collections.min(unsolidMilestones.entrySet(), comparingInt(Map.Entry::getValue));
         } catch (NoSuchElementException e) {
             return new AbstractMap.SimpleEntry<>(null, Integer.MAX_VALUE);
         }
@@ -173,13 +173,13 @@ public class MilestoneSolidifier {
      * It is used to cycle through the unsolid milestones as they become solid or irrelevant for our node.
      */
     private void nextEarliestMilestone() {
-        unsolidMilestones.remove(earliestMilestoneHash);
+        unsolidMilestones.remove(earliestUnsolidMilestoneHash);
 
         Map.Entry<Hash, Integer> nextEarliestMilestone = getEarliestUnsolidMilestoneEntry();
 
-        earliestMilestoneHash = nextEarliestMilestone.getKey();
-        earliestMilestoneIndex = nextEarliestMilestone.getValue();
-        earliestMilestoneTries = 0;
+        earliestUnsolidMilestoneHash = nextEarliestMilestone.getKey();
+        earliestUnsolidMilestoneIndex = nextEarliestMilestone.getValue();
+        earliestUnsolidMilestoneSolidificationAttempts = 0;
     }
 
     /**
@@ -199,26 +199,26 @@ public class MilestoneSolidifier {
      *
      * @return true if there are no unsolid milestones that have to be processed or if the earliest milestone is solid
      */
-    private boolean earliestMilestoneIsSolid() {
-        if (earliestMilestoneHash == null) {
+    private boolean isEarliestMilestoneSolid() {
+        if (earliestUnsolidMilestoneHash == null) {
             return true;
         }
 
         if (unsolidMilestones.size() > 1) {
-            statusLogger.status("Solidifying milestone #" + earliestMilestoneIndex + " [" + unsolidMilestones.size() + " left]");
+            statusLogger.status("Solidifying milestone #" + earliestUnsolidMilestoneIndex + " [" + unsolidMilestones.size() + " left]");
         }
 
         try {
             return transactionValidator.checkSolidity(
-                earliestMilestoneHash,
+            earliestUnsolidMilestoneHash,
                 true,
                 2 ^ Math.min(
-                    earliestMilestoneTries++ / SOLIDIFICATION_TRANSACTIONS_LIMIT_INCREMENT_INTERVAL,
+                    earliestUnsolidMilestoneSolidificationAttempts++ / SOLIDIFICATION_TRANSACTIONS_LIMIT_INCREMENT_INTERVAL,
                     SOLIDIFICATION_TRANSACTIONS_LIMIT_MAX_INCREMENT
                 ) * SOLIDIFICATION_TRANSACTIONS_LIMIT
             );
         } catch (Exception e) {
-            statusLogger.error("Error while solidifying milestone #" + earliestMilestoneIndex, e);
+            statusLogger.error("Error while solidifying milestone #" + earliestUnsolidMilestoneIndex, e);
 
             return false;
         }
@@ -233,9 +233,9 @@ public class MilestoneSolidifier {
      * @return true if the current solidification task was successful and the next milestone is due or false otherwise
      */
     private boolean processSolidificationTask() {
-        if (earliestMilestoneHash != null && (
-            earliestMilestoneIndex <= snapshotManager.getInitialSnapshot().getIndex() ||
-            earliestMilestoneIsSolid()
+        if (earliestUnsolidMilestoneHash != null && (
+            earliestUnsolidMilestoneIndex <= snapshotManager.getInitialSnapshot().getIndex() ||
+            isEarliestMilestoneSolid()
         )) {
             nextEarliestMilestone();
 

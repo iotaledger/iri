@@ -6,11 +6,11 @@ import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -22,6 +22,8 @@ import static com.iota.iri.controllers.TransactionViewModel.TRINARY_SIZE;
  */
 public class FileExportProvider implements PersistenceProvider {
     private static final Logger log = LoggerFactory.getLogger(FileExportProvider.class);
+    private static long lastFileNumber = 0L;
+    private final static Object lock = new Object();
 
     @Override
     public void init() throws Exception {
@@ -49,29 +51,37 @@ public class FileExportProvider implements PersistenceProvider {
     }
 
     @Override
-    public boolean update(Persistable model, Indexable index, String item) throws Exception {
+    public boolean update(Persistable model, Indexable index, String item) {
 
-        if(model instanceof Transaction) {
-            Transaction transaction = ((Transaction) model);
-            if(item.contains("sender")) {
-                Path path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
-                try(PrintWriter writer = new PrintWriter(path.toString(), "UTF-8")) {
-                    writer.println(index.toString());
-                    writer.println(Converter.trytes(trits(transaction)));
-                    writer.println(transaction.sender);
-                    if(item.equals("height")) {
-                        writer.println("Height: " + String.valueOf(transaction.height));
-                    } else {
-                        writer.println("Height: ");
-                    }
-                    writer.close();
-                    return true;
-                } catch (UnsupportedEncodingException | FileNotFoundException e) {
-                    log.error("File export failed", e);
-                } catch (Exception e) {
-                    log.error("Transaction load failed. ", e);
-                }
-            }
+        if (item == null || !item.contains("sender")) {
+            log.error("Item does not contain sender: {}", item);
+            return false;
+        }
+        if (!(model instanceof Transaction)) {
+            log.error("Model is not instance of Transaction");
+            return false;
+        }
+
+        // create export folder and export file
+        File exportFile = new File("export", String.valueOf(getFileNumber()) + ".tx");
+        if(!exportFile.getParentFile().exists() && exportFile.getParentFile().mkdirs()) {
+            log.error("Export folder can not be created");
+            return false;
+        }
+
+        // print data to file
+        Transaction transaction = ((Transaction) model);
+        try(PrintWriter writer = new PrintWriter(exportFile, StandardCharsets.UTF_8.name())) {
+            writer.println(index.toString());
+            writer.println(Converter.trytes(trits(transaction)));
+            writer.println(transaction.sender);
+            writer.println("Height: ");
+
+            return true;
+        } catch (UnsupportedEncodingException | FileNotFoundException e) {
+            log.error("File export failed", e);
+        } catch (Exception e) {
+            log.error("Transaction load failed", e);
         }
         return false;
     }
@@ -85,8 +95,6 @@ public class FileExportProvider implements PersistenceProvider {
     public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception {
         return null;
     }
-
-
 
     @Override
     public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> other) throws Exception {
@@ -157,10 +165,7 @@ public class FileExportProvider implements PersistenceProvider {
 
     }
 
-    private static long lastFileNumber = 0L;
-    private static Object lock = new Object();
-
-    public static long getFileNumber() {
+    private static long getFileNumber() {
         long now = System.currentTimeMillis() * 1000;
         synchronized (lock) {
             if (now <= lastFileNumber) {
@@ -170,7 +175,7 @@ public class FileExportProvider implements PersistenceProvider {
         }
         return now;
     }
-    byte[] trits(Transaction transaction) {
+    private byte[] trits(Transaction transaction) {
         byte[] trits = new byte[TRINARY_SIZE];
         if(transaction.bytes != null) {
             Converter.getTrits(transaction.bytes, trits);

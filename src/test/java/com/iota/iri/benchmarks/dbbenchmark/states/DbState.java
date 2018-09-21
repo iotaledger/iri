@@ -3,7 +3,7 @@ package com.iota.iri.benchmarks.dbbenchmark.states;
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;

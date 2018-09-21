@@ -68,12 +68,7 @@ public interface SnapshotConfig extends Config {
     /**
      * @return {@value Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE}
      */
-    String getPreviousEpochSpentAddressesFile();
-
-    /**
-     * @return {@value Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG_FILE}
-     */
-    String getPreviousEpochSpentAddressesSigFile();
+    String getPreviousEpochSpentAddressesFiles();
 
     interface Descriptions {
 
@@ -93,8 +88,5 @@ public interface SnapshotConfig extends Config {
                 "leaves (private keys) that the coordinator can use to sign a message.";
         String PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE = "The file that contains the list of all used addresses " +
                 "from previous epochs";
-        String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG_FILE = "The file that contains the signature to validate the" +
-                "authenticity of the PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE";
-
     }
 }

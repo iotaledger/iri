@@ -17,10 +17,9 @@ import java.util.stream.Collectors;
 
 public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
-    public static final String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
-    public static final int SNAPSHOT_PUBKEY_DEPTH = 6;
-    private static final int SNAPSHOT_INDEX = 6;
-    public static final int SPENT_ADDRESSES_INDEX = 7;
+    private static final String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
+    private static final int SNAPSHOT_PUBKEY_DEPTH = 6;
+    private static final int SNAPSHOT_INDEX = 9;
     private static Snapshot initialSnapshot;
     protected final Map<Hash, Long> state;
     private int index;

@@ -26,7 +26,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //API
     protected int port = Defaults.API_PORT;
     protected String apiHost = Defaults.API_HOST;
-    protected List<String> remoteLimitApi = new ArrayList<>();
+    protected List<String> remoteLimitApi = Defaults.REMOTE_LIMIT_API;
     protected int maxFindTransactions = Defaults.MAX_FIND_TRANSACTIONS;
     protected int maxRequestsList = Defaults.MAX_REQUESTS_LIST;
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
@@ -555,13 +555,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getPreviousEpochSpentAddressesFile() {
+    public String getPreviousEpochSpentAddressesFiles() {
         return Defaults.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT;
-    }
-
-    @Override
-    public String getPreviousEpochSpentAddressesSigFile () {
-        return Defaults.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG;
     }
 
     @Override
@@ -698,6 +693,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //API
         int API_PORT = 14265;
         String API_HOST = "localhost";
+        List<String> REMOTE_LIMIT_API = IotaUtils.createImmutableList("addNeighbors", "getNeighbors", "removeNeighbors", "attachToTangle", "interruptAttachingToTangle");
         int MAX_FIND_TRANSACTIONS = 100_000;
         int MAX_REQUESTS_LIST = 1_000;
         int MAX_GET_TRYTES = 10_000;
@@ -764,10 +760,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int LOCAL_SNAPSHOTS_DEPTH = 500;
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
-        String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT = "/previousEpochsSpentAddresses.txt";
-        String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = "/previousEpochsSpentAddresses.sig";
-        long GLOBAL_SNAPSHOT_TIME = 1517180400;
-        int MILESTONE_START_INDEX = 590_000;
+        String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
+                "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt";
+        long GLOBAL_SNAPSHOT_TIME = 1537203600;
+        int MILESTONE_START_INDEX = 774_805;
         int NUM_KEYS_IN_MILESTONE = 20;
         int MAX_ANALYZED_TXS = 20_000;
     }

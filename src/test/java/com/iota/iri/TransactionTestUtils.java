@@ -54,6 +54,20 @@ public class TransactionTestUtils {
         return new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
     }
 
+    public static String nextWord(String trytes) {
+        if ("".equals(trytes)) {
+            return "A";
+        }
+        char[] chars = trytes.toUpperCase().toCharArray();
+        for (int i = chars.length -1; i>=0; --i) {
+            if (chars[i] != 'Z') {
+                ++chars[i];
+                return new String(chars);
+            }
+        }
+        return trytes + 'A';
+    }
+
     private static String expandTrytes(String trytes) {
         return trytes + StringUtils.repeat('9', TransactionViewModel.TRYTES_SIZE - trytes.length());
     }

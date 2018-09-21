@@ -68,7 +68,7 @@ public class Iota {
         tangle.init();
 
         if (configuration.isRescanDb()){
-            rescan_db();
+            rescanDb();
         }
 
         if (configuration.isRevalidate()) {
@@ -85,7 +85,7 @@ public class Iota {
         node.init();
     }
 
-    private void rescan_db() throws Exception {
+    private void rescanDb() throws Exception {
         //delete all transaction indexes
         tangle.clearColumn(com.iota.iri.model.persistables.Address.class);
         tangle.clearColumn(com.iota.iri.model.persistables.Bundle.class);

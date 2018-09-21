@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.5.3</version>
+    <version>1.5.4</version>
 
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
@@ -20,6 +20,10 @@
         <java-version>1.8</java-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <undertow.version>1.4.6.Final</undertow.version>
+        <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
+             This variable will be load by checkstyle plugin automatically. It is more global than setting the
+             configLocation attribute on every maven goal. -->
+        <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
     </properties>
 
     <repositories>
@@ -177,6 +181,19 @@
             <version>1.72</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-core</artifactId>
+            <version>1.21</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.openjdk.jmh</groupId>
+            <artifactId>jmh-generator-annprocess</artifactId>
+            <version>1.21</version>
+            <scope>test</scope>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -190,6 +207,7 @@
                     <target>${java-version}</target>
                     <testSource>${java-version}</testSource>
                     <testTarget>${java-version}</testTarget>
+                    <useIncrementalCompilation>false</useIncrementalCompilation>
                 </configuration>
             </plugin>
             <plugin>
@@ -245,6 +263,8 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- This checkstyle goal will only be invoked during the validate goal or by running "mvn validate"
+                 manually. It indirectly calls "mvn checkstyle:check" -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
@@ -254,11 +274,10 @@
                         <id>validate</id>
                         <phase>validate</phase>
                         <configuration>
-                            <configLocation>checkstyle.xml</configLocation>
+                            <configLocation>${checkstyle.config.location}</configLocation>
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <failsOnError>true</failsOnError>
-                            <linkXRef>false</linkXRef>
                         </configuration>
                         <goals>
                             <goal>check</goal>
@@ -371,6 +390,7 @@
                 <configuration>
                     <excludes>
                         <exclude>integration/*.java</exclude>
+                        <exclude>benchmarks/**/*</exclude>
                     </excludes>
                 </configuration>
                 <executions>
@@ -550,10 +570,12 @@
     </profiles>
     <reporting>
         <plugins>
+            <!-- This checkstyle goal is indirectly called during report generation or by
+                 running "mvn checkstyle:checkstyle" manually-->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.17</version>
+                <version>3.0.0</version>
                 <reportSets>
                     <reportSet>
                         <reports>

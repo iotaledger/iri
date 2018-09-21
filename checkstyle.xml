@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <!DOCTYPE module PUBLIC
-          "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
-          "http://checkstyle.sourceforge.net/dtds/configuration_1_3.dtd">
+          "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+          "https://checkstyle.org/dtds/configuration_1_3.dtd">
 <!--
 
 IOTA checkstyle draft
@@ -18,5 +18,14 @@ IOTA checkstyle draft
     <property name="fileExtensions" value="java, properties, xml"/>
     <module name="TreeWalker">
         <module name="NeedBraces"/>
+        <!-- Checks for Naming Conventions.                  -->
+
+        <!-- See http://checkstyle.sf.net/config_naming.html -->
+        <module name="LocalFinalVariableName"/>
+        <module name="LocalVariableName"/>
+        <module name="MethodName"/>
+        <module name="PackageName"/>
+        <module name="ParameterName"/>
+        <module name="TypeName"/>
     </module>
 </module>

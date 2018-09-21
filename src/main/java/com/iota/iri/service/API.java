@@ -46,6 +46,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -53,7 +54,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.security.InvalidAlgorithmParameterException;
 
 import static io.undertow.Handlers.path;
 
@@ -150,24 +150,21 @@ public class API {
         if (isTestnet) {
             return;
         }
-        String previousEpochSpentAddressesFile = instance.configuration.getPreviousEpochSpentAddressesFile();
-        String previousEpochSpentAddressesSigFile = instance.configuration.getPreviousEpochSpentAddressesSigFile();
 
-        if (!SignedFiles.isFileSignatureValid(previousEpochSpentAddressesFile,
-                previousEpochSpentAddressesSigFile,
-                Snapshot.SNAPSHOT_PUBKEY, Snapshot.SNAPSHOT_PUBKEY_DEPTH, Snapshot.SPENT_ADDRESSES_INDEX)) {
-            throw new RuntimeException("Failed to load previousEpochsSpentAddresses - signature failed.");
-        }
-
-        InputStream in = Snapshot.class.getResourceAsStream(previousEpochSpentAddressesFile);
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
-        String line;
-        try {
-            while((line = reader.readLine()) != null) {
-                previousEpochsSpentAddresses.put(HashFactory.ADDRESS.create(line),true);
+        String[] previousEpochsSpentAddressesFiles = instance
+                .configuration
+                .getPreviousEpochSpentAddressesFiles()
+                .split(" ");
+        for (String previousEpochsSpentAddressesFile : previousEpochsSpentAddressesFiles) {
+            InputStream in = Snapshot.class.getResourceAsStream(previousEpochsSpentAddressesFile);
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    this.previousEpochsSpentAddresses.put(HashFactory.ADDRESS.create(line), true);
+                }
+            } catch (Exception e) {
+                log.error("Failed to load resource: {}.", previousEpochsSpentAddressesFile, e);
             }
-        } catch (IOException e) {
-            log.error("Failed to load previousEpochsSpentAddresses.");
         }
     }
 
@@ -373,13 +370,14 @@ public class API {
      **/
     private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
         final List<Hash> addressesHash = addressesStr.stream().map(HashFactory.ADDRESS::create).collect(Collectors.toList());
+
         final boolean[] states = new boolean[addressesHash.size()];
         int index = 0;
 
         for (Hash address : addressesHash) {
             states[index++] = wasAddressSpentFrom(address);
         }
-        return wereAddressesSpentFrom.create(states);
+        return WereAddressesSpentFrom.create(states);
     }
 
     private boolean wasAddressSpentFrom(Hash address) throws Exception {
@@ -556,12 +554,12 @@ public class API {
 
     /**
       * Temporarily removes a list of neighbors from your node.
-      * The added neighbors will be added again after relaunching IRI. 
+      * The added neighbors will be added again after relaunching IRI.
       * Remove the neighbors from your config file or make sure you don't supply them in the -n command line option if you want to keep them removed after restart.
       *
       * The URI (Unique Resource Identification) for removing neighbors is:
       * <b>udp://IPADDRESS:PORT</b>
-      * 
+      *
       * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if the URI scheme is wrong
       *
       * @param uris List of URI elements.
@@ -583,8 +581,8 @@ public class API {
     }
 
     /**
-      * Returns the raw transaction data (trytes) of a specific transaction. 
-      * These trytes can then be easily converted into the actual transaction object. 
+      * Returns the raw transaction data (trytes) of a specific transaction.
+      * These trytes can then be easily converted into the actual transaction object.
       * See utility functions for more details.
       *
       * @param hashes List of transaction hashes you want to get trytes from.
@@ -604,28 +602,28 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    private static int counter_getTxToApprove = 0;
-    public static int getCounter_getTxToApprove() {
-        return counter_getTxToApprove;
+    private static int counterGetTxToApprove = 0;
+    public static int getCounterGetTxToApprove() {
+        return counterGetTxToApprove;
     }
-    public static void incCounter_getTxToApprove() {
-        counter_getTxToApprove++;
+    public static void incCounteGetTxToApprove() {
+        counterGetTxToApprove++;
     }
 
     private static long ellapsedTime_getTxToApprove = 0L;
-    public static long getEllapsedTime_getTxToApprove() {
+    public static long getEllapsedTimeGetTxToApprove() {
         return ellapsedTime_getTxToApprove;
     }
-    public static void incEllapsedTime_getTxToApprove(long ellapsedTime) {
+    public static void incEllapsedTimeGetTxToApprove(long ellapsedTime) {
         ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
     /**
-      * Tip selection which returns <code>trunkTransaction</code> and <code>branchTransaction</code>. 
-      * The input value <code>depth</code> determines how many milestones to go back for finding the transactions to approve. 
-      * The higher your <code>depth</code> value, the more work you have to do as you are confirming more transactions. 
-      * If the <code>depth</code> is too large (usually above 15, it depends on the node's configuration) an error will be returned. 
-      * The <code>reference</code> is an optional hash of a transaction you want to approve. 
+      * Tip selection which returns <code>trunkTransaction</code> and <code>branchTransaction</code>.
+      * The input value <code>depth</code> determines how many milestones to go back for finding the transactions to approve.
+      * The higher your <code>depth</code> value, the more work you have to do as you are confirming more transactions.
+      * If the <code>depth</code> is too large (usually above 15, it depends on the node's configuration) an error will be returned.
+      * The <code>reference</code> is an optional hash of a transaction you want to approve.
       * If it can't be found at the specified <code>depth</code> then an error will be returned.
       *
       * @param depth Number of bundles to go back to determine the transactions for approval.
@@ -648,18 +646,18 @@ public class API {
     }
 
     private void gatherStatisticsOnTipSelection() {
-        API.incCounter_getTxToApprove();
-        if ((getCounter_getTxToApprove() % 100) == 0) {
-            String sb = "Last 100 getTxToApprove consumed " + API.getEllapsedTime_getTxToApprove() / 1000000000L + " seconds processing time.";
+        API.incCounteGetTxToApprove();
+        if ((getCounterGetTxToApprove() % 100) == 0) {
+            String sb = "Last 100 getTxToApprove consumed " + API.getEllapsedTimeGetTxToApprove() / 1000000000L + " seconds processing time.";
             log.debug(sb);
-            counter_getTxToApprove = 0;
+            counterGetTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
         }
     }
 
     /**
       * Returns the list of tips.
-      * 
+      *
       * @return {@link com.iota.iri.service.dto.GetTipsResponse}
       **/
     private synchronized AbstractResponse getTipsStatement() throws Exception {
@@ -667,7 +665,7 @@ public class API {
     }
 
     /**
-      * Store transactions into the local storage. 
+      * Store transactions into the local storage.
       * The trytes to be used for this call are returned by <code>attachToTangle</code>.
       *
       * @param trytes List of raw data of transactions to be rebroadcast.
@@ -694,7 +692,7 @@ public class API {
     }
 
     /**
-      * Returns the set of neighbors you are connected with, as well as their activity statistics (or counters). 
+      * Returns the set of neighbors you are connected with, as well as their activity statistics (or counters).
       * The activity counters are reset after restarting IRI.
       *
       * @return {@link com.iota.iri.service.dto.GetNeighborsResponse}
@@ -702,7 +700,7 @@ public class API {
     private AbstractResponse getNeighborsStatement() {
         return GetNeighborsResponse.create(instance.node.getNeighbors());
     }
-    
+
     /**
       * Interrupts and completely aborts the <code>attachToTangle</code> process.
       *
@@ -712,10 +710,10 @@ public class API {
         pearlDiver.cancel();
         return AbstractResponse.createEmptyResponse();
     }
-    
+
     /**
       * Returns information about your node.
-      * 
+      *
       * @return {@link com.iota.iri.service.dto.GetNodeInfoResponse}
       **/
     private AbstractResponse getNodeInfoStatement(){
@@ -730,6 +728,7 @@ public class API {
     }
 
     /**
+<<<<<<< HEAD
      * Get the inclusion states of a set of transactions. 
      * This is for determining if a transaction was accepted and confirmed by the network or not. 
      * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
@@ -839,11 +838,11 @@ public class API {
     }
 
     /**
-      * Find the transactions which match the specified input and return. 
-      * All input values are lists, for which a list of return values (transaction hashes), in the same order, is returned for all individual elements. 
-      * The input fields can either be <code>bundles<code>, <code>addresses</code>, <code>tags</code> or <code>approvees</code>. 
+      * Find the transactions which match the specified input and return.
+      * All input values are lists, for which a list of return values (transaction hashes), in the same order, is returned for all individual elements.
+      * The input fields can either be <code>bundles<code>, <code>addresses</code>, <code>tags</code> or <code>approvees</code>.
       * <b>Using multiple of these input fields returns the intersection of the values.</b>
-      * 
+      *
       * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if more than maxFindTxs was found
       *
       * @param request the map with input fields
@@ -950,7 +949,7 @@ public class API {
     }
 
     /**
-      * Broadcast a list of transactions to all neighbors. 
+      * Broadcast a list of transactions to all neighbors.
       * The input trytes for this call are provided by <code>attachToTangle</code>.
       *
       * @param trytes the list of transaction
@@ -970,20 +969,20 @@ public class API {
             instance.node.broadcast(transactionViewModel);
         }
     }
-    
+
 
     /**
       * Returns the confirmed balance, as viewed by the specified <code>tips</code>. If you do not specify the referencing <code>tips</code>, the returned balance is based on the latest confirmed milestone.
-      * In addition to the balances, it also returns the referencing <code>tips</code> (or milestone), as well as the index with which the confirmed balance was determined. 
+      * In addition to the balances, it also returns the referencing <code>tips</code> (or milestone), as well as the index with which the confirmed balance was determined.
       * The balances are returned as a list in the same order as the addresses were provided as input.
-      * 
+      *
       * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if tips are not found or inconsistent, or the treshold is invalid
       *
       * @param addresses the address to get the balance for
       * @param tips the tips to find the balance through
       * @param threshold the confirmation threshold between 0 and 100(incl)
       * @return {@link com.iota.iri.service.dto.GetBalancesResponse}
-      **/	
+      **/
     private AbstractResponse getBalancesStatement(final List<String> addresses, final List<String> tips, final int threshold) throws Exception {
 
         if (threshold <= 0 || threshold > 100) {
@@ -1036,29 +1035,29 @@ public class API {
     }
 
     private static int counter_PoW = 0;
-    public static int getCounter_PoW() {
+    public static int getCounterPoW() {
         return counter_PoW;
     }
-    public static void incCounter_PoW() {
+    public static void incCounterPoW() {
         API.counter_PoW++;
     }
 
     private static long ellapsedTime_PoW = 0L;
-    public static long getEllapsedTime_PoW() {
+    public static long getEllapsedTimePoW() {
         return ellapsedTime_PoW;
     }
-    public static void incEllapsedTime_PoW(long ellapsedTime) {
+    public static void incEllapsedTimePoW(long ellapsedTime) {
         ellapsedTime_PoW += ellapsedTime;
     }
 
     /**
-      * Attaches the specified transactions (trytes) to the Tangle by doing Proof of Work. 
+      * Attaches the specified transactions (trytes) to the Tangle by doing Proof of Work.
       * You need to supply <code>branchTransaction</code> as well as <code>trunkTransaction</code> (the tips which you're going to validate and reference with this transaction) - both of which you'll get through the <code>getTransactionsToApprove</code> API call.
       *
       * The returned value is a different set of tryte values which you can input into <code>broadcastTransactions</code> and <code>storeTransactions</code>.
-      * The last 243 trytes of the return value consist of the: <code>trunkTransaction</code> + <code>branchTransaction</code> + <code>nonce</code>. 
+      * The last 243 trytes of the return value consist of the: <code>trunkTransaction</code> + <code>branchTransaction</code> + <code>nonce</code>.
       * These are valid trytes which are then accepted by the network.
-      * 
+      *
       * @param trunkTransaction the trunk transaction
       * @param branchTransaction the branch transaction
       * @param minWeightMagnitude the minimum weight magnitute
@@ -1112,11 +1111,11 @@ public class API {
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {
-                API.incEllapsedTime_PoW(System.nanoTime() - startTime);
-                API.incCounter_PoW();
-                if ( ( API.getCounter_PoW() % 100) == 0 ) {
+                API.incEllapsedTimePoW(System.nanoTime() - startTime);
+                API.incCounterPoW();
+                if ( ( API.getCounterPoW() % 100) == 0 ) {
                     String sb = "Last 100 PoW consumed " +
-                            API.getEllapsedTime_PoW() / 1000000000L +
+                            API.getEllapsedTimePoW() / 1000000000L +
                             " seconds processing time.";
                     log.info(sb);
                     counter_PoW = 0;
@@ -1133,8 +1132,8 @@ public class API {
     }
 
     /**
-      * Temporarily add a list of neighbors to your node. 
-      * The added neighbors will be removed after relaunching IRI. 
+      * Temporarily add a list of neighbors to your node.
+      * The added neighbors will be removed after relaunching IRI.
       * Add the neighbors to your config file or supply them in the -n command line option if you want to keep them after restart.
       *
       * The URI (Unique Resource Identification) for adding neighbors is:
@@ -1244,7 +1243,7 @@ public class API {
       * <b>Only available on testnet.</b>
       * Creates, attaches, and broadcasts a transaction with this message
       *
-      * @param address The address to add the message to 
+      * @param address The address to add the message to
       * @param message The message to store
       **/
     private synchronized void storeMessageStatement(final String address, final String message) throws Exception {

@@ -5,9 +5,6 @@ import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.utils.Converter;
 
 public class TransactionHash extends AbstractHash {
-	protected TransactionHash(String source) {
-	    super(source);
-	}
 
 	protected TransactionHash(byte[] source, int offset, int sourceSize) {
 		super(source, offset, sourceSize);

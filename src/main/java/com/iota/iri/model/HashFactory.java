@@ -1,8 +1,5 @@
 package com.iota.iri.model;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,13 +10,14 @@ import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Persistable;
+import com.iota.iri.utils.Converter;
 
 public enum HashFactory {
-    TRANSACTION(TransactionHash.class),
-    ADDRESS(AddressHash.class),
-    BUNDLE(BundleHash.class),
-    TAG(TagHash.class),
-    OBSOLETETAG(ObsoleteTagHash.class),
+    TRANSACTION(Transaction.class),
+    ADDRESS(Address.class),
+    BUNDLE(Bundle.class),
+    TAG(Tag.class),
+    OBSOLETETAG(ObsoleteTag.class),
     
     /**
      * Creates from generic class, should be passed in the create() function. 
@@ -29,37 +27,14 @@ public enum HashFactory {
     
     private static final Logger log = LoggerFactory.getLogger(HashFactory.class);
     
-    //byte[], offset, size
-    private Constructor<Hash> constructor;
-    
-    //trits string
-    private Constructor<Hash> stringConstructor;
+    private Class<? extends Persistable> clazz;
 
-    @SuppressWarnings("unchecked")
-    HashFactory(Class<?> clazz) {
-        try {
-            this.constructor = (Constructor<Hash>) clazz.getDeclaredConstructor(byte[].class, int.class, int.class);
-            this.stringConstructor = (Constructor<Hash>) clazz.getDeclaredConstructor(String.class);
-        } catch (NoSuchMethodException | SecurityException e) {
-            e.printStackTrace();
-            this.constructor = null;
-        }
+    HashFactory(Class<? extends Persistable> clazz) {
+        this.clazz = clazz;
     }
     
     HashFactory() {
-        this.constructor = null;
-    }
-
-    private Hash createFromReflection(byte[] source, int sourceOffset, int sourceSize) {
-        if (constructor == null) {
-            return Hash.NULL_HASH;
-        }
         
-        try {
-            return constructor.newInstance(source, sourceOffset, sourceSize);
-        } catch(RuntimeException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            return Hash.NULL_HASH;
-        }
     }
     
     /**
@@ -67,16 +42,11 @@ public enum HashFactory {
      * @param trits the source data
      * @return the hash
      */
-    public Hash create(String trits) {
-        if (stringConstructor == null) {
-            return Hash.NULL_HASH;
-        }
-      
-        try {
-            return stringConstructor.newInstance(trits);
-        } catch(RuntimeException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
-            return Hash.NULL_HASH;
-        }
+    public Hash create(String trytes) {
+        
+        byte[] trits = new byte[Hash.SIZE_IN_TRITS];
+        Converter.trits(trytes, trits, 0);
+        return create(clazz, trits, 0, Hash.SIZE_IN_TRITS);
     }
 
     /**
@@ -87,7 +57,7 @@ public enum HashFactory {
      * @return the hash
      */
     public Hash create(byte[] source, int sourceOffset, int sourceSize) {
-        return createFromReflection(source, sourceOffset, sourceSize);
+        return create(clazz, source, sourceOffset, sourceSize);
     }
     
     /**
@@ -97,7 +67,7 @@ public enum HashFactory {
      * @return the hash
      */
     public Hash create(byte[] trits, int sourceOffset) {
-        return createFromReflection(trits, sourceOffset, Hash.SIZE_IN_TRITS);
+        return create(clazz, trits, sourceOffset, Hash.SIZE_IN_TRITS);
     }
     
     /**
@@ -107,12 +77,8 @@ public enum HashFactory {
      * @return the hash
      */
   	public Hash create(byte[] source) {
-  		return createFromReflection(source, 0, source.length == Hash.SIZE_IN_TRITS ? Hash.SIZE_IN_TRITS : Hash.SIZE_IN_BYTES);
+  		return create(clazz, source, 0, source.length == Hash.SIZE_IN_TRITS ? Hash.SIZE_IN_TRITS : Hash.SIZE_IN_BYTES);
   	}
-  	
-  	//
-  	// These are used by RocksDB
-  	//
 
     /**
      * 
@@ -133,6 +99,7 @@ public enum HashFactory {
      * @return the hash of the correct type
      */
     public Hash create(Class<?> modelClass, byte[] source, int sourceOffset, int sourceSize) {
+        
         //Transaction is first since its the most used
         if (modelClass.equals(Transaction.class) || modelClass.equals(Approvee.class)) {
             return new TransactionHash(source, sourceOffset, sourceSize);
@@ -151,7 +118,6 @@ public enum HashFactory {
             
         } else {
             log.warn("Tried to construct hash from unknown class " + modelClass);
-            
             //Default to transaction hash or NULL_HASH?
             return new TransactionHash(source, sourceOffset, sourceSize);
         }

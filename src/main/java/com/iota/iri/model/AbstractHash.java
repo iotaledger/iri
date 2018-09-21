@@ -29,11 +29,6 @@ public abstract class AbstractHash implements Hash, Serializable {
         }
     }
 
-    public AbstractHash(String trytes) {
-        this.tritSafe = new TritSafe(new byte[SIZE_IN_TRITS]);
-        Converter.trits(trytes, this.tritSafe.getData(), 0);
-    }
-
     @Override
     public void read(byte[] bytes) {
         if (bytes != null) {

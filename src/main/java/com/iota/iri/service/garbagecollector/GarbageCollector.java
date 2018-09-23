@@ -3,6 +3,8 @@ package com.iota.iri.service.garbagecollector;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.service.snapshot.SnapshotManager;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.thread.ThreadIdentifier;
+import com.iota.iri.utils.thread.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,9 +32,12 @@ public class GarbageCollector {
     private static final Logger log = LoggerFactory.getLogger(GarbageCollector.class);
 
     /**
-     * Boolean flag that indicates if the node is being shutdown.
+     * Holds a reference to the {@link ThreadIdentifier} for the cleanup thread.
+     *
+     * Using a {@link ThreadIdentifier} for spawning the thread allows the {@link ThreadUtils} to spawn exactly one
+     * thread for this instance even when we call the {@link #start()} method multiple times.
      */
-    boolean shuttingDown = false;
+    private final ThreadIdentifier cleanupThreadIdentifier = new ThreadIdentifier("Snapshot Garbage Collector");
 
     /**
      * Holds a reference to the tangle instance which acts as an interface to the used database.
@@ -117,33 +122,20 @@ public class GarbageCollector {
     }
 
     /**
-     * This method spawns the thread that is taking care of processing the cleanup jobs in the background.
+     * This method starts the cleanup {@link Thread} that asynchronously processes the queued jobs.
      *
-     * It repeatedly calls {@link #processCleanupJobs()} until the GarbageCollector is shutting down.
+     * This method is thread safe since we use a {@link ThreadIdentifier} to address the {@link Thread}. The
+     * {@link ThreadUtils} take care of only launching exactly one {@link Thread} that is not terminated.
      */
     public void start() {
-        (new Thread(() -> {
-            log.info("Snapshot Garbage Collector started ...");
-
-            while(!shuttingDown) {
-                try {
-                    processCleanupJobs();
-
-                    try {
-                        Thread.sleep(GARBAGE_COLLECTOR_RESCAN_INTERVAL);
-                    } catch(InterruptedException e) { /* do nothing */ }
-                } catch(GarbageCollectorException e) {
-                    log.error("error while processing the garbage collector jobs", e);
-                }
-            }
-        }, "Snapshot Garbage Collector")).start();
+        ThreadUtils.spawnThread(this::cleanupThread, cleanupThreadIdentifier);
     }
 
     /**
      * Shuts down the background job by setting the corresponding shutdown flag.
      */
     public void shutdown() {
-        shuttingDown = true;
+        ThreadUtils.stopThread(cleanupThreadIdentifier);
     }
 
     /**
@@ -225,6 +217,24 @@ public class GarbageCollector {
     }
 
     /**
+     * This method contains the logic for the processing of the cleanup jobs, that gets executed in a separate
+     * {@link Thread}.
+     *
+     * It repeatedly calls {@link #processCleanupJobs()} until the GarbageCollector is shutting down.
+     */
+    private void cleanupThread() {
+        while(!Thread.interrupted()) {
+            try {
+                processCleanupJobs();
+            } catch(GarbageCollectorException e) {
+                log.error("error while processing the garbage collector jobs", e);
+            }
+
+            ThreadUtils.sleep(GARBAGE_COLLECTOR_RESCAN_INTERVAL);
+        }
+    }
+
+    /**
      * This method contains the logic for scheduling the jobs and executing them.
      *
      * It iterates through all available queues and executes the corresponding {@link QueueProcessor} for each of them
@@ -234,7 +244,7 @@ public class GarbageCollector {
      */
     private void processCleanupJobs() throws GarbageCollectorException {
         for(Map.Entry<Class<? extends GarbageCollectorJob>, ArrayDeque<GarbageCollectorJob>> entry : garbageCollectorJobs.entrySet()) {
-            if(shuttingDown) {
+            if(Thread.interrupted()) {
                 return;
             }
 

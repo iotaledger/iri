@@ -137,7 +137,7 @@ public class MilestonePrunerJob extends GarbageCollectorJob {
      * @throws GarbageCollectorException if anything goes wrong while processing the jobs
      */
     private static void processQueue(GarbageCollector garbageCollector, ArrayDeque<GarbageCollectorJob> jobQueue) throws GarbageCollectorException {
-        while(!garbageCollector.shuttingDown && jobQueue.size() >= 2 || ((MilestonePrunerJob) jobQueue.getFirst()).targetIndex < ((MilestonePrunerJob) jobQueue.getFirst()).currentIndex) {
+        while(!Thread.interrupted() && jobQueue.size() >= 2 || ((MilestonePrunerJob) jobQueue.getFirst()).targetIndex < ((MilestonePrunerJob) jobQueue.getFirst()).currentIndex) {
             MilestonePrunerJob firstJob = (MilestonePrunerJob) jobQueue.removeFirst();
             firstJob.process();
 
@@ -216,7 +216,7 @@ public class MilestonePrunerJob extends GarbageCollectorJob {
      * @throws GarbageCollectorException if anything goes wrong while cleaning up or persisting the changes
      */
     public void process() throws GarbageCollectorException {
-        while(!garbageCollector.shuttingDown && targetIndex < currentIndex) {
+        while(!Thread.interrupted() && targetIndex < currentIndex) {
             cleanupMilestoneTransactions();
 
             currentIndex--;

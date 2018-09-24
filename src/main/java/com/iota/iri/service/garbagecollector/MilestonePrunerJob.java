@@ -251,7 +251,7 @@ public class MilestonePrunerJob extends GarbageCollectorJob {
             if (milestoneViewModel != null) {
                 elementsToDelete.add(new Pair<>(milestoneViewModel.getHash(), Transaction.class));
                 elementsToDelete.add(new Pair<>(new IntegerIndex(milestoneViewModel.index()), Milestone.class));
-                if (!garbageCollector.snapshotManager.getInitialSnapshot().isSolidEntryPoint(milestoneViewModel.getHash())) {
+                if (!garbageCollector.snapshotManager.getInitialSnapshot().hasSolidEntryPoint(milestoneViewModel.getHash())) {
                     garbageCollector.addJob(new UnconfirmedSubtanglePrunerJob(milestoneViewModel.getHash()));
                 }
                 DAGHelper.get(garbageCollector.tangle).traverseApprovees(
@@ -260,7 +260,7 @@ public class MilestonePrunerJob extends GarbageCollectorJob {
                 approvedTransaction -> {
                     elementsToDelete.add(new Pair<>(approvedTransaction.getHash(), Transaction.class));
 
-                    if (!garbageCollector.snapshotManager.getInitialSnapshot().isSolidEntryPoint(approvedTransaction.getHash())) {
+                    if (!garbageCollector.snapshotManager.getInitialSnapshot().hasSolidEntryPoint(approvedTransaction.getHash())) {
                         try {
                             garbageCollector.addJob(new UnconfirmedSubtanglePrunerJob(approvedTransaction.getHash()));
                         } catch(GarbageCollectorException e) {

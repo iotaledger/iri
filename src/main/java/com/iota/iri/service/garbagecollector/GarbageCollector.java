@@ -89,8 +89,48 @@ public class GarbageCollector {
 
         MilestonePrunerJob.registerInGarbageCollector(this);
         UnconfirmedSubtanglePrunerJob.registerInGarbageCollector(this);
+    }
 
-        restoreCleanupJobs();
+    /**
+     * This method tries to restore the previous state of the Garbage Collector by reading the state file that get's
+     * persisted whenever we modify any of the queues.
+     *
+     * It is used to restore the state of the garbage collector between IRI restarts and speed up the pruning
+     * operations. If it fails to restore the state it just continues with an empty state which doesn't cause any
+     * problems with future jobs other than requiring them to perform unnecessary steps and therefore slowing them down
+     * a bit.
+     */
+    public void restoreCleanupJobs() {
+        try {
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                    new BufferedInputStream(
+                        new FileInputStream(getStateFile())
+                    )
+                )
+            );
+
+            try {
+                String line;
+                while((line = reader.readLine()) != null) {
+                    String[] parts = line.split(";", 2);
+                    if(parts.length >= 2) {
+                        JobParser jobParser = this.jobParsers.get(parts[0]);
+                        if(jobParser == null) {
+                            throw new GarbageCollectorException("could not determine a parser for cleanup job of type " + parts[0]);
+                        }
+
+                        addJob(jobParser.parse(parts[1]));
+                    }
+                }
+            } finally {
+                reader.close();
+            }
+        }
+        catch(IOException e) { /* do nothing */ }
+        catch(Exception e) {
+            log.error("could not load local snapshot file", e);
+        }
     }
 
     /**
@@ -276,48 +316,6 @@ public class GarbageCollector {
         }
 
         return garbageCollectorJobs.get(jobClass);
-    }
-
-    /**
-     * This method tries to restore the previous state of the Garbage Collector by reading the state file that get's
-     * persisted whenever we modify any of the queues.
-     *
-     * It is used to restore the state of the garbage collector between IRI restarts and speed up the pruning
-     * operations. If it fails to restore the state it just continues with an empty state which doesn't cause any
-     * problems with future jobs other than requiring them to perform unnecessary steps and therefore slowing them down
-     * a bit.
-     */
-    private void restoreCleanupJobs() {
-        try {
-            BufferedReader reader = new BufferedReader(
-                new InputStreamReader(
-                    new BufferedInputStream(
-                        new FileInputStream(getStateFile())
-                    )
-                )
-            );
-
-            try {
-                String line;
-                while((line = reader.readLine()) != null) {
-                    String[] parts = line.split(";", 2);
-                    if(parts.length >= 2) {
-                        JobParser jobParser = this.jobParsers.get(parts[0]);
-                        if(jobParser == null) {
-                            throw new GarbageCollectorException("could not determine a parser for cleanup job of type " + parts[0]);
-                        }
-
-                        addJob(jobParser.parse(parts[1]));
-                    }
-                }
-            } finally {
-                reader.close();
-            }
-        }
-        catch(IOException e) { /* do nothing */ }
-        catch(Exception e) {
-            log.error("could not load local snapshot file", e);
-        }
     }
 
     /**

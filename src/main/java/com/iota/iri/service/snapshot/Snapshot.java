@@ -4,7 +4,7 @@ import com.iota.iri.model.Hash;
 
 /* placeholder for a future PR - keep the project compilable */
 public class Snapshot {
-    public boolean isSolidEntryPoint(Hash transactionHash) {
+    public boolean hasSolidEntryPoint(Hash transactionHash) {
         return true;
     }
 

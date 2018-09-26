@@ -53,6 +53,6 @@ if [[ "$TOS" != "y" ]]; then
 fi
 
 # Modify docker-compose.yml
-sed -i "s/__DOMAIN__/$DOMAIN/g" ./docker-compose.yml
-sed -i "s/__EMAIL__/$EMAIL/g" ./docker-compose.yml
-sed -i "s/__PORT__/$PORT/g" ./docker-compose.yml
+sed -i "" "s/__DOMAIN__/$DOMAIN/g" ./docker-compose.yml
+sed -i "" "s/__EMAIL__/$EMAIL/g" ./docker-compose.yml
+sed -i "" "s/__PORT__/$PORT/g" ./docker-compose.yml

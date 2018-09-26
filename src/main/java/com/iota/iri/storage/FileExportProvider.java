@@ -51,7 +51,7 @@ public class FileExportProvider implements PersistenceProvider {
 
     @Override
     public boolean isAvailable() {
-        throw new UnsupportedOperationException();
+        return false;
     }
 
     @Override

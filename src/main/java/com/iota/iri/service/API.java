@@ -216,17 +216,10 @@ public class API {
                     if (!request.containsKey("address") || !request.containsKey("message")) {
                         return ErrorResponse.create("Invalid params");
                     }
-
-                    if (invalidSubtangleStatus()) {
-                        return ErrorResponse
-                                .create("This operation cannot be executed: The subtangle has not been updated yet.");
-                    }
-
-                    final String address = (String) request.get("address");
-                    final String message = (String) request.get("message");
-
-                    storeMessageStatement(address, message);
-                    return AbstractResponse.createEmptyResponse();
+                    
+                    String address = (String) request.get("address");
+                    String message = (String) request.get("message");
+                    return storeMessageStatement(address, message);
                 }
 
                 case "addNeighbors": {
@@ -280,22 +273,12 @@ public class API {
                     return getTipsStatement();
                 }
                 case "getTransactionsToApprove": {
-                    final Optional<Hash> reference = request.containsKey("reference") ?
-                            Optional.of(HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
-                            : Optional.empty();
-                    final int depth = getParameterAsInt(request, "depth");
-                    if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
-                        return ErrorResponse.create("Invalid depth input");
-                    }
-
-                    try {
-                        List<Hash> tips = getTransactionsToApproveStatement(depth, reference);
-                        return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
-
-                    } catch (RuntimeException e) {
-                        log.info("Tip selection failed: " + e.getLocalizedMessage());
-                        return ErrorResponse.create(e.getLocalizedMessage());
-                    }
+                    Optional<Hash> reference = request.containsKey("reference") ?
+                        Optional.of(HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
+                        : Optional.empty();
+                    int depth = getParameterAsInt(request, "depth");
+                    
+                    return getTransactionsToApproveStatement(depth, reference);
                 }
                 case "getTrytes": {
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
@@ -630,18 +613,31 @@ public class API {
       * @param reference Hash of transaction to start random-walk from, used to make sure the tips returned reference a given transaction in their past.
       * @return {@link com.iota.iri.service.dto.GetTransactionsToApproveResponse}
       **/
-    public synchronized List<Hash> getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
+    private synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
+        if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
+            return ErrorResponse.create("Invalid depth input");
+        }
 
+        try {
+            List<Hash> tips = getTransactionToApproveTips(depth, reference);
+            return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
+            
+        } catch (Exception e) {
+            log.info("Tip selection failed: " + e.getLocalizedMessage());
+            return ErrorResponse.create(e.getLocalizedMessage());
+        }
+    }
+    
+    List<Hash> getTransactionToApproveTips(int depth, Optional<Hash> reference) throws Exception{
         if (invalidSubtangleStatus()) {
             throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
         }
-
+        
         List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(depth, reference);
-
+        
         if (log.isDebugEnabled()) {
             gatherStatisticsOnTipSelection();
         }
-
         return tips;
     }
 
@@ -1239,15 +1235,15 @@ public class API {
         }
     }
 
-    /**
-      * <b>Only available on testnet.</b>
-      * Creates, attaches, and broadcasts a transaction with this message
-      *
-      * @param address The address to add the message to
-      * @param message The message to store
-      **/
-    private synchronized void storeMessageStatement(final String address, final String message) throws Exception {
-        final List<Hash> txToApprove = getTransactionsToApproveStatement(3, Optional.empty());
+   /**
+     * <b>Only available on testnet.</b>
+     * Creates, attaches, and broadcasts a transaction with this message
+     *
+     * @param address The address to add the message to 
+     * @param message The message to store
+     **/
+    private synchronized AbstractResponse storeMessageStatement(final String address, final String message) throws Exception {
+        final List<Hash> txToApprove = getTransactionToApproveTips(3, Optional.empty());
 
         final int txMessageSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
 
@@ -1262,7 +1258,7 @@ public class API {
 
         Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
         final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
-
+    
         List<String> transactions = new ArrayList<>();
         for (int i = 0; i < txCount; i++) {
             String tx;
@@ -1276,20 +1272,20 @@ public class API {
 
             tx = StringUtils.rightPad(tx, txMessageSize, '9');
             tx += address.substring(0, 81);
-// value
+            // value
             tx += StringUtils.repeat('9', 27);
-// obsolete tag
+            // obsolete tag
             tx += StringUtils.repeat('9', 27);
-// timestamp
+            // timestamp
             tx += timestampTrytes;
-// current index
+            // current index
             tx += StringUtils.rightPad(Converter.trytes(currentIndexTrits), currentIndexTrits.length / 3, '9');
-// last index
+            // last index
             tx += StringUtils.rightPad(lastIndexTrytes, lastIndexTrits.length / 3, '9');
             transactions.add(tx);
         }
 
-// let's calculate the bundle essence :S
+        // let's calculate the bundle essence :S
         int startIdx = TransactionViewModel.ESSENCE_TRINARY_OFFSET / 3;
         Sponge sponge = SpongeFactory.create(SpongeFactory.Mode.KERL);
 
@@ -1306,8 +1302,9 @@ public class API {
 
         transactions = transactions.stream().map(tx -> StringUtils.rightPad(tx + bundleHash, TRYTES_SIZE, '9')).collect(Collectors.toList());
 
-// do pow
+        // do pow
         List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
         broadcastTransactionsStatement(powResult);
+        return AbstractResponse.createEmptyResponse();
     }
 }

@@ -1,4 +1,4 @@
-package com.iota.iri.integration;
+package com.iota.iri.service;
 
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
@@ -133,7 +133,7 @@ public class NodeIntegrationTests {
     }
 
     private void sendMilestone(API api, long index) throws Exception {
-        newMilestone(api, api.getTransactionsToApproveStatement(10, Optional.empty()), index);
+        newMilestone(api, api.getTransactionToApproveTips(10, Optional.empty()), index);
     }
 
     private void newMilestone(API api, List<Hash> tips, long index) throws Exception {

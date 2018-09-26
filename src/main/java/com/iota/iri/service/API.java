@@ -724,7 +724,6 @@ public class API {
     }
 
     /**
-<<<<<<< HEAD
      * Get the inclusion states of a set of transactions. 
      * This is for determining if a transaction was accepted and confirmed by the network or not. 
      * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.

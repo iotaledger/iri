@@ -4,14 +4,10 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created by paul on 5/6/17.
- */
 public class StateDiff implements Persistable {
     public Map<Hash, Long> state;
 
@@ -26,7 +22,7 @@ public class StateDiff implements Persistable {
         state = new HashMap<>();
         if(bytes != null) {
             for (i = 0; i < bytes.length; i += Hash.SIZE_IN_BYTES + Long.BYTES) {
-                state.put(new Hash(bytes, i, Hash.SIZE_IN_BYTES),
+                state.put(HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES),
                         Serializer.getLong(Arrays.copyOfRange(bytes, i + Hash.SIZE_IN_BYTES, i + Hash.SIZE_IN_BYTES + Long.BYTES)));
             }
         }

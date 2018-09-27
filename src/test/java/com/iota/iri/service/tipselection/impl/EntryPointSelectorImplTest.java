@@ -5,6 +5,7 @@ import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -27,7 +28,7 @@ public class EntryPointSelectorImplTest {
 
     @Test
     public void testEntryPointWithTangleData() throws Exception {
-        Hash milestoneHash = Hash.calculate(SpongeFactory.Mode.CURLP81, new byte[]{1});
+        Hash milestoneHash = TransactionHash.calculate(SpongeFactory.Mode.CURLP81, new byte[]{1});
         mockTangleBehavior(milestoneHash);
         mockMilestoneTrackerBehavior(0, Hash.NULL_HASH);
 
@@ -54,11 +55,11 @@ public class EntryPointSelectorImplTest {
     }
 
     private void mockTangleBehavior(Hash milestoneModelHash) throws Exception {
-        com.iota.iri.model.Milestone milestoneModel = new com.iota.iri.model.Milestone();
+        com.iota.iri.model.persistables.Milestone milestoneModel = new com.iota.iri.model.persistables.Milestone();
         milestoneModel.index = new IntegerIndex(0);
         milestoneModel.hash = milestoneModelHash;
         Pair<Indexable, Persistable> indexMilestoneModel = new Pair<>(new IntegerIndex(0), milestoneModel);
-        Mockito.when(tangle.getFirst(com.iota.iri.model.Milestone.class, IntegerIndex.class))
+        Mockito.when(tangle.getFirst(com.iota.iri.model.persistables.Milestone.class, IntegerIndex.class))
                 .thenReturn(indexMilestoneModel);
     }
 }

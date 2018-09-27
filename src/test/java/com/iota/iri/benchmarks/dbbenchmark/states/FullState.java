@@ -1,7 +1,7 @@
 package com.iota.iri.benchmarks.dbbenchmark.states;
 
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Transaction;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Pair;

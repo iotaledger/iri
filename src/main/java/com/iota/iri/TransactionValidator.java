@@ -7,6 +7,7 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.zmq.MessageQ;
@@ -19,9 +20,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;
 
-/**
- * Created by paul on 4/17/17.
- */
 public class TransactionValidator {
     private final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
     private final Tangle tangle;
@@ -109,7 +107,7 @@ public class TransactionValidator {
     }
 
     public TransactionViewModel validateTrits(final byte[] trits, int minWeightMagnitude) {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, Hash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
@@ -119,7 +117,7 @@ public class TransactionValidator {
     }
 
     public TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, Hash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
+        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, TransactionHash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }

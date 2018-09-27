@@ -1,8 +1,7 @@
-package com.iota.iri.model;
+package com.iota.iri.model.persistables;
 
-/**
- * Created by paul on 5/15/17.
- */
+import com.iota.iri.model.Hash;
+
 public class Address extends Hashes{
     public Address(){}
     public Address(Hash hash) {

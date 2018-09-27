@@ -1,14 +1,13 @@
-package com.iota.iri.model;
+package com.iota.iri.model.persistables;
 
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 
 import java.nio.ByteBuffer;
 
-/**
- * Created by paul on 3/2/17 for iri.
- */
 public class Transaction implements Persistable {
     public static final int SIZE = 1604;
 
@@ -91,15 +90,15 @@ public class Transaction implements Persistable {
     public void readMetadata(byte[] bytes) {
         int i = 0;
         if(bytes != null) {
-            address = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
+            address = HashFactory.ADDRESS.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
-            bundle = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
+            bundle = HashFactory.BUNDLE.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
-            trunk = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
+            trunk = HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
-            branch = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
+            branch = HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
-            obsoleteTag = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
+            obsoleteTag = HashFactory.OBSOLETETAG.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
             value = Serializer.getLong(bytes, i);
             i += Long.BYTES;
@@ -110,7 +109,7 @@ public class Transaction implements Persistable {
             timestamp = Serializer.getLong(bytes, i);
             i += Long.BYTES;
 
-            tag = new Hash(bytes, i, Hash.SIZE_IN_BYTES);
+            tag = HashFactory.TAG.create(bytes, i, Hash.SIZE_IN_BYTES);
             i += Hash.SIZE_IN_BYTES;
             attachmentTimestamp = Serializer.getLong(bytes, i);
             i += Long.BYTES;

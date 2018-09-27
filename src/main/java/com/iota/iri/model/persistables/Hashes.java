@@ -1,10 +1,10 @@
-package com.iota.iri.model;
+package com.iota.iri.model.persistables;
 
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Persistable;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.Serializable;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
@@ -26,7 +26,7 @@ public class Hashes implements Persistable {
         if(bytes != null) {
             set = new LinkedHashSet<>(bytes.length / (1 + Hash.SIZE_IN_BYTES) + 1);
             for (int i = 0; i < bytes.length; i += 1 + Hash.SIZE_IN_BYTES) {
-                set.add(new Hash(bytes, i, Hash.SIZE_IN_BYTES));
+                set.add(HashFactory.GENERIC.create(this.getClass(), bytes, i, Hash.SIZE_IN_BYTES));
             }
         }
     }

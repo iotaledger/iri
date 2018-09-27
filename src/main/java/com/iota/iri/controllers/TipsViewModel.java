@@ -1,12 +1,12 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.model.Hash;
-
 import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Set;
+
+import com.iota.iri.model.Hash;
 
 public class TipsViewModel {
 

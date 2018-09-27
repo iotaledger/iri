@@ -3,6 +3,9 @@ package com.iota.iri;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+
+import com.iota.iri.model.HashFactory;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +83,7 @@ public class Snapshot {
                 if (parts.length >= 2) {
                     String key = parts[0];
                     String value = parts[1];
-                    state.put(new Hash(key), Long.valueOf(value));
+                    state.put(HashFactory.TRANSACTION.create(key), Long.valueOf(value));
                 }
             }
         } catch (IOException e) {

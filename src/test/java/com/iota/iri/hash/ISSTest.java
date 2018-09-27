@@ -1,6 +1,7 @@
 package com.iota.iri.hash;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.utils.Converter;
 import org.junit.Test;
 
@@ -61,8 +62,8 @@ public class ISSTest {
         int index = 0;
         int nof = 2;
         SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
-        Hash[] hashes = {new Hash("D9XCNSCCAJGLWSQOQAQNFWANPYKYMCQ9VCOMROLDVLONPPLDFVPIZNAPVZLQMPFYJPAHUKIAEKNCQIYJZ"),
-                         new Hash("MDWYEJJHJDIUVPKDY9EACGDJUOP9TLYDWETUBOYCBLYXYYYJYUXYUTCTPTDGJYFKMQMCNZDQPTBE9AFIW")};
+        Hash[] hashes = {HashFactory.ADDRESS.create("D9XCNSCCAJGLWSQOQAQNFWANPYKYMCQ9VCOMROLDVLONPPLDFVPIZNAPVZLQMPFYJPAHUKIAEKNCQIYJZ"),
+                HashFactory.ADDRESS.create("MDWYEJJHJDIUVPKDY9EACGDJUOP9TLYDWETUBOYCBLYXYYYJYUXYUTCTPTDGJYFKMQMCNZDQPTBE9AFIW")};
         for (int i=0;i<modes.length;i++) {
             SpongeFactory.Mode mode = modes[i];
             byte[] seedTrits = Converter.allocateTritsForTrytes(seed.length());
@@ -72,13 +73,13 @@ public class ISSTest {
             byte[] key = ISS.key(mode, subseed, nof);
             byte[] digest = ISS.digests(mode, key);
             byte[] address = ISS.address(mode, digest);
-            Hash addressTrytes = new Hash(address);
+            Hash addressTrytes = HashFactory.ADDRESS.create(address);
             assertEquals(hashes[i].toString(), addressTrytes.toString());
         }
     }
 
     public static Hash getRandomTransactionHash() {
-        return new Hash(getRandomTrits(Hash.SIZE_IN_TRITS));
+        return HashFactory.TRANSACTION.create(getRandomTrits(Hash.SIZE_IN_TRITS));
     }
     final static Random rnd_seed = new Random();
 
@@ -106,7 +107,7 @@ public class ISSTest {
                 byte[] key = ISS.key(mode, subseed, nof);
                 byte[] digest = ISS.digests(mode, key);
                 byte[] address = ISS.address(mode, digest);
-                addresses[j] = new Hash(address);
+                addresses[j] = HashFactory.ADDRESS.create(address);
             }
             System.out.println(String.format("%s,%s,%s,%s,%s", seed, addresses[0],addresses[1],addresses[2],addresses[3]));
         }

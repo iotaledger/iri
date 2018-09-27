@@ -1,4 +1,6 @@
-package com.iota.iri.model;
+package com.iota.iri.model.persistables;
+
+import com.iota.iri.model.Hash;
 
 public class ObsoleteTag extends Tag {
 

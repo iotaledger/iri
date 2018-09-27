@@ -1,8 +1,8 @@
 package com.iota.iri.hash;
 
-import com.iota.iri.model.Hash;
-
 import java.util.Arrays;
+
+import com.iota.iri.model.Hash;
 
 /**
  * (c) 2016 Come-from-Beyond

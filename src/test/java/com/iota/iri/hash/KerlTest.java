@@ -1,6 +1,7 @@
 package com.iota.iri.hash;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.utils.Converter;
 import org.junit.Assert;
 import org.junit.Test;
@@ -210,7 +211,7 @@ public class KerlTest {
     }
 
     public static Hash getRandomTransactionHash() {
-        return new Hash(getRandomTrits(Hash.SIZE_IN_TRITS));
+        return HashFactory.TRANSACTION.create(getRandomTrits(Hash.SIZE_IN_TRITS));
     }
 
     //@Test

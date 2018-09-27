@@ -14,6 +14,8 @@ import com.iota.iri.hash.PearlDiver;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
@@ -158,7 +160,7 @@ public class API {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    this.previousEpochsSpentAddresses.put(new Hash(line), true);
+                    this.previousEpochsSpentAddresses.put(HashFactory.ADDRESS.create(line), true);
                 }
             } catch (Exception e) {
                 log.error("Failed to load resource: {}.", previousEpochsSpentAddressesFile, e);
@@ -226,8 +228,8 @@ public class API {
                     return addNeighborsStatement(uris);
                 }
                 case "attachToTangle": {
-                    final Hash trunkTransaction  = new Hash(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
-                    final Hash branchTransaction = new Hash(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
+                    final Hash trunkTransaction  = HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
+                    final Hash branchTransaction = HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
                     final int minWeightMagnitude = getParameterAsInt(request,"minWeightMagnitude");
 
                     final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
@@ -272,7 +274,7 @@ public class API {
                 }
                 case "getTransactionsToApprove": {
                     Optional<Hash> reference = request.containsKey("reference") ?
-                        Optional.of(new Hash (getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
+                        Optional.of(HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
                         : Optional.empty();
                     int depth = getParameterAsInt(request, "depth");
                     
@@ -344,13 +346,14 @@ public class API {
     }
 
     /**
-      * Check if a list of addresses was ever spent from, in the current epoch, or in previous epochs.
-      *
-      * @param addresses List of addresses to check if they were ever spent from.
-      * @return {@link com.iota.iri.service.dto.WereAddressesSpentFrom}
-      **/
-    private AbstractResponse wereAddressesSpentFromStatement(List<String> addresses) throws Exception {
-        final List<Hash> addressesHash = addresses.stream().map(Hash::new).collect(Collectors.toList());
+     * Check if a list of addresses was ever spent from, in the current epoch, or in previous epochs.
+     *
+     * @param addresses List of addresses to check if they were ever spent from.
+     * @return {@link com.iota.iri.service.dto.wereAddressesSpentFrom}
+     **/
+    private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
+        final List<Hash> addressesHash = addressesStr.stream().map(HashFactory.ADDRESS::create).collect(Collectors.toList());
+
         final boolean[] states = new boolean[addressesHash.size()];
         int index = 0;
 
@@ -410,19 +413,19 @@ public class API {
 
 
     /**
-      * Checks the consistency of the transactions.
-      * Marks state as false on the following checks<br/>
-      * - Transaction does not exist<br/>
-      * - Transaction is not a tail<br/>
-      * - Missing a reference transaction<br/>
-      * - Invalid bundle<br/>
-      * - Tails of tails are invalid<br/>
-      *
-      * @param tails List of transactions you want to check the consistency for
-      * @return {@link com.iota.iri.service.dto.CheckConsistency}
-      **/
-    private AbstractResponse checkConsistencyStatement(List<String> tails) throws Exception {
-        final List<Hash> transactions = tails.stream().map(Hash::new).collect(Collectors.toList());
+     * Checks the consistency of the transactions. 
+     * Marks state as false on the following checks<br/>
+     * - Transaction does not exist<br/>
+     * - Transaction is not a tail<br/>
+     * - Missing a reference transaction<br/>
+     * - Invalid bundle<br/>
+     * - Tails of tails are invalid<br/>
+     *
+     * @param tails List of transactions you want to check the consistency for
+     * @return {@link com.iota.iri.service.dto.CheckConsistency}
+     **/
+    private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
+        final List<Hash> transactions = transactionsList.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
         boolean state = true;
         String info = "";
 
@@ -571,7 +574,7 @@ public class API {
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
-            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, new Hash(hash));
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(hash));
             if (transactionViewModel != null) {
                 elements.add(Converter.trytes(transactionViewModel.trits()));
             }
@@ -721,20 +724,21 @@ public class API {
     }
 
     /**
-      * Get the inclusion states of a set of transactions.
-      * This is for determining if a transaction was accepted and confirmed by the network or not.
-      * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
-      *
-      * This API call simply returns a list of boolean values in the same order as the transaction list you submitted, thus you get a true/false whether a transaction is confirmed or not.
-      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
-      *
-      * @param transactions List of transactions you want to get the inclusion state for.
-      * @param tips List of tips (including milestones) you want to search for the inclusion state.
-      * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse}
-      **/
-    private AbstractResponse getInclusionStatesStatement(final List<String> transactions, final List<String> tips) throws Exception {
-        final List<Hash> trans = transactions.stream().map(Hash::new).collect(Collectors.toList());
-        final List<Hash> tps = tips.stream().map(Hash::new).collect(Collectors.toList());
+     * Get the inclusion states of a set of transactions. 
+     * This is for determining if a transaction was accepted and confirmed by the network or not. 
+     * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
+     *
+     * This API call simply returns a list of boolean values in the same order as the transaction list you submitted, thus you get a true/false whether a transaction is confirmed or not.
+     * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
+     * 
+     * @param transactions List of transactions you want to get the inclusion state for.
+     * @param tips List of tips (including milestones) you want to search for the inclusion state.
+     * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse} 
+     **/
+    private AbstractResponse getInclusionStatesStatement(final List<String> trans, final List<String> tips) throws Exception {
+        final List<Hash> transactions = trans.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
+        final List<Hash> tps = tips.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
+
         int numberOfNonMetTransactions = transactions.size();
         final byte[] inclusionStates = new byte[numberOfNonMetTransactions];
 
@@ -751,7 +755,7 @@ public class API {
         if(minTipsIndex > 0) {
             int maxTipsIndex = tipsIndex.stream().reduce((a,b) -> a > b ? a : b).orElse(0);
             int count = 0;
-            for(Hash hash: trans) {
+            for(Hash hash : transactions) {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(instance.tangle, hash);
                 if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
                     inclusionStates[count] = -1;
@@ -778,7 +782,7 @@ public class API {
         }
         for(int i = 0; i < inclusionStates.length; i++) {
             if(inclusionStates[i] == 0) {
-                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, trans.get(i));
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, transactions.get(i));
                 int snapshotIndex = transactionViewModel.snapshotIndex();
                 sameIndexTransactionCount.putIfAbsent(snapshotIndex, 0);
                 sameIndexTransactionCount.put(snapshotIndex, sameIndexTransactionCount.get(snapshotIndex) + 1);
@@ -788,7 +792,7 @@ public class API {
             Queue<Hash> sameIndexTip = sameIndexTips.get(index);
             if (sameIndexTip != null) {
                 //has tips in the same index level
-                if (!exhaustiveSearchWithinIndex(sameIndexTip, analyzedTips, trans, inclusionStates, sameIndexTransactionCount.get(index), index)) {
+                if (!exhaustiveSearchWithinIndex(sameIndexTip, analyzedTips, transactions, inclusionStates, sameIndexTransactionCount.get(index), index)) {
                     return ErrorResponse.create("The subtangle is not solid");
                 }
             }
@@ -848,7 +852,7 @@ public class API {
         if (request.containsKey("bundles")) {
             final HashSet<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);
             for (final String bundle : bundles) {
-                bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, new Hash(bundle)).getHashes());
+                bundlesTransactions.addAll(BundleViewModel.load(instance.tangle, HashFactory.BUNDLE.create(bundle)).getHashes());
             }
             foundTransactions.addAll(bundlesTransactions);
             containsKey = true;
@@ -858,7 +862,7 @@ public class API {
         if (request.containsKey("addresses")) {
             final HashSet<String> addresses = getParameterAsSet(request,"addresses",HASH_SIZE);
             for (final String address : addresses) {
-                addressesTransactions.addAll(AddressViewModel.load(instance.tangle, new Hash(address)).getHashes());
+                addressesTransactions.addAll(AddressViewModel.load(instance.tangle, HashFactory.ADDRESS.create(address)).getHashes());
             }
             foundTransactions.addAll(addressesTransactions);
             containsKey = true;
@@ -869,12 +873,12 @@ public class API {
             final HashSet<String> tags = getParameterAsSet(request,"tags",0);
             for (String tag : tags) {
                 tag = padTag(tag);
-                tagsTransactions.addAll(TagViewModel.load(instance.tangle, new Hash(tag)).getHashes());
+                tagsTransactions.addAll(TagViewModel.load(instance.tangle, HashFactory.TAG.create(tag)).getHashes());
             }
             if (tagsTransactions.isEmpty()) {
                 for (String tag : tags) {
                     tag = padTag(tag);
-                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, new Hash(tag)).getHashes());
+                    tagsTransactions.addAll(TagViewModel.loadObsolete(instance.tangle, HashFactory.OBSOLETETAG.create(tag)).getHashes());
                 }
             }
             foundTransactions.addAll(tagsTransactions);
@@ -886,7 +890,7 @@ public class API {
         if (request.containsKey("approvees")) {
             final HashSet<String> approvees = getParameterAsSet(request,"approvees",HASH_SIZE);
             for (final String approvee : approvees) {
-                approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, new Hash(approvee)).getApprovers(instance.tangle).getHashes());
+                approveeTransactions.addAll(TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(approvee)).getApprovers(instance.tangle).getHashes());
             }
             foundTransactions.addAll(approveeTransactions);
             containsKey = true;
@@ -980,7 +984,7 @@ public class API {
             return ErrorResponse.create("Illegal 'threshold'");
         }
 
-        final List<Hash> addressList = addresses.stream().map(address -> (new Hash(address)))
+        final List<Hash> addressList = addresses.stream().map(address -> (HashFactory.ADDRESS.create(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
         final List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
@@ -989,7 +993,7 @@ public class API {
         if (tips == null || tips.size() == 0) {
             hashes = Collections.singletonList(instance.milestoneTracker.latestSolidSubtangleMilestone);
         } else {
-            hashes = tips.stream().map(address -> (new Hash(address)))
+            hashes = tips.stream().map(address -> (HashFactory.ADDRESS.create(address)))
                     .collect(Collectors.toCollection(LinkedList::new));
         }
         try {

@@ -1,16 +1,12 @@
-package com.iota.iri.model;
+package com.iota.iri.model.persistables;
 
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
-import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.util.Map;
-
-/**
- * Created by paul on 4/11/17.
- */
 public class Milestone implements Persistable {
     public IntegerIndex index;
     public Hash hash;
@@ -22,7 +18,7 @@ public class Milestone implements Persistable {
     public void read(byte[] bytes) {
         if(bytes != null) {
             index = new IntegerIndex(Serializer.getInteger(bytes));
-            hash = new Hash(bytes, Integer.BYTES, Hash.SIZE_IN_BYTES);
+            hash = HashFactory.TRANSACTION.create(bytes, Integer.BYTES, Hash.SIZE_IN_BYTES);
         }
     }
 

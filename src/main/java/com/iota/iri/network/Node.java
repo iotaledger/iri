@@ -7,6 +7,8 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.StringUtils;
@@ -234,7 +236,7 @@ public class Node {
 
                     if (!cached) {
                         //if not, then validate
-                        receivedTransactionViewModel = new TransactionViewModel(receivedData, Hash.calculate(receivedData, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
+                        receivedTransactionViewModel = new TransactionViewModel(receivedData, TransactionHash.calculate(receivedData, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
                         receivedTransactionHash = receivedTransactionViewModel.getHash();
                         transactionValidator.runValidation(receivedTransactionViewModel, transactionValidator.getMinWeightMagnitude());
 
@@ -267,7 +269,7 @@ public class Node {
                 //Request bytes
 
                 //add request to reply queue (requestedHash, neighbor)
-                Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, reqHashSize);
+                Hash requestedHash = HashFactory.TRANSACTION.create(receivedData, TransactionViewModel.SIZE, reqHashSize);
                 if (requestedHash.equals(receivedTransactionHash)) {
                     //requesting a random tip
                     requestedHash = Hash.NULL_HASH;
@@ -411,7 +413,7 @@ public class Node {
             //find requested trytes
             try {
                 //transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
-                transactionViewModel = TransactionViewModel.fromHash(tangle, new Hash(requestedHash.bytes(), 0, reqHashSize));
+                transactionViewModel = TransactionViewModel.fromHash(tangle, HashFactory.TRANSACTION.create(requestedHash.bytes(), 0, reqHashSize));
                 //log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
             } catch (Exception e) {
                 log.error("Error while searching for transaction.", e);

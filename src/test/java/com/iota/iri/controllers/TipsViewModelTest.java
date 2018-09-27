@@ -1,9 +1,10 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.model.Hash;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import com.iota.iri.model.Hash;
 
 import java.util.concurrent.ExecutionException;
 

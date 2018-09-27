@@ -2,6 +2,7 @@ package com.iota.iri.hash;
 
 import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.utils.Converter;
 import java.util.Random;
 
@@ -55,7 +56,7 @@ public class PearlDiverTest {
         for (int i = 0; i < 10000; i++) {
             byte[] trits = TransactionViewModelTest.getRandomTransactionTrits();
             pearlDiver.search(trits, MIN_WEIGHT_MAGNITUDE, NUM_CORES);
-            Hash hash = Hash.calculate(SpongeFactory.Mode.CURLP81, trits);
+            Hash hash = TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits);
             for (int j = Hash.SIZE_IN_TRITS - 1; j > Hash.SIZE_IN_TRITS - MIN_WEIGHT_MAGNITUDE; j--) {
                 assertEquals(hash.trits()[j], 0);
             }

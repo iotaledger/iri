@@ -4,6 +4,7 @@ import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

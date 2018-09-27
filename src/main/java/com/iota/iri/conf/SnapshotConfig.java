@@ -41,7 +41,7 @@ public interface SnapshotConfig extends Config {
     long getSnapshotTime();
 
     /**
-     * return {@value Descriptions#SNAPSHOT_FILE}
+     * @return {@value Descriptions#SNAPSHOT_FILE}
      */
     String getSnapshotFile();
 

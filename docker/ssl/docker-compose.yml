@@ -5,7 +5,6 @@ nginx:
     - iri
   environment:
     - MY_DOMAIN_NAME=__DOMAIN__
-    - PORT=__PORT__
   ports:
     - "80:80"
     - "443:443"
@@ -25,4 +24,4 @@ letsencrypt:
     - TERM=xterm
 iri:
   image: iotaledger/iri:latest
-  command: -p __PORT__
+  command: -p 14265

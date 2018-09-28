@@ -90,7 +90,8 @@ public class TransactionRequester {
     }
 
     /**
-     * This method allows to check if a transaction was requested by the TransactionRequester.
+     * This method allows to check if a transaction was requested by the TransactionRequester while trying to solidify a
+     * milestone transaction.
      *
      * It can for example be used to determine if a transaction that was received by the node was actively requested
      * while i.e. solidifying transactions or if a transaction arrived due to the gossip protocol.

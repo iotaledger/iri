@@ -171,7 +171,6 @@ public class MilestoneSolidifier {
             milestonesToSolidify.remove(youngestMilestoneInQueue.getKey());
             milestonesToSolidify.put(milestoneEntry.getKey(), milestoneEntry.getValue());
 
-            youngestMilestoneInQueue = null;
             determineYoungestMilestoneInQueue();
         }
     }
@@ -224,6 +223,11 @@ public class MilestoneSolidifier {
      * It iterates through the queue and checks if the corresponding milestones are still relevant for our node, or if
      * they could be successfully solidified. If the milestones become solid or irrelevant, we remove them from the
      * pool and the queue and reset the {@link #youngestMilestoneInQueue} marker (if necessary).
+     *
+     * Note: While checking the solidity of the milestones we issue
+     *       {@link TransactionValidator#checkSolidity(Hash, boolean, int)} calls using the {@link #isSolid(Map.Entry)}
+     *       method, which requests the missing transactions and marks the milestones as solid once all referenced
+     *       transactions are known.
      */
     private void processSolidificationQueue() {
         for (

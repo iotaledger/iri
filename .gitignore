@@ -105,3 +105,6 @@ venv.bak/
 
 # pyc files
 *.pyc 
+
+#Metafiles
+.metadata/

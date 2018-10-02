@@ -1,64 +1,119 @@
 from aloe import *
-from iota import Iota,ProposedTransaction,Address,Tag,TryteString,BundleHash
+from iota import ProposedTransaction,Address,Tag,TryteString,ProposedBundle,Transaction
 
 from util import static_vals
-from util.test_logic import api_test_logic as tests
+from util.test_logic import api_test_logic as api_utils
 from time import sleep
-import importlib
+import threading
 
 import logging 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-neighbors = static_vals.TEST_NEIGHBORS
 testAddress = static_vals.TEST_ADDRESS
 
 config = {}
 responses = {'getNodeInfo':{},'getNeighbors':{},'getTips':{},'getTransactionsToApprove': {},'getTrytes':{}}   
 
 
-###
-#Register API call    
-@step(r'"([^"]*)" is called on "([^"]*)"')
+
+'''
+This is the general api calling function. There are 3 inputs
+
+@param apiCAll:     The api call that will be requested
+@param nodeName:    The name identifying the node you would like to make this request on
+@param table:       A gherkin table outlining any arguments needed for the call
+                    (See tests/features/machine1/1_api+tests.feature for examples) 
+
+    The table parameter is unique in that there are several input types available depending on the call
+    being made. 
+    Types:
+        string:         Basic string argument, will be taken as is
+        int:            Basic integer argument, will be converted to int before call is made
+        nodeAddress:    Node name identifier, will create address from node configuration 
+        staticValue:    Static name identifier, will fetch value from util/static_vals.py 
+        staticList:     Same as staticValue, except it places the results into a list 
+        responseValue:  Identifier for api call response value
+        responseList:   Same as responseValue, ecept it places the results into a list
+        bool:           Bool argument, returns True or False
+ 
+'''
+@step(r'"([^"]*)" is called on "([^"]*)" with:')
 def api_method_is_called(step,apiCall,nodeName):
     logger.info('%s is called on %s',apiCall,nodeName)
     config['apiCall'] = apiCall
     config['nodeId'] = nodeName
+    arg_list = step.hashes
+
+    options = {}
+    api_utils.prepare_options(arg_list, options)
     responses[apiCall] = {}
-        
-     
-    api = tests.prepare_api_call(nodeName)
-        
-    logger.debug('Assigning call list...')
-        
-    callList = {
-        'getNodeInfo': api.get_node_info,
-        'getNeighbors': api.get_neighbors,
-        'getTips': api.get_tips,
-        'getTransactionsToApprove': api.get_transactions_to_approve
-    }
-    
-    if apiCall == 'getNodeInfo':
-        response = api.get_node_info()
-        logger.debug('Node Info Response: %s',response)
-    elif apiCall == 'getNeighbors':
-        response = api.get_neighbors()
-        logger.debug('Neighbor Response: %s',response)
-    elif apiCall == 'getTips':
-        response = api.get_tips()
-        logger.debug('Get Tips Response Error')
-    elif apiCall == 'getTransactionsToApprove':
-        response = api.get_transactions_to_approve(3)
-        logger.debug('Get Transactions To Approve Error')
-    else:
-        response = "Incorrect API call definition"
-    
-    
-    assert type(response) is dict, response
+
+    api = api_utils.prepare_api_call(nodeName)
+    response = api_utils.fetch_call(apiCall, api, options)
+
+    assert type(response) is dict, 'There may be something wrong with the response format: {}'.format(response)
     
     responses[apiCall] = {}
     responses[apiCall][nodeName] = response
 
+#This method is identical to the method above, but creates a new thread
+#TODO: Find a way to pass aloe.world variable between threads to eliminate need for duplicate code
+@step(r'"([^"]*)" is called in parallel on "([^"]*)" with:')
+def threaded_call(step,apiCall,node):
+    logger.info("Creating thread for {}".format(apiCall))
+    config['apiCall'] = apiCall
+    config['nodeId'] = node
+    arg_list = step.hashes
+
+    options = {}
+    api_utils.prepare_options(arg_list, options)
+    api = api_utils.prepare_api_call(node)
+
+    def make_call(api,options):
+        response = api_utils.fetch_call(apiCall, api, options)
+        responses[apiCall] = {}
+        responses[apiCall][node] = response
+        return response
+
+    new_thread = threading.Thread(target=make_call, args=(api,options))
+    new_thread.setDaemon(True)
+    new_thread.start()
+
+    if 'threads' not in config:
+        config['threads'] = {}
+    config['threads'][apiCall] = new_thread
+    #Wait 3 seconds to give node time to respond
+    sleep(3)
+
+
+@step(r'the "([^"]*)" parallel call should return with:')
+def compare_thread_return(step,apiCall):
+    #Prepare response list for comparison
+    response_list = responses[apiCall][config['nodeId']]
+    #Exclude duration from response list
+    if 'duration' in response_list:
+        del response_list['duration']
+    response_keys = response_list.keys()
+
+    #Prepare expected values list for comparison
+    expected_values = {}
+    args = step.hashes
+    api_utils.prepare_options(args,expected_values)
+    keys = expected_values.keys()
+
+    #Confirm that the lists are of equal length before comparing
+    assert len(keys) == len(response_keys), 'Response: {} does not contain the same number of arguments: {}'.format(keys,response_keys)
+
+    for count in range(len(keys)):
+        response_key = response_keys[count]
+        response_value = response_list[response_key]
+        expected_value = expected_values[response_key]
+
+        assert response_value == expected_value, \
+            'Returned: {} does not match the expected value: {}'.format(response_value,expected_value)
+
+    logger.info('Responses match')
 
 
 @step(r'GTTA is called (\d+) times on "([^"]*)"')
@@ -67,7 +122,7 @@ def spam_call_gtta(step,numTests,node):
     config['apiCall'] = apiCall
     config['nodeId'] = node
     
-    api = tests.prepare_api_call(node)
+    api = api_utils.prepare_api_call(node)
     logging.info('Calls being made to %s',node)
     responseVal = []
     for i in range(int(numTests)):
@@ -77,6 +132,61 @@ def spam_call_gtta(step,numTests,node):
         
     responses[apiCall] = {}
     responses[apiCall][node] = responseVal
+
+
+###
+#Transaction Generator
+#TODO: Merge Transaction Logic commit to modularise bundle generation
+@step(r'a transaction is generated and attached on "([^"]*)" with:')
+def generate_transaction_and_attach(step,node):
+    arg_list = step.hashes
+    config['nodeId'] = node
+    config['apiCall'] = 'attachToTangle'
+    options = {}
+    api = api_utils.prepare_api_call(node)
+
+    api_utils.prepare_options(arg_list, options)
+    addresses = options.get('address')
+    value = options.get('value')
+
+    transaction = ProposedTransaction(address=Address(addresses[0]), value = value)
+
+    bundle = ProposedBundle()
+    bundle.add_transaction(transaction)
+    bundle.finalize()
+    trytes = str(bundle[0].as_tryte_string())
+
+    gtta = api.get_transactions_to_approve(depth=3)
+    branch = str(gtta['branchTransaction'])
+    trunk = str(gtta['trunkTransaction'])
+
+    sent = api.attach_to_tangle(trunk,branch,[trytes],9)
+    logger.info('Transaction Sent')
+
+    setattr(static_vals, "TEST_STORE_TRANSACTION", sent.get('trytes'))
+
+
+@step(r'the response for "([^"]*)" should return with:')
+def check_response_for_value(step,apiCall):
+    response_values = responses[apiCall][config['nodeId']]
+
+    expected_values = {}
+    args = step.hashes
+    api_utils.prepare_options(args,expected_values)
+
+
+    for expected_value_key in expected_values:
+        if expected_value_key in response_values:
+            expected_value = expected_values[expected_value_key]
+            response_value = response_values[expected_value_key]
+            if type(response_value) is list:
+                response_value = response_value[0]
+            assert expected_value == response_value, \
+                "The expected value {} does not match the response value: {}".format(expected_value,response_value)
+
+    logger.info('Response contained expected values')
+
+
 
 ###
 #Response testing    
@@ -107,14 +217,41 @@ def compare_response(step):
                     assert str(responseKeys[responseKeyVal]) == str(keys[responseKeyVal])
             except:
                 logger.debug("No values to verify response with")        
- 
+
+'''
+Creates an inconsistent transaction by generating a zero value transaction that references 
+a non-existent transaction as its branch and trunk, thus not connecting with any other part 
+of the tangle.
+'''
+#TODO: Merge Transaction Logic commit to modularise bundle generation
+@step(r'an inconsistent transaction is generated on "([^"]*)"')
+def create_inconsistent_transaction(step,node):
+    config['nodeId'] = node
+    api = api_utils.prepare_api_call(node)
+    branch = getattr(static_vals,"NULL_HASH")
+    trunk = branch
+    trytes = getattr(static_vals,"EMPTY_TRANSACTION_TRYTES")
+
+    transaction = api.attach_to_tangle(trunk,branch,[trytes],14)
+    transaction_trytes = transaction.get('trytes')
+    api.store_transactions(transaction_trytes)
+    transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
+    logger.info(transaction_hash.hash)
+
+    if 'inconsistentTransactions' not in responses:
+        responses['inconsistentTransactions'] = {}
+
+    responses['inconsistentTransactions'][node] = transaction_hash.hash
+
+
+
  ###
  #Test GetTrytes 
 @step(r'getTrytes is called with the hash ([^"]+)')
 def call_getTrytes(step,hash):
-    api = tests.prepare_api_call(config['nodeId'])
+    api = api_utils.prepare_api_call(config['nodeId'])
     testHash = getattr(static_vals, hash)
-    response = api.get_trytes(testHash)
+    response = api.get_trytes([testHash])
     logger.debug("Call may not have responded correctly: \n%s",response)
     assert type(response) is dict
     responses['getTrytes'][config['nodeId']] = response
@@ -128,53 +265,20 @@ def check_trytes(step,trytes):
         assert response['trytes'][0] == testTrytes, "Trytes do not match"
 
 
-
-###
-#Test Add and Remove Neighbors
-@step(r'2 neighbors are added with "([^"]*)" on "([^"]*)"')
-def add_neighbors(step,apiCall,nodeName):
-    config['nodeId'] = nodeName
-    api = tests.prepare_api_call(nodeName)
-    response = api.add_neighbors(neighbors)
-    logger.debug('Response: %s',response)
-
-    
-@step(r'"getNeighbors" is called, it should return the following neighbors:')
-def check_neighbors_post_addition(step):
-    logger.info('Ensuring Neighbors were added correctly')
-    containsNeighbor = check_neighbors(step)
-    assert containsNeighbor[1] is True
-    assert containsNeighbor[0] is True 
-    
-    
-@step(r'"removeNeighbors" will be called to remove the same neighbors')
-def remove_neighbors(step):
-    api = tests.prepare_api_call(config['nodeId'])
-    response = api.remove_neighbors(neighbors)
-    logger.debug('Response: %s',response)
-    
-@step(r'"getNeighbors" should not return the following neighbors:')
-def check_neighbors_post_removal(step):
-    logger.info('Ensuring Neighbors were removed correctly')
-    containsNeighbor = check_neighbors(step)
-    assert containsNeighbor[1] is False
-    assert containsNeighbor[0] is False
-
-
 ###
 #Test transactions
 @step(r'"([^"]*)" and "([^"]*)" are neighbors')
 def make_neighbors(step,node1,node2):
-    host1 = world.machine['nodes'][node1]['host']
-    port1 = world.machine['nodes'][node1]['ports']['gossip-udp']
-    host2 = world.machine['nodes'][node2]['host']
-    port2 = world.machine['nodes'][node2]['ports']['gossip-udp']
+    host1 = world.machine['nodes'][node1]['podip']
+    port1 = world.machine['nodes'][node1]['clusterip_ports']['gossip-udp']
+    host2 = world.machine['nodes'][node2]['podip']
+    port2 = world.machine['nodes'][node2]['clusterip_ports']['gossip-udp']
     
     hosts = [host1,host2]
     ports = [port1,port2]
     
-    api1 = tests.prepare_api_call(node1)
-    api2 = tests.prepare_api_call(node2)
+    api1 = api_utils.prepare_api_call(node1)
+    api2 = api_utils.prepare_api_call(node2)
         
     response1 = api1.get_neighbors()
     response2 = api2.get_neighbors()
@@ -225,7 +329,7 @@ def send_transaction(step,tag,nodeName):
     logger.debug('Preparing Transaction...')
     logger.debug('Node: %s',nodeName)
     config['tag'] = tag
-    api = tests.prepare_api_call(nodeName)  
+    api = api_utils.prepare_api_call(nodeName)
     txn = \
         ProposedTransaction(
             address = 
@@ -244,7 +348,7 @@ def send_transaction(step,tag,nodeName):
 @step(r'findTransaction is called with the same tag on "([^"]*)"')
 def find_transaction_is_called(step,nodeName):
     logger.debug(nodeName)
-    api = tests.prepare_api_call(nodeName)    
+    api = api_utils.prepare_api_call(nodeName)
     logger.info("Searching for Transaction with the tag: {} on {}".format(config['tag'],nodeName))
     response = api.find_transactions(tags=[config['tag']])    
     config['findTransactionResponse'] = response
@@ -260,9 +364,9 @@ def check_transaction_response(step):
 @step(r'find transaction is called with the address:')
 def find_transactions_from_address(step):
     logger.info('Finding milestones')
-    node = config('nodeId')       
+    node = config['nodeId']
     
-    api = tests.prepare_api_call(node)
+    api = api_utils.prepare_api_call(node)
     transactions = api.find_transactions(addresses = [step.multiline])
     responses['findTransactions'] = transactions 
 
@@ -286,9 +390,17 @@ def fetch_config(key):
 def fetch_response(apiCall):
     return responses[apiCall]
 
+'''
+This method is used to determine if a node contains the neighbors specified in the steps feature list
 
+@returns a list of two bools 
+
+If the return contains a False response, then the neighbor associated with that bool will be added in the remaining
+methods in the step.  
+'''
+#TODO: Move this function to a utility file along with all other functionality involving neighbors
 def check_neighbors(step):
-    api = prepare_api_call(config['nodeId'])
+    api = api_utils.prepare_api_call(config['nodeId'])
     response = api.getNeighbors()
     containsNeighbor = [False,False]
     

@@ -278,6 +278,13 @@ public class ConfigTest {
                         Assert.assertThat(configNames, IsCollectionContaining.hasItem(config)));
     }
 
+    @Test
+    public void testDontValidateMIlestoneSigDefaultValue() {
+        IotaConfig iotaConfig = ConfigFactory.createIotaConfig(true);
+        Assert.assertFalse("By default testnet should be validating milestones",
+                iotaConfig.isDontValidateTestnetMilestoneSig());
+    }
+
     private String deriveNameFromSetter(Method setter) {
         JsonIgnore jsonIgnore = setter.getAnnotation(JsonIgnore.class);
         if (jsonIgnore != null) {

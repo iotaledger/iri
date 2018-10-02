@@ -19,7 +19,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import static com.iota.iri.controllers.TransactionViewModel.*;
 
 public class TransactionValidator {
-    private final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
+    private static final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
@@ -108,18 +108,14 @@ public class TransactionValidator {
         return transactionViewModel;
     }
 
-    TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude) {
-        return validateBytes(bytes, minWeightMagnitude, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
-    }
-
-    TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
-        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, TransactionHash.calculate(bytes, TransactionViewModel.TRINARY_SIZE, curl));
+    public TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
+        TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, TransactionHash.calculate(bytes, TRINARY_SIZE, curl));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
 
     public boolean checkSolidity(Hash hash, boolean milestone) throws Exception {
-        if(TransactionViewModel.fromHash(tangle, hash).isSolid()) {
+        if(fromHash(tangle, hash).isSolid()) {
             return true;
         }
         Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -128,9 +124,9 @@ public class TransactionValidator {
         Hash hashPointer;
         while ((hashPointer = nonAnalyzedTransactions.poll()) != null) {
             if (analyzedHashes.add(hashPointer)) {
-                final TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hashPointer);
+                final TransactionViewModel transaction = fromHash(tangle, hashPointer);
                 if(!transaction.isSolid()) {
-                    if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
+                    if (transaction.getType() == PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
                         transactionRequester.requestTransaction(hashPointer, milestone);
                         solid = false;
                         break;
@@ -142,13 +138,13 @@ public class TransactionValidator {
             }
         }
         if (solid) {
-            TransactionViewModel.updateSolidTransactions(tangle, analyzedHashes);
+            updateSolidTransactions(tangle, analyzedHashes);
         }
         analyzedHashes.clear();
         return solid;
     }
 
-    void addSolidTransaction(Hash hash) {
+    public void addSolidTransaction(Hash hash) {
         synchronized (cascadeSync) {
             if (useFirst.get()) {
                 newSolidTransactionsOne.add(hash);
@@ -189,10 +185,10 @@ public class TransactionValidator {
         while(cascadeIterator.hasNext() && !shuttingDown.get()) {
             try {
                 Hash hash = cascadeIterator.next();
-                TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
+                TransactionViewModel transaction = fromHash(tangle, hash);
                 Set<Hash> approvers = transaction.getApprovers(tangle).getHashes();
                 for(Hash h: approvers) {
-                    TransactionViewModel tx = TransactionViewModel.fromHash(tangle, h);
+                    TransactionViewModel tx = fromHash(tangle, h);
                     if(quietQuickSetSolid(tx)) {
                         tx.update(tangle, "solid|height");
                         tipsViewModel.setSolid(h);

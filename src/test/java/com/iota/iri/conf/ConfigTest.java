@@ -142,7 +142,7 @@ public class ConfigTest {
                 //we ignore this on mainnet
                 "--mwm", "4",
                 "--testnet-coordinator", "TTTTTTTTT",
-                "--test-no-coo-validation",
+                "--testnet-no-coo-validation",
                 //this should be ignored everywhere
                 "--fake-config"
         };
@@ -173,7 +173,8 @@ public class ConfigTest {
         Assert.assertEquals("zmq enabled", true, iotaConfig.isZmqEnabled());
         Assert.assertEquals("mwm", 4, iotaConfig.getMwm());
         Assert.assertEquals("coo", "TTTTTTTTT", iotaConfig.getCoordinator());
-        Assert.assertEquals("--test-no-coo-validation", true, iotaConfig.isDontValidateTestnetMilestoneSig());
+        Assert.assertEquals("--testnet-no-coo-validation", true,
+                iotaConfig.isDontValidateTestnetMilestoneSig());
     }
 
     @Test
@@ -276,6 +277,13 @@ public class ConfigTest {
                         "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS"}, config))
                 .forEach(config ->
                         Assert.assertThat(configNames, IsCollectionContaining.hasItem(config)));
+    }
+
+    @Test
+    public void testDontValidateMIlestoneSigDefaultValue() {
+        IotaConfig iotaConfig = ConfigFactory.createIotaConfig(true);
+        Assert.assertFalse("By default testnet should be validating milestones",
+                iotaConfig.isDontValidateTestnetMilestoneSig());
     }
 
     private String deriveNameFromSetter(Method setter) {

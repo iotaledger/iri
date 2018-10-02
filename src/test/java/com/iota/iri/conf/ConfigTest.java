@@ -142,7 +142,7 @@ public class ConfigTest {
                 //we ignore this on mainnet
                 "--mwm", "4",
                 "--testnet-coordinator", "TTTTTTTTT",
-                "--test-no-coo-validation",
+                "--testnet-no-coo-validation",
                 //this should be ignored everywhere
                 "--fake-config"
         };
@@ -173,7 +173,8 @@ public class ConfigTest {
         Assert.assertEquals("zmq enabled", true, iotaConfig.isZmqEnabled());
         Assert.assertEquals("mwm", 4, iotaConfig.getMwm());
         Assert.assertEquals("coo", "TTTTTTTTT", iotaConfig.getCoordinator());
-        Assert.assertEquals("--test-no-coo-validation", true, iotaConfig.isDontValidateTestnetMilestoneSig());
+        Assert.assertEquals("--testnet-no-coo-validation", true,
+                iotaConfig.isDontValidateTestnetMilestoneSig());
     }
 
     @Test

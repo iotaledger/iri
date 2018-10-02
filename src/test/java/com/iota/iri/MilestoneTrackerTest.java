@@ -48,7 +48,7 @@ public class MilestoneTrackerTest {
 
     }
 
-    private static void initializeMilestoneTracker(String coordinator, int keys, int MWM, SpongeFactory.Mode sigMode, int securityLevel) throws IOException {
+    private static void initializeMilestoneTracker(String coordinator, int keys, int MWM) throws IOException {
         String[] args = {
                 "--testnet-coordinator", coordinator,
                 "--mwm", String.valueOf(MWM),
@@ -69,7 +69,7 @@ public class MilestoneTrackerTest {
         //set defaults
         SpongeFactory.Mode sigMode = SpongeFactory.Mode.CURLP27;
         int securityLevel = 1;
-        initializeMilestoneTracker("ECFTA9SVHYH9MRRKJHQCBXNQKDBNGCWWDUAVILCOF9LMJNDPZLLTRYPKNHPVLXJYGGAXGOBYHZHGLNXKE", 7, 4, sigMode, securityLevel);
+        initializeMilestoneTracker("ECFTA9SVHYH9MRRKJHQCBXNQKDBNGCWWDUAVILCOF9LMJNDPZLLTRYPKNHPVLXJYGGAXGOBYHZHGLNXKE", 7, 4);
 
 
         //store milestone:
@@ -92,7 +92,7 @@ public class MilestoneTrackerTest {
         //set defaults
         SpongeFactory.Mode sigMode = SpongeFactory.Mode.KERL;
         int securityLevel = 1;
-        initializeMilestoneTracker("ECRGOIGKMFCNJPILB9GRUN9WIFOXY9GPKLSJV9UUQINIOHWKYJRZEQ9IHTS9HMFCMQBGRNODBIWTPILGC", 7, 4, sigMode, securityLevel);
+        initializeMilestoneTracker("ECRGOIGKMFCNJPILB9GRUN9WIFOXY9GPKLSJV9UUQINIOHWKYJRZEQ9IHTS9HMFCMQBGRNODBIWTPILGC", 7, 4);
 
 
         //store milestone:
@@ -115,7 +115,7 @@ public class MilestoneTrackerTest {
         //set defaults
         SpongeFactory.Mode sigMode = SpongeFactory.Mode.CURLP27;
         int securityLevel = 3;
-        initializeMilestoneTracker("ROLHKXFNMSN9WWAWLWYKWXJUQ9BREXTKOMCZFT99JOLWNWBPUYSCZPLSOSOPICLKXXSDRAYEYRNTTKTNI", 7, 4, sigMode, securityLevel);
+        initializeMilestoneTracker("ROLHKXFNMSN9WWAWLWYKWXJUQ9BREXTKOMCZFT99JOLWNWBPUYSCZPLSOSOPICLKXXSDRAYEYRNTTKTNI", 7, 4);
 
 
         //store milestone:
@@ -144,7 +144,7 @@ public class MilestoneTrackerTest {
         //set defaults
         SpongeFactory.Mode sigMode = SpongeFactory.Mode.KERL;
         int securityLevel = 3;
-        initializeMilestoneTracker("IDSWNWLGPFLAQADAEYUINRS9MBEMCYARHXHVSBOZDOBHPIPNVYUFFTQLNYGDZKKTEBHYOQXVQVHXBGXH9", 7, 4, sigMode, securityLevel);
+        initializeMilestoneTracker("IDSWNWLGPFLAQADAEYUINRS9MBEMCYARHXHVSBOZDOBHPIPNVYUFFTQLNYGDZKKTEBHYOQXVQVHXBGXH9", 7, 4);
 
 
         //store milestone:

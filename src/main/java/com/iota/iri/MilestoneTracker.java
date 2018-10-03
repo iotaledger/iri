@@ -201,10 +201,7 @@ public class MilestoneTracker {
                     //the signed transaction - which references the confirmed transactions and contains the Merkle tree siblings.
                     final TransactionViewModel siblingsTx = bundleTransactionViewModels.get(securityLevel);
 
-                    //TODO: strict checks for bundle structure
-                    if (siblingsTx.getType() == TransactionViewModel.FILLED_SLOT
-                            && transactionViewModel.getBranchTransactionHash().equals(siblingsTx.getTrunkTransactionHash())
-                            && transactionViewModel.getBundleHash().equals(siblingsTx.getBundleHash())) {
+                    if (isMilestoneBundleStructureValid(bundleTransactionViewModels, securityLevel)) {
                         //milestones sign the normalized hash of the sibling transaction.
                         byte[] signedHash = ISS.normalizedBundle(siblingsTx.getHash().trits());
 
@@ -292,5 +289,15 @@ public class MilestoneTracker {
 
             e.printStackTrace();
         }
+    }
+
+    private boolean isMilestoneBundleStructureValid(List<TransactionViewModel> bundleTxs, int securityLevel) {
+        TransactionViewModel head = bundleTxs.get(securityLevel);
+        return bundleTxs.stream()
+                .limit(securityLevel)
+                .allMatch(tx ->
+                        tx.getBranchTransactionHash().equals(head.getTrunkTransactionHash()));
+        //trunks of bundles are checked in Bundle validation - no need to check again.
+        //bundleHash equality is checked in BundleValidator.validate() (loadTransactionsFromTangle)
     }
 }

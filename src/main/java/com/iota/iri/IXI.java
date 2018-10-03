@@ -283,6 +283,10 @@ public class IXI {
         ixiLifetime.remove(moduleName);
     }
 
+    /**
+     * Cleans up the environment, shutdown the dir watcher thread and wait till all running api calls are completed.
+     * @throws InterruptedException if directory watching thread was unexpected interrupted.
+     */
     public void shutdown() throws InterruptedException {
         if(dirWatchThread != null) {
             shutdown = true;

@@ -6,12 +6,13 @@ import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -22,10 +23,30 @@ import static com.iota.iri.controllers.TransactionViewModel.TRINARY_SIZE;
  */
 public class FileExportProvider implements PersistenceProvider {
     private static final Logger log = LoggerFactory.getLogger(FileExportProvider.class);
+    private static final String FOLDER_EXPORT = "export";
+    private static final String FOLDER_EXPORT_SOLID = "export-solid";
+    private static long lastFileNumber = 0L;
+    private static final Object lock = new Object();
+
+    Path createDirectory(Path exportPath) {
+        if (exportPath == null) {
+            throw new IllegalArgumentException("exportPath should not be null");
+        }
+        if (!Files.exists(exportPath)) {
+            log.info("Create directory '{}'", exportPath);
+            try {
+                return Files.createDirectory(exportPath);
+            } catch (IOException e) {
+                log.error("Could not create directory", e);
+            }
+        }
+        return exportPath;
+    }
 
     @Override
-    public void init() throws Exception {
-
+    public void init() {
+        createDirectory(Paths.get(FOLDER_EXPORT));
+        createDirectory(Paths.get(FOLDER_EXPORT_SOLID));
     }
 
     @Override
@@ -35,132 +56,121 @@ public class FileExportProvider implements PersistenceProvider {
 
     @Override
     public void shutdown() {
-
+        // not yet implemented
     }
 
     @Override
-    public boolean save(Persistable model, Indexable index) throws Exception {
+    public boolean save(Persistable model, Indexable index) {
         return false;
     }
 
     @Override
-    public void delete(Class<?> model, Indexable index) throws Exception {
-
+    public void delete(Class<?> model, Indexable index) {
+        // not yet implemented
     }
 
     @Override
-    public boolean update(Persistable model, Indexable index, String item) throws Exception {
+    public boolean update(Persistable model, Indexable index, String item) {
 
-        if(model instanceof Transaction) {
-            Transaction transaction = ((Transaction) model);
-            if(item.contains("sender")) {
-                Path path = Paths.get("export", String.valueOf(getFileNumber()) + ".tx");
-                try(PrintWriter writer = new PrintWriter(path.toString(), "UTF-8")) {
-                    writer.println(index.toString());
-                    writer.println(Converter.trytes(trits(transaction)));
-                    writer.println(transaction.sender);
-                    if(item.equals("height")) {
-                        writer.println("Height: " + String.valueOf(transaction.height));
-                    } else {
-                        writer.println("Height: ");
-                    }
-                    writer.close();
-                    return true;
-                } catch (UnsupportedEncodingException | FileNotFoundException e) {
-                    log.error("File export failed", e);
-                } catch (Exception e) {
-                    log.error("Transaction load failed. ", e);
-                }
-            }
+        if (item == null || !item.contains("sender")) {
+            log.error("Item does not contain sender: {}", item);
+            return false;
+        }
+        if (!(model instanceof Transaction)) {
+            log.error("Model is not instance of Transaction");
+            return false;
+        }
+        Transaction transaction = ((Transaction) model);
+        File exportFile = new File(FOLDER_EXPORT, String.valueOf(getFileNumber()) + ".tx");
+        try(PrintWriter writer = new PrintWriter(exportFile, StandardCharsets.UTF_8.name())) {
+            writer.println(index.toString());
+            writer.println(Converter.trytes(trits(transaction)));
+            writer.println(transaction.sender);
+            return true;
+        } catch (UnsupportedEncodingException | FileNotFoundException e) {
+            log.error("File export failed", e);
+        } catch (Exception e) {
+            log.error("Transaction load failed", e);
         }
         return false;
     }
 
     @Override
-    public boolean exists(Class<?> model, Indexable key) throws Exception {
+    public boolean exists(Class<?> model, Indexable key) {
         return false;
     }
 
     @Override
-    public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception {
-        return null;
-    }
-
-
-
-    @Override
-    public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> other) throws Exception {
+    public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) {
         return null;
     }
 
     @Override
-    public Persistable get(Class<?> model, Indexable index) throws Exception {
+    public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> other) {
+        return new HashSet<>();
+    }
+
+    @Override
+    public Persistable get(Class<?> model, Indexable index) {
         return null;
     }
 
     @Override
-    public boolean mayExist(Class<?> model, Indexable index) throws Exception {
+    public boolean mayExist(Class<?> model, Indexable index) {
         return false;
     }
 
     @Override
-    public long count(Class<?> model) throws Exception {
+    public long count(Class<?> model) {
         return 0;
     }
 
     @Override
     public Set<Indexable> keysStartingWith(Class<?> modelClass, byte[] value) {
+        return new HashSet<>();
+    }
+
+    @Override
+    public Persistable seek(Class<?> model, byte[] key) {
         return null;
     }
 
     @Override
-    public Persistable seek(Class<?> model, byte[] key) throws Exception {
+    public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) {
         return null;
     }
 
     @Override
-    public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception {
+    public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) {
         return null;
     }
 
     @Override
-    public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception {
+    public Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) {
         return null;
     }
 
     @Override
-    public Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) throws Exception {
-        return null;
-    }
-
-    public boolean merge(Persistable model, Indexable index) throws Exception {
+    public boolean saveBatch(List<Pair<Indexable, Persistable>> models) {
         return false;
     }
 
     @Override
-    public boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {
-        return false;
+    public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) {
+        // not yet implemented
     }
 
     @Override
-    public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
-
+    public void clear(Class<?> column) {
+        // not yet implemented
     }
 
     @Override
-    public void clear(Class<?> column) throws Exception {
-
+    public void clearMetadata(Class<?> column) {
+        // not yet implemented
     }
 
-    @Override
-    public void clearMetadata(Class<?> column) throws Exception {
-
-    }
-
-    private static long lastFileNumber = 0L;
-    private static Object lock = new Object();
-
-    public static long getFileNumber() {
+    private static long getFileNumber() {
         long now = System.currentTimeMillis() * 1000;
         synchronized (lock) {
             if (now <= lastFileNumber) {
@@ -170,7 +180,7 @@ public class FileExportProvider implements PersistenceProvider {
         }
         return now;
     }
-    byte[] trits(Transaction transaction) {
+    private byte[] trits(Transaction transaction) {
         byte[] trits = new byte[TRINARY_SIZE];
         if(transaction.bytes != null) {
             Converter.getTrits(transaction.bytes, trits);

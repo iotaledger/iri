@@ -47,6 +47,7 @@ public class IRI {
                 break;
             default:
                 level = "INFO";
+                break;
         }
         System.getProperties().put("logging-level", level);
         System.out.println("Logging - property 'logging-level' set to: [" + level + "]");
@@ -70,27 +71,6 @@ public class IRI {
             ixi = new IXI(iota);
             api = new API(iota, ixi);
             shutdownHook();
-
-            if (config.isExport()) {
-                File exportDir = new File("export");
-                if (!exportDir.exists()) {
-                    log.info("Create directory 'export'");
-                    try {
-                        exportDir.mkdir();
-                    } catch (SecurityException e) {
-                        log.error("Could not create directory", e);
-                    }
-                }
-                exportDir = new File("export-solid");
-                if (!exportDir.exists()) {
-                    log.info("Create directory 'export-solid'");
-                    try {
-                        exportDir.mkdir();
-                    } catch (SecurityException e) {
-                        log.error("Could not create directory", e);
-                    }
-                }
-            }
 
             try {
                 iota.init();

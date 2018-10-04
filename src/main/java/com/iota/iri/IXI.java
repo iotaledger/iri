@@ -255,7 +255,7 @@ public class IXI {
         try {
             scriptEngine.eval(ixiModuleReader, bindings);
         } catch (ScriptException e) {
-            log.error("Script error");
+            log.error("Script error", e);
         }
         try {
             ixiModuleReader.close();

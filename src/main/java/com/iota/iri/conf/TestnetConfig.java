@@ -18,7 +18,6 @@ public class TestnetConfig extends BaseIotaConfig {
     protected int numberOfKeysInMilestone = Defaults.KEYS_IN_MILESTONE;
     protected int transactionPacketSize = Defaults.PACKET_SIZE;
     protected int requestHashSize = Defaults.REQUEST_HASH_SIZE;
-    protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
 
     public TestnetConfig() {
         super();

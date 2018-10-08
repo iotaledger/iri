@@ -50,7 +50,7 @@ public class TCPNeighbor extends Neighbor {
                     this.source.close();
                     log.info("Source {} closed", this.getHostAddress());
                 } catch (IOException e) {
-                    log.info("Source {} close failure {}", this.getHostAddress());
+                    log.info("Source {} close failure {}", this.getHostAddress(), e.getMessage());
                 }
             }
         }
@@ -70,7 +70,7 @@ public class TCPNeighbor extends Neighbor {
                     this.sink.close();
                     log.info("Sink {} closed", this.getHostAddress());
                 } catch (IOException e) {
-                    log.info("Source {} close failure {}", this.getHostAddress());
+                    log.info("Source {} close failure {}", this.getHostAddress(), e.getMessage());
                 }
             }
         }

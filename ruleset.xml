@@ -81,6 +81,9 @@
 
     <rule ref="category/java/documentation.xml/CommentRequired" deprecated="true">
         <properties>
+            <!-- Ignore @Test methods -->
+            <property name="violationSuppressXPath"
+                      value="//MethodDeclaration/../Annotation/MarkerAnnotation/Name[@Image='Test']" />
             <property name="protectedMethodCommentRequirement" value="Ignored"/>
             <property name="fieldCommentRequirement" value="Ignored"/>
         </properties>

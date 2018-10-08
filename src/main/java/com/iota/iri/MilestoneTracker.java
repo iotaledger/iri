@@ -4,7 +4,10 @@ import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.hash.*;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.ISS;
+import com.iota.iri.hash.ISSInPlace;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Tangle;
@@ -197,8 +200,10 @@ public class MilestoneTracker {
         else {
             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
-                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
-                    //the signed transaction - which references the confirmed transactions and contains the Merkle tree siblings.
+                final TransactionViewModel tail = bundleTransactionViewModels.get(0);
+                if (tail.getHash().equals(transactionViewModel.getHash())) {
+                    //the signed transaction - which references the confirmed transactions and contains
+                    // the Merkle tree siblings.
                     final TransactionViewModel siblingsTx = bundleTransactionViewModels.get(securityLevel);
 
                     if (isMilestoneBundleStructureValid(bundleTransactionViewModels, securityLevel)) {
@@ -210,15 +215,16 @@ public class MilestoneTracker {
                         byte[] digest = new byte[Curl.HASH_LENGTH];
 
                         for (int i = 0; i < securityLevel; i++) {
-                            ISSInPlace.digest(mode, signedHash, ISS.NUMBER_OF_FRAGMENT_CHUNKS * i, bundleTransactionViewModels.get(i).getSignature(), 0, digest);
+                            ISSInPlace.digest(mode, signedHash, ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
+                                    bundleTransactionViewModels.get(i).getSignature(), 0, digest);
                             bb.put(digest);
                         }
 
-                        final byte[] digests = bb.array();
+                        byte[] digests = bb.array();
                         byte[] address = ISS.address(mode, digests);
 
                         //validate Merkle path
-                        final byte[] merkleRoot = ISS.getMerkleRoot(mode, address,
+                        byte[] merkleRoot = ISS.getMerkleRoot(mode, address,
                                 siblingsTx.trits(), 0, index, numOfKeysInMilestone);
                         if ((testnet && acceptAnyTestnetCoo) || (HashFactory.ADDRESS.create(merkleRoot)).equals(coordinator)) {
                             new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);

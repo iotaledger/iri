@@ -57,6 +57,11 @@
     <rule ref="category/java/bestpractices.xml/UseAssertSameInsteadOfAssertTrue" deprecated="true"/>
     <rule ref="category/java/bestpractices.xml/UseAssertTrueInsteadOfAssertEquals" deprecated="true"/>
     <rule ref="category/java/bestpractices.xml/JUnitAssertionsShouldIncludeMessage" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedFormalParameter" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateField" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedImports" deprecated="true"/>
 
     <rule ref="category/java/codestyle.xml/ExtendsObject" deprecated="true"/>
     <rule ref="category/java/codestyle.xml/UnnecessaryModifier" name="UnnecessaryFinalModifier" deprecated="true"/>
@@ -64,7 +69,6 @@
     <rule ref="category/java/codestyle.xml/FieldDeclarationsShouldBeAtStartOfClass" deprecated="true"/>
     <rule ref="category/java/codestyle.xml/UnnecessaryFullyQualifiedName" deprecated="true"/>
     <rule ref="category/java/codestyle.xml/DuplicateImports" deprecated="true"/>
-    <rule ref="category/java/bestpractices.xml/UnusedImports" deprecated="true"/>
     <rule ref="category/java/codestyle.xml/MIsLeadingVariableName" name="MisleadingVariableName" deprecated="true"/>
     <rule ref="category/java/codestyle.xml/SuspiciousConstantFieldName" deprecated="true"/>
 

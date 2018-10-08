@@ -60,7 +60,7 @@ public class MilestoneTrackerTest {
         configuration.parseConfigFromArgs(args);
 
         MessageQ messageQ = Mockito.mock(MessageQ.class);
-        TransactionValidator transactionValidator = new TransactionValidator(tangle, new TipsViewModel(), new TransactionRequester(tangle, messageQ), messageQ, configuration);
+        TransactionValidator transactionValidator = new TransactionValidator(tangle, new TipsViewModel(), new TransactionRequester(tangle, messageQ), configuration);
         milestoneTracker = new MilestoneTracker(tangle, transactionValidator, messageQ, Snapshot.init(configuration).clone(), configuration);
     }
 

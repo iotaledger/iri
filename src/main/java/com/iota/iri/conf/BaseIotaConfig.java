@@ -55,7 +55,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String dbLogPath = Defaults.DB_LOG_PATH;
     protected int dbCacheSize = Defaults.DB_CACHE_SIZE; //KB
     protected String mainDb = Defaults.ROCKS_DB;
-    protected boolean export = Defaults.EXPORT;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
@@ -356,18 +355,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--db"}, description = DbConfig.Descriptions.MAIN_DB)
     protected void setMainDb(String mainDb) {
         this.mainDb = mainDb;
-    }
-
-    @Override
-    public boolean isExport() {
-        return export;
-    }
-
-
-    @JsonProperty
-    @Parameter(names = {"--export"}, description = DbConfig.Descriptions.EXPORT)
-    protected void setExport(boolean export) {
-        this.export = export;
     }
 
     @Override
@@ -717,7 +704,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String DB_LOG_PATH = "mainnet.log";
         int DB_CACHE_SIZE = 100_000;
         String ROCKS_DB = "rocksdb";
-        boolean EXPORT = false;
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
 

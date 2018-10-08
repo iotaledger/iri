@@ -10,9 +10,20 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.service.TipsSolidifier;
-import com.iota.iri.service.tipselection.*;
-import com.iota.iri.service.tipselection.impl.*;
-import com.iota.iri.storage.*;
+import com.iota.iri.service.tipselection.EntryPointSelector;
+import com.iota.iri.service.tipselection.RatingCalculator;
+import com.iota.iri.service.tipselection.TailFinder;
+import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.service.tipselection.Walker;
+import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
+import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
+import com.iota.iri.service.tipselection.impl.TailFinderImpl;
+import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
+import com.iota.iri.service.tipselection.impl.WalkerAlpha;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.ZmqPublishProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
@@ -51,7 +62,7 @@ public class Iota {
         messageQ = MessageQ.createWith(configuration);
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
-        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ,
+        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester,
                 configuration);
         milestoneTracker = new MilestoneTracker(tangle, transactionValidator, messageQ, initialSnapshot, configuration);
         node = new Node(tangle, transactionValidator, transactionRequester, tipsViewModel, milestoneTracker, messageQ,
@@ -133,9 +144,6 @@ public class Iota {
             default: {
                 throw new NotImplementedException("No such database type.");
             }
-        }
-        if (configuration.isExport()) {
-            tangle.addPersistenceProvider(new FileExportProvider());
         }
         if (configuration.isZmqEnabled()) {
             tangle.addPersistenceProvider(new ZmqPublishProvider(messageQ));

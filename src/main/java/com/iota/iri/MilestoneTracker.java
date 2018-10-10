@@ -13,6 +13,7 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.zmq.MessageQ;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +30,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.iota.iri.MilestoneTracker.Validity.*;
+import static com.iota.iri.MilestoneTracker.Validity.INCOMPLETE;
+import static com.iota.iri.MilestoneTracker.Validity.INVALID;
+import static com.iota.iri.MilestoneTracker.Validity.VALID;
 
 public class MilestoneTracker {
 
@@ -184,7 +187,7 @@ public class MilestoneTracker {
         return milestoneStartIndex;
     }
 
-    protected Validity validateMilestone(SpongeFactory.Mode mode, int securityLevel, TransactionViewModel transactionViewModel, int index) throws Exception {
+    Validity validateMilestone(SpongeFactory.Mode mode, int securityLevel, TransactionViewModel transactionViewModel, int index) throws Exception {
         if (index < 0 || index >= 0x200000) {
             return INVALID;
         }

@@ -1,7 +1,5 @@
 package com.iota.iri.service;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.iota.iri.*;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.ConsensusConfig;
@@ -15,25 +13,16 @@ import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
-import io.undertow.Undertow;
-import io.undertow.security.api.AuthenticationMechanism;
-import io.undertow.security.api.AuthenticationMode;
-import io.undertow.security.handlers.AuthenticationCallHandler;
-import io.undertow.security.handlers.AuthenticationConstraintHandler;
-import io.undertow.security.handlers.AuthenticationMechanismsHandler;
-import io.undertow.security.handlers.SecurityInitialHandler;
-import io.undertow.security.idm.IdentityManager;
-import io.undertow.security.impl.BasicAuthenticationMechanism;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
-import io.undertow.util.*;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,6 +43,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+
+import io.undertow.Undertow;
+import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.AuthenticationMode;
+import io.undertow.security.handlers.AuthenticationCallHandler;
+import io.undertow.security.handlers.AuthenticationConstraintHandler;
+import io.undertow.security.handlers.AuthenticationMechanismsHandler;
+import io.undertow.security.handlers.SecurityInitialHandler;
+import io.undertow.security.idm.IdentityManager;
+import io.undertow.security.impl.BasicAuthenticationMechanism;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.*;
 
 import static io.undertow.Handlers.path;
 
@@ -716,8 +718,9 @@ public class API {
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
         return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                 Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
-                Runtime.getRuntime().totalMemory(), instance.milestone.latestMilestone, instance.milestone.latestMilestoneIndex,
-                instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex, instance.milestone.milestoneStartIndex,
+                Runtime.getRuntime().totalMemory(), instance.milestoneTracker.latestMilestone, instance.milestoneTracker
+                        .latestMilestoneIndex,
+                instance.milestoneTracker.latestSolidSubtangleMilestone, instance.milestoneTracker.latestSolidSubtangleMilestoneIndex, instance.milestoneTracker.milestoneStartIndex,
                 instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                 System.currentTimeMillis(), instance.tipsViewModel.size(),
                 instance.transactionRequester.numberOfTransactionsToRequest());

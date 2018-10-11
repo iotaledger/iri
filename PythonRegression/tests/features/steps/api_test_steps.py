@@ -169,6 +169,8 @@ def generate_transaction_and_attach(step,node):
     trunk = str(gtta['trunkTransaction'])
 
     sent = api.attach_to_tangle(trunk,branch,[trytes],9)
+    world.responses['attachToTangle'] = {}
+    world.responses['attachToTangle'][node] = sent
     logger.info('Transaction Sent')
 
     setattr(static_vals, "TEST_STORE_TRANSACTION", sent.get('trytes'))

@@ -1,11 +1,13 @@
 package com.iota.iri;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
 import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.service.API;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +23,7 @@ public class IRI {
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
-    public static final String VERSION = "1.5.5_RC";
+    public static final String VERSION = "1.5.5";
 
     public static void main(String[] args) throws Exception {
         // Logging is configured first before any references to Logger or LoggerFactory.

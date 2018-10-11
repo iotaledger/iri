@@ -5,6 +5,7 @@ from util import static_vals
 from util.test_logic import api_test_logic as api_utils
 from time import sleep
 import threading
+import queue
 
 import logging 
 logging.basicConfig(level=logging.INFO)
@@ -12,8 +13,8 @@ logger = logging.getLogger(__name__)
 
 testAddress = static_vals.TEST_ADDRESS
 
-config = {}
-responses = {'getNodeInfo':{},'getNeighbors':{},'getTips':{},'getTransactionsToApprove': {},'getTrytes':{}}   
+world.config = {}
+world.responses = {}
 
 
 
@@ -38,59 +39,66 @@ This is the general api calling function. There are 3 inputs
         bool:           Bool argument, returns True or False
  
 '''
-@step(r'"([^"]*)" is called on "([^"]*)" with:')
+@step(r'"([^"]+)" is called on "([^"]+)" with:')
 def api_method_is_called(step,apiCall,nodeName):
     logger.info('%s is called on %s',apiCall,nodeName)
-    config['apiCall'] = apiCall
-    config['nodeId'] = nodeName
+    world.config['apiCall'] = apiCall
+    world.config['nodeId'] = nodeName
     arg_list = step.hashes
 
     options = {}
     api_utils.prepare_options(arg_list, options)
-    responses[apiCall] = {}
 
     api = api_utils.prepare_api_call(nodeName)
     response = api_utils.fetch_call(apiCall, api, options)
 
     assert type(response) is dict, 'There may be something wrong with the response format: {}'.format(response)
     
-    responses[apiCall] = {}
-    responses[apiCall][nodeName] = response
+    world.responses[apiCall] = {}
+    world.responses[apiCall][nodeName] = response
 
 #This method is identical to the method above, but creates a new thread
-#TODO: Find a way to pass aloe.world variable between threads to eliminate need for duplicate code
-@step(r'"([^"]*)" is called in parallel on "([^"]*)" with:')
+@step(r'"([^"]+)" is called in parallel on "([^"]+)" with:')
 def threaded_call(step,apiCall,node):
     logger.info("Creating thread for {}".format(apiCall))
-    config['apiCall'] = apiCall
-    config['nodeId'] = node
+    world.config['apiCall'] = apiCall
+    world.config['nodeId'] = node
     arg_list = step.hashes
 
     options = {}
     api_utils.prepare_options(arg_list, options)
     api = api_utils.prepare_api_call(node)
 
-    def make_call(api,options):
+    def make_call(api,options,q):
         response = api_utils.fetch_call(apiCall, api, options)
+        responses = q.get()
         responses[apiCall] = {}
         responses[apiCall][node] = response
         return response
 
-    new_thread = threading.Thread(target=make_call, args=(api,options))
+    q = queue.Queue()
+    q.put(world.responses)
+    new_thread = threading.Thread(target=make_call, args=(api,options,q))
     new_thread.setDaemon(True)
     new_thread.start()
 
-    if 'threads' not in config:
-        config['threads'] = {}
-    config['threads'][apiCall] = new_thread
-    #Wait 3 seconds to give node time to respond
-    sleep(3)
+    if 'threads' not in world.config:
+        world.config['threads'] = {}
+
+    world.config['threads'][apiCall] = new_thread
 
 
-@step(r'the "([^"]*)" parallel call should return with:')
+@step(r'we wait (\d+) seconds')
+def wait_for_step(step,time):
+    logger.debug('Waiting for {} seconds'.format(time))
+    sleep(int(time))
+
+
+@step(r'the "([^"]+)" parallel call should return with:')
 def compare_thread_return(step,apiCall):
     #Prepare response list for comparison
-    response_list = responses[apiCall][config['nodeId']]
+    logger.debug(world.responses)
+    response_list = world.responses[apiCall][world.config['nodeId']]
     #Exclude duration from response list
     if 'duration' in response_list:
         del response_list['duration']
@@ -116,11 +124,11 @@ def compare_thread_return(step,apiCall):
     logger.info('Responses match')
 
 
-@step(r'GTTA is called (\d+) times on "([^"]*)"')
+@step(r'GTTA is called (\d+) times on "([^"]+)"')
 def spam_call_gtta(step,numTests,node):
     apiCall = 'getTransactionsToApprove' 
-    config['apiCall'] = apiCall
-    config['nodeId'] = node
+    world.config['apiCall'] = apiCall
+    world.config['nodeId'] = node
     
     api = api_utils.prepare_api_call(node)
     logging.info('Calls being made to %s',node)
@@ -130,18 +138,18 @@ def spam_call_gtta(step,numTests,node):
         response = api.get_transactions_to_approve(depth=3)
         responseVal.append(response)
         
-    responses[apiCall] = {}
-    responses[apiCall][node] = responseVal
+    world.responses[apiCall] = {}
+    world.responses[apiCall][node] = responseVal
 
 
 ###
 #Transaction Generator
 #TODO: Merge Transaction Logic commit to modularise bundle generation
-@step(r'a transaction is generated and attached on "([^"]*)" with:')
+@step(r'a transaction is generated and attached on "([^"]+)" with:')
 def generate_transaction_and_attach(step,node):
     arg_list = step.hashes
-    config['nodeId'] = node
-    config['apiCall'] = 'attachToTangle'
+    world.config['nodeId'] = node
+    world.config['apiCall'] = 'attachToTangle'
     options = {}
     api = api_utils.prepare_api_call(node)
 
@@ -166,10 +174,9 @@ def generate_transaction_and_attach(step,node):
     setattr(static_vals, "TEST_STORE_TRANSACTION", sent.get('trytes'))
 
 
-@step(r'the response for "([^"]*)" should return with:')
+@step(r'the response for "([^"]+)" should return with:')
 def check_response_for_value(step,apiCall):
-    response_values = responses[apiCall][config['nodeId']]
-
+    response_values = world.responses[apiCall][world.config['nodeId']]
     expected_values = {}
     args = step.hashes
     api_utils.prepare_options(args,expected_values)
@@ -194,11 +201,11 @@ def check_response_for_value(step,apiCall):
 def compare_response(step):
     logger.info('Validating response')
     keys = step.hashes
-    nodeId = config['nodeId']
-    apiCall = config['apiCall']
+    nodeId = world.config['nodeId']
+    apiCall = world.config['apiCall']
     
     if apiCall == 'getNodeInfo' or apiCall == 'getTransactionsToApprove':
-        response = responses[apiCall][nodeId]
+        response = world.responses[apiCall][nodeId]
         responseKeys = list(response.keys())
         responseKeys.sort()
         logger.debug('Response Keys: %s', responseKeys)
@@ -207,7 +214,7 @@ def compare_response(step):
             assert str(responseKeys[response_key_val]) == str(keys[response_key_val]['keys']), "There was an error with the response" 
     
     elif apiCall == 'getNeighbors' or apiCall == 'getTips':
-        responseList = responses[apiCall][nodeId] 
+        responseList = world.responses[apiCall][nodeId]
         responseKeys = list(responseList.keys())
         logger.debug('Response Keys: %s', responseKeys)
         
@@ -224,9 +231,9 @@ a non-existent transaction as its branch and trunk, thus not connecting with any
 of the tangle.
 '''
 #TODO: Merge Transaction Logic commit to modularise bundle generation
-@step(r'an inconsistent transaction is generated on "([^"]*)"')
+@step(r'an inconsistent transaction is generated on "([^"]+)"')
 def create_inconsistent_transaction(step,node):
-    config['nodeId'] = node
+    world.config['nodeId'] = node
     api = api_utils.prepare_api_call(node)
     branch = getattr(static_vals,"NULL_HASH")
     trunk = branch
@@ -238,28 +245,29 @@ def create_inconsistent_transaction(step,node):
     transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
     logger.info(transaction_hash.hash)
 
-    if 'inconsistentTransactions' not in responses:
-        responses['inconsistentTransactions'] = {}
+    if 'inconsistentTransactions' not in world.responses:
+        world.responses['inconsistentTransactions'] = {}
 
-    responses['inconsistentTransactions'][node] = transaction_hash.hash
+    world.responses['inconsistentTransactions'][node] = transaction_hash.hash
 
 
 
  ###
  #Test GetTrytes 
-@step(r'getTrytes is called with the hash ([^"]+)')
-def call_getTrytes(step,hash):
-    api = api_utils.prepare_api_call(config['nodeId'])
+@step(r'getTrytes is called on "([^"]+)" with the hash ([^"]+)')
+def call_getTrytes(step,node,hash):
+    api = api_utils.prepare_api_call(node)
     testHash = getattr(static_vals, hash)
     response = api.get_trytes([testHash])
     logger.debug("Call may not have responded correctly: \n%s",response)
     assert type(response) is dict
-    responses['getTrytes'][config['nodeId']] = response
+    world.responses['getTrytes'] = {}
+    world.responses['getTrytes'][node] = response
 
 
 @step(r'the response should be equal to ([^"]+)')
 def check_trytes(step,trytes):
-    response = responses['getTrytes'][config['nodeId']]
+    response = world.responses['getTrytes'][world.config['nodeId']]
     testTrytes = getattr(static_vals,trytes)  
     if 'trytes' in response:
         assert response['trytes'][0] == testTrytes, "Trytes do not match"
@@ -267,7 +275,7 @@ def check_trytes(step,trytes):
 
 ###
 #Test transactions
-@step(r'"([^"]*)" and "([^"]*)" are neighbors')
+@step(r'"([^"]+)" and "([^"]+)" are neighbors')
 def make_neighbors(step,node1,node2):
     host1 = world.machine['nodes'][node1]['podip']
     port1 = world.machine['nodes'][node1]['clusterip_ports']['gossip-udp']
@@ -324,11 +332,11 @@ def make_neighbors(step,node1,node2):
     logger.info(response)
         
      
-@step(r'a transaction with the tag "([^"]*)" is sent from "([^"]*)"')
+@step(r'a transaction with the tag "([^"]+)" is sent from "([^"]+)"')
 def send_transaction(step,tag,nodeName):
     logger.debug('Preparing Transaction...')
     logger.debug('Node: %s',nodeName)
-    config['tag'] = tag
+    world.config['tag'] = tag
     api = api_utils.prepare_api_call(nodeName)
     txn = \
         ProposedTransaction(
@@ -345,18 +353,18 @@ def send_transaction(step,tag,nodeName):
     sleep(10)
    
    
-@step(r'findTransaction is called with the same tag on "([^"]*)"')
+@step(r'findTransaction is called with the same tag on "([^"]+)"')
 def find_transaction_is_called(step,nodeName):
     logger.debug(nodeName)
     api = api_utils.prepare_api_call(nodeName)
-    logger.info("Searching for Transaction with the tag: {} on {}".format(config['tag'],nodeName))
-    response = api.find_transactions(tags=[config['tag']])    
-    config['findTransactionResponse'] = response
+    logger.info("Searching for Transaction with the tag: {} on {}".format(world.config['tag'],nodeName))
+    response = api.find_transactions(tags=[world.config['tag']])
+    world.config['findTransactionResponse'] = response
     
 @step(r'the Transaction should be found')
 def check_transaction_response(step):
     logger.debug("Checking response...")
-    response = config['findTransactionResponse']
+    response = world.config['findTransactionResponse']
     assert len(response['hashes']) != 0, 'Transactions not found'
     logger.info("{} Transactions found".format(len(response['hashes'])))  
                                   
@@ -364,31 +372,31 @@ def check_transaction_response(step):
 @step(r'find transaction is called with the address:')
 def find_transactions_from_address(step):
     logger.info('Finding milestones')
-    node = config['nodeId']
+    node = world.config['nodeId']
     
     api = api_utils.prepare_api_call(node)
     transactions = api.find_transactions(addresses = [step.multiline])
-    responses['findTransactions'] = transactions 
+    world.responses['findTransactions'] = transactions
 
 
 def check_responses_for_call(apiCall):
-    if len(responses[apiCall]) > 0:
+    if len(world.responses[apiCall]) > 0:
         return True
     else:
         return False
     
 
 def fill_response(apiCall,response):
-    responses[apiCall] = response
+    world.responses[apiCall] = response
 
 def fill_config(key,value):
-    config[key] = value
+    world.config[key] = value
 
 def fetch_config(key):
-    return config[key]  
+    return world.config[key]
     
 def fetch_response(apiCall):
-    return responses[apiCall]
+    return world.responses[apiCall]
 
 '''
 This method is used to determine if a node contains the neighbors specified in the steps feature list
@@ -400,7 +408,7 @@ methods in the step.
 '''
 #TODO: Move this function to a utility file along with all other functionality involving neighbors
 def check_neighbors(step):
-    api = api_utils.prepare_api_call(config['nodeId'])
+    api = api_utils.prepare_api_call(world.config['nodeId'])
     response = api.getNeighbors()
     containsNeighbor = [False,False]
     

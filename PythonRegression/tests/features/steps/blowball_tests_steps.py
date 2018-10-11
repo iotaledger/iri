@@ -1,7 +1,5 @@
 from aloe import world, step 
 from util.test_logic import api_test_logic
-from iota import *
-import io
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -9,9 +7,7 @@ logger = logging.getLogger(__name__)
 
 tests = api_test_logic
 
-config = {}
-responses = {}
-test_vars = {}
+world.test_vars = {}
 
 
 @step(r'the returned GTTA transactions will be compared with the milestones')
@@ -20,14 +16,14 @@ def compare_gtta_with_milestones(step):
     gtta_responses = tests.fetch_response('getTransactionsToApprove')
     find_transactions_responses = tests.fetch_response('findTransactions')
     milestones = list(find_transactions_responses['hashes'])
-    node = tests.fetch_config('nodeId')
-    config['max'] = len(gtta_responses[node])
+    node = world.config['nodeId']
+    world.config['max'] = len(gtta_responses[node])
     
     transactions = []
     transactions_count = []
     milestone_transactions = []
     milestone_transactions_count = []
-    test_vars['milestone_count'] = 0
+    world.test_vars['milestone_count'] = 0
     
     for node in gtta_responses:
         if type(gtta_responses[node]) is list:
@@ -40,7 +36,7 @@ def compare_gtta_with_milestones(step):
                 compare_responses(trunk_transaction,milestones,transactions,transactions_count,
                                   milestone_transactions,milestone_transactions_count)
     
-        logger.info("Milestone count: " + str(test_vars['milestone_count']))
+        logger.info("Milestone count: " + str(world.test_vars['milestone_count']))
     
     f = open('blowball_log.txt','w')
     for transaction in range(len(transactions)):
@@ -60,7 +56,7 @@ def compare_gtta_with_milestones(step):
 
 @step(r'less than (\d+) percent of the returned transactions should reference milestones')
 def less_than_max_percent(step,max_percent):
-    percentage = (float(test_vars['milestone_count'])/(config['max'] * 2)) * 100.00
+    percentage = (float(world.test_vars['milestone_count'])/(world.config['max'] * 2)) * 100.00
     logger.info(str(percentage) + "% milestones")
     assert percentage < float(max_percent)
     
@@ -77,7 +73,7 @@ def compare_responses(value,milestone_list,transaction_list,transaction_counter_
             milestone_transaction_count.append(1)
             logger.debug('added transaction "{}" to milestone list'.format(value))
             
-        test_vars['milestone_count'] += 1
+        world.test_vars['milestone_count'] += 1
         logger.debug('"{}" is a milestone'.format(value))    
     else: 
         if value in transaction_list:

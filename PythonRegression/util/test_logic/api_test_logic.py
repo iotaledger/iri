@@ -26,13 +26,14 @@ def check_responses_for_call(apiCall):
         return False
     
 def fetch_response(apiCall):
-    steps = import_steps()
-    return steps.responses[apiCall]
+    return world.responses[apiCall]
+
+def place_response(apiCall,node,response):
+    world.responses[apiCall][node] = response
 
 
 def fetch_config(key):
-    steps = import_steps()
-    return steps.config[key]
+    return world.config[key]
 
 
 def check_neighbors(step,node):
@@ -98,6 +99,7 @@ def fetch_call(apiCall,api,options):
         'getNodeInfo': api.get_node_info,
         'getNeighbors': api.get_neighbors,
         'getTips': api.get_tips,
+        'getTrytes':api.get_trytes,
         'getTransactionsToApprove': api.get_transactions_to_approve,
         'getBalances': api.get_balances,
         'addNeighbors': api.add_neighbors,

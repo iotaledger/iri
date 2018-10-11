@@ -90,13 +90,14 @@ Feature: Test API calls on Machine 1
 
 
     #Values can be found in util/static_vals.py
-	Scenario Outline: GetTrytes is called
-		Given getTrytes is called with the hash <hash>
-		Then the response should be equal to <trytes>
-		
-		Examples:
-			|hash		|trytes			|
-			|TEST_HASH	|TEST_TRYTES		|
+	Scenario: GetTrytes is called
+		Given "getTrytes" is called on "nodeA" with:
+		|keys       |values             |type               |
+		|hashes     |TEST_HASH          |staticList         |
+
+		Then the response for "getTrytes" should return with:
+		|keys       |values             |type               |
+		|trytes     |TEST_TRYTES        |staticValue        |
 
 
 
@@ -168,7 +169,9 @@ Feature: Test API calls on Machine 1
 		|branch_transaction     |TEST_HASH		|staticValue    |
 		|min_weight_magnitude   |50			|int            |
 
-		And "interruptAttachingToTangle" is called in parallel on "nodeA" with:
+		And we wait 2 seconds
+
+		Then "interruptAttachingToTangle" is called in parallel on "nodeA" with:
 		|keys                   |values				|type           |
 
         # Do not include duration in the return expectations as it will always return a variable amount

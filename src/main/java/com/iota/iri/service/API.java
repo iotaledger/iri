@@ -216,7 +216,7 @@ public class API {
                     if (!request.containsKey("address") || !request.containsKey("message")) {
                         return ErrorResponse.create("Invalid params");
                     }
-                    
+
                     String address = (String) request.get("address");
                     String message = (String) request.get("message");
                     return storeMessageStatement(address, message);
@@ -277,7 +277,7 @@ public class API {
                         Optional.of(HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
                         : Optional.empty();
                     int depth = getParameterAsInt(request, "depth");
-                    
+
                     return getTransactionsToApproveStatement(depth, reference);
                 }
                 case "getTrytes": {
@@ -351,8 +351,8 @@ public class API {
      * @param addresses List of addresses to check if they were ever spent from.
      * @return {@link com.iota.iri.service.dto.wereAddressesSpentFrom}
      **/
-    private AbstractResponse wereAddressesSpentFromStatement(List<String> addressesStr) throws Exception {
-        final List<Hash> addressesHash = addressesStr.stream().map(HashFactory.ADDRESS::create).collect(Collectors.toList());
+    private AbstractResponse wereAddressesSpentFromStatement(List<String> addresses) throws Exception {
+        final List<Hash> addressesHash = addresses.stream().map(HashFactory.ADDRESS::create).collect(Collectors.toList());
 
         final boolean[] states = new boolean[addressesHash.size()];
         int index = 0;
@@ -413,7 +413,7 @@ public class API {
 
 
     /**
-     * Checks the consistency of the transactions. 
+     * Checks the consistency of the transactions.
      * Marks state as false on the following checks<br/>
      * - Transaction does not exist<br/>
      * - Transaction is not a tail<br/>
@@ -421,7 +421,7 @@ public class API {
      * - Invalid bundle<br/>
      * - Tails of tails are invalid<br/>
      *
-     * @param tails List of transactions you want to check the consistency for
+     * @param transactionsList List of transactions you want to check the consistency for
      * @return {@link com.iota.iri.service.dto.CheckConsistency}
      **/
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
@@ -589,7 +589,7 @@ public class API {
     public static int getCounterGetTxToApprove() {
         return counterGetTxToApprove;
     }
-    public static void incCounteGetTxToApprove() {
+    public static void incCounterGetTxToApprove() {
         counterGetTxToApprove++;
     }
 
@@ -621,20 +621,20 @@ public class API {
         try {
             List<Hash> tips = getTransactionToApproveTips(depth, reference);
             return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
-            
+
         } catch (Exception e) {
             log.info("Tip selection failed: " + e.getLocalizedMessage());
             return ErrorResponse.create(e.getLocalizedMessage());
         }
     }
-    
+
     List<Hash> getTransactionToApproveTips(int depth, Optional<Hash> reference) throws Exception{
         if (invalidSubtangleStatus()) {
             throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
         }
-        
+
         List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(depth, reference);
-        
+
         if (log.isDebugEnabled()) {
             gatherStatisticsOnTipSelection();
         }
@@ -642,7 +642,7 @@ public class API {
     }
 
     private void gatherStatisticsOnTipSelection() {
-        API.incCounteGetTxToApprove();
+        API.incCounterGetTxToApprove();
         if ((getCounterGetTxToApprove() % 100) == 0) {
             String sb = "Last 100 getTxToApprove consumed " + API.getEllapsedTimeGetTxToApprove() / 1000000000L + " seconds processing time.";
             log.debug(sb);
@@ -716,30 +716,30 @@ public class API {
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
         return GetNodeInfoResponse.create(name, IRI.VERSION, Runtime.getRuntime().availableProcessors(),
                 Runtime.getRuntime().freeMemory(), System.getProperty("java.version"), Runtime.getRuntime().maxMemory(),
-                Runtime.getRuntime().totalMemory(), instance.milestoneTracker.latestMilestone, instance.milestoneTracker.latestMilestoneIndex,
-                instance.milestoneTracker.latestSolidSubtangleMilestone, instance.milestoneTracker.latestSolidSubtangleMilestoneIndex, instance.milestoneTracker.milestoneStartIndex,
+                Runtime.getRuntime().totalMemory(), instance.milestone.latestMilestone, instance.milestone.latestMilestoneIndex,
+                instance.milestone.latestSolidSubtangleMilestone, instance.milestone.latestSolidSubtangleMilestoneIndex, instance.milestone.milestoneStartIndex,
                 instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                 System.currentTimeMillis(), instance.tipsViewModel.size(),
                 instance.transactionRequester.numberOfTransactionsToRequest());
     }
 
     /**
-     * Get the inclusion states of a set of transactions. 
-     * This is for determining if a transaction was accepted and confirmed by the network or not. 
+     * Get the inclusion states of a set of transactions.
+     * This is for determining if a transaction was accepted and confirmed by the network or not.
      * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
      *
      * This API call simply returns a list of boolean values in the same order as the transaction list you submitted, thus you get a true/false whether a transaction is confirmed or not.
      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
-     * 
+     *
      * @param transactions List of transactions you want to get the inclusion state for.
      * @param tips List of tips (including milestones) you want to search for the inclusion state.
-     * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse} 
+     * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse}
      **/
-    private AbstractResponse getInclusionStatesStatement(final List<String> trans, final List<String> tips) throws Exception {
-        final List<Hash> transactions = trans.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
+    private AbstractResponse getInclusionStatesStatement(final List<String> transactions, final List<String> tips) throws Exception {
+        final List<Hash> trans = transactions.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
         final List<Hash> tps = tips.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
 
-        int numberOfNonMetTransactions = transactions.size();
+        int numberOfNonMetTransactions = trans.size();
         final byte[] inclusionStates = new byte[numberOfNonMetTransactions];
 
         List<Integer> tipsIndex = new LinkedList<>();
@@ -755,7 +755,7 @@ public class API {
         if(minTipsIndex > 0) {
             int maxTipsIndex = tipsIndex.stream().reduce((a,b) -> a > b ? a : b).orElse(0);
             int count = 0;
-            for(Hash hash : transactions) {
+            for(Hash hash: trans) {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(instance.tangle, hash);
                 if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
                     inclusionStates[count] = -1;
@@ -782,7 +782,7 @@ public class API {
         }
         for(int i = 0; i < inclusionStates.length; i++) {
             if(inclusionStates[i] == 0) {
-                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, transactions.get(i));
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, trans.get(i));
                 int snapshotIndex = transactionViewModel.snapshotIndex();
                 sameIndexTransactionCount.putIfAbsent(snapshotIndex, 0);
                 sameIndexTransactionCount.put(snapshotIndex, sameIndexTransactionCount.get(snapshotIndex) + 1);
@@ -792,7 +792,7 @@ public class API {
             Queue<Hash> sameIndexTip = sameIndexTips.get(index);
             if (sameIndexTip != null) {
                 //has tips in the same index level
-                if (!exhaustiveSearchWithinIndex(sameIndexTip, analyzedTips, transactions, inclusionStates, sameIndexTransactionCount.get(index), index)) {
+                if (!exhaustiveSearchWithinIndex(sameIndexTip, analyzedTips, trans, inclusionStates, sameIndexTransactionCount.get(index), index)) {
                     return ErrorResponse.create("The subtangle is not solid");
                 }
             }
@@ -1238,7 +1238,7 @@ public class API {
      * <b>Only available on testnet.</b>
      * Creates, attaches, and broadcasts a transaction with this message
      *
-     * @param address The address to add the message to 
+     * @param address The address to add the message to
      * @param message The message to store
      **/
     private synchronized AbstractResponse storeMessageStatement(final String address, final String message) throws Exception {
@@ -1257,7 +1257,7 @@ public class API {
 
         Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
         final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
-    
+
         List<String> transactions = new ArrayList<>();
         for (int i = 0; i < txCount; i++) {
             String tx;

@@ -26,10 +26,10 @@ script:
   # see  https://stackoverflow.com/questions/34405047/how-do-you-merge-into-another-branch-using-travis-with-git-commands?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
   - build_head=$(git rev-parse HEAD) 
   - git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
-  - git fetch origin dev
-  - git checkout -f dev
+  - git fetch origin $TRAVIS_BRANCH
+  - git checkout -f $TRAVIS_BRANCH
   - git checkout $build_head
-  - git merge dev
+  - git merge $TRAVIS_BRANCH
   - mvn integration-test -Dlogging-level=INFO
   #run jar sanity tests
   - VERSION=`echo -e 'setns x=http://maven.apache.org/POM/4.0.0\ncat /x:project/x:version/text()' | xmllint --shell pom.xml | grep -v / | tr -d -` 

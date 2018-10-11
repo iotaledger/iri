@@ -1,5 +1,6 @@
 package com.iota.iri.zmq;
 
+import com.iota.iri.conf.ZMQConfig;
 import com.iota.iri.utils.IotaIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +22,11 @@ public class MessageQ {
 
     private final ExecutorService publisherService = Executors.newSingleThreadExecutor();
 
-    public MessageQ(int port, String ipc, int nthreads, boolean enabled) {
+    public static MessageQ createWith(ZMQConfig config) {
+        return new MessageQ(config.getZmqPort(), config.getZmqIpc(), config.getZmqThreads(), config.isZmqEnabled());
+    }
+
+    private MessageQ(int port, String ipc, int nthreads, boolean enabled) {
         if (enabled) {
             context = ZMQ.context(nthreads);
             publisher = context.socket(ZMQ.PUB);

@@ -1,7 +1,5 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Hash;
 import com.iota.iri.model.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
@@ -13,8 +11,8 @@ import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import static com.iota.iri.controllers.TransactionViewModel.TRINARY_SIZE;
@@ -142,6 +140,11 @@ public class FileExportProvider implements PersistenceProvider {
     @Override
     public boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception {
         return false;
+    }
+
+    @Override
+    public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
+
     }
 
     @Override

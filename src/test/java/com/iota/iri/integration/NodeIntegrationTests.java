@@ -2,9 +2,10 @@ package com.iota.iri.integration;
 
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
-import com.iota.iri.conf.Configuration;
 
 import static com.iota.iri.controllers.TransactionViewModel.*;
+
+import com.iota.iri.conf.*;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
@@ -53,7 +54,7 @@ public class NodeIntegrationTests {
             folders[i*2 + 1] = new TemporaryFolder();
             iotaNodes[i] = newNode(i, folders[i*2], folders[i*2+1]);
             ixi[i] = new IXI(iotaNodes[i]);
-            ixi[i].init(iotaNodes[i].configuration.string(Configuration.DefaultConfSettings.IXI_DIR));
+            ixi[i].init(IXIConfig.IXI_DIR);
             api[i] = new API(iotaNodes[i], ixi[i]);
             api[i].init();
         }
@@ -84,14 +85,13 @@ public class NodeIntegrationTests {
     private Iota newNode(int index, TemporaryFolder db, TemporaryFolder log) throws Exception {
         db.create();
         log.create();
-        Configuration conf = new Configuration();
+        TestnetConfig conf = new TestnetConfig();
         Iota iota;
-        conf.put(Configuration.DefaultConfSettings.PORT, String.valueOf(14800 + index));
-        conf.put(Configuration.DefaultConfSettings.UDP_RECEIVER_PORT, String.valueOf(14700 + index));
-        conf.put(Configuration.DefaultConfSettings.TCP_RECEIVER_PORT, String.valueOf(14700 + index));
-        conf.put(Configuration.DefaultConfSettings.DB_PATH, db.getRoot().getAbsolutePath());
-        conf.put(Configuration.DefaultConfSettings.DB_LOG_PATH, log.getRoot().getAbsolutePath());
-        conf.put(Configuration.DefaultConfSettings.TESTNET, "true");
+        conf.setPort(14800 + index);
+        conf.setUdpReceiverPort((14700 + index));
+        conf.setUdpReceiverPort((14700 + index));
+        conf.setDbPath(db.getRoot().getAbsolutePath());
+        conf.setDbLogPath(log.getRoot().getAbsolutePath());
         iota = new Iota(conf);
         iota.init();
         return iota;
@@ -135,7 +135,7 @@ public class NodeIntegrationTests {
     }
 
     private void sendMilestone(API api, long index) throws Exception {
-        newMilestone(api, api.getTransactionToApproveStatement(10, Optional.empty()), index);
+        newMilestone(api, api.getTransactionsToApproveStatement(10, Optional.empty()), index);
     }
 
     private void newMilestone(API api, List<Hash> tips, long index) throws Exception {
@@ -143,12 +143,12 @@ public class NodeIntegrationTests {
         transactions.add(new byte[TRINARY_SIZE]);
         Converter.copyTrits(index, transactions.get(0), OBSOLETE_TAG_TRINARY_OFFSET, OBSOLETE_TAG_TRINARY_SIZE);
         transactions.add(Arrays.copyOf(transactions.get(0), TRINARY_SIZE));
-        Hash coordinator = new Hash(Configuration.TESTNET_COORDINATOR_ADDRESS);
+        Hash coordinator = new Hash(new TestnetConfig().getCoordinator());
         System.arraycopy(coordinator.trits(), 0, transactions.get(0), ADDRESS_TRINARY_OFFSET, ADDRESS_TRINARY_SIZE);
         setBundleHash(transactions, null);
         List<String> elements = api.attachToTangleStatement(tips.get(0), tips.get(0), 13, transactions.stream().map(Converter::trytes).collect(Collectors.toList()));
-        api.storeTransactionStatement(elements);
-        api.broadcastTransactionStatement(elements);
+        api.storeTransactionsStatement(elements);
+        api.broadcastTransactionsStatement(elements);
     }
 
     public void setBundleHash(List<byte[]> transactions, Curl customCurl) {

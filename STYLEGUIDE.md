@@ -20,7 +20,7 @@ and [Google's Java Style Guide](https://google.github.io/styleguide/javaguide.ht
 - [Code Complete 2](http://www.stevemcconnell.com/cc.htm)<br />
   Not java-specific, but a good handbook for programming best-practices.
 
-### Table of Contents
+## Table of Contents
   * [Coding style](#coding-style)                                                                                             
      * [Formatting](#formatting)                                                                                              
         * [Use line breaks wisely](#use-line-breaks-wisely)                                                                   

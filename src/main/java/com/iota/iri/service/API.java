@@ -97,9 +97,9 @@ public class API {
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
 	
-	private static int counterGetTxToApprove = 0;
+    private static int counter_getTxToApprove = 0;
     private static long elapsedTime_getTxToApprove = 0L;
-	private static int counter_PoW = 0;
+    private static int counter_PoW = 0;
     private static long elapsedTime_PoW = 0L;
     
  
@@ -637,7 +637,7 @@ public class API {
     }
 	
 	private void gatherStatisticsOnPoW(long startTime) {
-	    counter_PoW++;
+        counter_PoW++;
         elapsedTime_PoW+=(System.nanoTime() - startTime);
         if ((counter_PoW() % 100) == 0) {
             String sb = "Last 100 PoW consumed " + elapsedTime_PoW / 1000000000L + " seconds processing time.";
@@ -648,12 +648,12 @@ public class API {
     }
 
     private void gatherStatisticsOnTipSelection(long startTime) {
-        counterGetTxToApprove++;
-	    elapsedTime_getTxToApprove+=(System.nanoTime() - startTime);
-        if ((counterGetTxToApprove % 100) == 0) {
+        counter_getTxToApprove++;
+        elapsedTime_getTxToApprove+=(System.nanoTime() - startTime);
+        if ((counter_getTxToApprove % 100) == 0) {
             String sb = "Last 100 getTxToApprove consumed " + elapsedTime_getTxToApprove / 1000000000L + " seconds processing time.";
             log.debug(sb);
-            counterGetTxToApprove = 0;
+            counter_getTxToApprove = 0;
             elapsedTime_getTxToApprove = 0L;
         }
     }

@@ -1,7 +1,5 @@
 package com.iota.iri.utils;
 
-import java.nio.ByteBuffer;
-
 /**
  * Created by paul on 3/13/17 for iri-testnet.
  */

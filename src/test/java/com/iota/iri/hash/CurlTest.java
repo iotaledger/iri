@@ -1,14 +1,10 @@
 package com.iota.iri.hash;
 
-import com.iota.iri.model.Hash;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 import org.junit.Assert;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
 import java.util.Random;
 
 /**

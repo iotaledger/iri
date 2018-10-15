@@ -3,7 +3,9 @@ package com.iota.iri;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.utils.IotaIOUtils;
+
+import com.iota.iri.model.HashFactory;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,12 +20,12 @@ import java.util.stream.Collectors;
 
 public class Snapshot {
     private static final Logger log = LoggerFactory.getLogger(Snapshot.class);
-    public static String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
-    public static int SNAPSHOT_PUBKEY_DEPTH = 6;
-    public static int SNAPSHOT_INDEX = 6;
-    public static int SPENT_ADDRESSES_INDEX = 7;
+    private static final String SNAPSHOT_PUBKEY = "TTXJUGKTNPOOEXSTQVVACENJOQUROXYKDRCVK9LHUXILCLABLGJTIPNF9REWHOIMEUKWQLUOKD9CZUYAC";
+    private static final int SNAPSHOT_PUBKEY_DEPTH = 6;
+    private static final int SNAPSHOT_INDEX = 9;
     private static Snapshot initialSnapshot;
-
+    protected final Map<Hash, Long> state;
+    private int index;
 
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
 
@@ -34,7 +36,7 @@ public class Snapshot {
             String snapshotFile = config.getSnapshotFile();
             if (!config.isTestnet() && !SignedFiles.isFileSignatureValid(snapshotFile, config.getSnapshotSignatureFile(),
                     SNAPSHOT_PUBKEY, SNAPSHOT_PUBKEY_DEPTH, SNAPSHOT_INDEX)) {
-                throw new RuntimeException("Snapshot signature failed.");
+                throw new IllegalStateException("Snapshot signature failed.");
             }
             Map<Hash, Long> initialState = initInitialState(snapshotFile);
             initialSnapshot = new Snapshot(initialState, 0);
@@ -70,19 +72,18 @@ public class Snapshot {
     }
 
     private static Map<Hash, Long> initInitialState(String snapshotFile) {
-        String line;
         Map<Hash, Long> state = new HashMap<>();
-        BufferedReader reader = null;
-        try {
-            InputStream snapshotStream = getSnapshotStream(snapshotFile);
-            BufferedInputStream bufferedInputStream = new BufferedInputStream(snapshotStream);
-            reader = new BufferedReader(new InputStreamReader(bufferedInputStream));
+        BufferedInputStream bufferedInputStream;
+        try (InputStream snapshotStream = getSnapshotStream(snapshotFile)) {
+            bufferedInputStream = new BufferedInputStream(snapshotStream);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(bufferedInputStream));
+            String line;
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(";", 2);
                 if (parts.length >= 2) {
                     String key = parts[0];
                     String value = parts[1];
-                    state.put(new Hash(key), Long.valueOf(value));
+                    state.put(HashFactory.TRANSACTION.create(key), Long.valueOf(value));
                 }
             }
         } catch (IOException e) {
@@ -91,14 +92,8 @@ public class Snapshot {
             log.error("Failed to load snapshot.", e);
             System.exit(-1);
         }
-        finally {
-            IotaIOUtils.closeQuietly(reader);
-        }
         return state;
     }
-
-    protected final Map<Hash, Long> state;
-    private int index;
 
     public int index() {
         int i;
@@ -137,12 +132,12 @@ public class Snapshot {
 
     void apply(Map<Hash, Long> patch, int newIndex) {
         if (!patch.entrySet().stream().map(Map.Entry::getValue).reduce(Math::addExact).orElse(0L).equals(0L)) {
-            throw new RuntimeException("Diff is not consistent.");
+            throw new IllegalStateException("Diff is not consistent.");
         }
         rwlock.writeLock().lock();
-        patch.entrySet().stream().forEach(hashLongEntry -> {
-            if (state.computeIfPresent(hashLongEntry.getKey(), (hash, aLong) -> hashLongEntry.getValue() + aLong) == null) {
-                state.putIfAbsent(hashLongEntry.getKey(), hashLongEntry.getValue());
+        patch.forEach((key, value) -> {
+            if (state.computeIfPresent(key, (hash, aLong) -> value + aLong) == null) {
+                state.putIfAbsent(key, value);
             }
         });
         index = newIndex;
@@ -157,7 +152,7 @@ public class Snapshot {
             if (entry.getValue() <= 0) {
 
                 if (entry.getValue() < 0) {
-                    log.info("Skipping negative value for address: " + entry.getKey() + ": " + entry.getValue());
+                    log.info("Skipping negative value for address: {}: {}", entry.getKey(), entry.getValue());
                     return false;
                 }
 

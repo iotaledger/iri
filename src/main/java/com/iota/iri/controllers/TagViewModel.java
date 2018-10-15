@@ -1,8 +1,8 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.Tag;
-import com.iota.iri.model.ObsoleteTag;
+import com.iota.iri.model.persistables.ObsoleteTag;
+import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -11,9 +11,7 @@ import com.iota.iri.utils.Pair;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
-/**
- * Created by paul on 5/15/17.
- */
+
 public class TagViewModel implements HashesViewModel {
     private Tag self;
     private Indexable hash;

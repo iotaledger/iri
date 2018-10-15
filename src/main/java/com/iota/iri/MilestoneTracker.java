@@ -4,12 +4,16 @@ import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;
+import com.iota.iri.hash.ISSInPlace;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.zmq.MessageQ;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,13 +24,15 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
-import java.util.Arrays;
+import java.nio.ByteBuffer;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.iota.iri.MilestoneTracker.Validity.*;
+import static com.iota.iri.MilestoneTracker.Validity.INCOMPLETE;
+import static com.iota.iri.MilestoneTracker.Validity.INVALID;
+import static com.iota.iri.MilestoneTracker.Validity.VALID;
 
 public class MilestoneTracker {
 
@@ -68,7 +74,7 @@ public class MilestoneTracker {
 
         //configure
         this.testnet = config.isTestnet();
-        this.coordinator = new Hash(config.getCoordinator());
+        this.coordinator = HashFactory.ADDRESS.create(config.getCoordinator());
         this.numOfKeysInMilestone = config.getNumberOfKeysInMilestone();
         this.milestoneStartIndex = config.getMilestoneStartIndex();
         this.latestMilestoneIndex = milestoneStartIndex;
@@ -79,7 +85,7 @@ public class MilestoneTracker {
     private boolean shuttingDown;
     private static final int RESCAN_INTERVAL = 5000;
 
-    public void init (SpongeFactory.Mode mode, LedgerValidator ledgerValidator) {
+    public void init(SpongeFactory.Mode mode, int securityLevel, LedgerValidator ledgerValidator) {
         this.ledgerValidator = ledgerValidator;
         AtomicBoolean ledgerValidatorInitialized = new AtomicBoolean(false);
         (new Thread(() -> {
@@ -103,7 +109,7 @@ public class MilestoneTracker {
                                 if(analyzedMilestoneCandidates.add(hash)) {
                                     TransactionViewModel t = TransactionViewModel.fromHash(tangle, hash);
                                     if (t.getCurrentIndex() == 0) {
-                                        final Validity valid = validateMilestone(mode, t, getIndex(t));
+                                        final Validity valid = validateMilestone(mode, securityLevel, t, getIndex(t));
                                         switch (valid) {
                                             case VALID:
                                                 MilestoneViewModel milestoneViewModel = MilestoneViewModel.latest(tangle);
@@ -181,7 +187,7 @@ public class MilestoneTracker {
         return milestoneStartIndex;
     }
 
-    private Validity validateMilestone(SpongeFactory.Mode mode, TransactionViewModel transactionViewModel, int index) throws Exception {
+    Validity validateMilestone(SpongeFactory.Mode mode, int securityLevel, TransactionViewModel transactionViewModel, int index) throws Exception {
         if (index < 0 || index >= 0x200000) {
             return INVALID;
         }
@@ -197,24 +203,33 @@ public class MilestoneTracker {
         else {
             for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
-                //if (Arrays.equals(bundleTransactionViewModels.get(0).getHash(),transactionViewModel.getHash())) {
-                if (bundleTransactionViewModels.get(0).getHash().equals(transactionViewModel.getHash())) {
+                final TransactionViewModel tail = bundleTransactionViewModels.get(0);
+                if (tail.getHash().equals(transactionViewModel.getHash())) {
+                    //the signed transaction - which references the confirmed transactions and contains
+                    // the Merkle tree siblings.
+                    final TransactionViewModel siblingsTx = bundleTransactionViewModels.get(securityLevel);
 
-                    //final TransactionViewModel transactionViewModel2 = StorageTransactions.instance().loadTransaction(transactionViewModel.trunkTransactionPointer);
-                    final TransactionViewModel transactionViewModel2 = transactionViewModel.getTrunkTransaction(tangle);
-                    if (transactionViewModel2.getType() == TransactionViewModel.FILLED_SLOT
-                            && transactionViewModel.getBranchTransactionHash().equals(transactionViewModel2.getTrunkTransactionHash())
-                            && transactionViewModel.getBundleHash().equals(transactionViewModel2.getBundleHash())) {
+                    if (isMilestoneBundleStructureValid(bundleTransactionViewModels, securityLevel)) {
+                        //milestones sign the normalized hash of the sibling transaction.
+                        byte[] signedHash = ISS.normalizedBundle(siblingsTx.getHash().trits());
 
-                        final byte[] trunkTransactionTrits = transactionViewModel.getTrunkTransactionHash().trits();
-                        final byte[] signatureFragmentTrits = Arrays.copyOfRange(transactionViewModel.trits(), TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
+                        //validate leaf signature
+                        ByteBuffer bb = ByteBuffer.allocate(Curl.HASH_LENGTH * securityLevel);
+                        byte[] digest = new byte[Curl.HASH_LENGTH];
 
-                        final byte[] merkleRoot = ISS.getMerkleRoot(mode, ISS.address(mode, ISS.digest(mode,
-                                Arrays.copyOf(ISS.normalizedBundle(trunkTransactionTrits),
-                                        ISS.NUMBER_OF_FRAGMENT_CHUNKS),
-                                signatureFragmentTrits)),
-                                transactionViewModel2.trits(), 0, index, numOfKeysInMilestone);
-                        if ((testnet && acceptAnyTestnetCoo) || (new Hash(merkleRoot)).equals(coordinator)) {
+                        for (int i = 0; i < securityLevel; i++) {
+                            ISSInPlace.digest(mode, signedHash, ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
+                                    bundleTransactionViewModels.get(i).getSignature(), 0, digest);
+                            bb.put(digest);
+                        }
+
+                        byte[] digests = bb.array();
+                        byte[] address = ISS.address(mode, digests);
+
+                        //validate Merkle path
+                        byte[] merkleRoot = ISS.getMerkleRoot(mode, address,
+                                siblingsTx.trits(), 0, index, numOfKeysInMilestone);
+                        if ((testnet && acceptAnyTestnetCoo) || (HashFactory.ADDRESS.create(merkleRoot)).equals(coordinator)) {
                             new MilestoneViewModel(index, transactionViewModel.getHash()).store(tangle);
                             return VALID;
                         } else {
@@ -283,5 +298,15 @@ public class MilestoneTracker {
 
             e.printStackTrace();
         }
+    }
+
+    private boolean isMilestoneBundleStructureValid(List<TransactionViewModel> bundleTxs, int securityLevel) {
+        TransactionViewModel head = bundleTxs.get(securityLevel);
+        return bundleTxs.stream()
+                .limit(securityLevel)
+                .allMatch(tx ->
+                        tx.getBranchTransactionHash().equals(head.getTrunkTransactionHash()));
+        //trunks of bundles are checked in Bundle validation - no need to check again.
+        //bundleHash equality is checked in BundleValidator.validate() (loadTransactionsFromTangle)
     }
 }

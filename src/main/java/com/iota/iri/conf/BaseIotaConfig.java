@@ -10,7 +10,6 @@ import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /*
@@ -56,7 +55,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String dbLogPath = Defaults.DB_LOG_PATH;
     protected int dbCacheSize = Defaults.DB_CACHE_SIZE; //KB
     protected String mainDb = Defaults.ROCKS_DB;
-    protected boolean export = Defaults.EXPORT;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
@@ -360,18 +358,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public boolean isExport() {
-        return export;
-    }
-
-
-    @JsonProperty
-    @Parameter(names = {"--export"}, description = DbConfig.Descriptions.EXPORT)
-    protected void setExport(boolean export) {
-        this.export = export;
-    }
-
-    @Override
     public boolean isRevalidate() {
         return revalidate;
     }
@@ -556,13 +542,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getPreviousEpochSpentAddressesFile() {
+    public String getPreviousEpochSpentAddressesFiles() {
         return Defaults.PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT;
-    }
-
-    @Override
-    public String getPreviousEpochSpentAddressesSigFile () {
-        return Defaults.PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG;
     }
 
     @Override
@@ -723,7 +704,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String DB_LOG_PATH = "mainnet.log";
         int DB_CACHE_SIZE = 100_000;
         String ROCKS_DB = "rocksdb";
-        boolean EXPORT = false;
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
 
@@ -766,10 +746,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int LOCAL_SNAPSHOTS_DEPTH = 500;
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
-        String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT = "/previousEpochsSpentAddresses.txt";
-        String PREVIOUS_EPOCH_SPENT_ADDRESSES_SIG = "/previousEpochsSpentAddresses.sig";
-        long GLOBAL_SNAPSHOT_TIME = 1517180400;
-        int MILESTONE_START_INDEX = 590_000;
+        String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
+                "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt";
+        long GLOBAL_SNAPSHOT_TIME = 1537203600;
+        int MILESTONE_START_INDEX = 774_805;
         int NUM_KEYS_IN_MILESTONE = 20;
         int MAX_ANALYZED_TXS = 20_000;
     }

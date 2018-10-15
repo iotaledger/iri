@@ -8,29 +8,31 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.io.IOException;
 
+/**
+ * Deserialize boolean type.
+ */
 public class CustomBoolDeserializer extends StdDeserializer<Boolean>{
 
+    /**
+     * Default constructor
+     */
     public CustomBoolDeserializer() {
-        this(Boolean.class);
-    }
-
-    protected CustomBoolDeserializer(Class<?> vc) {
-        super(vc);
+        super(Boolean.class);
     }
 
     @Override
     public Boolean deserialize(JsonParser parser, DeserializationContext ctxt) throws IOException {
-        JsonToken t = parser.getCurrentToken();
-        if (t == JsonToken.VALUE_TRUE) {
+        JsonToken jsonToken = parser.getCurrentToken();
+        if (jsonToken == JsonToken.VALUE_TRUE) {
             return true;
         }
-        if (t == JsonToken.VALUE_FALSE) {
+        if (jsonToken == JsonToken.VALUE_FALSE) {
             return false;
         }
-        if (t == JsonToken.VALUE_NULL) {
+        if (jsonToken == JsonToken.VALUE_NULL) {
             return parseNull(ctxt);
         }
-        if (t == JsonToken.VALUE_STRING) {
+        if (jsonToken == JsonToken.VALUE_STRING) {
             String text = parser.getText().trim();
             if (StringUtils.isEmpty(text)) {
                 return parseNull(ctxt);

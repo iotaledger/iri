@@ -2,7 +2,6 @@ package com.iota.iri;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.iota.iri.hash.ISS;
 import com.iota.iri.service.CallableRequest;
 import com.iota.iri.service.dto.AbstractResponse;
 import com.sun.nio.file.SensitivityWatchEventModifier;
@@ -55,7 +54,7 @@ public class IXI {
         this.iota = iota;
     }
 
-    public void init(String rootDir) throws Exception {
+    public void init(String rootDir) throws IOException {
         if(rootDir.length() > 0) {
             watcher = FileSystems.getDefault().newWatchService();
             this.rootPath = Paths.get(rootDir);
@@ -70,9 +69,9 @@ public class IXI {
     private void registerRecursive(final Path root) throws IOException {
         Files.walkFileTree(root, EnumSet.allOf(FileVisitOption.class), MAX_TREE_DEPTH, new SimpleFileVisitor<Path>() {
             @Override
-            public FileVisitResult preVisitDirectory(Path modulePath, BasicFileAttributes attrs) throws IOException {
+            public FileVisitResult preVisitDirectory(Path modulePath, BasicFileAttributes attrs) {
                 watch(modulePath);
-                if (modulePath != rootPath) {
+                if (!modulePath.equals(rootPath)) {
                     loadModule(modulePath);
                 }
                 return FileVisitResult.CONTINUE;
@@ -117,7 +116,7 @@ public class IXI {
     }
 
     private void handleModulePathEvent(Path watchedPath, IxiEvent ixiEvent, Path changedPath) {
-        if (watchedPath != rootPath && Files.isDirectory(changedPath)) { // we are only interested in dir changes in tree depth level 2
+        if (!watchedPath.equals(rootPath) && Files.isDirectory(changedPath)) { // we are only interested in dir changes in tree depth level 2
             return;
         }
         handlePathEvent(ixiEvent, changedPath);
@@ -166,7 +165,7 @@ public class IXI {
             WatchKey watchKey = dir.register(watcher, new WatchEvent.Kind[]{ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY}, SensitivityWatchEventModifier.HIGH);
             watchKeys.put(watchKey, dir);
         } catch (IOException e) {
-            log.error("Could not create watcher for path '" + dir + "'.");
+            log.error("Could not create watcher for path '{}'.", dir);
         }
     }
 
@@ -197,10 +196,10 @@ public class IXI {
     }
 
     private void loadModule(Path modulePath) {
-        log.info("Searching: " + modulePath);
+        log.info("Searching: {}", modulePath);
         Path packageJsonPath = getPackagePath(modulePath);
         if (!Files.exists(packageJsonPath)) {
-            log.info("No package.json found in " + modulePath);
+            log.info("No package.json found in {}", modulePath);
             return;
         }
         final Map packageJson;
@@ -209,16 +208,16 @@ public class IXI {
             packageJsonReader = new FileReader(packageJsonPath.toFile());
             packageJson = gson.fromJson(packageJsonReader, Map.class);
         } catch (FileNotFoundException e) {
-            log.error("Could not load " + packageJsonPath.toString());
+            log.error("Could not load {}", packageJsonPath);
             return;
         }
         try {
             packageJsonReader.close();
         } catch (IOException e) {
-            log.error("Could not close file " + packageJsonPath.toString());
+            log.error("Could not close file {}", packageJsonPath);
         }
         if(packageJson != null && packageJson.get("main") != null) {
-            log.info("Loading module: " + getModuleName(modulePath, true));
+            log.info("Loading module: {}", getModuleName(modulePath, true));
             Path pathToMain = Paths.get(modulePath.toString(), (String) packageJson.get("main"));
             attach(pathToMain, getModuleName(modulePath, true));
         } else {
@@ -227,7 +226,7 @@ public class IXI {
     }
 
     private void unloadModule(Path moduleNamePath) {
-        log.debug("Unloading module: " + moduleNamePath);
+        log.debug("Unloading module: {}", moduleNamePath);
         Path realPath = getRealPath(moduleNamePath);
         String moduleName = getModuleName(realPath, false);
         detach(moduleName);
@@ -239,10 +238,10 @@ public class IXI {
         try {
             ixiModuleReader = new FileReader(pathToMain.toFile());
         } catch (FileNotFoundException e) {
-            log.error("Could not load " + pathToMain);
+            log.error("Could not load {}", pathToMain);
             return;
         }
-        log.info("Starting script: " + pathToMain);
+        log.info("Starting script: {}", pathToMain);
         Map<String, CallableRequest<AbstractResponse>> ixiMap = new HashMap<>();
         Map<String, Runnable> startStop = new HashMap<>();
 
@@ -256,12 +255,12 @@ public class IXI {
         try {
             scriptEngine.eval(ixiModuleReader, bindings);
         } catch (ScriptException e) {
-            log.error("Script error");
+            log.error("Script error", e);
         }
         try {
             ixiModuleReader.close();
         } catch (IOException e) {
-            log.error("Could not close " + pathToMain);
+            log.error("Could not close {}", pathToMain);
         }
     }
 
@@ -276,7 +275,7 @@ public class IXI {
         ixiLifetime.remove(moduleName);
     }
 
-    public void shutdown() throws InterruptedException, IOException {
+    public void shutdown() throws InterruptedException {
         if(dirWatchThread != null) {
             shutdown = true;
             dirWatchThread.join();

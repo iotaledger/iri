@@ -1,0 +1,96 @@
+<?xml version="1.0"?>
+
+<ruleset name="Iota"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 http://pmd.sourceforge.net/ruleset_2_0_0.xsd">
+    <description>
+        The Iota ruleset contains a collection of good practices which should be followed.
+    </description>
+
+    <rule ref="category/java/errorprone.xml/AvoidBranchingStatementAsLastInLoop" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/AvoidDecimalLiteralsInBigDecimalConstructor" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/AvoidMultipleUnaryOperators" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/BrokenNullCheck" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/CheckSkipResult" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/ClassCastExceptionWithToArray" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/DontUseFloatTypeForLoopIndices" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/JumbledIncrementer" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/MisplacedNullCheck" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/OverrideBothEqualsAndHashcode" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/ReturnFromFinallyBlock" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/UnconditionalIfStatement" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/CloseResource" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptyCatchBlock" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptyFinallyBlock" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptyIfStmt" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptyStatementBlock" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptyStatementNotInLoop" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptyInitializer" name="EmptyStaticInitializer" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptySwitchStatements" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptySynchronizedBlock" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptyTryBlock" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/EmptyWhileStmt" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/InvalidSlf4jMessageFormat" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/LoggerIsNotStaticFinal" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/MoreThanOneLogger" deprecated="true"/>
+    <rule ref="category/java/errorprone.xml/JUnitSpelling" deprecated="true"/>
+
+    <rule ref="category/java/multithreading.xml/AvoidThreadGroup" deprecated="true"/>
+    <rule ref="category/java/multithreading.xml/DontCallThreadRun" deprecated="true"/>
+    <rule ref="category/java/multithreading.xml/DoubleCheckedLocking" deprecated="true"/>
+    <rule ref="category/java/multithreading.xml/NonThreadSafeSingleton" deprecated="true"/>
+
+    <rule ref="category/java/bestpractices.xml/AvoidUsingHardCodedIP" deprecated="true">
+        <properties>
+            <!-- Ignore @Test methods -->
+            <property name="violationSuppressXPath"
+                      value="//MethodDeclaration/../Annotation/MarkerAnnotation/Name[@Image='Test']"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/bestpractices.xml/CheckResultSet" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/LooseCoupling" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UseCollectionIsEmpty" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/SwitchStmtsShouldHaveDefault" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UseAssertEqualsInsteadOfAssertTrue" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UseAssertNullInsteadOfAssertTrue" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UseAssertSameInsteadOfAssertTrue" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UseAssertTrueInsteadOfAssertEquals" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/JUnitAssertionsShouldIncludeMessage" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedFormalParameter" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedLocalVariable" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateField" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod" deprecated="true"/>
+    <rule ref="category/java/bestpractices.xml/UnusedImports" deprecated="true"/>
+
+    <rule ref="category/java/codestyle.xml/ExtendsObject" deprecated="true"/>
+    <rule ref="category/java/codestyle.xml/UnnecessaryModifier" name="UnnecessaryFinalModifier" deprecated="true"/>
+    <rule ref="category/java/codestyle.xml/AvoidFinalLocalVariable" deprecated="true"/>
+    <rule ref="category/java/codestyle.xml/FieldDeclarationsShouldBeAtStartOfClass" deprecated="true"/>
+    <rule ref="category/java/codestyle.xml/UnnecessaryFullyQualifiedName" deprecated="true"/>
+    <rule ref="category/java/codestyle.xml/DuplicateImports" deprecated="true"/>
+    <rule ref="category/java/codestyle.xml/MIsLeadingVariableName" name="MisleadingVariableName" deprecated="true"/>
+    <rule ref="category/java/codestyle.xml/SuspiciousConstantFieldName" deprecated="true"/>
+
+    <rule ref="category/java/performance.xml/BigIntegerInstantiation" deprecated="true"/>
+    <rule ref="category/java/performance.xml/BooleanInstantiation" deprecated="true"/>
+    <rule ref="category/java/performance.xml/StringToString"/>
+
+    <rule ref="category/java/design.xml/SimplifyBooleanAssertion" deprecated="true"/>
+    <rule ref="category/java/design.xml/CollapsibleIfStatements" deprecated="true"/>
+    <rule ref="category/java/design.xml/CouplingBetweenObjects" deprecated="true"/>
+    <rule ref="category/java/design.xml/SimplifyConditional" deprecated="true"/>
+    <rule ref="category/java/design.xml/CyclomaticComplexity" deprecated="true"/>
+    <rule ref="category/java/design.xml/NPathComplexity" deprecated="true"/>
+
+    <rule ref="category/java/documentation.xml/CommentRequired" deprecated="true">
+        <properties>
+            <!-- Ignore @Test methods -->
+            <property name="violationSuppressXPath"
+                      value="//MethodDeclaration/../Annotation/MarkerAnnotation/Name[@Image='Test']" />
+            <property name="protectedMethodCommentRequirement" value="Ignored"/>
+            <property name="fieldCommentRequirement" value="Ignored"/>
+        </properties>
+    </rule>
+    <rule ref="category/java/documentation.xml/UncommentedEmptyMethodBody" deprecated="true"/>
+</ruleset>

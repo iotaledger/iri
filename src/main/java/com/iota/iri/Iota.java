@@ -10,9 +10,20 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.service.TipsSolidifier;
-import com.iota.iri.service.tipselection.*;
-import com.iota.iri.service.tipselection.impl.*;
-import com.iota.iri.storage.*;
+import com.iota.iri.service.tipselection.EntryPointSelector;
+import com.iota.iri.service.tipselection.RatingCalculator;
+import com.iota.iri.service.tipselection.TailFinder;
+import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.service.tipselection.Walker;
+import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
+import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
+import com.iota.iri.service.tipselection.impl.TailFinderImpl;
+import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
+import com.iota.iri.service.tipselection.impl.WalkerAlpha;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.ZmqPublishProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
@@ -51,7 +62,7 @@ public class Iota {
         messageQ = MessageQ.createWith(configuration);
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, messageQ);
-        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester, messageQ,
+        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester,
                 configuration);
         milestoneTracker = new MilestoneTracker(tangle, transactionValidator, messageQ, initialSnapshot, configuration);
         node = new Node(tangle, transactionValidator, transactionRequester, tipsViewModel, milestoneTracker, messageQ,
@@ -72,11 +83,11 @@ public class Iota {
         }
 
         if (configuration.isRevalidate()) {
-            tangle.clearColumn(com.iota.iri.model.Milestone.class);
+            tangle.clearColumn(com.iota.iri.model.persistables.Milestone.class);
             tangle.clearColumn(com.iota.iri.model.StateDiff.class);
-            tangle.clearMetadata(com.iota.iri.model.Transaction.class);
+            tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
         }
-        milestoneTracker.init(SpongeFactory.Mode.CURLP27, ledgerValidator);
+        milestoneTracker.init(SpongeFactory.Mode.CURLP27, 1, ledgerValidator);
         transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
         tipsSolidifier.init();
         transactionRequester.init(configuration.getpRemoveRequest());
@@ -87,14 +98,14 @@ public class Iota {
 
     private void rescanDb() throws Exception {
         //delete all transaction indexes
-        tangle.clearColumn(com.iota.iri.model.Address.class);
-        tangle.clearColumn(com.iota.iri.model.Bundle.class);
-        tangle.clearColumn(com.iota.iri.model.Approvee.class);
-        tangle.clearColumn(com.iota.iri.model.ObsoleteTag.class);
-        tangle.clearColumn(com.iota.iri.model.Tag.class);
-        tangle.clearColumn(com.iota.iri.model.Milestone.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Address.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Bundle.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Approvee.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.ObsoleteTag.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Tag.class);
+        tangle.clearColumn(com.iota.iri.model.persistables.Milestone.class);
         tangle.clearColumn(com.iota.iri.model.StateDiff.class);
-        tangle.clearMetadata(com.iota.iri.model.Transaction.class);
+        tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
 
         //rescan all tx & refill the columns
         TransactionViewModel tx = TransactionViewModel.first(tangle);
@@ -133,9 +144,6 @@ public class Iota {
             default: {
                 throw new NotImplementedException("No such database type.");
             }
-        }
-        if (configuration.isExport()) {
-            tangle.addPersistenceProvider(new FileExportProvider());
         }
         if (configuration.isZmqEnabled()) {
             tangle.addPersistenceProvider(new ZmqPublishProvider(messageQ));

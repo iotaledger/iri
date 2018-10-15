@@ -1,9 +1,9 @@
 package com.iota.iri.service.tipselection;
 
-import com.iota.iri.model.Hash;
-
 import java.util.List;
 import java.util.Optional;
+
+import com.iota.iri.model.Hash;
 
 /**
  * Selects tips to be approved

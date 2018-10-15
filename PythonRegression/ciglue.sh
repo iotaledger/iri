@@ -1,22 +1,32 @@
 #!/bin/bash
 
+if [ "$#" -ne 1 ]; then
+    echo "Please specify an image to test"
+    exit 1
+fi
+
 set -x
 
-DOCKER_REGISTRY=dyrellc/iri-network-tests
+UUID=$(uuidgen)
 ERROR=0
+K8S_NAMESPACE=$(kubectl config get-contexts $(kubectl config current-context) | tail -n+2 | gawk '{print $5}')
+IMAGE=$1
 
-git clone --depth 1 --branch yaml_configuration https://github.com/karimodm/iri-network-tests.git iri-network-tests
+git clone --depth 1 https://github.com/iotaledger/tiab tiab
 
-cd iri-network-tests
-git pull
-echo "iri-network-tests revision: "; git rev-parse HEAD
 virtualenv venv
 source venv/bin/activate
+
+cd tiab
+git pull
+echo "tiab revision: "; git rev-parse HEAD
 pip install -r requirements.txt
 cd ..
 
+pip install -e .
+
 for machine_dir in tests/features/machine?; do
-  python iri-network-tests/create_cluster.py -u $DOCKER_REGISTRY -d -c $machine_dir/config.yml -o $machine_dir/output.yml
+  python tiab/create_cluster.py -i $IMAGE -t $UUID -n $K8S_NAMESPACE -c $machine_dir/config.yml -o $machine_dir/output.yml -d
   if [ $? -ne 0 ]; then
     ERROR=1
     python <<EOF
@@ -27,17 +37,17 @@ for (key,value) in yaml.load(open('$machine_dir/output.yml'))['nodes'].iteritems
 EOF
   fi
 done
-REVISION_HASH=$(grep -F 'revision_hash:' $machine_dir/output.yml | cut -d' ' -f2)
 
 if [ $ERROR -eq 0 ]; then
   echo "Starting tests..." 
   for machine_dir in tests/features/machine?;do
-   mapfile -t FEATURES < <(find $machine_dir -type f -name "*.feature") 
-   aloe ${FEATURES} -v --nologcapture --where $machine_dir
+    FEATURES=$(find $machine_dir -type f -name "*.feature" -exec basename {} \; | tr "\n" " ")
+    aloe $FEATURES --verbose --nologcapture --where $machine_dir
   done
 fi
 
+timeout 10 tiab/teardown_cluster.py -t $UUID -n $K8S_NAMESPACE
+
 deactivate
 
-timeout 10 iri-network-tests/teardown_cluster.sh -r $REVISION_HASH
 exit $ERROR

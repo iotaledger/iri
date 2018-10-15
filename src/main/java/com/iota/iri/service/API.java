@@ -645,7 +645,7 @@ public class API {
 
     private void gatherStatisticsOnTipSelection(int startTime) {
         API.incCounterGetTxToApprove();
-		API.incElapsedTimeGetTxToApprove(System.nanoTime() - startTime);
+	API.incElapsedTimeGetTxToApprove(System.nanoTime() - startTime);
         if ((getCounterGetTxToApprove() % 100) == 0) {
             String sb = "Last 100 getTxToApprove consumed " + API.getElapsedTimeGetTxToApprove() / 1000000000L + " seconds processing time.";
             log.debug(sb);

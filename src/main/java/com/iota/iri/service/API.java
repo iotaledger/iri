@@ -595,12 +595,12 @@ public class API {
         counterGetTxToApprove++;
     }
 
-    private static long ellapsedTime_getTxToApprove = 0L;
-    public static long getEllapsedTimeGetTxToApprove() {
-        return ellapsedTime_getTxToApprove;
+    private static long elapsedTime_getTxToApprove = 0L;
+    public static long getElapsedTimeGetTxToApprove() {
+        return elapsedTime_getTxToApprove;
     }
-    public static void incEllapsedTimeGetTxToApprove(long ellapsedTime) {
-        ellapsedTime_getTxToApprove += ellapsedTime;
+    public static void incElapsedTimeGetTxToApprove(long elapsedTime) {
+        elapsedTime_getTxToApprove += elapsedTime;
     }
 
     /**
@@ -634,22 +634,23 @@ public class API {
         if (invalidSubtangleStatus()) {
             throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
         }
-
+        long startTime = System.nanoTime();
         List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(depth, reference);
 
         if (log.isDebugEnabled()) {
-            gatherStatisticsOnTipSelection();
+            gatherStatisticsOnTipSelection(startTime);
         }
         return tips;
     }
 
-    private void gatherStatisticsOnTipSelection() {
+    private void gatherStatisticsOnTipSelection(int startTime) {
         API.incCounterGetTxToApprove();
+		API.incElapsedTimeGetTxToApprove(System.nanoTime() - startTime);
         if ((getCounterGetTxToApprove() % 100) == 0) {
-            String sb = "Last 100 getTxToApprove consumed " + API.getEllapsedTimeGetTxToApprove() / 1000000000L + " seconds processing time.";
+            String sb = "Last 100 getTxToApprove consumed " + API.getElapsedTimeGetTxToApprove() / 1000000000L + " seconds processing time.";
             log.debug(sb);
             counterGetTxToApprove = 0;
-            ellapsedTime_getTxToApprove = 0L;
+            elapsedTime_getTxToApprove = 0L;
         }
     }
 
@@ -1040,12 +1041,12 @@ public class API {
         API.counter_PoW++;
     }
 
-    private static long ellapsedTime_PoW = 0L;
-    public static long getEllapsedTimePoW() {
-        return ellapsedTime_PoW;
+    private static long elapsedTime_PoW = 0L;
+    public static long getElapsedTimePoW() {
+        return elapsedTime_PoW;
     }
-    public static void incEllapsedTimePoW(long ellapsedTime) {
-        ellapsedTime_PoW += ellapsedTime;
+    public static void incElapsedTimePoW(long elapsedTime) {
+        elapsedTime_PoW += elapsedTime;
     }
 
     /**
@@ -1109,15 +1110,15 @@ public class API {
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {
-                API.incEllapsedTimePoW(System.nanoTime() - startTime);
+                API.incElapsedTimePoW(System.nanoTime() - startTime);
                 API.incCounterPoW();
                 if ( ( API.getCounterPoW() % 100) == 0 ) {
                     String sb = "Last 100 PoW consumed " +
-                            API.getEllapsedTimePoW() / 1000000000L +
+                            API.getElapsedTimePoW() / 1000000000L +
                             " seconds processing time.";
                     log.info(sb);
                     counter_PoW = 0;
-                    ellapsedTime_PoW = 0L;
+                    elapsedTime_PoW = 0L;
                 }
             }
         }

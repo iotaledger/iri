@@ -1,18 +1,19 @@
-package com.iota.iri.service.garbagecollector;
+package com.iota.iri.service.transactionpruning;
 
 /**
- * This class is used to wrap exceptions that are specific to the garbage collector logic.
+ * This class is used to wrap exceptions that are specific to the transaction pruning logic.
  *
- * It allows us to distinct between the different kinds of errors that can happen during the execution of the code.
+ * It allows us to distinct between the different kinds of errors that can happen during the execution of the pruning
+ * logic.
  */
-public class GarbageCollectorException extends Exception {
+public class TransactionPruningException extends Exception {
     /**
      * Constructor of the exception which allows us to provide a specific error message and the cause of the error.
      *
      * @param message reason why this error occurred
      * @param cause wrapped exception that caused this error
      */
-    GarbageCollectorException(String message, Throwable cause) {
+    public TransactionPruningException(String message, Throwable cause) {
         super(message, cause);
     }
 
@@ -22,7 +23,7 @@ public class GarbageCollectorException extends Exception {
      *
      * @param message reason why this error occurred
      */
-    GarbageCollectorException(String message) {
+    public TransactionPruningException(String message) {
         super(message);
     }
 
@@ -32,7 +33,7 @@ public class GarbageCollectorException extends Exception {
      *
      * @param cause wrapped exception that caused this error
      */
-    GarbageCollectorException(Throwable cause) {
+    public TransactionPruningException(Throwable cause) {
         super(cause);
     }
 }

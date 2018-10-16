@@ -639,7 +639,7 @@ public class API {
 	private void gatherStatisticsOnPoW(long startTime) {
         counter_PoW++;
         elapsedTime_PoW+=(System.nanoTime() - startTime);
-        if ((counter_PoW() % 100) == 0) {
+        if ((counter_PoW % 100) == 0) {
             String sb = "Last 100 PoW consumed " + elapsedTime_PoW / 1000000000L + " seconds processing time.";
             log.debug(sb);
             counter_PoW = 0;

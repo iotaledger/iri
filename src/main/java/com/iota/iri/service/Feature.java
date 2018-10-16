@@ -26,6 +26,11 @@ public enum Feature {
         return name;
     }
     
+    /**
+     * Calculates all features for this Iota node
+     * @param instance the instance of this node
+     * @return A list of features
+     */
     public static Feature[] calculateFeatures(Iota instance) {
         List<Feature> features = new ArrayList<>();
         
@@ -62,6 +67,11 @@ public enum Feature {
         return features.toArray(new Feature[]{});
     }
     
+    /**
+     * Calculates all features for this Iota node
+     * @param instance the instance of this node
+     * @return A list of the features in readable name format
+     */
     public static String[] calculateFeatureNames(Iota instance) {
         Feature[] features = calculateFeatures(instance);
         

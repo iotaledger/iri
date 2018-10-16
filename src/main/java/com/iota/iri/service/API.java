@@ -631,14 +631,14 @@ public class API {
         List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(depth, reference);
 
         if (log.isDebugEnabled()) {
-            gatherStatisticsOnTipSelection(startTime);
+            gatherStatisticsOnTipSelection(System.nanoTime() - startTime);
         }
         return tips;
     }
 	
-	private void gatherStatisticsOnPoW(long startTime) {
+	private void gatherStatisticsOnPoW(long elapsedTime) {
         counter_PoW++;
-        elapsedTime_PoW+=(System.nanoTime() - startTime);
+        elapsedTime_PoW+=elapsedTime;
         if ((counter_PoW % 100) == 0) {
             String sb = "Last 100 PoW consumed " + elapsedTime_PoW / 1000000000L + " seconds processing time.";
             log.debug(sb);
@@ -647,9 +647,9 @@ public class API {
         }
     }
 
-    private void gatherStatisticsOnTipSelection(long startTime) {
+    private void gatherStatisticsOnTipSelection(long elapsedTime) {
         counter_getTxToApprove++;
-        elapsedTime_getTxToApprove+=(System.nanoTime() - startTime);
+        elapsedTime_getTxToApprove+=elapsedTime;
         if ((counter_getTxToApprove % 100) == 0) {
             String sb = "Last 100 getTxToApprove consumed " + elapsedTime_getTxToApprove / 1000000000L + " seconds processing time.";
             log.debug(sb);
@@ -1101,7 +1101,7 @@ public class API {
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {
-                gatherStatisticsOnPoW(startTime);
+                gatherStatisticsOnPoW(System.nanoTime() - startTime);
             }
         }
 

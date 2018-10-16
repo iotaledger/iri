@@ -647,17 +647,6 @@ public class API {
         }
     }
 
-    private void gatherStatisticsOnPoW(long elapsedTime) {
-        counter_PoW++;
-        elapsedTime_PoW += elapsedTime;
-        if ((counter_PoW % 100) == 0) {
-            String sb = "Last 100 PoW consumed " + elapsedTime_PoW / 1000000000L + " seconds processing time.";
-            log.debug(sb);
-            counter_PoW = 0;
-            elapsedTime_PoW = 0L;
-        }
-    }
-
     /**
       * Returns the list of tips.
       *
@@ -1113,6 +1102,18 @@ public class API {
         }
         return elements;
     }
+
+    private void gatherStatisticsOnPoW(long elapsedTime) {
+        counter_PoW++;
+        elapsedTime_PoW += elapsedTime;
+        if ((counter_PoW % 100) == 0) {
+            String sb = "Last 100 PoW consumed " + elapsedTime_PoW / 1000000000L + " seconds processing time.";
+            log.debug(sb);
+            counter_PoW = 0;
+            elapsedTime_PoW = 0L;
+        }
+    }
+
 
     /**
       * Temporarily add a list of neighbors to your node.

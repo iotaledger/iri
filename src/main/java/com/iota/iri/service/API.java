@@ -636,17 +636,6 @@ public class API {
         return tips;
     }
 
-    private void gatherStatisticsOnPoW(long elapsedTime) {
-        counter_PoW++;
-        elapsedTime_PoW += elapsedTime;
-        if ((counter_PoW % 100) == 0) {
-            String sb = "Last 100 PoW consumed " + elapsedTime_PoW / 1000000000L + " seconds processing time.";
-            log.debug(sb);
-            counter_PoW = 0;
-            elapsedTime_PoW = 0L;
-        }
-    }
-
     private void gatherStatisticsOnTipSelection(long elapsedTime) {
         counter_getTxToApprove++;
         elapsedTime_getTxToApprove += elapsedTime;
@@ -655,6 +644,17 @@ public class API {
             log.debug(sb);
             counter_getTxToApprove = 0;
             elapsedTime_getTxToApprove = 0L;
+        }
+    }
+
+    private void gatherStatisticsOnPoW(long elapsedTime) {
+        counter_PoW++;
+        elapsedTime_PoW += elapsedTime;
+        if ((counter_PoW % 100) == 0) {
+            String sb = "Last 100 PoW consumed " + elapsedTime_PoW / 1000000000L + " seconds processing time.";
+            log.debug(sb);
+            counter_PoW = 0;
+            elapsedTime_PoW = 0L;
         }
     }
 

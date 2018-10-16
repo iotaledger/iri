@@ -1101,7 +1101,7 @@ public class API {
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {
-			    gatherStatisticsOnPoW(startTime);
+                gatherStatisticsOnPoW(startTime);
             }
         }
 

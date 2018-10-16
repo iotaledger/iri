@@ -96,6 +96,8 @@ public class API {
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
+    
+    private final String[] features;
 
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
@@ -109,6 +111,8 @@ public class API {
         milestoneStartIndex = ((ConsensusConfig) configuration).getMilestoneStartIndex();
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
+
+        features = Feature.calculateFeatureNames(instance);
     }
 
     public void init() throws IOException {
@@ -723,7 +727,8 @@ public class API {
                 instance.milestoneTracker.latestSolidSubtangleMilestone, instance.milestoneTracker.latestSolidSubtangleMilestoneIndex, instance.milestoneTracker.milestoneStartIndex,
                 instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                 System.currentTimeMillis(), instance.tipsViewModel.size(),
-                instance.transactionRequester.numberOfTransactionsToRequest());
+                instance.transactionRequester.numberOfTransactionsToRequest(),
+                features);
     }
 
     /**

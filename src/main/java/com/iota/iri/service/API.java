@@ -1026,7 +1026,6 @@ public class API {
         return GetBalancesResponse.create(elements, hashes.stream().map(h -> h.toString()).collect(Collectors.toList()), index);
     }
 
- 
 
 
     /**

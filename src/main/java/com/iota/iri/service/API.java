@@ -635,8 +635,8 @@ public class API {
         }
         return tips;
     }
-	
-	private void gatherStatisticsOnPoW(long elapsedTime) {
+
+    private void gatherStatisticsOnPoW(long elapsedTime) {
         counter_PoW++;
         elapsedTime_PoW += elapsedTime;
         if ((counter_PoW % 100) == 0) {

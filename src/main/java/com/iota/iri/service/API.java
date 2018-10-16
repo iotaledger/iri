@@ -594,7 +594,6 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-  
 
     /**
       * Tip selection which returns <code>trunkTransaction</code> and <code>branchTransaction</code>.

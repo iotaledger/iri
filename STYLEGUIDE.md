@@ -559,7 +559,7 @@ class [fan-out](http://en.wikipedia.org/wiki/Coupling_(computer_programming)#Mod
     // Good.
     import com.iota.baz.foo.BazFoo;
     import com.iota.Foo;
-    //This is fine because it is long enough and a specifric subpackage was specified.
+    //This is fine because it is long enough and a specific subpackage was specified.
     import com.iota.bar.foo.collections.*
 
     interface Bar extends Foo {
@@ -1181,7 +1181,7 @@ So before you spend a week writing your memory-mapped compressed huffman-encoded
 ### TODOs
 
 #### TODOs should not reach production code
-While working on a feature you can use TODOs as a tool to make sure you didn't forget anything before you make a pull request. There are not a way to manage tasks in the project! We have a dedicated issue tracker for this.
+While working on a feature you can use TODOs as a tool to make sure you didn't forget anything before you make a pull request. They are not a way to manage tasks in the project! We have a dedicated issue tracker for this.
 
 #### Open issues on uncompleted TODOs
 If it is something that can be very disturbing to the code reader, one can comment with the issue number to make sure no duplicate will be opened. It will also serve as a constant reminder that something needs to be fixed.

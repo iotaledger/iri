@@ -126,7 +126,7 @@ Every logical block should have braces, even if it is a one-liner.
 Indent size is 4 columns.
 
     :::java
-    // Like this.
+    // Like this
     if (x < 0) {
       negative(x);
     } else {
@@ -811,7 +811,7 @@ We avoid the assert statement since it can be
 *See also [preconditions](#preconditions)*
 
 #### Preconditions
-Preconditions checks are a good practice, since they serve as a well-defined barrier against bad input from callers.  As a convention, object parameters to public constructors and methods should always be checked against null, unless null is explicitly allowed. It is advised to use `Objects.requireNonNull("Informative error message", object)` to throw a preemptive `NullPointerExceptions`.
+Preconditions checks are a good practice, since they serve as a well-defined barrier against bad input from callers.  As a convention, object parameters to public constructors and methods should always be checked against null, unless null is explicitly allowed. It is advised to use `Objects.requireNonNull(object,"Informative error message")` to throw a preemptive `NullPointerExceptions`.
 
 *See also [be wary of null](#be-wary-of-null)*
 
@@ -831,9 +831,9 @@ Preconditions checks are a good practice, since they serve as a well-defined bar
     // Good.
     class AsyncFileReader {
       void readLater(File file, Closure<String> callback) {
-        Objects.requireNonNull("No file was given to read", file);
+        Objects.requireNonNull(file, "No file was given to read");
         checkArgument(file.exists() && file.canRead(), "File must exist and be readable.");
-        Objects.requireNonNul("No operation defined to how to read files", callback);
+        Objects.requireNonNull(callback, "No operation defined to how to read files");
 
         scheduledExecutor.schedule(new Runnable() {
           @Override public void run() {

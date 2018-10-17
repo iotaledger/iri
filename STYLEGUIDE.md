@@ -121,8 +121,8 @@ separation.  We have similar constructs in programming languages; you should use
 advantage to effectively tell the story to those reading the code.
 
 #### Indent style
-We use the "one true brace style" ([1TBS](http://en.wikipedia.org/wiki/Indent_style#Variant:_1TBS)).
-Indent size is 2 columns.
+Every logical block should have braces, even if it is a one-liner.
+Indent size is 4 columns.
 
     :::java
     // Like this.
@@ -139,7 +139,7 @@ Indent size is 2 columns.
     // Also not like this.
     if (x < 0) negative(x);
 
-Continuation indent is 4 columns.  Nested continuations may add 4 columns or 2 at each level.
+Continuation indent is 8 columns.  Nested continuations should add 4 columns at each level.
 
     :::java
     // Bad.

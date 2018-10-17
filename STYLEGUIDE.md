@@ -1009,7 +1009,8 @@ When declaring method return types it is best to strive to be specific yet abstr
 
     // Good.
     //   - Iterable defines the minimal functionality required of the return.
-    //An advantage here is that you have more possibilities to change the implementation. Notice that the program shouldn't break no matter what implementing subclass you use. 
+    //An advantage here is that you have more possibilities to change the implementation.
+    //Notice that the program shouldn't break no matter what implementing subclass you use. 
     interface Database {
       Iterable<User> fetchUsers(String query);
     }

@@ -108,6 +108,7 @@ and [Google's Java Style Guide](https://google.github.io/styleguide/javaguide.ht
 ## Coding style
 
 ### Formatting
+Please use the Eclipse formatting files `format_settings.epf` and `format.importorder` in the main directory of the repository. IntelliJ users can use the [Eclipse Code Formatter](https://plugins.jetbrains.com/plugin/6546-eclipse-code-formatter)
 
 #### Use line breaks wisely
 There are generally two reasons to insert a line break:

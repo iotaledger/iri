@@ -9,10 +9,31 @@ import com.iota.iri.Iota;
 import com.iota.iri.conf.IotaConfig;
 
 public enum Feature {
-    ATTACH_TO_TANGLE("attachToTange"),
+    /**
+     * This node allows doing proof of work for you.
+     */
+    PROOF_OF_WORK("RemotePOW"),
+    
+    /**
+     * This node has enabled snapshot pruning
+     * It will most likely just contain "recent" transactions, as defined in the nodes config
+     */
     SNAPSHOT_PRUNING("snapshotPruning"),
+    
+    /**
+     * This node automatically tries to get the new IP from neighbors with dynamic IPs
+     * 
+     */
     DNS_REFRESHER("dnsRefresher"),
+    
+    /**
+     * This node is connected to the testnet instead of the mainnet tangle
+     */
     TESTNET("testnet"),
+    
+    /**
+     * This node has the zero message queue enabled for fetching/reading "activities" on the node
+     */
     ZMQ("zeroMessageQueue");
     
     private String name;
@@ -49,13 +70,13 @@ public enum Feature {
         }
         
         List<Feature> apiFeatures = Arrays.asList(new Feature[] {
-                ATTACH_TO_TANGLE
+                PROOF_OF_WORK
         });
         
         for (String disabled : configuration.getRemoteLimitApi()) {
             switch (disabled) {
-            case "attachToTange":
-                apiFeatures.remove(ATTACH_TO_TANGLE);
+            case "attachToTangle":
+                apiFeatures.remove(PROOF_OF_WORK);
                 break;
 
             default:

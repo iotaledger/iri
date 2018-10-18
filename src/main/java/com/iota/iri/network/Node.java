@@ -422,6 +422,10 @@ public class Node {
             try {
                 sendPacket(sendingPacket, transactionViewModel, neighbor);
 
+                ByteBuffer digest = getBytesDigest(transactionViewModel.getBytes());
+                synchronized (recentSeenBytes) {
+                    recentSeenBytes.put(digest, transactionViewModel.getHash());
+                }
             } catch (Exception e) {
                 log.error("Error fetching transaction to request.", e);
             }

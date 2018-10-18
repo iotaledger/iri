@@ -9,7 +9,7 @@ set -x
 
 UUID=$(uuidgen)
 ERROR=0
-K8S_NAMESPACE=$(kubectl config get-contexts $(kubectl config current-context) | tail -n+2 | gawk '{print $5}')
+K8S_NAMESPACE=$(kubectl config get-contexts $(kubectl config current-context) | tail -n+2 | awk '{print $5}')
 IMAGE=$1
 
 git clone --depth 1 https://github.com/iotaledger/tiab tiab

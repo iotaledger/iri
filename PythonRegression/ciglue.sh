@@ -26,11 +26,7 @@ cd ..
 pip install -e .
 
 for machine_dir in tests/features/machine?; do
-  if [ -z "$K8S_NAMESPACE" ]; then
-    python tiab/create_cluster.py -i $IMAGE -t $UUID -c $machine_dir/config.yml -o $machine_dir/output.yml -d
-  else
-    python tiab/create_cluster.py -i $IMAGE -t $UUID -n $K8S_NAMESPACE -c $machine_dir/config.yml -o $machine_dir/output.yml -d
-  fi
+  python tiab/create_cluster.py -i $IMAGE -t $UUID -n $K8S_NAMESPACE -c $machine_dir/config.yml -o $machine_dir/output.yml -d
   if [ $? -ne 0 ]; then
     ERROR=1
     python <<EOF

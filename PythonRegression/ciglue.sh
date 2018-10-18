@@ -14,7 +14,7 @@ IMAGE=$1
 
 git clone --depth 1 https://github.com/iotaledger/tiab tiab
 
-virtualenv venv
+virtualenv -p python2 venv
 source venv/bin/activate
 
 cd tiab

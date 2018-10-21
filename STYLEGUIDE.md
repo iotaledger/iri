@@ -642,6 +642,8 @@ testability in mind while designing your classes and interfaces.
 When testing a class, you often need to provide some kind of canned functionality as a replacement
 for real-world behavior.  For example, rather than fetching a row from a real database, you have a test row that you want to return.  This is most commonly performed with a fake object or a mock object.  While the difference sounds subtle, mocks have major benefits over fakes.
 
+Let's look at a bad example:
+
     :::java
     class RpcClient {
       RpcClient(HttpTransport transport) {
@@ -689,6 +691,9 @@ for real-world behavior.  For example, rather than fetching a row from a real da
       }
     }
 
+Good example:
+
+    :::java
     // Good.
     //   - We can mock the interface and have very fine control over how it is expected to be used.
     public class RpcClientTest {
@@ -930,8 +935,44 @@ Mutable objects carry a burden - you need to make sure that those who are *able*
 
 #### Be wary of null
 A method should return an `Optional` to indicate the possibility of a null value.
+If you want to compare values of nullable vars that for some reason aren't wrapped in an `Optional` you can avoid nasty null pointer exceptions using `Objects.equals()`.
 
-
+    :::java
+    //bad, str is allowed to be null but null pointer excpetion may be thrown
+    private static final String MY_STR = "STRING"
+    
+    public boolean compareStrings(String str) {
+        //this may throw a null pointer exception
+        return str.equals(MY_STR);
+    }
+    
+    
+    //better 
+     private static final String MY_STR = "STRING"
+        
+        public boolean compareStrings(String str) {
+            //this is null safe
+            return MY_STR.equals(str);
+        }
+        
+    //safe solution 
+    private String myStr = "STRING"
+            
+            public boolean compareStrings(String str) {
+                //this is null safe
+                return Objects.equals(myStr, str);
+            }
+    
+            
+    //preferrable solution: use Optional to express that null is a valid state for the variable
+     private static final String MY_STR = "STRING"
+                
+                public boolean compareStrings(Optional<String> str) {
+                    //The user will be wary of null pointer exceptions because of Optional
+                    //Without reading the guide he will not put str first.
+                    return MY_STR.equals(str.get());
+                } 
+                
 #### Clean up with finally
 
     :::java

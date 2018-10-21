@@ -592,9 +592,11 @@ Consider the pattern below as an alternative.
     }
 
 #### Leverage or extend existing interfaces
-Sometimes an existing interface allows your class to easily 'plug in' to other related classes.
-This leads to highly [cohesive](http://en.wikipedia.org/wiki/Cohesion_(computer_science)) code.
+Sometimes an existing interface allows your class to easily 'plug in' to other related classes. This leads to highly [cohesive](http://en.wikipedia.org/wiki/Cohesion_(computer_science)) code.
 
+Examples of common interfaces that are extended are [Cloneable](https://docs.oracle.com/javase/8/docs/api/java/lang/Cloneable.html), [Readable](https://docs.oracle.com/javase/8/docs/api/java/lang/Readable.html), [Appendable](https://docs.oracle.com/javase/8/docs/api/java/lang/Appendable.html), [AutoClosable](https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html),
+ [Iterable](https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html), [Comparable](https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html), [Runnable](https://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html), and [Callable](https://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html).
+  
     :::java
     // An unfortunate lack of consideration.  Anyone who wants to interact with Blobs will need to
     // write specific glue code.
@@ -615,6 +617,22 @@ This leads to highly [cohesive](http://en.wikipedia.org/wiki/Cohesion_(computer_
 
 Warning - don't bend the definition of an existing interface to make this work.  If the interface
 doesn't conceptually apply cleanly, it's best to avoid this.
+
+#### Use functional interfaces
+ Any interface that has exactly one abstract method is a functional interface that can be used with lambda expressions. When one creates a new functional interface it is encouraged to add the optional `@FunctionalInterface` annotation to ensure than no more than one abstract method will ever be added. One should use built in functional interfaces such as: 
+[Supplier](https://docs.oracle.com/javase/8/docs/api/java/util/function/Supplier.html), [Consumer](https://docs.oracle.com/javase/8/docs/api/java/util/function/Consumer.html), [Predicate](https://docs.oracle.com/javase/8/docs/api/java/util/function/Predicate.html), [UnaryOperator](https://docs.oracle.com/javase/8/docs/api/index.html?java/util/function/UnaryOperator.html), [Function](https://docs.oracle.com/javase/8/docs/api/index.html?java/util/function/Function.html), and anything else that can be found in `java.uti.function.*`.
+
+Note that old interfaces prior to Java 8 such as `Runnable`, `Callable`, and `Comparable` are also functional.
+ 
+ 
+     :::java
+    //Example of how the Predicate interface is used
+    List<String> names = Arrays.asList("Angela", "Aaron", "Bob", "Claire", "David");
+     
+    List<String> namesWithA = names.stream()
+       //filter takes in a Predicate
+      .filter(name -> name.startsWith("A"))
+      .collect(Collectors.toList());
 
 ## Writing testable code
 Writing unit tests doesn't have to be hard.  You can make it easy for yourself if you keep

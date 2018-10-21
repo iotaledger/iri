@@ -125,7 +125,7 @@ advantage to effectively tell the story to those reading the code.
 Every logical block should have braces, even if it is a one-liner.
 Indent size is 4 columns.
 
-    :::java
+    
     // Like this
     if (x < 0) {
       negative(x);
@@ -142,7 +142,7 @@ Indent size is 4 columns.
 
 Continuation indent is 8 columns.  Nested continuations should add 4 columns at each level.
 
-    :::java
+    
     // Bad.
     //   - Line breaks are arbitrary.
     //   - Scanning the code makes it difficult to piece the message together.
@@ -160,7 +160,7 @@ Continuation indent is 8 columns.  Nested continuations should add 4 columns at 
 
 Don't break up a statement unnecessarily.
 
-    :::java
+    
     // Bad.
     String value =
         otherValue;
@@ -170,7 +170,7 @@ Don't break up a statement unnecessarily.
 
 Method declaration continuations.
 
-    :::java
+    
     // Sub-optimal since line breaks are arbitrary and only filling lines.
     String downloadAnInternet(Internet internet, Tubes tubes,
         Blogosphere blogs, Amount<Long, Data> bandwidth) {
@@ -215,7 +215,7 @@ Method declaration continuations.
 
 ##### Chained method calls
 
-    :::java
+    
     // Bad.
     //   - Line breaks are based on line length, not logic.
     Iterable<Module> modules = ImmutableList.<Module>builder().add(new LifecycleModule())
@@ -263,7 +263,7 @@ ordering (sections
 [8.3.1](http://docs.oracle.com/javase/specs/jls/se7/html/jls-8.html#jls-8.3.1) and
 [8.4.3](http://docs.oracle.com/javase/specs/jls/se7/html/jls-8.html#jls-8.4.3)).
 
-    :::java
+    
     // Bad.
     final volatile private String value;
 
@@ -274,7 +274,7 @@ ordering (sections
 
 #### Extremely short variable names should be reserved for instances like loop indices.
 
-    :::java
+    
     // Bad.
     //   - Field names give little insight into what fields are used for.
     class User {
@@ -294,7 +294,7 @@ ordering (sections
 
 #### Include units in variable names
 
-    :::java
+    
     // Bad.
     long pollInterval;
     int fileSize;
@@ -315,7 +315,7 @@ type is generally a sign of a bad variable name.
 
 Avoid embedding the field type in the field name.
 
-    :::java
+    
     // Bad.
     Map<Integer, User> idToUserMap;
     String valueString;
@@ -327,7 +327,7 @@ Avoid embedding the field type in the field name.
 Also avoid embedding scope information in a variable.  Hierarchy-based naming suggests that a class
 is too complex and should be broken apart.
 
-    :::java
+    
     // Bad.
     private String _value;
     private String mValue;
@@ -337,7 +337,7 @@ is too complex and should be broken apart.
 
 ### Space pad operators and equals.
 
-    :::java
+    
     // Bad.
     //   - This offers poor visual separation of operations.
     int foo=a+b+1;
@@ -350,7 +350,7 @@ Don't make your reader open the
 [spec](http://docs.oracle.com/javase/tutorial/java/nutsandbolts/operators.html) to confirm,
 if you expect a specific operation ordering, make it obvious with parenthesis.
 
-    :::java
+    
     // Bad.
     return a << 8 * n + 1 | 0xFF;
 
@@ -359,7 +359,7 @@ if you expect a specific operation ordering, make it obvious with parenthesis.
 
 It's even good to be *really* obvious.
 
-    :::java
+    
     if ((values != null) && (10 > values.size())) {
       ...
     }
@@ -373,7 +373,7 @@ the more documentation is needed.
 Your elementary school teacher was right - you should never start a statement this way.
 Likewise, you shouldn't write documentation this way.
 
-    :::java
+    
     // Bad.
     /**
      * This is a class that implements a cache.  It does caching for you.
@@ -397,7 +397,7 @@ blanks in the API, and make it easier to quickly and *correctly* use your API.
 A thorough class doc usually has a one sentence summary and, if necessary,
 a more detailed explanation.
 
-    :::java
+    
     /**
      * An RPC equivalent of a unix pipe tee.  Any RPC sent to the tee input is guaranteed to have
      * been sent to both tee outputs before the call returns.
@@ -412,7 +412,7 @@ a more detailed explanation.
 A method doc should tell what the method *does*.  Depending on the argument types, it may
 also be important to document input format.
 
-    :::java
+    
     // Bad.
     //   - The doc tells nothing that the method declaration didn't.
     //   - This is the 'filler doc'.  It would pass style checks, but doesn't help anybody.
@@ -449,7 +449,7 @@ also be important to document input format.
 We've all encountered frustration when dealing with other libraries, but ranting about it doesn't
 do you any favors.  Suppress the expletives and get to the point.
 
-    :::java
+    
     // Bad.
     // I hate xml/soap so much, why can't it do this for me!?
     try {
@@ -468,7 +468,7 @@ do you any favors.  Suppress the expletives and get to the point.
 
 #### Don't document overriding methods (usually)
 
-    :::java
+    
     interface Database {
       /**
        * Gets the installed version of the database.
@@ -523,7 +523,7 @@ source file is irrelevant after several iterations.  We find it's better to trus
 #### Import ordering
 Imports are grouped by top-level package, with blank lines separating groups. Static imports should be avoided, but are allowed in test classes.
 
-    :::java
+    
     import com.iota.*
 
     import java.*
@@ -543,7 +543,7 @@ Wildcard imports make the source of an imported class less clear.  They also ten
 class [fan-out](http://en.wikipedia.org/wiki/Coupling_(computer_programming)#Module_coupling). However, if you have an imports that exceed more than 5 packages/classes you can assume that you are specific enough. Especially if you have lots of imports from the specific subpackage. <br />
 *See also [texas imports](#stay-out-of-texas)*
 
-    :::java
+    
     // Bad.
     //   - Where did Foo come from?
     import com.iota.baz.foo.*;
@@ -578,7 +578,7 @@ implementations package private.
 Many small interfaces can seem heavyweight, since you end up with a large number of source files.
 Consider the pattern below as an alternative.
 
-    :::java
+    
     interface FileFetcher {
       File getFile(String name);
 
@@ -597,7 +597,7 @@ Sometimes an existing interface allows your class to easily 'plug in' to other r
 Examples of common interfaces that are extended are [Cloneable](https://docs.oracle.com/javase/8/docs/api/java/lang/Cloneable.html), [Readable](https://docs.oracle.com/javase/8/docs/api/java/lang/Readable.html), [Appendable](https://docs.oracle.com/javase/8/docs/api/java/lang/Appendable.html), [AutoClosable](https://docs.oracle.com/javase/8/docs/api/java/lang/AutoCloseable.html),
  [Iterable](https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html), [Comparable](https://docs.oracle.com/javase/8/docs/api/java/lang/Iterable.html), [Runnable](https://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html), and [Callable](https://docs.oracle.com/javase/8/docs/api/java/lang/Runnable.html).
   
-    :::java
+    
     // An unfortunate lack of consideration.  Anyone who wants to interact with Blobs will need to
     // write specific glue code.
     class Blobs {
@@ -625,7 +625,7 @@ doesn't conceptually apply cleanly, it's best to avoid this.
 Note that old interfaces prior to Java 8 such as `Runnable`, `Callable`, and `Comparable` are also functional.
  
  
-     :::java
+     
     //Example of how the Predicate interface is used
     List<String> names = Arrays.asList("Angela", "Aaron", "Bob", "Claire", "David");
      
@@ -644,7 +644,7 @@ for real-world behavior.  For example, rather than fetching a row from a real da
 
 Let's look at a bad example:
 
-    :::java
+    
     class RpcClient {
       RpcClient(HttpTransport transport) {
         ...
@@ -693,7 +693,7 @@ Let's look at a bad example:
 
 Good example:
 
-    :::java
+    
     // Good.
     //   - We can mock the interface and have very fine control over how it is expected to be used.
     public class RpcClientTest {
@@ -728,7 +728,7 @@ Good example:
 
 ### Let your callers construct support objects
 
-    :::java
+    
     // Bad.
     //   - A unit test needs to manage a temporary file on disk to test this class.
     class ConfigReader {
@@ -789,7 +789,7 @@ testing should be handled separately, and run in a more controlled environment t
 #### Use JMH for running benchmarks and stress tests
 In order to create benchmarks it is advised to use [JMH](http://tutorials.jenkov.com/java-performance/jmh.html). *One must run those tests on a clean controlled environment in order to obtain meaningful results*. One can use the `JunitRunner` to perform assertions on the results. Of course if you use JUnit you must make sure it is excluded from your other unit tests.
 
-    :::java
+    
     public class BenchmarkRunner {
 
     @Test
@@ -838,7 +838,7 @@ Preconditions checks are a good practice, since they serve as a well-defined bar
 
 *See also [be wary of null](#be-wary-of-null)*
 
-    :::java
+    
     // Bad.
     //   - If the file or callback are null, the problem isn't noticed until much later.
     class AsyncFileReader {
@@ -872,7 +872,7 @@ In a class API, you should support access to any methods and fields that you mak
 Therefore, only expose what you intend the caller to use.  This can be imperative when
 writing thread-safe code.
 
-    :::java
+    
     public class Parser {
       // Bad.
       //   - Callers can directly access and mutate, possibly breaking internal assumptions.
@@ -900,7 +900,7 @@ writing thread-safe code.
 
 Mutable objects carry a burden - you need to make sure that those who are *able* to mutate it are not violating expectations of other users of the object, and that it's even safe for them to modify.
 
-    :::java
+    
     // Bad.
     //   - Anyone with a reference to User can modify the user's birthday.
     //   - Calling getAttributes() gives mutable access to the underlying map.
@@ -937,7 +937,7 @@ Mutable objects carry a burden - you need to make sure that those who are *able*
 A method should return an `Optional` to indicate the possibility of a null value.
 If you want to compare values of nullable vars that for some reason aren't wrapped in an `Optional` you can avoid nasty null pointer exceptions using `Objects.equals()`.
 
-    :::java
+    
     //bad, str is allowed to be null but null pointer excpetion may be thrown
     private static final String MY_STR = "STRING"
     
@@ -975,7 +975,7 @@ If you want to compare values of nullable vars that for some reason aren't wrapp
                 
 #### Clean up with finally
 
-    :::java
+    
     FileInputStream in = null;
     try {
       ...
@@ -995,7 +995,7 @@ If you want to compare values of nullable vars that for some reason aren't wrapp
 Even if there are no checked exceptions, there are still cases where you should use try/finally
 to guarantee resource symmetry.
 
-    :::java
+    
     // Bad.
     //   - Mutex is never unlocked.
     mutex.lock();
@@ -1032,7 +1032,7 @@ to guarantee resource symmetry.
 #### Disambiguate
 Favor readability - if there's an ambiguous and unambiguous route, always favor unambiguous.
 
-    :::java
+    
     // Bad.
     //   - Depending on the font, it may be difficult to discern 1001 from 100l.
     long count = 100l + n;
@@ -1046,7 +1046,7 @@ Delete unused code (imports, fields, parameters, methods, classes).  They will o
 #### Use specific abstract types to declare method return types
 When declaring method return types it is best to strive to be specific yet abstract. The reason is that you don't know what will the callers of the method need. You don't want to degrade functionality too much. The callers can always abstract the returned type farther if needed.
 
-    :::java
+    
     // Bad.
     //   - Implementations of Database must match the ArrayList return type. We need to depend on abstractions not concretions.
     //   - Changing return type to Set<User> or List<User> could break implementations and users.
@@ -1100,7 +1100,7 @@ Typecasting is a sign of poor class design, and can often be avoided.  An obviou
 
 Final fields are useful because they declare that a field may not be reassigned. *Differentiate between fields and local variables. Adding `Final` everywhere may lead to too much verbosity.*
 
-    :::java
+    
     public class TransactionValidator {
     //this should be final if you want the instance to use the same converter by design
     final Converter converter;
@@ -1122,7 +1122,7 @@ Mutable static state is rarely necessary, and causes loads of problems when pres
 ##### Catch narrow exceptions
 Sometimes when using try/catch blocks, it may be tempting to just `catch Exception`, `Error`, or `Throwable` so you don't have to worry about what type was thrown. This is usually a bad idea, as you can end up catching more than you really wanted to deal with.  For example, `catch Exception` would capture `NullPointerException`, and `catch Throwable` would capture `OutOfMemoryError`.
 
-    :::java
+    
     // Bad.
     //   - If a RuntimeException happens, the program continues rather than aborting.
     try {
@@ -1149,7 +1149,7 @@ so that you may be awaken for events like a JVM shutdown.  When catching `Interr
 IBM has a good [article](http://www.ibm.com/developerworks/java/library/j-jtp05236/index.html) on
 this topic.
 
-    :::java
+    
     // Bad.
     //   - Surrounding code (or higher-level code) has no idea that the thread was interrupted.
     try {
@@ -1173,7 +1173,7 @@ Even if you are calling another naughty API that throws Exception, at least hide
 bubble up even further.  You should also make an effort to hide implementation details from your
 callers when it comes to exceptions.
 
-    :::java
+    
     // Bad.
     //   - Caller is forced to catch Exception, trapping many unnecessary types of issues.
     interface DataStore {
@@ -1245,7 +1245,7 @@ While working on a feature you can use TODOs as a tool to make sure you didn't f
 #### Open issues on uncompleted TODOs
 If it is something that can be very disturbing to the code reader, one can comment with the issue number to make sure no duplicate will be opened. It will also serve as a constant reminder that something needs to be fixed.
 
-    :::java
+    
     // Bad.
     //   - TODO is in production code.
     // TODO: Implement request backoff.
@@ -1262,7 +1262,7 @@ there are other code structures that lead to violations of the spirit of the law
 #### In classes
 Take what you need, nothing more.  This often relates to [texas constructors](#stay-out-of-texas) but it can also hide in constructors or methods that take few parameters.  The key idea is to defer assembly to the layers of the code that know enough to assemble and instead just take the minimal interface you need to get your work done.
 
-    :::java
+    
     // Bad.
     //   - Weigher uses hosts and port only to immediately construct another object.
     class Weigher {
@@ -1290,7 +1290,7 @@ If you want to provide a convenience constructor, a factory method or an externa
 If a method has multiple isolated blocks consider naming these blocks by extracting them to helper methods that do just one thing.  Besides making the calling sites read less
 like code and more like english, the extracted sites are often easier to flow-analyse for human eyes. The classic case is branched variable assignment.  In the extreme, never do this:
 
-    :::java
+    
     void calculate(Subject subject) {
       double weight;
       if (useWeightingService(subject)) {
@@ -1308,7 +1308,7 @@ like code and more like english, the extracted sites are often easier to flow-an
 
 Instead do this:
 
-    :::java
+    
     void calculate(Subject subject) {
       double weight = calculateWeight(subject);
 
@@ -1359,7 +1359,7 @@ If you want to automatically perform cleanup like this when the VM is shutting d
 ### Avoid unnecessary code
 #### Superfluous temporary variables.
 
-    :::java
+    
     // Bad.
     //   - The variable is immediately returned, and just serves to clutter the code.
     List<String> strings = fetchStrings();
@@ -1370,7 +1370,7 @@ If you want to automatically perform cleanup like this when the VM is shutting d
 
 #### Unneeded assignment.
 
-    :::java
+    
     // Bad.
     //   - The "Default" value is never realized.
     String value = "Default";
@@ -1391,7 +1391,7 @@ If you want to automatically perform cleanup like this when the VM is shutting d
 ### The 'fast' implementation
 Don't bewilder your API users with a 'fast' or 'optimized' implementation of a method.
 
-    :::java
+    
     int fastAdd(Iterable<Integer> ints);
 
     // Why would the caller ever use this when there's a 'fast' add?

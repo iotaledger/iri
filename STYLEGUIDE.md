@@ -355,7 +355,7 @@ if you expect a specific operation ordering, make it obvious with parenthesis.
     return a << 8 * n + 1 | 0xFF;
 
     // Good.
-    return (a << (8 * n) + 1) | 0xFF;
+    return (a << ((8 * n) + 1)) | 0xFF;
 
 It's even good to be *really* obvious.
 

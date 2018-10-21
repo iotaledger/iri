@@ -39,7 +39,7 @@ public enum HashFactory {
     
     /**
      * Creates a Hash using the provided trits
-     * @param trits the source data
+     * @param trytes the source data
      * @return the hash
      */
     public Hash create(String trytes) {

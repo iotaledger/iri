@@ -31,10 +31,10 @@ script:
   - git merge $TRAVIS_BRANCH
   - mvn integration-test -Dlogging-level=INFO
   #run jar sanity tests
-  - VERSION=$(mvn help:evaluate -Dexpression=project.version | grep '^[0-9.]*')
+  - VERSION=$(mvn help:evaluate -Dexpression=project.version | grep -E '^[0-9.]+')
   - echo $VERSION
   #jacoco prep (appends to mvn run)
-  - JACOCO_V=$(mvn help:evaluate -Dexpression=jacoco.version | grep '^[0-9.]*')
+  - JACOCO_V=$(mvn help:evaluate -Dexpression=jacoco.version | grep -E '^[0-9.]+')
   - export _JAVA_OPTIONS="$_JAVA_OPTIONS -javaagent:$HOME/.m2/repository/org/jacoco/org.jacoco.agent/$JACOCO_V/org.jacoco.agent-$JACOCO_V-runtime.jar=destfile=$PWD/target/jacoco.exec,output=file,append=true,dumponexit=true"
   - echo $_JAVA_OPTIONS
   - git clone https://github.com/iotaledger/iri-regression-tests.git

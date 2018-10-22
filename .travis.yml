@@ -15,7 +15,6 @@ addons:
   apt:
     packages:
     - jq
-    - libxml2-utils 
 
 matrix:
   allow_failures:
@@ -32,7 +31,7 @@ script:
   - git merge $TRAVIS_BRANCH
   - mvn integration-test -Dlogging-level=INFO
   #run jar sanity tests
-  - VERSION=`echo -e 'setns x=http://maven.apache.org/POM/4.0.0\ncat /x:project/x:version/text()' | xmllint --shell pom.xml | grep -v / | tr -d -` 
+  - VERSION=$(mvn help:evaluate -Dexpression=project.version | grep '^[0-9.]*')
   - echo $VERSION
   - git clone https://github.com/iotaledger/iri-regression-tests.git
   - cd iri-regression-tests

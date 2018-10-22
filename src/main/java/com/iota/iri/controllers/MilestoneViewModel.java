@@ -23,6 +23,18 @@ public class MilestoneViewModel {
         milestones.clear();
     }
 
+    /**
+     * This method removes a {@link MilestoneViewModel} from the cache.
+     *
+     * It is used by the {@link com.iota.iri.service.garbagecollector.GarbageCollector} to remove milestones that were
+     * deleted in the database, so that the runtime environment correctly reflects the database state.
+     *
+     * @param milestoneIndex the index of the milestone
+     */
+    public static void clear(int milestoneIndex) {
+        milestones.remove(milestoneIndex);
+    }
+
     public MilestoneViewModel(final int index, final Hash milestoneHash) {
         this.milestone = new Milestone();
         this.milestone.index = new IntegerIndex(index);

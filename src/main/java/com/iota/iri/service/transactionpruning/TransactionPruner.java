@@ -1,9 +1,11 @@
 package com.iota.iri.service.transactionpruning;
 
+import com.iota.iri.service.snapshot.Snapshot;
+
 /**
  * Represents the manager for the cleanup jobs that are issued by the
- * {@link com.iota.iri.service.snapshot.SnapshotManager} in connection with local snapshots and eventually other parts
- * of the code.
+ * {@link com.iota.iri.service.snapshot.LocalSnapshotManager} in connection with local snapshots and eventually other
+ * parts of the code.
  */
 public interface TransactionPruner {
     /**
@@ -12,7 +14,7 @@ public interface TransactionPruner {
      *
      * In addition to adding the jobs to the internal list of jobs that have to be executed, it informs the job about
      * the {@link TransactionPruner}, the {@link com.iota.iri.storage.Tangle}, the
-     * {@link com.iota.iri.controllers.TipsViewModel} and the {@link com.iota.iri.service.snapshot.Snapshot} instances
+     * {@link com.iota.iri.controllers.TipsViewModel} and the {@link Snapshot} instances
      * that this job is working on.
      *
      * @param job the job that shall be executed

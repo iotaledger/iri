@@ -14,7 +14,7 @@ import java.util.stream.Stream;
  * The {@link AsyncTransactionPruner} uses a separate queue for every job type, to be able to adjust the processing
  * logic based on the type of the job.
  */
-public class SimpleJobQueue implements JobQueue {
+public class SimpleJobQueue implements JobQueue<TransactionPrunerJob> {
     /**
      * Holds a reference to the container of this queue.
      */
@@ -74,7 +74,7 @@ public class SimpleJobQueue implements JobQueue {
     @Override
     public void processJobs() throws TransactionPruningException {
         TransactionPrunerJob currentJob;
-        while (!Thread.interrupted() && (currentJob = jobs.peek()) != null) {
+        while (!Thread.currentThread().isInterrupted() && (currentJob = jobs.peek()) != null) {
             try {
                 currentJob.process();
 

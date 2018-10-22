@@ -113,7 +113,9 @@ public class AsyncTransactionPruner implements TransactionPruner {
      * @param snapshot last local or global snapshot that acts as a starting point for the state of ledger
      * @param config Configuration with important snapshot related configuration parameters
      */
-    public AsyncTransactionPruner(Tangle tangle, TipsViewModel tipsViewModel, Snapshot snapshot, SnapshotConfig config) {
+    public AsyncTransactionPruner(Tangle tangle, TipsViewModel tipsViewModel, Snapshot snapshot,
+            SnapshotConfig config) {
+
         this.tangle = tangle;
         this.tipsViewModel = tipsViewModel;
         this.snapshot = snapshot;
@@ -138,6 +140,8 @@ public class AsyncTransactionPruner implements TransactionPruner {
         job.setTipsViewModel(tipsViewModel);
         job.setSnapshot(snapshot);
 
+        // this call is "unchecked" to a "raw" JobQueue and it is intended since the matching JobQueue is defined by the
+        // registered job types
         getJobQueue(job.getClass()).addJob(job);
 
         saveState();
@@ -153,7 +157,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
     @Override
     public void processJobs() throws TransactionPruningException {
         for(JobQueue jobQueue : jobQueues.values()) {
-            if(Thread.interrupted()) {
+            if(Thread.currentThread().isInterrupted()) {
                 return;
             }
 
@@ -193,7 +197,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
             while ((line = reader.readLine()) != null) {
                 String[] parts = line.split(";", 2);
                 if (parts.length >= 2) {
-                    JobParser jobParser = this.jobParsers.get(parts[0]);
+                    JobParser jobParser = jobParsers.get(parts[0]);
                     if (jobParser == null) {
                         throw new TransactionPruningException("could not determine a parser for cleanup job of type " + parts[0]);
                     }
@@ -201,8 +205,8 @@ public class AsyncTransactionPruner implements TransactionPruner {
                     addJob(jobParser.parse(parts[1]));
                 }
             }
-        } catch(IOException e) {
-            if(getStateFile().exists()) {
+        } catch (IOException e) {
+            if (getStateFile().exists()) {
                 throw new TransactionPruningException("could not read the state file", e);
             }
         }
@@ -249,7 +253,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
      * It repeatedly calls {@link #processJobs()} until the TransactionPruner is shutting down.
      */
     private void processJobsThread() {
-        while(!Thread.interrupted()) {
+        while(!Thread.currentThread().isInterrupted()) {
             try {
                 processJobs();
             } catch(TransactionPruningException e) {
@@ -267,7 +271,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
      * {@link AsyncTransactionPruner} is shutting down.
      */
     private void persistThread() {
-        while(!Thread.interrupted()) {
+        while(!Thread.currentThread().isInterrupted()) {
             try {
                 if (persistRequested) {
                     saveStateNow();
@@ -306,7 +310,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
             Files.write(
                 Paths.get(getStateFile().getAbsolutePath()),
                 () -> jobQueues.values().stream()
-                      .flatMap(JobQueue::stream)
+                      .<TransactionPrunerJob>flatMap(JobQueue::stream)
                       .<CharSequence>map(jobEntry -> {
                           jobsPersisted.incrementAndGet();
 
@@ -393,6 +397,13 @@ public class AsyncTransactionPruner implements TransactionPruner {
      */
     @FunctionalInterface
     private interface JobParser {
+        /**
+         * Parses the serialized version of a job back into its unserialized object.
+         *
+         * @param input serialized job
+         * @return unserialized job
+         * @throws TransactionPruningException if anything goes wrong while parsing the serialized job
+         */
         TransactionPrunerJob parse(String input) throws TransactionPruningException;
     }
 }

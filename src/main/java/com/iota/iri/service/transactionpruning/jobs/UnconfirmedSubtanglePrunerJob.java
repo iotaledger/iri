@@ -3,7 +3,8 @@ package com.iota.iri.service.transactionpruning.jobs;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.Transaction;
-import com.iota.iri.service.transactionpruning.*;
+import com.iota.iri.service.transactionpruning.TransactionPrunerJobStatus;
+import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Pair;
@@ -13,8 +14,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents a job for the {@link TransactionPruner} that cleans up all unconfirmed transactions approving a certain
- * transaction.
+ * Represents a job for the {@link com.iota.iri.service.transactionpruning.TransactionPruner} that cleans up all
+ * unconfirmed transactions approving a certain transaction.
  *
  * It is used to clean up orphaned subtangles when they become irrelevant for the ledger.
  */

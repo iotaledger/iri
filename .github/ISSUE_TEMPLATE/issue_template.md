@@ -1,4 +1,9 @@
 <!--- Remove text and sections that do not apply -->
+---
+name: IRI issue template
+about: Request a feature or report a bug
+
+---
 
 The issue tracker is only for reporting bugs or submitting feature requests.
 If you need technical assistance for running a node please consult the #fullnode channel on Discord (https://discord.gg/jrxApWC) or https://forum.helloiota.com/Technology/Help.

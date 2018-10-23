@@ -60,6 +60,14 @@ def import_steps():
 
 
 def prepare_options(args,optionList):
+    """
+    Prepares key dictionary for comparison with response values. The argument and type are contained in
+    a gherkin table, stored beneath the step definition in the associated feature file. This function
+    converts the argument values to the appropriate format.
+
+    :param args: The gherkin table arguments from the feature file
+    :param optionList: The list dictionary that the arguments will be placed into
+    """
     for x in range(len(args)):
         if len(args) != 0:
             key = args[x]['keys']

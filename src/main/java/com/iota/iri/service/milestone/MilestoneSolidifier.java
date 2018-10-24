@@ -2,10 +2,11 @@ package com.iota.iri.service.milestone;
 
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.snapshot.SnapshotManager;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.utils.log.Logger;
+import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.ThreadIdentifier;
 import com.iota.iri.utils.thread.ThreadUtils;
-import com.iota.iri.utils.log.StatusLogger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
@@ -43,12 +44,12 @@ public class MilestoneSolidifier {
     /**
      * Logger for this class allowing us to dump debug and status messages.
      */
-    private final StatusLogger statusLogger = new StatusLogger(LoggerFactory.getLogger(MilestoneSolidifier.class));
+    private final Logger statusLogger = new IntervalLogger(MilestoneSolidifier.class);
 
     /**
-     * Holds a reference to the SnapshotManager which allows us to check if milestones are still relevant.
+     * Holds a reference to the initial Snapshot which allows us to check if milestones are still relevant.
      */
-    private SnapshotManager snapshotManager;
+    private Snapshot initialSnapshot;
 
     /**
      * Holds a reference to the TransactionValidator which allows us to issue solidity checks.
@@ -94,11 +95,11 @@ public class MilestoneSolidifier {
      *
      * It simply stores the passed in parameters to be able to access them later on.
      *
-     * @param snapshotManager SnapshotManager instance that is used by the node
+     * @param initialSnapshot initial Snapshot instance that is used by the node
      * @param transactionValidator TransactionValidator instance that is used by the node
      */
-    public MilestoneSolidifier(SnapshotManager snapshotManager, TransactionValidator transactionValidator) {
-        this.snapshotManager = snapshotManager;
+    public MilestoneSolidifier(Snapshot initialSnapshot, TransactionValidator transactionValidator) {
+        this.initialSnapshot = initialSnapshot;
         this.transactionValidator = transactionValidator;
     }
 
@@ -118,7 +119,7 @@ public class MilestoneSolidifier {
         if (
             !unsolidMilestonesPool.containsKey(milestoneHash) &&
             !newlyAddedMilestones.containsKey(milestoneHash) &&
-            milestoneIndex > snapshotManager.getInitialSnapshot().getIndex()
+            milestoneIndex > initialSnapshot.getIndex()
         ) {
             newlyAddedMilestones.put(milestoneHash, milestoneIndex);
         }
@@ -171,6 +172,7 @@ public class MilestoneSolidifier {
             milestonesToSolidify.remove(youngestMilestoneInQueue.getKey());
             milestonesToSolidify.put(milestoneEntry.getKey(), milestoneEntry.getValue());
 
+            youngestMilestoneInQueue = null;
             determineYoungestMilestoneInQueue();
         }
     }
@@ -182,7 +184,7 @@ public class MilestoneSolidifier {
      * answer to the issued transaction requests.
      */
     private void milestoneSolidificationThread() {
-        while(!Thread.interrupted()) {
+        while(!Thread.currentThread().isInterrupted()) {
             processNewlyAddedMilestones();
             processSolidificationQueue();
             refillSolidificationQueue();
@@ -201,10 +203,9 @@ public class MilestoneSolidifier {
      * {@link #youngestMilestoneInQueue}, we add the to the solidification queue.
      */
     private void processNewlyAddedMilestones() {
-        for (
-            Iterator<Map.Entry<Hash, Integer>> iterator = newlyAddedMilestones.entrySet().iterator();
-            iterator.hasNext();
-        ) {
+        for (Iterator<Map.Entry<Hash, Integer>> iterator = newlyAddedMilestones.entrySet().iterator();
+                !Thread.currentThread().isInterrupted() && iterator.hasNext();) {
+
             Map.Entry<Hash, Integer> currentEntry = iterator.next();
 
             unsolidMilestonesPool.put(currentEntry.getKey(), currentEntry.getValue());
@@ -223,20 +224,14 @@ public class MilestoneSolidifier {
      * It iterates through the queue and checks if the corresponding milestones are still relevant for our node, or if
      * they could be successfully solidified. If the milestones become solid or irrelevant, we remove them from the
      * pool and the queue and reset the {@link #youngestMilestoneInQueue} marker (if necessary).
-     *
-     * Note: While checking the solidity of the milestones we issue
-     *       {@link TransactionValidator#checkSolidity(Hash, boolean, int)} calls using the {@link #isSolid(Map.Entry)}
-     *       method, which requests the missing transactions and marks the milestones as solid once all referenced
-     *       transactions are known.
      */
     private void processSolidificationQueue() {
-        for (
-            Iterator<Map.Entry<Hash, Integer>> iterator = milestonesToSolidify.entrySet().iterator();
-            iterator.hasNext();
-        ) {
+        for (Iterator<Map.Entry<Hash, Integer>> iterator = milestonesToSolidify.entrySet().iterator();
+                !Thread.currentThread().isInterrupted() && iterator.hasNext();) {
+
             Map.Entry<Hash, Integer> currentEntry = iterator.next();
 
-            if (currentEntry.getValue() <= snapshotManager.getInitialSnapshot().getIndex() || isSolid(currentEntry)) {
+            if (currentEntry.getValue() <= initialSnapshot.getIndex() || isSolid(currentEntry)) {
                 unsolidMilestonesPool.remove(currentEntry.getKey());
                 iterator.remove();
 
@@ -261,6 +256,7 @@ public class MilestoneSolidifier {
 
         Map.Entry<Hash, Integer> nextSolidificationCandidate;
         while (
+            !Thread.currentThread().isInterrupted() &&
             milestonesToSolidify.size() < SOLIDIFICATION_QUEUE_SIZE &&
             (nextSolidificationCandidate = getNextSolidificationCandidate()) != null
         ) {
@@ -325,7 +321,7 @@ public class MilestoneSolidifier {
      */
     private boolean isSolid(Map.Entry<Hash, Integer> currentEntry) {
         if (unsolidMilestonesPool.size() > 1) {
-            statusLogger.status("Solidifying milestone #" + currentEntry.getValue() + " [" + milestonesToSolidify.size() + " / " + unsolidMilestonesPool.size() + "]");
+            statusLogger.info("Solidifying milestone #" + currentEntry.getValue() + " [" + milestonesToSolidify.size() + " / " + unsolidMilestonesPool.size() + "]");
         }
 
         try {

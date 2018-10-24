@@ -61,7 +61,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private ThreadIdentifier monitorThreadIdentifier = new ThreadIdentifier("Local Snapshots Monitor");
 
     /**
-     * Creates the {@link LocalSnapshotManager} that takes care of .
+     * Creates the {@link LocalSnapshotManager} that takes care of automatically creating local snapshots when the
+     * defined intervals have passed.
      *
      * It simply stores the passed in parameters in their private properties.
      *

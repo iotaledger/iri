@@ -83,24 +83,13 @@ public class TransactionRequester {
      * while i.e. solidifying transactions or if a transaction arrived due to the gossip protocol.
      *
      * @param transactionHash hash of the transaction to check
+     * @param milestoneRequest flag that indicates if the hash was requested by a milestone request
      * @return true if the transaction is in the set of transactions to be requested and false otherwise
      */
-    public boolean contains(Hash transactionHash) {
-        return milestoneTransactionsToRequest.contains(transactionHash) || transactionsToRequest.contains(transactionHash);
-    }
-
-    /**
-     * This method allows to check if a transaction was requested by the TransactionRequester while trying to solidify a
-     * milestone transaction.
-     *
-     * It can for example be used to determine if a transaction that was received by the node was actively requested
-     * while i.e. solidifying transactions or if a transaction arrived due to the gossip protocol.
-     *
-     * @param transactionHash hash of the transaction to check
-     * @return true if the transaction is in the set of transactions to be requested and false otherwise
-     */
-    public boolean containsMilestoneRequest(Hash transactionHash) {
-        return milestoneTransactionsToRequest.contains(transactionHash);
+    public boolean isTransactionRequested(Hash transactionHash, boolean milestoneRequest) {
+        return (milestoneRequest && milestoneTransactionsToRequest.contains(transactionHash)) || (!milestoneRequest &&
+                milestoneTransactionsToRequest.contains(transactionHash) ||
+                transactionsToRequest.contains(transactionHash));
     }
 
     private boolean transactionsToRequestIsFull() {

@@ -64,7 +64,7 @@ public class MilestoneSolidifier {
     private Map<Hash, Integer> newlyAddedMilestones = new ConcurrentHashMap<>();
 
     /**
-     * Holds all unsolid milestones that shall be solidified.
+     * Holds all unsolid milestones that shall be solidified (the transaction hash mapped to its milestone index).
      */
     private Map<Hash, Integer> unsolidMilestonesPool = new ConcurrentHashMap<>();
 
@@ -169,7 +169,6 @@ public class MilestoneSolidifier {
             milestonesToSolidify.remove(youngestMilestoneInQueue.getKey());
             milestonesToSolidify.put(milestoneEntry.getKey(), milestoneEntry.getValue());
 
-            youngestMilestoneInQueue = null;
             determineYoungestMilestoneInQueue();
         }
     }

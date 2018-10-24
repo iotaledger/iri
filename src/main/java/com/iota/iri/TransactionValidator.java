@@ -169,10 +169,7 @@ public class TransactionValidator {
                     if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
                         solid = false;
 
-                        if (milestone && !transactionRequester.containsMilestoneRequest(hashPointer)) {
-                            transactionRequester.requestTransaction(hashPointer, milestone);
-                            break;
-                        } else if (!milestone && !transactionRequester.contains(hashPointer)) {
+                        if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
                             transactionRequester.requestTransaction(hashPointer, milestone);
                             break;
                         }

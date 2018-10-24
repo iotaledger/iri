@@ -15,7 +15,6 @@ addons:
   apt:
     packages:
     - jq
-    - libxml2-utils 
 
 matrix:
   allow_failures:
@@ -32,8 +31,12 @@ script:
   - git merge $TRAVIS_BRANCH
   - mvn integration-test -Dlogging-level=INFO
   #run jar sanity tests
-  - VERSION=`echo -e 'setns x=http://maven.apache.org/POM/4.0.0\ncat /x:project/x:version/text()' | xmllint --shell pom.xml | grep -v / | tr -d -` 
+  - VERSION=$(mvn help:evaluate -Dexpression=project.version | grep -E '^[0-9.]+')
   - echo $VERSION
+  #jacoco prep (appends to mvn run)
+  - JACOCO_V=$(mvn help:evaluate -Dexpression=jacoco.version | grep -E '^[0-9.]+')
+  - export _JAVA_OPTIONS="$_JAVA_OPTIONS -javaagent:$HOME/.m2/repository/org/jacoco/org.jacoco.agent/$JACOCO_V/org.jacoco.agent-$JACOCO_V-runtime.jar=destfile=$PWD/target/jacoco.exec,output=file,append=true,dumponexit=true"
+  - echo $_JAVA_OPTIONS
   - git clone https://github.com/iotaledger/iri-regression-tests.git
   - cd iri-regression-tests
   - git checkout -f master
@@ -43,10 +46,12 @@ script:
   - cp -rf ../target iri/target
   - bash run_all_stable_tests.sh $VERSION
   - cd ..
+  #jacoco append to report
+  - mvn jacoco:report
 
 after_success:
   #codacy-coverage send report. Uses Travis Env variable (CODACY_PROJECT_TOKEN)
-  - test $TRAVIS_PULL_REQUEST = "false" && test $TRAVIS_JDK_VERSION = "oraclejdk8" && wget -O codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r .assets[0].browser_download_url)
+  - test $TRAVIS_PULL_REQUEST = "false" && test $TRAVIS_JDK_VERSION = "oraclejdk8" && wget -O codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets[0].browser_download_url')
   - test $TRAVIS_PULL_REQUEST = "false" && test $TRAVIS_JDK_VERSION = "oraclejdk8" && java -jar codacy-coverage-reporter-assembly-latest.jar report -l Java -r target/site/jacoco/jacoco.xml
 
 deploy:

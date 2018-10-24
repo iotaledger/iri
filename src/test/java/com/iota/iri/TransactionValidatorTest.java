@@ -4,14 +4,13 @@ import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
-import com.iota.iri.model.Hash;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.zmq.MessageQ;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -21,7 +20,6 @@ import static com.iota.iri.controllers.TransactionViewModelTest.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-/** Created by paul on 5/14/17. */
 public class TransactionValidatorTest {
 
   private static final int MAINNET_MWM = 14;
@@ -42,7 +40,7 @@ public class TransactionValidatorTest {
     TipsViewModel tipsViewModel = new TipsViewModel();
     MessageQ messageQ = Mockito.mock(MessageQ.class);
     TransactionRequester txRequester = new TransactionRequester(tangle, messageQ);
-    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, messageQ, new MainnetConfig());
+    txValidator = new TransactionValidator(tangle, tipsViewModel, txRequester, new MainnetConfig());
     txValidator.setMwm(false, MAINNET_MWM);
   }
 
@@ -59,15 +57,6 @@ public class TransactionValidatorTest {
     assertTrue(txValidator.getMinWeightMagnitude() == 13);
     txValidator.shutdown();
     txValidator.init(false, MAINNET_MWM);
-  }
-
-  @Test
-  public void validateBytes() throws Exception {
-    byte[] trits = getRandomTransactionTrits();
-    Converter.copyTrits(0, trits, 0, trits.length);
-    byte[] bytes = Converter.allocateBytesForTrits(trits.length);
-    Converter.bytes(trits, bytes);
-    txValidator.validateBytes(bytes, MAINNET_MWM);
   }
 
   @Test
@@ -110,7 +99,7 @@ public class TransactionValidatorTest {
   public void addSolidTransactionWithoutErrors() {
     byte[] trits = getRandomTransactionTrits();
     Converter.copyTrits(0, trits, 0, trits.length);
-    txValidator.addSolidTransaction(Hash.calculate(SpongeFactory.Mode.CURLP81, trits));
+    txValidator.addSolidTransaction(TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
   }
 
   private TransactionViewModel getTxWithBranchAndTrunk() throws Exception {
@@ -119,13 +108,13 @@ public class TransactionValidatorTest {
 
     byte[] trits = Converter.allocateTritsForTrytes(trytes.length());
     Converter.trits(trytes, trits, 0);
-    trunkTx = new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURLP81, trits));
-    branchTx = new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURLP81, trits));
+    trunkTx = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
+    branchTx = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
 
     byte[] childTx = getRandomTransactionTrits();
     System.arraycopy(trunkTx.getHash().trits(), 0, childTx, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
     System.arraycopy(branchTx.getHash().trits(), 0, childTx, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
-    tx = new TransactionViewModel(childTx, Hash.calculate(SpongeFactory.Mode.CURLP81, childTx));
+    tx = new TransactionViewModel(childTx, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, childTx));
 
     trunkTx.store(tangle);
     branchTx.store(tangle);
@@ -164,9 +153,9 @@ public class TransactionValidatorTest {
         }
 
         parent = TransactionViewModel.fromHash(tangle, parent.getHash());
-        Assert.assertTrue("Parent tx was expected to be solid", parent.isSolid());
+        assertTrue("Parent tx was expected to be solid", parent.isSolid());
         grandParent = TransactionViewModel.fromHash(tangle, grandParent.getHash());
-        Assert.assertTrue("Grandparent  was expected to be solid", grandParent.isSolid());
+        assertTrue("Grandparent  was expected to be solid", grandParent.isSolid());
     }
 
   @Test
@@ -199,14 +188,14 @@ public class TransactionValidatorTest {
     }
 
     parent = TransactionViewModel.fromHash(tangle, parent.getHash());
-    Assert.assertTrue("Parent tx was expected to be solid", parent.isSolid());
+    assertTrue("Parent tx was expected to be solid", parent.isSolid());
     grandParent = TransactionViewModel.fromHash(tangle, grandParent.getHash());
-    Assert.assertFalse("GrandParent tx was expected to be not solid", grandParent.isSolid());
+    assertFalse("GrandParent tx was expected to be not solid", grandParent.isSolid());
   }
 
   private TransactionViewModel getTxWithoutBranchAndTrunk() throws Exception {
     byte[] trits = getRandomTransactionTrits();
-    TransactionViewModel tx = new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURLP81, trits));
+    TransactionViewModel tx = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
 
     tx.store(tangle);
 

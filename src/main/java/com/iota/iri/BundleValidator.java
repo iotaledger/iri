@@ -1,6 +1,5 @@
 package com.iota.iri;
 
-import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.hash.*;
 import com.iota.iri.model.Hash;
 import com.iota.iri.controllers.TransactionViewModel;

@@ -9,7 +9,7 @@ import java.util.Objects;
 public class TestnetConfig extends BaseIotaConfig {
 
     protected String coordinator = Defaults.COORDINATOR_ADDRESS;
-    protected boolean dontValidateTestnetMilestoneSig = Defaults.VALIDATE_MILESTONE_SIG;
+    protected boolean dontValidateTestnetMilestoneSig = Defaults.DONT_VALIDATE_MILESTONE_SIG;
     protected String snapshotFile = Defaults.SNAPSHOT_FILE;
     protected String snapshotSignatureFile = Defaults.SNAPSHOT_SIG;
     protected long snapshotTime = Defaults.SNAPSHOT_TIME;
@@ -161,7 +161,7 @@ public class TestnetConfig extends BaseIotaConfig {
 
     public interface Defaults {
         String COORDINATOR_ADDRESS = "EQQFCZBIHRHWPXKMTOLMYUYPCN9XLMJPYZVFJSAY9FQHCCLWTOLLUGKKMXYFDBOOYFBLBI9WUEILGECYM";
-        boolean VALIDATE_MILESTONE_SIG = true;
+        boolean DONT_VALIDATE_MILESTONE_SIG = false;
         String LOCAL_SNAPSHOTS_BASE_PATH = "testnet";
         String SNAPSHOT_FILE = "/snapshotTestnet.txt";
         int REQUEST_HASH_SIZE = 49;

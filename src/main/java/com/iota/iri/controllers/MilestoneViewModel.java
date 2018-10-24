@@ -2,7 +2,7 @@ package com.iota.iri.controllers;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
-import com.iota.iri.model.Milestone;
+import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -11,9 +11,6 @@ import com.iota.iri.utils.Pair;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Created by paul on 4/11/17.
- */
 public class MilestoneViewModel {
     private final Milestone milestone;
     private static final Map<Integer, MilestoneViewModel> milestones = new ConcurrentHashMap<>();
@@ -24,6 +21,18 @@ public class MilestoneViewModel {
 
     public static void clear() {
         milestones.clear();
+    }
+
+    /**
+     * This method removes a {@link MilestoneViewModel} from the cache.
+     *
+     * It is used by the {@link com.iota.iri.service.garbagecollector.GarbageCollector} to remove milestones that were
+     * deleted in the database, so that the runtime environment correctly reflects the database state.
+     *
+     * @param milestoneIndex the index of the milestone
+     */
+    public static void clear(int milestoneIndex) {
+        milestones.remove(milestoneIndex);
     }
 
     public MilestoneViewModel(final int index, final Hash milestoneHash) {

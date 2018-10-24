@@ -1,3 +1,23 @@
+1.5.5
+    - Javadoc on API command methods (#943)
+    - Parse case insensitive boolean text (#966)
+    - re-enable `--remote` flag - opens API interface to all hosts (#953)
+    - fix generics in RocksDbPersistenceProvider (#956)
+    - Fix milestone start index default value (#941)
+    - Enable batch deletion in rocksDB (#939)
+    - Refactor Configuration (#910)
+    - Some TransactionValidator fixes regarding solidity (#913)
+    - Remove checkSolidity mocks (#908)
+    - Fix: TransactionValidator instance based / TransactionRequester fixed (#914)
+    - Changed Dockerfile to source java and maven from precompiled docker containers. (#929)
+    - Fix grammar in API responses (#884)
+    - Fix error in log statement (#829)
+    - Move sleep inside spawnSolidTransactionsPropagation loop (#911)
+    - Fix solidity propagation from bottom to top (#907)
+
+1.5.4
+   - Update snapshot to 2018-09-17 17:00 UTC (#989)
+
 1.5.3
    - Remove WalkValidator cache of tips that are below max depth (#903)
 

@@ -7,6 +7,8 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.StringUtils;
@@ -222,24 +224,21 @@ public class Node {
                 try {
 
                     //Transaction bytes
-
-                    MessageDigest digest = MessageDigest.getInstance("SHA-256");
-                    digest.update(receivedData, 0, TransactionViewModel.SIZE);
-                    ByteBuffer byteHash = ByteBuffer.wrap(digest.digest());
+                    ByteBuffer digest = getBytesDigest(receivedData);
 
                     //check if cached
                     synchronized (recentSeenBytes) {
-                        cached = (receivedTransactionHash = recentSeenBytes.get(byteHash)) != null;
+                        cached = (receivedTransactionHash = recentSeenBytes.get(digest)) != null;
                     }
 
                     if (!cached) {
                         //if not, then validate
-                        receivedTransactionViewModel = new TransactionViewModel(receivedData, Hash.calculate(receivedData, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
+                        receivedTransactionViewModel = new TransactionViewModel(receivedData, TransactionHash.calculate(receivedData, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
                         receivedTransactionHash = receivedTransactionViewModel.getHash();
                         transactionValidator.runValidation(receivedTransactionViewModel, transactionValidator.getMinWeightMagnitude());
 
                         synchronized (recentSeenBytes) {
-                            recentSeenBytes.put(byteHash, receivedTransactionHash);
+                            recentSeenBytes.put(digest, receivedTransactionHash);
                         }
 
                         //if valid - add to receive queue (receivedTransactionViewModel, neighbor)
@@ -267,7 +266,7 @@ public class Node {
                 //Request bytes
 
                 //add request to reply queue (requestedHash, neighbor)
-                Hash requestedHash = new Hash(receivedData, TransactionViewModel.SIZE, reqHashSize);
+                Hash requestedHash = HashFactory.TRANSACTION.create(receivedData, TransactionViewModel.SIZE, reqHashSize);
                 if (requestedHash.equals(receivedTransactionHash)) {
                     //requesting a random tip
                     requestedHash = Hash.NULL_HASH;
@@ -411,7 +410,7 @@ public class Node {
             //find requested trytes
             try {
                 //transactionViewModel = TransactionViewModel.find(Arrays.copyOf(requestedHash.bytes(), TransactionRequester.REQUEST_HASH_SIZE));
-                transactionViewModel = TransactionViewModel.fromHash(tangle, new Hash(requestedHash.bytes(), 0, reqHashSize));
+                transactionViewModel = TransactionViewModel.fromHash(tangle, HashFactory.TRANSACTION.create(requestedHash.bytes(), 0, reqHashSize));
                 //log.debug("Requested Hash: " + requestedHash + " \nFound: " + transactionViewModel.getHash());
             } catch (Exception e) {
                 log.error("Error while searching for transaction.", e);
@@ -423,6 +422,10 @@ public class Node {
             try {
                 sendPacket(sendingPacket, transactionViewModel, neighbor);
 
+                ByteBuffer digest = getBytesDigest(transactionViewModel.getBytes());
+                synchronized (recentSeenBytes) {
+                    recentSeenBytes.put(digest, transactionViewModel.getHash());
+                }
             } catch (Exception e) {
                 log.error("Error fetching transaction to request.", e);
             }
@@ -634,6 +637,12 @@ public class Node {
     public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
         executor.awaitTermination(6, TimeUnit.SECONDS);
+    }
+
+    private ByteBuffer getBytesDigest(byte[] receivedData) throws NoSuchAlgorithmException {
+        MessageDigest digest = MessageDigest.getInstance("SHA-256");
+        digest.update(receivedData, 0, TransactionViewModel.SIZE);
+        return ByteBuffer.wrap(digest.digest());
     }
 
     // helpers methods

@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * This class contains a collection of methods that make the management of {@link Thread}s a little bit more convenient.
@@ -25,7 +26,7 @@ public class ThreadUtils {
      * @see #spawnThread(Runnable, ThreadIdentifier)
      * @see #stopThread(ThreadIdentifier)
      */
-    private static final HashMap<Object, Thread> threads = new HashMap<>();
+    private static final Map<Object, Thread> threads = new HashMap<>();
 
     /**
      * This method spawns a new {@link Thread} for the given {@link ThreadIdentifier}.

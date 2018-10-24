@@ -1,11 +1,13 @@
 package com.iota.iri;
 
-import com.beust.jcommander.JCommander;
-import com.beust.jcommander.ParameterException;
 import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.service.API;
+
+import com.beust.jcommander.JCommander;
+import com.beust.jcommander.ParameterException;
+
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +23,7 @@ public class IRI {
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
-    public static final String VERSION = "1.5.3";
+    public static final String VERSION = "1.5.5";
 
     public static void main(String[] args) throws Exception {
         // Logging is configured first before any references to Logger or LoggerFactory.
@@ -47,6 +49,7 @@ public class IRI {
                 break;
             default:
                 level = "INFO";
+                break;
         }
         System.getProperties().put("logging-level", level);
         System.out.println("Logging - property 'logging-level' set to: [" + level + "]");
@@ -70,27 +73,6 @@ public class IRI {
             ixi = new IXI(iota);
             api = new API(iota, ixi);
             shutdownHook();
-
-            if (config.isExport()) {
-                File exportDir = new File("export");
-                if (!exportDir.exists()) {
-                    log.info("Create directory 'export'");
-                    try {
-                        exportDir.mkdir();
-                    } catch (SecurityException e) {
-                        log.error("Could not create directory", e);
-                    }
-                }
-                exportDir = new File("export-solid");
-                if (!exportDir.exists()) {
-                    log.info("Create directory 'export-solid'");
-                    try {
-                        exportDir.mkdir();
-                    } catch (SecurityException e) {
-                        log.error("Could not create directory", e);
-                    }
-                }
-            }
 
             try {
                 iota.init();

@@ -1,8 +1,8 @@
 package com.iota.iri.service.tipselection;
 
-import com.iota.iri.model.Hash;
-
 import java.util.Optional;
+
+import com.iota.iri.model.Hash;
 
 /**
  * Finds the tail of a bundle

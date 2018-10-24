@@ -1,7 +1,8 @@
 package com.iota.iri.utils;
 
-import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.StringUtils;
+
+import com.iota.iri.model.Hash;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;

@@ -412,6 +412,37 @@ public class TransactionViewModel {
         }
     }
 
+    /**
+     * This method is the setter for the isSnapshot flag of a transaction.
+     *
+     * It gets automatically called by the "Latest Milestone Tracker" and marks transactions that represent a milestone
+     * accordingly. It first checks if the value has actually changed and then issues a database update.
+     *
+     * @param tangle Tangle instance which acts as a database interface
+     * @param isSnapshot true if the transaction is a snapshot and false otherwise
+     * @throws Exception if something goes wrong while saving the changes to the database
+     */
+    public void isSnapshot(Tangle tangle, final boolean isSnapshot) throws Exception {
+        if (isSnapshot != transaction.isSnapshot) {
+            transaction.isSnapshot = isSnapshot;
+            update(tangle, "isSnapshot");
+        }
+    }
+
+    /**
+     * This method is the getter for the isSnapshot flag of a transaction.
+     *
+     * The isSnapshot flag indicates if the transaction is a coordinator issued milestone. It allows us to differentiate
+     * the two types of transactions (normal transactions / milestones) very fast and efficiently without issuing
+     * further database queries or even full verifications of the signature. If it is set to true one can for example
+     * use the snapshotIndex() method to retrieve the corresponding MilestoneViewModel object.
+     *
+     * @return true if the transaction is a milestone and false otherwise
+     */
+    public boolean isSnapshot() {
+        return transaction.isSnapshot;
+    }
+
     public long getHeight() {
         return transaction.height;
     }

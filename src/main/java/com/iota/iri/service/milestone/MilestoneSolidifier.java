@@ -7,7 +7,6 @@ import com.iota.iri.utils.log.Logger;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.ThreadIdentifier;
 import com.iota.iri.utils.thread.ThreadUtils;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -116,11 +115,9 @@ public class MilestoneSolidifier {
      * @param milestoneIndex index of the milestone that shall be solidified
      */
     public void add(Hash milestoneHash, int milestoneIndex) {
-        if (
-            !unsolidMilestonesPool.containsKey(milestoneHash) &&
-            !newlyAddedMilestones.containsKey(milestoneHash) &&
-            milestoneIndex > initialSnapshot.getIndex()
-        ) {
+        if (!unsolidMilestonesPool.containsKey(milestoneHash) && !newlyAddedMilestones.containsKey(milestoneHash) &&
+                milestoneIndex > initialSnapshot.getIndex()) {
+
             newlyAddedMilestones.put(milestoneHash, milestoneIndex);
         }
     }
@@ -235,7 +232,9 @@ public class MilestoneSolidifier {
                 unsolidMilestonesPool.remove(currentEntry.getKey());
                 iterator.remove();
 
-                if (youngestMilestoneInQueue != null && currentEntry.getKey().equals(youngestMilestoneInQueue.getKey())) {
+                if (youngestMilestoneInQueue != null &&
+                        currentEntry.getKey().equals(youngestMilestoneInQueue.getKey())) {
+
                     youngestMilestoneInQueue = null;
                 }
             }
@@ -255,11 +254,9 @@ public class MilestoneSolidifier {
         }
 
         Map.Entry<Hash, Integer> nextSolidificationCandidate;
-        while (
-            !Thread.currentThread().isInterrupted() &&
-            milestonesToSolidify.size() < SOLIDIFICATION_QUEUE_SIZE &&
-            (nextSolidificationCandidate = getNextSolidificationCandidate()) != null
-        ) {
+        while (!Thread.currentThread().isInterrupted() && milestonesToSolidify.size() < SOLIDIFICATION_QUEUE_SIZE &&
+                (nextSolidificationCandidate = getNextSolidificationCandidate()) != null) {
+
             addToSolidificationQueue(nextSolidificationCandidate);
         }
     }
@@ -291,12 +288,9 @@ public class MilestoneSolidifier {
     private Map.Entry<Hash, Integer> getNextSolidificationCandidate() {
         Map.Entry<Hash, Integer> nextSolidificationCandidate = null;
         for (Map.Entry<Hash, Integer> milestoneEntry : unsolidMilestonesPool.entrySet()) {
-            if (
-                !milestonesToSolidify.containsKey(milestoneEntry.getKey()) && (
-                    nextSolidificationCandidate == null ||
-                    milestoneEntry.getValue() < nextSolidificationCandidate.getValue()
-                )
-            ) {
+            if (!milestonesToSolidify.containsKey(milestoneEntry.getKey()) && (nextSolidificationCandidate == null ||
+                    milestoneEntry.getValue() < nextSolidificationCandidate.getValue())) {
+
                 nextSolidificationCandidate = milestoneEntry;
             }
         }
@@ -321,11 +315,13 @@ public class MilestoneSolidifier {
      */
     private boolean isSolid(Map.Entry<Hash, Integer> currentEntry) {
         if (unsolidMilestonesPool.size() > 1) {
-            statusLogger.info("Solidifying milestone #" + currentEntry.getValue() + " [" + milestonesToSolidify.size() + " / " + unsolidMilestonesPool.size() + "]");
+            statusLogger.info("Solidifying milestone #" + currentEntry.getValue() +
+                    " [" + milestonesToSolidify.size() + " / " + unsolidMilestonesPool.size() + "]");
         }
 
         try {
-            return transactionValidator.checkSolidity(currentEntry.getKey(), true, SOLIDIFICATION_TRANSACTIONS_LIMIT * 4);
+            return transactionValidator.checkSolidity(currentEntry.getKey(), true,
+                    SOLIDIFICATION_TRANSACTIONS_LIMIT * 4);
         } catch (Exception e) {
             statusLogger.error("Error while solidifying milestone #" + currentEntry.getValue(), e);
 

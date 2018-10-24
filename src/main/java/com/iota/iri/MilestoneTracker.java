@@ -35,6 +35,13 @@ import static com.iota.iri.MilestoneTracker.Validity.INVALID;
 import static com.iota.iri.MilestoneTracker.Validity.VALID;
 
 public class MilestoneTracker {
+    /**
+     * Available runtime states of the {@link MilestoneTracker}.
+     */
+    public enum Status {
+        INITIALIZING,
+        INITIALIZED
+    }
 
     enum Validity {
         VALID,
@@ -62,6 +69,11 @@ public class MilestoneTracker {
 
     private final Set<Hash> analyzedMilestoneCandidates = new HashSet<>();
 
+    /**
+     * The current status of the {@link MilestoneTracker}.
+     */
+    protected Status status = Status.INITIALIZING;
+
     public MilestoneTracker(Tangle tangle,
                             TransactionValidator transactionValidator,
                             MessageQ messageQ,
@@ -80,6 +92,17 @@ public class MilestoneTracker {
         this.latestMilestoneIndex = milestoneStartIndex;
         this.latestSolidSubtangleMilestoneIndex = milestoneStartIndex;
         this.acceptAnyTestnetCoo = config.isDontValidateTestnetMilestoneSig();
+    }
+
+    /**
+     * This method returns the current status of the milestone tracker.
+     *
+     * It allows us to determine if all of the "startup" tasks have succeeded.
+     *
+     * @return {@code INITIALIZED} when all of the "startup" tasks have finished and {@code INITIALIZING} otherwise
+     */
+    public Status getStatus() {
+        return this.status;
     }
 
     private boolean shuttingDown;
@@ -247,7 +270,7 @@ public class MilestoneTracker {
         MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
         if (latest != null) {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(
-                    tangle, latestSolidSubtangleMilestoneIndex, testnet, milestoneStartIndex);
+                    tangle, latestSolidSubtangleMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
                  milestoneViewModel = milestoneViewModel.next(tangle)) {
                 if (transactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&

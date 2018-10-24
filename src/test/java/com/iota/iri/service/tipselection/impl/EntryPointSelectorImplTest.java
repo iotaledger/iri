@@ -1,17 +1,13 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.MilestoneTracker;
-import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.service.tipselection.EntryPointSelector;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Pair;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;

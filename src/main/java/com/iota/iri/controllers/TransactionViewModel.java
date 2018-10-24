@@ -94,20 +94,20 @@ public class TransactionViewModel {
 
     public TransactionViewModel(final byte[] trits, Hash hash) {
         transaction = new Transaction();
-        
+
         if(trits.length == 8019) {
             this.trits = new byte[trits.length];
             System.arraycopy(trits, 0, this.trits, 0, trits.length);
             transaction.bytes = Converter.allocateBytesForTrits(trits.length);
             Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
-            
+
             transaction.validity = 0;
             transaction.arrivalTime = 0;
         } else {
             transaction.bytes = new byte[SIZE];
             System.arraycopy(trits, 0, transaction.bytes, 0, SIZE);
         }
-        
+
         this.hash = hash;
         weightMagnitude = this.hash.trailingZeros();
         transaction.type = FILLED_SLOT;
@@ -473,5 +473,17 @@ public class TransactionViewModel {
     @Override
     public int hashCode() {
         return Objects.hash(getHash());
+    }
+
+    /**
+     * This method creates a human readable string representation of the transaction.
+     *
+     * It can be used to directly append the transaction in error and debug messages.
+     *
+     * @return human readable string representation of the transaction
+     */
+    @Override
+    public String toString() {
+        return "transaction " + hash.toString();
     }
 }

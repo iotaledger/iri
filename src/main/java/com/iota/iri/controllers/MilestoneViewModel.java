@@ -26,8 +26,8 @@ public class MilestoneViewModel {
     /**
      * This method removes a {@link MilestoneViewModel} from the cache.
      *
-     * It is used by the {@link com.iota.iri.service.garbagecollector.GarbageCollector} to remove milestones that were
-     * deleted in the database, so that the runtime environment correctly reflects the database state.
+     * It is used by the {@link com.iota.iri.service.transactionpruning.TransactionPruner} to remove milestones that
+     * were deleted in the database, so that the runtime environment correctly reflects the database state.
      *
      * @param milestoneIndex the index of the milestone
      */
@@ -129,4 +129,15 @@ public class MilestoneViewModel {
         tangle.delete(Milestone.class, milestone.index);
     }
 
+    /**
+     * This method creates a human readable string representation of the milestone.
+     *
+     * It can be used to directly append the milestone in error and debug messages.
+     *
+     * @return human readable string representation of the milestone
+     */
+    @Override
+    public String toString() {
+        return "milestone #" + index() + " (" + getHash().toString() + ")";
+    }
 }

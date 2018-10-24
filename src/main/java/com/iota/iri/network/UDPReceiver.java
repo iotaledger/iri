@@ -69,7 +69,7 @@ public class UDPReceiver {
 
             while (!shuttingDown.get()) {
 
-                if (((processed + dropped) % 50000 == 0)) {
+                if (((processed + dropped) % 50000 == 49999)) {
                     log.info("Receiver thread processed/dropped ratio: "+processed+"/"+dropped);
                     processed = 0;
                     dropped = 0;

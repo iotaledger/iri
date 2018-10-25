@@ -14,12 +14,12 @@ public class Transaction implements Persistable {
     /**
      * Bitmask used to access and store the solid flag.
      */
-    public static int IS_SOLID_BITMASK    = 0b01;
+    public static final int IS_SOLID_BITMASK    = 0b01;
 
     /**
      * Bitmask used to access and store the isSnapshot flag.
      */
-    public static int IS_SNAPSHOT_BITMASK = 0b10;
+    public static final int IS_SNAPSHOT_BITMASK = 0b10;
 
     public byte[] bytes;
 

@@ -69,90 +69,197 @@ public class SnapshotMetaDataImpl implements SnapshotMetaData {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(
                 new FileInputStream(snapshotMetaDataFile))))) {
 
-            Hash hash;
-            int index;
-            long timestamp;
-            int solidEntryPointsSize;
-            int seenMilestonesSize;
+            Hash hash = readMilestoneHash(reader);
+            int index = readMilestoneIndex(reader);
+            long timestamp = readMilestoneTimestamp(reader);
+            int amountOfSolidEntryPoints = readAmountOfSolidEntryPoints(reader);
+            int amountOfSeenMilestones = readAmountOfSeenMilestones(reader);
+            Map<Hash, Integer> solidEntryPoints = readSolidEntryPoints(reader, amountOfSolidEntryPoints);
+            Map<Hash, Integer> seenMilestones = readSeenMilestones(reader, amountOfSeenMilestones);
 
-            // read the hash
-            String line;
-            if((line = reader.readLine()) != null) {
-                hash = HashFactory.TRANSACTION.create(line);
-            } else {
-                throw new SnapshotException("invalid or malformed snapshot metadata file at " +
-                        snapshotMetaDataFile.getAbsolutePath());
-            }
-
-            // read the index
-            if((line = reader.readLine()) != null) {
-                index = Integer.parseInt(line);
-            } else {
-                throw new SnapshotException("invalid or malformed snapshot metadata file at " +
-                        snapshotMetaDataFile.getAbsolutePath());
-            }
-
-            // read the timestamp
-            if((line = reader.readLine()) != null) {
-                timestamp = Long.parseLong(line);
-            } else {
-                throw new SnapshotException("invalid or malformed snapshot metadata file at " +
-                        snapshotMetaDataFile.getAbsolutePath());
-            }
-
-            // read the solid entry points size
-            if((line = reader.readLine()) != null) {
-                solidEntryPointsSize = Integer.parseInt(line);
-            } else {
-                throw new SnapshotException("invalid or malformed snapshot metadata file at " +
-                        snapshotMetaDataFile.getAbsolutePath());
-            }
-
-            // read the solid entry points size
-            if((line = reader.readLine()) != null) {
-                seenMilestonesSize = Integer.parseInt(line);
-            } else {
-                throw new SnapshotException("invalid or malformed snapshot metadata file at " +
-                        snapshotMetaDataFile.getAbsolutePath());
-            }
-
-            // read the solid entry points from our file
-            HashMap<Hash, Integer> solidEntryPoints = new HashMap<>();
-            for(int i = 0; i < solidEntryPointsSize; i++) {
-                if((line = reader.readLine()) != null) {
-                    String[] parts = line.split(";", 2);
-                    if(parts.length >= 2) {
-                        solidEntryPoints.put(HashFactory.TRANSACTION.create(parts[0]), Integer.parseInt(parts[1]));
-                    }
-                } else {
-                    throw new SnapshotException("invalid or malformed snapshot metadata file at " +
-                            snapshotMetaDataFile.getAbsolutePath());
-                }
-            }
-
-            // read the seen milestones
-            HashMap<Hash, Integer> seenMilestones = new HashMap<>();
-            for(int i = 0; i < seenMilestonesSize; i++) {
-                if((line = reader.readLine()) != null) {
-                    String[] parts = line.split(";", 2);
-                    if(parts.length >= 2) {
-                        seenMilestones.put(HashFactory.TRANSACTION.create(parts[0]), Integer.parseInt(parts[1]));
-                    }
-                } else {
-                    throw new SnapshotException("invalid or malformed snapshot metadata file at " +
-                            snapshotMetaDataFile.getAbsolutePath());
-                }
-            }
-
-            // close the reader
-            reader.close();
-
-            // create and return our SnapshotMetaData object
             return new SnapshotMetaDataImpl(hash, index, timestamp, solidEntryPoints, seenMilestones);
         } catch (IOException e) {
-            throw new SnapshotException("failed to read the snapshot metadata file at " +
+            throw new SnapshotException("failed to read from the snapshot metadata file at " +
                     snapshotMetaDataFile.getAbsolutePath(), e);
         }
+    }
+
+    /**
+     * This method reads the transaction hash of the milestone that references the
+     * {@link com.iota.iri.service.snapshot.Snapshot} from the meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @return Hash of the milestone transaction that references the {@link com.iota.iri.service.snapshot.Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the hash from the file
+     * @throws IOException if we could not read from the file
+     */
+    private static Hash readMilestoneHash(BufferedReader reader) throws SnapshotException, IOException {
+        String line;
+        if((line = reader.readLine()) == null) {
+            throw new SnapshotException("could not read the transaction hash from the meta data file");
+        }
+
+        return HashFactory.TRANSACTION.create(line);
+    }
+
+    /**
+     * This method reads the milestone index of the milestone that references the
+     * {@link com.iota.iri.service.snapshot.Snapshot} from the meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @return milestone index of the milestone that references the {@link com.iota.iri.service.snapshot.Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the milestone index from the file
+     * @throws IOException if we could not read from the file
+     */
+    private static int readMilestoneIndex(BufferedReader reader) throws SnapshotException, IOException {
+        try {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read the milestone index from the meta data file");
+            }
+
+            return Integer.parseInt(line);
+        } catch (NumberFormatException e) {
+            throw new SnapshotException("could not parse the milestone index from the meta data file", e);
+        }
+    }
+
+    /**
+     * This method reads the timestamp of the milestone that references the
+     * {@link com.iota.iri.service.snapshot.Snapshot} from the meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @return timestamp of the milestone that references the {@link com.iota.iri.service.snapshot.Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the milestone timestamp from the file
+     * @throws IOException if we could not read from the file
+     */
+    private static long readMilestoneTimestamp(BufferedReader reader) throws SnapshotException, IOException {
+        try {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read the milestone timestamp from the meta data file");
+            }
+
+            return Long.parseLong(line);
+        } catch (NumberFormatException e) {
+            throw new SnapshotException("could not parse the milestone timestamp from the meta data file", e);
+        }
+    }
+
+    /**
+     * This method reads the amount of solid entry points of the {@link com.iota.iri.service.snapshot.Snapshot} from the
+     * meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @return amount of solid entry points of the {@link com.iota.iri.service.snapshot.Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the amount of solid entry points from the file
+     * @throws IOException if we could not read from the file
+     */
+    private static int readAmountOfSolidEntryPoints(BufferedReader reader) throws SnapshotException, IOException {
+        try {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read the amount of solid entry points from the meta data file");
+            }
+
+            return Integer.parseInt(line);
+        } catch (NumberFormatException e) {
+            throw new SnapshotException("could not parse the amount of solid entry points from the meta data file", e);
+        }
+    }
+
+    /**
+     * This method reads the amount of seen milestones of the {@link com.iota.iri.service.snapshot.Snapshot} from the
+     * meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @return amount of seen milestones of the {@link com.iota.iri.service.snapshot.Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the amount of seen milestones from the file
+     * @throws IOException if we could not read from the file
+     */
+    private static int readAmountOfSeenMilestones(BufferedReader reader) throws SnapshotException, IOException {
+        try {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read the amount of seen milestones from the meta data file");
+            }
+
+            return Integer.parseInt(line);
+        } catch (NumberFormatException e) {
+            throw new SnapshotException("could not parse the amount of seen milestones from the meta data file", e);
+        }
+    }
+
+    /**
+     * This method reads the solid entry points of the {@link com.iota.iri.service.snapshot.Snapshot} from the
+     * meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @param amountOfSolidEntryPoints the amount of solid entry points we expect
+     * @return the solid entry points of the {@link com.iota.iri.service.snapshot.Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the solid entry points from the file
+     * @throws IOException if we could not read from the file
+     */
+    private static Map<Hash, Integer> readSolidEntryPoints(BufferedReader reader, int amountOfSolidEntryPoints)
+            throws SnapshotException, IOException {
+
+        Map<Hash, Integer> solidEntryPoints = new HashMap<>();
+
+        for(int i = 0; i < amountOfSolidEntryPoints; i++) {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read a solid entry point from the meta data file");
+            }
+
+            String[] parts = line.split(";", 2);
+            if(parts.length == 2) {
+                try {
+                    solidEntryPoints.put(HashFactory.TRANSACTION.create(parts[0]), Integer.parseInt(parts[1]));
+                } catch (NumberFormatException e) {
+                    throw new SnapshotException("could not parse a solid entry point from the meta data file", e);
+                }
+            } else {
+                throw new SnapshotException("could not parse a solid entry point from the meta data file");
+            }
+        }
+
+        return solidEntryPoints;
+    }
+
+    /**
+     * This method reads the seen milestones of the {@link com.iota.iri.service.snapshot.Snapshot} from the
+     * meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @param amountOfSeenMilestones the amount of seen milestones we expect
+     * @return the seen milestones of the {@link com.iota.iri.service.snapshot.Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the seen milestones from the file
+     * @throws IOException if we could not read from the file
+     */
+    private static Map<Hash, Integer> readSeenMilestones(BufferedReader reader, int amountOfSeenMilestones)
+            throws SnapshotException, IOException {
+
+        Map<Hash, Integer> seenMilestones = new HashMap<>();
+
+        for(int i = 0; i < amountOfSeenMilestones; i++) {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read a seen milestone from the meta data file");
+            }
+
+            String[] parts = line.split(";", 2);
+            if(parts.length == 2) {
+                try {
+                    seenMilestones.put(HashFactory.TRANSACTION.create(parts[0]), Integer.parseInt(parts[1]));
+                } catch (NumberFormatException e) {
+                    throw new SnapshotException("could not parse a seen milestone from the meta data file", e);
+                }
+            } else {
+                throw new SnapshotException("could not parse a seen milestone from the meta data file");
+            }
+        }
+
+        return seenMilestones;
     }
 
     /**

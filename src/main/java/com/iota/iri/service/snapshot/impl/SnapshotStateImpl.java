@@ -112,7 +112,7 @@ public class SnapshotStateImpl implements SnapshotState {
      */
     @Override
     public boolean isConsistent() {
-        return getInconsistentAddresses().size() == 0;
+        return getInconsistentAddresses().isEmpty();
     }
 
     /**
@@ -197,7 +197,7 @@ public class SnapshotStateImpl implements SnapshotState {
      *
      * @return a map of the inconsistent addresses (negative balance) and their actual balance
      */
-    private HashMap<Hash, Long> getInconsistentAddresses() {
+    private Map<Hash, Long> getInconsistentAddresses() {
         HashMap<Hash, Long> result = new HashMap<>();
         balances.forEach((key, value) -> {
             if (value < 0) {

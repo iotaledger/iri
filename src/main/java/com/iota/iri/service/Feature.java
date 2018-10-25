@@ -8,6 +8,13 @@ import java.util.stream.Collectors;
 import com.iota.iri.Iota;
 import com.iota.iri.conf.IotaConfig;
 
+/**
+ * 
+ * Features describe the capability of the node. 
+ * They do not have to have a name specifically linked to a class/action. 
+ * Features are based on enabled/disabled functionality due to, for example, config values
+ *
+ */
 public enum Feature {
     /**
      * This node allows doing proof of work for you.
@@ -69,9 +76,9 @@ public enum Feature {
             features.add(ZMQ);
         }
         
-        List<Feature> apiFeatures = Arrays.asList(new Feature[] {
+        List<Feature> apiFeatures = new ArrayList<Feature>(Arrays.asList(new Feature[] {
                 PROOF_OF_WORK
-        });
+        }));
         
         for (String disabled : configuration.getRemoteLimitApi()) {
             switch (disabled) {

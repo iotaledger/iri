@@ -57,70 +57,16 @@ public class LocalSnapshotServiceImpl implements LocalSnapshotService {
     public void takeLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
             TransactionPruner transactionPruner) throws SnapshotException {
 
-        int targetMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsDepth();
+        MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, config);
 
-        MilestoneViewModel targetMilestone;
-        try {
-            targetMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, targetMilestoneIndex);
-        } catch (Exception e) {
-            throw new SnapshotException("could not load the target milestone", e);
-        }
-        if (targetMilestone == null) {
-            throw new SnapshotException("missing milestone with an index of " + targetMilestoneIndex + " or lower");
-        }
+        Snapshot newSnapshot = generateSnapshot(tangle, snapshotProvider, config, targetMilestone);
 
-        Snapshot newSnapshot;
-        try {
-            newSnapshot = generateSnapshot(tangle, snapshotProvider, config, targetMilestone);
+        cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
+                newSnapshot.getSolidEntryPoints(), transactionPruner);
 
-            Map<Hash, Integer> oldSolidEntryPoints = snapshotProvider.getInitialSnapshot().getSolidEntryPoints();
-            Map<Hash, Integer> newSolidEntryPoints = newSnapshot.getSolidEntryPoints();
+        cleanupOldData(config, transactionPruner, targetMilestone);
 
-            oldSolidEntryPoints.forEach((transactionHash, milestoneIndex) -> {
-                if (!newSolidEntryPoints.containsKey(transactionHash)) {
-                    try {
-                        // only clean up if the corresponding milestone transaction was cleaned up already -> otherwise
-                        // let the MilestonePrunerJob do this
-                        if (TransactionViewModel.fromHash(tangle, transactionHash).getType() ==
-                                TransactionViewModel.PREFILLED_SLOT) {
-
-                            transactionPruner.addJob(new UnconfirmedSubtanglePrunerJob(transactionHash));
-                        }
-                    } catch (Exception e) {
-                        log.error("failed to add cleanup job to the transaction pruner", e);
-                    }
-                }
-            });
-        } catch (Exception e) {
-            throw new SnapshotException("could not generate the snapshot", e);
-        }
-
-        try {
-            int targetIndex = targetMilestone.index() - config.getLocalSnapshotsPruningDelay();
-            int startingIndex = config.getMilestoneStartIndex() + 1;
-
-            if (targetIndex >= startingIndex) {
-                transactionPruner.addJob(new MilestonePrunerJob(startingIndex, targetMilestone.index() -
-                        config.getLocalSnapshotsPruningDelay()));
-            }
-
-        } catch (TransactionPruningException e) {
-            throw new SnapshotException("could not add the cleanup job to the transaction pruner", e);
-        }
-
-        newSnapshot.writeToDisk(config.getLocalSnapshotsBasePath());
-
-        snapshotProvider.getInitialSnapshot().lockWrite();
-        snapshotProvider.getLatestSnapshot().lockWrite();
-
-        snapshotProvider.getInitialSnapshot().update(newSnapshot);
-
-        snapshotProvider.getLatestSnapshot().setInitialHash(snapshotProvider.getInitialSnapshot().getHash());
-        snapshotProvider.getLatestSnapshot().setInitialIndex(snapshotProvider.getInitialSnapshot().getIndex());
-        snapshotProvider.getLatestSnapshot().setInitialTimestamp(snapshotProvider.getInitialSnapshot().getTimestamp());
-
-        snapshotProvider.getInitialSnapshot().unlockWrite();
-        snapshotProvider.getLatestSnapshot().unlockWrite();
+        persistLocalSnapshot(snapshotProvider, newSnapshot, config);
     }
 
     /**
@@ -212,6 +158,126 @@ public class LocalSnapshotServiceImpl implements LocalSnapshotService {
         progressLogger.finish();
 
         return seenMilestones;
+    }
+
+    /**
+     * This method determines the milestone that shall be used for the local snapshot.
+     *
+     * It determines the milestone by subtracting the {@link SnapshotConfig#getLocalSnapshotsDepth()} from the latest
+     * solid milestone index and retrieving the next milestone before this point.
+     *
+     * @param tangle Tangle object which acts as a database interface
+     * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
+     * @param config important snapshot related configuration parameters
+     * @return the target milestone for the local snapshot
+     * @throws SnapshotException if anything goes wrong while determining the target milestone for the local snapshot
+     */
+    private MilestoneViewModel determineMilestoneForLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider,
+            SnapshotConfig config) throws SnapshotException {
+
+        int targetMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex() - config.getLocalSnapshotsDepth();
+
+        MilestoneViewModel targetMilestone;
+        try {
+            targetMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, targetMilestoneIndex);
+        } catch (Exception e) {
+            throw new SnapshotException("could not load the target milestone", e);
+        }
+        if (targetMilestone == null) {
+            throw new SnapshotException("missing milestone with an index of " + targetMilestoneIndex + " or lower");
+        }
+
+        return targetMilestone;
+    }
+
+    /**
+     * This method creates {@link TransactionPruner} jobs for the expired solid entry points, which removes the
+     * unconfirmed subtangles branching off of these transactions.
+     *
+     * We only clean up these subtangles if the transaction that they are branching off has been cleaned up already by a
+     * {@link MilestonePrunerJob}. If the corresponding milestone has not been processed we leave them in the database
+     * so we give the node a little bit more time to "use" these transaction for references from future milestones. This
+     * is used to correctly reflect the {@link SnapshotConfig#getLocalSnapshotsPruningDelay()}, where we keep old data
+     * prior to a snapshot.
+     *
+     * @param tangle Tangle object which acts as a database interface
+     * @param oldSolidEntryPoints solid entry points of the current initial {@link Snapshot}
+     * @param newSolidEntryPoints solid entry points of the new initial {@link Snapshot}
+     * @param transactionPruner manager for the pruning jobs that takes care of cleaning up the old data that
+     */
+    private void cleanupExpiredSolidEntryPoints(Tangle tangle, Map<Hash, Integer> oldSolidEntryPoints,
+            Map<Hash, Integer> newSolidEntryPoints, TransactionPruner transactionPruner) {
+
+        oldSolidEntryPoints.forEach((transactionHash, milestoneIndex) -> {
+            if (!newSolidEntryPoints.containsKey(transactionHash)) {
+                try {
+                    // only clean up if the corresponding milestone transaction was cleaned up already -> otherwise
+                    // let the MilestonePrunerJob do this
+                    if (TransactionViewModel.fromHash(tangle, transactionHash).getType() ==
+                            TransactionViewModel.PREFILLED_SLOT) {
+
+                        transactionPruner.addJob(new UnconfirmedSubtanglePrunerJob(transactionHash));
+                    }
+                } catch (Exception e) {
+                    log.error("failed to add cleanup job to the transaction pruner", e);
+                }
+            }
+        });
+    }
+
+    /**
+     * This method creates the {@link TransactionPruner} jobs that are responsible for removing the old data.
+     *
+     * It first calculates the range of milestones that shall be deleted and then issues a {@link MilestonePrunerJob}
+     * for this range (if it is not empty).
+     *
+     * @param config important snapshot related configuration parameters
+     * @param transactionPruner  manager for the pruning jobs that takes care of cleaning up the old data that
+     * @param targetMilestone milestone that was used as a reference point for the local snapshot
+     * @throws SnapshotException if anything goes wrong while issuing the cleanup jobs
+     */
+    private void cleanupOldData(SnapshotConfig config, TransactionPruner transactionPruner,
+            MilestoneViewModel targetMilestone) throws SnapshotException {
+
+        int targetIndex = targetMilestone.index() - config.getLocalSnapshotsPruningDelay();
+        int startingIndex = config.getMilestoneStartIndex() + 1;
+
+        try {
+            if (targetIndex >= startingIndex) {
+                transactionPruner.addJob(new MilestonePrunerJob(startingIndex, targetIndex));
+            }
+        } catch (TransactionPruningException e) {
+            throw new SnapshotException("could not add the cleanup job to the transaction pruner", e);
+        }
+    }
+
+    /**
+     * This method persists the local snapshot on the disk and updates the instances used by the
+     * {@link SnapshotProvider}.
+     *
+     * It first writes the files to the disk and then updates the two {@link Snapshot}s accordingly.
+     *
+     * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
+     * @param newSnapshot Snapshot that shall be persisted
+     * @param config important snapshot related configuration parameters
+     * @throws SnapshotException if anything goes wrong while persisting the snapshot
+     */
+    private void persistLocalSnapshot(SnapshotProvider snapshotProvider, Snapshot newSnapshot, SnapshotConfig config)
+            throws SnapshotException {
+
+        newSnapshot.writeToDisk(config.getLocalSnapshotsBasePath());
+
+        snapshotProvider.getInitialSnapshot().lockWrite();
+        snapshotProvider.getLatestSnapshot().lockWrite();
+
+        snapshotProvider.getInitialSnapshot().update(newSnapshot);
+
+        snapshotProvider.getLatestSnapshot().setInitialHash(newSnapshot.getHash());
+        snapshotProvider.getLatestSnapshot().setInitialIndex(newSnapshot.getIndex());
+        snapshotProvider.getLatestSnapshot().setInitialTimestamp(newSnapshot.getTimestamp());
+
+        snapshotProvider.getInitialSnapshot().unlockWrite();
+        snapshotProvider.getLatestSnapshot().unlockWrite();
     }
 
     /**

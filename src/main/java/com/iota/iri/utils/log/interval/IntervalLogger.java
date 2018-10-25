@@ -282,6 +282,16 @@ public class IntervalLogger implements Logger {
         public abstract void print();
 
         /**
+         * This method allows us to used the Messages in HashMaps and other collections that use the hashCode method to
+         * identify objects. Even tho this is not actively used we anyway want to implement it to be on the safe side
+         * if we ever implement something like this.
+         *
+         * @return a unique int identifier that can be used to address equal objects
+         */
+        @Override
+        public abstract int hashCode();
+
+        /**
          * This method allows us to compare different {@link Message}s for equality and check if we have received or
          * processed the same {@link Message} already.
          *
@@ -318,6 +328,18 @@ public class IntervalLogger implements Logger {
                 lastPrintedMessage = this;
                 lastLogTime = System.currentTimeMillis();
             }
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            int result = 1;
+
+            result = 31 * result + (message == null ? 0 : message.hashCode());
+
+            return result;
         }
 
         /**
@@ -369,6 +391,18 @@ public class IntervalLogger implements Logger {
          * {@inheritDoc}
          */
         @Override
+        public int hashCode() {
+            int result = 2;
+
+            result = 31 * result + (message == null ? 0 : message.hashCode());
+
+            return result;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public boolean equals(Object obj) {
             if (obj == this) {
                 return true;
@@ -401,6 +435,19 @@ public class IntervalLogger implements Logger {
             super(message);
 
             this.cause = cause;
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
+        public int hashCode() {
+            int result = 3;
+
+            result = 31 * result + (message == null ? 0 : message.hashCode());
+            result = 31 * result + (cause == null ? 0 : cause.hashCode());
+
+            return result;
         }
 
         /**

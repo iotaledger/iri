@@ -148,7 +148,7 @@ public class TransactionValidator {
      * @throws Exception if anything goes wrong while trying to solidify the transaction
      */
     public boolean checkSolidity(Hash hash, boolean milestone, int maxProcessedTransactions) throws Exception {
-        if(TransactionViewModel.fromHash(tangle, hash).isSolid()) {
+        if(fromHash(tangle, hash).isSolid()) {
             return true;
         }
         Set<Hash> analyzedHashes = new HashSet<>(Collections.singleton(Hash.NULL_HASH));
@@ -164,9 +164,9 @@ public class TransactionValidator {
                     return false;
                 }
 
-                final TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hashPointer);
+                final TransactionViewModel transaction = fromHash(tangle, hashPointer);
                 if(!transaction.isSolid()) {
-                    if (transaction.getType() == TransactionViewModel.PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
+                    if (transaction.getType() == PREFILLED_SLOT && !hashPointer.equals(Hash.NULL_HASH)) {
                         solid = false;
 
                         if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {

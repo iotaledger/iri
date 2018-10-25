@@ -43,7 +43,7 @@ public class MilestoneSolidifier {
     /**
      * Logger for this class allowing us to dump debug and status messages.
      */
-    private final Logger statusLogger = new IntervalLogger(MilestoneSolidifier.class);
+    private static final Logger statusLogger = new IntervalLogger(MilestoneSolidifier.class);
 
     /**
      * Holds a reference to the initial Snapshot which allows us to check if milestones are still relevant.
@@ -248,7 +248,7 @@ public class MilestoneSolidifier {
      * is still space in the {@link #milestonesToSolidify} queue.
      */
     private void refillSolidificationQueue() {
-        if(youngestMilestoneInQueue == null && milestonesToSolidify.size() >= 1) {
+        if(youngestMilestoneInQueue == null && !milestonesToSolidify.isEmpty()) {
             determineYoungestMilestoneInQueue();
         }
 

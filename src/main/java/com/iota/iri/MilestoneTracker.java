@@ -72,7 +72,7 @@ public class MilestoneTracker {
     /**
      * The current status of the {@link MilestoneTracker}.
      */
-    protected Status status = Status.INITIALIZING;
+    private Status status = Status.INITIALIZING;
 
     public MilestoneTracker(Tangle tangle,
                             TransactionValidator transactionValidator,

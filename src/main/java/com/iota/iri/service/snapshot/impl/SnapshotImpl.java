@@ -155,12 +155,8 @@ public class SnapshotImpl implements Snapshot {
      */
     @Override
     public void rollBackMilestones(int targetMilestoneIndex, Tangle tangle) throws SnapshotException {
-        if(targetMilestoneIndex <= getInitialIndex()) {
-            throw new SnapshotException("the target milestone index is lower than the initial snapshot index");
-        }
-
-        if(targetMilestoneIndex > getIndex()) {
-            throw new SnapshotException("the target milestone index is higher than the current one");
+        if(targetMilestoneIndex <= getInitialIndex() || targetMilestoneIndex > getIndex()) {
+            throw new SnapshotException("invalid milestone index");
         }
 
         lockWrite();

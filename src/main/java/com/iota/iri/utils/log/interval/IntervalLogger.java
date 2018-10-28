@@ -3,6 +3,8 @@ package com.iota.iri.utils.log.interval;
 import com.iota.iri.utils.log.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 /**
  * This class represents a wrapper for the {@link org.slf4j.Logger} used by IRI that implements a logic to rate limits
  * the output on the console.
@@ -282,14 +284,16 @@ public class IntervalLogger implements Logger {
         public abstract void print();
 
         /**
-         * This method allows us to used the Messages in HashMaps and other collections that use the hashCode method to
+         * This method allows us to use the Messages in HashMaps and other collections that use the hashCode method to
          * identify objects. Even tho this is not actively used we anyway want to implement it to be on the safe side
          * if we ever implement something like this.
          *
          * @return a unique int identifier that can be used to address equal objects
          */
         @Override
-        public abstract int hashCode();
+        public int hashCode() {
+            return Objects.hash(getClass(), message);
+        }
 
         /**
          * This method allows us to compare different {@link Message}s for equality and check if we have received or
@@ -299,7 +303,18 @@ public class IntervalLogger implements Logger {
          * @return true if it represents the same message or false otherwise
          */
         @Override
-        public abstract boolean equals(Object obj);
+        public boolean equals(Object obj) {
+{            if (obj == this) {
+                return true;
+            }
+
+            if (!getClass().equals(obj.getClass())) {
+                return false;
+            }
+
+            return message.equals(((Message) obj).message);
+        }
+        }
     }
 
     /**
@@ -328,34 +343,6 @@ public class IntervalLogger implements Logger {
                 lastPrintedMessage = this;
                 lastLogTime = System.currentTimeMillis();
             }
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int hashCode() {
-            int result = 1;
-
-            result = 31 * result + (message == null ? 0 : message.hashCode());
-
-            return result;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-
-            if (!(obj instanceof InfoMessage)) {
-                return false;
-            }
-
-            return message.equals(((InfoMessage) obj).message);
         }
     }
 
@@ -386,34 +373,6 @@ public class IntervalLogger implements Logger {
                 lastLogTime = System.currentTimeMillis();
             }
         }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int hashCode() {
-            int result = 2;
-
-            result = 31 * result + (message == null ? 0 : message.hashCode());
-
-            return result;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-
-            if (!(obj instanceof DebugMessage)) {
-                return false;
-            }
-
-            return message.equals(((DebugMessage) obj).message);
-        }
     }
 
     /**
@@ -435,19 +394,6 @@ public class IntervalLogger implements Logger {
             super(message);
 
             this.cause = cause;
-        }
-
-        /**
-         * {@inheritDoc}
-         */
-        @Override
-        public int hashCode() {
-            int result = 3;
-
-            result = 31 * result + (message == null ? 0 : message.hashCode());
-            result = 31 * result + (cause == null ? 0 : cause.hashCode());
-
-            return result;
         }
 
         /**
@@ -475,16 +421,16 @@ public class IntervalLogger implements Logger {
          * {@inheritDoc}
          */
         @Override
+        public int hashCode() {
+            return Objects.hash(getClass(), message, cause);
+        }
+
+        /**
+         * {@inheritDoc}
+         */
+        @Override
         public boolean equals(Object obj) {
-            if (obj == this) {
-                return true;
-            }
-
-            if (!(obj instanceof ErrorMessage)) {
-                return false;
-            }
-
-            return message.equals(((ErrorMessage) obj).message) && cause == ((ErrorMessage) obj).cause;
+            return super.equals(obj) && cause == ((ErrorMessage) obj).cause;
         }
     }
 }

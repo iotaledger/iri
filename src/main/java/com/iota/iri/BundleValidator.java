@@ -1,8 +1,8 @@
 package com.iota.iri;
 
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.*;
 import com.iota.iri.model.Hash;
-import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 
@@ -12,10 +12,11 @@ public class BundleValidator {
 
     public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash tailHash) throws Exception {
         TransactionViewModel tail = TransactionViewModel.fromHash(tangle, tailHash);
-        List<List<TransactionViewModel>> transactions = new LinkedList<>();
-        if (tail.getCurrentIndex() != 0) {
-            return transactions;
+        if (tail.getCurrentIndex() != 0 || tail.getValidity() == -1) {
+            return Collections.EMPTY_LIST;
         }
+
+        List<List<TransactionViewModel>> transactions = new LinkedList<>();
         final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(tangle, tail);
 
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {

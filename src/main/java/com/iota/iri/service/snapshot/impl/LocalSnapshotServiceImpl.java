@@ -1,5 +1,6 @@
 package com.iota.iri.service.snapshot.impl;
 
+import com.iota.iri.MilestoneTracker;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
@@ -55,11 +56,11 @@ public class LocalSnapshotServiceImpl implements LocalSnapshotService {
      */
     @Override
     public void takeLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            TransactionPruner transactionPruner) throws SnapshotException {
+            MilestoneTracker milestoneTracker, TransactionPruner transactionPruner) throws SnapshotException {
 
         MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, config);
 
-        Snapshot newSnapshot = generateSnapshot(tangle, snapshotProvider, config, targetMilestone);
+        Snapshot newSnapshot = generateSnapshot(tangle, snapshotProvider, config, milestoneTracker, targetMilestone);
 
         cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
                 newSnapshot.getSolidEntryPoints(), transactionPruner);
@@ -74,7 +75,7 @@ public class LocalSnapshotServiceImpl implements LocalSnapshotService {
      */
     @Override
     public Snapshot generateSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            MilestoneViewModel targetMilestone) throws SnapshotException {
+            MilestoneTracker milestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException {
 
         if (targetMilestone == null) {
             throw new SnapshotException("the target milestone must not be null");
@@ -107,7 +108,7 @@ public class LocalSnapshotServiceImpl implements LocalSnapshotService {
         }
 
         snapshot.setSolidEntryPoints(generateSolidEntryPoints(tangle, snapshotProvider, targetMilestone));
-        snapshot.setSeenMilestones(generateSeenMilestones(tangle, config, targetMilestone));
+        snapshot.setSeenMilestones(generateSeenMilestones(tangle, config, milestoneTracker, targetMilestone));
 
         return snapshot;
     }
@@ -133,7 +134,7 @@ public class LocalSnapshotServiceImpl implements LocalSnapshotService {
      */
     @Override
     public Map<Hash, Integer> generateSeenMilestones(Tangle tangle, SnapshotConfig config,
-            MilestoneViewModel targetMilestone) throws SnapshotException {
+            MilestoneTracker milestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException {
 
         ProgressLogger progressLogger = new IntervalProgressLogger(
                 "Taking local snapshot [processing seen milestones]", log)
@@ -142,8 +143,8 @@ public class LocalSnapshotServiceImpl implements LocalSnapshotService {
         HashMap<Hash, Integer> seenMilestones = new HashMap<>();
         try {
             MilestoneViewModel seenMilestone = targetMilestone;
-            while ((seenMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, seenMilestone.index()))
-                    != null) {
+            while ((seenMilestone = MilestoneViewModel.findClosestNextMilestone(tangle, seenMilestone.index(),
+                    milestoneTracker.latestMilestoneIndex)) != null) {
 
                 seenMilestones.put(seenMilestone.getHash(), seenMilestone.index());
 
@@ -179,7 +180,8 @@ public class LocalSnapshotServiceImpl implements LocalSnapshotService {
 
         MilestoneViewModel targetMilestone;
         try {
-            targetMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, targetMilestoneIndex);
+            targetMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, targetMilestoneIndex,
+                    snapshotProvider.getInitialSnapshot().getIndex());
         } catch (Exception e) {
             throw new SnapshotException("could not load the target milestone", e);
         }
@@ -444,7 +446,8 @@ public class LocalSnapshotServiceImpl implements LocalSnapshotService {
 
                 solidEntryPoints.put(currentMilestone.getHash(), targetMilestone.index());
 
-                nextMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, currentMilestone.index());
+                nextMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, currentMilestone.index(),
+                        snapshotProvider.getInitialSnapshot().getIndex());
 
                 progressLogger.progress();
             }

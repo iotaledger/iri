@@ -1,5 +1,6 @@
 package com.iota.iri.service.snapshot;
 
+import com.iota.iri.MilestoneTracker;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.model.Hash;
@@ -32,7 +33,7 @@ public interface LocalSnapshotService {
      * @throws SnapshotException if anything goes wrong while creating the local snapshot
      */
     void takeLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            TransactionPruner transactionPruner) throws SnapshotException;
+            MilestoneTracker milestoneTracker, TransactionPruner transactionPruner) throws SnapshotException;
 
     /**
      * This method generates a local snapshot of the full ledger state at the given milestone.
@@ -49,7 +50,7 @@ public interface LocalSnapshotService {
      * @throws SnapshotException if anything goes wrong while generating the local snapshot
      */
     Snapshot generateSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            MilestoneViewModel targetMilestone) throws SnapshotException;
+            MilestoneTracker milestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException;
 
     /**
      * This method generates the solid entry points for a snapshot that belong to the given milestone.
@@ -80,6 +81,6 @@ public interface LocalSnapshotService {
      * @return a map of solid entry points associating their hash to the milestone index that confirmed them
      * @throws SnapshotException if anything goes wrong while generating the solid entry points
      */
-    Map<Hash, Integer> generateSeenMilestones(Tangle tangle, SnapshotConfig config, MilestoneViewModel targetMilestone)
-            throws SnapshotException;
+    Map<Hash, Integer> generateSeenMilestones(Tangle tangle, SnapshotConfig config, MilestoneTracker milestoneTracker,
+            MilestoneViewModel targetMilestone) throws SnapshotException;
 }

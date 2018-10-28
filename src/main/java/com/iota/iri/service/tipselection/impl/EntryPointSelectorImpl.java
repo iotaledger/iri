@@ -25,8 +25,8 @@ public class EntryPointSelectorImpl implements EntryPointSelector {
     public Hash getEntryPoint(int depth) throws Exception {
         int milestoneIndex = Math.max(milestoneTracker.latestSolidSubtangleMilestoneIndex - depth - 1,
                 milestoneTracker.getMilestoneStartIndex());
-        MilestoneViewModel milestoneViewModel =
-                MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex);
+        MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex,
+                milestoneTracker.latestMilestoneIndex);
         if (milestoneViewModel != null && milestoneViewModel.getHash() != null) {
             return milestoneViewModel.getHash();
         }

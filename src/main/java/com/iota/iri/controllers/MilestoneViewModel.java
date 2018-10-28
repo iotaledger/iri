@@ -12,19 +12,6 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class MilestoneViewModel {
-    /**
-     * This value represents the maximum amount of milestone indexes that can be skipped by the coordinator.
-     *
-     * Note: This is in fact 1 already but, to be able to deal with databases before the adjustment we set this to 50.
-     */
-    private final static int MAX_MILESTONE_INDEX_GAP = 50;
-
-    /**
-     * This value represents the milestone index where the coordinator changed its behaviour and doesn't skip milestones
-     * anymore.
-     */
-    private final static int MILESTONE_GAP_PATCH_INDEX = 650000;
-
     private final Milestone milestone;
     private static final Map<Integer, MilestoneViewModel> milestones = new ConcurrentHashMap<>();
 
@@ -107,11 +94,11 @@ public class MilestoneViewModel {
         return null;
     }
 
-    public static MilestoneViewModel findClosestPrevMilestone(Tangle tangle, int index) throws Exception {
+    public static MilestoneViewModel findClosestPrevMilestone(Tangle tangle, int index, int minIndex) throws Exception {
         // search for the previous milestone preceding our index
         MilestoneViewModel previousMilestoneViewModel = null;
         int currentIndex = index;
-        while(previousMilestoneViewModel == null && --currentIndex >= index - MAX_MILESTONE_INDEX_GAP) {
+        while(previousMilestoneViewModel == null && --currentIndex >= minIndex) {
             previousMilestoneViewModel = MilestoneViewModel.get(tangle, currentIndex);
         }
 
@@ -126,17 +113,15 @@ public class MilestoneViewModel {
      *
      * @param tangle Tangle object which acts as a database interface
      * @param index milestone index where the search shall start
+     * @param maxIndex milestone index where the search shall stop
      * @return the milestone which follows directly after the given index or null if none was found
      * @throws Exception if anything goes wrong while loading entries from the database
      */
-    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index) throws Exception {
-        // adjust the max milestone gap according to the index (the coo ensures no gaps after a certain milestone index)
-        int maxMilestoneGap = index >= MILESTONE_GAP_PATCH_INDEX ? 1 : MAX_MILESTONE_INDEX_GAP;
-
+    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index, int maxIndex) throws Exception {
         // search for the next milestone following our index
         MilestoneViewModel nextMilestoneViewModel = null;
         int currentIndex = index;
-        while(nextMilestoneViewModel == null && ++currentIndex <= index + maxMilestoneGap) {
+        while(nextMilestoneViewModel == null && ++currentIndex <= maxIndex) {
             nextMilestoneViewModel = MilestoneViewModel.get(tangle, currentIndex);
         }
 

@@ -101,7 +101,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      *
      * It periodically checks if a new {@link Snapshot} has to be taken until the {@link Thread} is terminated. If it
      * detects that a {@link Snapshot} is due it triggers the creation of the {@link Snapshot} by calling
-     * {@link LocalSnapshotService#takeLocalSnapshot(Tangle, SnapshotProvider, SnapshotConfig, TransactionPruner)}.
+     * {@link LocalSnapshotService#takeLocalSnapshot(Tangle, SnapshotProvider, SnapshotConfig, MilestoneTracker,
+     * TransactionPruner)}.
      *
      * @param milestoneTracker tracker for the milestones to determine when a new local snapshot is due
      */
@@ -116,7 +117,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                     config.getLocalSnapshotsDepth() + localSnapshotInterval) {
 
                 try {
-                    localSnapshotService.takeLocalSnapshot(tangle, snapshotProvider, config, transactionPruner);
+                    localSnapshotService.takeLocalSnapshot(tangle, snapshotProvider, config, milestoneTracker,
+                            transactionPruner);
                 } catch (SnapshotException e) {
                     log.error("error while taking local snapshot", e);
                 }

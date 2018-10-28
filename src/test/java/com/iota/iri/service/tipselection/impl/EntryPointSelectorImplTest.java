@@ -65,6 +65,7 @@ public class EntryPointSelectorImplTest {
         milestoneModel.index = new IntegerIndex(1);
         milestoneModel.hash = milestoneModelHash;
         Mockito.when(milestoneTracker.getMilestoneStartIndex()).thenReturn(0);
+        milestoneTracker.latestMilestoneIndex = 1;
         Mockito.when(tangle.load(com.iota.iri.model.persistables.Milestone.class, milestoneModel.index))
                 .thenReturn(milestoneModel);
     }

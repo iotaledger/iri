@@ -95,11 +95,11 @@ public class MilestoneTracker {
     }
 
     /**
-     * This method returns the current status of the milestone tracker.
+     * This method returns the current status of the {@link MilestoneTracker}.
      *
      * It allows us to determine if all of the "startup" tasks have succeeded.
      *
-     * @return {@code INITIALIZED} when all of the "startup" tasks have finished and {@code INITIALIZING} otherwise
+     * @return the current status of the {@link MilestoneTracker}
      */
     public Status getStatus() {
         return this.status;
@@ -270,7 +270,7 @@ public class MilestoneTracker {
         MilestoneViewModel latest = MilestoneViewModel.latest(tangle);
         if (latest != null) {
             for (milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(
-                    tangle, latestSolidSubtangleMilestoneIndex);
+                    tangle, latestSolidSubtangleMilestoneIndex, latestMilestoneIndex);
                  milestoneViewModel != null && milestoneViewModel.index() <= latest.index() && !shuttingDown;
                  milestoneViewModel = milestoneViewModel.next(tangle)) {
                 if (transactionValidator.checkSolidity(milestoneViewModel.getHash(), true) &&

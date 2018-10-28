@@ -42,6 +42,11 @@ public class IntegerIndex implements Indexable{
     }
 
     @Override
+    public int hashCode() {
+        return value;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         if (obj == this) {
             return true;

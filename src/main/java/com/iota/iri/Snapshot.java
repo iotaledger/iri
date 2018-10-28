@@ -83,7 +83,7 @@ public class Snapshot {
                 if (parts.length >= 2) {
                     String key = parts[0];
                     String value = parts[1];
-                    state.put(HashFactory.TRANSACTION.create(key), Long.valueOf(value));
+                    state.put(HashFactory.ADDRESS.create(key), Long.valueOf(value));
                 }
             }
         } catch (IOException e) {

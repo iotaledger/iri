@@ -13,7 +13,7 @@ import java.text.DecimalFormat;
  */
 public class IntervalProgressLogger implements ProgressLogger {
     /**
-     * Holds the default interval in which the logger shows messages.
+     * Holds the default interval (in milliseconds) in which the logger shows messages.
      */
     private static final int DEFAULT_LOG_INTERVAL = 3000;
 

@@ -29,6 +29,7 @@ public interface LocalSnapshotService {
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param config important snapshot related configuration parameters
+     * @param milestoneTracker milestone tracker that allows us to retrieve information about the known milestones
      * @param transactionPruner manager for the pruning jobs that takes care of cleaning up the old data that
      * @throws SnapshotException if anything goes wrong while creating the local snapshot
      */
@@ -45,6 +46,7 @@ public interface LocalSnapshotService {
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param config important snapshot related configuration parameters
+     * @param milestoneTracker milestone tracker that allows us to retrieve information about the known milestones
      * @param targetMilestone milestone that is used as a reference point for the snapshot
      * @return a local snapshot of the full ledger state at the given milestone
      * @throws SnapshotException if anything goes wrong while generating the local snapshot
@@ -77,6 +79,7 @@ public interface LocalSnapshotService {
      *
      * @param tangle Tangle object which acts as a database interface
      * @param config important snapshot related configuration parameters
+     * @param milestoneTracker milestone tracker that allows us to retrieve information about the known milestones
      * @param targetMilestone milestone that is used as a reference point for the snapshot
      * @return a map of solid entry points associating their hash to the milestone index that confirmed them
      * @throws SnapshotException if anything goes wrong while generating the solid entry points

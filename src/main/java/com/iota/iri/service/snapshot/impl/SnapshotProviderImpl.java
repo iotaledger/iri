@@ -3,7 +3,10 @@ package com.iota.iri.service.snapshot.impl;
 import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.snapshot.*;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.SnapshotException;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -168,8 +171,8 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      *
      * We add the NULL_HASH as the only solid entry point and an empty list of seen milestones.
      *
-     * @return
-     * @throws SnapshotException
+     * @return the builtin snapshot (last global snapshot) that is embedded in the jar
+     * @throws SnapshotException if anything goes wrong while loading the builtin {@link Snapshot}
      */
     private SnapshotImpl loadBuiltInSnapshot() throws SnapshotException {
         if (builtinSnapshot == null) {

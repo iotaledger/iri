@@ -4,6 +4,11 @@ import com.iota.iri.utils.log.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This class represents a wrapper for the {@link org.slf4j.Logger} used by IRI that implements a logic to rate limits
@@ -39,9 +44,19 @@ public class IntervalLogger implements Logger {
     private Message lastPrintedMessage;
 
     /**
-     * Holds a reference to the thread that takes care of scheduling the next message.
+     * Holds a flag that is used to determine if an output was scheduled already.
      */
-    private Thread outputThread = null;
+    private AtomicBoolean outputScheduled = new AtomicBoolean(false);
+
+    /**
+     * Holds a reference to the scheduled job which allows us to cancel its execution if we force the output before.
+     */
+    private Future<?> scheduledJob;
+
+    /**
+     * Holds the manager for the {@link Thread} that schedules the delayed output.
+     */
+    private final ScheduledExecutorService outputScheduler = Executors.newScheduledThreadPool(1);
 
     /**
      * Holds a timestamp value when the last message was printed.
@@ -209,15 +224,7 @@ public class IntervalLogger implements Logger {
         if (lastReceivedMessage != null && (printImmediately ||
                 System.currentTimeMillis() - lastLogTime >= logInterval)) {
 
-            lastReceivedMessage.print();
-
-            if (outputThread != null) {
-                synchronized (this) {
-                    if (outputThread != null) {
-                        outputThread.interrupt();
-                    }
-                }
-            }
+            lastReceivedMessage.output();
         } else {
             scheduleOutput();
         }
@@ -231,26 +238,14 @@ public class IntervalLogger implements Logger {
      * is the same as dumping the message manually through the {@link org.slf4j.Logger} object itself.
      */
     private void scheduleOutput() {
-        if (outputThread == null) {
-            synchronized(this) {
-                if (outputThread == null) {
-                    outputThread = new Thread(() -> {
-                        try {
-                            Thread.sleep(Math.max(logInterval - (System.currentTimeMillis() - lastLogTime), 1));
+        if (outputScheduled.compareAndSet(false, true)) {
+            String currentThreadName = Thread.currentThread().getName();
 
-                            outputThread = null;
+            scheduledJob = outputScheduler.schedule(() -> {
+                Thread.currentThread().setName(currentThreadName);
 
-                            triggerOutput(true);
-                        } catch(InterruptedException e) {
-                            outputThread = null;
-
-                            Thread.currentThread().interrupt();
-                        }
-                    }, Thread.currentThread().getName());
-
-                    outputThread.start();
-                }
-            }
+                triggerOutput(true);
+            }, Math.max(logInterval - (System.currentTimeMillis() - lastLogTime), 1), TimeUnit.MILLISECONDS);
         }
     }
 
@@ -275,13 +270,29 @@ public class IntervalLogger implements Logger {
         }
 
         /**
-         * This method handles the actual output of messages through the {@link org.slf4j.Logger} instance.
+         * This method triggers the output of the given message.
          *
-         * It first checks if the message that shall get printed differs from the last message that was printed and then
-         * issues the output of the message. After printing the message, it updates the internal variables to handle the
-         * next message accordingly.
+         * It first cancels any scheduled job because the latest provided message will be printed by this call already
+         * and then triggers the printing of the message through the instance specific {@link #print()} method.
+         *
+         * We only print the message if the same method was not printed already, before.
          */
-        public abstract void print();
+        public void output() {
+            if (scheduledJob != null) {
+                scheduledJob.cancel(true);
+            }
+
+            if (!this.equals(lastPrintedMessage)) {
+                if (enabled) {
+                    print();
+                }
+
+                lastPrintedMessage = this;
+                lastLogTime = System.currentTimeMillis();
+            }
+
+            outputScheduled.set(false);
+        }
 
         /**
          * This method allows us to use the Messages in HashMaps and other collections that use the hashCode method to
@@ -304,17 +315,25 @@ public class IntervalLogger implements Logger {
          */
         @Override
         public boolean equals(Object obj) {
-{            if (obj == this) {
+            if (obj == this) {
                 return true;
             }
 
-            if (!getClass().equals(obj.getClass())) {
+            if (obj == null || !getClass().equals(obj.getClass())) {
                 return false;
             }
 
             return message.equals(((Message) obj).message);
         }
-        }
+
+        /**
+         * This method handles the actual output of messages through the {@link org.slf4j.Logger} instance.
+         *
+         * It first checks if the message that shall get printed differs from the last message that was printed and then
+         * issues the output of the message. After printing the message, it updates the internal variables to handle the
+         * next message accordingly.
+         */
+        protected abstract void print();
     }
 
     /**
@@ -334,15 +353,8 @@ public class IntervalLogger implements Logger {
          * {@inheritDoc}
          */
         @Override
-        public void print() {
-            if (!this.equals(lastPrintedMessage)) {
-                if (enabled) {
-                    logger.info(message);
-                }
-
-                lastPrintedMessage = this;
-                lastLogTime = System.currentTimeMillis();
-            }
+        protected void print() {
+            logger.info(message);
         }
     }
 
@@ -363,15 +375,8 @@ public class IntervalLogger implements Logger {
          * {@inheritDoc}
          */
         @Override
-        public void print() {
-            if (!this.equals(lastPrintedMessage)) {
-                if (enabled) {
-                    logger.debug(message);
-                }
-
-                lastPrintedMessage = this;
-                lastLogTime = System.currentTimeMillis();
-            }
+        protected void print() {
+            logger.debug(message);
         }
     }
 
@@ -398,27 +403,6 @@ public class IntervalLogger implements Logger {
 
         /**
          * {@inheritDoc}
-         *
-         * It also includes a stack trace of the cause of the error if it was provided when creating this instance.
-         */
-        @Override
-        public void print() {
-            if (!this.equals(lastPrintedMessage)) {
-                if (enabled) {
-                    if (cause == null) {
-                        logger.error(message);
-                    } else {
-                        logger.error(message, cause);
-                    }
-                }
-
-                lastPrintedMessage = this;
-                lastLogTime = System.currentTimeMillis();
-            }
-        }
-
-        /**
-         * {@inheritDoc}
          */
         @Override
         public int hashCode() {
@@ -431,6 +415,20 @@ public class IntervalLogger implements Logger {
         @Override
         public boolean equals(Object obj) {
             return super.equals(obj) && cause == ((ErrorMessage) obj).cause;
+        }
+
+        /**
+         * {@inheritDoc}
+         *
+         * It also includes a stack trace of the cause of the error if it was provided when creating this instance.
+         */
+        @Override
+        protected void print() {
+            if (cause == null) {
+                logger.error(message);
+            } else {
+                logger.error(message, cause);
+            }
         }
     }
 }

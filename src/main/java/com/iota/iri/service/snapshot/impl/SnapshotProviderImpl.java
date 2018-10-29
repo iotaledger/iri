@@ -9,7 +9,6 @@ import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotMetaData;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotState;
-import com.iota.iri.utils.IotaIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,10 +118,14 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * {@inheritDoc}
+     * This method dumps the current state to a file.
+     *
+     * It is used by local snapshots to persist the in memory states and allow IRI to resume from the local snapshot.
+     *
+     * @param snapshotPath location of the file that shall be written
+     * @throws SnapshotException if anything goes wrong while writing the file
      */
-    @Override
-    public void writeSnapshotStateToDisk(SnapshotState snapshotState, String snapshotPath) throws SnapshotException {
+    private void writeSnapshotStateToDisk(SnapshotState snapshotState, String snapshotPath) throws SnapshotException {
         try {
             Files.write(
                     Paths.get(snapshotPath),
@@ -139,10 +142,15 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * {@inheritDoc}
+     * This method writes a file containing a serialized version of the metadata object.
+     *
+     * It can be used to store the current values and read them on a later point in time. It is used by the local
+     * snapshot manager to generate and maintain the snapshot files.
+     *
+     * @param filePath location of the file that shall be written
+     * @throws SnapshotException if anything goes wrong while writing the file
      */
-    @Override
-    public void writeSnapshotMetaDataToDisk(SnapshotMetaData metaData, String filePath) throws SnapshotException {
+    private void writeSnapshotMetaDataToDisk(SnapshotMetaData metaData, String filePath) throws SnapshotException {
         try {
             Map<Hash, Integer> solidEntryPoints = metaData.getSolidEntryPoints();
             Map<Hash, Integer> seenMilestones = metaData.getSeenMilestones();
@@ -294,7 +302,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * This method reads the balances from the given file and creates the corresponding SnapshotState.
+     * This method reads the balances from the given file on the disk and creates the corresponding SnapshotState.
      *
      * The format of the file is pairs of "address;balance" separated by newlines. It simply reads the file line by
      * line, adding the corresponding values to the map.
@@ -303,32 +311,44 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @return the unserialized version of the state file
      */
     private SnapshotState readSnapshotStatefromFile(String snapshotStateFilePath) throws SnapshotException {
-        BufferedReader reader = null;
-        try {
-            InputStream snapshotStream = SnapshotProviderImpl.class.getResourceAsStream(snapshotStateFilePath);
-            if (snapshotStream == null) {
-                snapshotStream = new FileInputStream(snapshotStateFilePath);
-            }
-            reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(snapshotStream)));
-
-            Map<Hash, Long> state = new HashMap<>();
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(";", 2);
-                if (parts.length >= 2) {
-                    state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
-                } else {
-                    throw new SnapshotException("malformed snapshot state file at " + snapshotStateFilePath);
-                }
-            }
-
-            return new SnapshotStateImpl(state);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(snapshotStateFilePath))))) {
+            return readSnapshotState(reader);
         } catch (IOException e) {
             throw new SnapshotException("failed to read the snapshot file at " + snapshotStateFilePath, e);
-        } finally {
-            IotaIOUtils.closeQuietly(reader);
         }
+    }
+
+    /**
+     * This method reads the balances from the given file in the JAR and creates the corresponding SnapshotState.
+     *
+     * The format of the file is pairs of "address;balance" separated by newlines. It simply reads the file line by
+     * line, adding the corresponding values to the map.
+     *
+     * @param snapshotStateFilePath location of the snapshot state file
+     * @return the unserialized version of the state file
+     */
+    private SnapshotState readSnapshotStateFromJAR(String snapshotStateFilePath) throws SnapshotException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(SnapshotProviderImpl.class.getResourceAsStream(snapshotStateFilePath))))) {
+            return readSnapshotState(reader);
+        } catch (IOException e) {
+            throw new SnapshotException("failed to read the snapshot file from JAR at " + snapshotStateFilePath, e);
+        }
+    }
+
+    private SnapshotState readSnapshotState(BufferedReader reader) throws IOException, SnapshotException {
+        Map<Hash, Long> state = new HashMap<>();
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split(";", 2);
+            if (parts.length >= 2) {
+                state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
+            } else {
+                throw new SnapshotException("malformed snapshot state file");
+            }
+        }
+
+        return new SnapshotStateImpl(state);
     }
 
     /**

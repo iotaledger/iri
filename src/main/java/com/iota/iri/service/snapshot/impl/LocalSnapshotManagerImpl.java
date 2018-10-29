@@ -118,9 +118,10 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
                     ? config.getLocalSnapshotsIntervalSynced()
                     : config.getLocalSnapshotsIntervalUnsynced();
 
-            if (snapshotProvider.getLatestSnapshot().getIndex() - snapshotProvider.getInitialSnapshot().getIndex() >
-                    config.getLocalSnapshotsDepth() + localSnapshotInterval) {
+            int latestSnapshotIndex = snapshotProvider.getLatestSnapshot().getIndex();
+            int initialSnapshotIndex = snapshotProvider.getInitialSnapshot().getIndex();
 
+            if (latestSnapshotIndex - initialSnapshotIndex > config.getLocalSnapshotsDepth() + localSnapshotInterval) {
                 try {
                     localSnapshotService.takeLocalSnapshot(tangle, snapshotProvider, config, milestoneTracker,
                             transactionPruner);

@@ -3,16 +3,19 @@ package com.iota.iri.service.snapshot.impl;
 import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
+import com.iota.iri.service.snapshot.SnapshotMetaData;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotState;
+import com.iota.iri.utils.IotaIOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Implements the basic contract of the {@link SnapshotProvider} interface.
@@ -144,7 +147,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             if (localSnapshotFile.exists() && localSnapshotFile.isFile() && localSnapshotMetadDataFile.exists() &&
                     localSnapshotMetadDataFile.isFile()) {
 
-                SnapshotState snapshotState = SnapshotStateImpl.fromFile(localSnapshotFile.getAbsolutePath());
+                SnapshotState snapshotState = readSnapshotStatefromFile(localSnapshotFile.getAbsolutePath());
                 if (!snapshotState.hasCorrectSupply()) {
                     throw new SnapshotException("the snapshot state file has an invalid supply");
                 }
@@ -152,7 +155,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
                     throw new SnapshotException("the snapshot state file is not consistent");
                 }
 
-                SnapshotMetaDataImpl snapshotMetaData = SnapshotMetaDataImpl.fromFile(localSnapshotMetadDataFile);
+                SnapshotMetaData snapshotMetaData = readSnapshotMetaDatafromFile(localSnapshotMetadDataFile);
 
                 log.info("resumed from local snapshot #" + snapshotMetaData.getIndex() + " ...");
 
@@ -190,12 +193,12 @@ public class SnapshotProviderImpl implements SnapshotProvider {
                 throw new SnapshotException("failed to validate the signature of the builtin snapshot file", e);
             }
 
-            SnapshotState snapshotState = SnapshotStateImpl.fromFile(config.getSnapshotFile());
+            SnapshotState snapshotState = readSnapshotStatefromFile(config.getSnapshotFile());
             if (!snapshotState.hasCorrectSupply()) {
-                throw new IllegalStateException("the snapshot state file has an invalid supply");
+                throw new SnapshotException("the snapshot state file has an invalid supply");
             }
             if (!snapshotState.isConsistent()) {
-                throw new IllegalStateException("the snapshot state file is not consistent");
+                throw new SnapshotException("the snapshot state file is not consistent");
             }
 
             HashMap<Hash, Integer> solidEntryPoints = new HashMap<>();
@@ -214,5 +217,251 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         }
 
         return new SnapshotImpl(builtinSnapshot);
+    }
+
+    /**
+     * This method reads the balances from the given file and creates the corresponding SnapshotState.
+     *
+     * The format of the file is pairs of "address;balance" separated by newlines. It simply reads the file line by
+     * line, adding the corresponding values to the map.
+     *
+     * @param snapshotStateFilePath location of the snapshot state file
+     * @return the unserialized version of the state file
+     */
+    private SnapshotState readSnapshotStatefromFile(String snapshotStateFilePath) throws SnapshotException {
+        BufferedReader reader = null;
+        try {
+            InputStream snapshotStream = SnapshotImpl.class.getResourceAsStream(snapshotStateFilePath);
+            if (snapshotStream == null) {
+                snapshotStream = new FileInputStream(snapshotStateFilePath);
+            }
+            reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(snapshotStream)));
+
+            Map<Hash, Long> state = new HashMap<>();
+
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(";", 2);
+                if (parts.length >= 2) {
+                    state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
+                } else {
+                    throw new SnapshotException("malformed snapshot state file at " + snapshotStateFilePath);
+                }
+            }
+
+            return new SnapshotStateImpl(state);
+        } catch (IOException e) {
+            throw new SnapshotException("failed to read the snapshot file at " + snapshotStateFilePath, e);
+        } finally {
+            IotaIOUtils.closeQuietly(reader);
+        }
+    }
+
+    /**
+     * This method retrieves the meta data of a snapshot from a file.
+     *
+     * It is used by local snapshots to determine the relevant information about the saved snapshot.
+     *
+     * @param snapshotMetaDataFile File object with the path to the snapshot metadata file
+     * @return SnapshotMetaData instance holding all the relevant details about the snapshot
+     * @throws SnapshotException if anything goes wrong while reading and parsing the file
+     */
+    private SnapshotMetaData readSnapshotMetaDatafromFile(File snapshotMetaDataFile) throws SnapshotException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(
+                new FileInputStream(snapshotMetaDataFile))))) {
+
+            Hash hash = readMilestoneHashFromMetaDataFile(reader);
+            int index = readMilestoneIndexFromMetaDataFile(reader);
+            long timestamp = readMilestoneTimestampFromMetaDataFile(reader);
+            int amountOfSolidEntryPoints = readAmountOfSolidEntryPointsFromMetaDataFile(reader);
+            int amountOfSeenMilestones = readAmountOfSeenMilestonesFromMetaDataFile(reader);
+            Map<Hash, Integer> solidEntryPoints = readSolidEntryPointsFromMetaDataFile(reader,
+                    amountOfSolidEntryPoints);
+            Map<Hash, Integer> seenMilestones = readSeenMilestonesFromMetaDataFile(reader, amountOfSeenMilestones);
+
+            return new SnapshotMetaDataImpl(hash, index, timestamp, solidEntryPoints, seenMilestones);
+        } catch (IOException e) {
+            throw new SnapshotException("failed to read from the snapshot metadata file at " +
+                    snapshotMetaDataFile.getAbsolutePath(), e);
+        }
+    }
+
+    /**
+     * This method reads the transaction hash of the milestone that references the {@link Snapshot} from the meta data
+     * file.
+     *
+     * @param reader reader that is used to read the file
+     * @return Hash of the milestone transaction that references the {@link Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the hash from the file
+     * @throws IOException if we could not read from the file
+     */
+    private Hash readMilestoneHashFromMetaDataFile(BufferedReader reader) throws SnapshotException, IOException {
+        String line;
+        if((line = reader.readLine()) == null) {
+            throw new SnapshotException("could not read the transaction hash from the meta data file");
+        }
+
+        return HashFactory.TRANSACTION.create(line);
+    }
+
+    /**
+     * This method reads the milestone index of the milestone that references the {@link Snapshot} from the meta data
+     * file.
+     *
+     * @param reader reader that is used to read the file
+     * @return milestone index of the milestone that references the {@link Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the milestone index from the file
+     * @throws IOException if we could not read from the file
+     */
+    private int readMilestoneIndexFromMetaDataFile(BufferedReader reader) throws SnapshotException, IOException {
+        try {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read the milestone index from the meta data file");
+            }
+
+            return Integer.parseInt(line);
+        } catch (NumberFormatException e) {
+            throw new SnapshotException("could not parse the milestone index from the meta data file", e);
+        }
+    }
+
+    /**
+     * This method reads the timestamp of the milestone that references the {@link Snapshot} from the meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @return timestamp of the milestone that references the {@link Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the milestone timestamp from the file
+     * @throws IOException if we could not read from the file
+     */
+    private long readMilestoneTimestampFromMetaDataFile(BufferedReader reader) throws SnapshotException, IOException {
+        try {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read the milestone timestamp from the meta data file");
+            }
+
+            return Long.parseLong(line);
+        } catch (NumberFormatException e) {
+            throw new SnapshotException("could not parse the milestone timestamp from the meta data file", e);
+        }
+    }
+
+    /**
+     * This method reads the amount of solid entry points of the {@link Snapshot} from the
+     * meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @return amount of solid entry points of the {@link Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the amount of solid entry points from the file
+     * @throws IOException if we could not read from the file
+     */
+    private int readAmountOfSolidEntryPointsFromMetaDataFile(BufferedReader reader) throws SnapshotException,
+            IOException {
+
+        try {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read the amount of solid entry points from the meta data file");
+            }
+
+            return Integer.parseInt(line);
+        } catch (NumberFormatException e) {
+            throw new SnapshotException("could not parse the amount of solid entry points from the meta data file", e);
+        }
+    }
+
+    /**
+     * This method reads the amount of seen milestones of the {@link Snapshot} from the
+     * meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @return amount of seen milestones of the {@link Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the amount of seen milestones from the file
+     * @throws IOException if we could not read from the file
+     */
+    private int readAmountOfSeenMilestonesFromMetaDataFile(BufferedReader reader) throws SnapshotException,
+            IOException {
+
+        try {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read the amount of seen milestones from the meta data file");
+            }
+
+            return Integer.parseInt(line);
+        } catch (NumberFormatException e) {
+            throw new SnapshotException("could not parse the amount of seen milestones from the meta data file", e);
+        }
+    }
+
+    /**
+     * This method reads the solid entry points of the {@link Snapshot} from the meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @param amountOfSolidEntryPoints the amount of solid entry points we expect
+     * @return the solid entry points of the {@link Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the solid entry points from the file
+     * @throws IOException if we could not read from the file
+     */
+    private Map<Hash, Integer> readSolidEntryPointsFromMetaDataFile(BufferedReader reader, int amountOfSolidEntryPoints)
+            throws SnapshotException, IOException {
+
+        Map<Hash, Integer> solidEntryPoints = new HashMap<>();
+
+        for(int i = 0; i < amountOfSolidEntryPoints; i++) {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read a solid entry point from the meta data file");
+            }
+
+            String[] parts = line.split(";", 2);
+            if(parts.length == 2) {
+                try {
+                    solidEntryPoints.put(HashFactory.TRANSACTION.create(parts[0]), Integer.parseInt(parts[1]));
+                } catch (NumberFormatException e) {
+                    throw new SnapshotException("could not parse a solid entry point from the meta data file", e);
+                }
+            } else {
+                throw new SnapshotException("could not parse a solid entry point from the meta data file");
+            }
+        }
+
+        return solidEntryPoints;
+    }
+
+    /**
+     * This method reads the seen milestones of the {@link Snapshot} from the meta data file.
+     *
+     * @param reader reader that is used to read the file
+     * @param amountOfSeenMilestones the amount of seen milestones we expect
+     * @return the seen milestones of the {@link Snapshot}
+     * @throws SnapshotException if anything goes wrong while reading the seen milestones from the file
+     * @throws IOException if we could not read from the file
+     */
+    private Map<Hash, Integer> readSeenMilestonesFromMetaDataFile(BufferedReader reader, int amountOfSeenMilestones)
+            throws SnapshotException, IOException {
+
+        Map<Hash, Integer> seenMilestones = new HashMap<>();
+
+        for(int i = 0; i < amountOfSeenMilestones; i++) {
+            String line;
+            if ((line = reader.readLine()) == null) {
+                throw new SnapshotException("could not read a seen milestone from the meta data file");
+            }
+
+            String[] parts = line.split(";", 2);
+            if(parts.length == 2) {
+                try {
+                    seenMilestones.put(HashFactory.TRANSACTION.create(parts[0]), Integer.parseInt(parts[1]));
+                } catch (NumberFormatException e) {
+                    throw new SnapshotException("could not parse a seen milestone from the meta data file", e);
+                }
+            } else {
+                throw new SnapshotException("could not parse a seen milestone from the meta data file");
+            }
+        }
+
+        return seenMilestones;
     }
 }

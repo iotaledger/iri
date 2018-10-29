@@ -57,7 +57,7 @@ public class SnapshotImpl implements Snapshot {
      * @param state state of the snapshot with the balances of all addresses
      * @param metaData meta data of the snapshot with the additional information of this snapshot
      */
-    public SnapshotImpl(SnapshotState state, SnapshotMetaDataImpl metaData) {
+    public SnapshotImpl(SnapshotState state, SnapshotMetaData metaData) {
         this.state = state;
         this.metaData = metaData;
     }

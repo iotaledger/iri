@@ -33,44 +33,6 @@ public class SnapshotStateImpl implements SnapshotState {
     private final Map<Hash, Long> balances;
 
     /**
-     * This method reads the balances from the given file and creates the corresponding SnapshotState.
-     *
-     * The format of the file is pairs of "address;balance" separated by newlines. It simply reads the file line by
-     * line, adding the corresponding values to the map.
-     *
-     * @param snapshotStateFilePath location of the snapshot state file
-     * @return the unserialized version of the state file
-     */
-    protected static SnapshotState fromFile(String snapshotStateFilePath) throws SnapshotException {
-        BufferedReader reader = null;
-        try {
-            InputStream snapshotStream = SnapshotImpl.class.getResourceAsStream(snapshotStateFilePath);
-            if (snapshotStream == null) {
-                snapshotStream = new FileInputStream(snapshotStateFilePath);
-            }
-            reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(snapshotStream)));
-
-            Map<Hash, Long> state = new HashMap<>();
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(";", 2);
-                if (parts.length >= 2) {
-                    state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
-                } else {
-                    throw new SnapshotException("malformed snapshot state file at " + snapshotStateFilePath);
-                }
-            }
-
-            return new SnapshotStateImpl(state);
-        } catch (IOException e) {
-            throw new SnapshotException("failed to read the snapshot file at " + snapshotStateFilePath, e);
-        } finally {
-            IotaIOUtils.closeQuietly(reader);
-        }
-    }
-
-    /**
      * Creates a deep clone of the passed in {@link SnapshotState}.
      *
      * @param snapshotState the object that shall be cloned
@@ -87,7 +49,7 @@ public class SnapshotStateImpl implements SnapshotState {
      *
      * @param balances map with the addresses associated to their balance
      */
-    private SnapshotStateImpl(Map<Hash, Long> balances) {
+    protected SnapshotStateImpl(Map<Hash, Long> balances) {
         this.balances = balances;
     }
 

@@ -47,8 +47,9 @@ public interface Snapshot extends SnapshotMetaData, SnapshotState {
      * track of the milestones that were previously skipped.
      *
      * @param skippedMilestoneIndex index of the milestone that was skipped while applying the ledger state
+     * @return true if the index was added and false if it was already part of the set
      */
-    void addSkippedMilestone(int skippedMilestoneIndex);
+    boolean addSkippedMilestone(int skippedMilestoneIndex);
 
     /**
      * This methods allows us to remove a milestone index from the internal list of skipped milestone indexes.

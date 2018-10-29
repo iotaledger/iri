@@ -3,7 +3,6 @@ package com.iota.iri.service;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.iota.iri.Iota;
 import com.iota.iri.conf.IotaConfig;
@@ -57,7 +56,7 @@ public enum Feature {
     /**
      * Calculates all features for this Iota node
      * @param instance the instance of this node
-     * @return A list of features
+     * @return An array of features
      */
     public static Feature[] calculateFeatures(Iota instance) {
         List<Feature> features = new ArrayList<>();
@@ -98,15 +97,14 @@ public enum Feature {
     /**
      * Calculates all features for this Iota node
      * @param instance the instance of this node
-     * @return A list of the features in readable name format
+     * @return An array of the features in readable name format
      */
     public static String[] calculateFeatureNames(Iota instance) {
         Feature[] features = calculateFeatures(instance);
         
-        List<String> featureNames = Arrays.stream(features)
-                .map(feature -> feature.toString())
-                .collect(Collectors.toList());
+        String[] featureNames = Arrays.stream(features)
+                .map(feature -> feature.toString()).toArray(String[]::new);
         
-        return featureNames.toArray(new String[features.length]);
+        return featureNames;
     }
 }

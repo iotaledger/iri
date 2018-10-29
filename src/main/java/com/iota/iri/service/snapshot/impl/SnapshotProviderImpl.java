@@ -118,71 +118,6 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * This method dumps the current state to a file.
-     *
-     * It is used by local snapshots to persist the in memory states and allow IRI to resume from the local snapshot.
-     *
-     * @param snapshotPath location of the file that shall be written
-     * @throws SnapshotException if anything goes wrong while writing the file
-     */
-    private void writeSnapshotStateToDisk(SnapshotState snapshotState, String snapshotPath) throws SnapshotException {
-        try {
-            Files.write(
-                    Paths.get(snapshotPath),
-                    () -> snapshotState.getBalances().entrySet()
-                            .stream()
-                            .filter(entry -> entry.getValue() != 0)
-                            .<CharSequence>map(entry -> entry.getKey() + ";" + entry.getValue())
-                            .sorted()
-                            .iterator()
-            );
-        } catch (IOException e) {
-            throw new SnapshotException("failed to write the snapshot state file at " + snapshotPath, e);
-        }
-    }
-
-    /**
-     * This method writes a file containing a serialized version of the metadata object.
-     *
-     * It can be used to store the current values and read them on a later point in time. It is used by the local
-     * snapshot manager to generate and maintain the snapshot files.
-     *
-     * @param filePath location of the file that shall be written
-     * @throws SnapshotException if anything goes wrong while writing the file
-     */
-    private void writeSnapshotMetaDataToDisk(SnapshotMetaData metaData, String filePath) throws SnapshotException {
-        try {
-            Map<Hash, Integer> solidEntryPoints = metaData.getSolidEntryPoints();
-            Map<Hash, Integer> seenMilestones = metaData.getSeenMilestones();
-
-            Files.write(
-                    Paths.get(filePath),
-                    () -> Stream.concat(
-                            Stream.of(
-                                    metaData.getHash().toString(),
-                                    String.valueOf(metaData.getIndex()),
-                                    String.valueOf(metaData.getTimestamp()),
-                                    String.valueOf(solidEntryPoints.size()),
-                                    String.valueOf(seenMilestones.size())
-                            ),
-                            Stream.concat(
-                                solidEntryPoints.entrySet()
-                                        .stream()
-                                        .sorted(Map.Entry.comparingByValue())
-                                        .<CharSequence>map(entry -> entry.getKey().toString() + ";" + entry.getValue()),
-                                seenMilestones.entrySet()
-                                        .stream()
-                                        .sorted(Map.Entry.comparingByValue())
-                                        .<CharSequence>map(entry -> entry.getKey().toString() + ";" + entry.getValue())
-                            )
-                    ).iterator()
-            );
-        } catch (IOException e) {
-            throw new SnapshotException("failed to write snapshot meta data file at " + filePath, e);
-        }
-    }
-
-    /**
      * {@inheritDoc}
      */
     @Override
@@ -190,6 +125,8 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         initialSnapshot = null;
         latestSnapshot = null;
     }
+
+    //region SNAPSHOT RELATED UTILITY METHODS //////////////////////////////////////////////////////////////////////////
 
     /**
      * Loads the snapshots that are provided by this data provider.
@@ -221,7 +158,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @return local snapshot of the node
      * @throws SnapshotException if local snapshot files exist but are malformed
      */
-    private SnapshotImpl loadLocalSnapshot() throws SnapshotException {
+    private Snapshot loadLocalSnapshot() throws SnapshotException {
         if (config.getLocalSnapshotsEnabled()) {
             File localSnapshotFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.state");
             File localSnapshotMetadDataFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.meta");
@@ -259,7 +196,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @return the builtin snapshot (last global snapshot) that is embedded in the jar
      * @throws SnapshotException if anything goes wrong while loading the builtin {@link Snapshot}
      */
-    private SnapshotImpl loadBuiltInSnapshot() throws SnapshotException {
+    private Snapshot loadBuiltInSnapshot() throws SnapshotException {
         if (builtinSnapshot == null) {
             try {
                 if (!config.isTestnet() && !SignedFiles.isFileSignatureValid(
@@ -275,7 +212,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
                 throw new SnapshotException("failed to validate the signature of the builtin snapshot file", e);
             }
 
-            SnapshotState snapshotState = readSnapshotStatefromFile(config.getSnapshotFile());
+            SnapshotState snapshotState = readSnapshotStateFromJAR(config.getSnapshotFile());
             if (!snapshotState.hasCorrectSupply()) {
                 throw new SnapshotException("the snapshot state file has an invalid supply");
             }
@@ -301,14 +238,46 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         return new SnapshotImpl(builtinSnapshot);
     }
 
+    //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //region SNAPSHOT STATE RELATED UTILITY METHODS ////////////////////////////////////////////////////////////////////
+
+    /**
+     * This method reads the balances from the given reader.
+     *
+     * The format of the input is pairs of "address;balance" separated by newlines. It simply reads the input line by
+     * line, adding the corresponding values to the map.
+     *
+     * @param reader reader allowing us to retrieve the lines of the {@link SnapshotState} file
+     * @return the unserialized version of the snapshot state state file
+     * @throws IOException if something went wrong while trying to access the file
+     * @throws SnapshotException if anything goes wrong while reading the state file
+     */
+    private SnapshotState readSnapshotState(BufferedReader reader) throws IOException, SnapshotException {
+        Map<Hash, Long> state = new HashMap<>();
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split(";", 2);
+            if (parts.length == 2) {
+                state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
+            } else {
+                throw new SnapshotException("malformed snapshot state file");
+            }
+        }
+
+        return new SnapshotStateImpl(state);
+    }
+
     /**
      * This method reads the balances from the given file on the disk and creates the corresponding SnapshotState.
      *
-     * The format of the file is pairs of "address;balance" separated by newlines. It simply reads the file line by
-     * line, adding the corresponding values to the map.
+     * It simply creates the corresponding reader and for the file on the given location and passes it on to
+     * {@link #readSnapshotState(BufferedReader)}.
      *
      * @param snapshotStateFilePath location of the snapshot state file
      * @return the unserialized version of the state file
+     * @throws SnapshotException if anything goes wrong while reading the state file
      */
     private SnapshotState readSnapshotStatefromFile(String snapshotStateFilePath) throws SnapshotException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(snapshotStateFilePath))))) {
@@ -321,11 +290,12 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     /**
      * This method reads the balances from the given file in the JAR and creates the corresponding SnapshotState.
      *
-     * The format of the file is pairs of "address;balance" separated by newlines. It simply reads the file line by
-     * line, adding the corresponding values to the map.
+     * It simply creates the corresponding reader and for the file on the given location in the JAR and passes it on to
+     * {@link #readSnapshotState(BufferedReader)}.
      *
      * @param snapshotStateFilePath location of the snapshot state file
      * @return the unserialized version of the state file
+     * @throws SnapshotException if anything goes wrong while reading the state file
      */
     private SnapshotState readSnapshotStateFromJAR(String snapshotStateFilePath) throws SnapshotException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(SnapshotProviderImpl.class.getResourceAsStream(snapshotStateFilePath))))) {
@@ -335,21 +305,33 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         }
     }
 
-    private SnapshotState readSnapshotState(BufferedReader reader) throws IOException, SnapshotException {
-        Map<Hash, Long> state = new HashMap<>();
-
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] parts = line.split(";", 2);
-            if (parts.length >= 2) {
-                state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
-            } else {
-                throw new SnapshotException("malformed snapshot state file");
-            }
+    /**
+     * This method dumps the current state to a file.
+     *
+     * It is used by local snapshots to persist the in memory states and allow IRI to resume from the local snapshot.
+     *
+     * @param snapshotPath location of the file that shall be written
+     * @throws SnapshotException if anything goes wrong while writing the file
+     */
+    private void writeSnapshotStateToDisk(SnapshotState snapshotState, String snapshotPath) throws SnapshotException {
+        try {
+            Files.write(
+                    Paths.get(snapshotPath),
+                    () -> snapshotState.getBalances().entrySet()
+                            .stream()
+                            .filter(entry -> entry.getValue() != 0)
+                            .<CharSequence>map(entry -> entry.getKey() + ";" + entry.getValue())
+                            .sorted()
+                            .iterator()
+            );
+        } catch (IOException e) {
+            throw new SnapshotException("failed to write the snapshot state file at " + snapshotPath, e);
         }
-
-        return new SnapshotStateImpl(state);
     }
+
+    //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //region SNAPSHOT METADATA RELATED UTILITY METHODS /////////////////////////////////////////////////////////////////
 
     /**
      * This method retrieves the meta data of a snapshot from a file.
@@ -558,4 +540,47 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
         return seenMilestones;
     }
+
+    /**
+     * This method writes a file containing a serialized version of the metadata object.
+     *
+     * It can be used to store the current values and read them on a later point in time. It is used by the local
+     * snapshot manager to generate and maintain the snapshot files.
+     *
+     * @param filePath location of the file that shall be written
+     * @throws SnapshotException if anything goes wrong while writing the file
+     */
+    private void writeSnapshotMetaDataToDisk(SnapshotMetaData metaData, String filePath) throws SnapshotException {
+        try {
+            Map<Hash, Integer> solidEntryPoints = metaData.getSolidEntryPoints();
+            Map<Hash, Integer> seenMilestones = metaData.getSeenMilestones();
+
+            Files.write(
+                    Paths.get(filePath),
+                    () -> Stream.concat(
+                            Stream.of(
+                                    metaData.getHash().toString(),
+                                    String.valueOf(metaData.getIndex()),
+                                    String.valueOf(metaData.getTimestamp()),
+                                    String.valueOf(solidEntryPoints.size()),
+                                    String.valueOf(seenMilestones.size())
+                            ),
+                            Stream.concat(
+                                solidEntryPoints.entrySet()
+                                        .stream()
+                                        .sorted(Map.Entry.comparingByValue())
+                                        .<CharSequence>map(entry -> entry.getKey().toString() + ";" + entry.getValue()),
+                                seenMilestones.entrySet()
+                                        .stream()
+                                        .sorted(Map.Entry.comparingByValue())
+                                        .<CharSequence>map(entry -> entry.getKey().toString() + ";" + entry.getValue())
+                            )
+                    ).iterator()
+            );
+        } catch (IOException e) {
+            throw new SnapshotException("failed to write snapshot meta data file at " + filePath, e);
+        }
+    }
+
+    //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
 }

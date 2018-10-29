@@ -1,7 +1,5 @@
 package com.iota.iri.service.snapshot;
 
-import com.iota.iri.storage.Tangle;
-
 /**
  * Represents a complete Snapshot of the ledger state.
  *
@@ -49,9 +47,8 @@ public interface Snapshot extends SnapshotMetaData, SnapshotState {
      * track of the milestones that were previously skipped.
      *
      * @param skippedMilestoneIndex index of the milestone that was skipped while applying the ledger state
-     * @return true if the skipped milestone was added to the internal list and false if it was present already
      */
-    boolean addSkippedMilestone(int skippedMilestoneIndex);
+    void addSkippedMilestone(int skippedMilestoneIndex);
 
     /**
      * This methods allows us to remove a milestone index from the internal list of skipped milestone indexes.

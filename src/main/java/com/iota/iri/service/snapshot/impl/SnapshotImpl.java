@@ -102,8 +102,8 @@ public class SnapshotImpl implements Snapshot {
      * {@inheritDoc}
      */
     @Override
-    public boolean addSkippedMilestone(int skippedMilestoneIndex) {
-        return skippedMilestones.add(skippedMilestoneIndex);
+    public void addSkippedMilestone(int skippedMilestoneIndex) {
+        skippedMilestones.add(skippedMilestoneIndex);
     }
 
     /**

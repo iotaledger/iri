@@ -31,6 +31,7 @@ public interface SnapshotProvider {
      * Note: This method writes two files - the meta data file and the state file. The path of the corresponding file is
      *       determined by appending ".snapshot.meta" / ".snapshot.state" to the given base path.
      *
+     * @param snapshot the {@link Snapshot} that shall be persisted
      * @param basePath base path of the local snapshot files
      * @throws SnapshotException if anything goes wrong while writing the file
      */

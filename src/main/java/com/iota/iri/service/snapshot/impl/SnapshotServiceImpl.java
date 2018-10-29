@@ -170,8 +170,10 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         Snapshot snapshot;
         try {
-            int distanceFromInitialSnapshot = Math.abs(snapshotProvider.getInitialSnapshot().getIndex() - targetMilestone.index());
-            int distanceFromLatestSnapshot = Math.abs(snapshotProvider.getLatestSnapshot().getIndex() - targetMilestone.index());
+            int distanceFromInitialSnapshot = Math.abs(snapshotProvider.getInitialSnapshot().getIndex() -
+                    targetMilestone.index());
+            int distanceFromLatestSnapshot = Math.abs(snapshotProvider.getLatestSnapshot().getIndex() -
+                    targetMilestone.index());
 
             if (distanceFromInitialSnapshot <= distanceFromLatestSnapshot) {
                 snapshot = new SnapshotImpl(snapshotProvider.getInitialSnapshot());

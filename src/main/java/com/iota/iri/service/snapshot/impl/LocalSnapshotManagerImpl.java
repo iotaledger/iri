@@ -34,7 +34,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     /**
      * Service that contains the logic for generating local {@link com.iota.iri.service.snapshot.Snapshot}s.
      */
-    private static final SnapshotService SNAPSHOT_SERVICE = new SnapshotServiceImpl();
+    private final SnapshotService snapshotService;
 
     /**
      * Data provider for the relevant {@link com.iota.iri.service.snapshot.Snapshot} instances.
@@ -75,9 +75,10 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * @param tangle object which acts as a database interface
      * @param config configuration with important snapshot related parameters
      */
-    public LocalSnapshotManagerImpl(SnapshotProvider snapshotProvider, TransactionPruner transactionPruner,
-            Tangle tangle, SnapshotConfig config) {
+    public LocalSnapshotManagerImpl(SnapshotService snapshotService, SnapshotProvider snapshotProvider,
+            TransactionPruner transactionPruner, Tangle tangle, SnapshotConfig config) {
 
+        this.snapshotService = snapshotService;
         this.snapshotProvider = snapshotProvider;
         this.transactionPruner = transactionPruner;
         this.tangle = tangle;
@@ -123,7 +124,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
 
             if (latestSnapshotIndex - initialSnapshotIndex > config.getLocalSnapshotsDepth() + localSnapshotInterval) {
                 try {
-                    SNAPSHOT_SERVICE.takeLocalSnapshot(tangle, snapshotProvider, config, milestoneTracker,
+                    snapshotService.takeLocalSnapshot(tangle, snapshotProvider, config, milestoneTracker,
                             transactionPruner);
                 } catch (SnapshotException e) {
                     log.error("error while taking local snapshot", e);

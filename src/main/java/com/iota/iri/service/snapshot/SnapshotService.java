@@ -45,9 +45,10 @@ public interface SnapshotService {
      *
      * Note: this method is used to reverse the changes introduced by {@link #replayMilestones(Tangle, Snapshot, int)}
      *
+     * @param tangle Tangle object which acts as a database interface
+     * @param snapshot the Snapshot that shall get modified
      * @param targetMilestoneIndex the index of the milestone that should be rolled back (including all following
      *                             milestones that were applied)
-     * @param tangle Tangle object which acts as a database interface
      * @throws SnapshotException if something goes wrong while reverting the changes
      */
     void rollBackMilestones(Tangle tangle, Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException;

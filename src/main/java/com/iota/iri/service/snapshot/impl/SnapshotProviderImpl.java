@@ -243,33 +243,6 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     //region SNAPSHOT STATE RELATED UTILITY METHODS ////////////////////////////////////////////////////////////////////
 
     /**
-     * This method reads the balances from the given reader.
-     *
-     * The format of the input is pairs of "address;balance" separated by newlines. It simply reads the input line by
-     * line, adding the corresponding values to the map.
-     *
-     * @param reader reader allowing us to retrieve the lines of the {@link SnapshotState} file
-     * @return the unserialized version of the snapshot state state file
-     * @throws IOException if something went wrong while trying to access the file
-     * @throws SnapshotException if anything goes wrong while reading the state file
-     */
-    private SnapshotState readSnapshotState(BufferedReader reader) throws IOException, SnapshotException {
-        Map<Hash, Long> state = new HashMap<>();
-
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] parts = line.split(";", 2);
-            if (parts.length == 2) {
-                state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
-            } else {
-                throw new SnapshotException("malformed snapshot state file");
-            }
-        }
-
-        return new SnapshotStateImpl(state);
-    }
-
-    /**
      * This method reads the balances from the given file on the disk and creates the corresponding SnapshotState.
      *
      * It simply creates the corresponding reader and for the file on the given location and passes it on to
@@ -306,10 +279,38 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
+     * This method reads the balances from the given reader.
+     *
+     * The format of the input is pairs of "address;balance" separated by newlines. It simply reads the input line by
+     * line, adding the corresponding values to the map.
+     *
+     * @param reader reader allowing us to retrieve the lines of the {@link SnapshotState} file
+     * @return the unserialized version of the snapshot state state file
+     * @throws IOException if something went wrong while trying to access the file
+     * @throws SnapshotException if anything goes wrong while reading the state file
+     */
+    private SnapshotState readSnapshotState(BufferedReader reader) throws IOException, SnapshotException {
+        Map<Hash, Long> state = new HashMap<>();
+
+        String line;
+        while ((line = reader.readLine()) != null) {
+            String[] parts = line.split(";", 2);
+            if (parts.length == 2) {
+                state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
+            } else {
+                throw new SnapshotException("malformed snapshot state file");
+            }
+        }
+
+        return new SnapshotStateImpl(state);
+    }
+
+    /**
      * This method dumps the current state to a file.
      *
      * It is used by local snapshots to persist the in memory states and allow IRI to resume from the local snapshot.
      *
+     * @param snapshotState state object that shall be written
      * @param snapshotPath location of the file that shall be written
      * @throws SnapshotException if anything goes wrong while writing the file
      */
@@ -424,8 +425,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * This method reads the amount of solid entry points of the {@link Snapshot} from the
-     * metadata file.
+     * This method reads the amount of solid entry points of the {@link Snapshot} from the metadata file.
      *
      * @param reader reader that is used to read the file
      * @return amount of solid entry points of the {@link Snapshot}
@@ -546,11 +546,13 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * It can be used to store the current values and read them on a later point in time. It is used by the local
      * snapshot manager to generate and maintain the snapshot files.
      *
-     * @param snapshotMetaData metadata object
+     * @param snapshotMetaData metadata object that shall be written
      * @param filePath location of the file that shall be written
      * @throws SnapshotException if anything goes wrong while writing the file
      */
-    private void writeSnapshotMetaDataToDisk(SnapshotMetaData snapshotMetaData, String filePath) throws SnapshotException {
+    private void writeSnapshotMetaDataToDisk(SnapshotMetaData snapshotMetaData, String filePath)
+            throws SnapshotException {
+
         try {
             Map<Hash, Integer> solidEntryPoints = snapshotMetaData.getSolidEntryPoints();
             Map<Hash, Integer> seenMilestones = snapshotMetaData.getSeenMilestones();

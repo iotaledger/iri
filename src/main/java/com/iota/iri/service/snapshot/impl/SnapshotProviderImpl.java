@@ -14,8 +14,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Stream;
 
 /**
  * Implements the basic contract of the {@link SnapshotProvider} interface.
@@ -98,6 +101,77 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     @Override
     public Snapshot getLatestSnapshot() {
         return latestSnapshot;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void writeSnapshotToDisk(Snapshot snapshot, String basePath) throws SnapshotException {
+        snapshot.lockRead();
+
+        try {
+            writeSnapshotStateToDisk(snapshot, basePath + ".snapshot.state");
+            writeSnapshotMetaDataToDisk(snapshot, basePath + ".snapshot.meta");
+        } finally {
+            snapshot.unlockRead();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void writeSnapshotStateToDisk(SnapshotState snapshotState, String snapshotPath) throws SnapshotException {
+        try {
+            Files.write(
+                    Paths.get(snapshotPath),
+                    () -> snapshotState.getBalances().entrySet()
+                            .stream()
+                            .filter(entry -> entry.getValue() != 0)
+                            .<CharSequence>map(entry -> entry.getKey() + ";" + entry.getValue())
+                            .sorted()
+                            .iterator()
+            );
+        } catch (IOException e) {
+            throw new SnapshotException("failed to write the snapshot state file at " + snapshotPath, e);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void writeSnapshotMetaDataToDisk(SnapshotMetaData metaData, String filePath) throws SnapshotException {
+        try {
+            Map<Hash, Integer> solidEntryPoints = metaData.getSolidEntryPoints();
+            Map<Hash, Integer> seenMilestones = metaData.getSeenMilestones();
+
+            Files.write(
+                    Paths.get(filePath),
+                    () -> Stream.concat(
+                            Stream.of(
+                                    metaData.getHash().toString(),
+                                    String.valueOf(metaData.getIndex()),
+                                    String.valueOf(metaData.getTimestamp()),
+                                    String.valueOf(solidEntryPoints.size()),
+                                    String.valueOf(seenMilestones.size())
+                            ),
+                            Stream.concat(
+                                solidEntryPoints.entrySet()
+                                        .stream()
+                                        .sorted(Map.Entry.comparingByValue())
+                                        .<CharSequence>map(entry -> entry.getKey().toString() + ";" + entry.getValue()),
+                                seenMilestones.entrySet()
+                                        .stream()
+                                        .sorted(Map.Entry.comparingByValue())
+                                        .<CharSequence>map(entry -> entry.getKey().toString() + ";" + entry.getValue())
+                            )
+                    ).iterator()
+            );
+        } catch (IOException e) {
+            throw new SnapshotException("failed to write snapshot meta data file at " + filePath, e);
+        }
     }
 
     /**
@@ -231,7 +305,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     private SnapshotState readSnapshotStatefromFile(String snapshotStateFilePath) throws SnapshotException {
         BufferedReader reader = null;
         try {
-            InputStream snapshotStream = SnapshotImpl.class.getResourceAsStream(snapshotStateFilePath);
+            InputStream snapshotStream = SnapshotProviderImpl.class.getResourceAsStream(snapshotStateFilePath);
             if (snapshotStream == null) {
                 snapshotStream = new FileInputStream(snapshotStateFilePath);
             }

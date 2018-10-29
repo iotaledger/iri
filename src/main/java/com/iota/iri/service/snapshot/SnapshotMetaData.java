@@ -212,15 +212,4 @@ public interface SnapshotMetaData {
      * @param newMetaData the new meta data that shall overwrite the current one
      */
     void update(SnapshotMetaData newMetaData);
-
-    /**
-     * This method writes a file containing a serialized version of this metadata object.
-     *
-     * It can be used to store the current values and read them on a later point in time. It is used by the local
-     * snapshot manager to generate and maintain the snapshot files.
-     *
-     * @param filePath location of the file that shall be written
-     * @throws SnapshotException if anything goes wrong while writing the file
-     */
-    void writeToDisk(String filePath) throws SnapshotException;
 }

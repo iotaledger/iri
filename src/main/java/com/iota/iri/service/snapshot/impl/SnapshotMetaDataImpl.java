@@ -256,37 +256,4 @@ public class SnapshotMetaDataImpl implements SnapshotMetaData {
         setSolidEntryPoints(new HashMap<>(newMetaData.getSolidEntryPoints()));
         setSeenMilestones(new HashMap<>(newMetaData.getSeenMilestones()));
     }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void writeToDisk(String filePath) throws SnapshotException {
-        try {
-            Files.write(
-                    Paths.get(filePath),
-                    () -> Stream.concat(
-                            Stream.of(
-                                    hash.toString(),
-                                    String.valueOf(index),
-                                    String.valueOf(timestamp),
-                                    String.valueOf(solidEntryPoints.size()),
-                                    String.valueOf(seenMilestones.size())
-                            ),
-                            Stream.concat(
-                                solidEntryPoints.entrySet()
-                                        .stream()
-                                        .sorted(Map.Entry.comparingByValue())
-                                        .<CharSequence>map(entry -> entry.getKey().toString() + ";" + entry.getValue()),
-                                seenMilestones.entrySet()
-                                        .stream()
-                                        .sorted(Map.Entry.comparingByValue())
-                                        .<CharSequence>map(entry -> entry.getKey().toString() + ";" + entry.getValue())
-                            )
-                    ).iterator()
-            );
-        } catch (IOException e) {
-            throw new SnapshotException("failed to write snapshot meta data file at " + filePath, e);
-        }
-    }
 }

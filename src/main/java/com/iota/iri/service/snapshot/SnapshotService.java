@@ -10,12 +10,12 @@ import com.iota.iri.storage.Tangle;
 import java.util.Map;
 
 /**
- * Represents the service for local snapshots that contains the relevant business logic for creating taking and
- * generating local {@link Snapshot}s.
+ * Represents the service for snapshots that contains the relevant business logic for modifying {@link Snapshot}s and
+ * generating new local {@link Snapshot}s.
  *
  * This class is stateless and does not hold any domain specific models.
  */
-public interface LocalSnapshotService {
+public interface SnapshotService {
     /**
      * This method applies the balance changes that are introduced by future milestones to the current Snapshot.
      *
@@ -25,13 +25,14 @@ public interface LocalSnapshotService {
      * mean time. If the application of changes fails, we restore the state of the snapshot to the one it had before the
      * application attempt so this method only modifies the Snapshot if it succeeds.
      *
-     * Note: the changes done by this method can be reverted by using {@link #rollBackMilestones(int, Tangle)}
+     * Note: the changes done by this method can be reverted by using {@link #rollBackMilestones(Tangle, Snapshot, int)}
      *
-     * @param targetMilestoneIndex the index of the milestone that should be applied
      * @param tangle Tangle object which acts as a database interface
+     * @param snapshot the Snapshot that shall get modified
+     * @param targetMilestoneIndex the index of the milestone that should be applied
      * @throws SnapshotException if something goes wrong while applying the changes
      */
-    void replayMilestones(int targetMilestoneIndex, Tangle tangle) throws SnapshotException;
+    void replayMilestones(Tangle tangle, Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException;
 
     /**
      * This method rolls back the latest milestones until it reaches the state that the snapshot had before applying
@@ -42,14 +43,14 @@ public interface LocalSnapshotService {
      * fails, we restore the state of the snapshot to the one it had before the rollback attempt so this method only
      * modifies the Snapshot if it succeeds.
      *
-     * Note: this method is used to reverse the changes introduced by {@link #replayMilestones(int, Tangle)}
+     * Note: this method is used to reverse the changes introduced by {@link #replayMilestones(Tangle, Snapshot, int)}
      *
      * @param targetMilestoneIndex the index of the milestone that should be rolled back (including all following
      *                             milestones that were applied)
      * @param tangle Tangle object which acts as a database interface
      * @throws SnapshotException if something goes wrong while reverting the changes
      */
-    void rollBackMilestones(int targetMilestoneIndex, Tangle tangle) throws SnapshotException;
+    void rollBackMilestones(Tangle tangle, Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException;
 
     /**
      * This method takes a "full" local snapshot according to the configuration of the node.

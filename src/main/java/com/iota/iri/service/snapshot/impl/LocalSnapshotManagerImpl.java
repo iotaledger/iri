@@ -3,7 +3,7 @@ package com.iota.iri.service.snapshot.impl;
 import com.iota.iri.MilestoneTracker;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
-import com.iota.iri.service.snapshot.LocalSnapshotService;
+import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
@@ -34,7 +34,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     /**
      * Service that contains the logic for generating local {@link com.iota.iri.service.snapshot.Snapshot}s.
      */
-    private static final LocalSnapshotService localSnapshotService = new LocalSnapshotServiceImpl();
+    private static final SnapshotService SNAPSHOT_SERVICE = new SnapshotServiceImpl();
 
     /**
      * Data provider for the relevant {@link com.iota.iri.service.snapshot.Snapshot} instances.
@@ -106,7 +106,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * It periodically checks if a new {@link com.iota.iri.service.snapshot.Snapshot} has to be taken until the
      * {@link Thread} is terminated. If it detects that a {@link com.iota.iri.service.snapshot.Snapshot} is due it
      * triggers the creation of the {@link com.iota.iri.service.snapshot.Snapshot} by calling
-     * {@link LocalSnapshotService#takeLocalSnapshot(Tangle, SnapshotProvider, SnapshotConfig, MilestoneTracker,
+     * {@link SnapshotService#takeLocalSnapshot(Tangle, SnapshotProvider, SnapshotConfig, MilestoneTracker,
      * TransactionPruner)}.
      *
      * @param milestoneTracker tracker for the milestones to determine when a new local snapshot is due
@@ -123,7 +123,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
 
             if (latestSnapshotIndex - initialSnapshotIndex > config.getLocalSnapshotsDepth() + localSnapshotInterval) {
                 try {
-                    localSnapshotService.takeLocalSnapshot(tangle, snapshotProvider, config, milestoneTracker,
+                    SNAPSHOT_SERVICE.takeLocalSnapshot(tangle, snapshotProvider, config, milestoneTracker,
                             transactionPruner);
                 } catch (SnapshotException e) {
                     log.error("error while taking local snapshot", e);

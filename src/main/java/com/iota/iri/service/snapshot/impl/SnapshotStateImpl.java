@@ -131,26 +131,6 @@ public class SnapshotStateImpl implements SnapshotState {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void writeToDisk(String snapshotPath) throws SnapshotException {
-        try {
-            Files.write(
-                    Paths.get(snapshotPath),
-                    () -> balances.entrySet()
-                            .stream()
-                            .filter(entry -> entry.getValue() != 0)
-                            .<CharSequence>map(entry -> entry.getKey() + ";" + entry.getValue())
-                            .sorted()
-                            .iterator()
-            );
-        } catch (IOException e) {
-            throw new SnapshotException("failed to write the snapshot state file at " + snapshotPath, e);
-        }
-    }
-
-    /**
      * Returns all addresses that have a negative balance.
      *
      * While this should never happen with the state belonging to the snapshot itself, it can still happen for the

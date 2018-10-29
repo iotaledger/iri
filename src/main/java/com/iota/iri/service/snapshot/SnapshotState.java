@@ -78,14 +78,4 @@ public interface SnapshotState {
      * @return a differential SnapshotState that contains the resulting balances of all modified addresses
      */
     SnapshotState patchedState(SnapshotStateDiff snapshotStateDiff);
-
-    /**
-     * This method dumps the current state to a file.
-     *
-     * It is used by local snapshots to persist the in memory states and allow IRI to resume from the local snapshot.
-     *
-     * @param snapshotPath location of the file that shall be written
-     * @throws SnapshotException if anything goes wrong while writing the file
-     */
-    void writeToDisk(String snapshotPath) throws SnapshotException;
 }

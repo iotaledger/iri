@@ -323,7 +323,7 @@ public class IntervalLogger implements Logger {
                 return false;
             }
 
-            return message.equals(((Message) obj).message);
+            return Objects.equals(message, ((Message) obj).message);
         }
 
         /**

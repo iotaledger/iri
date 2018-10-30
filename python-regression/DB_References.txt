@@ -1,0 +1,54 @@
+Test DB's 
+All test db's are stored in an Iota Foundation s3 bucket:
+[ https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/* ]
+
+Blowball Tests - Machine 3
+Name: Blowball_Tests_db.tar
+
+Description: This db was created by bootstrapping the testnet coo tool to create a stream of milestones. As these milestones were being issued, the node was then spammed with valid and invalid transactions. Once a few invalid transactions were stored in the db, a side tangle referencing one of these transactions was generated, forming a chain of transactions only referencing previous side-tangle transactions, thus separating it from the original flow of transactions. This DB contains a few thousand valid, invalid and side tangle transactions to traverse through for the gtta tests. 
+
+Scripts Used: 
+-https://github.com/iotaledger/tangle-tools/tree/python-tools/python-tools: 
+    invalid_transaction_spammer.py, 
+    transaction_spammer.py, 
+    side_tangle.py
+ 
+-Milestones were issued using the testnet-coordinator tool bootstrapped to an empty db
+
+
+
+
+Stitching Tests - Machine 4
+Name: Stitching_tests_db.tar
+
+Description: This db was created by bootstrapping the testnet coo tool to create a stream of milestones. As these milestones were being issued, the node was then spammed with valid and invalid transactions. Once a few invalid transactions were stored in the db, a side tangle referencing one of these transactions was generated, forming a chain of transactions only referencing previous side-tangle transactions. This DB contains several thousand valid, invalid and side-tangle transactions for use in the stitching tests. Some of the side-tangle transactions have been hardcoded into the static_vals.py utility file for reference in the tests. 
+
+Scripts Used: 
+-https://github.com/iotaledger/tangle-tools/tree/python-tools/python-tools: 
+    invalid_transaction_spammer.py, 
+    transaction_spammer.py
+    side_tangle.py
+ 
+-Milestones were issued using the testnet-coordinator tool bootstrapped to an empty db
+
+
+
+
+
+
+
+Validation Test - Machine 5
+Name: Validation_tests_db.tar
+
+Description: This db was created by bootstrapping the testnet coo tool to create a stream of milestones. As these milestones were being issued, the node was then spammed with valid and invalid transactions. Once 37 milestones had been issued this way, the coo tool was stopped, and the seed used for signing the transactions was altered to ensure that these new milestones would not be validated. 8 of these new milestones were issued, and will only register when a new node is started with the DONT_VALIDATE_TESTNET_MILESTONE_SIG flag is set to True. Otherwise the node will only register the first 37 milestones and will load from there.  
+
+Scripts Used: 
+-https://github.com/iotaledger/tangle-tools/tree/python-tools/python-tools: 
+    invalid_transaction_spammer.py, 
+    transaction_spammer.py
+
+-Milestones were issued using the testnet-coordinator tool bootstrapped to an empty db
+
+
+
+

@@ -32,14 +32,14 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private static final Logger log = LoggerFactory.getLogger(LocalSnapshotManagerImpl.class);
 
     /**
-     * Service that contains the logic for generating local {@link com.iota.iri.service.snapshot.Snapshot}s.
-     */
-    private final SnapshotService snapshotService;
-
-    /**
      * Data provider for the relevant {@link com.iota.iri.service.snapshot.Snapshot} instances.
      */
     private final SnapshotProvider snapshotProvider;
+
+    /**
+     * Service that contains the logic for generating local {@link com.iota.iri.service.snapshot.Snapshot}s.
+     */
+    private final SnapshotService snapshotService;
 
     /**
      * Manager for the pruning jobs that allows us to clean up old transactions.
@@ -75,11 +75,11 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * @param tangle object which acts as a database interface
      * @param config configuration with important snapshot related parameters
      */
-    public LocalSnapshotManagerImpl(SnapshotService snapshotService, SnapshotProvider snapshotProvider,
+    public LocalSnapshotManagerImpl(SnapshotProvider snapshotProvider, SnapshotService snapshotService,
             TransactionPruner transactionPruner, Tangle tangle, SnapshotConfig config) {
 
-        this.snapshotService = snapshotService;
         this.snapshotProvider = snapshotProvider;
+        this.snapshotService = snapshotService;
         this.transactionPruner = transactionPruner;
         this.tangle = tangle;
         this.config = config;

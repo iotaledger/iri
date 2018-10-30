@@ -58,10 +58,9 @@ public enum Feature {
      * @param instance the instance of this node
      * @return An array of features
      */
-    public static Feature[] calculateFeatures(Iota instance) {
+    public static Feature[] calculateFeatures(IotaConfig configuration) {
         List<Feature> features = new ArrayList<>();
         
-        IotaConfig configuration = instance.configuration;
         if (configuration.getLocalSnapshotsPruningEnabled()) {
             features.add(SNAPSHOT_PRUNING);
         }
@@ -99,8 +98,8 @@ public enum Feature {
      * @param instance the instance of this node
      * @return An array of the features in readable name format
      */
-    public static String[] calculateFeatureNames(Iota instance) {
-        Feature[] features = calculateFeatures(instance);
+    public static String[] calculateFeatureNames(IotaConfig configuration) {
+        Feature[] features = calculateFeatures(configuration);
         
         String[] featureNames = Arrays.stream(features)
                 .map(feature -> feature.toString()).toArray(String[]::new);

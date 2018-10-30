@@ -112,7 +112,7 @@ public class API {
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
-        features = Feature.calculateFeatureNames(instance);
+        features = Feature.calculateFeatureNames(instance.configuration);
     }
 
     public void init() throws IOException {

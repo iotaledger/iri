@@ -103,7 +103,8 @@ public class CuckooFilterImpl implements CuckooFilter {
         }
 
         if(fingerPrintSize <= 0 || fingerPrintSize > 128) {
-            throw new IllegalArgumentException("invalid finger print size \"" + fingerPrintSize + "\" [expected value between 0 and 129]");
+            throw new IllegalArgumentException("invalid finger print size \"" + fingerPrintSize +
+                    "\" [expected value between 0 and 129]");
         }
 
         while((tableSize * bucketSize) < itemCount || itemCount * 1.0 / (tableSize * bucketSize) > 0.955) {

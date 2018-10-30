@@ -996,7 +996,7 @@ public class API {
         if (tips == null || tips.size() == 0) {
             hashes = Collections.singletonList(instance.milestoneTracker.latestSolidSubtangleMilestone);
         } else {
-            hashes = tips.stream().map(address -> (HashFactory.ADDRESS.create(address)))
+            hashes = tips.stream().map(tip -> (HashFactory.TRANSACTION.create(tip)))
                     .collect(Collectors.toCollection(LinkedList::new));
         }
         try {

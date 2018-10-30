@@ -1099,7 +1099,7 @@ public class API {
                 Converter.copyTrits(MAX_TIMESTAMP_VALUE,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
 
-                if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
+                if (!pearlDiver.search(transactionTrits, minWeightMagnitude, instance.configuration.getPowThreads())) {
                     transactionViewModels.clear();
                     break;
                 }

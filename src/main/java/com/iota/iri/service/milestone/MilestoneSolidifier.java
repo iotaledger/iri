@@ -38,7 +38,7 @@ public class MilestoneSolidifier {
      * Note: We want to find the next previous milestone and not get stuck somewhere at the end of the tangle with a
      *       long running {@link TransactionValidator#checkSolidity(Hash, boolean)} call.
      */
-    private static final int SOLIDIFICATION_TRANSACTIONS_LIMIT = 20000;
+    private static final int SOLIDIFICATION_TRANSACTIONS_LIMIT = 50000;
 
     /**
      * Logger for this class allowing us to dump debug and status messages.
@@ -320,7 +320,7 @@ public class MilestoneSolidifier {
 
         try {
             return transactionValidator.checkSolidity(currentEntry.getKey(), true,
-                    SOLIDIFICATION_TRANSACTIONS_LIMIT * 4);
+                    SOLIDIFICATION_TRANSACTIONS_LIMIT);
         } catch (Exception e) {
             statusLogger.error("Error while solidifying milestone #" + currentEntry.getValue(), e);
 

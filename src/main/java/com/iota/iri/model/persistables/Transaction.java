@@ -14,7 +14,7 @@ public class Transaction implements Persistable {
     /**
      * Bitmask used to access and store the solid flag.
      */
-    public static final int IS_SOLID_BITMASK    = 0b01;
+    public static final int IS_SOLID_BITMASK = 0b01;
 
     /**
      * Bitmask used to access and store the isMilestone flag.

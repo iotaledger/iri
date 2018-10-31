@@ -269,7 +269,7 @@ public class TransactionViewModel {
             byte[] tagBytes = Converter.allocateBytesForTrits(OBSOLETE_TAG_TRINARY_SIZE);
             Converter.bytes(trits(), OBSOLETE_TAG_TRINARY_OFFSET, tagBytes, 0, OBSOLETE_TAG_TRINARY_SIZE);
 
-            transaction.obsoleteTag = HashFactory.TAG.create(tagBytes, 0, TAG_SIZE_IN_BYTES);
+            transaction.obsoleteTag = HashFactory.OBSOLETETAG.create(tagBytes, 0, TAG_SIZE_IN_BYTES);
         }
         return transaction.obsoleteTag;
     }

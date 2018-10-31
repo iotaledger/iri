@@ -17,9 +17,9 @@ public class Transaction implements Persistable {
     public static final int IS_SOLID_BITMASK    = 0b01;
 
     /**
-     * Bitmask used to access and store the isSnapshot flag.
+     * Bitmask used to access and store the isMilestone flag.
      */
-    public static final int IS_SNAPSHOT_BITMASK = 0b10;
+    public static final int IS_MILESTONE_BITMASK = 0b10;
 
     public byte[] bytes;
 
@@ -49,7 +49,7 @@ public class Transaction implements Persistable {
     /**
      * This flag indicates if the transaction is a coordinator issued milestone.
      */
-    public boolean isSnapshot = false;
+    public boolean isMilestone = false;
 
     public long height = 0;
     public String sender = "";
@@ -100,7 +100,7 @@ public class Transaction implements Persistable {
         // encode booleans in 1 byte
         byte flags = 0;
         flags |= solid ? IS_SOLID_BITMASK : 0;
-        flags |= isSnapshot ? IS_SNAPSHOT_BITMASK : 0;
+        flags |= isMilestone ? IS_MILESTONE_BITMASK : 0;
         buffer.put(flags);
 
         buffer.put(Serializer.serialize(snapshot));
@@ -155,7 +155,7 @@ public class Transaction implements Persistable {
 
             // decode the boolean byte by checking the bitmasks
             solid = (bytes[i] & IS_SOLID_BITMASK) != 0;
-            isSnapshot = (bytes[i] & IS_SNAPSHOT_BITMASK) != 0;
+            isMilestone = (bytes[i] & IS_MILESTONE_BITMASK) != 0;
             i++;
 
             snapshot = Serializer.getInteger(bytes, i);

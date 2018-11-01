@@ -32,8 +32,7 @@ def find_in_response(key, response):
             if is_present:
                 break
 
-    if is_present is not True:
-        raise AssertionError('{} does not appear to be present in the response: {}'.format(key, response))
+    assert is_present is True, '{} does not appear to be present in the response: {}'.format(key, response)
 
 
 def fetch_future_results(future_results, num_tests, response_vals):

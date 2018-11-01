@@ -32,18 +32,16 @@ def compare_thread_return(step, api_call):
     keys = expected_values.keys()
 
     # Confirm that the lists are of equal length before comparing
-    if len(keys) != len(response_keys):
-        raise AssertionError("Response: {} does not contain"
-                             "the same number of arguments: {}".format(keys,response_keys))
+    assert len(keys) == len(response_keys), "Response: {} does not contain""\
+                                            ""the same number of arguments: {}".format(keys,response_keys)
 
     for count in range(len(keys)):
         response_key = response_keys[count]
         response_value = response_list[response_key]
         expected_value = expected_values[response_key]
 
-        if response_value != expected_value:
-            raise AssertionError("Returned: {} does not match"
-                                 "the expected value: {}".format(response_value, expected_value))
+        assert response_value == expected_value, "Returned: {} does not match the expected"" \
+        ""value: {}".format(response_value, expected_value)
 
     logger.info('Responses match')
 
@@ -64,8 +62,7 @@ def response_exists(step,apiCall):
             if is_empty:
                 empty_values[key] = response[key]
 
-    if len(empty_values) != 0:
-        raise AssertionError("There was an empty value in the response {}".format(empty_values))
+    assert len(empty_values) == 0, "There was an empty value in the response {}".format(empty_values)
 
 
 @step(r'the response for "([^"]*)" should return with:')
@@ -89,9 +86,8 @@ def check_response_for_value(step, api_call):
             if isinstance(response_value, list):
                 response_value = response_value[0]
 
-            if expected_value != response_value:
-                raise AssertionError("The expected value {} does not match"
-                                     "the response value: {}".format(expected_value, response_value))
+            assert expected_value == response_value, "The expected value {} does not match"" \
+            ""the response value: {}".format(expected_value, response_value)
 
     logger.info('Response contained expected values')
 
@@ -173,8 +169,7 @@ def less_than_max_percent(step, max_percent):
     percentage = (float(world.test_vars['milestone_count'])/(world.config['max'] * 2)) * 100.00
     logger.info(str(percentage) + "% milestones")
 
-    if percentage >= float(max_percent):
-        raise AssertionError("The returned percentage exceeds {}%".format(float(max_percent)))
+    assert percentage < float(max_percent), "The returned percentage exceeds {}%".format(float(max_percent))
 
 
 def compare_responses(value, milestone_list, transaction_list, transaction_counter_list,

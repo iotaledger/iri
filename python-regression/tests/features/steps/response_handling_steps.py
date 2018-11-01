@@ -33,7 +33,7 @@ def compare_thread_return(step, api_call):
 
     # Confirm that the lists are of equal length before comparing
     if len(keys) != len(response_keys):
-        raise AssertionError("Response: {} does not contain" 
+        raise AssertionError("Response: {} does not contain"
                              "the same number of arguments: {}".format(keys,response_keys))
 
     for count in range(len(keys)):
@@ -90,7 +90,7 @@ def check_response_for_value(step, api_call):
                 response_value = response_value[0]
 
             if expected_value != response_value:
-                raise AssertionError("The expected value {} does not match" 
+                raise AssertionError("The expected value {} does not match"
                                      "the response value: {}".format(expected_value, response_value))
 
     logger.info('Response contained expected values')

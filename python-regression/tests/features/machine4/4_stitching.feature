@@ -9,12 +9,19 @@ Feature: Ensure node reliability while stitching a side tangle
 	Scenario: Check consistency on a stitching transaction responds
 		
 		Given a stitching transaction is issued on "nodeA" with the tag "STITCHING"
-		And check_consistency is called on this transaction
-		Then the response should return "False"
-		When a transaction is issued referencing the stitching transaction
+		And "checkConsistency" is called in parallel on "nodeA" with:
+		|keys                   |values                 |type           |
+		|tails                  |previousTransaction    |responseList   |
+
+		Then the "checkConsistency" parallel call should return with:
+		|keys                   |values                 |type           |
+		|state                  |False                  |bool           |
+
+		When a transaction is issued referencing the previous transaction
+
 		And "getTransactionsToApprove" is called on "nodeA" with:
-		|keys                   |values         |type           |
-		|depth                  |3              |int            |
+		|keys                   |values                 |type           |
+		|depth                  |3                      |int            |
 
 		Then a response with the following is returned:
 		|keys							|

@@ -25,7 +25,7 @@ def find_in_response(key, response):
                 break
 
         elif isinstance(response[k], list):
-            for index, d in enumerate(response[k]):
+            for d in response[k]:
                 if not isinstance(d, bool) and key in d:
                     is_present = True
                     break

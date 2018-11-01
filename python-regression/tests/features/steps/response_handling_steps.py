@@ -111,10 +111,10 @@ def compare_response(step):
     response = world.responses[api_call][node_id]
     key_list = []
 
-    for index, key in enumerate(keys):
+    for key in keys:
         key_list.append(key['keys'])
 
-    for index, key in enumerate(key_list):
+    for key in key_list:
         response_handling.find_in_response(key, response)
 
 
@@ -136,7 +136,7 @@ def compare_gtta_with_milestones(step):
 
     for node in gtta_responses:
         if isinstance(gtta_responses[node], list):
-            for index, response in enumerate(gtta_responses[node]):
+            for response in gtta_responses[node]:
                 branch_transaction = response['branchTransaction']
                 trunk_transaction = response['trunkTransaction']
 

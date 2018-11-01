@@ -10,7 +10,7 @@ def populate_queue(*args):
     :returns q: Returns a populated queue
     """
     q = queue.Queue()
-    for arg in enumerate(args):
+    for arg in args:
         q.put(args[arg])
     return q
 

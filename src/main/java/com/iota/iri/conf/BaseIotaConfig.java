@@ -79,6 +79,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected double alpha = Defaults.ALPHA;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
 
+    //PearlDiver
+    protected int powThreads = Defaults.POW_THREADS;
+
     //Snapshot
     protected boolean localSnapshotsEnabled = Defaults.LOCAL_SNAPSHOTS_ENABLED;
     protected boolean localSnapshotsPruningEnabled = Defaults.LOCAL_SNAPSHOTS_PRUNING_ENABLED;
@@ -676,6 +679,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.maxAnalyzedTransactions = maxAnalyzedTransactions;
     }
 
+    @Override
+    public int getPowThreads() {
+        return powThreads;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--pow-threads", description = PearlDiverConfig.Descriptions.POW_THREADS)
+    protected void setPowThreads(int powThreads) {
+        this.powThreads = powThreads;
+    }
+
     public interface Defaults {
         //API
         int API_PORT = 14265;
@@ -731,6 +745,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //TipSel
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
+
+        //PearlDiver
+        int POW_THREADS = 0;
 
         //Coo
         String COORDINATOR_ADDRESS =

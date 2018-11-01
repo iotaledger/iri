@@ -413,7 +413,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This method is the setter for the isMilestone flag of a transaction.
+     * This method is the setter for the milestone flag of a transaction.
      *
      * It gets automatically called by the "Latest Milestone Tracker" and marks transactions that represent a milestone
      * accordingly. It first checks if the value has actually changed and then issues a database update.
@@ -423,16 +423,16 @@ public class TransactionViewModel {
      * @throws Exception if something goes wrong while saving the changes to the database
      */
     public void isMilestone(Tangle tangle, final boolean isMilestone) throws Exception {
-        if (isMilestone != transaction.isMilestone) {
-            transaction.isMilestone = isMilestone;
-            update(tangle, "isMilestone");
+        if (isMilestone != transaction.milestone) {
+            transaction.milestone = isMilestone;
+            update(tangle, "milestone");
         }
     }
 
     /**
-     * This method is the getter for the isMilestone flag of a transaction.
+     * This method is the getter for the milestone flag of a transaction.
      *
-     * The isMilestone flag indicates if the transaction is a coordinator issued milestone. It allows us to differentiate
+     * The milestone flag indicates if the transaction is a coordinator issued milestone. It allows us to differentiate
      * the two types of transactions (normal transactions / milestones) very fast and efficiently without issuing
      * further database queries or even full verifications of the signature. If it is set to true one can for example
      * use the snapshotIndex() method to retrieve the corresponding MilestoneViewModel object.
@@ -440,7 +440,7 @@ public class TransactionViewModel {
      * @return true if the transaction is a milestone and false otherwise
      */
     public boolean isMilestone() {
-        return transaction.isMilestone;
+        return transaction.milestone;
     }
 
     public long getHeight() {

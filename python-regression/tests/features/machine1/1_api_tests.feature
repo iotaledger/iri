@@ -22,7 +22,7 @@ Feature: Test API calls on Machine 1
 		|appName					|
 		|appVersion					|
 		|duration					|
-		|features                 |                                                              
+		|features					|                                                              
 		|jreAvailableProcessors				|
 		|jreFreeMemory					|
 		|jreMaxMemory					|

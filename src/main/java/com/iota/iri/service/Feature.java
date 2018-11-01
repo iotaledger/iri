@@ -102,7 +102,8 @@ public enum Feature {
         Feature[] features = calculateFeatures(configuration);
         
         String[] featureNames = Arrays.stream(features)
-                .map(feature -> feature.toString()).toArray(String[]::new);
+                .map(feature -> feature.toString())
+                .toArray(String[]::new);
         
         return featureNames;
     }

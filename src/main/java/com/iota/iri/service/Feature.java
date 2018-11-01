@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import com.iota.iri.Iota;
 import com.iota.iri.conf.IotaConfig;
 
 /**

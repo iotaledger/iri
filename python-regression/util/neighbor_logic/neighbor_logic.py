@@ -16,7 +16,7 @@ def check_if_neighbors(api, neighbors, expected_neighbor):
     methods in the step.
     """
     is_neighbor = False
-    for key in range(len(neighbors)):
+    for key in enumerate(neighbors):
         if expected_neighbor == neighbors[key]['address']:
             logger.info("Already a neighbor")
             is_neighbor = True

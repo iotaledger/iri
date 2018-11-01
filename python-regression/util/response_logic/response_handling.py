@@ -25,15 +25,15 @@ def find_in_response(key, response):
                 break
 
         elif isinstance(response[k], list):
-            for d in range(len(response[k])):
-                logger.info(response[k][d])
-                if type(response[k][d]) != bool and key in response[k][d]:
+            for index, d in enumerate(response[k]):
+                if not isinstance(d, bool) and key in d:
                     is_present = True
                     break
             if is_present:
                 break
 
-    assert is_present is True, '{} does not appear to be present in the response: {}'.format(key, response)
+    if is_present is not True:
+        raise AssertionError('{} does not appear to be present in the response: {}'.format(key, response))
 
 
 def fetch_future_results(future_results, num_tests, response_vals):

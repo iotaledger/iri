@@ -35,7 +35,9 @@ def generate_transaction_and_attach(step, node):
     transaction = transactions.create_and_attach_transaction(api, transaction_args)
     api.broadcast_and_store(transaction.get('trytes'))
 
-    assert len(transaction['trytes']) > 0
+    if len(transaction['trytes']) <= 0:
+        raise AssertionError("Transaction was not created correctly")
+
     world.responses['attachToTangle'] = {}
     world.responses['attachToTangle'][node] = transaction
     logger.info('Transaction Sent')

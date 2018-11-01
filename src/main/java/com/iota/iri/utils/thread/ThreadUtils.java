@@ -63,7 +63,7 @@ public class ThreadUtils {
      * In addition to creating the {@link Thread}, it also dumps some log messages to inform the user about the creation
      * and the lifecycle of the {@link Thread}s.
      *
-     * @param runnable method reference that is responsible for processing the thread (i.e. {@code this::myThreadMethod})
+     * @param runnable method reference that is responsible for processing the thread (i.e. {@code this::threadMethod})
      * @param threadName the name of the {@link Thread} that shall be started started
      * @return the thread that got spawned by this method
      */
@@ -117,13 +117,13 @@ public class ThreadUtils {
      * It first checks if the {@link Thread} was interrupted already and otherwise issues a {@link Thread#sleep(long)}.
      * If a {@link InterruptedException} is caught, it resets the interrupted flag and returns the corresponding result.
      *
-     * See <a href="https://dzone.com/articles/how-to-handle-the-interruptedexception">Handle the InterruptedException</a>
+     * See <a href="https://dzone.com/articles/how-to-handle-the-interruptedexception">Handle InterruptedException</a>
      *
      * @param timeoutInMS milliseconds that the current Thread should wait
      * @return true if the sleep was successful and false if it got interrupted
      */
     public static boolean sleep(int timeoutInMS) {
-        if(Thread.interrupted()) {
+        if(Thread.currentThread().isInterrupted()) {
             return false;
         }
 

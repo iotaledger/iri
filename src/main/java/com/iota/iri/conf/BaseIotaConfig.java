@@ -738,12 +738,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
-        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
-        int LOCAL_SNAPSHOTS_PRUNING_DELAY = 1000;
+        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = true;
+        int LOCAL_SNAPSHOTS_PRUNING_DELAY = 50000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
-        int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 5000;
+        int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 1000;
         String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
-        int LOCAL_SNAPSHOTS_DEPTH = 500;
+        int LOCAL_SNAPSHOTS_DEPTH = 100;
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =

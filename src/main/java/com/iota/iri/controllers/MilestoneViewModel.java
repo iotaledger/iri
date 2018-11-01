@@ -143,4 +143,15 @@ public class MilestoneViewModel {
         tangle.delete(Milestone.class, milestone.index);
     }
 
+    /**
+     * This method creates a human readable string representation of the milestone.
+     *
+     * It can be used to directly append the milestone in error and debug messages.
+     *
+     * @return human readable string representation of the milestone
+     */
+    @Override
+    public String toString() {
+        return "milestone #" + index() + " (" + getHash().toString() + ")";
+    }
 }

@@ -34,8 +34,9 @@ def api_method_is_called(step, api_call, node_name):
             :type staticValue: Static name identifier, will fetch value from util/static_vals.py
             :type staticList: Same as staticValue, except it places the results into a list
             :type responseValue: Identifier for api call response value
-            :type responseList: Same as responseValue, ecept it places the results into a list
+            :type responseList: Same as responseValue, except it places the results into a list
             :type configValue: Identifier for a value stored in world.config
+            :type configList: Same as configValue, except it places the results into a list
             :type bool: Bool argument, returns True or False
     """
     logger.info('%s is called on %s', api_call, node_name)
@@ -46,6 +47,7 @@ def api_method_is_called(step, api_call, node_name):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
+    logger.info(options)
     api = api_utils.prepare_api_call(node_name)
     response = api_utils.fetch_call(api_call, api, options)
 
@@ -162,18 +164,30 @@ def spam_call(step, api_call, num_tests, node):
     api_utils.assign_nodes(node, nodes)
     node = world.config['nodeId']
 
-    def run_call(node, api):
+    def run_call(node, args):
         logger.debug('Running Thread on {}'.format(node))
-        response = api.get_transactions_to_approve(depth=3)
+        api = args['api']
+        options = args['options']
+        response = api_utils.fetch_call(api_call, api, options)
+        #response = api.get_transactions_to_approve(depth=3)
         return response
 
     args = nodes
+    for node in args:
+        args[node]['options'] = options
+
     future_results = pool.start_pool(run_call, num_tests, args)
 
     responses.fetch_future_results(future_results, num_tests, response_val)
 
     world.responses[api_call] = {}
     world.responses[api_call][node] = response_val
+
+    if api_call == "attachToTangle":
+        trytes = []
+        for response in range(len(response_val)):
+            trytes.append(response_val[response]['trytes'][0])
+        setattr(static_vals, "ATTACHED_TRANSACTIONS", trytes)
 
     end = time()
     time_spent = end - start

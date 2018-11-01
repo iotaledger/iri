@@ -4,6 +4,7 @@ from util import static_vals as static
 from util.test_logic import api_test_logic as api_utils
 from util.transaction_bundle_logic import transaction_logic as transactions
 from util.threading_logic import pool_logic as pool
+from util.milestone_logic import milestones
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -41,7 +42,7 @@ def generate_transaction_and_attach(step, node):
     logger.info('Transaction Sent')
 
     setattr(static, "TEST_STORE_TRANSACTION", transaction.get('trytes'))
-
+    return transaction
 
 @step(r'an inconsistent transaction is generated on "([^"]+)"')
 def create_inconsistent_transaction(step, node):
@@ -128,3 +129,43 @@ def reference_stitch_transaction(step):
 
     transaction_results = pool.start_pool(make_transaction, 1, {node: {'api': api, 'responses': world.responses}})
     pool.fetch_results(transaction_results[0], 30)
+
+@step(r'"(\d+)" transactions are issued on "([^"]+)" with:')
+def issue_multiple_transactions(step, num_transactions, node):
+    transaction_hashes = []
+    for iteration in range(int(num_transactions)):
+        transaction = generate_transaction_and_attach(step, node)
+        transaction_hash = Transaction.from_tryte_string(transaction['trytes'][0]).hash
+        logger.info(transaction_hash)
+        transaction_hashes.append(transaction_hash)
+
+    setattr(static, "ATTACHED_TRANSACTIONS", transaction_hashes)
+    logger.info("Transactions generated and stored")
+
+
+
+@step(r'a milestone is issued with index (\d+) and referencing a hash from "([^"]+)"')
+def issue_a_milestone_with_reference(step, index, static_variable):
+    """
+    This method issues a milestone with a given index, and stores that milestone hash in staticVals.py
+
+    :param index: The index of the milestone you are issuing
+    """
+    node = world.config['nodeId']
+    address = getattr(static, "TEST_BLOWBALL_COO")
+
+    api = api_utils.prepare_api_call(node)
+
+    transactions = getattr(static, static_variable)
+    logger.info(len(transactions))
+    reference_transaction = transactions[len(transactions) - 1]
+    logger.info(type(reference_transaction))
+    logger.info(reference_transaction)
+    logger.info('Issuing milestone {}'.format(index))
+    milestone = milestones.issue_milestone(address, api, index, reference_transaction)
+
+    if 'latestMilestone' not in world.config:
+        world.config['latestMilestone'] = {}
+
+    world.config['latestMilestone'][node] = [Transaction.from_tryte_string(milestone['trytes'][1]).hash]
+

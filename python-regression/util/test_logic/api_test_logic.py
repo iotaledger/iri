@@ -84,31 +84,46 @@ def prepare_options(args, option_list):
 
             if arg_type == "int":
                 value = int(value)
+
             elif arg_type == "list":
                 value = [value]
+
             elif arg_type == "nodeAddress":
                 host = world.machine['nodes'][value]['host']
                 port = world.machine['nodes'][value]['ports']['gossip-udp']
                 address = "udp://" + host + ":" + str(port)
                 value = [address.decode()]
+
             elif arg_type == "staticValue":
                 value = getattr(static_vals, value)
+
             elif arg_type == "staticList":
                 address = getattr(static_vals, value)
                 value = [address]
+
             elif arg_type == "bool":
                 if value == "False":
                     value = False
                 else:
                     value = True
+
             elif arg_type == "responseValue":
                 config = fetch_config('nodeId')
                 response = fetch_response(value)
                 value = response[config]
+
             elif arg_type == "responseList":
                 config = fetch_config('nodeId')
                 response = fetch_response(value)
                 value = [response[config]]
+
+            elif arg_type == "configValue":
+                node = fetch_config('nodeId')
+                value = world.config[value][node]
+
+            elif arg_type == "configList":
+                node = fetch_config('nodeId')
+                value = [world.config[value][node]]
 
             option_list[key] = value
 
@@ -160,12 +175,12 @@ def assign_nodes(node, node_list):
     if node == 'all nodes':
         for current_node in world.machine['nodes']:
             api = prepare_api_call(current_node)
-            node_list[current_node] = api
+            node_list[current_node] = {'api': api}
         node = next(iter(world.machine['nodes']))
         world.config['nodeId'] = node
     else:
         api = prepare_api_call(node)
-        node_list[node] = api
+        node_list[node] = {'api': api}
         world.config['nodeId'] = node
 
 

@@ -1,6 +1,7 @@
 from aloe import world, step
 from util.test_logic import api_test_logic as api_utils
 from util.response_logic import response_handling as response_handling
+from util import static_vals as static
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -206,3 +207,16 @@ def compare_responses(value, milestone_list, transaction_list, transaction_count
             transaction_list.append(value)
             transaction_counter_list.append(1)
             logger.debug('added transaction "{}" to transaction list'.format(value))
+
+
+@step(r'the response for "([^"]+)" on "([^"]+)" is stored in the static value "([^"]+)"')
+def store_response_in_static(step, api_call, node_name, static_variable):
+    world.config['nodeId'] = node_name
+
+    response = world.responses[api_call][node_name]
+    if api_call == 'findTransactions':
+        response = response['hashes']
+
+    setattr(static, static_variable, response)
+    logger.info("Response {} stored in variable: {}".format(response, static_variable))
+

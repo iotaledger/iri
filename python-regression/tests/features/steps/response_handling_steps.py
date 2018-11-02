@@ -33,16 +33,16 @@ def compare_thread_return(step, api_call):
     keys = expected_values.keys()
 
     # Confirm that the lists are of equal length before comparing
-    assert len(keys) == len(response_keys), \
-        'Response: {} does not contain the same number of arguments: {}'.format(keys,response_keys)
+    assert len(keys) == len(response_keys), "Response: {} does not contain""\
+                                            ""the same number of arguments: {}".format(keys,response_keys)
 
     for count in range(len(keys)):
         response_key = response_keys[count]
         response_value = response_list[response_key]
         expected_value = expected_values[response_key]
 
-        assert response_value == expected_value, \
-            'Returned: {} does not match the expected value: {}'.format(response_value,expected_value)
+        assert response_value == expected_value, "Returned: {} does not match the expected"" \
+        ""value: {}".format(response_value, expected_value)
 
     logger.info('Responses match')
 
@@ -84,11 +84,12 @@ def check_response_for_value(step, api_call):
             expected_value = expected_values[expected_value_key]
             response_value = response_values[expected_value_key]
 
-            if type(response_value) is list:
+            if isinstance(response_value, list):
                 response_value = response_value[0]
 
-            assert expected_value == response_value, \
-                "The expected value {} does not match the response value: {}".format(expected_value, response_value)
+            assert expected_value == response_value, "The expected value {} does not match"" \
+            ""the response value: {}".format(expected_value, response_value)
+
     logger.info('Response contained expected values')
 
 
@@ -107,11 +108,11 @@ def compare_response(step):
     response = world.responses[api_call][node_id]
     key_list = []
 
-    for key in range(len(keys)):
-        key_list.append(keys[key]['keys'])
+    for key in keys:
+        key_list.append(key['keys'])
 
-    for key in range(len(key_list)):
-        response_handling.find_in_response(key_list[key], response)
+    for key in key_list:
+        response_handling.find_in_response(key, response)
 
 
 @step(r'the returned GTTA transactions will be compared with the milestones')
@@ -131,10 +132,10 @@ def compare_gtta_with_milestones(step):
     world.test_vars['milestone_count'] = 0
 
     for node in gtta_responses:
-        if type(gtta_responses[node]) is list:
-            for response in range(len(gtta_responses[node])):
-                branch_transaction = gtta_responses[node][response]['branchTransaction']
-                trunk_transaction = gtta_responses[node][response]['trunkTransaction']
+        if isinstance(gtta_responses[node], list):
+            for response in gtta_responses[node]:
+                branch_transaction = response['branchTransaction']
+                trunk_transaction = response['trunkTransaction']
 
                 compare_responses(branch_transaction, milestones, transactions, transactions_count,
                                   milestone_transactions, milestone_transactions_count)
@@ -144,15 +145,15 @@ def compare_gtta_with_milestones(step):
         logger.info("Milestone count: " + str(world.test_vars['milestone_count']))
 
     f = open('blowball_log.txt', 'w')
-    for transaction in range(len(transactions)):
-        transaction_string = 'Transaction: ' + str(transactions[transaction]) + " : " + \
-                             str(transactions_count[transaction])
+    for index, transaction in enumerate(transactions):
+        transaction_string = 'Transaction: ' + str(transaction) + " : " + \
+                             str(transactions_count[index])
         logger.debug(transaction_string)
         f.write(transaction_string + "\n")
 
-    for milestone in range(len(milestone_transactions)):
-        milestone_string = 'Milestone: ' + str(milestone_transactions[milestone]) + \
-                           " : " + str(milestone_transactions_count[milestone])
+    for index, milestone in enumerate(milestone_transactions):
+        milestone_string = 'Milestone: ' + str(milestone) + \
+                           " : " + str(milestone_transactions_count[index])
         logger.debug(milestone_string)
         f.write(milestone_string + "\n")
 
@@ -168,7 +169,8 @@ def less_than_max_percent(step, max_percent):
     """
     percentage = (float(world.test_vars['milestone_count'])/(world.config['max'] * 2)) * 100.00
     logger.info(str(percentage) + "% milestones")
-    assert percentage < float(max_percent)
+
+    assert percentage < float(max_percent), "The returned percentage exceeds {}%".format(float(max_percent))
 
 
 def compare_responses(value, milestone_list, transaction_list, transaction_counter_list,

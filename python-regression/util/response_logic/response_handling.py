@@ -25,9 +25,8 @@ def find_in_response(key, response):
                 break
 
         elif isinstance(response[k], list):
-            for d in range(len(response[k])):
-                logger.info(response[k][d])
-                if type(response[k][d]) != bool and key in response[k][d]:
+            for d in response[k]:
+                if not isinstance(d, bool) and key in d:
                     is_present = True
                     break
             if is_present:

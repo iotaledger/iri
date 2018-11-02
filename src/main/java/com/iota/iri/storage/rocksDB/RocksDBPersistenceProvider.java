@@ -336,7 +336,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     ColumnFamilyHandle handle = classTreeMap.get(entry.hi);
                     writeBatch.remove(handle, keyBytes);
                     ColumnFamilyHandle metadataHandle = metadataReference.get(entry.hi);
-                    if (metadataReference != null) {
+                    if (metadataHandle != null) {
                         writeBatch.remove(metadataHandle, keyBytes);
                     }
                 });

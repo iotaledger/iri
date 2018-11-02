@@ -2,29 +2,28 @@ import threading, queue
 from aloe import world
 
 
-'''
-Places the variables into a queue for threadsafe access
-
-@param args:    Variables to be placed in queue, in the order they should be called on 
-@return         Returns a populated queue
-'''
 def populate_queue(*args):
+    """
+    Places the variables into a queue for threadsafe access
+
+    :param args: Variables to be placed in queue, in the order they should be called on
+    :returns q: Returns a populated queue
+    """
     q = queue.Queue()
-    for arg in range(len(args)):
+    for arg in args:
         q.put(args[arg])
     return q
 
-'''
-Makes a thread for an api call, and stores the thread in the world environment for later access
-'''
-def make_thread(function,*args):
-    new_thread = threading.Thread(target=function, args=(args))
+
+def make_thread(function, *args):
+    """Makes a thread for an api call, and stores the thread in the world environment for later access"""
+    new_thread = threading.Thread(target=function, args=args)
     new_thread.setDaemon(True)
     new_thread.start()
 
-    apiCall = world.config['apiCall']
+    api_call = world.config['apiCall']
     if 'threads' not in world.config:
         world.config['threads'] = {}
 
-    world.config['threads'][apiCall] = new_thread
+    world.config['threads'][api_call] = new_thread
 

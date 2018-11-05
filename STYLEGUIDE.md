@@ -390,6 +390,78 @@ Likewise, you shouldn't write documentation this way.
       ...
     }
 
+#### Documenting interfaces
+The documentation for an interface should give you an understanding on what the interface does
+without any need to look at its implementation(s). It needs to focus on what the 
+interface role is without drifting too much to other parts of the system.
+    
+    //Bad
+    /**
+     *
+     * Calculates the <tt>rating</tt> for transactions in a subtangle.
+     *
+     * <p>
+     // This line has nothing to do with the current interface
+     * We create a subtangle by calculating an entrypoint that starts at given depth (number of milestones
+     * beofre the most recent one).
+     *
+     * During tip selection we perform a random walk on a subtangle until we reach a tip.
+     * The <tt>rating</tt> is an integer assigned to a transaction that will
+     * determine the probability of being traversed upon during the next step of the random walk.
+     * A transaction that has a higher rating compared to other transactions, is more likely to be
+     * traversed on during the random walk.
+     *
+     * </p>
+     */
+    @FunctionalInterface
+    public interface RatingCalculator {
+    ...
+    }
+    
+    
+    
+    //Good
+    /**
+     *
+     * Calculates the <tt>rating</tt> for transactions in a subtangle.
+     *
+     * <p>
+     * During tip selection we perform a random walk on a subtangle until we reach a tip.
+     * The <tt>rating</tt> is an integer assigned to a transaction that will
+     * determine the probability of being traversed upon during the next step of the random walk.
+     * A transaction that has a higher rating compared to other transactions, is more likely to be
+     * traversed on during the random walk.
+     * </p>
+     */
+    @FunctionalInterface
+    public interface RatingCalculator {
+
+The problems with the example above is:
+1. We will probably start having duplicate documentation. So we will have to maintain documentation in more than
+one place.
+2. We are documenting an interface not the entire system
+
+If one still wants to explain the relationship of this interface to to others the "@see" annotation 
+can come in handy.
+
+    //Use @see to point the reader to related modules
+    /**
+     *
+     * Calculates the <tt>rating</tt> for transactions in a subtangle.
+     *
+     * <p>
+     * During tip selection we perform a random walk on a subtangle until we reach a tip.
+     * The <tt>rating</tt> is an integer assigned to a transaction that will
+     * determine the probability of being traversed upon during the next step of the random walk.
+     * A transaction that has a higher rating compared to other transactions, is more likely to be
+     * traversed on during the random walk.
+     * </p>
+     *
+     * @see EntryPointSelector
+     * @see Walker
+     */
+
+
 #### Documenting a class
 Documentation for a class may range from a single sentence
 to paragraphs with code examples. Documentation should serve to disambiguate any conceptual
@@ -407,6 +479,25 @@ a more detailed explanation.
     public class RpcTee<T> {
       ...
     }
+    
+Also when you are implementing an interface no need for obvious comments
+
+    //Bad
+    /**
+    * Implements the basic contract of {@link Bar}
+    */
+    public class BarImpl implements Bar {
+    ..
+    }
+    
+    //Good
+    /**
+     * Utilizes Foo sets in order to bring the system to equilibrium.  
+     */
+     public class BarImpl implements Bar {
+     ..
+     }
+
 
 #### Documenting a method
 A method doc should tell what the method *does*.  Depending on the argument types, it may
@@ -430,7 +521,7 @@ also be important to document input format.
     /**
      * Splits a string on whitespace.
      *
-     * @param s The string to split.  An {@code null} string is treated as an empty string.
+     * @param s The string to split.  A {@code null} string is treated as an empty string.
      * @return A list of the whitespace-delimited parts of the input.
      */
     List<String> split(String s);
@@ -440,10 +531,113 @@ also be important to document input format.
     /**
      * Splits a string on whitespace.  Repeated whitespace characters are collapsed.
      *
-     * @param s The string to split.  An {@code null} string is treated as an empty string.
+     * @param s The string to split.  A {@code null} string is treated as an empty string.
      * @return A list of the whitespace-delimited parts of the input.
      */
     List<String> split(String s);
+    
+#### Getters and Setters
+When documenting getters and setters be sure to write meaningful comments. No comments 
+are better than trivial comments.
+    
+    //Bad, here we just clutter the code with meaningless comments.
+    public class Bar {
+       
+        private long foo;
+       
+       /**
+        * gets the foo
+        *
+        * @return the foo
+        */
+        public long getFoo() {
+           return foo;
+        }
+      
+       /**
+        * sets the foo
+        *
+        * @param foo the foo to set
+        */
+        public void setFoo(long foo) {
+           this.foo = foo;
+        }
+    }
+    
+    //Might as well just have no comments
+    public class Bar {
+           
+        private long foo;
+       
+        public long getFoo() {
+           return foo;
+        }
+       
+        public void setFoo(long foo) {
+           this.foo = foo;
+        }
+    }
+    
+    //Good!
+    public class Bar {
+       
+        private static final long MAX_FOO = 100;
+      
+        private long foo;
+       
+       /**
+        * Gets the adjustment factor used in the Bar-calculation. It has a default
+        * value per Baz type, but it can be manually adjusted
+        *
+        * @return a value between 0 and {@link #MAX_FOO} inclusive.
+        */
+        public long getFoo() {
+           return foo;
+        }
+      
+      /**
+       * Foo is the adjustment factor used in the Bar-calculation. It has a default
+       * value depending on the Baz type, but can be adjusted on a per-case base.
+       * 
+       * @param foo must be greater than 0 and not greater than {@link #MAX_FOO}.
+       */
+        public void setFoo(long foo) {
+           this.foo = foo;
+        }
+    }
+    
+    //Also Good!
+    //The only problem here is that if we want to generate the javadocs html
+    //then we need to configure the doclet to generate docs for private methods.
+    //Non-issue if you don't generate the docs.
+    public class Bar {
+       
+        private static final long MAX_FOO = 100;
+         
+      /**
+       * The adjustment factor used in the Bar-calculation. It has a default
+       * value depending on the Baz type, but can be adjusted on a per-case base.
+       * Foo must be greater than 0 and not greater than {@link #MAX_FOO}.
+       */
+        private long foo;
+       
+       /**
+        *
+        * @return {@link #foo}
+        */
+        public long getFoo() {
+           return foo;
+        }
+      
+      /**
+       * 
+       * @param {@link #foo}
+       */
+        public void setFoo(long foo) {
+           this.foo = foo;
+        }
+    }
+    
 
 #### Be professional
 We've all encountered frustration when dealing with other libraries, but ranting about it doesn't
@@ -511,12 +705,47 @@ do you any favors.  Suppress the expletives and get to the point.
         ...
       }
     }
+    
+    //Also Great
+    //Inherit the doc and add more info
+     class TwitterDatabase implements Database {
+          /**
+           * {@inheritDoc}
+           *
+           * @return version in format X.X.X.X
+           */
+          @Override
+          public String getVersion() {
+            ...
+          }
+        }
+    
 
 #### Use javadoc features
+You can use html tags:
+\<pre>,\<tt>,\<b>,\<p>, and etc.
+
+Also use javadocs tags such as {@link}, {@code}, {@param}, {@see}, and {@return}
 
 ##### No author tags
 Code can change hands numerous times in its lifetime, and quite often the original author of a
 source file is irrelevant after several iterations.  We find it's better to trust commit history.
+
+#### No need to overuse {@link}
+
+Remember that javadocs automatically generate links for return types for us.
+
+   //Bad, the doclet will generate a link anyhows.   
+   /**
+    * @return the {@link #Foo.Bar}
+    */
+    public Bar getBar() 
+    
+   //Better 
+   /**
+    * @return the Bar that facilitates the Foo
+    */
+    public Bar getBar() 
 
 ### Imports
 

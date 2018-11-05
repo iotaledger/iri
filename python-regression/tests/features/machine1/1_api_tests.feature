@@ -38,6 +38,7 @@ Feature: Test API calls on Machine 1
 		|time						|
 		|tips						|
 		|transactionsToRequest				|
+		|coordinatorAddress					|
 
 
 	Scenario: GetNeighbors is called

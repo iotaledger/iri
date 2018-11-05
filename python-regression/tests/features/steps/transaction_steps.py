@@ -1,10 +1,11 @@
 from aloe import world, step
-from iota import Transaction
+from iota import Transaction, Address
 from util import static_vals as static
 from util.test_logic import api_test_logic as api_utils
 from util.transaction_bundle_logic import transaction_logic as transactions
 from util.threading_logic import pool_logic as pool
 from util.milestone_logic import milestones
+from copy import deepcopy
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -14,7 +15,7 @@ logger = logging.getLogger(__name__)
 @step(r'a transaction is generated and attached on "([^"]+)" with:')
 def generate_transaction_and_attach(step, node):
     """
-    Creates a zero value transaction with the specified arguments.
+    Creates a transaction with the specified arguments.
 
     :param node: The node that the transaction will be generated on.
     :param step.hashes: A gherkin table present in the feature file specifying the
@@ -23,9 +24,20 @@ def generate_transaction_and_attach(step, node):
     arg_list = step.hashes
     world.config['nodeId'] = node
     world.config['apiCall'] = 'attachToTangle'
+    seed = ""
+
+    for arg in arg_list:
+        if arg['keys'] == 'seed' and arg['type'] == 'staticList':
+            seed = arg['values']
+            arg['type'] = 'ignore'
+            logger.info("seed: {}".format(seed))
+
+    if seed != "":
+        api = api_utils.prepare_api_call(node, seed=seed)
+    else:
+        api = api_utils.prepare_api_call(node)
 
     options = {}
-    api = api_utils.prepare_api_call(node)
     api_utils.prepare_options(arg_list, options)
 
     transaction_args = {}
@@ -33,17 +45,17 @@ def generate_transaction_and_attach(step, node):
         transaction_args[key] = options.get(key)
     api_utils.prepare_transaction_arguments(transaction_args)
 
-    transaction = transactions.create_and_attach_transaction(api, transaction_args)
+    transaction = transactions.create_and_attach_transaction(api, Address(seed), transaction_args)
     api.broadcast_and_store(transaction.get('trytes'))
 
     assert len(transaction['trytes']) > 0, "Transaction was not created correctly"
 
     world.responses['attachToTangle'] = {}
     world.responses['attachToTangle'][node] = transaction
-    logger.info('Transaction Sent')
 
     setattr(static, "TEST_STORE_TRANSACTION", transaction.get('trytes'))
     return transaction
+
 
 @step(r'an inconsistent transaction is generated on "([^"]+)"')
 def create_inconsistent_transaction(step, node):
@@ -131,18 +143,39 @@ def reference_stitch_transaction(step):
     transaction_results = pool.start_pool(make_transaction, 1, {node: {'api': api, 'responses': world.responses}})
     pool.fetch_results(transaction_results[0], 30)
 
+
 @step(r'"(\d+)" transactions are issued on "([^"]+)" with:')
 def issue_multiple_transactions(step, num_transactions, node):
     transaction_hashes = []
+    stored_values = ()
     for iteration in range(int(num_transactions)):
+        if iteration == 0:
+            stored_values = deepcopy(step.hashes)
+            stored_value_list = {}
+            for index, value in enumerate(stored_values):
+                stored_value_list[index] = value
+
+        for i, v in enumerate(step.hashes):
+
+            if v['keys'] == "seed" and (v['type'] == "staticList" or v['type'] == "ignore"):
+
+                if v['type'] != stored_value_list[i]['type']:
+                    logger.info("Changing type")
+                    v['type'] = stored_value_list[i]['type']
+
+                if v['values'] != stored_value_list[i]['values']:
+                    logger.info("Changing values")
+                    v['values'] = stored_value_list[i]['values']
+
+                new_address = getattr(static, v['values'])
+                v['values'] = new_address[iteration]
+
         transaction = generate_transaction_and_attach(step, node)
         transaction_hash = Transaction.from_tryte_string(transaction['trytes'][0]).hash
-        logger.info(transaction_hash)
         transaction_hashes.append(transaction_hash)
 
     setattr(static, "ATTACHED_TRANSACTIONS", transaction_hashes)
     logger.info("Transactions generated and stored")
-
 
 
 @step(r'a milestone is issued with index (\d+) and referencing a hash from "([^"]+)"')
@@ -158,15 +191,14 @@ def issue_a_milestone_with_reference(step, index, static_variable):
     api = api_utils.prepare_api_call(node)
 
     transactions = getattr(static, static_variable)
-    logger.info(len(transactions))
     reference_transaction = transactions[len(transactions) - 1]
-    logger.info(type(reference_transaction))
-    logger.info(reference_transaction)
     logger.info('Issuing milestone {}'.format(index))
     milestone = milestones.issue_milestone(address, api, index, reference_transaction)
 
     if 'latestMilestone' not in world.config:
         world.config['latestMilestone'] = {}
 
-    world.config['latestMilestone'][node] = [Transaction.from_tryte_string(milestone['trytes'][1]).hash]
-
+    milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
+    milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
+    world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
+    logger.info("Milestones transactions: \n{}\n{}".format(milestone_hash, milestone_hash2))

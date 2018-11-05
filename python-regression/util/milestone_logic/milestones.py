@@ -25,6 +25,9 @@ def issue_milestone(address, api, index, *reference_transaction):
     bundle.add_transaction(txn2)
     bundle.finalize()
 
+    bundle[0]._legacy_tag = Tag(converter.int_to_trytestring(index, 9))
+    bundle[1]._legacy_tag = Tag(converter.int_to_trytestring(index, 9))
+
     tips = api.get_transactions_to_approve(depth=3)
     trunk = tips['trunkTransaction']
     if reference_transaction:

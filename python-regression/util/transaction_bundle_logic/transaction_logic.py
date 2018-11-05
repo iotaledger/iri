@@ -1,4 +1,5 @@
-from iota import ProposedBundle,ProposedTransaction,Address,Tag
+from iota import ProposedBundle, ProposedTransaction, Address, Tag
+from util import static_vals as static
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -25,7 +26,7 @@ def create_transaction_bundle(address, tag, value):
     return bundle
 
 
-def create_and_attach_transaction(api, arg_list):
+def create_and_attach_transaction(api, value_transaction, arg_list):
     """
     Create a transaction and attach it to the tangle.
 
@@ -33,10 +34,18 @@ def create_and_attach_transaction(api, arg_list):
     :param arg_list: The argument list (dictionary) for the transaction
     :return sent: The return value for the attachToTangle call (contains the attached transaction trytes)
     """
+    logger.info("Creating and attaching transaction")
     transaction = ProposedTransaction(**arg_list)
 
     bundle = ProposedBundle()
     bundle.add_transaction(transaction)
+
+    if value_transaction:
+        logger.info("Looking for inputs")
+        inputs = api.get_inputs(start=0, stop=10, threshold=0)
+        bundle.add_inputs([inputs['inputs'][0]])
+        bundle.send_unspent_inputs_to(Address(getattr(static, "TEST_EMPTY_ADDRESS")))
+
     bundle.finalize()
     trytes = str(bundle[0].as_tryte_string())
 

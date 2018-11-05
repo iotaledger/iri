@@ -47,7 +47,6 @@ def api_method_is_called(step, api_call, node_name):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
-    logger.info(options)
     api = api_utils.prepare_api_call(node_name)
     response = api_utils.fetch_call(api_call, api, options)
 
@@ -185,8 +184,8 @@ def spam_call(step, api_call, num_tests, node):
 
     if api_call == "attachToTangle":
         trytes = []
-        for response in range(len(response_val)):
-            trytes.append(response_val[response]['trytes'][0])
+        for response in response_val:
+            trytes.append(response['trytes'][0])
         setattr(static_vals, "ATTACHED_TRANSACTIONS", trytes)
 
     end = time()

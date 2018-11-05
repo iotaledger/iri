@@ -7,7 +7,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def prepare_api_call(node_name):
+def prepare_api_call(node_name, **seed):
     """
     Prepares an api target as an entry point for API calls on a specified node.
 
@@ -19,7 +19,7 @@ def prepare_api_call(node_name):
     host = world.machine['nodes'][node_name]['host']
     port = world.machine['nodes'][node_name]['ports']['api']
     address = "http://" + host + ":" + str(port)
-    api = Iota(address)
+    api = Iota(address, **seed)
     logger.info('API call prepared for %s', address)
     return api
 
@@ -125,7 +125,8 @@ def prepare_options(args, option_list):
                 node = fetch_config('nodeId')
                 value = [world.config[value][node]]
 
-            option_list[key] = value
+            if key != 'seed':
+                option_list[key] = value
 
 
 def fetch_call(api_call, api, options):

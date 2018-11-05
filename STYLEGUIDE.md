@@ -731,18 +731,18 @@ Also use javadocs tags such as {@link}, {@code}, {@param}, {@see}, and {@return}
 Code can change hands numerous times in its lifetime, and quite often the original author of a
 source file is irrelevant after several iterations.  We find it's better to trust commit history.
 
-#### No need to overuse {@link}
+##### No need to overuse {@link}
 
 Remember that javadocs automatically generate links for return types for us.
 
-   //Bad, the doclet will generate a link anyhows.   
-   /**
+    //Bad, the doclet will generate a link anyhows.   
+    /**
     * @return the {@link #Foo.Bar}
     */
     public Bar getBar() 
     
-   //Better 
-   /**
+    //Better 
+    /**
     * @return the Bar that facilitates the Foo
     */
     public Bar getBar() 

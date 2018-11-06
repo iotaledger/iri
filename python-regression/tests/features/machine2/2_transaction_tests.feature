@@ -20,7 +20,7 @@ Feature: Test transaction confirmation
         #However, due to the M bug, the index registered on the node will be much higher
         When a milestone is issued with index 61 and referencing a hash from "FOUND_TRANSACTIONS"
         #Give the node 10 seconds to process to the new milestone
-        And we wait "10" second/seconds
+        And we wait "15" second/seconds
 
         Then "getInclusionStates" is called on "nodeA" with:
         |keys                   |values                     |type           |
@@ -38,7 +38,7 @@ Feature: Test transaction confirmation
         A milestone will be issued that references these transactions, and this should
         confirm the transations.
 
-        Given "2" transactions are issued on "nodeA" with:
+        Given "10" transactions are issued on "nodeA" with:
         |keys                   |values                     |type           |
         |seed                   |THE_BANK                   |staticList     |
         |address                |TEST_ADDRESS               |staticValue    |
@@ -50,11 +50,16 @@ Feature: Test transaction confirmation
         |tags                   |VALUE9TRANSACTION          |list           |
 
         Then the response for "findTransactions" on "nodeA" is stored in the static value "FOUND_TRANSACTIONS"
+
+        And "checkConsistency" is called on "nodeA" with:
+        |keys                   |values                     |type           |
+        |tails                  |FOUND_TRANSACTIONS         |staticValue    |
+
         #In the default DB, the latest sent index will be 61. The next milestone issued should be 62.
         #However, due to the M bug, the index registered on the node will be much higher
-        When a milestone is issued with index 62 and referencing a hash from "FOUND_TRANSACTIONS"
+        When a milestone is issued with index 63 and referencing a hash from "FOUND_TRANSACTIONS"
         #Give the node 10 seconds to process to the new milestone
-        And we wait "10" second/seconds
+        And we wait "15" second/seconds
 
         Then "getInclusionStates" is called on "nodeA" with:
         |keys                   |values                     |type           |

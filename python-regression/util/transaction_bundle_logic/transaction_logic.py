@@ -26,11 +26,12 @@ def create_transaction_bundle(address, tag, value):
     return bundle
 
 
-def create_and_attach_transaction(api, value_transaction, arg_list):
+def create_and_attach_transaction(api, value_transaction, arg_list, *reference):
     """
     Create a transaction and attach it to the tangle.
 
     :param api: The api target you would like to make the call to
+    :param value_transaction: A bool to determine if this transaction is a value or zero value transaction
     :param arg_list: The argument list (dictionary) for the transaction
     :return sent: The return value for the attachToTangle call (contains the attached transaction trytes)
     """
@@ -43,6 +44,7 @@ def create_and_attach_transaction(api, value_transaction, arg_list):
     if value_transaction:
         logger.info("Looking for inputs")
         inputs = api.get_inputs(start=0, stop=10, threshold=0)
+        logger.info(inputs['inputs'][0])
         bundle.add_inputs([inputs['inputs'][0]])
         bundle.send_unspent_inputs_to(Address(getattr(static, "TEST_EMPTY_ADDRESS")))
 
@@ -50,10 +52,18 @@ def create_and_attach_transaction(api, value_transaction, arg_list):
     trytes = str(bundle[0].as_tryte_string())
 
     gtta = api.get_transactions_to_approve(depth=3)
-    branch = str(gtta['branchTransaction'])
     trunk = str(gtta['trunkTransaction'])
-
+    if reference:
+        branch = reference[0]
+        logger.info(type(branch))
+    else:
+        branch = str(gtta['branchTransaction'])
+    logger.info("*******************")
+    logger.info(branch)
+    logger.info(trunk)
+    logger.info("*******************")
     sent = api.attach_to_tangle(trunk, branch, [trytes], 9)
+
     return sent
 
 

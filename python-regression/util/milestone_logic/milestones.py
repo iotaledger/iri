@@ -1,5 +1,6 @@
 from iota import ProposedTransaction, ProposedBundle, Tag, Address
 from util import conversion as converter
+from util.transaction_bundle_logic import bundle_logic
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -17,16 +18,22 @@ def issue_milestone(address, api, index, *reference_transaction):
         value=0
     )
 
-    txn1._legacy_tag = Tag(converter.int_to_trytestring(index, 9))
-    txn2._legacy_tag = Tag(converter.int_to_trytestring(index, 9))
-
     bundle = ProposedBundle()
     bundle.add_transaction(txn1)
     bundle.add_transaction(txn2)
-    bundle.finalize()
 
     bundle[0]._legacy_tag = Tag(converter.int_to_trytestring(index, 9))
     bundle[1]._legacy_tag = Tag(converter.int_to_trytestring(index, 9))
+
+
+    logger.info(bundle[0]._legacy_tag)
+    logger.info(bundle[1]._legacy_tag)
+
+    #bundle.finalize()
+    bundle_logic.finalize(bundle)
+
+    logger.info(bundle[0]._legacy_tag)
+    logger.info(bundle[1]._legacy_tag)
 
     tips = api.get_transactions_to_approve(depth=3)
     trunk = tips['trunkTransaction']

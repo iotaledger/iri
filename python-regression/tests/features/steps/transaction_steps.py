@@ -25,6 +25,7 @@ def generate_transaction_and_attach(step, node):
     world.config['nodeId'] = node
     world.config['apiCall'] = 'attachToTangle'
     seed = ""
+    is_value_transaction = False
 
     for arg in arg_list:
         if arg['keys'] == 'seed' and arg['type'] == 'staticList':
@@ -34,6 +35,7 @@ def generate_transaction_and_attach(step, node):
 
     if seed != "":
         api = api_utils.prepare_api_call(node, seed=seed)
+        is_value_transaction = True
     else:
         api = api_utils.prepare_api_call(node)
 
@@ -45,11 +47,12 @@ def generate_transaction_and_attach(step, node):
         transaction_args[key] = options.get(key)
     api_utils.prepare_transaction_arguments(transaction_args)
 
-    transaction = transactions.create_and_attach_transaction(api, Address(seed), transaction_args)
+    transaction = transactions.create_and_attach_transaction(api, is_value_transaction, transaction_args)
     api.broadcast_and_store(transaction.get('trytes'))
+    hash = Transaction.from_tryte_string(transaction['trytes'][0]).hash
+    logger.info(hash)
 
     assert len(transaction['trytes']) > 0, "Transaction was not created correctly"
-
     world.responses['attachToTangle'] = {}
     world.responses['attachToTangle'][node] = transaction
 
@@ -156,15 +159,11 @@ def issue_multiple_transactions(step, num_transactions, node):
                 stored_value_list[index] = value
 
         for i, v in enumerate(step.hashes):
-
             if v['keys'] == "seed" and (v['type'] == "staticList" or v['type'] == "ignore"):
-
                 if v['type'] != stored_value_list[i]['type']:
-                    logger.info("Changing type")
                     v['type'] = stored_value_list[i]['type']
 
                 if v['values'] != stored_value_list[i]['values']:
-                    logger.info("Changing values")
                     v['values'] = stored_value_list[i]['values']
 
                 new_address = getattr(static, v['values'])

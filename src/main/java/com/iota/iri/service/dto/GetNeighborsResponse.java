@@ -22,11 +22,16 @@ public class GetNeighborsResponse extends AbstractResponse {
     static class Neighbor {
 
         private String address;
-        public long numberOfAllTransactions, numberOfRandomTransactionRequests, numberOfNewTransactions, numberOfInvalidTransactions, numberOfSentTransactions;
+        public long numberOfAllTransactions,
+                numberOfRandomTransactionRequests,
+                numberOfNewTransactions,
+                numberOfInvalidTransactions,
+                numberOfStaleTransactions,
+                numberOfSentTransactions;
         public String connectionType;
 
         /**
-         * The address of your peer
+         * The address of your neighbor
          * 
          * @return the address
          */
@@ -53,7 +58,7 @@ public class GetNeighborsResponse extends AbstractResponse {
         }
 
         /**
-         * Invalid transactions your peer has sent you. 
+         * Invalid transactions your neighbor has sent you. 
          * These are transactions with invalid signatures or overall schema.
          * 
          * @return the number
@@ -61,9 +66,19 @@ public class GetNeighborsResponse extends AbstractResponse {
         public long getNumberOfInvalidTransactions() {
             return numberOfInvalidTransactions;
         }
-        
+
         /**
-         * Amount of transactions send through your peer
+         * Stale transactions your neighbor has sent you.
+         * These are transactions with a timestamp older than your latest snapshot.
+         *
+         * @return the number
+         */
+        public long getNumberOfStaleTransactions() {
+            return numberOfStaleTransactions;
+        }
+
+        /**
+         * Amount of transactions send through your neighbor
          * 
          * @return the number
          */
@@ -72,7 +87,7 @@ public class GetNeighborsResponse extends AbstractResponse {
         }
 
         /**
-         * The method type your peer is using to connect (TCP / UDP)
+         * The method type your neighbor is using to connect (TCP / UDP)
          * 
          * @return the connection type
          */
@@ -86,6 +101,7 @@ public class GetNeighborsResponse extends AbstractResponse {
             ne.address = n.getAddress().getHostString() + ":" + port;
             ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
             ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();
+            ne.numberOfStaleTransactions = n.getNumberOfStaleTransactions();
             ne.numberOfNewTransactions = n.getNumberOfNewTransactions();
             ne.numberOfRandomTransactionRequests = n.getNumberOfRandomTransactionRequests();
             ne.numberOfSentTransactions = n.getNumberOfSentTransactions();

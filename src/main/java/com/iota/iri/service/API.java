@@ -728,7 +728,8 @@ public class API {
                 instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                 System.currentTimeMillis(), instance.tipsViewModel.size(),
                 instance.transactionRequester.numberOfTransactionsToRequest(),
-                features);
+                features,
+                instance.configuration.getCoordinator());
     }
 
     /**

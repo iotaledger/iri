@@ -8,8 +8,39 @@ import com.iota.iri.utils.Converter;
 
 import java.util.*;
 
+/**
+ * Validates bundles.
+ * <p>
+ * Bundles are a list of transactions that represent an atomic transfer, meaning that either all
+ * transactions inside the bundle will be accepted by the network, or none.
+ *</p>
+ */
 public class BundleValidator {
 
+    /**
+     * Fetches a bundle of transactions identified by the {@code tailHash} and validates them.
+     * <p>
+     * The fetched transactions have the same bundle hash as the transaction identified by {@code tailHash}
+     * The validation ascertains that:
+     * <ol>
+     *     <li>{@code tailHash} has an index of 0</li>
+     *     <li>{@code tailHash} was not already invalidated by a previous call to this method</li>
+     *     <li>That the transactions reference order is consistent with the indexes</li>
+     *     <li>The last index of each transaction in the bundle matches the last index of the tail transaction</li>
+     *     <li>While summing up the bundle value we never exceed the total supply of iotas</li>
+     *     <li>Check that last trit in a valid address hash is 0. We generate addresses using Kerl and we lose
+     *     the last trit when we convert from binary</li>
+     *     <li>Ascertain that total bundle value is 0 (inputs and outputs are balanced)</li>
+     *     <li>Recalculate the bundle hash by absorbing and squeezing the transaction essence of the transactions</li>
+     * </ol>
+     *</p>
+     * @param tangle used to fetch the bundle's transactions from the persistence layer
+     * @param tailHash the hash of the last transaction in a bundle.
+     * @return The list of transactions of the bundle. If the bundle is valid then the tail transaction's
+     * {@link TransactionViewModel#getValidity()} will return 1, else it will return -1. If the tail transaction
+     * failed input validation (bad index or validity) then an immutable empty list will be returned.
+     * @throws Exception if a persistence error occured
+     */
     public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash tailHash) throws Exception {
         TransactionViewModel tail = TransactionViewModel.fromHash(tangle, tailHash);
         if (tail.getCurrentIndex() != 0 || tail.getValidity() == -1) {
@@ -19,6 +50,7 @@ public class BundleValidator {
         List<List<TransactionViewModel>> transactions = new LinkedList<>();
         final Map<Hash, TransactionViewModel> bundleTransactions = loadTransactionsFromTangle(tangle, tail);
 
+        //we don't really iterate, we just pick the tail tx. See the if on the next line
         for (TransactionViewModel transactionViewModel : bundleTransactions.values()) {
 
             if (transactionViewModel.getCurrentIndex() == 0 && transactionViewModel.getValidity() >= 0) {
@@ -36,6 +68,7 @@ public class BundleValidator {
                 final byte[] normalizedBundle = new byte[Curl.HASH_LENGTH / ISS.TRYTE_WIDTH];
                 final byte[] digestTrits = new byte[Curl.HASH_LENGTH];
 
+                //here we iterate over the txs by checking the trunk of the current transaction
                 MAIN_LOOP:
                 while (true) {
 
@@ -57,7 +90,9 @@ public class BundleValidator {
                         break;
                     }
 
-                    if (i++ == lastIndex) { // It's supposed to become -3812798742493 after 3812798742493 and to go "down" to -1 but we hope that noone will create such long bundles
+                    // It's supposed to become -3812798742493 after 3812798742493 and to go "down" to -1 but
+                    // we hope that no one will create such long bundles
+                    if (i++ == lastIndex) {
 
                         if (bundleValue == 0) {
 
@@ -68,13 +103,15 @@ public class BundleValidator {
                                 }
                                 curlInstance.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
                                 if (Arrays.equals(instanceTransactionViewModels.get(0).getBundleHash().trits(), bundleHashTrits)) {
-
+                                    //normalizing bundle in preparation for sig verification
                                     ISSInPlace.normalizedBundle(bundleHashTrits, normalizedBundle);
 
                                     for (int j = 0; j < instanceTransactionViewModels.size(); ) {
 
                                         transactionViewModel = instanceTransactionViewModels.get(j);
-                                        if (transactionViewModel.value() < 0) { // let's recreate the address of the transactionViewModel.
+                                        //if it is a spent transaction that should be signed
+                                        if (transactionViewModel.value() < 0) {
+                                            // let's verify signature by recreating the public address
                                             addressInstance.reset();
                                             int offset = 0, offsetNext = 0;
                                             do {
@@ -87,12 +124,13 @@ public class BundleValidator {
                                                     digestTrits);
                                                 addressInstance.absorb(digestTrits,0, Curl.HASH_LENGTH);
                                                 offset = offsetNext;
-                                            } while (++j < instanceTransactionViewModels.size()
+                                            } //loop to traverse signature fragments divided between txs
+                                            while (++j < instanceTransactionViewModels.size()
                                                     && instanceTransactionViewModels.get(j).getAddressHash().equals(transactionViewModel.getAddressHash())
                                                     && instanceTransactionViewModels.get(j).value() == 0);
 
                                             addressInstance.squeeze(addressTrits, 0, addressTrits.length);
-                                            //if (!Arrays.equals(Converter.bytes(addressTrits, 0, TransactionViewModel.ADDRESS_TRINARY_SIZE), transactionViewModel.getAddress().getHash().bytes())) {
+                                            //signature verification
                                             if (! Arrays.equals(transactionViewModel.getAddressHash().trits(), addressTrits)) {
                                                 instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                                                 break MAIN_LOOP;
@@ -104,20 +142,30 @@ public class BundleValidator {
 
                                     instanceTransactionViewModels.get(0).setValidity(tangle, 1);
                                     transactions.add(instanceTransactionViewModels);
-                                } else {
+                                }
+                                //bundle hash was not verified
+                                else {
                                     instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                                 }
-                            } else {
+                            }
+                            //bundle validity is known
+                            else {
                                 transactions.add(instanceTransactionViewModels);
                             }
-                        } else {
+                        }
+                        //bundle value is not balanced to 0
+                        else {
                             instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         }
+                        //break from main loop
                         break;
 
-                    } else {
+                    }
+                    //we need to traverse to the next tx in the bundle
+                    else {
                         transactionViewModel = bundleTransactions.get(transactionViewModel.getTrunkTransactionHash());
                         if (transactionViewModel == null) {
+                            //we found all the transactions and we can now return
                             break;
                         }
                     }
@@ -127,6 +175,12 @@ public class BundleValidator {
         return transactions;
     }
 
+    /**
+     * Checks that the bundle is balanced meaning that the total inputs equal to outputs.
+     *
+     * @param transactionViewModels list of transactions that are in a bundle
+     * @return true if balanced. false if unbalanced or {@code transactionViewModels} is empty
+     */
     public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels) {
         long value = 0;
         for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {

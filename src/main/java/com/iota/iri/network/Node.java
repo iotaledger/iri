@@ -255,7 +255,7 @@ public class Node {
                     } catch (Exception e1) {
                         log.error(e1.getMessage());
                     }
-                    neighbor.incInvalidTransactions();
+                    neighbor.incStaleTransactions();
                 } catch (final RuntimeException e) {
                     log.error(e.getMessage());
                     log.error("Received an Invalid TransactionViewModel. Dropping it...");

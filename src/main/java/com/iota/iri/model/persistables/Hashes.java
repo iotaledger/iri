@@ -9,12 +9,24 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 /**
- * Created by paul on 3/8/17 for iri.
+ * Represents a persistable <tt>hash</tt> set
+ *
+ * <p>
+ *     A <tt>Hash</tt> set contains the byte array representations of Hash objects.
+ *     These hashes serve as reference points for specific parts of a transaction set,
+ *     including the <tt>Address</tt>, <tt>Tag</tt>, <tt>Branch</tt> and <tt>Trunk</tt>
+ *     transaction components.
+ * </p>
  */
 public class Hashes implements Persistable {
+
+    /**A set for storing hashes*/
     public Set<Hash> set = new LinkedHashSet<>();
+
+    /**A delimeter for separating hashes within a byte stream*/
     private static final byte delimiter = ",".getBytes()[0];
 
+    /**Returns the byte stream of the contained hash set*/
     public byte[] bytes() {
         return set.parallelStream()
                 .map(Hash::bytes)
@@ -22,6 +34,12 @@ public class Hashes implements Persistable {
                 .orElse(new byte[0]);
     }
 
+    /**
+     * Reads the given byte array. If the array is not null, the current set is replaced with the newly
+     * read values.
+     *
+     * @param bytes the byte array that will be read
+     */
     public void read(byte[] bytes) {
         if(bytes != null) {
             set = new LinkedHashSet<>(bytes.length / (1 + Hash.SIZE_IN_BYTES) + 1);
@@ -31,6 +49,7 @@ public class Hashes implements Persistable {
         }
     }
 
+    /**Creates an empty byte array*/
     @Override
     public byte[] metadata() {
         return new byte[0];

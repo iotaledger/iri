@@ -7,7 +7,19 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
+/**
+ * Represents a persistable <tt>Milestone</tt> set
+ *
+ * <p>
+ *     Milestones are issued by the coordinator to direct and verify the tangle.
+ *     The coordinator issues milestones every 40 seconds to help confirm valid
+ *     transactions. Milestones are also verified by other nodes to ensure that
+ *     they are not malicious in nature, and do not confirm transactions that it
+ *     should not (i.e. double spending).
+ * </p>
+ */
 public class Milestone implements Persistable {
+
     public IntegerIndex index;
     public Hash hash;
 
@@ -15,6 +27,10 @@ public class Milestone implements Persistable {
         return ArrayUtils.addAll(index.bytes(), hash.bytes());
     }
 
+    /**
+     * Populate
+     * @param bytes
+     */
     public void read(byte[] bytes) {
         if(bytes != null) {
             index = new IntegerIndex(Serializer.getInteger(bytes));

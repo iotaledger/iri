@@ -8,6 +8,17 @@ import com.iota.iri.utils.Serializer;
 
 import java.nio.ByteBuffer;
 
+
+/**
+ * Represents a persistable <tt>Transaction</tt> set.
+ *
+ * <p>
+ *     A Transaction set contains all the information of a particular transaction. This includes
+ *     hash objects for the <tt>address</tt>, <tt>bundle</tt>, <tt>trunk</tt>, <tt>branch</tt>,
+ *     and <tt>obsolete tag</tt>, as well as data such as the <tt>value</tt> of the
+ *     transaction as well as the <tt>timestamps</tt> and more.
+ * </p>
+ */
 public class Transaction implements Persistable {
     public static final int SIZE = 1604;
 
@@ -42,8 +53,17 @@ public class Transaction implements Persistable {
     public int type = TransactionViewModel.PREFILLED_SLOT;
     public long arrivalTime = 0;
 
+
     //public boolean confirmed = false;
+
+    /**
+     * This flag indicates if the transaction metadata was parsed from a byte array.
+     */
     public boolean parsed = false;
+
+    /**
+     * This flag indicates whether the transaction is considered solid or not
+     */
     public boolean solid = false;
 
     /**
@@ -55,10 +75,18 @@ public class Transaction implements Persistable {
     public String sender = "";
     public int snapshot;
 
+    /**
+     * Returns the bytes of the transaction set
+     */
     public byte[] bytes() {
         return bytes;
     }
 
+    /**
+     * Assigns the Transaction set bytes provided the given array is not null
+     *
+     * @param bytes the byte array that the transaction bytes will be assigned to
+     */
     public void read(byte[] bytes) {
         if(bytes != null) {
             this.bytes = new byte[SIZE];
@@ -67,6 +95,9 @@ public class Transaction implements Persistable {
         }
     }
 
+    /**
+     * Returns a byte array containing all the relevant metadata for the transaction.
+     */
     @Override
     public byte[] metadata() {
         int allocateSize =
@@ -108,6 +139,12 @@ public class Transaction implements Persistable {
         return buffer.array();
     }
 
+    /**
+     * Reads the contents of a given array of bytes, assigning the array contents to the
+     * appropriate classes.
+     *
+     * @param bytes The byte array containing the transaction information
+     */
     @Override
     public void readMetadata(byte[] bytes) {
         int i = 0;

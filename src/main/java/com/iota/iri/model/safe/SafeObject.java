@@ -24,7 +24,11 @@ public class SafeObject {
 	public byte[] getData() {
 		return safeObj;
 	}
-	
+
+	/**
+	 * Ensures the object is not null, otherwise throws an explicit error message
+	 * @param messageIfUnsafe the error message
+	 */
 	protected void checkSafe(String messageIfUnsafe) {
 		Objects.requireNonNull(safeObj, messageIfUnsafe);
 	}

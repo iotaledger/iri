@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Implementation of <tt>RatingCalculator</tt> that gives the cumulative for each transaction referencing entryPoint.
  * Used to create a weighted random walks.
  */
 public class CumulativeWeightWithEdgeCalculator extends CumulativeWeightCalculator {

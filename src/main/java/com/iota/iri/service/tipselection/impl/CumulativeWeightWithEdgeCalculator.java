@@ -24,7 +24,6 @@ public class CumulativeWeightWithEdgeCalculator extends CumulativeWeightCalculat
 
     @Override
     public UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
-        this is broken
         return super.calculate(entryPoint);
     }
 }

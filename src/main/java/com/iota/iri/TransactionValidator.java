@@ -20,6 +20,8 @@ import static com.iota.iri.controllers.TransactionViewModel.*;
 
 public class TransactionValidator {
     private static final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
+    private static final int  TESTNET_MWM_CAP = 13;
+
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
@@ -29,14 +31,34 @@ public class TransactionValidator {
     private static final long MAX_TIMESTAMP_FUTURE = 2L * 60L * 60L;
     private static final long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1_000L;
 
+
+    //*****************fields for solidification thread*********************************//
+
     private Thread newSolidThread;
 
+    /**
+     * If true use {@link #newSolidTransactionsOne} while solidifying. Else use {@link #newSolidTransactionsTwo}.
+     */
     private final AtomicBoolean useFirst = new AtomicBoolean(true);
+    /**
+     * Is {@link #newSolidThread} shutting down
+     */
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
+    /**
+     * mutex for solidification
+     */
     private final Object cascadeSync = new Object();
     private final Set<Hash> newSolidTransactionsOne = new LinkedHashSet<>();
     private final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
 
+    /**
+     * Constructor for Tangle Validator
+     *
+     * @param tangle relays tangle data to and from the persistence layer
+     * @param tipsViewModel container that get updated with the latest tips (transactions with no children)
+     * @param transactionRequester used to request missing transactions from neighbors
+     * @param config configuration for obtaining snapshot data
+     */
     TransactionValidator(Tangle tangle, TipsViewModel tipsViewModel, TransactionRequester transactionRequester,
                                 SnapshotConfig config) {
         this.tangle = tangle;
@@ -46,6 +68,21 @@ public class TransactionValidator {
         this.snapshotTimestampMs = snapshotTimestamp * 1000;
     }
 
+    /**
+     * Does two things
+     * <ol>
+     *     <li>Sets the minimum weight magnitude. We validate POW on a transaction we will ascertain that it has
+     *     a certain amount of 9s in the end </li>
+     *     <li>Starts transaction solidification thread</li>
+     * </ol>
+     *
+     *
+     * @see #spawnSolidTransactionsPropagation()
+     * @param testnet true if we are in testnet mode then {@code mwm} will be capped at {@value #TESTNET_MWM_CAP}
+     *                regardless of parameter input.
+     * @param mwm minimum weight magnitude: the minimal number of 9s that ought to appear in the end of the transaction
+     *            hash
+     */
     public void init(boolean testnet, int mwm) {
         setMwm(testnet, mwm);
 
@@ -53,33 +90,72 @@ public class TransactionValidator {
         newSolidThread.start();
     }
 
+    //Package Private For Testing
     void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
         //lowest allowed MWM encoded in 46 bytes.
         if (!testnet){
-            minWeightMagnitude = Math.max(minWeightMagnitude, 13);
+            minWeightMagnitude = Math.max(minWeightMagnitude, TESTNET_MWM_CAP);
         }
     }
 
+    /**
+     * Shutdown roots to tip solidification thread
+     * @throws InterruptedException
+     * @see #spawnSolidTransactionsPropagation()
+     */
     public void shutdown() throws InterruptedException {
         shuttingDown.set(true);
         newSolidThread.join();
     }
 
+    /**
+     * @return the number of trailing 9s that must appear in the transaction hash in order to know that proof of work
+     * has been done
+     */
     public int getMinWeightMagnitude() {
         return minWeightMagnitude;
     }
 
+    /**
+     * Ascertains that the timestamp of the transaction is not below the last global snapshot time
+     * or more than {@value #MAX_TIMESTAMP_FUTURE} seconds in the future.
+     *
+     * <p>
+     *     First the attachment timestamp (set after POW) is checked, and if not available
+     *     the regular timestamp is checked. Genesis transaction will always be valid.
+     * </p>
+     * @param transactionViewModel transaction under test
+     * @return <tt>true</tt> if timestamp is not in bound and {@code transactionViewModel} is not genesis.
+     * Else returns  <tt>false</tt>.
+     */
     private boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
         if (transactionViewModel.getAttachmentTimestamp() == 0) {
-            return transactionViewModel.getTimestamp() < snapshotTimestamp && !Objects.equals(transactionViewModel.getHash(), Hash.NULL_HASH)
+            return transactionViewModel.getTimestamp() < snapshotTimestamp
+                    //you are valid if you are the genesis
+                    && !Objects.equals(transactionViewModel.getHash(), Hash.NULL_HASH)
                     || transactionViewModel.getTimestamp() > (System.currentTimeMillis() / 1000) + MAX_TIMESTAMP_FUTURE;
         }
         return transactionViewModel.getAttachmentTimestamp() < snapshotTimestampMs
                 || transactionViewModel.getAttachmentTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
     }
 
+    /**
+     * Runs the following validation checks on a transaction:
+     * <ol>
+     *     <li>{@link #hasInvalidTimestamp} check</li>
+     *     <li>Check that no value trits are set beyond the usable index, otherwise we will have values larger
+     *     than max supply</li>
+     *     <li>Check that sufficient POW was performed</li>
+     *     <li>If a value transaction we check that the address has 0 as the last trit. This must be because of the
+     *     conversion between bytes to trits</li>
+     * </ol>
+     * @param transactionViewModel transaction that should be validated
+     * @param minWeightMagnitude the minimal number of trailing 9s at the end of the transaction hash
+     * @throws StaleTimestampException if timestamp check fails
+     * @throws IllegalStateException if any of the other checks fail
+     */
     public void runValidation(TransactionViewModel transactionViewModel, final int minWeightMagnitude) {
         transactionViewModel.setMetadata();
         transactionViewModel.setAttachmentData();
@@ -102,12 +178,28 @@ public class TransactionValidator {
         }
     }
 
+    /**
+     * Creates a new transaction from  {@code trits} and validates it with {@link #runValidation}
+     *
+     * @param trits raw transaction trits
+     * @param minWeightMagnitude minimal number of trailing 9s in transaction for POW validation
+     * @return the transaction resulting from the raw trits
+     * @throws RuntimeException if validation fails
+     */
     public TransactionViewModel validateTrits(final byte[] trits, int minWeightMagnitude) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(trits, 0, trits.length, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
         runValidation(transactionViewModel, minWeightMagnitude);
         return transactionViewModel;
     }
 
+    /**
+     * Creates a new transaction from {@code bytes} and validates it with {@link #runValidation}
+     *
+     * @param bytes raw transaction trits
+     * @param minWeightMagnitude minimal number of trailing 9s in transaction for POW validation
+     * @return the transaction resulting from the raw trits
+     * @throws RuntimeException if validation fails
+     */
     public TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
         TransactionViewModel transactionViewModel = new TransactionViewModel(bytes, TransactionHash.calculate(bytes, TRINARY_SIZE, curl));
         runValidation(transactionViewModel, minWeightMagnitude);
@@ -197,6 +289,10 @@ public class TransactionValidator {
         }
     }
 
+    /**
+     * Creates a runnable that runs {@link #propagateSolidTransactions()} in a loop every 500 ms
+     * @return runnable that is not started
+     */
     private Runnable spawnSolidTransactionsPropagation() {
         return () -> {
             while(!shuttingDown.get()) {
@@ -211,11 +307,18 @@ public class TransactionValidator {
         };
     }
 
+    /**
+     * Iterates over all known solid transactions that are currently known. For each solid transaction we find
+     * its children (approvers) and try to quickly solidify them with {@link #quietQuickSetSolid}.
+     * If we manage to solidify the transactions we add them to the solidification queue for a traversal by a later run.
+     */
+    //Package private for testing
     void propagateSolidTransactions() {
         Set<Hash> newSolidHashes = new HashSet<>();
         useFirst.set(!useFirst.get());
         //synchronized to make sure no one is changing the newSolidTransactions collections during addAll
         synchronized (cascadeSync) {
+            //We are using a collection that doesn't get updated by other threads
             if (useFirst.get()) {
                 newSolidHashes.addAll(newSolidTransactionsTwo);
                 newSolidTransactionsTwo.clear();
@@ -244,6 +347,29 @@ public class TransactionValidator {
         }
     }
 
+
+    /**
+     * Updates a transaction after it was stored in the tangle. It tells the node to not request it anymore, update the
+     * live tips accordingly, and attempts to solidify.
+     *
+     * <p/>
+     * It performs the following operations:
+     *
+     * <ol>
+     *     <li>Removes {@code transactionViewModel}'s hash from the the request queue since we already found it.</li>
+     *     <li>If {@code transactionViewModel} has no children we add it to the node's active tip list</li>
+     *     <li>Removes {@code transactionViewModel}'s parents from the node's tip list (if they're present there)</li>
+     *     <li>Attempts to quickly solidify {@code transactionViewModel} by checking whether its direct parents
+     *     are soild. If solid we add it to the queue transaction solidification thread to help it propagate the
+     *     solidification to approving child transactions</li>
+     *     <li>Requests missing transactions that are needed to solidify {@code transactionViewModel}</li>
+     * </ol>
+     * @param transactionViewModel received transaction that is being updated
+     * @throws Exception if an error occurred while trying to solidify
+     * @see TipsViewModel
+     */
+    //Not part of the validation process. This should be moved to a component in charge of
+    //what transaction we gossip.
     public void updateStatus(TransactionViewModel transactionViewModel) throws Exception {
         transactionRequester.clearTransactionRequest(transactionViewModel.getHash());
         if(transactionViewModel.getApprovers(tangle).size() == 0) {
@@ -259,6 +385,11 @@ public class TransactionValidator {
         }
     }
 
+    /**
+     * Perform a {@link #quickSetSolid} while capturing and logging errors
+     * @param transactionViewModel transaction we try to solidify.
+     * @return <tt>true</tt> if we managed to solidify, else <tt>false</tt>.
+     */
     private boolean quietQuickSetSolid(TransactionViewModel transactionViewModel) {
         try {
             return quickSetSolid(transactionViewModel);
@@ -268,6 +399,13 @@ public class TransactionValidator {
         }
     }
 
+    /**
+     * Tries to solidify the transactions quickly by performing {@link #checkApproovee} on both parents (trunk and
+     * branch). If the parents are solid, mark the transactions as solid.
+     * @param transactionViewModel transaction to solidify
+     * @return <tt>true</tt> if we made the transaction solid, else <tt>false</tt>.
+     * @throws Exception
+     */
     private boolean quickSetSolid(final TransactionViewModel transactionViewModel) throws Exception {
         if(!transactionViewModel.isSolid()) {
             boolean solid = true;
@@ -286,6 +424,12 @@ public class TransactionValidator {
         return false;
     }
 
+    /**
+     * If the the {@code approvee} is missing request it from a neighbor.
+     * @param approovee transaction we check.
+     * @return true if {@code approvee} is solid.
+     * @throws Exception if we encounter an error while requesting a transaction
+     */
     private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
         if(approovee.getType() == PREFILLED_SLOT) {
             transactionRequester.requestTransaction(approovee.getHash(), false);
@@ -297,11 +441,14 @@ public class TransactionValidator {
         return approovee.isSolid();
     }
 
-    //for testing
+    //Package Private For Testing
     boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }
 
+    /**
+     * Thrown if transaction fails {@link #hasInvalidTimestamp} check.
+     */
     public static class StaleTimestampException extends RuntimeException {
         StaleTimestampException (String message) {
             super(message);

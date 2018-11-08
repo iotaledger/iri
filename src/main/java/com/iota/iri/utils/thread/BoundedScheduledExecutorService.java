@@ -80,12 +80,6 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     public void onFinishTask(TaskDetails taskDetails, Throwable error) {}
 
     @Override
-    public void onStartTask(TaskDetails taskDetails) {}
-
-    @Override
-    public void onFinishTask(TaskDetails taskDetails, Throwable error) {}
-
-    @Override
     public void onCancelTask(TaskDetails taskDetails) {}
 
     /**

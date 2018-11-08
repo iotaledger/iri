@@ -32,13 +32,14 @@ public class BundleValidator {
      *     the last trit when we convert from binary</li>
      *     <li>Ascertain that total bundle value is 0 (inputs and outputs are balanced)</li>
      *     <li>Recalculate the bundle hash by absorbing and squeezing the transaction essence of the transactions</li>
+     *     <li>Validate the signature on input transactions</li>
      * </ol>
      *</p>
      * @param tangle used to fetch the bundle's transactions from the persistence layer
      * @param tailHash the hash of the last transaction in a bundle.
-     * @return The list of transactions of the bundle. If the bundle is valid then the tail transaction's
-     * {@link TransactionViewModel#getValidity()} will return 1, else it will return -1. If the tail transaction
-     * failed input validation (bad index or validity) then an immutable empty list will be returned.
+     * @return A list of transactions of the bundle contained in another list. If the bundle is valid then the tail transaction's
+     * {@link TransactionViewModel#getValidity()} will return 1, else it will return -1. If the bundle is invalid
+     * then an empty list will be returned.
      * @throws Exception if a persistence error occured
      */
     public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash tailHash) throws Exception {
@@ -84,7 +85,7 @@ public class BundleValidator {
                         instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         break;
                     }
-
+                    //we lose the last trit converting from bytes
                     if (transactionViewModel.value() != 0 && transactionViewModel.getAddressHash().trits()[Curl.HASH_LENGTH - 1] != 0) {
                         instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         break;
@@ -102,7 +103,8 @@ public class BundleValidator {
                                     curlInstance.absorb(transactionViewModel2.trits(), TransactionViewModel.ESSENCE_TRINARY_OFFSET, TransactionViewModel.ESSENCE_TRINARY_SIZE);
                                 }
                                 curlInstance.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
-                                if (Arrays.equals(instanceTransactionViewModels.get(0).getBundleHash().trits(), bundleHashTrits)) {
+                                //verify bundle hash is correct
+                                if (Arrays.equals(instanceTransactionViewModels.get(0).getBundleHash().trits(), bundleHashTrits))  {
                                     //normalizing bundle in preparation for sig verification
                                     ISSInPlace.normalizedBundle(bundleHashTrits, normalizedBundle);
 
@@ -139,7 +141,7 @@ public class BundleValidator {
                                             j++;
                                         }
                                     }
-
+                                    //should only be reached after for loop is done
                                     instanceTransactionViewModels.get(0).setValidity(tangle, 1);
                                     transactions.add(instanceTransactionViewModels);
                                 }
@@ -176,10 +178,10 @@ public class BundleValidator {
     }
 
     /**
-     * Checks that the bundle is balanced meaning that the total inputs equal to outputs.
+     * Checks that the bundle's inputs and outputs are balanced.
      *
      * @param transactionViewModels list of transactions that are in a bundle
-     * @return true if balanced. false if unbalanced or {@code transactionViewModels} is empty
+     * @return {@code true} if balanced, {@code false} if unbalanced or {@code transactionViewModels} is empty
      */
     public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels) {
         long value = 0;
@@ -196,6 +198,14 @@ public class BundleValidator {
         return (value != 0 || transactionViewModels.size() == 0);
     }
 
+    /**
+     * Traverses down the given {@code tail} trunk until all transactions that belong to the same bundle
+     * (identified by the bundle hash) are found and loaded.
+     *
+     * @param tangle connection to the persistence layer
+     * @param tail should be the tail transaction of the bundle
+     * @return map of all transactions in the bundle, mapped by their transaction hash
+     */
     private static Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle, TransactionViewModel tail) {
         final Map<Hash, TransactionViewModel> bundleTransactions = new HashMap<>();
         final Hash bundleHash = tail.getBundleHash();

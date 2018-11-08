@@ -74,21 +74,12 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     @Override
-<<<<<<< HEAD
-    public void onStartTask(TaskDetails taskDetails) {
-        // doesn't do anything but allows a child class to hook into this event by overriding this method
-    }
+    public void onStartTask(TaskDetails taskDetails) {}
 
     @Override
-    public void onFinishTask(TaskDetails taskDetails, Throwable error) {
-        // doesn't do anything but allows a child class to hook into this event by overriding this method
-    }
+    public void onFinishTask(TaskDetails taskDetails, Throwable error) {}
 
     @Override
-    public void onCancelTask(TaskDetails taskDetails) {
-        // doesn't do anything but allows a child class to hook into this event by overriding this method
-    }
-=======
     public void onStartTask(TaskDetails taskDetails) {}
 
     @Override
@@ -96,7 +87,6 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
 
     @Override
     public void onCancelTask(TaskDetails taskDetails) {}
->>>>>>> de458d51... Feat: introducing several executor services for IRI
 
     /**
      * {@inheritDoc}

@@ -2,6 +2,7 @@ package com.iota.iri.service.dto;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.API;
+
 import com.iota.iri.service.Feature;
 
 /**
@@ -59,7 +60,11 @@ public class GetNodeInfoResponse extends AbstractResponse {
     
     /**
      * The hash of the latest transaction which is solid and is used for sending transactions. 
+<<<<<<< HEAD
      * For a milestone to become solid, your local node must approve the subtangle of coordinator-approved transactions, 
+=======
+     * For a milestone to become solid your local node must basically approve the subtangle of coordinator-approved transactions, 
+>>>>>>> DTO documented
      *  and have a consistent view of all referenced transactions.
      */
     private String latestSolidSubtangleMilestone;
@@ -139,7 +144,11 @@ public class GetNodeInfoResponse extends AbstractResponse {
      * @param numberOfTransactionsToRequest {@link #transactionsToRequest}
      * @param features {@link #features}
      * @param coordinatorAddress {@link #coordinatorAddress}
+<<<<<<< HEAD
      * @return a {@link GetNodeInfoResponse} filled with all the provided parameters
+=======
+     * @return a {@link GetNodeInfoResponse} filled all the provided parameters
+>>>>>>> DTO documented
      */
 	public static AbstractResponse create(String appName, String appVersion, int jreAvailableProcessors, long jreFreeMemory,
 	        String jreVersion, long maxMemory, long totalMemory, Hash latestMilestone, int latestMilestoneIndex,

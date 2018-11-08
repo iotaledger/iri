@@ -14,17 +14,7 @@ public class GetNeighborsResponse extends AbstractResponse {
 
     /**
      * The neighbors you are connected with, as well as their activity counters.
-     * This includes the following statistics:
-     * <ol>
-     *     <li>address</li>
-     *     <li>connectionType</li>
-     *     <li>numberOfAllTransactions</li>
-     *     <li>numberOfRandomTransactionRequests</li>
-     *     <li>numberOfNewTransactions</li>
-     *     <li>numberOfInvalidTransactions</li>
-     *     <li>numberOfSentTransactions</li>
-     *     <li>numberOfStaleTransactions</li>
-     * </ol>
+     * 
      * @see {@link com.iota.iri.service.dto.GetNeighborsResponse.Neighbor}
      */
     private Neighbor[] neighbors;

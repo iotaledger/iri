@@ -3,6 +3,9 @@ package com.iota.iri.model;
 import com.iota.iri.hash.Curl;
 import com.iota.iri.storage.Indexable;
 
+/**
+ * Represents an indexable hash object
+ */
 public interface Hash extends Indexable, HashId {
     
     Hash NULL_HASH = HashFactory.TRANSACTION.create(new byte[Curl.HASH_LENGTH]);

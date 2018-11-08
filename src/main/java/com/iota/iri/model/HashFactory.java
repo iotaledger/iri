@@ -12,6 +12,11 @@ import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Converter;
 
+/**
+ * Generates an appropriate Hash model from a set of source data. The available models that
+ * can be instantiated include: <tt>Transaction Hash</tt>, <tt>Address Hash</tt>, <tt>Bundle Hash</tt>,
+ * <tt>Tag Hash</tt>, and an <tt>ObsoleteTag Hash</tt>.
+ */
 public enum HashFactory {
     TRANSACTION(Transaction.class),
     ADDRESS(Address.class),
@@ -38,7 +43,7 @@ public enum HashFactory {
     }
     
     /**
-     * Creates a Hash using the provided trits
+     * Creates a Hash using the provided trytes
      * @param trytes the source data
      * @return the hash
      */
@@ -50,7 +55,7 @@ public enum HashFactory {
     }
 
     /**
-     * Creates a Hash using the provided trits
+     * Creates a Hash using the provided source data
      * @param source the source data
      * @param sourceOffset the offset we start reading from
      * @param sourceSize the size this hash is in bytes, starting from offset
@@ -81,7 +86,8 @@ public enum HashFactory {
   	}
 
     /**
-     * 
+     * Instantiates the creation of a specified Hash type. The source offset is set to 0.
+     *
      * @param modelClass The model this Hash represents
      * @param source the source data, bytes or trits. Based on the length of source data
      * @return the hash of the correct type
@@ -91,7 +97,8 @@ public enum HashFactory {
     }
 
     /**
-     * 
+     * Generates the specified hash type.
+     *
      * @param modelClass The model this Hash represents
      * @param source the source data, bytes or trits
      * @param sourceOffset the offset in the source

@@ -4,12 +4,6 @@ import com.iota.iri.model.Hash;
 
 /**
  * Represents a persistable <tt>Tag</tt> hash set.
- *
- * <p>
- *     Tags can be defined and used as a referencing hash for organizing and
- *     finding transactions. A unique tag can be included in multiple transactions
- *     and can then be used to identify these stored transactions in the database.
- * </p>
  */
 public class Tag extends Hashes {
 

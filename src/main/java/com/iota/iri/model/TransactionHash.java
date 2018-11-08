@@ -4,6 +4,15 @@ import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.utils.Converter;
 
+/**
+ * Creates a <tt>Transaction</tt> Hash object.
+ * 
+ * <p>
+ *     A transaction hash acts as a reference point for a transaction object.
+ * </p>
+ *
+ * @see com.iota.iri.model.persistables.Transaction
+ */
 public class TransactionHash extends AbstractHash {
 
 	protected TransactionHash(byte[] source, int offset, int sourceSize) {

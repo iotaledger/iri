@@ -88,6 +88,7 @@ public class APIIntegrationTests {
             //init
             try {
                 iota.init();
+                iota.snapshotProvider.getInitialSnapshot().setTimestamp(0);
                 api.init();
                 ixi.init(IXIConfig.IXI_DIR);
             } catch (final Exception e) {

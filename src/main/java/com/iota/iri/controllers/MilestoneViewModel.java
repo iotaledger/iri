@@ -118,8 +118,6 @@ public class MilestoneViewModel {
      * @throws Exception if anything goes wrong while loading entries from the database
      */
     public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index, int maxIndex) throws Exception {
-        System.out.println(index);
-        System.out.println(maxIndex);
         // search for the next milestone following our index
         MilestoneViewModel nextMilestoneViewModel = null;
         int currentIndex = index;

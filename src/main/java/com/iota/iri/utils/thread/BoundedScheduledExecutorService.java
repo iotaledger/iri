@@ -74,13 +74,19 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     }
 
     @Override
-    public void onStartTask(TaskDetails taskDetails) {}
+    public void onStartTask(TaskDetails taskDetails) {
+        // doesn't do anything but allows a child class to hook into this event by overriding this method
+    }
 
     @Override
-    public void onFinishTask(TaskDetails taskDetails, Throwable error) {}
+    public void onFinishTask(TaskDetails taskDetails, Throwable error) {
+        // doesn't do anything but allows a child class to hook into this event by overriding this method
+    }
 
     @Override
-    public void onCancelTask(TaskDetails taskDetails) {}
+    public void onCancelTask(TaskDetails taskDetails) {
+        // doesn't do anything but allows a child class to hook into this event by overriding this method
+    }
 
     /**
      * {@inheritDoc}

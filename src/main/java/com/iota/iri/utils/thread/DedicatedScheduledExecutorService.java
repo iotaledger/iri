@@ -131,7 +131,7 @@ public class DedicatedScheduledExecutorService extends BoundedScheduledExecutorS
      * @param debug debug flag that indicates if every "run" should be accompanied with a log message
      */
     public DedicatedScheduledExecutorService(Logger logger, boolean debug) {
-        this(null, logger, true);
+        this(null, logger, debug);
     }
 
     /**

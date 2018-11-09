@@ -176,7 +176,7 @@ public class MilestoneViewModelTest {
         new MilestoneViewModel(next, HashFactory.TRANSACTION.create("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
         new MilestoneViewModel(first, HashFactory.TRANSACTION.create("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
         assertEquals(next, MilestoneViewModel.findClosestNextMilestone(
-                tangle, first, false, milestoneStartIndex).index().intValue());
+                tangle, first, next).index().intValue());
     }
 
     @Test
@@ -185,6 +185,6 @@ public class MilestoneViewModelTest {
         int next = 9;
         new MilestoneViewModel(next, HashFactory.TRANSACTION.create("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
         new MilestoneViewModel(first, HashFactory.TRANSACTION.create("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
-        assertEquals(first, MilestoneViewModel.findClosestPrevMilestone(tangle, next).index().intValue());
+        assertEquals(first, MilestoneViewModel.findClosestPrevMilestone(tangle, next, first).index().intValue());
     }
 }

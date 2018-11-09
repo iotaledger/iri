@@ -25,12 +25,15 @@ public class GetNodeInfoResponse extends AbstractResponse {
     private long time;
     private int tips;
     private int transactionsToRequest;
+    
+    private String[] features;
+    private String coordinatorAddress;
 
 	public static AbstractResponse create(String appName, String appVersion, int jreAvailableProcessors, long jreFreeMemory,
 	        String jreVersion, long maxMemory, long totalMemory, Hash latestMilestone, int latestMilestoneIndex,
 	        Hash latestSolidSubtangleMilestone, int latestSolidSubtangleMilestoneIndex, int milestoneStartIndex,
-	        int neighbors, int packetsQueueSize,
-	        long currentTimeMillis, int tips, int numberOfTransactionsToRequest) {
+	        int neighbors, int packetsQueueSize, long currentTimeMillis, int tips, 
+	        int numberOfTransactionsToRequest,  String[] features, String coordinatorAddress) {
 		final GetNodeInfoResponse res = new GetNodeInfoResponse();
 		res.appName = appName;
 		res.appVersion = appVersion;
@@ -53,6 +56,9 @@ public class GetNodeInfoResponse extends AbstractResponse {
 		res.time = currentTimeMillis;
 		res.tips = tips;
 		res.transactionsToRequest = numberOfTransactionsToRequest;
+		
+		res.features = features;
+		res.coordinatorAddress = coordinatorAddress;
 		return res;
 	}
 
@@ -208,10 +214,27 @@ public class GetNodeInfoResponse extends AbstractResponse {
      * At some point, the node will process this queue and ask for details about transactions in the "transaction to request" queue from one of its neighbors. 
      * By this means, nodes solidify their view of the tangle (i.e. filling in the unknown parts).
      *
-     * @return The transactions to tequest.
+     * @return The transactions to request.
      */
 	public int getTransactionsToRequest() {
 		return transactionsToRequest;
 	}
+	
+	/**
+	 * Every node can have features enabled or disabled. 
+	 * This list will contain all the required information about the features of a node.
+	 * @return The list of features of this node
+	 */
+	public String[] getFeatures() {
+	    return features;
+	}
 
+	/**
+	 * The address of the Coordinator being followed by this node.
+	 *
+	 * @return The tips.
+	 */
+	public String getCoordinatorAddress() {
+		return coordinatorAddress;
+	}
 }

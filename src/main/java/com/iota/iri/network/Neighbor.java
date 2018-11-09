@@ -14,6 +14,7 @@ public abstract class Neighbor {
     private long numberOfInvalidTransactions;
     private long randomTransactionRequests;
     private long numberOfSentTransactions;
+    private long numberOfStaleTransactions;
 
     private boolean flagged = false;
     public boolean isFlagged() {
@@ -84,11 +85,15 @@ public abstract class Neighbor {
     public void incInvalidTransactions() {
     	numberOfInvalidTransactions++;
     }
-    
+
+    void incStaleTransactions() {
+        numberOfStaleTransactions++;
+    }
+
     public void incSentTransactions() {
         numberOfSentTransactions++;
     }
-    
+
     public long getNumberOfAllTransactions() {
 		return numberOfAllTransactions;
 	}
@@ -96,7 +101,11 @@ public abstract class Neighbor {
     public long getNumberOfInvalidTransactions() {
 		return numberOfInvalidTransactions;
 	}
-    
+
+    public long getNumberOfStaleTransactions() {
+        return numberOfStaleTransactions;
+    }
+
     public long getNumberOfNewTransactions() {
 		return numberOfNewTransactions;
 	}
@@ -108,5 +117,5 @@ public abstract class Neighbor {
 	public long getNumberOfSentTransactions() {
 	    return numberOfSentTransactions;
 	}
-    
+
 }

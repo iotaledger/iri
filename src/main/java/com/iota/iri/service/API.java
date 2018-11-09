@@ -102,7 +102,8 @@ public class API {
     private static int counter_PoW = 0;
     private static long elapsedTime_PoW = 0L;
     
- 
+    private final String[] features;
+
 
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
@@ -116,6 +117,8 @@ public class API {
         milestoneStartIndex = ((ConsensusConfig) configuration).getMilestoneStartIndex();
 
         previousEpochsSpentAddresses = new ConcurrentHashMap<>();
+
+        features = Feature.calculateFeatureNames(instance.configuration);
     }
 
     public void init() throws IOException {
@@ -716,7 +719,9 @@ public class API {
                 instance.milestoneTracker.latestSolidSubtangleMilestone, instance.milestoneTracker.latestSolidSubtangleMilestoneIndex, instance.milestoneTracker.milestoneStartIndex,
                 instance.node.howManyNeighbors(), instance.node.queuedTransactionsSize(),
                 System.currentTimeMillis(), instance.tipsViewModel.size(),
-                instance.transactionRequester.numberOfTransactionsToRequest());
+                instance.transactionRequester.numberOfTransactionsToRequest(),
+                features,
+                instance.configuration.getCoordinator());
     }
 
     /**
@@ -989,7 +994,7 @@ public class API {
         if (tips == null || tips.size() == 0) {
             hashes = Collections.singletonList(instance.milestoneTracker.latestSolidSubtangleMilestone);
         } else {
-            hashes = tips.stream().map(address -> (HashFactory.ADDRESS.create(address)))
+            hashes = tips.stream().map(tip -> (HashFactory.TRANSACTION.create(tip)))
                     .collect(Collectors.toCollection(LinkedList::new));
         }
         try {
@@ -1078,7 +1083,7 @@ public class API {
                 Converter.copyTrits(MAX_TIMESTAMP_VALUE,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
 
-                if (!pearlDiver.search(transactionTrits, minWeightMagnitude, 0)) {
+                if (!pearlDiver.search(transactionTrits, minWeightMagnitude, instance.configuration.getPowThreads())) {
                     transactionViewModels.clear();
                     break;
                 }

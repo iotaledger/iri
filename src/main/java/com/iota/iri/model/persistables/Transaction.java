@@ -11,6 +11,16 @@ import java.nio.ByteBuffer;
 public class Transaction implements Persistable {
     public static final int SIZE = 1604;
 
+    /**
+     * Bitmask used to access and store the solid flag.
+     */
+    public static final int IS_SOLID_BITMASK = 0b01;
+
+    /**
+     * Bitmask used to access and store the milestone flag.
+     */
+    public static final int IS_MILESTONE_BITMASK = 0b10;
+
     public byte[] bytes;
 
     public Hash address;
@@ -35,6 +45,12 @@ public class Transaction implements Persistable {
     //public boolean confirmed = false;
     public boolean parsed = false;
     public boolean solid = false;
+
+    /**
+     * This flag indicates if the transaction is a coordinator issued milestone.
+     */
+    public boolean milestone = false;
+
     public long height = 0;
     public String sender = "";
     public int snapshot;
@@ -80,7 +96,13 @@ public class Transaction implements Persistable {
         buffer.put(Serializer.serialize(arrivalTime));
         buffer.put(Serializer.serialize(height));
         //buffer.put((byte) (confirmed ? 1:0));
-        buffer.put((byte) (solid ? 1 : 0));
+
+        // encode booleans in 1 byte
+        byte flags = 0;
+        flags |= solid ? IS_SOLID_BITMASK : 0;
+        flags |= milestone ? IS_MILESTONE_BITMASK : 0;
+        buffer.put(flags);
+
         buffer.put(Serializer.serialize(snapshot));
         buffer.put(sender.getBytes());
         return buffer.array();
@@ -130,8 +152,12 @@ public class Transaction implements Persistable {
             confirmed = bytes[i] == 1;
             i++;
             */
-            solid = bytes[i] == 1;
+
+            // decode the boolean byte by checking the bitmasks
+            solid = (bytes[i] & IS_SOLID_BITMASK) != 0;
+            milestone = (bytes[i] & IS_MILESTONE_BITMASK) != 0;
             i++;
+
             snapshot = Serializer.getInteger(bytes, i);
             i += Integer.BYTES;
             byte[] senderBytes = new byte[bytes.length - i];

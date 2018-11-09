@@ -1,5 +1,6 @@
 package com.iota.iri.utils.dag;
 
+import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.Tangle;
@@ -37,7 +38,9 @@ public class DAGHelper {
         if((instance = instances.get(tangle)) == null) {
             synchronized(DAGHelper.class) {
                 if((instance = instances.get(tangle)) == null) {
-                    instance = instances.put(tangle, new DAGHelper(tangle));
+                    instance = new DAGHelper(tangle);
+
+                    instances.put(tangle, instance);
                 }
             }
         }
@@ -89,12 +92,12 @@ public class DAGHelper {
         try {
             Hash currentTransactionHash;
             while((currentTransactionHash = transactionsToExamine.poll()) != null) {
-                if(processedTransactions.add(currentTransactionHash)) {
+                if(currentTransactionHash == startingTransactionHash || processedTransactions.add(currentTransactionHash)) {
                     TransactionViewModel currentTransaction = TransactionViewModel.fromHash(tangle, currentTransactionHash);
                     if(
-                        currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT && (
-                            // do not "test" the starting transaction since it is not an "approver"
-                            currentTransactionHash == startingTransactionHash ||
+                        // do not "test" the starting transaction since it is not an "approver"
+                        currentTransactionHash == startingTransactionHash || (
+                            currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT &&
                             condition.test(currentTransaction)
                         )
                     ) {
@@ -103,7 +106,7 @@ public class DAGHelper {
                             currentTransactionConsumer.accept(currentTransaction);
                         }
 
-                        currentTransaction.getApprovers(tangle).getHashes().stream().forEach(approverHash -> transactionsToExamine.add(approverHash));
+                        transactionsToExamine.addAll(ApproveeViewModel.load(tangle, currentTransactionHash).getHashes());
                     }
                 }
             }
@@ -164,7 +167,7 @@ public class DAGHelper {
         try {
             Hash currentTransactionHash;
             while((currentTransactionHash = transactionsToExamine.poll()) != null) {
-                if(processedTransactions.add(currentTransactionHash)) {
+                if(currentTransactionHash == startingTransactionHash || processedTransactions.add(currentTransactionHash)) {
                     TransactionViewModel currentTransaction = TransactionViewModel.fromHash(tangle, currentTransactionHash);
                     if(
                         currentTransaction.getType() != TransactionViewModel.PREFILLED_SLOT &&(

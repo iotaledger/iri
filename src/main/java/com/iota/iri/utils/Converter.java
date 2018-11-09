@@ -3,7 +3,7 @@ package com.iota.iri.utils;
 import java.util.Arrays;
 
 /**
- * Converts different between representations of trytes, bytes, trits and numbers.
+ * Converts between different representations of trytes, bytes, trits and numbers.
  *
  * <p>
  *     The IOTA protocol is represented in Trits and Trytes, while data is stored and broadcast in Bytes.
@@ -12,7 +12,7 @@ import java.util.Arrays;
  * <p>
  *     This class also provides additional conversion tools:
  *     <ul>
- *         <li>Converting Trits to numerical values based on <i>Balance Ternary</i> arithmetic</li>
+ *         <li>Converting Trits to numerical values based on <i>Balanced ternary</i> arithmetic</li>
  *         <li>Converting ascii to a Tryte string</li>
  *     </ul>
  * </p>
@@ -77,7 +77,7 @@ public class Converter {
 
     /**
      * Converts trits array to bytes array based on {@link #NUMBER_OF_TRITS_IN_A_BYTE}.<br>
-     *     this method will over-ride the content of {@code dest}
+     *     this method will override the content of {@code dest}
      *
      * @param trits source trits array
      * @param srcPos starting position for trits
@@ -104,7 +104,7 @@ public class Converter {
 
     /**
      * Converts trits array to bytes array. <br>
-     * this method will over-ride the content of {@code dest}
+     * this method will override the content of {@code dest}
      * @see #bytes(byte[], int, byte[], int, int)
      *
      * @param trits source trits array
@@ -127,7 +127,7 @@ public class Converter {
     /**
      * Converts bytes array to trits array based on {@link #NUMBER_OF_TRITS_IN_A_BYTE}.<br>
      *     the inverse of {@link #bytes(byte[], int, byte[], int, int)}. <br>
-     *     this method will over-ride the content of {@code trits}
+     *     this method will override the content of {@code trits}
      *
      * @param bytes source bytes array
      * @param trits destination trits array
@@ -149,7 +149,7 @@ public class Converter {
     // Trytes <-> Trits
     /**
      * Converts a tryte string to trits (bytes array) based on {@link #NUMBER_OF_TRITS_IN_A_TRYTE}.<br>
-     *     this method will over-ride the content of {@code dest}
+     *     this method will override the content of {@code dest}
      *
      * @param trytes source trytes string
      * @param dest destination trits array
@@ -200,7 +200,7 @@ public class Converter {
 
     /**
      * Creates a new trits array with the converted tryte string.<br>
-     *     should be used most for testing, as it allocates memory.
+     *     should be used only for testing as it allocates memory.
      * @see #allocatingTritsFromTrytes(String)
      * @see #trits(String, byte[], int)
      *
@@ -217,7 +217,7 @@ public class Converter {
     // Long <-> Trits
 
     /**
-     * Parses the trits argument as a long value, based on <i>Balance Ternary</i> arithmetic
+     * Parses the trits argument as a long value, based on <i>Balanced ternary</i> arithmetic
      * @param trits Array of trits to be parsed
      * @param srcPos Starting position in trits array
      * @param size Amount of trits to parse
@@ -233,7 +233,7 @@ public class Converter {
     }
 
     /**
-     * fills a trit array with a representation of the {@code value} argument in <i>Balance Ternary</i> arithmetic
+     * fills a trit array with a representation of the {@code value} argument in <i>Balanced ternary</i> arithmetic
 
      * @param value a long value
      * @param destination destination trit array

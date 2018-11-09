@@ -104,7 +104,7 @@ public class API {
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
-    
+
     private final String[] features;
 
     public API(Iota instance, IXI ixi) {
@@ -365,7 +365,6 @@ public class API {
      * Check if a list of addresses was ever spent from, in the current epoch, or in previous epochs.
      *
      * @param addresses List of addresses to check if they were ever spent from.
-     * @return {@link com.iota.iri.service.dto.wereAddressesSpentFrom}
      **/
     private AbstractResponse wereAddressesSpentFromStatement(List<String> addresses) throws Exception {
         final List<Hash> addressesHash = addresses.stream().map(HashFactory.ADDRESS::create).collect(Collectors.toList());
@@ -394,7 +393,7 @@ public class API {
                 }
                 //pending
                 Hash tail = findTail(hash);
-                if (tail != null && BundleValidator.validate(instance.tangle, tail).size() != 0) {
+                if (tail != null && BundleValidator.validate(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), tail).size() != 0) {
                     return true;
                 }
             }
@@ -460,7 +459,7 @@ public class API {
                 state = false;
                 info = "tails are not solid (missing a referenced tx): " + transaction;
                 break;
-            } else if (BundleValidator.validate(instance.tangle, txVM.getHash()).size() == 0) {
+            } else if (BundleValidator.validate(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), txVM.getHash()).size() == 0) {
                 state = false;
                 info = "tails are not consistent (bundle is invalid): " + transaction;
                 break;
@@ -470,7 +469,7 @@ public class API {
         if (state) {
             instance.milestoneTracker.latestSnapshot.rwlock.readLock().lock();
             try {
-                WalkValidatorImpl walkValidator = new WalkValidatorImpl(instance.tangle, instance.ledgerValidator,
+                WalkValidatorImpl walkValidator = new WalkValidatorImpl(instance.tangle, instance.snapshotProvider, instance.ledgerValidator,
                         instance.milestoneTracker, instance.configuration);
                 for (Hash transaction : transactions) {
                     if (!walkValidator.isValid(transaction)) {
@@ -701,7 +700,7 @@ public class API {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
-                transactionViewModel.update(instance.tangle, "sender");
+                transactionViewModel.update(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), "sender");
             }
 
             if(BaseIotaConfig.getInstance().getWASMSupport()) {

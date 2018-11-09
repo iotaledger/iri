@@ -5,6 +5,7 @@ import com.iota.iri.validator.MilestoneTracker;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.tipselection.WalkValidator;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
@@ -28,6 +29,7 @@ public class WalkValidatorImpl implements WalkValidator {
 
     private final Tangle tangle;
     private final Logger log = LoggerFactory.getLogger(WalkValidator.class);
+    private final SnapshotProvider snapshotProvider;
     private final LedgerValidator ledgerValidator;
     private final MilestoneTracker milestoneTracker;
     private final TipSelConfig config;
@@ -37,8 +39,9 @@ public class WalkValidatorImpl implements WalkValidator {
     private Map<Hash, Long> myDiff;
     private Set<Hash> myApprovedHashes;
 
-    public WalkValidatorImpl(Tangle tangle, LedgerValidator ledgerValidator, MilestoneTracker milestoneTracker, TipSelConfig config) {
+    public WalkValidatorImpl(Tangle tangle, SnapshotProvider snapshotProvider, LedgerValidator ledgerValidator, MilestoneTracker milestoneTracker, TipSelConfig config) {
         this.tangle = tangle;
+        this.snapshotProvider = snapshotProvider;
         this.ledgerValidator = ledgerValidator;
         this.milestoneTracker = milestoneTracker;
         this.config = config;
@@ -91,7 +94,7 @@ public class WalkValidatorImpl implements WalkValidator {
 
             if (analyzedTransactions.add(hash)) {
                 TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
-                if ((transaction.snapshotIndex() != 0 || Objects.equals(Hash.NULL_HASH, transaction.getHash()))
+                if ((transaction.snapshotIndex() != 0 || snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(transaction.getHash()))
                         && transaction.snapshotIndex() < lowerAllowedSnapshotIndex) {
                     log.debug("failed below max depth because of reaching a tx below the allowed snapshot index {}",
                             lowerAllowedSnapshotIndex);

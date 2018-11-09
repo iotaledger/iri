@@ -3,6 +3,7 @@ package com.iota.iri.validator.impl;
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.validator.*;
@@ -15,20 +16,15 @@ public class LedgerValidatorImpl implements LedgerValidator{
 
     private final Logger log = LoggerFactory.getLogger(LedgerValidatorImpl.class);
     private final Tangle tangle;
+    private final SnapshotProvider snapshotProvider;
     private final MilestoneTracker milestoneTracker;
     private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
     private volatile int numberOfConfirmedTransactions;
 
-    /*public  LedgerValidatorImpl() {
-        tangle = null;
-        milestoneTracker = null;
-        messageQ = null;
-        transactionRequester = null;
-        numberOfConfirmedTransactions = 0;
-    }*/
-    public LedgerValidatorImpl(Tangle tangle, MilestoneTracker milestoneTracker, TransactionRequester transactionRequester, MessageQ messageQ) {
+    public LedgerValidator(Tangle tangle, SnapshotProvider snapshotProvider, MilestoneTracker milestoneTracker, TransactionRequester transactionRequester, MessageQ messageQ) {
         this.tangle = tangle;
+        this.snapshotProvider = snapshotProvider;
         this.milestoneTracker = milestoneTracker;
         this.transactionRequester = transactionRequester;
         this.messageQ = messageQ;
@@ -80,7 +76,7 @@ public class LedgerValidatorImpl implements LedgerValidator{
 
                             boolean validBundle = false;
 
-                            final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getHash());
+                            final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
                             /*
                             for(List<TransactionViewModel> transactions: bundleTransactions) {
                                 if (transactions.size() > 0) {
@@ -150,7 +146,7 @@ public class LedgerValidatorImpl implements LedgerValidator{
             if (visitedHashes.add(hashPointer)) {
                 final TransactionViewModel transactionViewModel2 = TransactionViewModel.fromHash(tangle, hashPointer);
                 if(transactionViewModel2.snapshotIndex() == 0) {
-                    transactionViewModel2.setSnapshot(tangle, index);
+                    transactionViewModel2.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), index);
                     messageQ.publish("%s %s %d sn", transactionViewModel2.getAddressHash(), transactionViewModel2.getHash(), index);
                     messageQ.publish("sn %d %s %s %s %s %s", index, transactionViewModel2.getHash(),
                             transactionViewModel2.getAddressHash(),

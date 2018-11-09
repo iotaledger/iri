@@ -11,6 +11,9 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.service.TipsSolidifier;
+import com.iota.iri.service.snapshot.SnapshotException;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.service.tipselection.TailFinder;
@@ -52,6 +55,7 @@ public class Iota {
     public final LedgerValidator ledgerValidator;
     public final MilestoneTracker milestoneTracker;
     public final Tangle tangle;
+    public final SnapshotProvider snapshotProvider;
     public final TransactionValidator transactionValidator;
     public final TipsSolidifier tipsSolidifier;
     public final TransactionRequester transactionRequester;
@@ -63,17 +67,18 @@ public class Iota {
     public final MessageQ messageQ;
     public final TipSelector tipsSelector;
 
-    public Iota(IotaConfig configuration) throws IOException {
+    public Iota(IotaConfig configuration) throws SnapshotException, IOException {
         this.configuration = configuration;
         Snapshot initialSnapshot = Snapshot.init(configuration).clone();
         tangle = new Tangle();
         messageQ = MessageQ.createWith(configuration);
         tipsViewModel = new TipsViewModel();
-        transactionRequester = new TransactionRequester(tangle, messageQ);
-        transactionValidator = new TransactionValidator(tangle, tipsViewModel, transactionRequester,
-                configuration);
-        milestoneTracker = new MilestoneTracker(tangle, transactionValidator, messageQ, initialSnapshot, configuration);
-        node = new Node(tangle, transactionValidator, transactionRequester, tipsViewModel, milestoneTracker, messageQ,
+        snapshotProvider = new SnapshotProviderImpl(configuration);
+        transactionRequester = new TransactionRequester(tangle, snapshotProvider.getInitialSnapshot(), messageQ);
+        transactionValidator = new TransactionValidator(tangle, snapshotProvider.getInitialSnapshot(), tipsViewModel,
+                transactionRequester);
+        milestoneTracker = new MilestoneTracker(tangle, snapshotProvider, transactionValidator, messageQ, initialSnapshot, configuration);
+        node = new Node(tangle, snapshotProvider.getInitialSnapshot(), transactionValidator, transactionRequester, tipsViewModel, milestoneTracker, messageQ,
                 configuration);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
@@ -167,20 +172,20 @@ public class Iota {
 
     private TipSelector createTipSelector(TipSelConfig config) {
         // TODO use factory
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestoneTracker);
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider, milestoneTracker);
         if(BaseIotaConfig.getInstance().getEntryPointSelector().equals("KATZ")) {
             entryPointSelector = new EntryPointSelectorKatz(tangle, null);
         }
 
         // TODO use factory
-        RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
+        RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider.getInitialSnapshot());
         if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("CUM_EDGE_WEIGHT")){
             ratingCalculator = new CumulativeWeightWithEdgeCalculator(tangle);
         }
 
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
-        return new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
+        return new TipSelectorImpl(tangle, snapshotProvider, ledgerValidator, entryPointSelector, ratingCalculator,
                 walker, milestoneTracker, config);
     }
 

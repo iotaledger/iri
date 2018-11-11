@@ -19,27 +19,36 @@ public class BundleValidator {
 
     /**
      * Fetches a bundle of transactions identified by the {@code tailHash} and validates them.
+     * Bundle is a group of transactions with the same bundle hash chained by their trunks.
      * <p>
      * The fetched transactions have the same bundle hash as the transaction identified by {@code tailHash}
-     * The validation ascertains that:
+     * The validation does the following semantic checks:
      * <ol>
-     *     <li>{@code tailHash} has an index of 0</li>
-     *     <li>{@code tailHash} was not already invalidated by a previous call to this method</li>
-     *     <li>The transactions' reference order is consistent with the indexes</li>
-     *     <li>The last index of each transaction in the bundle matches the last index of the tail transaction</li>
-     *     <li>While summing up the bundle value we never exceed the total supply of iotas</li>
-     *     <li>Check that last trit in a valid address hash is 0. We generate addresses using Kerl and we lose
+     *     <li>The absolute bundle value never exceeds the total supply of iotas</li>
      *     the last trit when we convert from binary</li>
-     *     <li>Ascertain that total bundle value is 0 (inputs and outputs are balanced)</li>
-     *     <li>Recalculate the bundle hash by absorbing and squeezing the transaction essence of the transactions</li>
+     *     <li>Total bundle value is 0 (inputs and outputs are balanced)</li>
+     *     <li>Recalculate the bundle hash by absorbing and squeezing the transactions' essence</li>
      *     <li>Validate the signature on input transactions</li>
      * </ol>
+     *
+     * As well as the following syntactic checks:
+     * <ol>
+     *    <li>{@code tailHash} has an index of 0</li>
+     *    <li>The transactions' reference order is consistent with the indexes</li>
+     *    <li>The last index of each transaction in the bundle matches the last index of the tail transaction</li>
+     *    <li>Check that last trit in a valid address hash is 0. We generate addresses using Kerl and we lose</li>
+     * </ol>
+     *
+     * @implNote if {@code tailHash} was already invalidated/validated by a previous call to this method
+     * then we don't validate it
+     * again.
      *</p>
      * @param tangle used to fetch the bundle's transactions from the persistence layer
      * @param tailHash the hash of the last transaction in a bundle.
-     * @return A list of transactions of the bundle contained in another list. If the bundle is valid then the tail transaction's
-     * {@link TransactionViewModel#getValidity()} will return 1, else it will return -1. If the bundle is invalid
-     * then an empty list will be returned.
+     * @return A list of transactions of the bundle contained in another list. If the bundle is valid then the tail
+     * transaction's {@link TransactionViewModel#getValidity()} will return 1, else
+     * {@link TransactionViewModel#getValidity()} will return -1.
+     * If the bundle is invalid then an empty list will be returned.
      * @throws Exception if a persistence error occured
      */
     public static List<List<TransactionViewModel>> validate(Tangle tangle, Hash tailHash) throws Exception {
@@ -113,7 +122,7 @@ public class BundleValidator {
                                         transactionViewModel = instanceTransactionViewModels.get(j);
                                         //if it is a spent transaction that should be signed
                                         if (transactionViewModel.value() < 0) {
-                                            // let's verify signature by recreating the public address
+                                            // let's verify the signature by recalculating the public address
                                             addressInstance.reset();
                                             int offset = 0, offsetNext = 0;
                                             do {
@@ -145,7 +154,7 @@ public class BundleValidator {
                                     instanceTransactionViewModels.get(0).setValidity(tangle, 1);
                                     transactions.add(instanceTransactionViewModels);
                                 }
-                                //bundle hash was not verified
+                                //bundle hash verification failed
                                 else {
                                     instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                                 }
@@ -155,7 +164,7 @@ public class BundleValidator {
                                 transactions.add(instanceTransactionViewModels);
                             }
                         }
-                        //bundle value is not balanced to 0
+                        //total bundle value does not sum to 0
                         else {
                             instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         }
@@ -203,7 +212,7 @@ public class BundleValidator {
      * (identified by the bundle hash) are found and loaded.
      *
      * @param tangle connection to the persistence layer
-     * @param tail should be the tail transaction of the bundle
+     * @param tail should be the last transaction of the bundle
      * @return map of all transactions in the bundle, mapped by their transaction hash
      */
     private static Map<Hash, TransactionViewModel> loadTransactionsFromTangle(Tangle tangle, TransactionViewModel tail) {

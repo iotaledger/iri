@@ -3,8 +3,6 @@ package com.iota.iri.crypto;
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.iota.iri.crypto.PearlDiver.State.*;
-
 public class PearlDiver {
 
     enum State {
@@ -26,7 +24,7 @@ public class PearlDiver {
 
     public void cancel() {
         synchronized (syncObj) {
-            state = CANCELLED;
+            state = State.CANCELLED;
         }
     }
 
@@ -45,7 +43,7 @@ public class PearlDiver {
 
         validateParameters(transactionTrits, minWeightMagnitude);
         synchronized (syncObj) {
-            state = RUNNING;
+            state = State.RUNNING;
         }
 
         final long[] midStateLow = new long[CURL_STATE_LENGTH];
@@ -72,11 +70,11 @@ public class PearlDiver {
                 worker.join();
             } catch (InterruptedException e) {
                 synchronized (syncObj) {
-                    state = CANCELLED;
+                    state = State.CANCELLED;
                 }
             }
         }
-        return state == COMPLETED;
+        return state == State.COMPLETED;
     }
 
     private Runnable getRunnable(final int threadIndex, final byte[] transactionTrits, final int minWeightMagnitude,
@@ -95,7 +93,7 @@ public class PearlDiver {
 
             final int maskStartIndex = CURL_HASH_LENGTH - minWeightMagnitude;
             long mask = 0;
-            while (state == RUNNING && mask == 0) {
+            while (state == State.RUNNING && mask == 0) {
 
                 increment(midStateCopyLow, midStateCopyHigh, 162 + (CURL_HASH_LENGTH / 9) * 2,
                     CURL_HASH_LENGTH);
@@ -110,8 +108,8 @@ public class PearlDiver {
             }
             if (mask != 0) {
                 synchronized (syncObj) {
-                    if (state == RUNNING) {
-                        state = COMPLETED;
+                    if (state == State.RUNNING) {
+                        state = State.COMPLETED;
                         long outMask = 1;
                         while ((outMask & mask) == 0) {
                             outMask <<= 1;

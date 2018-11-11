@@ -14,19 +14,12 @@ import java.util.NoSuchElementException;
  */
 public class Curl implements Sponge {
 
-    public static final int NUMBER_OF_ROUNDSP81 = 81;
-    public static final int NUMBER_OF_ROUNDSP27 = 27;
+    static final int NUMBER_OF_ROUNDSP81 = 81;
+    static final int NUMBER_OF_ROUNDSP27 = 27;
     private final int numberOfRounds;
     private static final int STATE_LENGTH = 3 * HASH_LENGTH;
-    private static final int HALF_LENGTH = 364;
 
     private static final byte[] TRUTH_TABLE = {1, 0, -1, 2, 1, -1, 0, 2, -1, 1, 0};
-    /*
-    private static final IntPair[] TRANSFORM_INDICES = IntStream.range(0, STATE_LENGTH)
-            .mapToObj(i -> new IntPair(i == 0 ? 0 : (((i - 1) % 2) + 1) * HALF_LENGTH - ((i - 1) >> 1),
-                    ((i % 2) + 1) * HALF_LENGTH - ((i) >> 1)))
-            .toArray(IntPair[]::new);
-            */
 
     private final byte[] state;
     private final long[] stateLow;
@@ -50,7 +43,54 @@ public class Curl implements Sponge {
         stateLow = null;
     }
 
-    public Curl(boolean pair, SpongeFactory.Mode mode) {
+    @Override
+    public void absorb(final byte[] trits, int offset, int length) {
+
+        do {
+            System.arraycopy(trits, offset, state, 0, length < HASH_LENGTH ? length : HASH_LENGTH);
+            transform();
+            offset += HASH_LENGTH;
+        } while ((length -= HASH_LENGTH) > 0);
+    }
+
+    @Override
+    public void squeeze(final byte[] trits, int offset, int length) {
+
+        do {
+            System.arraycopy(state, 0, trits, offset, length < HASH_LENGTH ? length : HASH_LENGTH);
+            transform();
+            offset += HASH_LENGTH;
+        } while ((length -= HASH_LENGTH) > 0);
+    }
+
+    /**
+     * Performs {@code numberOfRounds} Transformations on the internal state.
+     */
+    private void transform() {
+
+        int scratchpadIndex = 0;
+        int prevScratchpadIndex = 0;
+        for (int round = 0; round < numberOfRounds; round++) {
+            System.arraycopy(state, 0, scratchpad, 0, STATE_LENGTH);
+            for (int stateIndex = 0; stateIndex < STATE_LENGTH; stateIndex++) {
+                prevScratchpadIndex = scratchpadIndex;
+                if (scratchpadIndex < 365) {
+                    scratchpadIndex += 364;
+                } else {
+                    scratchpadIndex += -365;
+                }
+                state[stateIndex] = TRUTH_TABLE[scratchpad[prevScratchpadIndex] + (scratchpad[scratchpadIndex] << 2) + 5];
+            }
+        }
+    }
+    public void reset() {
+        Arrays.fill(state, (byte) 0);
+    }
+
+
+    // BCURLT - pair Curl implementation.
+    // code not in use.
+    protected Curl(boolean pair, SpongeFactory.Mode mode) {
         switch(mode) {
             case CURLP27: {
                 numberOfRounds = NUMBER_OF_ROUNDSP27;
@@ -72,56 +112,14 @@ public class Curl implements Sponge {
         }
     }
 
-    private void setMode(SpongeFactory.Mode mode) {
-
-    }
-
-    public void absorb(final byte[] trits, int offset, int length) {
-
-        do {
-            System.arraycopy(trits, offset, state, 0, length < HASH_LENGTH ? length : HASH_LENGTH);
-            transform();
-            offset += HASH_LENGTH;
-        } while ((length -= HASH_LENGTH) > 0);
-    }
-
-
-    public void squeeze(final byte[] trits, int offset, int length) {
-
-        do {
-            System.arraycopy(state, 0, trits, offset, length < HASH_LENGTH ? length : HASH_LENGTH);
-            transform();
-            offset += HASH_LENGTH;
-        } while ((length -= HASH_LENGTH) > 0);
-    }
-
-    private void transform() {
-
-        int scratchpadIndex = 0;
-        int prevScratchpadIndex = 0;
-        for (int round = 0; round < numberOfRounds; round++) {
-            System.arraycopy(state, 0, scratchpad, 0, STATE_LENGTH);
-            for (int stateIndex = 0; stateIndex < STATE_LENGTH; stateIndex++) {
-                prevScratchpadIndex = scratchpadIndex;
-                if (scratchpadIndex < 365) {
-                    scratchpadIndex += 364;
-                } else {
-                    scratchpadIndex += -365;
-                }
-                state[stateIndex] = TRUTH_TABLE[scratchpad[prevScratchpadIndex] + (scratchpad[scratchpadIndex] << 2) + 5];
-            }
-        }
-    }
-    public void reset() {
-        Arrays.fill(state, (byte) 0);
-    }
-    public void reset(boolean pair) {
+    void reset(boolean pair) {
         if(pair) {
             set();
         } else {
             reset();
         }
     }
+
     private void set() {
         Arrays.fill(stateLow, Converter.HIGH_LONG_BITS);
         Arrays.fill(stateHigh, Converter.HIGH_LONG_BITS);
@@ -145,7 +143,7 @@ public class Curl implements Sponge {
         }
     }
 
-    public void absorb(final Pair<long[], long[]> pair, int offset, int length) {
+    void absorb(final Pair<long[], long[]> pair, int offset, int length) {
         int o = offset, l = length, i = 0;
         do {
             System.arraycopy(pair.low, o, stateLow, 0, l < HASH_LENGTH ? l : HASH_LENGTH);
@@ -155,7 +153,7 @@ public class Curl implements Sponge {
         } while ((l -= HASH_LENGTH) > 0);
     }
 
-    public Pair<long[], long[]> squeeze(Pair<long[], long[]> pair, int offset, int length) {
+    Pair<long[], long[]> squeeze(Pair<long[], long[]> pair, int offset, int length) {
         int o = offset, l = length, i = 0;
         long[] low = pair.low;
         long[] hi = pair.hi;

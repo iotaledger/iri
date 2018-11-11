@@ -163,7 +163,7 @@ public class BundleValidator {
                         break;
 
                     }
-                    //we need to traverse to the next tx in the bundle
+                    //traverse to the next tx in the bundle
                     else {
                         transactionViewModel = bundleTransactions.get(transactionViewModel.getTrunkTransactionHash());
                         if (transactionViewModel == null) {

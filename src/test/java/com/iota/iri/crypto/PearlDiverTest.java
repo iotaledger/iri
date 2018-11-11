@@ -1,4 +1,4 @@
-package com.iota.iri.hash;
+package com.iota.iri.crypto;
 
 import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;

@@ -789,7 +789,7 @@ public class API {
      * 
      * @return The current amount of times this node has returned transactions to approve
      */
-    private static int getCounterGetTxToApprove() {
+    public static int getCounterGetTxToApprove() {
         return counterGetTxToApprove;
     }
     
@@ -1267,7 +1267,7 @@ public class API {
      * Adds '9' until the String is of {@link #HASH_SIZE} length.
      * 
      * @param tag The String to fill.
-     * @return The updated String.
+     * @return The updated 
      * @throws ValidationException If the <tt>tag</tt> is a {@link Hash#NULL_HASH}.
      */
     private String padTag(String tag) throws ValidationException {

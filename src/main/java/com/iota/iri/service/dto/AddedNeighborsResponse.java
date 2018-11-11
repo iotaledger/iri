@@ -16,7 +16,7 @@ public class AddedNeighborsResponse extends AbstractResponse {
 	/**
      * Creates a new {@link AddedNeighborsResponse}
      * 
-     * @param numberOfAddedNeighbors {@linkplain #addedNeighbors}
+     * @param numberOfAddedNeighbors {@link #addedNeighbors}
      * @return an {@link AddedNeighborsResponse} filled with the number of added neighbors
      */
 	public static AbstractResponse create(int numberOfAddedNeighbors) {
@@ -27,7 +27,7 @@ public class AddedNeighborsResponse extends AbstractResponse {
 
     /**
      * 
-     * @return {@linkplain #addedNeighbors}
+     * @return {link #addedNeighbors}
      */
 	public int getAddedNeighbors() {
 		return addedNeighbors;

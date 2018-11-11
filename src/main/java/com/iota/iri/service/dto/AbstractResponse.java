@@ -13,6 +13,11 @@ import org.apache.commons.lang3.builder.ToStringStyle;
   **/
 public abstract class AbstractResponse {
 
+    /**
+     * An 'empty' Response class.
+     * Will only contain values which are included in {@link AbstractResponse} itself.
+     * This is used when an API command does not need to return data.
+     */
 	private static class Emptyness extends AbstractResponse {}
 
 	/**

@@ -132,7 +132,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
      * @param numberOfTransactionsToRequest {@link #transactionsToRequest}
      * @param features {@link #features}
      * @param coordinatorAddress {@link #coordinatorAddress}
-     * @return a {@link GetNodeInfoResponse} filled all the provided parameters
+     * @return a {@link GetNodeInfoResponse} filled with all the provided parameters
      */
 	public static AbstractResponse create(String appName, String appVersion, int jreAvailableProcessors, long jreFreeMemory,
 	        String jreVersion, long maxMemory, long totalMemory, Hash latestMilestone, int latestMilestoneIndex,

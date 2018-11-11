@@ -3,9 +3,13 @@ package com.iota.iri.crypto;
 import java.util.Arrays;
 
 /**
- * (c) 2016 Come-from-Beyond
- * 
- * IOTA Signature Scheme
+ * (c) 2016 Come-from-Beyond <br>
+ *
+ * IOTA Signature Scheme. <br>
+ * Based on Winternitz One Time Signatures.<br>
+ * Implemented in place - does not allocate memory.
+ *
+ * @see ISS ISS for popular usage
  */
 public class ISSInPlace {
 

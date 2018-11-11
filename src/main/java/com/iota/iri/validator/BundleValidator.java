@@ -1,7 +1,7 @@
 package com.iota.iri.validator;
 
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.hash.*;
+import com.iota.iri.crypto.*;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.storage.Tangle;

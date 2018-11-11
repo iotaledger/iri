@@ -3,7 +3,7 @@ package com.iota.iri.service.tipselection.impl;
 import com.iota.iri.validator.MilestoneTracker;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
-import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.TransactionHash;

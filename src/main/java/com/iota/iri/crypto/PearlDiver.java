@@ -1,9 +1,9 @@
-package com.iota.iri.hash;
+package com.iota.iri.crypto;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.iota.iri.hash.PearlDiver.State.*;
+import static com.iota.iri.crypto.PearlDiver.State.*;
 
 public class PearlDiver {
 

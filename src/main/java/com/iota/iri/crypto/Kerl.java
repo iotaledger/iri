@@ -1,4 +1,4 @@
-package com.iota.iri.hash;
+package com.iota.iri.crypto;
 
 import com.iota.iri.utils.Converter;
 import org.bouncycastle.jcajce.provider.digest.Keccak;

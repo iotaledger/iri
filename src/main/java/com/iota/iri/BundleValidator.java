@@ -25,7 +25,7 @@ public class BundleValidator {
      * <ol>
      *     <li>{@code tailHash} has an index of 0</li>
      *     <li>{@code tailHash} was not already invalidated by a previous call to this method</li>
-     *     <li>That the transactions reference order is consistent with the indexes</li>
+     *     <li>The transactions' reference order is consistent with the indexes</li>
      *     <li>The last index of each transaction in the bundle matches the last index of the tail transaction</li>
      *     <li>While summing up the bundle value we never exceed the total supply of iotas</li>
      *     <li>Check that last trit in a valid address hash is 0. We generate addresses using Kerl and we lose

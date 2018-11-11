@@ -8,6 +8,7 @@ package com.iota.iri.crypto;
 public abstract class SpongeFactory {
     /**
      * Modes of sponge constructions.
+     * Determines which hash function we will use
      */
     public enum Mode {
         CURLP81,

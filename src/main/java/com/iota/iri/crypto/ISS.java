@@ -46,6 +46,8 @@ public class ISS {
     public static final int NORMALIZED_FRAGMENT_LENGTH = Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS;
 
 
+    ///////////////////////////////////////////////Key generation////////////////////////////////////////////////////
+
     /**
      * Calculates a {@code subSeed} from a given {@code seed} and {@code index}
      * <pre>
@@ -57,7 +59,6 @@ public class ISS {
      * @param index incremental index of the subseed
      * @return the subseed
      */
-    // Key generation
     public static byte[] subseed(SpongeFactory.Mode mode, final byte[] seed, int index) {
 
         if (index < 0) {
@@ -87,7 +88,7 @@ public class ISS {
     }
 
     /**
-     * Derives a secret key of length {@code FRAGMENT_LENGTH * numberOfFragments} from subseed. <br>
+     * Derives a secret key of length {@code FRAGMENT_LENGTH} * {@code numberOfFragments} from subseed. <br>
      * <pre>
      *     key = squeeze(absorb(subseed), length = FRAGMENT_LENGTH * numberOfFragments)
      * </pre>
@@ -179,10 +180,15 @@ public class ISS {
         return address;
     }
 
-    // Signing
+/////////////////////////////////////////////////Signing////////////////////////////////////////////////////////
 
     /**
-     * Deterministically Normalize the bundle hash such that {@code sum(bundle) == 0} <br>
+     * Deterministically Normalize the bundle hash. <br>
+     *     <ol>
+     *         <li>map each tryte in {@code bundle} to balanced base-27 {@code [-13 , 13]} </li>
+     *         <li>sum all mapped trytes together</li>
+     *         <li>if sum != 0, start inc/dec each tryte till sum equals 0</li>
+     *     </ol>
      *
      * @param bundle hash to be normalized
      * @return normalized hash
@@ -237,8 +243,7 @@ public class ISS {
         return signatureFragment;
     }
 
-    // Validation
-
+////////////////////////////////////////////Validation//////////////////////////////////////////////////
     /**
      * recalculate the digest of the public key used to sign {@code signatureFragment}. <br>
      * <pre>
@@ -274,14 +279,15 @@ public class ISS {
 
     /**
      * Calculates the {@code root} of a Merkle tree, given a leaf and Merkle path<br>
+     * @see <a href="https://en.wikipedia.org/wiki/Merkle_tree">https://en.wikipedia.org/wiki/Merkle_tree</a><br>
      *
      * @param mode Hash function to be used
      * @param hash leaf of Merkle tree
-     * @param trits Merkle path
+     * @param trits Merkle path, the siblings of the leaf concatenated.
      * @param offset starting position in {@code trits}
      * @param indexIn leaf index (used to determine order of concatenation)
      * @param depth depth of Merkle tree
-     * @return the root
+     * @return the root, the consecutive hashing of the leaf and the Merkle path.
      */
     public static byte[] getMerkleRoot(SpongeFactory.Mode mode, byte[] hash, byte[] trits, int offset,
                                        final int indexIn, int depth) {

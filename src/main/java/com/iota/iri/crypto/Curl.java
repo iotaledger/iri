@@ -89,7 +89,8 @@ public class Curl implements Sponge {
 
 
     // BCURLT - pair Curl implementation.
-    // code not in use.
+    ///////////////////////////////////////Code not in use////////////////////////////////////////////////////
+
     protected Curl(boolean pair, SpongeFactory.Mode mode) {
         switch(mode) {
             case CURLP27: {

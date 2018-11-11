@@ -8,8 +8,10 @@ import java.util.List;
  * <p>
  *     Given a transaction's trits, computes an additional nonce such that
  *     the hash ends with {@code minWeightMagnitude} zeros:<br>
- *     {@code trailingZeros(hash(transaction || nonce)) < minWeightMagnitude}
  * </p>
+ * <pre>
+ *     trailingZeros(hash(transaction || nonce)) < minWeightMagnitude
+ * </pre>
  */
 public class PearlDiver {
 
@@ -32,11 +34,14 @@ public class PearlDiver {
 
     /**
      * Searches for a nonce such that the hash ends with {@code minWeightMagnitude} zeros.<br>
+     * To add the {@value com.iota.iri.controllers.TransactionViewModel#NONCE_TRINARY_SIZE}
+     * trits long nounce {@code transactionTrits} are changed from the following offset:
+     * {@value com.iota.iri.controllers.TransactionViewModel#NONCE_TRINARY_OFFSET} <br>
      *
      * @param transactionTrits trits of transaction
      * @param minWeightMagnitude target weight for trailing zeros
      * @param numberOfThreads number of worker threads to search for a nonce
-     * @return {@code true} if search completed successfully.
+     * @return <tt>true</tt> if search completed successfully.
      * the nonce will be written to the end of {@code transactionTrits}
      */
     public synchronized boolean search(final byte[] transactionTrits, final int minWeightMagnitude,

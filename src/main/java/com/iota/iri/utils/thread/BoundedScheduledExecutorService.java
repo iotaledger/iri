@@ -43,7 +43,7 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
      * <br />
      * Note: Whenever a task finishes, we clean up the used resources and make space for new tasks.<br />
      */
-    private AtomicInteger tasksQueued = new AtomicInteger(0);
+    private AtomicInteger scheduledTasksCounter = new AtomicInteger(0);
 
     /**
      * Creates an executor service that that accepts only a pre-defined amount of tasks that can be queued and run at
@@ -91,13 +91,13 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
     /**
      * {@inheritDoc}
      * <br />
-     * It frees the reserved resources by decrementing the {@link #tasksQueued} counter and removing the task from the
+     * It frees the reserved resources by decrementing the {@link #scheduledTasksCounter} and removing the task from the
      * {@link #scheduledTasks} set.<br />
      */
     @Override
     public void onCompleteTask(TaskDetails taskDetails, Throwable error) {
         scheduledTasks.remove(taskDetails);
-        tasksQueued.decrementAndGet();
+        scheduledTasksCounter.decrementAndGet();
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -898,10 +898,10 @@ public class BoundedScheduledExecutorService implements SilentScheduledExecutorS
      * @return true if we could reserve the given space and false otherwise
      */
     private boolean reserveCapacity(int requestedJobCount) {
-        if (tasksQueued.addAndGet(requestedJobCount) <= capacity) {
+        if (scheduledTasksCounter.addAndGet(requestedJobCount) <= capacity) {
             return true;
         } else {
-            tasksQueued.addAndGet(-requestedJobCount);
+            scheduledTasksCounter.addAndGet(-requestedJobCount);
 
             return false;
         }

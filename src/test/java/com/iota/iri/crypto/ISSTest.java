@@ -58,6 +58,42 @@ public class ISSTest {
     }
 
     @Test
+    public void testSignatureResolvesToAddressISSInPlace() throws Exception {
+        int index = 10;
+        int nof = 1;
+        SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
+
+        byte[] seedTrits = new byte[Sponge.HASH_LENGTH];
+
+        for (SpongeFactory.Mode mode: modes) {
+            Converter.trits(seed, seedTrits, 0);
+            ISSInPlace.subseed(mode, seedTrits, index);
+            byte[] key = new byte[ISSInPlace.FRAGMENT_LENGTH * nof];
+            ISSInPlace.key(mode, seedTrits, key);
+
+            Kerl curl = new Kerl();
+            byte[] messageTrits = Converter.allocateTritsForTrytes(message.length());
+            Converter.trits(message, messageTrits, 0);
+            curl.absorb(messageTrits, 0, messageTrits.length);
+            byte[] messageHash = new byte[Curl.HASH_LENGTH];
+            curl.squeeze(messageHash, 0, Curl.HASH_LENGTH);
+            byte[] normalizedFragment = new byte[Curl.HASH_LENGTH / ISSInPlace.TRYTE_WIDTH];
+            ISSInPlace.normalizedBundle(messageHash, normalizedFragment);
+            normalizedFragment = Arrays.copyOf(normalizedFragment, ISS.NUMBER_OF_FRAGMENT_CHUNKS * nof);
+            byte[] signature = ISS.signatureFragment(mode, normalizedFragment, key);
+            byte[] sigDigest = new byte[Curl.HASH_LENGTH];
+            ISSInPlace.digest(mode, normalizedFragment, 0, signature, 0, sigDigest);
+            byte[] signedAddress = new byte[Curl.HASH_LENGTH];
+            ISSInPlace.address(mode, sigDigest, signedAddress);
+            byte[] digest = new byte[key.length / ISSInPlace.FRAGMENT_LENGTH * Curl.HASH_LENGTH];;
+            ISSInPlace.digests(mode, key, digest);
+            byte[] address = new byte[Curl.HASH_LENGTH];
+            ISSInPlace.address(mode, digest, address);
+            assertTrue(Arrays.equals(address, signedAddress));
+        }
+    }
+
+    @Test
     public void addressGenerationISS() throws Exception {
         int index = 0;
         int nof = 2;

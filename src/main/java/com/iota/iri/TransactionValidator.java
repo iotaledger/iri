@@ -55,7 +55,7 @@ public class TransactionValidator {
      * Constructor for Tangle Validator
      *
      * @param tangle relays tangle data to and from the persistence layer
-     * @param tipsViewModel container that get updated with the latest tips (transactions with no children)
+     * @param tipsViewModel container that gets updated with the latest tips (transactions with no children)
      * @param transactionRequester used to request missing transactions from neighbors
      * @param config configuration for obtaining snapshot data
      */

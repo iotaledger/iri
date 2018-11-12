@@ -1,7 +1,7 @@
 package com.iota.iri.model;
 
 /**
- * Creates a <tt>Bundle</tt> hash object
+ * The public <tt>Bundle</tt> hash identifier of a transaction
  *
  *  <p>
  *     Bundles are collections of transactions that can be attached to the tangle at once.
@@ -14,7 +14,7 @@ package com.iota.iri.model;
 public class BundleHash extends AbstractHash {
 
     /**
-     * Constructor for a <tt>Bundle</tt> hash object using a source array and starting point
+     * Constructor for a <tt>Bundle</tt> hash identifier using a source array and starting point
      *
      * @param bytes The trit or byte array source that the object will be generated from
      * @param offset The starting point in the array for the beginning of the Bundle Hash object

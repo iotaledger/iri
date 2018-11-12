@@ -6,9 +6,7 @@ import com.iota.iri.utils.Converter;
 import java.util.Arrays;
 
 /**
- * Creates a Prefix Hash object for use in cumulative weight calculations.
- *
- * @see com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator
+ * Creates a Prefix Hash object with the length {@value PREFIX_LENGTH}.
  */
 public final class HashPrefix implements HashId {
     public static final int PREFIX_LENGTH = 44;

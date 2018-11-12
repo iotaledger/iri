@@ -12,7 +12,7 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Converter;
 
 /**
- * Generates a hash object
+ * Base implementation of a hash object
  */
 public abstract class AbstractHash implements Hash, Serializable {
     private final Object lock = new Object();

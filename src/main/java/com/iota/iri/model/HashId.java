@@ -6,6 +6,6 @@ package com.iota.iri.model;
  */
 public interface HashId {
 
-    /**returns the bytes of the current Hash ID*/
+    /**@return the bytes of the current Hash ID*/
     byte[] bytes();
 }

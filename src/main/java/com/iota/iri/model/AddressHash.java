@@ -1,10 +1,10 @@
 package com.iota.iri.model;
 
 /**
- * Creates an Address hash object
+ * The public <tt>Address</tt> hash identifier of a transaction
  *
  * <p>
- *     An Address hash can represent the sending or receiving party of a transaction. The Address
+ *     An <tt>Address</tt> hash can represent the sending or receiving party of a transaction. The Address
  *     hash can also be used to find specific associated transactions within the DB of a node using
  *     the API.
  * </p>
@@ -13,7 +13,7 @@ package com.iota.iri.model;
 public class AddressHash extends AbstractHash {
 
     /**
-     * Constructor for an Address hash object using a source array and starting point
+     * Constructor for an <tt>Address</tt> hash identifier using a source array and starting point
      *
      * @param bytes The trit or byte array source that the object will be generated from
      * @param offset The starting point in the array for the beginning of the Address Hash object

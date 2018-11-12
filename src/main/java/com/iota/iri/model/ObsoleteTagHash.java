@@ -1,7 +1,7 @@
 package com.iota.iri.model;
 
 /**
- * Creates an <tt>Obsolete Tag</tt> hash object
+ * The <tt>Obsolete Tag</tt> hash identifier of a transaction
  *
  * <p>
  *     An Obsolete Tag is used for determining milestone indexes.
@@ -14,7 +14,7 @@ package com.iota.iri.model;
 public class ObsoleteTagHash extends AbstractHash {
 
     /**
-     * Constructor for a <tt>Obsolete Tag</tt> hash object using a source array and starting point
+     * Constructor for a <tt>Obsolete Tag</tt> hash identifier using a source array and starting point
      *
      * @param tagBytes The trit or byte array source that the object will be generated from
      * @param offset The starting point in the array for the beginning of the Hash object

@@ -44,11 +44,10 @@ public enum HashFactory {
     
     /**
      * Creates a Hash using the provided trytes
-     * @param trytes the source data
-     * @return the hash
+     * @param trytes The source data as a string of trytes
+     * @return The hash
      */
     public Hash create(String trytes) {
-        
         byte[] trits = new byte[Hash.SIZE_IN_TRITS];
         Converter.trits(trytes, trits, 0);
         return create(clazz, trits, 0, Hash.SIZE_IN_TRITS);
@@ -56,10 +55,10 @@ public enum HashFactory {
 
     /**
      * Creates a Hash using the provided source data
-     * @param source the source data
-     * @param sourceOffset the offset we start reading from
-     * @param sourceSize the size this hash is in bytes, starting from offset
-     * @return the hash
+     * @param source The source data
+     * @param sourceOffset The offset we start reading from
+     * @param sourceSize The size this hash is in bytes, starting from offset
+     * @return The hash
      */
     public Hash create(byte[] source, int sourceOffset, int sourceSize) {
         return create(clazz, source, sourceOffset, sourceSize);
@@ -67,9 +66,9 @@ public enum HashFactory {
     
     /**
      * Creates a Hash using the provided trits
-     * @param trits the source data
-     * @param sourceOffset the offset we start reading from
-     * @return the hash
+     * @param trits The source data as an array of trits
+     * @param sourceOffset The offset we start reading from
+     * @return The hash
      */
     public Hash create(byte[] trits, int sourceOffset) {
         return create(clazz, trits, sourceOffset, Hash.SIZE_IN_TRITS);
@@ -78,8 +77,8 @@ public enum HashFactory {
     /**
      * Creates a Hash using the provided source.
      * Starts from the beginning, source size is based on source length
-     * @param source the source data
-     * @return the hash
+     * @param source The source data
+     * @return The hash
      */
   	public Hash create(byte[] source) {
   		return create(clazz, source, 0, source.length == Hash.SIZE_IN_TRITS ? Hash.SIZE_IN_TRITS : Hash.SIZE_IN_BYTES);
@@ -89,8 +88,8 @@ public enum HashFactory {
      * Instantiates the creation of a specified Hash type. The source offset is set to 0.
      *
      * @param modelClass The model this Hash represents
-     * @param source the source data, bytes or trits. Based on the length of source data
-     * @return the hash of the correct type
+     * @param source The source data, bytes or trits. Based on the length of source data
+     * @return The hash of the correct type
      */
     public Hash create(Class<?> modelClass, byte[] source) {
         return create(modelClass, source, 0, source.length == AbstractHash.SIZE_IN_TRITS ? AbstractHash.SIZE_IN_TRITS : AbstractHash.SIZE_IN_BYTES);
@@ -100,10 +99,10 @@ public enum HashFactory {
      * Generates the specified hash type.
      *
      * @param modelClass The model this Hash represents
-     * @param source the source data, bytes or trits
-     * @param sourceOffset the offset in the source
-     * @param sourceSize the size this hash is in bytes, starting from offset
-     * @return the hash of the correct type
+     * @param source The source data, bytes or trits
+     * @param sourceOffset The offset in the source that the hash will be created from
+     * @param sourceSize The size this hash is in bytes, starting from offset
+     * @return The hash of the correct type
      */
     public Hash create(Class<?> modelClass, byte[] source, int sourceOffset, int sourceSize) {
         

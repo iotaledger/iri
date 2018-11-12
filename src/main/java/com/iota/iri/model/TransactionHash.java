@@ -5,7 +5,7 @@ import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.utils.Converter;
 
 /**
- * Creates a <tt>Transaction</tt> Hash object.
+ * Creates a <tt>Transaction</tt> Hash identifier.
  * 
  * <p>
  *     A transaction hash acts as a reference point for a transaction object.
@@ -20,9 +20,9 @@ public class TransactionHash extends AbstractHash {
 	}
 	
     /**
-     * Calculates a transaction hash from an array of bytes. Uses the entire trits array
+     * Calculates a transaction hash identifier from an array of bytes. Uses the entire trits array
      * @param mode The mode we absorb the trits with
-     * @param trits array of trits we calculate the hash with
+     * @param trits Array of trits we calculate the hash with
      * @return The {@link TransactionHash}
      */
     public static TransactionHash calculate(SpongeFactory.Mode mode, byte[] trits) {
@@ -30,7 +30,7 @@ public class TransactionHash extends AbstractHash {
     }
 
     /**
-     * Calculates a transaction hash from an array of bytes
+     * Calculates a transaction hash identifier from an array of bytes
      * @param bytes The bytes that contain this transactionHash 
      * @param tritsLength The length of trits the bytes represent
      * @param sponge The way we absorb the trits with
@@ -43,7 +43,7 @@ public class TransactionHash extends AbstractHash {
     }
 
     /**
-     * Calculates a transaction hash from an array of bytes
+     * Calculates a transaction hash identifier from an array of bytes
      * @param tritsToCalculate array of trits we calculate the hash with
      * @param offset The position we start reading from inside the tritsToCalculate array
      * @param length The length of trits the bytes represent

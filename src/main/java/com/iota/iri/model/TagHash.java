@@ -1,7 +1,7 @@
 package com.iota.iri.model;
 
 /**
- * Creates a <tt>Bundle</tt> hash object
+ * Creates a <tt>Tag</tt> hash identifier
  *
  * <p>
  *     Tags can be defined and used as a referencing hash for organizing and
@@ -12,7 +12,7 @@ package com.iota.iri.model;
 public class TagHash extends AbstractHash {
 
     /**
-     * Constructor for a <tt>Tag</tt> hash object using a source array and starting point
+     * Constructor for a <tt>Tag</tt> hash identifier using a source array and starting point
      *
      * @param tagBytes The trit or byte array source that the object will be generated from
      * @param offset The starting point in the array for the beginning of the Hash object

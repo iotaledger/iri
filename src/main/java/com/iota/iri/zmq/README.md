@@ -1,7 +1,5 @@
 ## IRI MessageQ
 
-This is a **work in progress**. Things will change.
-
 MessageQ is a small wrapper for ZeroMQ inside IRI to allow streaming 
 of topics from within a running full node. The goal of this is to allow
 for targeted event streams from subscribing clients to the node process.
@@ -22,19 +20,22 @@ A client interested in tip selection metrics may subscribe to `mctn`, short for
 were traversed in a random walk simulation. It may subscribe to `rts`, for
 "reason to stop", to see information about walk terminations.
 
-Other topics currently found in the latest code are 
-* `dns` for information related to neighbors
+Topics currently found in the latest code are
+* `mctn` transactions traversed during random walk
+* `rts` information about walk terminations
+* `dnscv` neighbor DNS validations
+* `dnscc` neighbor DNS confirmations
+* `dnscu` neighbor DNS updates
 * `hmr` for the hit to miss ratio
 * `antn` for added non-tethered neighbors ( testnet only )
 * `rntn` for refused non-tethered neighbors
+* `rstat` for information about the tips requester
 * `rtl` for transactions randomly removed from the request list
 * `lmi` for the latest milestone index
 * `lmsi` for the latest solid milestone index
 * `lmhs` for the latest solid milestone hash
 * `sn` for newly confirmed transactions ( by solid milestone children measurement )
 * `tx` for newly seen transactions
-
-* `<Address>` to watch for an address to be confirmed
+* `<Address>` to watch activity on an address
 
 All topic must be lowercase (to not clash with `<Address>` containing the topic title - like `TXCR9...` & `TX`)
-All of these topics are subject to change, and more may be added; this is experimental code.

@@ -18,18 +18,18 @@ import java.util.concurrent.TimeUnit;
  *    allows the code to publish operational facts to a ZMQ stream.
  * </p>
  * <p>
- *    Usually, IRI events are published to this queue prepending the topic of the event to the body
+ *    IRI events are published to this queue prepending the topic of the event to the body
  *    of the message. The topic describes the type or the source of the event and is represented by
  *    a short lowercase string.
  *    Some example topics:
  *    <ol>
  *        <li>tx: transactions events</li>
  *        <li>lm: milestones events</li>
- *        <li>dns: DNS-workers events</li>
+ *        <li>dns: neighbors' DNS events</li>
  *    </ol>
+ *    To monitor for activity on a specific address, the topic is instead the Address to watch.
+ *    For a complete list and detailed topic specification please refer to the README.md.
  * </p>
- *
- *
  */
 public class MessageQ {
     private final static Logger LOG = LoggerFactory.getLogger(MessageQ.class);

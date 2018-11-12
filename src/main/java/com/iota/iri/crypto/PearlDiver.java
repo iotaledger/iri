@@ -1,10 +1,18 @@
-package com.iota.iri.hash;
+package com.iota.iri.crypto;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static com.iota.iri.hash.PearlDiver.State.*;
-
+/**
+ * Proof of Work calculator.
+ * <p>
+ *     Given a transaction's trits, computes an additional nonce such that
+ *     the hash ends with {@code minWeightMagnitude} zeros:<br>
+ * </p>
+ * <pre>
+ *     trailingZeros(hash(transaction || nonce)) < minWeightMagnitude
+ * </pre>
+ */
 public class PearlDiver {
 
     enum State {
@@ -24,28 +32,24 @@ public class PearlDiver {
     private volatile State state;
     private final Object syncObj = new Object();
 
-    public void cancel() {
-        synchronized (syncObj) {
-            state = CANCELLED;
-        }
-    }
-
-    private static void validateParameters(byte[] transactionTrits, int minWeightMagnitude) {
-        if (transactionTrits.length != TRANSACTION_LENGTH) {
-            throw new RuntimeException(
-                "Invalid transaction trits length: " + transactionTrits.length);
-        }
-        if (minWeightMagnitude < 0 || minWeightMagnitude > CURL_HASH_LENGTH) {
-            throw new RuntimeException("Invalid min weight magnitude: " + minWeightMagnitude);
-        }
-    }
-
+    /**
+     * Searches for a nonce such that the hash ends with {@code minWeightMagnitude} zeros.<br>
+     * To add the {@value com.iota.iri.controllers.TransactionViewModel#NONCE_TRINARY_SIZE}
+     * trits long nounce {@code transactionTrits} are changed from the following offset:
+     * {@value com.iota.iri.controllers.TransactionViewModel#NONCE_TRINARY_OFFSET} <br>
+     *
+     * @param transactionTrits trits of transaction
+     * @param minWeightMagnitude target weight for trailing zeros
+     * @param numberOfThreads number of worker threads to search for a nonce
+     * @return <tt>true</tt> if search completed successfully.
+     * the nonce will be written to the end of {@code transactionTrits}
+     */
     public synchronized boolean search(final byte[] transactionTrits, final int minWeightMagnitude,
                                        int numberOfThreads) {
 
         validateParameters(transactionTrits, minWeightMagnitude);
         synchronized (syncObj) {
-            state = RUNNING;
+            state = State.RUNNING;
         }
 
         final long[] midStateLow = new long[CURL_STATE_LENGTH];
@@ -72,11 +76,30 @@ public class PearlDiver {
                 worker.join();
             } catch (InterruptedException e) {
                 synchronized (syncObj) {
-                    state = CANCELLED;
+                    state = State.CANCELLED;
                 }
             }
         }
-        return state == COMPLETED;
+        return state == State.COMPLETED;
+    }
+
+    /**
+     * Cancels the running search task.
+     */
+    public void cancel() {
+        synchronized (syncObj) {
+            state = State.CANCELLED;
+        }
+    }
+
+    private static void validateParameters(byte[] transactionTrits, int minWeightMagnitude) {
+        if (transactionTrits.length != TRANSACTION_LENGTH) {
+            throw new RuntimeException(
+                    "Invalid transaction trits length: " + transactionTrits.length);
+        }
+        if (minWeightMagnitude < 0 || minWeightMagnitude > CURL_HASH_LENGTH) {
+            throw new RuntimeException("Invalid min weight magnitude: " + minWeightMagnitude);
+        }
     }
 
     private Runnable getRunnable(final int threadIndex, final byte[] transactionTrits, final int minWeightMagnitude,
@@ -95,7 +118,7 @@ public class PearlDiver {
 
             final int maskStartIndex = CURL_HASH_LENGTH - minWeightMagnitude;
             long mask = 0;
-            while (state == RUNNING && mask == 0) {
+            while (state == State.RUNNING && mask == 0) {
 
                 increment(midStateCopyLow, midStateCopyHigh, 162 + (CURL_HASH_LENGTH / 9) * 2,
                     CURL_HASH_LENGTH);
@@ -110,8 +133,8 @@ public class PearlDiver {
             }
             if (mask != 0) {
                 synchronized (syncObj) {
-                    if (state == RUNNING) {
-                        state = COMPLETED;
+                    if (state == State.RUNNING) {
+                        state = State.COMPLETED;
                         long outMask = 1;
                         while ((outMask & mask) == 0) {
                             outMask <<= 1;

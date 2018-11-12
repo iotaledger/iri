@@ -1,9 +1,9 @@
 package com.iota.iri;
 
-import com.iota.iri.hash.Curl;
-import com.iota.iri.hash.ISS;
-import com.iota.iri.hash.Sponge;
-import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.crypto.Curl;
+import com.iota.iri.crypto.ISS;
+import com.iota.iri.crypto.Sponge;
+import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 

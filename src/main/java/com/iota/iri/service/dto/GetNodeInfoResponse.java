@@ -27,12 +27,13 @@ public class GetNodeInfoResponse extends AbstractResponse {
     private int transactionsToRequest;
     
     private String[] features;
+    private String coordinatorAddress;
 
 	public static AbstractResponse create(String appName, String appVersion, int jreAvailableProcessors, long jreFreeMemory,
 	        String jreVersion, long maxMemory, long totalMemory, Hash latestMilestone, int latestMilestoneIndex,
 	        Hash latestSolidSubtangleMilestone, int latestSolidSubtangleMilestoneIndex, int milestoneStartIndex,
 	        int neighbors, int packetsQueueSize, long currentTimeMillis, int tips, 
-	        int numberOfTransactionsToRequest,  String[] features) {
+	        int numberOfTransactionsToRequest,  String[] features, String coordinatorAddress) {
 		final GetNodeInfoResponse res = new GetNodeInfoResponse();
 		res.appName = appName;
 		res.appVersion = appVersion;
@@ -57,6 +58,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 		res.transactionsToRequest = numberOfTransactionsToRequest;
 		
 		res.features = features;
+		res.coordinatorAddress = coordinatorAddress;
 		return res;
 	}
 
@@ -225,5 +227,14 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	 */
 	public String[] getFeatures() {
 	    return features;
+	}
+
+	/**
+	 * The address of the Coordinator being followed by this node.
+	 *
+	 * @return The tips.
+	 */
+	public String getCoordinatorAddress() {
+		return coordinatorAddress;
 	}
 }

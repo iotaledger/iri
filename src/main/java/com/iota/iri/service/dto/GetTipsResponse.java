@@ -2,6 +2,14 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
+import com.iota.iri.service.API;
+
+/**
+ * 
+ * Contains information about the result of a successful {@code getTips} API call.
+ * See {@link API#getTipsStatement} for how this response is created.
+ *
+ */
 public class GetTipsResponse extends AbstractResponse {
 	
     /**

@@ -1,7 +1,14 @@
 package com.iota.iri.service.dto;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.API;
 
+/**
+ * 
+ * Contains information about the result of a successful {@code getTransactionsToApprove} API call.
+ * See {@link API#getTransactionsToApproveStatement} for how this response is created.
+ *
+ */
 public class GetTransactionsToApproveResponse extends AbstractResponse {
 
     /**

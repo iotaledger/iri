@@ -2,8 +2,13 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
+import com.iota.iri.service.API;
+
 /**
- * This class represents the core API error for accessing a command which is limited by this Node.
+ * 
+ * Contains information about the result of a successful {@code findTransactions} API call.
+ * See {@link API#findTransactionsStatement} for how this response is created.
+ * 
  */
 public class FindTransactionsResponse extends AbstractResponse {
 	

@@ -1,5 +1,13 @@
 package com.iota.iri.service.dto;
 
+import com.iota.iri.service.API;
+
+/**
+ * 
+ * Contains information about the result of a successful {@code removeNeighbors} API call.
+ * See {@link API#removeNeighborsStatement} for how this response is created.
+ *
+ */
 public class RemoveNeighborsResponse extends AbstractResponse {
     
     /**

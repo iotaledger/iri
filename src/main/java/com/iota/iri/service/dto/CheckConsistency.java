@@ -1,8 +1,11 @@
 package com.iota.iri.service.dto;
 
+import com.iota.iri.service.API;
+
 /**
  * 
  * Contains information about the result of a successful {@code checkConsistency} API call.
+ * See {@link API#checkConsistencyStatement} for how this response is created.
  *
  */
 public class CheckConsistency extends AbstractResponse {

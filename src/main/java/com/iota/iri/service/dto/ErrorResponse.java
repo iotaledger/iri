@@ -1,7 +1,10 @@
 package com.iota.iri.service.dto;
 
+import com.iota.iri.service.API;
+
 /**
- * This class represents the core API error response.
+ * This class represents the response the API returns when an error has occurred.
+ * This can be returned for various reasons, see {@link API#process} for the cases.
  **/
 public class ErrorResponse extends AbstractResponse {
 	

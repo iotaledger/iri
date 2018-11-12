@@ -3,7 +3,14 @@ package com.iota.iri.service.dto;
 import java.util.List;
 
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.service.API;
 
+/**
+ * 
+ * Contains information about the result of a successful {@code getTrytes} API call.
+ * See {@link API#getTrytesStatement} for how this response is created.
+ *
+ */
 public class GetTrytesResponse extends AbstractResponse {
 	
     /**

@@ -1,7 +1,11 @@
 package com.iota.iri.service.dto;
 
+import com.iota.iri.service.API;
+
 /**
  * 
+ * Contains information about the result of a successful {@code getInclusionStates} API call.
+ * See {@link API#getInclusionStatesStatement} for how this response is created.
  *
  */
 public class GetInclusionStatesResponse extends AbstractResponse {

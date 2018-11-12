@@ -2,9 +2,12 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
+import com.iota.iri.service.API;
+
 /**
  * 
- * 
+ * Contains information about the result of a successful {@code getNeighbors} API call.
+ * See {@link API#getNeighborsStatement} for how this response is created.
  *
  */
 public class GetNeighborsResponse extends AbstractResponse {

@@ -2,8 +2,12 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
+import com.iota.iri.service.API;
+
 /**
  * 
+ * Contains information about the result of a successful {@code getBalances} API call.
+ * See {@link API#getBalancesStatement} for how this response is created.
  *
  */
 public class GetBalancesResponse extends AbstractResponse {

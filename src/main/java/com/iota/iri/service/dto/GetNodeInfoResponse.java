@@ -1,8 +1,15 @@
 package com.iota.iri.service.dto;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.API;
 import com.iota.iri.service.Feature;
 
+/**
+ * 
+ * Contains information about the result of a successful {@code getNodeInfo} API call.
+ * See {@link API#getNodeInfoStatement} for how this response is created.
+ *
+ */
 public class GetNodeInfoResponse extends AbstractResponse {
 
     /**

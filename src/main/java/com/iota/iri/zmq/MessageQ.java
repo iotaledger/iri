@@ -18,8 +18,8 @@ import java.util.concurrent.TimeUnit;
  *    allows the code to publish operational facts to a ZMQ stream.
  * </p>
  * <p>
- *    IRI events are published to this queue prepending the topic of the event to the body
- *    of the message. The topic describes the type or the source of the event and is represented by
+ *    IRI events are published to this queue prepending the {@code topic} of the event to the body
+ *    of the {@code message}. The topic describes the type or the source of the event and is represented by
  *    a short lowercase string.
  *    Some example topics:
  *    <ol>
@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  *        <li>lm: milestones events</li>
  *        <li>dns: neighbors' DNS events</li>
  *    </ol>
- *    To monitor for activity on a specific address, the topic is instead the Address to watch.
+ *    To monitor for activity on a specific address, the topic is instead the {@code Address} to watch.
  *    For a complete list and detailed topic specification please refer to the README.md.
  * </p>
  */

@@ -1,7 +1,7 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;

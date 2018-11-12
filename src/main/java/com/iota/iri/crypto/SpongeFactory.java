@@ -1,4 +1,4 @@
-package com.iota.iri.hash;
+package com.iota.iri.crypto;
 
 /**
  * Created by paul on 7/27/17.

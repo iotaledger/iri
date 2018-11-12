@@ -11,7 +11,25 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Created by paul on 6/20/17.
+ * Allows publishing of IRI events to a ZeroMQ queue.
+ *
+ * <p>
+ *    In order to be able to watch IRI events, and possibly build tools on top of them, this class
+ *    allows the code to publish operational facts to a ZMQ stream.
+ * </p>
+ * <p>
+ *    Usually, IRI events are published to this queue prepending the topic of the event to the body
+ *    of the message. The topic describes the type or the source of the event and is represented by
+ *    a short lowercase string.
+ *    Some example topics:
+ *    <ol>
+ *        <li>tx: transactions events</li>
+ *        <li>lm: milestones events</li>
+ *        <li>dns: DNS-workers events</li>
+ *    </ol>
+ * </p>
+ *
+ *
  */
 public class MessageQ {
     private final static Logger LOG = LoggerFactory.getLogger(MessageQ.class);
@@ -26,6 +44,14 @@ public class MessageQ {
         return new MessageQ(config.getZmqPort(), config.getZmqIpc(), config.getZmqThreads(), config.isZmqEnabled());
     }
 
+    /**
+     * Creates and starts a ZMQ publisher.
+     *
+     * @param port port the publisher will be bound to
+     * @param ipc IPC socket to bind the publisher to
+     * @param nthreads number of threads used by the ZMQ publisher
+     * @param enabled boolean enable flag; defaults to "false"
+     */
     private MessageQ(int port, String ipc, int nthreads, boolean enabled) {
         if (enabled) {
             context = ZMQ.context(nthreads);
@@ -41,6 +67,12 @@ public class MessageQ {
         }
     }
 
+    /**
+     * Publishes an event to the queue
+     *
+     * @param message message body, prepended by topic string
+     * @param objects objects to be rendered as part of the message
+     */
     public void publish(String message, Object... objects) {
         if (enabled) {
             String toSend = String.format(message, objects);
@@ -48,6 +80,9 @@ public class MessageQ {
         }
     }
 
+    /**
+     * Gracefully shuts down the ZMQ publisher, forcing after 5 seconds.
+     */
     public void shutdown() {
         publisherService.shutdown();
 

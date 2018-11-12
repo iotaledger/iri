@@ -78,7 +78,7 @@ public class TransactionValidator {
      *
      *
      * @see #spawnSolidTransactionsPropagation()
-     * @param testnet true if we are in testnet mode then {@code mwm} will be capped at {@value #TESTNET_MWM_CAP}
+     * @param testnet true if we are in testnet mode, this caps {@code mwm} to {@value #TESTNET_MWM_CAP}
      *                regardless of parameter input.
      * @param mwm minimum weight magnitude: the minimal number of 9s that ought to appear in the end of the transaction
      *            hash

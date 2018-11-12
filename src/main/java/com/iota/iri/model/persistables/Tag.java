@@ -3,21 +3,19 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.model.Hash;
 
 /**
- * Represents a persistable <tt>Tag</tt> hash set.
+ * This is a collection of hash identifiers that can change the value of a <tt>Tag</tt>.
  */
 public class Tag extends Hashes {
 
     /**
-     * Constructor for persistable <tt>Tag</tt> hash set.
-     * @param hash the hash that the persistable set will be generated from
+     * Adds a <tt>Tag</tt> hash identifier to the collection
+     * @param hash The hash identifier that will be added to the collection
      */
     public Tag(Hash hash) {
         set.add(hash);
     }
 
-    /**
-     * Constructor for persistable <tt>Bundle</tt> hash set.
-     */
+    /**Instantiates an empty <tt>Tag</tt> hash identifier collection*/
     public Tag() {
 
     }

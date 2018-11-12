@@ -10,7 +10,8 @@ import java.nio.ByteBuffer;
 
 
 /**
- * Represents a persistable <tt>Transaction</tt> set.
+ * This is a collection of hash identifiers that can change the value of a <tt>Transaction</tt>. This acts
+ * as the access point for all other persistable set collections representing the contents of a <tt>Transaction</tt>.
  *
  * <p>
  *     A Transaction set contains all the information of a particular transaction. This includes
@@ -83,7 +84,7 @@ public class Transaction implements Persistable {
     }
 
     /**
-     * Assigns the Transaction set bytes provided the given array is not null
+     * Assigns the Transaction set bytes to the given byte array provided the array is not null
      *
      * @param bytes the byte array that the transaction bytes will be assigned to
      */

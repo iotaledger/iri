@@ -3,26 +3,25 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.model.Hash;
 
 /**
- * Creates a persistable <tt>Approvee</tt> hash set. If a hash is provided, this hash is added
- * to the newly generated hash set.
+ * This is a collection of hash identifiers that can change the values of an <tt>Approvee</tt>
  *
  * <p>
  *     An <tt>Approvee</tt> hash set is comprised of transaction hashes that reference
- *     a specific transaction. Approvee's are transactions that either directly or
+ *     specific transactions. Approvee's are transactions that either directly or
  *     indirectly approve a transaction.
  * </p>
  */
 public class Approvee extends Hashes{
 
     /**
-     * Constructor for persistable <tt>Approvee</tt> hash set.
-     * @param hash the hash that the persistable set will be generated from
+     * Adds an <tt>Approvee</tt> identifier to the collection.
+     * @param hash The hash identifier that will be added to the collection
      */
     public Approvee(Hash hash) {
         set.add(hash);
     }
 
-    /**Constructor for persistable <tt>Approvee</tt> hash set.*/
+    /**Instantiates a collection of <tt>Approvee</tt> hash identifiers.*/
     public Approvee() {
 
     }

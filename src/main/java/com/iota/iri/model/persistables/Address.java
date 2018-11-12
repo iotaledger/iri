@@ -3,17 +3,18 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.model.Hash;
 
 /**
- * Creates a persistable <tt>Address</tt> hash set. If a hash is provided, this hash is added
- * to the newly generated hash set.
+ * This is a collection of hash identifiers that change the value of an <tt>Address</tt>
  */
 public class Address extends Hashes{
 
-    /**Constructor for persistable <tt>Address</tt> hash set*/
+    /**
+     * Instantiates an empty <tt>Address</tt> hash identifier collection
+     */
     public Address(){}
 
     /**
-     * Constructor for persistable <tt>Address</tt> hash set from a provided hash
-     * @param hash the hash that the persistable set will be generated from
+     * Adds an <tt>Address</tt> hash identifier to the collection
+     * @param hash The hash identifier that will be added to the collection
      */
     public Address(Hash hash) {
         set.add(hash);

@@ -128,7 +128,7 @@ public class TransactionValidator {
      * </p>
      * @param transactionViewModel transaction under test
      * @return <tt>true</tt> if timestamp is not in bound and {@code transactionViewModel} is not genesis.
-     * Else returns  <tt>false</tt>.
+     * Else returns <tt>false</tt>.
      */
     private boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
         if (transactionViewModel.getAttachmentTimestamp() == 0) {

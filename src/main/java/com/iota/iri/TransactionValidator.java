@@ -425,7 +425,7 @@ public class TransactionValidator {
     }
 
     /**
-     * If the the {@code approvee} is missing request it from a neighbor.
+     * If the the {@code approvee} is missing, request it from a neighbor.
      * @param approovee transaction we check.
      * @return true if {@code approvee} is solid.
      * @throws Exception if we encounter an error while requesting a transaction

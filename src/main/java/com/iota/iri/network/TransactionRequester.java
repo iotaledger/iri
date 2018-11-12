@@ -2,6 +2,7 @@ package com.iota.iri.network;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
@@ -29,9 +30,11 @@ public class TransactionRequester {
 
     private final Object syncObj = new Object();
     private final Tangle tangle;
+    private final Snapshot initialSnapshot;
 
-    public TransactionRequester(Tangle tangle, MessageQ messageQ) {
+    public TransactionRequester(Tangle tangle, Snapshot initialSnapshot, MessageQ messageQ) {
         this.tangle = tangle;
+        this.initialSnapshot = initialSnapshot;
         this.messageQ = messageQ;
     }
 
@@ -62,7 +65,7 @@ public class TransactionRequester {
     }
 
     public void requestTransaction(Hash hash, boolean milestone) throws Exception {
-        if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(tangle, hash)) {
+        if (!initialSnapshot.hasSolidEntryPoint(hash) && !TransactionViewModel.exists(tangle, hash)) {
             synchronized (syncObj) {
                 if(milestone) {
                     transactionsToRequest.remove(hash);

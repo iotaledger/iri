@@ -2,11 +2,14 @@ package com.iota.iri;
 
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
@@ -25,18 +28,22 @@ public class MilestoneTrackerTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
+    private static SnapshotProvider snapshotProvider;
     private static MilestoneTracker milestoneTracker;
 
 
     @AfterClass
     public static void tearDown() throws Exception {
         tangle.shutdown();
+        snapshotProvider.shutdown();
         dbFolder.delete();
+        logFolder.delete();
     }
 
     @BeforeClass
     public static void beforeClass() throws Exception {
         tangle = new Tangle();
+        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
         dbFolder.create();
         logFolder.create();
         tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
@@ -56,8 +63,8 @@ public class MilestoneTrackerTest {
         configuration.parseConfigFromArgs(args);
 
         MessageQ messageQ = Mockito.mock(MessageQ.class);
-        TransactionValidator transactionValidator = new TransactionValidator(tangle, new TipsViewModel(), new TransactionRequester(tangle, messageQ), configuration);
-        milestoneTracker = new MilestoneTracker(tangle, transactionValidator, messageQ, Snapshot.init(configuration).clone(), configuration);
+        TransactionValidator transactionValidator = new TransactionValidator(tangle, snapshotProvider.getInitialSnapshot(), new TipsViewModel(), new TransactionRequester(tangle, snapshotProvider.getInitialSnapshot(), messageQ));
+        milestoneTracker = new MilestoneTracker(tangle, snapshotProvider, transactionValidator, messageQ, Snapshot.init(configuration).clone(), configuration);
     }
 
     @Test
@@ -75,8 +82,8 @@ public class MilestoneTrackerTest {
         TransactionViewModel transaction0, transaction1;
         transaction0 = new TransactionViewModel(trits0, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits0));
         transaction1 = new TransactionViewModel(trits1, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits1));
-        transaction0.store(tangle);
-        transaction1.store(tangle);
+        transaction0.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
 
         //call validateMilestone
         final MilestoneTracker.Validity valid = milestoneTracker.validateMilestone(sigMode, securityLevel, transaction0, MilestoneTracker.getIndex(transaction0));
@@ -97,8 +104,8 @@ public class MilestoneTrackerTest {
         TransactionViewModel transaction0, transaction1;
         transaction0 = new TransactionViewModel(trits0, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits0));
         transaction1 = new TransactionViewModel(trits1, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits1));
-        transaction0.store(tangle);
-        transaction1.store(tangle);
+        transaction0.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
 
         //call validateMilestone
         final MilestoneTracker.Validity valid = milestoneTracker.validateMilestone(sigMode, securityLevel, transaction0, MilestoneTracker.getIndex(transaction0));
@@ -123,10 +130,10 @@ public class MilestoneTrackerTest {
         transaction1 = new TransactionViewModel(trits1, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits1));
         transaction2 = new TransactionViewModel(trits2, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits2));
         transaction3 = new TransactionViewModel(trits3, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits3));
-        transaction0.store(tangle);
-        transaction1.store(tangle);
-        transaction2.store(tangle);
-        transaction3.store(tangle);
+        transaction0.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction3.store(tangle, snapshotProvider.getInitialSnapshot());
 
         //call validateMilestone
         final MilestoneTracker.Validity valid = milestoneTracker.validateMilestone(sigMode, securityLevel, transaction0, MilestoneTracker.getIndex(transaction0));
@@ -151,10 +158,10 @@ public class MilestoneTrackerTest {
         transaction1 = new TransactionViewModel(trits1, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits1));
         transaction2 = new TransactionViewModel(trits2, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits2));
         transaction3 = new TransactionViewModel(trits3, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits3));
-        transaction0.store(tangle);
-        transaction1.store(tangle);
-        transaction2.store(tangle);
-        transaction3.store(tangle);
+        transaction0.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction3.store(tangle, snapshotProvider.getInitialSnapshot());
 
         //call validateMilestone
         final MilestoneTracker.Validity valid = milestoneTracker.validateMilestone(sigMode, securityLevel, transaction0, MilestoneTracker.getIndex(transaction0));

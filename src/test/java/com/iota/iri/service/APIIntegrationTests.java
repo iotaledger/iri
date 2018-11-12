@@ -8,9 +8,8 @@ import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IXIConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
-import com.iota.iri.service.API;
 import com.iota.iri.utils.Converter;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.ResponseSpecBuilder;
@@ -88,6 +87,7 @@ public class APIIntegrationTests {
             //init
             try {
                 iota.init();
+                iota.snapshotProvider.getInitialSnapshot().setTimestamp(0);
                 api.init();
                 ixi.init(IXIConfig.IXI_DIR);
             } catch (final Exception e) {

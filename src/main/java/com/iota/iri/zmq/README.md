@@ -36,6 +36,7 @@ Topics currently found in the latest code are
 * `lmhs` for the latest solid milestone hash
 * `sn` for newly confirmed transactions ( by solid milestone children measurement )
 * `tx` for newly seen transactions
+* `tx_trytes` trytes of newly seen transactions
 * `<Address>` to watch activity on an address
 
 All topic must be lowercase (to not clash with `<Address>` containing the topic title - like `TXCR9...` & `TX`)

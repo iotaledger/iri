@@ -23,9 +23,9 @@ import java.util.concurrent.TimeUnit;
  *    a short lowercase string.
  *    Some example topics:
  *    <ol>
- *        <li>tx: transactions events</li>
- *        <li>lm: milestones events</li>
- *        <li>dns: neighbors' DNS events</li>
+ *        <li><code>tx</code>: transactions events</li>
+ *        <li><code>lm</code>: milestones events</li>
+ *        <li><code>dnscu</code>: neighbors' DNS update events</li>
  *    </ol>
  *    To monitor for activity on a specific address, the topic is instead the {@code Address} to watch.
  *    For a complete list and detailed topic specification please refer to the README.md.
@@ -48,9 +48,9 @@ public class MessageQ {
      * Creates and starts a ZMQ publisher.
      *
      * @param port port the publisher will be bound to
-     * @param ipc IPC socket to bind the publisher to
+     * @param ipc IPC socket the publisher will be bound to
      * @param nthreads number of threads used by the ZMQ publisher
-     * @param enabled boolean enable flag; defaults to "false"
+     * @param enabled boolean enable flag; by default the publisher will not be started
      */
     private MessageQ(int port, String ipc, int nthreads, boolean enabled) {
         if (enabled) {
@@ -70,8 +70,8 @@ public class MessageQ {
     /**
      * Publishes an event to the queue
      *
-     * @param message message body, prepended by topic string
-     * @param objects objects to be rendered as part of the message
+     * @param message message body, prepended by the topic string
+     * @param objects arguments referenced by the message body, similar to a format string
      */
     public void publish(String message, Object... objects) {
         if (enabled) {

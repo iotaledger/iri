@@ -33,6 +33,7 @@ public interface ReportingExecutorService {
      * For recurring tasks it is called multiple times.<br />
      *
      * @param taskDetails object containing details about this task
+     * @param error {@link Exception} that caused the task to complete
      */
     void onFinishTask(TaskDetails taskDetails, Throwable error);
 
@@ -53,6 +54,7 @@ public interface ReportingExecutorService {
      * manner. For recurring tasks this only gets called once.<br />
      *
      * @param taskDetails object containing details about this task
+     * @param error {@link Exception} that caused the task to complete
      */
     void onCompleteTask(TaskDetails taskDetails, Throwable error);
 }

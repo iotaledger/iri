@@ -2,7 +2,6 @@ package com.iota.iri.service.dto;
 
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.API;
-
 import com.iota.iri.service.Feature;
 
 /**

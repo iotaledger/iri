@@ -119,7 +119,7 @@ public class TransactionValidator {
     }
 
     /**
-     * Ascertains that the timestamp of the transaction is not below the last global snapshot time
+     * Validates that the timestamp of the transaction is not below the last global snapshot time
      * or more than {@value #MAX_TIMESTAMP_FUTURE} seconds in the future.
      *
      * <p>

@@ -72,7 +72,7 @@ public class TransactionValidator {
      * Does two things
      * <ol>
      *     <li>Sets the minimum weight magnitude. We validate POW on a transaction we will ascertain that it has
-     *     a certain amount of 9s in the end </li>
+     *     a certain amount of 9s at the end of its hash. This amount depends on MWM</li>
      *     <li>Starts transaction solidification thread</li>
      * </ol>
      *

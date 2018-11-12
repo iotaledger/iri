@@ -111,7 +111,7 @@ public class TransactionValidator {
     }
 
     /**
-     * @return the number of trailing 9s that must appear in the transaction hash in order to know that proof of work
+     * @return the number of trailing 9s that have to be present in the transaction hash to validate that proof of work
      * has been done
      */
     public int getMinWeightMagnitude() {

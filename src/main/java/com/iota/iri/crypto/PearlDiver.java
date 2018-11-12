@@ -3,6 +3,16 @@ package com.iota.iri.crypto;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Proof of Work calculator.
+ * <p>
+ *     Given a transaction's trits, computes an additional nonce such that
+ *     the hash ends with {@code minWeightMagnitude} zeros:<br>
+ * </p>
+ * <pre>
+ *     trailingZeros(hash(transaction || nonce)) < minWeightMagnitude
+ * </pre>
+ */
 public class PearlDiver {
 
     enum State {
@@ -22,22 +32,18 @@ public class PearlDiver {
     private volatile State state;
     private final Object syncObj = new Object();
 
-    public void cancel() {
-        synchronized (syncObj) {
-            state = State.CANCELLED;
-        }
-    }
-
-    private static void validateParameters(byte[] transactionTrits, int minWeightMagnitude) {
-        if (transactionTrits.length != TRANSACTION_LENGTH) {
-            throw new RuntimeException(
-                "Invalid transaction trits length: " + transactionTrits.length);
-        }
-        if (minWeightMagnitude < 0 || minWeightMagnitude > CURL_HASH_LENGTH) {
-            throw new RuntimeException("Invalid min weight magnitude: " + minWeightMagnitude);
-        }
-    }
-
+    /**
+     * Searches for a nonce such that the hash ends with {@code minWeightMagnitude} zeros.<br>
+     * To add the {@value com.iota.iri.controllers.TransactionViewModel#NONCE_TRINARY_SIZE}
+     * trits long nounce {@code transactionTrits} are changed from the following offset:
+     * {@value com.iota.iri.controllers.TransactionViewModel#NONCE_TRINARY_OFFSET} <br>
+     *
+     * @param transactionTrits trits of transaction
+     * @param minWeightMagnitude target weight for trailing zeros
+     * @param numberOfThreads number of worker threads to search for a nonce
+     * @return <tt>true</tt> if search completed successfully.
+     * the nonce will be written to the end of {@code transactionTrits}
+     */
     public synchronized boolean search(final byte[] transactionTrits, final int minWeightMagnitude,
                                        int numberOfThreads) {
 
@@ -75,6 +81,25 @@ public class PearlDiver {
             }
         }
         return state == State.COMPLETED;
+    }
+
+    /**
+     * Cancels the running search task.
+     */
+    public void cancel() {
+        synchronized (syncObj) {
+            state = State.CANCELLED;
+        }
+    }
+
+    private static void validateParameters(byte[] transactionTrits, int minWeightMagnitude) {
+        if (transactionTrits.length != TRANSACTION_LENGTH) {
+            throw new RuntimeException(
+                    "Invalid transaction trits length: " + transactionTrits.length);
+        }
+        if (minWeightMagnitude < 0 || minWeightMagnitude > CURL_HASH_LENGTH) {
+            throw new RuntimeException("Invalid min weight magnitude: " + minWeightMagnitude);
+        }
     }
 
     private Runnable getRunnable(final int threadIndex, final byte[] transactionTrits, final int minWeightMagnitude,

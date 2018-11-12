@@ -357,7 +357,7 @@ public class TransactionValidator {
      *
      * <ol>
      *     <li>Removes {@code transactionViewModel}'s hash from the the request queue since we already found it.</li>
-     *     <li>If {@code transactionViewModel} has no children we add it to the node's active tip list</li>
+     *     <li>If {@code transactionViewModel} has no children, we add it to the node's active tip list</li>
      *     <li>Removes {@code transactionViewModel}'s parents from the node's tip list (if they're present there)</li>
      *     <li>Attempts to quickly solidify {@code transactionViewModel} by checking whether its direct parents
      *     are soild. If solid we add it to the queue transaction solidification thread to help it propagate the

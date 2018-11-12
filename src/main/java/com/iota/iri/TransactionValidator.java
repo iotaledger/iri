@@ -123,7 +123,7 @@ public class TransactionValidator {
      * or more than {@value #MAX_TIMESTAMP_FUTURE} seconds in the future.
      *
      * <p>
-     *     First the attachment timestamp (set after POW) is checked, and if not available
+     *     First the attachment timestamp (set after performing POW) is checked, and if not available
      *     the regular timestamp is checked. Genesis transaction will always be valid.
      * </p>
      * @param transactionViewModel transaction under test

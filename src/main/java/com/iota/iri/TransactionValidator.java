@@ -353,7 +353,7 @@ public class TransactionValidator {
      * to update the live tips accordingly, and attempts to solidify the transaction.
      *
      * <p/>
-     * It performs the following operations:
+     * Performs the following operations:
      *
      * <ol>
      *     <li>Removes {@code transactionViewModel}'s hash from the the request queue since we already found it.</li>

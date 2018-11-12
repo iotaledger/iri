@@ -361,7 +361,7 @@ public class TransactionValidator {
      *     <li>Removes {@code transactionViewModel}'s parents from the node's tip list (if they're present there)</li>
      *     <li>Attempts to quickly solidify {@code transactionViewModel} by checking whether its direct parents
      *     are soild. If solid we add it to the queue transaction solidification thread to help it propagate the
-     *     solidification to approving child transactions</li>
+     *     solidification to the approving child transactions</li>
      *     <li>Requests missing transactions that are needed to solidify {@code transactionViewModel}</li>
      * </ol>
      * @param transactionViewModel received transaction that is being updated

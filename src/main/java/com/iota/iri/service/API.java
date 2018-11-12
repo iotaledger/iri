@@ -96,8 +96,14 @@ public class API {
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
+	
+    private static int counter_getTxToApprove = 0;
+    private static long elapsedTime_getTxToApprove = 0L;
+    private static int counter_PoW = 0;
+    private static long elapsedTime_PoW = 0L;
     
     private final String[] features;
+
 
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
@@ -591,21 +597,6 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    private static int counterGetTxToApprove = 0;
-    public static int getCounterGetTxToApprove() {
-        return counterGetTxToApprove;
-    }
-    public static void incCounterGetTxToApprove() {
-        counterGetTxToApprove++;
-    }
-
-    private static long ellapsedTime_getTxToApprove = 0L;
-    public static long getEllapsedTimeGetTxToApprove() {
-        return ellapsedTime_getTxToApprove;
-    }
-    public static void incEllapsedTimeGetTxToApprove(long ellapsedTime) {
-        ellapsedTime_getTxToApprove += ellapsedTime;
-    }
 
     /**
       * Tip selection which returns <code>trunkTransaction</code> and <code>branchTransaction</code>.
@@ -638,22 +629,23 @@ public class API {
         if (invalidSubtangleStatus()) {
             throw new IllegalStateException("This operations cannot be executed: The subtangle has not been updated yet.");
         }
-
+        long startTime = System.nanoTime();
         List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(depth, reference);
 
         if (log.isDebugEnabled()) {
-            gatherStatisticsOnTipSelection();
+            gatherStatisticsOnTipSelection(System.nanoTime() - startTime);
         }
         return tips;
     }
 
-    private void gatherStatisticsOnTipSelection() {
-        API.incCounterGetTxToApprove();
-        if ((getCounterGetTxToApprove() % 100) == 0) {
-            String sb = "Last 100 getTxToApprove consumed " + API.getEllapsedTimeGetTxToApprove() / 1000000000L + " seconds processing time.";
+    private void gatherStatisticsOnTipSelection(long elapsedTime) {
+        counter_getTxToApprove++;
+        elapsedTime_getTxToApprove += elapsedTime;
+        if ((counter_getTxToApprove % 100) == 0) {
+            String sb = "Last 100 getTxToApprove consumed " + elapsedTime_getTxToApprove / 1000000000L + " seconds processing time.";
             log.debug(sb);
-            counterGetTxToApprove = 0;
-            ellapsedTime_getTxToApprove = 0L;
+            counter_getTxToApprove = 0;
+            elapsedTime_getTxToApprove = 0L;
         }
     }
 
@@ -1038,21 +1030,7 @@ public class API {
         return GetBalancesResponse.create(elements, hashes.stream().map(h -> h.toString()).collect(Collectors.toList()), index);
     }
 
-    private static int counter_PoW = 0;
-    public static int getCounterPoW() {
-        return counter_PoW;
-    }
-    public static void incCounterPoW() {
-        API.counter_PoW++;
-    }
 
-    private static long ellapsedTime_PoW = 0L;
-    public static long getEllapsedTimePoW() {
-        return ellapsedTime_PoW;
-    }
-    public static void incEllapsedTimePoW(long ellapsedTime) {
-        ellapsedTime_PoW += ellapsedTime;
-    }
 
     /**
       * Attaches the specified transactions (trytes) to the Tangle by doing Proof of Work.
@@ -1115,15 +1093,8 @@ public class API {
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
             } finally {
-                API.incEllapsedTimePoW(System.nanoTime() - startTime);
-                API.incCounterPoW();
-                if ( ( API.getCounterPoW() % 100) == 0 ) {
-                    String sb = "Last 100 PoW consumed " +
-                            API.getEllapsedTimePoW() / 1000000000L +
-                            " seconds processing time.";
-                    log.info(sb);
-                    counter_PoW = 0;
-                    ellapsedTime_PoW = 0L;
+                if (log.isDebugEnabled()) {
+                  gatherStatisticsOnPoW(System.nanoTime() - startTime);
                 }
             }
         }
@@ -1134,6 +1105,18 @@ public class API {
         }
         return elements;
     }
+
+    private void gatherStatisticsOnPoW(long elapsedTime) {
+        counter_PoW++;
+        elapsedTime_PoW += elapsedTime;
+        if ((counter_PoW % 100) == 0) {
+            String sb = "Last 100 PoW consumed " + elapsedTime_PoW / 1000000000L + " seconds processing time.";
+            log.debug(sb);
+            counter_PoW = 0;
+            elapsedTime_PoW = 0L;
+        }
+    }
+
 
     /**
       * Temporarily add a list of neighbors to your node.

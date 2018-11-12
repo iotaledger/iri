@@ -25,7 +25,7 @@ public class BundleValidator {
      * The validation does the following semantic checks:
      * <ol>
      *     <li>The absolute bundle value never exceeds the total supply of iotas</li>
-     *     the last trit when we convert from binary</li>
+     *     <li>The last trit when we convert from binary</li>
      *     <li>Total bundle value is 0 (inputs and outputs are balanced)</li>
      *     <li>Recalculate the bundle hash by absorbing and squeezing the transactions' essence</li>
      *     <li>Validate the signature on input transactions</li>
@@ -36,7 +36,8 @@ public class BundleValidator {
      *    <li>{@code tailHash} has an index of 0</li>
      *    <li>The transactions' reference order is consistent with the indexes</li>
      *    <li>The last index of each transaction in the bundle matches the last index of the tail transaction</li>
-     *    <li>Check that last trit in a valid address hash is 0. We generate addresses using Kerl and we lose</li>
+     *    <li>Check that last trit in a valid address hash is 0. We generate addresses using binary Kerl and
+     *    we lose the last trit in the process</li>
      * </ol>
      *
      * @implNote if {@code tailHash} was already invalidated/validated by a previous call to this method
@@ -159,7 +160,7 @@ public class BundleValidator {
                                     instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                                 }
                             }
-                            //bundle validity is known
+                            //bundle validity status is known
                             else {
                                 transactions.add(instanceTransactionViewModels);
                             }

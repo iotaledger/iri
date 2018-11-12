@@ -148,7 +148,7 @@ public class TransactionValidator {
      *     <li>Check that no value trits are set beyond the usable index, otherwise we will have values larger
      *     than max supply</li>
      *     <li>Check that sufficient POW was performed</li>
-     *     <li>If a value transaction we check that the address has 0 as the last trit. This must be because of the
+     *     <li>In value transactions, we check that the address has 0 set as the last trit. This must be because of the
      *     conversion between bytes to trits</li>
      * </ol>
      * @param transactionViewModel transaction that should be validated

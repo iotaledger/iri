@@ -310,7 +310,7 @@ public class TransactionValidator {
     /**
      * Iterates over all known solid transactions that are currently known. For each solid transaction we find
      * its children (approvers) and try to quickly solidify them with {@link #quietQuickSetSolid}.
-     * If we manage to solidify the transactions we add them to the solidification queue for a traversal by a later run.
+     * If we manage to solidify the transactions, we add them to the solidification queue for a traversal by a later run.
      */
     //Package private for testing
     void propagateSolidTransactions() {

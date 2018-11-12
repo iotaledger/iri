@@ -1054,13 +1054,13 @@ public class API {
         for(Integer index : sameIndexTransactionCount.keySet()) {
             // Get the tips from the snapshot indexes we are missing
             Queue<Hash> sameIndexTip = sameIndexTips.get(index);
-            if (sameIndexTip != null) {
-                // We have tips on the same level as transactions, do a manual search.
-                if (!exhaustiveSearchWithinIndex(sameIndexTip, analyzedTips, trans, 
+            
+            // We have tips on the same level as transactions, do a manual search.
+            if (sameIndexTip != null && !exhaustiveSearchWithinIndex(
+                        sameIndexTip, analyzedTips, trans, 
                         inclusionStates, sameIndexTransactionCount.get(index), index)) {
                     
-                    return ErrorResponse.create(INVALID_SUBTANGLE);
-                }
+                return ErrorResponse.create(INVALID_SUBTANGLE);
             }
         }
         final boolean[] inclusionStatesBoolean = new boolean[inclusionStates.length];
@@ -1160,7 +1160,7 @@ public class API {
 
         final Set<Hash> bundlesTransactions = new HashSet<>();
         if (request.containsKey("bundles")) {
-            final HashSet<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);
+            final Set<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);
             for (final String bundle : bundles) {
                 bundlesTransactions.addAll(
                         BundleViewModel.load(instance.tangle, HashFactory.BUNDLE.create(bundle))
@@ -1172,7 +1172,7 @@ public class API {
 
         final Set<Hash> addressesTransactions = new HashSet<>();
         if (request.containsKey("addresses")) {
-            final HashSet<String> addresses = getParameterAsSet(request,"addresses",HASH_SIZE);
+            final Set<String> addresses = getParameterAsSet(request,"addresses",HASH_SIZE);
             for (final String address : addresses) {
                 addressesTransactions.addAll(
                         AddressViewModel.load(instance.tangle, HashFactory.ADDRESS.create(address))
@@ -1184,7 +1184,7 @@ public class API {
 
         final Set<Hash> tagsTransactions = new HashSet<>();
         if (request.containsKey("tags")) {
-            final HashSet<String> tags = getParameterAsSet(request,"tags",0);
+            final Set<String> tags = getParameterAsSet(request,"tags",0);
             for (String tag : tags) {
                 tag = padTag(tag);
                 tagsTransactions.addAll(
@@ -1206,7 +1206,7 @@ public class API {
         final Set<Hash> approveeTransactions = new HashSet<>();
 
         if (request.containsKey("approvees")) {
-            final HashSet<String> approvees = getParameterAsSet(request,"approvees",HASH_SIZE);
+            final Set<String> approvees = getParameterAsSet(request,"approvees",HASH_SIZE);
             for (final String approvee : approvees) {
                 approveeTransactions.addAll(
                         TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(approvee))
@@ -1273,7 +1273,7 @@ public class API {
      *                             the string is not exactly trytes of <code>size</code> length or
      *                             the amount of Strings in the list exceeds {@link APIConfig#getMaxRequestsList}
      */
-    private HashSet<String> getParameterAsSet(
+    private Set<String> getParameterAsSet(
             Map<String, Object> request, 
             String paramName, int size) throws ValidationException {
 
@@ -1550,7 +1550,7 @@ public class API {
      */
     private int getParameterAsInt(Map<String, Object> request, String paramName) throws ValidationException {
         validateParamExists(request, paramName);
-        final int result;
+        int result;
         try {
             result = ((Double) request.get(paramName)).intValue();
         } catch (ClassCastException e) {

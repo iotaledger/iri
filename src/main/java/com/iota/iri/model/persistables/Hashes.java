@@ -45,7 +45,7 @@ public class Hashes implements Persistable {
         if(bytes != null) {
             set = new LinkedHashSet<>(bytes.length / (1 + Hash.SIZE_IN_BYTES) + 1);
             for (int i = 0; i < bytes.length; i += 1 + Hash.SIZE_IN_BYTES) {
-                set.add(HashFactory.GENERIC.create(this.getClass(), bytes, i, Hash.SIZE_IN_BYTES));
+                set.add(HashFactory.TRANSACTION.create(bytes, i, Hash.SIZE_IN_BYTES));
             }
         }
     }

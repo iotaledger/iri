@@ -1,4 +1,4 @@
-package com.iota.iri.hash;
+package com.iota.iri.crypto;
 
 import com.iota.iri.utils.Converter;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
@@ -8,15 +8,22 @@ import java.security.DigestException;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+/**
+ * Kerl is a cryptographic hash function, from the sponge family. <br>
+ * Kerl is a ternary wrapper to {@code Keccak-384}.
+ *
+ * @see <a href="https://github.com/iotaledger/kerl/blob/master/IOTA-Kerl-spec.md">Kerl spec</a>
+ */
 public final class Kerl implements Sponge {
 
-    public static final int BIT_HASH_LENGTH = 384;
-    public static final int BYTE_HASH_LENGTH = BIT_HASH_LENGTH / 8;
+    private static final int BIT_HASH_LENGTH = 384;
+    static final int BYTE_HASH_LENGTH = BIT_HASH_LENGTH / 8; //Package Private For Testing
 
-    public static final BigInteger RADIX = BigInteger.valueOf(Converter.RADIX);
-    public static final int MAX_POWERS_LONG = 40;
+    private static final BigInteger RADIX = BigInteger.valueOf(Converter.RADIX);
+    static final int MAX_POWERS_LONG = 40; //Package Private For Testing
     private static final BigInteger[] RADIX_POWERS = IntStream.range(0, MAX_POWERS_LONG + 1).mapToObj(RADIX::pow).toArray(BigInteger[]::new);
 
+    //delegate
     private final Keccak.Digest384 keccak;
 
     protected Kerl() {
@@ -42,6 +49,13 @@ public final class Kerl implements Sponge {
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>
+     *     <b>Due to a known vulnerability in this implementation, no more than 243 trits should be squeezed.</b>
+     * </p>
+     */
     @Override
     public void squeeze(final byte[] trits, final int offset, final int length) {
         if (length % 243 != 0) {
@@ -70,7 +84,10 @@ public final class Kerl implements Sponge {
         }
     }
 
-    public static BigInteger bigIntFromTrits(final byte[] trits, final int offset, final int size) {
+
+    //Bytes<->Trits Converters, used to convert 384bit to 243trits
+
+    static BigInteger bigIntFromTrits(final byte[] trits, final int offset, final int size) {
         for (int i = offset; i < offset + size; i++) {
             if (trits[i] < -1 || trits[i] > 1) {
                 throw new IllegalArgumentException("not a trit: " + trits[i]);
@@ -89,7 +106,7 @@ public final class Kerl implements Sponge {
         return value;
     }
 
-    public static void tritsFromBigInt(final BigInteger value, final byte[] destination, final int offset, final int size) {
+    static void tritsFromBigInt(final BigInteger value, final byte[] destination, final int offset, final int size) {
 
         if (destination.length - offset < size) {
             throw new IllegalArgumentException("Destination array has invalid size");
@@ -113,7 +130,7 @@ public final class Kerl implements Sponge {
         }
     }
 
-    public static void bytesFromBigInt(final BigInteger value, final byte[] destination) {
+    static void bytesFromBigInt(final BigInteger value, final byte[] destination) {
         if (destination.length < BYTE_HASH_LENGTH) {
             throw new IllegalArgumentException("Destination array has invalid size.");
         }

@@ -235,34 +235,19 @@ public class ISS {
      * @see <a href="https://en.wikipedia.org/wiki/Merkle_tree">https://en.wikipedia.org/wiki/Merkle_tree</a><br>
      *
      * @param mode Hash function to be used
-     * @param hash leaf of Merkle tree
+     * @param leaf leaf of Merkle tree
      * @param trits Merkle path, the siblings of the leaf concatenated.
      * @param offset starting position in {@code trits}
      * @param indexIn leaf index (used to determine order of concatenation)
      * @param depth depth of Merkle tree
      * @return the root, the consecutive hashing of the leaf and the Merkle path.
      */
-    public static byte[] getMerkleRoot(SpongeFactory.Mode mode, byte[] hash, byte[] trits, int offset,
+    public static byte[] getMerkleRoot(SpongeFactory.Mode mode, byte[] leaf, byte[] trits, int offset,
                                        final int indexIn, int depth) {
-        int index = indexIn;
-        final Sponge curl = SpongeFactory.create(mode);
-        for (int i = 0; i < depth; i++) {
-            curl.reset();
-            if ((index & 1) == 0) {
-                curl.absorb(hash, 0, hash.length);
-                curl.absorb(trits, offset + i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
-            } else {
-                curl.absorb(trits, offset + i * Curl.HASH_LENGTH, Curl.HASH_LENGTH);
-                curl.absorb(hash, 0, hash.length);
-            }
-            curl.squeeze(hash, 0, hash.length);
 
-            index >>= 1;
-        }
-        if (index != 0) {
-            return Hash.NULL_HASH.trits();
-        }
-        return hash;
+        byte[] root = new byte[leaf.length];
+        getMerkleRootInPlace(mode, leaf, trits, offset, indexIn, depth, root);
+        return root;
     }
 
 

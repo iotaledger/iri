@@ -21,6 +21,7 @@ import static com.iota.iri.controllers.TransactionViewModel.*;
 public class TransactionValidator {
     private static final Logger log = LoggerFactory.getLogger(TransactionValidator.class);
     private static final int  TESTNET_MWM_CAP = 13;
+    public static final int SOLID_SLEEP_TIME = 500;
 
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
@@ -32,7 +33,7 @@ public class TransactionValidator {
     private static final long MAX_TIMESTAMP_FUTURE_MS = MAX_TIMESTAMP_FUTURE * 1_000L;
 
 
-    //*****************fields for solidification thread*********************************//
+    /////////////////////////////////fields for solidification thread//////////////////////////////////////
 
     private Thread newSolidThread;
 
@@ -111,23 +112,23 @@ public class TransactionValidator {
     }
 
     /**
-     * @return the number of trailing 9s that have to be present in the transaction hash to validate that proof of work
-     * has been done
+     * @return the minimal number of trailing 9s that have to be present at the end of the transaction hash
+     * in order to validate that sufficient proof of work has been done
      */
     public int getMinWeightMagnitude() {
         return minWeightMagnitude;
     }
 
     /**
-     * Validates that the timestamp of the transaction is not below the last global snapshot time
-     * or more than {@value #MAX_TIMESTAMP_FUTURE} seconds in the future.
+     * Checks that the timestamp of the transaction is below the last global snapshot time
+     * or more than {@value #MAX_TIMESTAMP_FUTURE} seconds in the future, and thus invalid.
      *
      * <p>
      *     First the attachment timestamp (set after performing POW) is checked, and if not available
      *     the regular timestamp is checked. Genesis transaction will always be valid.
      * </p>
      * @param transactionViewModel transaction under test
-     * @return <tt>true</tt> if timestamp is not in bound and {@code transactionViewModel} is not genesis.
+     * @return <tt>true</tt> if timestamp is not in valid bounds and {@code transactionViewModel} is not genesis.
      * Else returns <tt>false</tt>.
      */
     private boolean hasInvalidTimestamp(TransactionViewModel transactionViewModel) {
@@ -144,13 +145,15 @@ public class TransactionValidator {
     /**
      * Runs the following validation checks on a transaction:
      * <ol>
-     *     <li>{@link #hasInvalidTimestamp} check</li>
+     *     <li>{@link #hasInvalidTimestamp} check.</li>
      *     <li>Check that no value trits are set beyond the usable index, otherwise we will have values larger
-     *     than max supply</li>
-     *     <li>Check that sufficient POW was performed</li>
+     *     than max supply.</li>
+     *     <li>Check that sufficient POW was performed.</li>
      *     <li>In value transactions, we check that the address has 0 set as the last trit. This must be because of the
-     *     conversion between bytes to trits</li>
+     *     conversion between bytes to trits.</li>
      * </ol>
+     *Exception is thrown upon failure.
+     *
      * @param transactionViewModel transaction that should be validated
      * @param minWeightMagnitude the minimal number of trailing 9s at the end of the transaction hash
      * @throws StaleTimestampException if timestamp check fails
@@ -179,11 +182,11 @@ public class TransactionValidator {
     }
 
     /**
-     * Creates a new transaction from  {@code trits} and validates it with {@link #runValidation}
+     * Creates a new transaction from  {@code trits} and validates it with {@link #runValidation}.
      *
      * @param trits raw transaction trits
      * @param minWeightMagnitude minimal number of trailing 9s in transaction for POW validation
-     * @return the transaction resulting from the raw trits
+     * @return the transaction resulting from the raw trits if valid.
      * @throws RuntimeException if validation fails
      */
     public TransactionViewModel validateTrits(final byte[] trits, int minWeightMagnitude) {
@@ -193,11 +196,11 @@ public class TransactionValidator {
     }
 
     /**
-     * Creates a new transaction from {@code bytes} and validates it with {@link #runValidation}
+     * Creates a new transaction from {@code bytes} and validates it with {@link #runValidation}.
      *
-     * @param bytes raw transaction trits
+     * @param bytes raw transaction bytes
      * @param minWeightMagnitude minimal number of trailing 9s in transaction for POW validation
-     * @return the transaction resulting from the raw trits
+     * @return the transaction resulting from the raw bytes if valid
      * @throws RuntimeException if validation fails
      */
     public TransactionViewModel validateBytes(final byte[] bytes, int minWeightMagnitude, Sponge curl) {
@@ -290,7 +293,7 @@ public class TransactionValidator {
     }
 
     /**
-     * Creates a runnable that runs {@link #propagateSolidTransactions()} in a loop every 500 ms
+     * Creates a runnable that runs {@link #propagateSolidTransactions()} in a loop every {@value #SOLID_SLEEP_TIME} ms
      * @return runnable that is not started
      */
     private Runnable spawnSolidTransactionsPropagation() {
@@ -298,7 +301,7 @@ public class TransactionValidator {
             while(!shuttingDown.get()) {
                 propagateSolidTransactions();
                 try {
-                    Thread.sleep(500);
+                    Thread.sleep(SOLID_SLEEP_TIME);
                 } catch (InterruptedException e) {
                     // Ignoring InterruptedException. Do not use Thread.currentThread().interrupt() here.
                     log.error("Thread was interrupted: ", e);
@@ -308,7 +311,7 @@ public class TransactionValidator {
     }
 
     /**
-     * Iterates over all known solid transactions that are currently known. For each solid transaction we find
+     * Iterates over all currently known solid transactions. For each solid transaction, we find
      * its children (approvers) and try to quickly solidify them with {@link #quietQuickSetSolid}.
      * If we manage to solidify the transactions, we add them to the solidification queue for a traversal by a later run.
      */
@@ -357,12 +360,14 @@ public class TransactionValidator {
      *
      * <ol>
      *     <li>Removes {@code transactionViewModel}'s hash from the the request queue since we already found it.</li>
-     *     <li>If {@code transactionViewModel} has no children (approvers), we add it to the node's active tip list</li>
-     *     <li>Removes {@code transactionViewModel}'s parents (branch & trunk) from the node's tip list (if they're present there)</li>
+     *     <li>If {@code transactionViewModel} has no children (approvers), we add it to the node's active tip list.</li>
+     *     <li>Removes {@code transactionViewModel}'s parents (branch & trunk) from the node's tip list
+     *     (if they're present there).</li>
      *     <li>Attempts to quickly solidify {@code transactionViewModel} by checking whether its direct parents
      *     are solid. If solid we add it to the queue transaction solidification thread to help it propagate the
-     *     solidification to the approving child transactions</li>
-     *     <li>Requests missing transactions that are needed to solidify {@code transactionViewModel}</li>
+     *     solidification to the approving child transactions.</li>
+     *     <li>Requests missing direct parent (trunk & branch) transactions that are needed to solidify
+     *     {@code transactionViewModel}.</li>
      * </ol>
      * @param transactionViewModel received transaction that is being updated
      * @throws Exception if an error occurred while trying to solidify

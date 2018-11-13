@@ -4,7 +4,7 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Serializer;
 
 /**
- * Used for storing persistables from a given index
+ An integer key that indexes {@link Persistable} objects in the database.
  */
 
 public class IntegerIndex implements Indexable{

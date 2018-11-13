@@ -2,8 +2,6 @@ package com.iota.iri.crypto;
 
 import java.util.Arrays;
 
-import com.iota.iri.model.Hash;
-
 /**
  * (c) 2016 Come-from-Beyond <br>
  * 
@@ -344,6 +342,7 @@ public class ISS {
         }
     }
 
+    //Package Private For Testing
     static void subseedInPlace(SpongeFactory.Mode mode, byte[] subseed, int index) {
 
         if (index < 0) {
@@ -371,6 +370,7 @@ public class ISS {
         hash.squeeze(subseed, 0, subseed.length);
     }
 
+    //Package Private For Testing
     static void keyInPlace(SpongeFactory.Mode mode, final byte[] subseed, byte[] key) {
 
         if (subseed.length != Kerl.HASH_LENGTH) {
@@ -392,6 +392,7 @@ public class ISS {
         hash.squeeze(key, 0, key.length);
     }
 
+    //Package Private For Testing
     static void digestsInPlace(SpongeFactory.Mode mode, final byte[] key, byte[] digests) {
 
         if (key.length == 0 || key.length % FRAGMENT_LENGTH != 0) {
@@ -421,6 +422,7 @@ public class ISS {
         }
     }
 
+    //Package Private For Testing
     static void addressInPlace(SpongeFactory.Mode mode, final byte[] digests, byte[] address) {
 
         if (digests.length == 0 || digests.length % Kerl.HASH_LENGTH != 0) {
@@ -436,6 +438,7 @@ public class ISS {
         hash.squeeze(address, 0, address.length);
     }
 
+    //Package Private For Testing
     static void signatureFragmentInPlace(SpongeFactory.Mode mode, final byte[] normalizedBundleFragment,
                                            final byte[] keyFragment, byte[] signatureFragment) {
 
@@ -461,8 +464,8 @@ public class ISS {
         }
     }
 
-    static void getMerkleRootInPlace(SpongeFactory.Mode mode, byte[] leaf, byte[] trits, int offset,
-                                     int index, int depth, byte[] hash) {
+    private static void getMerkleRootInPlace(SpongeFactory.Mode mode, byte[] leaf, byte[] trits, int offset,
+                                             int index, int depth, byte[] hash) {
 
         System.arraycopy(leaf, 0 , hash, 0 , leaf.length);
         final Sponge curl = SpongeFactory.create(mode);

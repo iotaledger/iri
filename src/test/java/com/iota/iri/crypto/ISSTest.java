@@ -67,9 +67,9 @@ public class ISSTest {
 
         for (SpongeFactory.Mode mode: modes) {
             Converter.trits(seed, seedTrits, 0);
-            ISSInPlace.subseed(mode, seedTrits, index);
-            byte[] key = new byte[ISSInPlace.FRAGMENT_LENGTH * nof];
-            ISSInPlace.key(mode, seedTrits, key);
+            ISS.subseedInPlace(mode, seedTrits, index);
+            byte[] key = new byte[ISS.FRAGMENT_LENGTH * nof];
+            ISS.keyInPlace(mode, seedTrits, key);
 
             Kerl curl = new Kerl();
             byte[] messageTrits = Converter.allocateTritsForTrytes(message.length());
@@ -77,18 +77,19 @@ public class ISSTest {
             curl.absorb(messageTrits, 0, messageTrits.length);
             byte[] messageHash = new byte[Curl.HASH_LENGTH];
             curl.squeeze(messageHash, 0, Curl.HASH_LENGTH);
-            byte[] normalizedFragment = new byte[Curl.HASH_LENGTH / ISSInPlace.TRYTE_WIDTH];
-            ISSInPlace.normalizedBundle(messageHash, normalizedFragment);
+            byte[] normalizedFragment = new byte[Curl.HASH_LENGTH / ISS.TRYTE_WIDTH];
+            ISS.normalizedBundleInPlace(messageHash, normalizedFragment);
             normalizedFragment = Arrays.copyOf(normalizedFragment, ISS.NUMBER_OF_FRAGMENT_CHUNKS * nof);
-            byte[] signature = ISS.signatureFragment(mode, normalizedFragment, key);
+            byte[] signature = new byte[ISS.FRAGMENT_LENGTH * nof];
+            ISS.signatureFragmentInPlace(mode, normalizedFragment, key, signature);
             byte[] sigDigest = new byte[Curl.HASH_LENGTH];
-            ISSInPlace.digest(mode, normalizedFragment, 0, signature, 0, sigDigest);
+            ISS.digestInPlace(mode, normalizedFragment, 0, signature, 0, sigDigest);
             byte[] signedAddress = new byte[Curl.HASH_LENGTH];
-            ISSInPlace.address(mode, sigDigest, signedAddress);
-            byte[] digest = new byte[key.length / ISSInPlace.FRAGMENT_LENGTH * Curl.HASH_LENGTH];;
-            ISSInPlace.digests(mode, key, digest);
+            ISS.addressInPlace(mode, sigDigest, signedAddress);
+            byte[] digest = new byte[key.length / ISS.FRAGMENT_LENGTH * Curl.HASH_LENGTH];;
+            ISS.digestsInPlace(mode, key, digest);
             byte[] address = new byte[Curl.HASH_LENGTH];
-            ISSInPlace.address(mode, digest, address);
+            ISS.addressInPlace(mode, digest, address);
             assertTrue(Arrays.equals(address, signedAddress));
         }
     }

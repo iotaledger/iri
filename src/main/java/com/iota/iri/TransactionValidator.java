@@ -350,7 +350,7 @@ public class TransactionValidator {
 
     /**
      * Updates a transaction after it was stored in the tangle. Tells the node to not request the transaction anymore,
-     * to update the live tips accordingly, and attempts to solidify the transaction.
+     * to update the live tips accordingly, and attempts to quickly solidify the transaction.
      *
      * <p/>
      * Performs the following operations:

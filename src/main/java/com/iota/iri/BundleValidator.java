@@ -115,7 +115,7 @@ public class BundleValidator {
                                 curlInstance.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
                                 //verify bundle hash is correct
                                 if (Arrays.equals(instanceTransactionViewModels.get(0).getBundleHash().trits(), bundleHashTrits))  {
-                                    //normalizing bundle in preparation for sig verification
+                                    //normalizing the bundle in preparation for signature verification
                                     ISSInPlace.normalizedBundle(bundleHashTrits, normalizedBundle);
 
                                     for (int j = 0; j < instanceTransactionViewModels.size(); ) {

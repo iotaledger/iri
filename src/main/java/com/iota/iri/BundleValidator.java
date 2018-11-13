@@ -11,7 +11,7 @@ import java.util.*;
 /**
  * Validates bundles.
  * <p>
- * Bundles are a list of transactions that represent an atomic transfer, meaning that either all
+ * Bundles are lists of transactions that represent an atomic transfer, meaning that either all
  * transactions inside the bundle will be accepted by the network, or none.
  *</p>
  */

@@ -12,7 +12,8 @@ import java.util.*;
  * Validates bundles.
  * <p>
  * Bundles are lists of transactions that represent an atomic transfer, meaning that either all
- * transactions inside the bundle will be accepted by the network, or none.
+ * transactions inside the bundle will be accepted by the network, or none. All transactions in a bundle have
+ * the same bundle hash and are chained together via their trunks.
  *</p>
  */
 public class BundleValidator {
@@ -85,7 +86,7 @@ public class BundleValidator {
 
                     instanceTransactionViewModels.add(transactionViewModel);
 
-
+                    //semantic checks
                     if (
                             transactionViewModel.getCurrentIndex() != i
                             || transactionViewModel.lastIndex() != lastIndex

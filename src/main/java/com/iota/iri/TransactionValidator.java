@@ -360,7 +360,7 @@ public class TransactionValidator {
      *     <li>If {@code transactionViewModel} has no children, we add it to the node's active tip list</li>
      *     <li>Removes {@code transactionViewModel}'s parents from the node's tip list (if they're present there)</li>
      *     <li>Attempts to quickly solidify {@code transactionViewModel} by checking whether its direct parents
-     *     are soild. If solid we add it to the queue transaction solidification thread to help it propagate the
+     *     are solid. If solid we add it to the queue transaction solidification thread to help it propagate the
      *     solidification to the approving child transactions</li>
      *     <li>Requests missing transactions that are needed to solidify {@code transactionViewModel}</li>
      * </ol>

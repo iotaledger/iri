@@ -15,15 +15,23 @@ import com.iota.iri.utils.Pair;
 
 import java.util.*;
 
+/**
+ * Controller class for transaction objects. A {@code TransactionViewModel} stores a controller for each component of
+ * the transaction within it.
+ */
+
 public class TransactionViewModel {
 
+    /**Base transaction object to be controlled*/
     private final Transaction transaction;
 
+    /**Length of a transaction object in trytes*/
     public static final int SIZE = 1604;
     private static final int TAG_SIZE_IN_BYTES = 17; // = ceil(81 TRITS / 5 TRITS_PER_BYTE)
 
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2
 
+    /**The predefined trit offset position for the varying components of a transaction object*/
     public static final int SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET = 0, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE = 6561;
     public static final int ADDRESS_TRINARY_OFFSET = SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE, ADDRESS_TRINARY_SIZE = 243;
     public static final int VALUE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET + ADDRESS_TRINARY_SIZE, VALUE_TRINARY_SIZE = 81, VALUE_USABLE_TRINARY_SIZE = 33;
@@ -46,7 +54,7 @@ public class TransactionViewModel {
 
     public static final int ESSENCE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET, ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + OBSOLETE_TAG_TRINARY_SIZE + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
-
+    /**Stores the controllers for the transaction components here*/
     private AddressViewModel address;
     private ApproveeViewModel approovers;
     private TransactionViewModel trunk;
@@ -61,6 +69,15 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
+    /**
+     * Populates the meta data of the controller. If the controller hash identifier is <tt>null</tt>, it will
+     * return with no response. If the transaction object has not been parsed, and the controller type is
+     * <tt>FILLED_SLOT</tt>, the saved metadata batch will be saved to the input tangle.
+     *
+     * @param tangle The tangle instance the transaction resides in.
+     * @param transactionViewModel The controller whose Metadata is to be filled.
+     * @throws Exception In the event the method cannot be completed, an exception will be thrown.
+     */
     public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
         if (Hash.NULL_HASH.equals(transactionViewModel.getHash())) {
             return;
@@ -70,6 +87,15 @@ public class TransactionViewModel {
         }
     }
 
+    /**
+     * Creates a new controller from a referenced transaction provided its hash identifier exists in the supplied
+     * tangle instance.
+     *
+     * @param tangle
+     * @param hash
+     * @return The transaction controller with its Metadata filled in.
+     * @throws Exception If no transaction can be found 
+     */
     public static TransactionViewModel find(Tangle tangle, byte[] hash) throws Exception {
         TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), HashFactory.TRANSACTION.create(hash));
         fillMetadata(tangle, transactionViewModel);

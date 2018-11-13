@@ -24,7 +24,7 @@ public class BundleValidator {
      * The fetched transactions have the same bundle hash as the transaction identified by {@code tailHash}
      * The validation does the following semantic checks:
      * <ol>
-     *     <li>The absolute bundle value never exceeds the total supply of iotas</li>
+     *     <li>The absolute bundle value never exceeds the total, global supply of iotas</li>
      *     <li>The last trit when we convert from binary</li>
      *     <li>Total bundle value is 0 (inputs and outputs are balanced)</li>
      *     <li>Recalculate the bundle hash by absorbing and squeezing the transactions' essence</li>

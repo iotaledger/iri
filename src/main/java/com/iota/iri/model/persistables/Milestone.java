@@ -26,6 +26,7 @@ public class Milestone implements Persistable {
     public Hash hash;
 
     /**@return The milestone index and associated hash identifier*/
+    @Override
     public byte[] bytes() {
         return ArrayUtils.addAll(index.bytes(), hash.bytes());
     }
@@ -35,6 +36,7 @@ public class Milestone implements Persistable {
      * hash identifier
      * @param bytes The input bytes of the milestone transaction
      */
+    @Override
     public void read(byte[] bytes) {
         if(bytes != null) {
             index = new IntegerIndex(Serializer.getInteger(bytes));

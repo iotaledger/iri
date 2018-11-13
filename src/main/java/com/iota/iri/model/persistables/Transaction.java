@@ -79,6 +79,7 @@ public class Transaction implements Persistable {
     /**
      * Returns the bytes of the transaction set
      */
+    @Override
     public byte[] bytes() {
         return bytes;
     }
@@ -88,6 +89,7 @@ public class Transaction implements Persistable {
      *
      * @param bytes the byte array that the transaction bytes will be assigned to
      */
+    @Override
     public void read(byte[] bytes) {
         if(bytes != null) {
             this.bytes = new byte[SIZE];

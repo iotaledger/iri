@@ -20,6 +20,7 @@ public class StateDiff implements Persistable {
      * Returns a byte array of the state map contained in the object. If no data is present in the state,
      * a new empty byte array is returned instead.
      */
+    @Override
     public byte[] bytes() {
         return state.entrySet().parallelStream()
                 .map(entry -> ArrayUtils.addAll(entry.getKey().bytes(), Serializer.serialize(entry.getValue())))

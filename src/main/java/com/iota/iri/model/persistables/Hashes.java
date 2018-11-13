@@ -28,6 +28,7 @@ public class Hashes implements Persistable {
     private static final byte delimiter = ",".getBytes()[0];
 
     /**Returns the bytes of the contained hash set*/
+    @Override
     public byte[] bytes() {
         return set.parallelStream()
                 .map(Hash::bytes)
@@ -41,6 +42,7 @@ public class Hashes implements Persistable {
      *
      * @param bytes the byte array that will be read
      */
+    @Override
     public void read(byte[] bytes) {
         if(bytes != null) {
             set = new LinkedHashSet<>(bytes.length / (1 + Hash.SIZE_IN_BYTES) + 1);

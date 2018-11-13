@@ -8,7 +8,7 @@ package com.iota.iri.model;
  *     If a milestone is issued from the coordinator address, first
  *     the signature is checked to confirm that the sender is indeed
  *     the coordinator, and then it will check the Obsolete Tag hash
- *     to determine the new index.
+ *     to determine the milestone's index.
  * </p>
  */
 public class ObsoleteTagHash extends AbstractHash {

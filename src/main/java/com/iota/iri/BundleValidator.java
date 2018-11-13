@@ -151,7 +151,7 @@ public class BundleValidator {
                                             j++;
                                         }
                                     }
-                                    //should only be reached after for loop is done
+                                    //should only be reached after the above for loop is done
                                     instanceTransactionViewModels.get(0).setValidity(tangle, 1);
                                     transactions.add(instanceTransactionViewModels);
                                 }

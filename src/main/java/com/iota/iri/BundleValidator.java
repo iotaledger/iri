@@ -136,7 +136,7 @@ public class BundleValidator {
                                                     digestTrits);
                                                 addressInstance.absorb(digestTrits,0, Curl.HASH_LENGTH);
                                                 offset = offsetNext;
-                                            } //loop to traverse signature fragments divided between txs
+                                            } //loop to traverse signature fragments divided between transactions
                                             while (++j < instanceTransactionViewModels.size()
                                                     && instanceTransactionViewModels.get(j).getAddressHash().equals(transactionViewModel.getAddressHash())
                                                     && instanceTransactionViewModels.get(j).value() == 0);

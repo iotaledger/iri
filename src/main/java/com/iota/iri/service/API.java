@@ -680,8 +680,18 @@ public class API {
             Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
+            // move store block from the for() function below --start
+            // no need to loop twice
+            if(transactionViewModel.store(instance.tangle)) {
+                transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
+                instance.transactionValidator.updateStatus(transactionViewModel);
+                transactionViewModel.updateSender("local");
+                transactionViewModel.update(instance.tangle, "sender");
+            }
+            // move store block from the for() function below --end
             elements.add(transactionViewModel);
         }
+        /*
         for (final TransactionViewModel transactionViewModel : elements) {
             //store transactions
             if(transactionViewModel.store(instance.tangle)) {
@@ -691,6 +701,7 @@ public class API {
                 transactionViewModel.update(instance.tangle, "sender");
             }
         }
+        */
     }
 
     /**

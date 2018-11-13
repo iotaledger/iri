@@ -60,8 +60,8 @@ public class TransactionViewModel {
 
     private byte[] trits;
     public int weightMagnitude;
-
-    public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
+    
+	public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
         if (Hash.NULL_HASH.equals(transactionViewModel.getHash())) {
             return;
         }
@@ -112,8 +112,8 @@ public class TransactionViewModel {
         weightMagnitude = this.hash.trailingZeros();
         transaction.type = FILLED_SLOT;
     }
-
-    public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
+    
+	public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
         return tangle.getCount(Transaction.class).intValue();
     }
 
@@ -210,10 +210,30 @@ public class TransactionViewModel {
         if (exists(tangle, hash)) {
             return false;
         }
+        setTrunkTimeDifference(tangle);
+        setBranchTimeDifference(tangle);
         return tangle.saveBatch(batch);
     }
 
-    public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
+	private void setTrunkTimeDifference(Tangle tangle) throws Exception {
+		trunk = getTrunkTransaction(tangle);
+		transaction.trunkTimeDifference = trunk.getArrivalTime() == 0 ? 0 : (transaction.arrivalTime - trunk.getArrivalTime());
+	}
+	
+	private void setBranchTimeDifference(Tangle tangle) throws Exception {
+		branch = getBranchTransaction(tangle);
+		transaction.branchTimeDifference = branch.getArrivalTime() == 0 ? 0 : (transaction.arrivalTime - branch.getArrivalTime());
+	}
+	
+    public long getTrunkTimeDifference() {
+		return transaction.trunkTimeDifference;
+	}
+
+	public long getBranchTimeDifference() {
+		return transaction.branchTimeDifference;
+	}
+
+	public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
         if(approovers == null) {
             approovers = ApproveeViewModel.load(tangle, hash);
         }

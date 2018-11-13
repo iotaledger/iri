@@ -1,5 +1,6 @@
 package com.iota.iri.service.tipselection.impl;
 
+import com.google.gson.Gson;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -35,6 +36,8 @@ public class CumulativeWeightCalculator implements RatingCalculator{
     public CumulativeWeightCalculator(Tangle tangle) {
         this.tangle = tangle;
     }
+    
+    private static final Gson gson = new Gson();
 
     @Override
     public UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
@@ -54,9 +57,23 @@ public class CumulativeWeightCalculator implements RatingCalculator{
         while (CollectionUtils.isNotEmpty(stack)) {
             Hash txHash = stack.peek();
             if (!sortedTxs.contains(txHash)) {
-                Collection<Hash> appHashes = getTxDirectApproversHashes(txHash, txToDirectApprovers);
-                if (CollectionUtils.isNotEmpty(appHashes)) {
-                    Hash txApp = getAndRemoveApprover(appHashes);
+//                Collection<Hash> appHashes = getTxDirectApproversHashes(txHash, txToDirectApprovers);
+                Collection<Hash> txApprovers = txToDirectApprovers.get(txHash);
+                if (txApprovers == null) {
+                    ApproveeViewModel approvers = ApproveeViewModel.load(tangle, txHash);
+                    Collection<Hash> appHashes = CollectionUtils.emptyIfNull(approvers.getHashes());
+                    txApprovers = new HashSet<>(appHashes.size());
+                    for (Hash appHash : appHashes) {
+                        //if not genesis (the tx that confirms itself)
+                        if (ObjectUtils.notEqual(Hash.NULL_HASH, appHash)) {
+                            txApprovers.add(appHash);
+                        }
+                    }
+                    txToDirectApprovers.put(txHash, txApprovers);
+                }
+            
+                if (CollectionUtils.isNotEmpty(txApprovers)) {
+                    Hash txApp = getAndRemoveApprover(txApprovers);
                     stack.push(txApp);
                     continue;
                 }
@@ -119,14 +136,13 @@ public class CumulativeWeightCalculator implements RatingCalculator{
         TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, txHash);
         Hash trunkHash = transactionViewModel.getTrunkTransactionHash();
         Hash branchHash = transactionViewModel.getBranchTransactionHash();
-
         Set<HashId> trunkApprovers = createApprovers(txHashToApprovers, txHash, approvers, trunkHash);
         txHashToApprovers.put(trunkHash, trunkApprovers);
         Set<HashId> branchApprovers = createApprovers(txHashToApprovers, txHash, approvers, branchHash);
         txHashToApprovers.put(branchHash, branchApprovers);
 
-        txHashToApprovers.remove(txHash);
-
+        //???? 这行代码完全没有起作用
+//        txHashToApprovers.remove(txHash);
         return txHashToApprovers;
     }
 

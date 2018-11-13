@@ -95,7 +95,7 @@ public class BundleValidator {
                         instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         break;
                     }
-                    //we lose the last trit converting from bytes
+                    //we lose the last trit by converting from bytes
                     if (transactionViewModel.value() != 0 && transactionViewModel.getAddressHash().trits()[Curl.HASH_LENGTH - 1] != 0) {
                         instanceTransactionViewModels.get(0).setValidity(tangle, -1);
                         break;

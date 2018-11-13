@@ -680,16 +680,13 @@ public class API {
             Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
-            elements.add(transactionViewModel);
-        }
-        for (final TransactionViewModel transactionViewModel : elements) {
-            //store transactions
             if(transactionViewModel.store(instance.tangle)) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(instance.tangle, "sender");
             }
+            elements.add(transactionViewModel);
         }
     }
 

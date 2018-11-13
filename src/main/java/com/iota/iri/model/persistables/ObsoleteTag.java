@@ -3,7 +3,8 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.model.Hash;
 
 /**
- * This is a collection of hash identifiers that can change the values of an <tt>Obsolete Tag</tt>.
+ * This is a collection of {@link com.iota.iri.model.TransactionHash} identifiers that are indexed by
+ * {@link com.iota.iri.model.ObsoleteTagHash} in the database.
  * This is part of the bundle essence, and for normal transactions, a {@link Tag} collection should be
  * used instead.
  */

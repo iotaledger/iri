@@ -17,7 +17,6 @@ import com.iota.iri.utils.Converter;
 public abstract class AbstractHash implements Hash, Serializable {
     private final Object lock = new Object();
 
-    /**Instantiates null safe byte and trit arrays*/
     private ByteSafe byteSafe;
     private TritSafe tritSafe;
 

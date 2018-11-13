@@ -7,7 +7,10 @@ import com.iota.iri.storage.Indexable;
  * Represents an indexable hash object
  */
 public interface Hash extends Indexable, HashId {
-    
+
+    /**
+     * Creates an empty transaction hash with from a byte array of length {@value Curl#HASH_LENGTH}
+     */
     Hash NULL_HASH = HashFactory.TRANSACTION.create(new byte[Curl.HASH_LENGTH]);
     
     /**

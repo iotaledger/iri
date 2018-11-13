@@ -3,7 +3,8 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.model.Hash;
 
 /**
- * This is a collection of hash identifiers that can change the value of a <tt>Tag</tt>.
+ * This is a collection of {@link com.iota.iri.model.TransactionHash} identifiers indexed by their
+ * {@link com.iota.iri.model.TagHash} in the data base.
  */
 public class Tag extends Hashes {
 

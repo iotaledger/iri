@@ -8,7 +8,8 @@ import com.iota.iri.utils.Serializer;
 import org.apache.commons.lang3.ArrayUtils;
 
 /**
- * This is a collection of hash identifiers that can change the value of a <tt>Milestone</tt>
+ * This stores a hash identifier for a <tt>Milestone</tt> transaction, indexed by a unique <tt>IntegerIndex</tt>
+ * generated from the serialized byte input.
  *
  * <p>
  *     Milestones are issued by the coordinator to direct and verify the tangle.
@@ -24,14 +25,15 @@ public class Milestone implements Persistable {
     /**Represents the hash identifier of the milestone*/
     public Hash hash;
 
-    /**@returns The collection of milestone indexes and associated hash identifiers*/
+    /**@return The milestone index and associated hash identifier*/
     public byte[] bytes() {
         return ArrayUtils.addAll(index.bytes(), hash.bytes());
     }
 
     /**
-     * Reads the input bytes and assigns an index and hash to the <tt>Milestone</tt> collection
-     * @param bytes The input bytes to be added to the collection
+     * Reads the input bytes and assigns an <tt>IntegerIndex</tt> to store a <tt>Milestone</tt> transaction
+     * hash identifier
+     * @param bytes The input bytes of the milestone transaction
      */
     public void read(byte[] bytes) {
         if(bytes != null) {

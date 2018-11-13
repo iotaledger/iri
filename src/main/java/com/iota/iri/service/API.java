@@ -1417,9 +1417,10 @@ public class API {
     
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
-     * Each increase indicates another 2 tips send.
+     * Each increase indicates another 2 tips sent.
      * 
-     * @return The current amount of times this node has done proof of work.
+     * @return The current amount of times this node has done proof of work. 
+     *         Doesn't distinguish between remote and local proof of work.
      */
     public static int getCounterPoW() {
         return counter_PoW;
@@ -1438,6 +1439,7 @@ public class API {
      * Can be 0 or more, and is set to 0 every 100 requests.
      * 
      * @return The current amount of time spent on doing proof of work in milliseconds.
+     *         Doesn't distinguish between remote and local proof of work. 
      */
     public static long getEllapsedTimePoW() {
         return ellapsedTime_PoW;
@@ -1457,7 +1459,7 @@ public class API {
       *     Prepares the specified transactions (trytes) for attachment to the Tangle by doing Proof of Work.
       *     You need to supply <tt>branchTransaction</tt> as well as <tt>trunkTransaction</tt>.
       *     These are the tips which you're going to validate and reference with this transaction. 
-      *     These are obtainable by calling the <tt>getTransactionsToApprove</tt> API call.
+      *     These are obtainable by the <tt>getTransactionsToApprove</tt> API call.
       * </p>
       * <p>
       *     The returned value is a different set of tryte values which you can input into 

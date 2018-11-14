@@ -10,8 +10,10 @@ import java.nio.ByteBuffer;
 
 
 /**
- * This is a collection of hash identifiers that can change the value of a <tt>Transaction</tt>. This acts
- * as the access point for all other persistable set collections representing the contents of a <tt>Transaction</tt>.
+ * This is a collection of {@link com.iota.iri.model.Hash} identifiers indexed by a
+ * {@link com.iota.iri.model.TransactionHash} in a database. This acts as the access
+ * point for all other persistable set collections representing the contents of a
+ * <tt>Transaction</tt>.
  *
  * <p>
  *     A Transaction set contains all the information of a particular transaction. This includes

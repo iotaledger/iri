@@ -3,7 +3,8 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.model.Hash;
 
 /**
- * This is a collection of hash identifiers that change the value of an <tt>Address</tt>
+ * This is a collection of {@link com.iota.iri.model.TransactionHash} identifiers indexed by their
+ * {@link com.iota.iri.model.AddressHash} in the database.
  */
 public class Address extends Hashes{
 

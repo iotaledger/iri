@@ -6,7 +6,7 @@ import com.iota.iri.utils.Converter;
 import java.util.Arrays;
 
 /**
- * Creates a Prefix Hash object with the length {@value PREFIX_LENGTH}.
+ * Creates a Prefix Hash object with a byte array length of {@value PREFIX_LENGTH}.
  */
 public final class HashPrefix implements HashId {
     public static final int PREFIX_LENGTH = 44;

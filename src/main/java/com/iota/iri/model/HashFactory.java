@@ -14,8 +14,14 @@ import com.iota.iri.utils.Converter;
 
 /**
  * Generates an appropriate Hash model from a set of source data. The available models that
- * can be instantiated include: <tt>Transaction Hash</tt>, <tt>Address Hash</tt>, <tt>Bundle Hash</tt>,
- * <tt>Tag Hash</tt>, and an <tt>ObsoleteTag Hash</tt>.
+ * can be instantiated include:
+ * <ul>
+ *     <li>Transaction Hash</li>
+ *     <li>Address Hash</li>
+ *     <li>Bundle Hash</li>
+ *     <li>Tag Hash</li>
+ *     <li>Obsolete Tag Hash</li>
+ * </ul>
  */
 public enum HashFactory {
     TRANSACTION(Transaction.class),

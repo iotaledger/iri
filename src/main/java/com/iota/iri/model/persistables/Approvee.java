@@ -3,12 +3,13 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.model.Hash;
 
 /**
- * This is a collection of hash identifiers that can change the values of an <tt>Approvee</tt>
+ * This is a collection of {@link com.iota.iri.model.TransactionHash} identifiers indexed by a given
+ * <tt>Aprovee</tt> {@link com.iota.iri.model.TransactionHash} in the database.
  *
  * <p>
  *     An <tt>Approvee</tt> hash set is comprised of transaction hashes that reference
- *     specific transactions. Approvee's are transactions that either directly or
- *     indirectly approve a transaction.
+ *     a specific transaction. Approvee's are transactions that directly approve a given
+ *     transaction.
  * </p>
  */
 public class Approvee extends Hashes{
@@ -21,7 +22,7 @@ public class Approvee extends Hashes{
         set.add(hash);
     }
 
-    /**Instantiates a collection of <tt>Approvee</tt> hash identifiers.*/
+    /**Instantiates an empty <tt>Approvee</tt> hash identifier collection.*/
     public Approvee() {
 
     }

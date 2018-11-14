@@ -41,9 +41,8 @@ public abstract class AbstractHash implements Hash, Serializable {
     }
 
     /**
-     * Assigns the input byte data to the hash object. If the byte or trit arrays are not null, an
-     * <tt>IllegalStateException</tt> is thrown. Each hash object can only be initialized with data
-     * once.
+     * Assigns the input byte data to the hash object. Each hash object can only be initialized with data
+     * once.If the byte or trit arrays are not null, an <tt>IllegalStateException</tt> is thrown.
      *
      * @param bytes A byte array containing the source bytes
      */

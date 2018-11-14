@@ -3,7 +3,8 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.model.Hash;
 
 /**
- * This is a collection of hash identifiers that can change the value of a <tt>Bundle</tt>.
+ * This is a collection of {@link com.iota.iri.model.TransactionHash} identifiers indexed by their
+ * {@link com.iota.iri.model.BundleHash} in the database.
  */
 public class Bundle extends Hashes{
 

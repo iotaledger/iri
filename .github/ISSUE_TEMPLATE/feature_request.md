@@ -1,5 +1,5 @@
 ---
-name: request a feature for IRI
+name: Request a feature for IRI
 about: Request a feature
 
 ---

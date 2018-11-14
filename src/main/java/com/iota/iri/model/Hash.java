@@ -9,7 +9,8 @@ import com.iota.iri.storage.Indexable;
 public interface Hash extends Indexable, HashId {
 
     /**
-     * Creates an empty transaction hash with from a byte array of length {@value Curl#HASH_LENGTH}
+     * Creates a null transaction hash with from a byte array of length {@value Curl#HASH_LENGTH}.
+     * This is used as a reference hash for the genesis transaction.
      */
     Hash NULL_HASH = HashFactory.TRANSACTION.create(new byte[Curl.HASH_LENGTH]);
     

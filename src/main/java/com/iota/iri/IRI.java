@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
@@ -17,7 +18,25 @@ import java.io.IOException;
 import java.util.Arrays;
 
 /**
+ * 
  * Main IOTA Reference Implementation starting class.
+ * <p>
+ *     The IRI software enables the Tangle to operate by enabling individuals to run the software and operate a Node.
+ *     The Node running the IRI software enables your device to communicate with neighbors 
+ *     in the peer-to-peer network that the Tangle operates on. 
+ * </p>
+ * <p>
+ *     IRI has all the core functionality implemented necessary for participating as a full node in the network.
+ *     This includes, but is not limited to, the following:
+ *     <ul>
+ *         <li>Receiving and broadcasting transactions through TCP and UDP.</li>
+ *         <li>Handling of HTTP requests from clients.</li>
+ *         <li>Tracking and validating Milestones.</li>
+ *         <li>Load custom modules to extend the API.</li>
+ *     </ul>
+ * </p>
+ * 
+ * @see <a href="https://docs.iota.org/iri">Online documentation on iri</a>
  */
 public class IRI {
 
@@ -25,10 +44,18 @@ public class IRI {
     public static final String TESTNET_NAME = "IRI Testnet";
     public static final String VERSION = "1.5.5";
 
+    /**
+     * The entry point of IRI.
+     * Starts by configuring the logging settings, then proceeds to {@link IRILauncher#main(String[])}
+     * Log level is by default set to INFO.
+     * 
+     * @param args Configuration arguments. See {@link BaseIotaConfig} for a list of all options.
+     * @throws Exception If we fail to start the IRI launcher.
+     */
     public static void main(String[] args) throws Exception {
         // Logging is configured first before any references to Logger or LoggerFactory.
-        // Any public method or field accessors needed in IRI should be put in IRI and then delegate to IRILauncher. That
-        // ensures that future code does not need to know about this setup.
+        // Any public method or field accessors needed in IRI should be put in IRI and then delegate to IRILauncher. 
+        // That ensures that future code does not need to know about this setup.
         configureLogging();
         IRILauncher.main(args);
     }
@@ -65,6 +92,20 @@ public class IRI {
         public static API api;
         public static IXI ixi;
 
+        /**
+         * Starts IRI. Setup is as follows:
+         * <ul>
+         *     <li>Load configuration.</li>
+         *     <li>Create {@link Iota}, {@link IXI} and {@link API}.</li>
+         *     <li>Listen for node shutdown.</li>
+         *     <li>Initialize {@link Iota}, {@link IXI} and {@link API} using their <tt>init()</tt> methods.</li> 
+         * </ul> 
+         * 
+         * If no exception is thrown, the node starts synchronizing with the network, and the API can be used.
+         * 
+         * @param args Configuration arguments. See {@link BaseIotaConfig} for a list of all options.
+         * @throws Exception If any of the <tt>init()</tt> methods failed to initialize.
+         */
         public static void main(String [] args) throws Exception {
             IotaConfig config = createConfiguration(args);
             log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, VERSION);
@@ -86,6 +127,10 @@ public class IRI {
             }
         }
 
+        /**
+         * Gracefully shuts down the node by calling <tt>shutdown()</tt> on {@link Iota}, {@link IXI} and {@link API}.
+         * Exceptions during shutdown are caught and logged.
+         */
         private static void shutdownHook() {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 log.info("Shutting down IOTA node, please hold tight...");

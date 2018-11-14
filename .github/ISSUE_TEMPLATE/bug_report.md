@@ -1,5 +1,5 @@
 ---
-name: report a bug in IRI
+name: Report a bug in IRI
 about: Report a bug
 
 ---

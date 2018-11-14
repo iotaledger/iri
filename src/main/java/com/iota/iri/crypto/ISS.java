@@ -305,38 +305,35 @@ public class ISS {
         if (bundle.length != Curl.HASH_LENGTH) {
             throw new RuntimeException("Invalid bundleValidator length: " + bundle.length);
         }
+        final int W = Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS; // Winternitz Parameter
 
         for (int i = 0; i < NUMBER_OF_SECURITY_LEVELS; i++) {
-            int sum = 0;
-            for (int j = i * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS);
-                 j < (i + 1) * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j++) {
+            int sum = parseBundleAsBaseWAndSum(bundle, normalizedBundle, W, i);
+            int sign = Integer.signum(sum);
+            changeHashTillSumIsZero(normalizedBundle, W, i, sum, sign);
+        }
+    }
 
-                normalizedBundle[j] = (byte) (bundle[j * TRYTE_WIDTH] + bundle[j * TRYTE_WIDTH + 1] * 3
-                        + bundle[j * TRYTE_WIDTH + 2] * 9);
-                sum += normalizedBundle[j];
-            }
-            if (sum > 0) {
-                while (sum-- > 0) {
+    private static int parseBundleAsBaseWAndSum(byte[] bundle, byte[] normalizedBundle, int W, int i) {
+        int sum = 0;
+        for (int j = i * W; j < (i + 1) * W; j++) {
+            normalizedBundle[j] = (byte) (
+                    bundle[j * TRYTE_WIDTH]
+                            + bundle[j * TRYTE_WIDTH + 1] * 3
+                            + bundle[j * TRYTE_WIDTH + 2] * 9
+            );
+            sum += normalizedBundle[j];
+        }
+        return sum;
+    }
 
-                    for (int j = i * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS);
-                         j < (i + 1) * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j++) {
-
-                        if (normalizedBundle[j] > MIN_TRYTE_VALUE) {
-                            normalizedBundle[j]--;
-                            break;
-                        }
-                    }
-                }
-            } else {
-                while (sum++ < 0) {
-                    for (int j = i * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS);
-                         j < (i + 1) * (Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS); j++) {
-
-                        if (normalizedBundle[j] < MAX_TRYTE_VALUE) {
-                            normalizedBundle[j]++;
-                            break;
-                        }
-                    }
+    private static void changeHashTillSumIsZero(byte[] normalizedBundle, int W, int offset, int sum, int sign) {
+        while (sum != 0) {
+            sum -= sign; // target is sum 0, so positive numbers should be decremented, and visa versa
+            for (int j = offset * W; j < (offset + 1) * W; j++) {
+                if (Math.abs(normalizedBundle[j]) < MAX_TRYTE_VALUE) {
+                    normalizedBundle[j] -= sign;
+                    break;
                 }
             }
         }

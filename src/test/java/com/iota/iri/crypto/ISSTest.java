@@ -86,7 +86,7 @@ public class ISSTest {
             ISS.digestInPlace(mode, normalizedFragment, 0, signature, 0, sigDigest);
             byte[] signedAddress = new byte[Curl.HASH_LENGTH];
             ISS.addressInPlace(mode, sigDigest, signedAddress);
-            byte[] digest = new byte[key.length / ISS.FRAGMENT_LENGTH * Curl.HASH_LENGTH];;
+            byte[] digest = new byte[key.length / ISS.FRAGMENT_LENGTH * Curl.HASH_LENGTH];
             ISS.digestsInPlace(mode, key, digest);
             byte[] address = new byte[Curl.HASH_LENGTH];
             ISS.addressInPlace(mode, digest, address);

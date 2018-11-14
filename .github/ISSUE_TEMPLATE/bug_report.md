@@ -1,6 +1,6 @@
 ---
-name: IRI issue template
-about: Request a feature or report a bug
+name: Report a bug in IRI
+about: Report a bug
 
 ---
 
@@ -9,8 +9,6 @@ The issue tracker is only for reporting bugs or submitting feature requests.
 If you need technical assistance for running a node please consult the #fullnode channel on Discord (https://discord.gg/jrxApWC) or https://forum.helloiota.com/Technology/Help.
 If you have general questions on IOTA you can go to https://iota.stackexchange.com/, https://helloiota.com/, or browse Discord channels (https://discord.gg/C88Wexg).
 
-
-<!----Format For Reporting Bugs------->
 ### Bug description
 A general description of the bug.
 
@@ -30,25 +28,3 @@ What really happened.
 
 ### Errors
 Paste any errors that you see.
-
-
-
-<!----Format For Feature Requests------->
-*Note*
-The feature request will probably be integrated faster if you do a pull request for it.
-If you want to discuss the feature before you actually write the code you are welcome to do it by first submitting an issue.
-
-### Description
-Briefly describe the feature you want.
-
-### Motivation
-Explain why this feature is needed.
-
-### Requirements
-Create a list of what you want this feature request to fulfill.
-
-### Open Questions (optional)
-Anything you want to discuss.
-
-### Am I planning to do it myself with a PR?
-Yes/No.

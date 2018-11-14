@@ -42,6 +42,7 @@ public class ISS {
     public static final int TRYTE_WIDTH = 3;
     private static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
     public static final int NORMALIZED_FRAGMENT_LENGTH = Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS;
+    public static final int W = Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS; // Winternitz Parameter
 
 
     ///////////////////////////////////////////////Key generation////////////////////////////////////////////////////
@@ -305,16 +306,15 @@ public class ISS {
         if (bundle.length != Curl.HASH_LENGTH) {
             throw new RuntimeException("Invalid bundleValidator length: " + bundle.length);
         }
-        final int W = Curl.HASH_LENGTH / TRYTE_WIDTH / NUMBER_OF_SECURITY_LEVELS; // Winternitz Parameter
 
         for (int i = 0; i < NUMBER_OF_SECURITY_LEVELS; i++) {
-            int sum = parseBundleAsBaseWAndSum(bundle, normalizedBundle, W, i);
+            int sum = parseBundleAsBaseWAndSum(bundle, normalizedBundle, i);
             int sign = Integer.signum(sum);
-            changeHashTillSumIsZero(normalizedBundle, W, i, sum, sign);
+            changeHashTillSumIsZero(normalizedBundle, i, sum, sign);
         }
     }
 
-    private static int parseBundleAsBaseWAndSum(byte[] bundle, byte[] normalizedBundle, int W, int i) {
+    private static int parseBundleAsBaseWAndSum(byte[] bundle, byte[] normalizedBundle, int i) {
         int sum = 0;
         for (int j = i * W; j < (i + 1) * W; j++) {
             normalizedBundle[j] = (byte) (
@@ -327,7 +327,7 @@ public class ISS {
         return sum;
     }
 
-    private static void changeHashTillSumIsZero(byte[] normalizedBundle, int W, int offset, int sum, int sign) {
+    private static void changeHashTillSumIsZero(byte[] normalizedBundle, int offset, int sum, int sign) {
         while (sum != 0) {
             sum -= sign; // target is sum 0, so positive numbers should be decremented, and visa versa
             for (int j = offset * W; j < (offset + 1) * W; j++) {

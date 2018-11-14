@@ -23,7 +23,7 @@ public class GetBalancesResponse extends AbstractResponse {
 	private List<String> references;
 	
 	/**
-     * The index with which the confirmed balance was determined
+     * The milestone index with which the confirmed balance was determined
      */
 	private int milestoneIndex;
 

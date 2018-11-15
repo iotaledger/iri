@@ -210,28 +210,8 @@ public class TransactionViewModel {
         if (exists(tangle, hash)) {
             return false;
         }
-        setTrunkTimeDifference(tangle);
-        setBranchTimeDifference(tangle);
         return tangle.saveBatch(batch);
     }
-
-	private void setTrunkTimeDifference(Tangle tangle) throws Exception {
-		trunk = getTrunkTransaction(tangle);
-		transaction.trunkTimeDifference = trunk.getArrivalTime() == 0 ? 0 : (transaction.arrivalTime - trunk.getArrivalTime());
-	}
-	
-	private void setBranchTimeDifference(Tangle tangle) throws Exception {
-		branch = getBranchTransaction(tangle);
-		transaction.branchTimeDifference = branch.getArrivalTime() == 0 ? 0 : (transaction.arrivalTime - branch.getArrivalTime());
-	}
-	
-    public long getTrunkTimeDifference() {
-		return transaction.trunkTimeDifference;
-	}
-
-	public long getBranchTimeDifference() {
-		return transaction.branchTimeDifference;
-	}
 
 	public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
         if(approovers == null) {

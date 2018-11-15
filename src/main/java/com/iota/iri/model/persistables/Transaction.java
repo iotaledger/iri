@@ -55,9 +55,6 @@ public class Transaction implements Persistable {
     public String sender = "";
     public int snapshot;
 
-    public long trunkTimeDifference = 0;
-    public long branchTimeDifference = 0;
-
     public byte[] bytes() {
         return bytes;
     }
@@ -74,7 +71,7 @@ public class Transaction implements Persistable {
     public byte[] metadata() {
         int allocateSize =
                 Hash.SIZE_IN_BYTES * 6 + //address,bundle,trunk,branch,obsoleteTag,tag
-                        Long.BYTES * 11 + //value,currentIndex,lastIndex,timestamp,attachmentTimestampLowerBound,attachmentTimestampUpperBound,arrivalTime,height
+                        Long.BYTES * 9 + //value,currentIndex,lastIndex,timestamp,attachmentTimestampLowerBound,attachmentTimestampUpperBound,arrivalTime,height
                         Integer.BYTES * 3 + //validity,type,snapshot
                         1 + //solid
                         sender.getBytes().length; //sender
@@ -99,8 +96,6 @@ public class Transaction implements Persistable {
         buffer.put(Serializer.serialize(arrivalTime));
         buffer.put(Serializer.serialize(height));
         //buffer.put((byte) (confirmed ? 1:0));
-        buffer.put(Serializer.serialize(trunkTimeDifference));
-        buffer.put(Serializer.serialize(branchTimeDifference));
         // encode booleans in 1 byte
         byte flags = 0;
         flags |= solid ? IS_SOLID_BITMASK : 0;
@@ -151,10 +146,6 @@ public class Transaction implements Persistable {
             arrivalTime = Serializer.getLong(bytes, i);
             i += Long.BYTES;
             height = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-            trunkTimeDifference = Serializer.getLong(bytes, i);
-            i += Long.BYTES;
-            branchTimeDifference = Serializer.getLong(bytes, i);
             i += Long.BYTES;
             /*
             confirmed = bytes[i] == 1;

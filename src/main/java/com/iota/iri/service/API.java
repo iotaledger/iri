@@ -673,7 +673,6 @@ public class API {
       * @param trytes List of raw data of transactions to be rebroadcast.
       **/
     public void storeTransactionsStatement(final List<String> trytes) throws Exception {
-        final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String trytesPart : trytes) {
             //validate all trytes
@@ -686,7 +685,6 @@ public class API {
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(instance.tangle, "sender");
             }
-            elements.add(transactionViewModel);
         }
     }
 

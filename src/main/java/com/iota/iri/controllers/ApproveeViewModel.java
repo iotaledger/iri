@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Acts as a controller interface for {@link Approvee} objects. These controllers are used within a
- * {@link ApproveeViewModel} to manipulate an Address object.
+ * Acts as a controller interface for an {@link Approvee} set. These controllers are used within a
+ * {@link TransactionViewModel} to manipulate an {@link Approvee} set.
  */
 public class ApproveeViewModel implements HashesViewModel {
     private Approvee self;
@@ -69,7 +69,7 @@ public class ApproveeViewModel implements HashesViewModel {
     }
 
     /**
-     * Attempts to store the <tt>Approvee</tt> hash set indexed by the hash identifier to the database.
+     * Attempts to store the {@link Approvee} set indexed by the hash identifier to the database.
      *
      * @param tangle The tangle reference for the database.
      * @return True if the set is stored correctly, False if not
@@ -79,13 +79,13 @@ public class ApproveeViewModel implements HashesViewModel {
         return tangle.save(self, hash);
     }
 
-    /**@return the integer size of the current <tt>Approvee</tt> set*/
+    /**@return the integer size of the current {@link Approvee} set*/
     public int size() {
         return self.set.size();
     }
 
     /**
-     * Adds a hash identifier to the <tt>Approvee</tt> set.
+     * Adds a hash identifier to the {@link Approvee} set.
      *
      * @param theHash The hash identifier to be added
      * @return True if the hash is added correctly, False if not
@@ -94,7 +94,7 @@ public class ApproveeViewModel implements HashesViewModel {
         return getHashes().add(theHash);
     }
 
-    /**@return The hash identifier for the <tt>Approvee</tt> set*/
+    /**@return The hash identifier for the {@link Approvee} set*/
     public Indexable getIndex() {
         return hash;
     }

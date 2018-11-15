@@ -233,7 +233,7 @@ public class TransactionViewModel {
 		return transaction.branchTimeDifference;
 	}
 
-    public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
+	public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
         if(approovers == null) {
             approovers = ApproveeViewModel.load(tangle, hash);
         }

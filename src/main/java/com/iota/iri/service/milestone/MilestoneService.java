@@ -1,12 +1,8 @@
 package com.iota.iri.service.milestone;
 
-import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.zmq.MessageQ;
 
 /**
  * Represents the service that contains all the relevant business logic for interacting with milestones.<br />
@@ -20,19 +16,14 @@ public interface MilestoneService {
      * It first checks if all transactions that belong to the milestone bundle are known already and only then verifies
      * the signature to analyze if the given milestone was really issued by the coordinator.<br />
      *
-     * @param tangle Tangle object which acts as a database interface [dependency]
-     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots [dependency]
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients [dependency]
-     * @param config config with important milestone specific settings [dependency]
      * @param transactionViewModel transaction that shall be analyzed
      * @param mode mode that gets used for the signature verification
      * @param securityLevel security level that gets used for the signature verification
      * @return validity status of the transaction regarding its role as a milestone
      * @throws MilestoneException if anything unexpected goes wrong while validating the milestone transaction
      */
-    MilestoneValidity validateMilestone(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
-            IotaConfig config, TransactionViewModel transactionViewModel, SpongeFactory.Mode mode, int securityLevel)
-            throws MilestoneException;
+    MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, SpongeFactory.Mode mode,
+            int securityLevel) throws MilestoneException;
 
     /**
      * This method updates the milestone index of all transactions that belong to a milestone.<br />
@@ -53,15 +44,11 @@ public interface MilestoneService {
      * if the transaction that got referenced is still "known" to the node by having a sufficiently high pruning
      * delay).<br />
      *
-     * @param tangle Tangle object which acts as a database interface [dependency]
-     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots [dependency]
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients [dependency]
      * @param milestoneHash the hash of the transaction
      * @param newIndex the milestone index that shall be set
      * @throws MilestoneException if anything unexpected happens while updating the milestone index
      */
-    void updateMilestoneIndexOfMilestoneTransactions(Tangle tangle, SnapshotProvider snapshotProvider,
-            MessageQ messageQ, Hash milestoneHash, int newIndex) throws MilestoneException;
+    void updateMilestoneIndexOfMilestoneTransactions(Hash milestoneHash, int newIndex) throws MilestoneException;
 
     /**
      * This method resets all milestone related information of the transactions that were "confirmed" by the given
@@ -74,22 +61,18 @@ public interface MilestoneService {
      * It recursively resets additional milestones if inconsistencies are found within the resetted milestone (wrong
      * {@code milestoneIndex}es).<br />
      *
-     * @param tangle Tangle object which acts as a database interface [dependency]
-     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots [dependency]
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients [dependency]
-     * @param milestoneIndex milestone index that shall
+     * @param index milestone index that shall
      * @throws MilestoneException if anything goes wrong while resetting the corrupted milestone
      */
-    void resetCorruptedMilestone(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
-            int milestoneIndex) throws MilestoneException;
+    void resetCorruptedMilestone(int index) throws MilestoneException;
 
     /**
      * This method checks if the given transaction "belongs" to the milestone with the given index.<br />
      * <br />
-     * We determine if a transaction still belongs to the milestone with the given index by examining its
-     * {@code snapshotIndex} value. For this method to work we require that the previous milestones have been processed
-     * already (which is enforce by the {@link com.iota.iri.service.milestone.LatestSolidMilestoneTracker} which applies
-     * the milestones in the order that they are issued by the coordinator).<br />
+     * We determine if a transaction still belongs to the milestone with the given index by examining its {@code
+     * snapshotIndex} value. For this method to work we require that the previous milestones have been processed already
+     * (which is enforce by the {@link com.iota.iri.service.milestone.LatestSolidMilestoneTracker} which applies the
+     * milestones in the order that they are issued by the coordinator).<br />
      *
      * @param transaction the transaction that shall be examined
      * @param milestoneIndex the milestone index that we want to check against

@@ -55,10 +55,40 @@ public class SnapshotServiceImpl implements SnapshotService {
     private static final int SOLID_ENTRY_POINT_LIFETIME = 1000;
 
     /**
+     * Holds the tangle object which acts as a database interface.<br />
+     */
+    private final Tangle tangle;
+
+    /**
+     * Holds the snapshot provider which gives us access to the relevant snapshots.<br />
+     */
+    private final SnapshotProvider snapshotProvider;
+
+    /**
+     * Holds the config with important snapshot specific settings.<br />
+     */
+    private final SnapshotConfig config;
+
+    /**
+     * Creates a service instance that allows us to interact with the snapshots.<br />
+     * <br />
+     * It simply stores the passed in dependencies in the internal properties.<br />
+     *
+     * @param tangle Tangle object which acts as a database interface
+     * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
+     * @param config important snapshot related configuration parameters
+     */
+    public SnapshotServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config) {
+        this.tangle = tangle;
+        this.snapshotProvider = snapshotProvider;
+        this.config = config;
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
-    public void replayMilestones(Tangle tangle, Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException {
+    public void replayMilestones(Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException {
         snapshot.lockWrite();
 
         Snapshot snapshotBeforeChanges = new SnapshotImpl(snapshot);
@@ -102,9 +132,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public void rollBackMilestones(Tangle tangle, Snapshot snapshot, int targetMilestoneIndex) throws
-            SnapshotException {
-
+    public void rollBackMilestones(Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException {
         if(targetMilestoneIndex <= snapshot.getInitialIndex() || targetMilestoneIndex > snapshot.getIndex()) {
             throw new SnapshotException("invalid milestone index");
         }
@@ -135,12 +163,12 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public void takeLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner) throws SnapshotException {
+    public void takeLocalSnapshot(LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner)
+            throws SnapshotException {
 
         MilestoneViewModel targetMilestone = determineMilestoneForLocalSnapshot(tangle, snapshotProvider, config);
 
-        Snapshot newSnapshot = generateSnapshot(tangle, snapshotProvider, config, latestMilestoneTracker, targetMilestone);
+        Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
         cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
                 newSnapshot.getSolidEntryPoints(), transactionPruner);
@@ -154,8 +182,8 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public Snapshot generateSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            LatestMilestoneTracker latestMilestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException {
+    public Snapshot generateSnapshot(LatestMilestoneTracker latestMilestoneTracker, MilestoneViewModel targetMilestone)
+            throws SnapshotException {
 
         if (targetMilestone == null) {
             throw new SnapshotException("the target milestone must not be null");
@@ -178,19 +206,19 @@ public class SnapshotServiceImpl implements SnapshotService {
             if (distanceFromInitialSnapshot <= distanceFromLatestSnapshot) {
                 snapshot = new SnapshotImpl(snapshotProvider.getInitialSnapshot());
 
-                replayMilestones(tangle, snapshot, targetMilestone.index());
+                replayMilestones(snapshot, targetMilestone.index());
             } else {
                 snapshot = new SnapshotImpl(snapshotProvider.getLatestSnapshot());
 
-                rollBackMilestones(tangle, snapshot, targetMilestone.index() + 1);
+                rollBackMilestones(snapshot, targetMilestone.index() + 1);
             }
         } finally {
             snapshotProvider.getInitialSnapshot().unlockRead();
             snapshotProvider.getLatestSnapshot().unlockRead();
         }
 
-        snapshot.setSolidEntryPoints(generateSolidEntryPoints(tangle, snapshotProvider, targetMilestone));
-        snapshot.setSeenMilestones(generateSeenMilestones(tangle, config, latestMilestoneTracker, targetMilestone));
+        snapshot.setSolidEntryPoints(generateSolidEntryPoints(targetMilestone));
+        snapshot.setSeenMilestones(generateSeenMilestones(latestMilestoneTracker, targetMilestone));
 
         return snapshot;
     }
@@ -199,9 +227,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public Map<Hash, Integer> generateSolidEntryPoints(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneViewModel targetMilestone) throws SnapshotException {
-
+    public Map<Hash, Integer> generateSolidEntryPoints(MilestoneViewModel targetMilestone) throws SnapshotException {
         Map<Hash, Integer> solidEntryPoints = new HashMap<>();
         solidEntryPoints.put(Hash.NULL_HASH, targetMilestone.index());
 
@@ -215,8 +241,8 @@ public class SnapshotServiceImpl implements SnapshotService {
      * {@inheritDoc}
      */
     @Override
-    public Map<Hash, Integer> generateSeenMilestones(Tangle tangle, SnapshotConfig config,
-            LatestMilestoneTracker latestMilestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException {
+    public Map<Hash, Integer> generateSeenMilestones(LatestMilestoneTracker latestMilestoneTracker,
+            MilestoneViewModel targetMilestone) throws SnapshotException {
 
         ProgressLogger progressLogger = new IntervalProgressLogger(
                 "Taking local snapshot [processing seen milestones]", log)

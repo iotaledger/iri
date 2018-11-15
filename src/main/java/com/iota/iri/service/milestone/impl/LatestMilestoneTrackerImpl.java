@@ -80,11 +80,6 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     private final MessageQ messageQ;
 
     /**
-     * Holds the configuration object which allows us to determine the important config parameters of the node.<br />
-     */
-    private final IotaConfig config;
-
-    /**
      * Holds a reference to the manager of the background worker.<br />
      */
     private final SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
@@ -152,7 +147,6 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         this.milestoneService = milestoneService;
         this.milestoneSolidifier = milestoneSolidifier;
         this.messageQ = messageQ;
-        this.config = config;
 
         coordinatorAddress = HashFactory.ADDRESS.create(config.getCoordinator());
 
@@ -201,18 +195,14 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * {@link MilestoneSolidifier} that takes care of requesting the missing parts of the milestone bundle.<br />
      */
     @Override
-    public MilestoneValidity analyzeMilestoneCandidate(TransactionViewModel transaction)
-            throws MilestoneException {
-
+    public MilestoneValidity analyzeMilestoneCandidate(TransactionViewModel transaction) throws MilestoneException {
         try {
             if (coordinatorAddress.equals(transaction.getAddressHash()) &&
                     transaction.getCurrentIndex() == 0) {
 
                 int milestoneIndex = milestoneService.getMilestoneIndex(transaction);
 
-                switch (milestoneService.validateMilestone(tangle, snapshotProvider, messageQ, config,
-                        transaction, SpongeFactory.Mode.CURLP27, 1)) {
-
+                switch (milestoneService.validateMilestone(transaction, SpongeFactory.Mode.CURLP27, 1)) {
                     case VALID:
                         if (milestoneIndex > latestMilestoneIndex) {
                             setLatestMilestone(transaction.getHash(), milestoneIndex);

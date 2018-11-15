@@ -45,53 +45,78 @@ public class MilestoneServiceImpl implements MilestoneService {
     private final static Logger log = LoggerFactory.getLogger(MilestoneServiceImpl.class);
 
     /**
+     * Holds the tangle object which acts as a database interface.<br />
+     */
+    private final Tangle tangle;
+
+    /**
+     * Holds the snapshot provider which gives us access to the relevant snapshots.<br />
+     */
+    private final SnapshotProvider snapshotProvider;
+
+    /**
      * Holds a reference to the service instance of the snapshot package that allows us to rollback ledger states.<br />
      */
     private final SnapshotService snapshotService;
+
+    /**
+     * Holds the ZeroMQ interface that allows us to emit messages for external recipients.<br />
+     */
+    private final MessageQ messageQ;
+
+    /**
+     * Holds the config with important milestone specific settings.<br />
+     */
+    private final IotaConfig config;
 
     /**
      * Creates a service instance that allows us to interact with the milestones.<br />
      * <br />
      * It simply stores the passed in dependencies in the internal properties.<br />
      *
+     * @param tangle Tangle object which acts as a database interface
+     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
      * @param snapshotService service instance of the snapshot package that allows us to rollback ledger states
+     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
+     * @param config config with important milestone specific settings
      */
-    public MilestoneServiceImpl(SnapshotService snapshotService) {
+    public MilestoneServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
+            MessageQ messageQ, IotaConfig config) {
+
+        this.tangle = tangle;
+        this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
+        this.messageQ = messageQ;
+        this.config = config;
     }
 
     //region {PUBLIC METHODS] //////////////////////////////////////////////////////////////////////////////////////////
 
     @Override
-    public void updateMilestoneIndexOfMilestoneTransactions(Tangle tangle, SnapshotProvider snapshotProvider,
-            MessageQ messageQ, Hash milestoneHash, int newIndex) throws MilestoneException {
-
-        if (newIndex <= 0) {
+    public void updateMilestoneIndexOfMilestoneTransactions(Hash milestoneHash, int index) throws MilestoneException {
+        if (index <= 0) {
             throw new MilestoneException("the new index needs to be bigger than 0 " +
                     "(use resetCorruptedMilestone to reset the milestone index)");
         }
 
-        updateMilestoneIndexOfMilestoneTransactions(tangle, snapshotProvider, messageQ, milestoneHash, newIndex, newIndex, new HashSet<>());
+        updateMilestoneIndexOfMilestoneTransactions(milestoneHash, index, index, new HashSet<>());
     }
 
     /**
      * {@inheritDoc}
      * <br />
-     * We redirect the call to {@link #resetCorruptedMilestone(Tangle, SnapshotProvider, MessageQ, int, Set)} while
-     * initiating the set of {@code processedTransactions} with an empty {@link HashSet} which will ensure that we reset
-     * all found transactions.<br />
+     * We redirect the call to {@link #resetCorruptedMilestone(int, Set)} while initiating the set of {@code
+     * processedTransactions} with an empty {@link HashSet} which will ensure that we reset all found
+     * transactions.<br />
      */
     @Override
-    public void resetCorruptedMilestone(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
-            int milestoneIndex) throws MilestoneException {
-
-        resetCorruptedMilestone(tangle, snapshotProvider, messageQ, milestoneIndex, new HashSet<>());
+    public void resetCorruptedMilestone(int index) throws MilestoneException {
+        resetCorruptedMilestone(index, new HashSet<>());
     }
 
     @Override
-    public MilestoneValidity validateMilestone(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
-            IotaConfig config, TransactionViewModel transactionViewModel, SpongeFactory.Mode mode, int securityLevel)
-            throws MilestoneException {
+    public MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, SpongeFactory.Mode mode,
+            int securityLevel) throws MilestoneException {
 
         int milestoneIndex = getMilestoneIndex(transactionViewModel);
         if (milestoneIndex < 0 || milestoneIndex >= 0x200000) {
@@ -153,8 +178,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                                 if (milestoneIndex < snapshotProvider.getLatestSnapshot().getIndex() &&
                                         milestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
 
-                                    resetCorruptedMilestone(tangle, snapshotProvider, messageQ,
-                                            newMilestoneViewModel.index());
+                                    resetCorruptedMilestone(newMilestoneViewModel.index());
                                 }
                                 return VALID;
                             } else {
@@ -186,13 +210,9 @@ public class MilestoneServiceImpl implements MilestoneService {
     //region [PRIVATE UTILITY METHODS] /////////////////////////////////////////////////////////////////////////////////
 
     /**
-     * This method implements the logic described by {@link #updateMilestoneIndexOfMilestoneTransactions(Tangle,
-     * SnapshotProvider, MessageQ, Hash, int)} but accepts some additional parameters that allow it to be reused by
-     * different parts of this service.<br />
+     * This method implements the logic described by {@link #updateMilestoneIndexOfMilestoneTransactions(Hash, int)} but
+     * accepts some additional parameters that allow it to be reused by different parts of this service.<br />
      *
-     * @param tangle Tangle object which acts as a database interface [dependency]
-     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots [dependency]
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients [dependency]
      * @param milestoneHash the hash of the transaction
      * @param correctIndex the milestone index of the milestone that would be set if all transactions are marked
      *                     correctly
@@ -200,9 +220,8 @@ public class MilestoneServiceImpl implements MilestoneService {
      * @throws MilestoneException if anything unexpected happens while updating the milestone index
      * @param processedTransactions a set of transactions that have been processed already (for the recursive calls)
      */
-    private void updateMilestoneIndexOfMilestoneTransactions(Tangle tangle, SnapshotProvider snapshotProvider,
-            MessageQ messageQ, Hash milestoneHash, int correctIndex, int newIndex, Set<Hash> processedTransactions)
-            throws MilestoneException {
+    private void updateMilestoneIndexOfMilestoneTransactions(Hash milestoneHash, int correctIndex, int newIndex,
+            Set<Hash> processedTransactions) throws MilestoneException {
 
         processedTransactions.add(milestoneHash);
 
@@ -233,12 +252,11 @@ public class MilestoneServiceImpl implements MilestoneService {
         }
 
         for(int inconsistentMilestoneIndex : inconsistentMilestones) {
-            resetCorruptedMilestone(tangle, snapshotProvider, messageQ, inconsistentMilestoneIndex,
-                    processedTransactions);
+            resetCorruptedMilestone(inconsistentMilestoneIndex, processedTransactions);
         }
 
         for (TransactionViewModel transactionToUpdate : transactionsToUpdate) {
-            updateMilestoneIndexOfSingleTransaction(tangle, snapshotProvider, messageQ, transactionToUpdate, newIndex);
+            updateMilestoneIndexOfSingleTransaction(transactionToUpdate, newIndex);
         }
     }
 
@@ -248,24 +266,21 @@ public class MilestoneServiceImpl implements MilestoneService {
      * In addition to setting the corresponding value, we also publish a message to the ZeroMQ message provider, which
      * allows external recipients to get informed about this change.<br />
      *
-     * @param tangle Tangle object which acts as a database interface [dependency]
-     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots [dependency]
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients [dependency]
      * @param transaction the transaction that shall have its {@code milestoneIndex} reset
-     * @param newIndex the milestone index that is set for the given transaction
+     * @param index the milestone index that is set for the given transaction
      * @throws MilestoneException if anything unexpected happens while updating the transaction
      */
-    private void updateMilestoneIndexOfSingleTransaction(Tangle tangle, SnapshotProvider snapshotProvider,
-            MessageQ messageQ, TransactionViewModel transaction, int newIndex) throws MilestoneException {
+    private void updateMilestoneIndexOfSingleTransaction(TransactionViewModel transaction, int index) throws
+            MilestoneException {
 
         try {
-            transaction.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), newIndex);
+            transaction.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), index);
         } catch (Exception e) {
             throw new MilestoneException("error while updating the snapshotIndex of " + transaction, e);
         }
 
-        messageQ.publish("%s %s %d sn", transaction.getAddressHash(), transaction.getHash(), newIndex);
-        messageQ.publish("sn %d %s %s %s %s %s", newIndex, transaction.getHash(), transaction.getAddressHash(),
+        messageQ.publish("%s %s %d sn", transaction.getAddressHash(), transaction.getHash(), index);
+        messageQ.publish("sn %d %s %s %s %s %s", index, transaction.getHash(), transaction.getAddressHash(),
                 transaction.getTrunkTransactionHash(), transaction.getBranchTransactionHash(),
                 transaction.getBundleHash());
     }
@@ -343,47 +358,41 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     /**
-     * This method does the same as {@link #resetCorruptedMilestone(Tangle, SnapshotProvider, MessageQ, int)} but
-     * additionally receives a set of {@code processedTransactions} that will allow us to not process the same
-     * transactions over and over again while resetting additional milestones in recursive calls.<br />
+     * This method does the same as {@link #resetCorruptedMilestone(int)} but additionally receives a set of {@code
+     * processedTransactions} that will allow us to not process the same transactions over and over again while
+     * resetting additional milestones in recursive calls.<br />
      * <br />
-     * It first checks if the desired {@code milestoneIndex} is reachable by this node and then triggers the
-     * reset by:<br />
+     * It first checks if the desired {@code milestoneIndex} is reachable by this node and then triggers the reset
+     * by:<br />
      * <br />
      * 1. resetting the ledger state if it addresses a milestone before the current latest solid milestone<br />
      * 2. resetting the {@code milestoneIndex} of all transactions that were confirmed by the current milestone<br />
-     * 3. deleting the corresponding {@link StateDiff} entry from the database
+     * 3. deleting the corresponding {@link StateDiff} entry from the database<br />
      *
-     * @param tangle Tangle object which acts as a database interface [dependency]
-     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots [dependency]
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients [dependency]
-     * @param milestoneIndex milestone index that shall
+     * @param index milestone index that shall
      * @param processedTransactions a set of transactions that have been processed already
      * @throws MilestoneException if anything goes wrong while resetting the corrupted milestone
      */
-    private void resetCorruptedMilestone(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
-            int milestoneIndex, Set<Hash> processedTransactions) throws MilestoneException {
-
-        if(milestoneIndex <= snapshotProvider.getInitialSnapshot().getIndex()) {
+    private void resetCorruptedMilestone(int index, Set<Hash> processedTransactions) throws MilestoneException {
+        if(index <= snapshotProvider.getInitialSnapshot().getIndex()) {
             return;
         }
 
-        log.info("resetting corrupted milestone #" + milestoneIndex);
+        log.info("resetting corrupted milestone #" + index);
 
         try {
-            MilestoneViewModel milestoneToRepair = MilestoneViewModel.get(tangle, milestoneIndex);
+            MilestoneViewModel milestoneToRepair = MilestoneViewModel.get(tangle, index);
             if(milestoneToRepair != null) {
                 if(milestoneToRepair.index() <= snapshotProvider.getLatestSnapshot().getIndex()) {
-                    snapshotService.rollBackMilestones(tangle, snapshotProvider.getLatestSnapshot(),
-                            milestoneToRepair.index());
+                    snapshotService.rollBackMilestones(snapshotProvider.getLatestSnapshot(), milestoneToRepair.index());
                 }
 
-                updateMilestoneIndexOfMilestoneTransactions(tangle, snapshotProvider, messageQ,
-                        milestoneToRepair.getHash(), milestoneToRepair.index(), 0, processedTransactions);
+                updateMilestoneIndexOfMilestoneTransactions(milestoneToRepair.getHash(), milestoneToRepair.index(), 0,
+                        processedTransactions);
                 tangle.delete(StateDiff.class, milestoneToRepair.getHash());
             }
         } catch (Exception e) {
-            throw new MilestoneException("failed to repair corrupted milestone with index #" + milestoneIndex, e);
+            throw new MilestoneException("failed to repair corrupted milestone with index #" + index, e);
         }
     }
 

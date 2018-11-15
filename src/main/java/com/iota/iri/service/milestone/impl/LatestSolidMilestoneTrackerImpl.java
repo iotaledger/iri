@@ -165,17 +165,17 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * This method tries to apply the given milestone to the ledger.<br />
      * <br />
      * If the application of the milestone fails, we start a repair routine which will revert the milestones preceding
-     * our current milestone and consequently try to reapply them in the next iteration of the
-     * {@link #checkForNewLatestSolidMilestones()} method (until the problem is solved).<br />
+     * our current milestone and consequently try to reapply them in the next iteration of the {@link
+     * #checkForNewLatestSolidMilestones()} method (until the problem is solved).<br />
      *
-     * @param milestoneViewModel the milestone that shall be applied to the ledger state
+     * @param milestone the milestone that shall be applied to the ledger state
      * @throws Exception if anything unexpected goes wrong while applying the milestone to the ledger
      */
-    private void applySolidMilestoneToLedger(MilestoneViewModel milestoneViewModel) throws Exception {
-        if (!ledgerService.applyMilestoneToLedger(tangle, snapshotProvider, messageQ, milestoneViewModel)) {
-            revertPrecedingMilestones(milestoneViewModel);
+    private void applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
+        if (!ledgerService.applyMilestoneToLedger(milestone)) {
+            revertPrecedingMilestones(milestone);
         } else {
-            resetRepairBackoffCounterIfProblemSolved(milestoneViewModel);
+            resetRepairBackoffCounterIfProblemSolved(milestone);
         }
     }
 
@@ -258,7 +258,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
         }
 
         for (int i = errorCausingMilestone.index(); i > errorCausingMilestone.index() - repairBackoffCounter; i--) {
-            milestoneService.resetCorruptedMilestone(tangle, snapshotProvider, messageQ, i);
+            milestoneService.resetCorruptedMilestone(i);
         }
      }
 }

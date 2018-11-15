@@ -105,8 +105,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * It periodically checks if a new {@link com.iota.iri.service.snapshot.Snapshot} has to be taken until the
      * {@link Thread} is terminated. If it detects that a {@link com.iota.iri.service.snapshot.Snapshot} is due it
      * triggers the creation of the {@link com.iota.iri.service.snapshot.Snapshot} by calling
-     * {@link SnapshotService#takeLocalSnapshot(Tangle, SnapshotProvider, SnapshotConfig, LatestMilestoneTracker,
-     * TransactionPruner)}.
+     * {@link SnapshotService#takeLocalSnapshot(LatestMilestoneTracker, TransactionPruner)}.
      *
      * @param latestMilestoneTracker tracker for the milestones to determine when a new local snapshot is due
      */
@@ -122,8 +121,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
 
             if (latestSnapshotIndex - initialSnapshotIndex > config.getLocalSnapshotsDepth() + localSnapshotInterval) {
                 try {
-                    snapshotService.takeLocalSnapshot(tangle, snapshotProvider, config, latestMilestoneTracker,
-                            transactionPruner);
+                    snapshotService.takeLocalSnapshot(latestMilestoneTracker, transactionPruner);
                 } catch (SnapshotException e) {
                     log.error("error while taking local snapshot", e);
                 }

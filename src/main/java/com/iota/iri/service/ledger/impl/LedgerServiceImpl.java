@@ -13,7 +13,6 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.impl.SnapshotStateDiffImpl;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.zmq.MessageQ;
 
 import java.util.*;
 
@@ -25,9 +24,14 @@ import java.util.*;
  */
 public class LedgerServiceImpl implements LedgerService {
     /**
-     * Holds a reference to the service instance containing the business logic of the milestone package.<br />
+     * Holds the tangle object which acts as a database interface.<br />
      */
-    private final MilestoneService milestoneService;
+    private final Tangle tangle;
+
+    /**
+     * Holds the snapshot provider which gives us access to the relevant snapshots.<br />
+     */
+    private final SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the service instance containing the business logic of the snapshot package.<br />
@@ -35,24 +39,33 @@ public class LedgerServiceImpl implements LedgerService {
     private final SnapshotService snapshotService;
 
     /**
+     * Holds a reference to the service instance containing the business logic of the milestone package.<br />
+     */
+    private final MilestoneService milestoneService;
+
+    /**
      * Creates a service instance that allows us to perform ledger state specific operations.<br />
      * <br />
      * It simply stores the passed in dependencies in the internal properties.<br />
      *
+     * @param tangle Tangle object which acts as a database interface
+     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
      * @param snapshotService service instance of the snapshot package that allows us to rollback ledger states
      */
-    public LedgerServiceImpl(SnapshotService snapshotService, MilestoneService milestoneService) {
+    public LedgerServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
+            MilestoneService milestoneService) {
+
+        this.tangle = tangle;
+        this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.milestoneService = milestoneService;
     }
 
     @Override
-    public boolean applyMilestoneToLedger(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
-            MilestoneViewModel milestone) throws LedgerException {
-
-        if(generateStateDiff(tangle, snapshotProvider, messageQ, milestone)) {
+    public boolean applyMilestoneToLedger(MilestoneViewModel milestone) throws LedgerException {
+        if(generateStateDiff(milestone)) {
             try {
-                snapshotService.replayMilestones(tangle, snapshotProvider.getLatestSnapshot(), milestone.index());
+                snapshotService.replayMilestones(snapshotProvider.getLatestSnapshot(), milestone.index());
             } catch (SnapshotException e) {
                 throw new LedgerException("failed to apply the balance changes to the ledger state", e);
             }
@@ -64,13 +77,11 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public boolean tipsConsistent(Tangle tangle, SnapshotProvider snapshotProvider, List<Hash> tips) throws
-            LedgerException {
-
+    public boolean tipsConsistent(List<Hash> tips) throws LedgerException {
         Set<Hash> visitedHashes = new HashSet<>();
         Map<Hash, Long> diff = new HashMap<>();
         for (Hash tip : tips) {
-            if (!isBalanceDiffConsistent(tangle, snapshotProvider, visitedHashes, diff, tip)) {
+            if (!isBalanceDiffConsistent(visitedHashes, diff, tip)) {
                 return false;
             }
         }
@@ -79,8 +90,8 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public boolean isBalanceDiffConsistent(Tangle tangle, SnapshotProvider snapshotProvider, Set<Hash> approvedHashes,
-            final Map<Hash, Long> diff, Hash tip) throws LedgerException {
+    public boolean isBalanceDiffConsistent(Set<Hash> approvedHashes, Map<Hash, Long> diff, Hash tip) throws
+            LedgerException {
 
         try {
             if (!TransactionViewModel.fromHash(tangle, tip).isSolid()) {
@@ -94,7 +105,7 @@ public class LedgerServiceImpl implements LedgerService {
             return true;
         }
         Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
-        Map<Hash, Long> currentState = generateBalanceDiff(tangle, snapshotProvider, visitedHashes, tip,
+        Map<Hash, Long> currentState = generateBalanceDiff(visitedHashes, tip,
                 snapshotProvider.getLatestSnapshot().getIndex());
         if (currentState == null) {
             return false;
@@ -114,8 +125,9 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public Map<Hash, Long> generateBalanceDiff(Tangle tangle, SnapshotProvider snapshotProvider,
-            Set<Hash> visitedTransactions, Hash milestoneHash, int milestoneIndex) throws LedgerException {
+    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash milestoneHash, int milestoneIndex)
+            throws LedgerException {
+
         Map<Hash, Long> state = new HashMap<>();
         Set<Hash> countedTx = new HashSet<>();
 
@@ -198,15 +210,11 @@ public class LedgerServiceImpl implements LedgerService {
      * If inconsistencies in the {@code snapshotIndex} are found it issues a reset of the corresponding milestone to
      * recover from this problem.<br />
      *
-     * @param tangle Tangle object which acts as a database interface [dependency]
-     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots [dependency]
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients [dependency]
      * @param milestone the milestone that shall have its {@link com.iota.iri.model.StateDiff} generated
      * @return {@code true} if the {@link com.iota.iri.model.StateDiff} could be generated and {@code false} otherwise
      * @throws LedgerException if anything unexpected happens while generating the {@link com.iota.iri.model.StateDiff}
      */
-    private boolean generateStateDiff(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
-            MilestoneViewModel milestone) throws LedgerException {
+    private boolean generateStateDiff(MilestoneViewModel milestone) throws LedgerException {
 
         try {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestone.getHash());
@@ -221,21 +229,21 @@ public class LedgerServiceImpl implements LedgerService {
                 // if the snapshotIndex of our transaction was set already, we have processed our milestones in
                 // the wrong order (i.e. while rescanning the db)
                 if (transactionSnapshotIndex != 0) {
-                    milestoneService.resetCorruptedMilestone(tangle, snapshotProvider, messageQ, milestone.index());
+                    milestoneService.resetCorruptedMilestone(milestone.index());
                 }
 
                 snapshotProvider.getLatestSnapshot().lockRead();
                 try {
                     Hash tail = transactionViewModel.getHash();
-                    Map<Hash, Long> balanceChanges = generateBalanceDiff(tangle, snapshotProvider, new HashSet<>(),
-                            tail, snapshotProvider.getLatestSnapshot().getIndex());
+                    Map<Hash, Long> balanceChanges = generateBalanceDiff(new HashSet<>(), tail,
+                            snapshotProvider.getLatestSnapshot().getIndex());
                     successfullyProcessed = balanceChanges != null;
                     if (successfullyProcessed) {
                         successfullyProcessed = snapshotProvider.getLatestSnapshot().patchedState(
                                 new SnapshotStateDiffImpl(balanceChanges)).isConsistent();
                         if (successfullyProcessed) {
-                            milestoneService.updateMilestoneIndexOfMilestoneTransactions(tangle, snapshotProvider,
-                                    messageQ, milestone.getHash(), milestone.index());
+                            milestoneService.updateMilestoneIndexOfMilestoneTransactions(milestone.getHash(),
+                                    milestone.index());
 
                             if (!balanceChanges.isEmpty()) {
                                 new StateDiffViewModel(balanceChanges, milestone.getHash()).store(tangle);

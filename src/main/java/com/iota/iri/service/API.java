@@ -682,11 +682,9 @@ public class API {
     }
 
     /**
-     * Checks if the latest solid subtangle milestone is still the initial milestone.
+     * Checks if our database is up to date with the latest coordinator issued milestones.
      * 
-     * @return <tt>true</tt> if milestoneStartIndex is equal to 
-     *                           {@link MilestoneTracker#latestSolidSubtangleMilestoneIndex},
-     *                           otherwise <tt>false</tt>
+     * @return <tt>true</tt> if we are not up to date yet, otherwise <tt>false</tt>
      */
     public boolean invalidSubtangleStatus() {
         return (instance.milestoneTracker.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
@@ -1388,7 +1386,8 @@ public class API {
             final Set<Hash> visitedHashes = new HashSet<>();
             final Map<Hash, Long> diff = new HashMap<>();
 
-            // Then check if all tips are present and we can update the transactions then through
+            // Calculate the difference created by the non-verified transactions which tips approve.
+            // This difference is put in a map with address -> value changed
             for (Hash tip : hashes) {
                 if (!TransactionViewModel.exists(instance.tangle, tip)) {
                     return ErrorResponse.create("Tip not found: " + tip.toString());
@@ -1398,7 +1397,7 @@ public class API {
                 }
             }
             
-            // Update the found balance according to current epoch's balance changes
+            // Update the found balance according to 'diffs' balance changes
             diff.forEach((key, value) -> balances.computeIfPresent(key, (hash, aLong) -> value + aLong));
         } finally {
             instance.milestoneTracker.latestSnapshot.rwlock.readLock().unlock();

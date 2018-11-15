@@ -29,6 +29,7 @@ public class TransactionViewModel {
     public static final int SIZE = 1604;
     private static final int TAG_SIZE_IN_BYTES = 17; // = ceil(81 TRITS / 5 TRITS_PER_BYTE)
 
+    /**Total supply of IOTA available in the network. Used for ensuring a balanced ledger state and bundle balances*/
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2
 
     /**The predefined trit offset position for the varying components of a transaction object*/
@@ -61,7 +62,7 @@ public class TransactionViewModel {
     private TransactionViewModel branch;
     private final Hash hash;
 
-
+    /**Transaction Types*/
     public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction value)
     public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only another tx references that hash
     public final static int FILLED_SLOT = -1; //  knows the hash only coz another tx references that hash
@@ -88,11 +89,11 @@ public class TransactionViewModel {
     }
 
     /**
-     * Creates a new controller from a referenced transaction provided its hash identifier exists in the supplied
-     * tangle instance.
+     * Creates a new controller from a referenced transaction. The given byte array is converted to a hash
+     * identifier, and the new controller is created from it, provided its hash identifier exists in the database.
      *
-     * @param tangle
-     * @param hash
+     * @param tangle The tangle instance reference for the database
+     * @param hash The hash byte array to be converted to a hash identifier and searched for
      * @return The transaction controller with its Metadata filled in.
      * @throws Exception If no transaction can be found 
      */
@@ -102,6 +103,14 @@ public class TransactionViewModel {
         return transactionViewModel;
     }
 
+    /**
+     * Creates a new controller from a given hash identifier, provided it exists in the database.
+     *
+     * @param tangle The tangle instance reference for the database
+     * @param hash The Hash identifier to search for
+     * @return The transaction controller with its Metadata filled in.
+     * @throws Exception If no transaction can be found
+     */
     public static TransactionViewModel fromHash(Tangle tangle, final Hash hash) throws Exception {
         TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
         fillMetadata(tangle, transactionViewModel);
@@ -112,6 +121,12 @@ public class TransactionViewModel {
         return tangle.maybeHas(Transaction.class, hash);
     }
 
+    /**
+     * Constructor for a controller interface. This controller is used to interact with a transaction model.
+     *
+     * @param transaction Transaction object that the interface will be created for
+     * @param hash
+     */
     public TransactionViewModel(final Transaction transaction, Hash hash) {
         this.transaction = transaction == null || transaction.bytes == null ? new Transaction(): transaction;
         this.hash = hash == null? Hash.NULL_HASH: hash;
@@ -139,6 +154,14 @@ public class TransactionViewModel {
         transaction.type = FILLED_SLOT;
     }
 
+    /**
+     * Returns the total number of transactions stored in a database. If no transaction objects are found,
+     * an exception will be thrown.
+     *
+     * @param tangle The tangle reference for the database.
+     * @return The integer count of total transactions in the database
+     * @throws Exception Thrown if no transactions found
+     */
     public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
         return tangle.getCount(Transaction.class).intValue();
     }
@@ -158,6 +181,14 @@ public class TransactionViewModel {
         return tangle.update(transaction, hash, item);
     }
 
+    /**
+     * Retrieves the <tt>Branch Transaction</tt> controller. If the controller doesn't already exist, a new one is
+     * created from the <tt>Branch Transaction</tt> hash identifier. If nothing is found, an exception will be thrown.
+     *
+     * @param tangle The tangle reference for the database.
+     * @return The <tt>Branch Transaction</tt> controller
+     * @throws Exception Thrown if no branch is found when creating a <tt>Transaction</tt> controller
+     */
     public TransactionViewModel getBranchTransaction(Tangle tangle) throws Exception {
         if(branch == null) {
             branch = TransactionViewModel.fromHash(tangle, getBranchTransactionHash());
@@ -165,6 +196,14 @@ public class TransactionViewModel {
         return branch;
     }
 
+    /**
+     * Retrieves the <tt>Trunk Transaction</tt> controller. If the controller doesn't already exist, a new one is
+     * created from the <tt>Trunk Transaction</tt> hash identifier. If nothing is found, an exception will be thrown.
+     *
+     * @param tangle The tangle reference for the database.
+     * @return The <tt>Trunk Transaction</tt> controller
+     * @throws Exception Thrown if no trunk is found when creating a <tt>Transaction</tt> controller
+     */
     public TransactionViewModel getTrunkTransaction(Tangle tangle) throws Exception {
         if(trunk == null) {
             trunk = TransactionViewModel.fromHash(tangle, getTrunkTransactionHash());
@@ -172,6 +211,11 @@ public class TransactionViewModel {
         return trunk;
     }
 
+    /**
+     * Converts the given byte array to the a new trit array of length {@value TRINARY_SIZE}.
+     * @param transactionBytes The byte array to be converted to trits
+     * @return The trit conversion of the byte array
+     */
     public static byte[] trits(byte[] transactionBytes) {
         byte[] trits;
         trits = new byte[TRINARY_SIZE];
@@ -181,10 +225,19 @@ public class TransactionViewModel {
         return trits;
     }
 
+    /**
+     * @return The trits stored in the controller. If the trits aren't available in the controller, the
+     * trits are generated from the transaction object and stored in the controller trits variable.
+     */
     public synchronized byte[] trits() {
         return (trits == null) ? (trits = trits(transaction.bytes)) : trits;
     }
 
+    /**
+     *
+     * @param tangle
+     * @throws Exception
+     */
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Transaction.class, hash);
     }
@@ -246,18 +299,39 @@ public class TransactionViewModel {
         return approovers;
     }
 
+    /**
+     * This is a getter for the type of a transaction controller. The type can be one of 3:
+     * <ul>
+     *     <li>PREFILLED_SLOT: 1</li>
+     *     <li>FILLED_SLOT: -1</li>
+     *     <li>GROUP: 0</li>
+     * </ul>
+     *
+     * @return The current type of the transaction.
+     */
     public final int getType() {
         return transaction.type;
     }
 
+    /**
+     * This is a setter for the transaction's arrival time.
+     * @param time The time to be set in the transaction
+     */
     public void setArrivalTime(long time) {
         transaction.arrivalTime = time;
     }
 
+    /**@return The transaction arrival time*/
     public long getArrivalTime() {
         return transaction.arrivalTime;
     }
 
+    /**
+     * This is a getter for the stored transaction bytes. If the transaction bytes are null, a byte array is
+     * created and stored from the stored trits. If the trits are also null, then a null byte array is returned.
+     *
+     * @return The stored transaction byte array
+     */
     public byte[] getBytes() {
         if(transaction.bytes == null || transaction.bytes.length != SIZE) {
             transaction.bytes = new byte[SIZE];
@@ -268,10 +342,19 @@ public class TransactionViewModel {
         return transaction.bytes;
     }
 
+    /**@return The transaction hash identifier*/
     public Hash getHash() {
         return hash;
     }
 
+    /**
+     * This is a getter for the <tt>Address</tt> controller associated with this transaction.
+     * @see AddressViewModel
+     *
+     * @param tangle The tangle reference for the database.
+     * @return The controller for the <tt>Address</tt> of the transaction.
+     * @throws Exception If the address cannot be found in the database, an exception is thrown.
+     */
     public AddressViewModel getAddress(Tangle tangle) throws Exception {
         if(address == null) {
             address = AddressViewModel.load(tangle, getAddressHash());
@@ -279,10 +362,24 @@ public class TransactionViewModel {
         return address;
     }
 
+    /**
+     * This is a getter for the <tt>Tag</tt> controller associated with this transaction.
+     * @see TagViewModel
+     *
+     * @param tangle The tangle reference for the database.
+     * @return The controller for the <tt>Tag</tt> of the transaction.
+     * @throws Exception If the tag cannot be found in the database, an exception is thrown.
+     */
     public TagViewModel getTag(Tangle tangle) throws Exception {
         return TagViewModel.load(tangle, getTagValue());
     }
 
+    /**
+     * This is a getter for the <tt>Address</tt> hash identifier of a transaction. If the hash is null, a new one is
+     * created from the stored transaction trits.
+     *
+     * @return The <tt>Address</tt> hash identifier.
+     */
     public Hash getAddressHash() {
         if(transaction.address == null) {
             transaction.address = HashFactory.ADDRESS.create(trits(), ADDRESS_TRINARY_OFFSET);
@@ -290,6 +387,12 @@ public class TransactionViewModel {
         return transaction.address;
     }
 
+    /**
+     * This is a getter for the <tt>Obsolete Tag</tt> hash identifier of a transaction. If the hash is null, a new
+     * one is created from the stored transaction trits.
+     *
+     * @return The <tt>Obsolete Tag</tt> hash identifier.
+     */
     public Hash getObsoleteTagValue() {
         if(transaction.obsoleteTag == null) {
             byte[] tagBytes = Converter.allocateBytesForTrits(OBSOLETE_TAG_TRINARY_SIZE);
@@ -300,6 +403,12 @@ public class TransactionViewModel {
         return transaction.obsoleteTag;
     }
 
+    /**
+     * This is a getter for the <tt>Bundle</tt> hash identifier of a transaction. If the hash is null, a new one is
+     * created from the stored transaction trits.
+     *
+     * @return The <tt>Bundle</tt> hash identifier.
+     */
     public Hash getBundleHash() {
         if(transaction.bundle == null) {
             transaction.bundle = HashFactory.BUNDLE.create(trits(), BUNDLE_TRINARY_OFFSET);
@@ -307,6 +416,12 @@ public class TransactionViewModel {
         return transaction.bundle;
     }
 
+    /**
+     * This is a getter for the <tt>Trunk Transaction</tt> hash identifier of a transaction. If the hash is null,
+     * a new one is created from the stored transaction trits.
+     *
+     * @return The <tt>Trunk Transaction</tt> hash identifier.
+     */
     public Hash getTrunkTransactionHash() {
         if(transaction.trunk == null) {
             transaction.trunk = HashFactory.TRANSACTION.create(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET);
@@ -314,6 +429,12 @@ public class TransactionViewModel {
         return transaction.trunk;
     }
 
+    /**
+     * This is a getter for the <tt>Branch Transaction</tt> hash identifier of a transaction. If the hash is null,
+     * a new one is created from the stored transaction trits.
+     *
+     * @return The <tt>Branch Transaction</tt> hash identifier.
+     */
     public Hash getBranchTransactionHash() {
         if(transaction.branch == null) {
             transaction.branch = HashFactory.TRANSACTION.create(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET);
@@ -330,10 +451,30 @@ public class TransactionViewModel {
         return transaction.tag;
     }
 
+    /**
+     * Getter for the <tt>Attachment Timestamp</tt> of a transaction.
+     *
+     * The attachme
+     *
+     * @return The <tt>Attachment Timestamp</tt>.
+     */
     public long getAttachmentTimestamp() { return transaction.attachmentTimestamp; }
+
+    /**
+     * Getter for the <tt>Attachment Timestamp Lower Bound</tt> of a transaction.
+     *
+     * @return The <tt>Attachment Timestamp Lower Bound</tt>.
+     */
+
     public long getAttachmentTimestampLowerBound() {
         return transaction.attachmentTimestampLowerBound;
     }
+
+    /**
+     * Getter for the <tt>Attachment Timestamp Upper Bound</tt> of a transaction.
+     *
+     * @return The <tt>Attachment Timestamp Upper Bound</tt>.
+     */
     public long getAttachmentTimestampUpperBound() {
         return transaction.attachmentTimestampUpperBound;
     }

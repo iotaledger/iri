@@ -1,21 +1,30 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.controllers.ApproveeViewModel;
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashId;
-import com.iota.iri.model.HashPrefix;
-import com.iota.iri.utils.collections.impl.TransformingMap;
-import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import com.iota.iri.storage.Tangle;
+import java.util.ArrayDeque;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
-import java.util.Map.Entry;
+import com.google.gson.Gson;
+import com.iota.iri.controllers.ApproveeViewModel;
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashId;
+import com.iota.iri.model.HashPrefix;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.collections.impl.TransformingMap;
+import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
 /**
  * Used to create a weighted random walks.
@@ -26,6 +35,8 @@ public class CumulativeWeightWithEdgeCalculator extends CumulativeWeightCalculat
 	
 	private static final int UNIT_WEIGHT = 1;
 	
+	private static final Gson gson = new Gson();
+
 	public CumulativeWeightWithEdgeCalculator(Tangle tangle) {
 		super(tangle);
 	}

@@ -60,8 +60,8 @@ public class TransactionViewModel {
 
     private byte[] trits;
     public int weightMagnitude;
-
-    public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
+    
+	public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
         if (Hash.NULL_HASH.equals(transactionViewModel.getHash())) {
             return;
         }
@@ -112,8 +112,8 @@ public class TransactionViewModel {
         weightMagnitude = this.hash.trailingZeros();
         transaction.type = FILLED_SLOT;
     }
-
-    public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
+    
+	public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
         return tangle.getCount(Transaction.class).intValue();
     }
 
@@ -233,7 +233,7 @@ public class TransactionViewModel {
 		return transaction.branchTimeDifference;
 	}
 
-    public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
+	public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
         if(approovers == null) {
             approovers = ApproveeViewModel.load(tangle, hash);
         }

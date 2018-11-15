@@ -686,6 +686,7 @@ public class API {
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(instance.tangle, "sender");
             }
+            // move store block from the for() function below --end
             elements.add(transactionViewModel);
         }
     }

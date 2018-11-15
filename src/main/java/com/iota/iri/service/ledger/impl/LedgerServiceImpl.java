@@ -51,6 +51,7 @@ public class LedgerServiceImpl implements LedgerService {
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
      * @param snapshotService service instance of the snapshot package that allows us to rollback ledger states
+     * @param milestoneService contains the important business logic when dealing with milestones
      */
     public LedgerServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
             MilestoneService milestoneService) {

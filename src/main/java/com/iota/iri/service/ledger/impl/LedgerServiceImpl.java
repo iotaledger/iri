@@ -237,7 +237,7 @@ public class LedgerServiceImpl implements LedgerService {
                             milestoneService.updateMilestoneIndexOfMilestoneTransactions(tangle, snapshotProvider,
                                     messageQ, milestone.getHash(), milestone.index());
 
-                            if (balanceChanges.size() != 0) {
+                            if (!balanceChanges.isEmpty()) {
                                 new StateDiffViewModel(balanceChanges, milestone.getHash()).store(tangle);
                             }
                         }

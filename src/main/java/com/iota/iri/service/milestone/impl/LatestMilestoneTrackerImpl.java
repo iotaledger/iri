@@ -232,6 +232,9 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                         transaction.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
 
                         return INCOMPLETE;
+
+                    default:
+                        return INVALID;
                 }
             }
 
@@ -269,23 +272,55 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * This method contains the logic for scanning for new latest milestones that gets executed in a background
      * worker.<br />
      * <br />
-     * It first collects all candidates in the {@link #milestoneCandidatesToAnalyze} set by retrieving all transactions
-     * that are originating from the coordinator address and then analyzes them in chunks of {@link
-     * #MAX_CANDIDATES_TO_ANALYZE}. This allows us to stop after the given amount and find and process newly arrived
-     * milestones in the next iteration of this background worker without having to process all old transactions
-     * first (which allows this tracker to have the correct values for {@link #getLatestMilestoneIndex()} and {@link
-     * #getLatestMilestoneHash()} faster than if we would process all old transactions before terminating.<br />
-     * <br />
-     * Once all candidates have been analyzed we set the {@link #initialized} flag to {@code true}.
+     * It first collects all new milestone candidates that need to be analyzed, then analyzes them and finally checks if
+     * the initialization is complete. In addition to this scanning logic it also issues regular log messages about the
+     * progress of the scanning.<br />
      */
     private void latestMilestoneTrackerThread() {
         try {
-            // will not fire on the first run because we have an empty list
-            if (milestoneCandidatesToAnalyze.size() > 1) {
-                log.info("Processing milestone candidates (" + milestoneCandidatesToAnalyze.size() + " remaining) ...");
+            logProgress();
+            collectNewMilestoneCandidates();
+
+            // additional log message on the first run to indicate how many milestone candidates we have in total
+            if (firstRun) {
+                firstRun = false;
+
+                logProgress();
             }
 
-            for(Hash hash: AddressViewModel.load(tangle, coordinatorAddress).getHashes()) {
+            analyzeMilestoneCandidates();
+            checkIfInitializationComplete();
+        } catch (MilestoneException e) {
+            log.error("error while analyzing the milestone candidates", e);
+        }
+    }
+
+    /**
+     * This method emits a log message about the scanning progress.<br />
+     * <br />
+     * It only emits a log message if we have more than one {@link #milestoneCandidatesToAnalyze}, which means that the
+     * very first call to this method in the "first run" on {@link #latestMilestoneTrackerThread()} will not produce any
+     * output (which is the reason why we call this method a second time after we have collected all the
+     * candidates in the "first run").<br />
+     */
+    private void logProgress() {
+        if (milestoneCandidatesToAnalyze.size() > 1) {
+            log.info("Processing milestone candidates (" + milestoneCandidatesToAnalyze.size() + " remaining) ...");
+        }
+    }
+
+    /**
+     * This method collects the new milestones that have not been "seen" before, by collecting them in the {@link
+     * #milestoneCandidatesToAnalyze} queue.<br />
+     * <br />
+     * We simply request all transaction that are originating from the coordinator address and treat them as potential
+     * milestone candidates.<br />
+     *
+     * @throws MilestoneException if anything unexpected happens while collecting the new milestone candidates
+     */
+    private void collectNewMilestoneCandidates() throws MilestoneException {
+        try {
+            for (Hash hash : AddressViewModel.load(tangle, coordinatorAddress).getHashes()) {
                 if (Thread.currentThread().isInterrupted()) {
                     return;
                 }
@@ -294,35 +329,47 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                     milestoneCandidatesToAnalyze.addFirst(hash);
                 }
             }
-
-            // will only fire on the first run to indicate how many milestones need to be processed in total
-            if (firstRun) {
-                firstRun = false;
-
-                if (milestoneCandidatesToAnalyze.size() > 1) {
-                    log.info("Processing milestone candidates (" + milestoneCandidatesToAnalyze.size() + " remaining) ...");
-                }
-            }
-
-            int candidatesToAnalyze = Math.min(milestoneCandidatesToAnalyze.size(), MAX_CANDIDATES_TO_ANALYZE);
-            for (int i = 0; i < candidatesToAnalyze; i++) {
-                if (Thread.currentThread().isInterrupted()) {
-                    return;
-                }
-
-                Hash candidateTransactionHash = milestoneCandidatesToAnalyze.pollFirst();
-                if(analyzeMilestoneCandidate(candidateTransactionHash) == INCOMPLETE) {
-                    seenMilestoneCandidates.remove(candidateTransactionHash);
-                }
-            }
-
-            if (milestoneCandidatesToAnalyze.size() == 0 && !initialized) {
-                initialized = true;
-
-                log.info("Processing milestone candidates ... [DONE]").triggerOutput(true);
-            }
         } catch (Exception e) {
-            log.error("error while analyzing the milestone candidates", e);
+            throw new MilestoneException("failed to collect the new milestone candidates", e);
+        }
+    }
+
+    /**
+     * This method analyzes the milestone candidates by working through the {@link #milestoneCandidatesToAnalyze}
+     * queue.<br />
+     * <br />
+     * We only process {@link #MAX_CANDIDATES_TO_ANALYZE} at a time, to give the caller the option to terminate early
+     * and pick up new milestones as fast as possible without being stuck with analyzing the old ones for too
+     * long.<br />
+     *
+     * @throws MilestoneException if anything unexpected happens while analyzing the milestone candidates
+     */
+    private void analyzeMilestoneCandidates() throws MilestoneException {
+        int candidatesToAnalyze = Math.min(milestoneCandidatesToAnalyze.size(), MAX_CANDIDATES_TO_ANALYZE);
+        for (int i = 0; i < candidatesToAnalyze; i++) {
+            if (Thread.currentThread().isInterrupted()) {
+                return;
+            }
+
+            Hash candidateTransactionHash = milestoneCandidatesToAnalyze.pollFirst();
+            if(analyzeMilestoneCandidate(candidateTransactionHash) == INCOMPLETE) {
+                seenMilestoneCandidates.remove(candidateTransactionHash);
+            }
+        }
+    }
+
+    /**
+     * This method checks if the initialization is complete.<br />
+     * <br />
+     * It simply checks if the {@link #initialized} flag is not set yet and there are no more {@link
+     * #milestoneCandidatesToAnalyze}. If the initialization was complete, we issue a log message and set the
+     * corresponding flag to {@code true}.<br />
+     */
+    private void checkIfInitializationComplete() {
+        if (!initialized && milestoneCandidatesToAnalyze.size() == 0) {
+            initialized = true;
+
+            log.info("Processing milestone candidates ... [DONE]").triggerOutput(true);
         }
     }
 
@@ -344,7 +391,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                 setLatestMilestone(lastMilestoneInDatabase.getHash(), lastMilestoneInDatabase.index());
             }
         } catch (Exception e) {
-             // just continue with the previously set latest milestone
+             log.error("unexpectedly failed to retrieve the latest milestone from the database", e);
         }
     }
 }

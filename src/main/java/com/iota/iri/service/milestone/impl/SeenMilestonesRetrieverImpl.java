@@ -125,7 +125,7 @@ public class SeenMilestonesRetrieverImpl implements SeenMilestonesRetriever {
             }
         });
 
-        if (seenMilestones.size() == 0) {
+        if (seenMilestones.isEmpty()) {
             log.info("Requesting seen milestones ... [DONE]");
 
             shutdown();

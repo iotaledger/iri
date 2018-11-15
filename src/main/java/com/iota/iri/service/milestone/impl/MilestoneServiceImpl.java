@@ -77,7 +77,7 @@ public class MilestoneServiceImpl implements MilestoneService {
     /**
      * {@inheritDoc}
      * <br />
-     * We redirect the call to {@link #resetCorruptedMilestone(Tangle, SnapshotProvider, MessageQ, int, HashSet)} while
+     * We redirect the call to {@link #resetCorruptedMilestone(Tangle, SnapshotProvider, MessageQ, int, Set)} while
      * initiating the set of {@code processedTransactions} with an empty {@link HashSet} which will ensure that we reset
      * all found transactions.<br />
      */
@@ -107,7 +107,7 @@ public class MilestoneServiceImpl implements MilestoneService {
             final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle,
                     snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
-            if (bundleTransactions.size() == 0) {
+            if (bundleTransactions.isEmpty()) {
                 return INCOMPLETE;
             } else {
                 for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
@@ -201,7 +201,7 @@ public class MilestoneServiceImpl implements MilestoneService {
      * @param processedTransactions a set of transactions that have been processed already (for the recursive calls)
      */
     private void updateMilestoneIndexOfMilestoneTransactions(Tangle tangle, SnapshotProvider snapshotProvider,
-            MessageQ messageQ, Hash milestoneHash, int correctIndex, int newIndex, HashSet<Hash> processedTransactions)
+            MessageQ messageQ, Hash milestoneHash, int correctIndex, int newIndex, Set<Hash> processedTransactions)
             throws MilestoneException {
 
         processedTransactions.add(milestoneHash);
@@ -362,7 +362,7 @@ public class MilestoneServiceImpl implements MilestoneService {
      * @throws MilestoneException if anything goes wrong while resetting the corrupted milestone
      */
     private void resetCorruptedMilestone(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
-            int milestoneIndex, HashSet<Hash> processedTransactions) throws MilestoneException {
+            int milestoneIndex, Set<Hash> processedTransactions) throws MilestoneException {
 
         if(milestoneIndex <= snapshotProvider.getInitialSnapshot().getIndex()) {
             return;

@@ -115,8 +115,8 @@ public class IntervalLogger implements Logger {
     /**
      * This method returns the underlying logback Logger.<br />
      * <br />
-     * It can be used to issue log entries directly to the underlying logger without disturbing the remaining logic.
-     * This allows us to use only 1 Logger
+     * It can be used to issue log entries directly to the underlying logger without interfering with the logic of this
+     * class.<br />
      *
      * @return the underlying logback Logger
      */

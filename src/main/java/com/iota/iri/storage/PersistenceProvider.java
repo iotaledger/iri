@@ -7,8 +7,9 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * Abstracts access to the data persisitence layer. Will handle the initialization and connections to the storage.
- * It will enable to create efficient batch writes
+ * Abstracts access to the data persisitence layer.
+ * Will handle the initialization and connections to the storage.
+ * It will enable to create efficient batch writes, deletes, and merges.
  */
 public interface PersistenceProvider {
 

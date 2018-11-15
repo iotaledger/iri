@@ -682,9 +682,10 @@ public class API {
     }
 
     /**
-     * Checks if our database is up to date with the latest coordinator issued milestones.
+     * Compares the last received confirmed milestone with the last global snapshot milestone.
+     * If these are equal, it means the tangle is empty and therefore invalid.
      * 
-     * @return <tt>true</tt> if we are not up to date yet, otherwise <tt>false</tt>
+     * @return <tt>false</tt> if we received at least a solid milestone, otherwise <tt>true</tt>
      */
     public boolean invalidSubtangleStatus() {
         return (instance.milestoneTracker.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);

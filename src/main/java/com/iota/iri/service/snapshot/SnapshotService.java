@@ -1,9 +1,9 @@
 package com.iota.iri.service.snapshot;
 
-import com.iota.iri.MilestoneTracker;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.storage.Tangle;
 
@@ -66,12 +66,12 @@ public interface SnapshotService {
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param config important snapshot related configuration parameters
-     * @param milestoneTracker milestone tracker that allows us to retrieve information about the known milestones
+     * @param latestMilestoneTracker milestone tracker that allows us to retrieve information about the known milestones
      * @param transactionPruner manager for the pruning jobs that takes care of cleaning up the old data that
      * @throws SnapshotException if anything goes wrong while creating the local snapshot
      */
     void takeLocalSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            MilestoneTracker milestoneTracker, TransactionPruner transactionPruner) throws SnapshotException;
+            LatestMilestoneTracker latestMilestoneTracker, TransactionPruner transactionPruner) throws SnapshotException;
 
     /**
      * This method generates a local snapshot of the full ledger state at the given milestone.
@@ -83,13 +83,13 @@ public interface SnapshotService {
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
      * @param config important snapshot related configuration parameters
-     * @param milestoneTracker milestone tracker that allows us to retrieve information about the known milestones
+     * @param latestMilestoneTracker milestone tracker that allows us to retrieve information about the known milestones
      * @param targetMilestone milestone that is used as a reference point for the snapshot
      * @return a local snapshot of the full ledger state at the given milestone
      * @throws SnapshotException if anything goes wrong while generating the local snapshot
      */
     Snapshot generateSnapshot(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config,
-            MilestoneTracker milestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException;
+            LatestMilestoneTracker latestMilestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException;
 
     /**
      * This method generates the solid entry points for a snapshot that belong to the given milestone.
@@ -116,11 +116,11 @@ public interface SnapshotService {
      *
      * @param tangle Tangle object which acts as a database interface
      * @param config important snapshot related configuration parameters
-     * @param milestoneTracker milestone tracker that allows us to retrieve information about the known milestones
+     * @param latestMilestoneTracker milestone tracker that allows us to retrieve information about the known milestones
      * @param targetMilestone milestone that is used as a reference point for the snapshot
      * @return a map of solid entry points associating their hash to the milestone index that confirmed them
      * @throws SnapshotException if anything goes wrong while generating the solid entry points
      */
-    Map<Hash, Integer> generateSeenMilestones(Tangle tangle, SnapshotConfig config, MilestoneTracker milestoneTracker,
-            MilestoneViewModel targetMilestone) throws SnapshotException;
+    Map<Hash, Integer> generateSeenMilestones(Tangle tangle, SnapshotConfig config,
+            LatestMilestoneTracker latestMilestoneTracker, MilestoneViewModel targetMilestone) throws SnapshotException;
 }

@@ -9,7 +9,6 @@ import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
-import com.iota.iri.service.API;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.service.tipselection.RatingCalculator;
@@ -44,15 +43,16 @@ import java.util.List;
  * All incoming data will be stored in one or more implementations of {@link PersistenceProvider}.
  * 
  * <p>
- *     During initialization, all the Providers can be set to rescan or revalidate its transactions.
- *     After initialization, an asynchronous process has started which will process incoming and outbound transactions.
- *     Each full node must conduct manual peering with 7-9 other full nodes (neighbors) in order to function optimally.
+ *     During initialization, all the Providers can be set to rescan or revalidate their transactions.
+ *     After initialization, an asynchronous process has started which will process inbound and outbound transactions.
+ *     Each full node should be peered with 7-9 other full nodes (neighbors) to function optimally.
  * </p>
  * <p>
- *     If this node has no Neighbors defined, no data transfers will happen. 
- *     However, if the node has Neighbors, but no Internet connection, synchronization will continue after Internet.
- *     Any sent transactions to this node in its local network will then be processed.
- *     This makes IRI able to run partially offline, if an already existing database exists on this node.   
+ *     If this node has no Neighbors defined, no data is transferred. 
+ *     However, if the node has Neighbors, but no Internet connection, 
+ *     synchronization will continue after Internet connection is established.
+ *     Any transactions sent to this node in its local network will then be processed.
+ *     This makes IRI able to run partially offline if an already existing database exists on this node.   
  * </p>
  * <p>
  *     Validation of a transaction is the process by which other devices choose the transaction.

@@ -19,20 +19,20 @@ import java.util.Arrays;
 
 /**
  * 
- * Main IOTA Reference Implementation starting class.
+ * Main IOTA Reference Implementation (IRI) starting class.
  * <p>
- *     The IRI software enables the Tangle to operate by enabling individuals to run the software and operate a Node.
+ *     The IRI software enables the Tangle to operate. Individuals can run IRI to operates Nodes.
  *     The Node running the IRI software enables your device to communicate with neighbors 
  *     in the peer-to-peer network that the Tangle operates on. 
  * </p>
  * <p>
- *     IRI has all the core functionality implemented necessary for participating as a full node in the network.
- *     This includes, but is not limited to, the following:
+ *     IRI implements all the core functionality necessary for participating in an IOTA network as a full node.
+ *     This includes, but is not limited to:
  *     <ul>
  *         <li>Receiving and broadcasting transactions through TCP and UDP.</li>
  *         <li>Handling of HTTP requests from clients.</li>
  *         <li>Tracking and validating Milestones.</li>
- *         <li>Load custom modules to extend the API.</li>
+ *         <li>Loading custom modules that extend the API.</li>
  *     </ul>
  * </p>
  * 
@@ -47,7 +47,7 @@ public class IRI {
     /**
      * The entry point of IRI.
      * Starts by configuring the logging settings, then proceeds to {@link IRILauncher#main(String[])}
-     * Log level is by default set to INFO.
+     * The log level is set to INFO by default.
      * 
      * @param args Configuration arguments. See {@link BaseIotaConfig} for a list of all options.
      * @throws Exception If we fail to start the IRI launcher.
@@ -95,7 +95,7 @@ public class IRI {
         /**
          * Starts IRI. Setup is as follows:
          * <ul>
-         *     <li>Load configuration.</li>
+         *     <li>Load the configuration.</li>
          *     <li>Create {@link Iota}, {@link IXI} and {@link API}.</li>
          *     <li>Listen for node shutdown.</li>
          *     <li>Initialize {@link Iota}, {@link IXI} and {@link API} using their <tt>init()</tt> methods.</li> 

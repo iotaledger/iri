@@ -166,6 +166,17 @@ public class TransactionViewModel {
         return tangle.getCount(Transaction.class).intValue();
     }
 
+    /**
+     * This method updates the metadata contained in the transaction, and updates the database with the transaction
+     * object. First all the most recent hash identifiers are fetched to make sure the object's metadata is up to date.
+     * Then it checks if the current transaction hash is null. If it is, then the method immediately returns false, and
+     * if not, it attempts to update the transaction object and identifier in the database.
+     *
+     * @param tangle The tangle reference for the database
+     * @param item The string identifying the purpose of the update
+     * @return True if the update was successful, False if it failed
+     * @throws Exception Thrown if any of the metadata fails to fetch, or if the database update fails 
+     */
     public boolean update(Tangle tangle, String item) throws Exception {
         getAddressHash();
         getTrunkTransactionHash();
@@ -234,13 +245,23 @@ public class TransactionViewModel {
     }
 
     /**
-     *
-     * @param tangle
-     * @throws Exception
+     * Removes the <tt>Transaction</tt> object from the database
+     * @param tangle The tangle reference for the database
+     * @throws Exception Thrown if there is nothing to delete (e.g. the hash identifier, or object is null)
      */
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Transaction.class, hash);
     }
+
+    /**
+     * Creates a list of hash objects and index pairings for each of the components of the transaction. Each
+     * hash object will be indexed by a newly generated hash identifier of the appropriate type, created using
+     * the transaction hash identifier. Then the method sets the attachment timestamp data as well as the value
+     * and other metadata for the transaction. Finally the method returns the list.
+     *
+     * @return The list of hash objects indexed by the transaction hash identifier.
+     * @throws Exception Thrown if there is an error with populating the list, or setting the attachment data/metadata
+     */
 
     public List<Pair<Indexable, Persistable>> getMetadataSaveBatch() throws Exception {
         List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
@@ -255,6 +276,14 @@ public class TransactionViewModel {
         return hashesList;
     }
 
+    /**
+     * Fetches a list of all transaction component and hash identifier pairs from the stored metadata. The method then
+     * ensures that the transaction bytes are present before adding the transaction and hash identifier to the already
+     * compiled list of transaction components.
+     *
+     * @return A complete list of all relevant transaction component objects paired with their hash identifiers
+     * @throws Exception Thrown if the metadata fails to fetch, or if the bytes are not retrieved correctly
+     */
     public List<Pair<Indexable, Persistable>> getSaveBatch() throws Exception {
         List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
         hashesList.addAll(getMetadataSaveBatch());
@@ -263,7 +292,14 @@ public class TransactionViewModel {
         return hashesList;
     }
 
-
+    /**
+     * Fetches the first persistable <tt>Transaction</tt> object from the database and generates a new controller
+     * from it. If no objects exist in the database, it will return a null pair.
+     *
+     * @param tangle the tangle reference for the database
+     * @return The new controller
+     * @throws Exception Thrown if the database fails to return a first object
+     */
     public static TransactionViewModel first(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> transactionPair = tangle.getFirst(Transaction.class, Hash.class);
         if(transactionPair != null && transactionPair.hi != null) {
@@ -272,6 +308,14 @@ public class TransactionViewModel {
         return null;
     }
 
+    /**
+     * Fetches the next indexed persistable <tt>Transaction</tt> object from the database and generates a new
+     * controller from it. If no objects exist in the database, it will return a null pair.
+     *
+     * @param tangle the tangle reference for the database
+     * @return The new controller
+     * @throws Exception Thrown if the database fails to return a next object
+     */
     public TransactionViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> transactionPair = tangle.next(Transaction.class, hash);
         if(transactionPair != null && transactionPair.hi != null) {
@@ -280,6 +324,12 @@ public class TransactionViewModel {
         return null;
     }
 
+    /**
+     *
+     * @param tangle
+     * @return
+     * @throws Exception
+     */
     public boolean store(Tangle tangle) throws Exception {
         if (hash.equals(Hash.NULL_HASH) || exists(tangle, hash)) {
             return false;

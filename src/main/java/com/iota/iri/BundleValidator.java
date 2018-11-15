@@ -47,6 +47,7 @@ public class BundleValidator {
      * again.
      *</p>
      * @param tangle used to fetch the bundle's transactions from the persistence layer
+     * @param initialSnapshot the initial snapshot that defines the genesis for our ledger state
      * @param tailHash the hash of the last transaction in a bundle.
      * @return A list of transactions of the bundle contained in another list. If the bundle is valid then the tail
      * transaction's {@link TransactionViewModel#getValidity()} will return 1, else

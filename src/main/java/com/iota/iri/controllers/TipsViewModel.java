@@ -68,8 +68,10 @@ public class TipsViewModel {
     }
 
     /**
+     * Iterates through all solid and non-solid tips and compiles them into one {@link Hash} set to be returned. This
+     * does so in a synchronised fashion.
      *
-     * @return
+     * @return The {@link Hash} set containing all solid and non-solid tips
      */
     public Set<Hash> getTips() {
         Set<Hash> hashes = new HashSet<>();
@@ -88,6 +90,13 @@ public class TipsViewModel {
         return hashes;
     }
 
+    /**
+     * Generates a random integer within the range of the <tt>SolidTips</tt> set, and iterates through the set until
+     * a hash is returned. If there are no <tt>Solid</tt> tips available, then <tt>getRandomNonSolidTipHash</tt> is
+     * called and returned instead.
+     *
+     * @return A random <tt>Solid</tt> tip if available, a random <tt>NonSolid</tt> tip if not
+     */
     public Hash getRandomSolidTipHash() {
         synchronized (sync) {
             int size = solidTips.size();
@@ -106,6 +115,12 @@ public class TipsViewModel {
         }
     }
 
+    /**
+     * Generates a random integer within the range of the <tt>Tips</tt> set, and iterates through the set until a hash
+     * is returned. If there are no tips available, then null is returned instead.
+     *
+     * @return A random tip if available, null if not
+     */
     public Hash getRandomNonSolidTipHash() {
         synchronized (sync) {
             int size = tips.size();
@@ -124,18 +139,31 @@ public class TipsViewModel {
         }
     }
 
+    /**
+     * Fetches the size of the <tt>Tips</tt> set in a synchronised fashion
+     * @return The size of the set
+     */
     public int nonSolidSize() {
         synchronized (sync) {
             return tips.size();
         }
     }
-    
+
+    /**
+     * Fetches the size of the <tt>SolidTips</tt> set in a synchronised fashion
+     * @return The size of the set
+     */
     public int solidSize() {
         synchronized (sync) {
             return solidTips.size();
         }
     }
 
+    /**
+     * Fetches the size of the <tt>Tips</tt> set and <tt>SolidTips</tt>set combined. This does so in a synchronised
+     * fashion.
+     * @return The size of both sets combined
+     */
     public int size() {
         synchronized (sync) {
             return tips.size() + solidTips.size();

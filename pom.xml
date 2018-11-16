@@ -196,6 +196,12 @@
             <version>1.21</version>
             <scope>test</scope>
         </dependency>
+        
+        <dependency>
+            <groupId>com.iota</groupId>
+            <artifactId>mdxdoclet</artifactId>
+            <version>0.2</version>
+        </dependency>
 
     </dependencies>
 
@@ -630,20 +636,23 @@
                         <id>javadoc</id>
                         <configuration>
                             <!-- This dependency can be found at: https://github.com/iotaledger/iri-mdx-doclet -->
-                            <doclet>com.iota.mdxdoclet.MDXDoclet</doclet>
-                            <sourcepath>src/main/java</sourcepath>
-                            <useStandardDocletOptions>false</useStandardDocletOptions>
-                            <destDir>mdx</destDir>
-                            <additionalOptions>
-                                <additionalOption>-version "${project.version}"</additionalOption>
-                            </additionalOptions>
-                            <quiet>true</quiet>
-                            <docletArtifact>
-                                <groupId>com.iota</groupId>
-                                <artifactId>mdxdoclet</artifactId>
-                                <version>0.1</version>
-                            </docletArtifact>
-                        </configuration>
+		                    <doclet>com.iota.mdxdoclet.MDXDoclet</doclet>
+		                    <sourcepath>src/main/java</sourcepath>
+		                    <useStandardDocletOptions>false</useStandardDocletOptions>
+		                    <additionalOptions>
+		                        <additionalOption>-version "${project.version}"</additionalOption>
+		                        <additionalOption>-classeslist "API"</additionalOption>
+		                        <additionalOption>
+                                    -repolink "${project.scm.url}blob/master/src/main/java/"
+                                </additionalOption>
+		                    </additionalOptions>
+		                    <quiet>true</quiet>
+		                    <docletArtifact>
+		                        <groupId>com.iota</groupId>
+		                        <artifactId>mdxdoclet</artifactId>
+		                        <version>0.2</version>
+		                    </docletArtifact>
+		                </configuration>
                         <reports>
                             <report>javadoc</report>
                         </reports>

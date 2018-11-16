@@ -21,7 +21,7 @@ import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
-
+import com.iota.mdxdoclet.Document;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -531,6 +531,7 @@ public class API {
      * @param addresses List of addresses to check if they were ever spent from.
      * @return {@link com.iota.iri.service.dto.wereAddressesSpentFrom}
      **/
+    @Document(name="wereAddressesSpentFrom")
     private AbstractResponse wereAddressesSpentFromStatement(List<String> addresses) throws Exception {
         final List<Hash> addressesHash = addresses.stream()
                 .map(HashFactory.ADDRESS::create)
@@ -633,6 +634,7 @@ public class API {
      * @param transactionsList Transactions you want to check the consistency for
      * @return {@link CheckConsistency}
      **/
+    @Document(name="checkConsistency")
     private AbstractResponse checkConsistencyStatement(List<String> transactionsList) throws Exception {
         final List<Hash> transactions = transactionsList.stream().map(HashFactory.TRANSACTION::create).collect(Collectors.toList());
         boolean state = true;
@@ -697,9 +699,10 @@ public class API {
      *
      * @return {@link com.iota.iri.service.dto.GetNeighborsResponse}
      **/
-   private AbstractResponse getNeighborsStatement() {
+    @Document(name="getNeighbors")
+    private AbstractResponse getNeighborsStatement() {
        return GetNeighborsResponse.create(instance.node.getNeighbors());
-   }
+    }
     
     /**
      * Temporarily add a list of neighbors to your node.
@@ -713,7 +716,8 @@ public class API {
      * @param uris list of neighbors to add
      * @return {@link com.iota.iri.service.dto.AddedNeighborsResponse}
      **/
-   private AbstractResponse addNeighborsStatement(List<String> uris) {
+    @Document(name="addNeighbors")
+    private AbstractResponse addNeighborsStatement(List<String> uris) {
        int numberOfAddedNeighbors = 0;
        try {
            for (final String uriString : uris) {
@@ -728,7 +732,7 @@ public class API {
            return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
        }
        return AddedNeighborsResponse.create(numberOfAddedNeighbors);
-   }
+    }
 
     /**
       * Temporarily removes a list of neighbors from your node.
@@ -743,6 +747,7 @@ public class API {
       * @param uris The URIs of the neighbors we want to remove.
       * @return {@link com.iota.iri.service.dto.RemoveNeighborsResponse}
       **/
+    @Document(name="removeNeighbors")
     private AbstractResponse removeNeighborsStatement(List<String> uris) {
         int numberOfRemovedNeighbors = 0;
         try {
@@ -766,6 +771,7 @@ public class API {
       * @param hashes The transaction hashes you want to get trytes from.
       * @return {@link com.iota.iri.service.dto.GetTrytesResponse}
       **/
+    @Document(name="getTrytes")
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
@@ -833,6 +839,7 @@ public class API {
       * @return {@link com.iota.iri.service.dto.GetTransactionsToApproveResponse}
       * @throws Exception When tip selection has failed. Currently caught and returned as an {@link ErrorResponse}.
       **/
+    @Document(name="getTransactionsToApprove")
     private synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
         if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
             return ErrorResponse.create("Invalid depth input");
@@ -898,6 +905,7 @@ public class API {
       *
       * @return {@link com.iota.iri.service.dto.GetTipsResponse}
       **/
+    @Document(name="getTips")
     private synchronized AbstractResponse getTipsStatement() throws Exception {
         return GetTipsResponse.create(instance.tipsViewModel.getTips()
                 .stream()
@@ -913,6 +921,7 @@ public class API {
       * @param trytes Transaction data to be stored.
       * @throws Exception When storing or updating a transaction fails
       **/
+    @Document(name="storeTransactions")
     public void storeTransactionsStatement(List<String> trytes) throws Exception {
         final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
@@ -940,6 +949,7 @@ public class API {
       *
       * @return {@link com.iota.iri.service.dto.AbstractResponse.Emptyness}
       **/
+    @Document(name="interruptAttachingToTangle")
     private AbstractResponse interruptAttachingToTangleStatement(){
         pearlDiver.cancel();
         return AbstractResponse.createEmptyResponse();
@@ -950,6 +960,7 @@ public class API {
       *
       * @return {@link com.iota.iri.service.dto.GetNodeInfoResponse}
       **/
+    @Document(name="getNodeInfo")
     private AbstractResponse getNodeInfoStatement(){
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
         return GetNodeInfoResponse.create(name, IRI.VERSION, 
@@ -988,6 +999,7 @@ public class API {
      * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse}
      * @throws Exception When a transaction cannot be loaded from hash
      **/
+    @Document(name="getInclusionStates")
     private AbstractResponse getInclusionStatesStatement(
             final List<String> transactions, 
             final List<String> tips) throws Exception {
@@ -1171,6 +1183,7 @@ public class API {
       * @throws Exception If a model cannot be loaded, no valid input fields were supplied 
       *                   or the total transactions to find exceeds {@link APIConfig#getMaxFindTransactions()}.
       **/
+    @Document(name="findTransactions")
     private synchronized AbstractResponse findTransactionsStatement(final Map<String, Object> request) throws Exception {
 
         final Set<Hash> foundTransactions =  new HashSet<>();
@@ -1312,6 +1325,7 @@ public class API {
       * 
       * @param trytes the list of transaction trytes to broadcast
       **/
+    @Document(name="broadcastTransactions")
     public void broadcastTransactionsStatement(List<String> trytes) {
         final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
@@ -1349,6 +1363,7 @@ public class API {
       * @return {@link com.iota.iri.service.dto.GetBalancesResponse}
       * @throws Exception When the database has encountered an error
       **/
+    @Document(name="getBalances")
     private AbstractResponse getBalancesStatement(List<String> addresses, 
                                                   List<String> tips, 
                                                   int threshold) throws Exception {
@@ -1486,6 +1501,7 @@ public class API {
       * @param trytes the list of trytes to prepare for network attachment, by doing proof of work.
       * @return The list of transactions in trytes, ready to be broadcast to the network.
       **/
+    @Document(name="attachToTangle", returnParam="trytes")
     public synchronized List<String> attachToTangleStatement(Hash trunkTransaction, Hash branchTransaction,
                                                              int minWeightMagnitude, List<String> trytes) {
         

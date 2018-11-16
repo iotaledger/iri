@@ -10,7 +10,7 @@ import com.iota.iri.utils.Pair;
 import java.util.Set;
 
 /**
- * Acts as a controller interface for an {@link Address} set. These controllers are used within a
+ * Acts as a controller interface for an {@link Address} set. This controller is used within a
  * {@link TransactionViewModel} to manipulate an {@link Address} set.
  */
 public class AddressViewModel implements HashesViewModel {
@@ -18,19 +18,19 @@ public class AddressViewModel implements HashesViewModel {
     private Indexable hash;
 
     /**
-     * Constructor for an <tt>Address</tt> controller from a hash identifier.
-     * @param hash The Hash identifier that the controller will be created from.
+     * Constructor for an {@link Address} set controller from a {@link Hash} identifier.
+     * @param hash The {@link Hash} identifier that the controller will be created for.
      */
     public AddressViewModel(Hash hash) {
         this.hash = hash;
     }
 
     /**
-     * Constructor for an <tt>Address</tt> controller from an existing Address set. If the set is empty, an empty
-     * set is created.
+     * Constructor for an {@link Address} set controller from an existing {@link Address} set. If the set is empty, an
+     * {@link Address} set is created.
      *
      * @param hashes The {@link Address} set that the controller will be created from
-     * @param hash The hash identifier that acts as a reference for the {@link Address} set
+     * @param hash The {@link Hash} identifier that acts as a reference for the {@link Address} set
      */
     private AddressViewModel(Address hashes, Indexable hash) {
         self = hashes == null || hashes.set == null ? new Address(): hashes;
@@ -38,50 +38,50 @@ public class AddressViewModel implements HashesViewModel {
     }
 
     /**
-     * Creates a new <tt>Address</tt> controller for an {@link Address} set. This controller is created using the
-     * given hash identifier.
+     * Creates a new {@link Address} set controller. This controller is created by extracting the {@link Address} set
+     * from the database using the provided {@link Hash} identifier.
      *
      * @param tangle The tangle reference for the database to find the {@link Address} set in
      * @param hash The hash identifier for the {@link Address} set that needs to be found
      * @return The {@link AddressViewModel} controller generated
-     * @throws Exception Thrown if the database cannot load an {@link Address} set from the reference hash
+     * @throws Exception Thrown if the database cannot load an {@link Address} set from the reference {@link Hash}
      */
     public static AddressViewModel load(Tangle tangle, Indexable hash) throws Exception {
         return new AddressViewModel((Address) tangle.load(Address.class, hash), hash);
     }
 
     /**
-     * Stores the {@link Address} set indexed by its hash identifier in the database.
+     * Stores the {@link Address} set indexed by its {@link Hash} identifier in the database.
      *
      * @param tangle The tangle reference for the database
      * @return True if the object was saved correctly, False if not
-     * @throws Exception Thrown if the address object or index are null
+     * @throws Exception Thrown if the {@link Address} set or index {@link Hash} are null
      */
     public boolean store(Tangle tangle) throws Exception {
         return tangle.save(self, hash);
     }
 
-    /**@return The size of the {@link Address} set stored in the controller*/
+    /**@return The size of the {@link Address} set referenced by the controller*/
     public int size() {
         return self.set.size();
     }
 
     /**
-     * Adds the given {@link com.iota.iri.model.AddressHash} identifier to the stored <tt>Address</tt> set
+     * Adds the {@link Address} set referenced by the provided {@link Hash} to the stored {@link Address} set.
      *
-     * @param theHash The hash identifier to be added to the set
-     * @return True if the hash is stored correctly, False if not
+     * @param theHash The {@link Hash} identifier to be added to the set
+     * @return True if the {@link Address} set is added correctly, False if not
      */
     public boolean addHash(Hash theHash) {
         return getHashes().add(theHash);
     }
 
-    /**@return The index hash identifier of the object*/
+    /**@return The index {@link Hash} identifier of the {@link Address} set*/
     public Indexable getIndex() {
         return hash;
     }
 
-    /**@return The {@link Address} set of the object*/
+    /**@return The {@link Address} set referenced by the controller*/
     public Set<Hash> getHashes() {
         return self.set;
     }
@@ -92,11 +92,11 @@ public class AddressViewModel implements HashesViewModel {
     }
 
     /**
-     * Fetches the first persistable {@link Address} set from the database and generates a new controller
-     * from it. If no objects exist in the database, it will return a null pair.
+     * Fetches the first persistable {@link Address} set from the database and generates a new {@link AddressViewModel}
+     * from it. If no {@link Address} sets exist in the database, it will return a null pair.
      *
      * @param tangle the tangle reference for the database
-     * @return The new controller
+     * @return The new {@link AddressViewModel}
      * @throws Exception Thrown if the database fails to return a first object
      */
     public static AddressViewModel first(Tangle tangle) throws Exception {
@@ -109,11 +109,11 @@ public class AddressViewModel implements HashesViewModel {
 
     /**
      * Fetches the next indexed persistable {@link Address} set from the database and generates a new
-     * controller from it. If no objects exist in the database, it will return a null pair.
+     * {@link AddressViewModel} from it. If no {@link Address} sets exist in the database, it will return a null pair.
      *
      * @param tangle the tangle reference for the database
-     * @return The new controller
-     * @throws Exception Thrown if the database fails to return a next object
+     * @return The new {@link AddressViewModel}
+     * @throws Exception Thrown if the database fails to return a next {@link Address} set
      */
     public AddressViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.next(Address.class, hash);

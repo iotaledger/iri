@@ -13,7 +13,7 @@ import com.iota.iri.service.API;
 public class GetTipsResponse extends AbstractResponse {
 	
     /**
-     * The list of current tips
+     * The current tips as seen by this node.
      */
 	private String[] hashes;
 

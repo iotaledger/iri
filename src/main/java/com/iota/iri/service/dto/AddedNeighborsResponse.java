@@ -12,7 +12,7 @@ public class AddedNeighborsResponse extends AbstractResponse {
 	
     /**
      * The amount of temporally added neighbors to this node.
-     * This amount can be 0 or more.
+     * Can be 0 or more.
      */
 	private int addedNeighbors;
 	

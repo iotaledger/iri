@@ -13,8 +13,8 @@ import com.iota.iri.service.API;
 public class GetNeighborsResponse extends AbstractResponse {
 
     /**
-     * The neighbors you are connected with, as well as their activity count.
-     * This activity includes the following statistics:
+     * The neighbors you are connected with, as well as their activity counters.
+     * This includes the following statistics:
      * <ol>
      *     <li>address</li>
      *     <li>connectionType</li>
@@ -23,6 +23,7 @@ public class GetNeighborsResponse extends AbstractResponse {
      *     <li>numberOfNewTransactions</li>
      *     <li>numberOfInvalidTransactions</li>
      *     <li>numberOfSentTransactions</li>
+     *     <li>numberOfStaleTransactions</li>
      * </ol>
      * @see {@link com.iota.iri.service.dto.GetNeighborsResponse.Neighbor}
      */

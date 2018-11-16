@@ -59,7 +59,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
     
     /**
      * The hash of the latest transaction which is solid and is used for sending transactions. 
-     * For a milestone to become solid your local node must basically approve the subtangle of coordinator-approved transactions, 
+     * For a milestone to become solid, your local node must approve the subtangle of coordinator-approved transactions, 
      *  and have a consistent view of all referenced transactions.
      */
     private String latestSolidSubtangleMilestone;

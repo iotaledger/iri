@@ -12,7 +12,7 @@ public class ExceptionResponse extends AbstractResponse {
 	
     /**
      * Contains a readable message as to why an exception has been thrown.
-     * This either due to invalid payload of a API request, or the message of an uncaught exception.
+     * This is either due to invalid payload of an API request, or the message of an uncaught exception.
      */
 	private String exception;
 

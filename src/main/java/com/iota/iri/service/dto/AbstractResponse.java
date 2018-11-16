@@ -63,7 +63,7 @@ public abstract class AbstractResponse {
 	}
 
     /**
-     * If a response needs to send no data back, an {@link Emptyness} is used.
+     * If a response doesn't need to send data back, an {@link Emptyness} is used.
      * This has all the fields and functions of an AbstractResponse, and nothing more.
      * 
      * @return Returns a plain AbstractResponse without extra fields

@@ -11,8 +11,8 @@ import com.iota.iri.service.API;
 public class RemoveNeighborsResponse extends AbstractResponse {
     
     /**
-     * The amount of temporally removed neighbors to this node.
-     * This amount can be 0 or more.
+     * The amount of temporarily removed neighbors from this node.
+     * Can be 0 or more.
      */
 	private int removedNeighbors;
 	

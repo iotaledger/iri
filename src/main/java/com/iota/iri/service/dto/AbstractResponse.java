@@ -7,17 +7,26 @@ import org.apache.commons.lang3.builder.ToStringStyle;
 
 /**
   * 
-  * Abstract response.
+  * Every response that the IRI API gives is a child of this class.<br/>
+  * Duration for every response is recorded automatically during the processing of a request.
   *
   **/
 public abstract class AbstractResponse {
 
+    /**
+     * An 'empty' Response class.
+     * Will only contain values which are included in {@link AbstractResponse} itself.
+     * This is used when an API command does not need to return data.
+     */
 	private static class Emptyness extends AbstractResponse {}
 
+	/**
+	 * The duration it took to process this command in milliseconds
+	 */
     private Integer duration;
 
     /**
-     * Returns a String that represents this object.
+     * Builds a string representation of this object using multiple lines
      *
      * @return Returns a string representation of this object.
      */
@@ -38,27 +47,26 @@ public abstract class AbstractResponse {
     }
 
     /**
-     * The duration it took to process this command in milliseconds
      *
-     * @return The duration.
+     * @return {@link #duration}
      */
     public Integer getDuration() {
         return duration;
     }
 
     /**
-     * Sets the duration.
-     *
-     * @param duration The duration
+     * 
+     * @param duration {@link #duration}
      */
     public void setDuration(Integer duration) {
 		this.duration = duration;
 	}
 
     /**
-     * Returns an empty AbstractResponse
-     *
-     * @return Returns an empty AbstractResponse
+     * If a response doesn't need to send data back, an {@link Emptyness} is used.
+     * This has all the fields and functions of an AbstractResponse, and nothing more.
+     * 
+     * @return Returns a plain AbstractResponse without extra fields
      */
     public static AbstractResponse createEmptyResponse() {
     	return new Emptyness();

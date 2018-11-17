@@ -3,6 +3,7 @@ package com.iota.iri.network;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -62,8 +63,13 @@ public abstract class Neighbor {
 	}
 
     protected boolean matches(SocketAddress address) {
-        // check if socket address (hostname/ip:port or /ip:port) contains ip (== host address)
-        return StringUtils.contains(address.toString(), getHostAddress());
+        if (address instanceof InetSocketAddress) {
+            // faster than fallback
+            InetAddress adr = ((InetSocketAddress) address).getAddress();
+            return adr != null && StringUtils.equals(adr.getHostAddress(), hostAddress);
+        } else { // fallback
+            return address != null && address.toString().contains(hostAddress);
+        }
     }
 
     void incAllTransactions() {

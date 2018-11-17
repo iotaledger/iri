@@ -3,12 +3,13 @@ package com.iota.iri.network;
 import org.junit.Test;
 
 import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class UDPNeighborTest {
 
-    private UDPNeighbor neighbor = new UDPNeighbor(address("localhost", 42), null, false);
+    private final UDPNeighbor neighbor = new UDPNeighbor(address("localhost", 42), null, false);
 
     @Test
     public void sameIpWhenMatchesThenTrue() {
@@ -22,6 +23,8 @@ public class UDPNeighborTest {
     public void differentIpWhenMatchesThenFalse() {
         assertThat(neighbor.matches(address("foo.bar.com", 42))).isFalse();
         assertThat(neighbor.matches(address("8.8.8.8", 42))).isFalse();
+        assertThat(neighbor.matches(null)).isFalse();
+        assertThat(neighbor.matches(new SocketAddress() {})).isFalse();
     }
 
     private InetSocketAddress address(String hostOrIp, int port) {

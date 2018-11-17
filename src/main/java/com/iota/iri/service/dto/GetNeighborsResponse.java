@@ -15,7 +15,7 @@ public class GetNeighborsResponse extends AbstractResponse {
     /**
      * The neighbors you are connected with, as well as their activity counters.
      * 
-     * @see {@link com.iota.iri.service.dto.GetNeighborsResponse.Neighbor}
+     * @see com.iota.iri.service.dto.GetNeighborsResponse.Neighbor
      */
     private Neighbor[] neighbors;
 
@@ -50,80 +50,48 @@ public class GetNeighborsResponse extends AbstractResponse {
      */
     static class Neighbor {
 
-        private String address;
-        public long numberOfAllTransactions,
-                numberOfRandomTransactionRequests,
-                numberOfNewTransactions,
-                numberOfInvalidTransactions,
-                numberOfStaleTransactions,
-                numberOfSentTransactions;
-        public String connectionType;
-
         /**
          * The address of your neighbor
-         * 
-         * @return the address
          */
-        public String getAddress() {
-            return address;
-        }
-
+        private String address;
+        
         /**
          * Number of all transactions sent (invalid, valid, already-seen)
-         * 
-         * @return the number
          */
-        public long getNumberOfAllTransactions() {
-            return numberOfAllTransactions;
-        }
-
+        public long numberOfAllTransactions;
+        
+        /**
+         * Random tip requests which were sent
+         */
+        public long numberOfRandomTransactionRequests;
+        
         /**
          * New transactions which were transmitted.
-         * 
-         * @return the number
          */
-        public long getNumberOfNewTransactions() {
-            return numberOfNewTransactions;
-        }
-
+        public long numberOfNewTransactions;
+        
         /**
          * Invalid transactions your neighbor has sent you. 
          * These are transactions with invalid signatures or overall schema.
-         * 
-         * @return the number
          */
-        public long getNumberOfInvalidTransactions() {
-            return numberOfInvalidTransactions;
-        }
-
+        public long numberOfInvalidTransactions;
+        
         /**
          * Stale transactions your neighbor has sent you.
          * These are transactions with a timestamp older than your latest snapshot.
-         *
-         * @return the number
          */
-        public long getNumberOfStaleTransactions() {
-            return numberOfStaleTransactions;
-        }
-
+        public long numberOfStaleTransactions;
+        
         /**
          * Amount of transactions send through your neighbor
-         * 
-         * @return the number
          */
-        public long getNumberOfSentTransactions() {
-            return numberOfSentTransactions;
-        }
-
+        public long numberOfSentTransactions;
+        
         /**
          * The method type your neighbor is using to connect (TCP / UDP)
-         * 
-         * @return the connection type
          */
-        public String getConnectionType() {
-            return connectionType;
-        }
-
+        public String connectionType;
+        
         /**
          * Creates a new Neighbor DTO from a Neighbor network instance
          * @param n the neighbor currently connected to this node
@@ -141,6 +109,70 @@ public class GetNeighborsResponse extends AbstractResponse {
             ne.numberOfSentTransactions = n.getNumberOfSentTransactions();
             ne.connectionType = n.connectionType();
             return ne;
+        }
+
+        /**
+         * 
+         * {@link #address}
+         */
+        public String getAddress() {
+            return address;
+        }
+
+        /**
+         * 
+         * {@link #numberOfAllTransactions}
+         */
+        public long getNumberOfAllTransactions() {
+            return numberOfAllTransactions;
+        }
+
+        /**
+         * 
+         * {@link #numberOfNewTransactions}
+         */
+        public long getNumberOfNewTransactions() {
+            return numberOfNewTransactions;
+        }
+
+        /**
+         * 
+         * {@link #numberOfInvalidTransactions}
+         */
+        public long getNumberOfInvalidTransactions() {
+            return numberOfInvalidTransactions;
+        }
+
+        /**
+         * 
+         * {@link #numberOfStaleTransactions}
+         */
+        public long getNumberOfStaleTransactions() {
+            return numberOfStaleTransactions;
+        }
+
+        /**
+         * 
+         * {@link #numberOfSentTransactions}
+         */
+        public long getNumberOfSentTransactions() {
+            return numberOfSentTransactions;
+        }
+        
+        /**
+         * 
+         * {@link #numberOfRandomTransactionRequests}
+         */
+        public long getNumberOfRandomTransactionRequests() {
+            return numberOfRandomTransactionRequests;
+        }
+
+        /**
+         * 
+         * {@link #connectionType}
+         */
+        public String getConnectionType() {
+            return connectionType;
         }
     }
 }

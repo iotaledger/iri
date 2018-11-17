@@ -243,10 +243,10 @@ public class API {
      * Sends the API response back as JSON to the requester. 
      * Status code of the HTTP request is also set according to the type of response.
      * <ul>
-     *     <li>{@link ErrorResponse}: 400</li>
-     *     <li>{@link AccessLimitedResponse}: 401</li>
-     *     <li>{@link ExceptionResponse}: 500</li>
-     *     <li>Default: 200</li>
+     * <li>{@link ErrorResponse}: 400</li>
+     * <li>{@link AccessLimitedResponse}: 401</li>
+     * <li>{@link ExceptionResponse}: 500</li>
+     * <li>Default: 200</li>
      * </ul>
      * 
      * @param exchange Contains information about what the client sent to us
@@ -299,15 +299,15 @@ public class API {
 
     /**
      * <p>
-     *     Processes an API HTTP request. 
-     *     No checks have been done until now, except that it is not an OPTIONS request.
-     *     We can be sure that we are in a thread that allows blocking.
+     * Processes an API HTTP request. 
+     * No checks have been done until now, except that it is not an OPTIONS request.
+     * We can be sure that we are in a thread that allows blocking.
      * </p>
      * <p>
-     *     The request process duration is recorded. 
-     *     During this the request gets verified. If it is incorrect, an {@link ErrorResponse} is made.
-     *     Otherwise it is processed in {@link #process(String, InetSocketAddress)}.
-     *     The result is sent back to the requester.
+     * The request process duration is recorded. 
+     * During this the request gets verified. If it is incorrect, an {@link ErrorResponse} is made.
+     * Otherwise it is processed in {@link #process(String, InetSocketAddress)}.
+     * The result is sent back to the requester.
      * </p>
      *   
      * @param exchange Contains the data the client sent to us
@@ -529,7 +529,7 @@ public class API {
      * If an address has a pending transaction, it is also marked as spend.
      * 
      * @param addresses List of addresses to check if they were ever spent from.
-     * @return {@link com.iota.iri.service.dto.wereAddressesSpentFrom}
+     * @return {@link com.iota.iri.service.dto.WereAddressesSpentFrom}
      **/
     @Document(name="wereAddressesSpentFrom")
     private AbstractResponse wereAddressesSpentFromStatement(List<String> addresses) throws Exception {
@@ -624,9 +624,9 @@ public class API {
      * Checks the consistency of the transactions.
      * Marks state as false on the following checks:
      * <ul>
-     *     <li>Missing a reference transaction</li>
-     *     <li>Invalid bundle</li>
-     *     <li>Tails of tails are invalid</li>
+     * <li>Missing a reference transaction</li>
+     * <li>Invalid bundle</li>
+     * <li>Tails of tails are invalid</li>
      * </ul>
      * 
      * If a transaction does not exist, or it is not a tail, an {@link ErrorResponse} is returned.
@@ -880,11 +880,11 @@ public class API {
 
     /**
      * <p>
-     *     Handles statistics on tip selection. 
-     *     Increases the tip selection by one use.
+     * Handles statistics on tip selection. 
+     * Increases the tip selection by one use.
      * </p> 
      * <p>
-     *     If the {@link #getCounterGetTxToApprove()} is a power of 100, a log is send and counters are reset.
+     * If the {@link #getCounterGetTxToApprove()} is a power of 100, a log is send and counters are reset.
      * </p>
      */
     private void gatherStatisticsOnTipSelection() {
@@ -984,13 +984,13 @@ public class API {
 
     /**
      * <p>
-     *     Get the inclusion states of a set of transactions.
-     *     This is for determining if a transaction was accepted and confirmed by the network or not.
-     *     You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
+     * Get the inclusion states of a set of transactions.
+     * This is for determining if a transaction was accepted and confirmed by the network or not.
+     * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
      * </p>
      * <p>
-     *     This API call returns a list of boolean values in the same order as the submitted transactions.<br/>
-     *     Boolean values will be <tt>true</tt> for confirmed transactions, otherwise <tt>false</tt>.
+     * This API call returns a list of boolean values in the same order as the submitted transactions.<br/>
+     * Boolean values will be <tt>true</tt> for confirmed transactions, otherwise <tt>false</tt>.
      * </p>
      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
      *
@@ -1169,9 +1169,9 @@ public class API {
 
     /**
       * <p>
-      *     Find the transactions which match the specified input and return.
-      *     All input values are lists, for which a list of return values (transaction hashes), in the same order, is returned for all individual elements.
-      *     The input fields can either be <tt>bundles</tt>, <tt>addresses</tt>, <tt>tags</tt> or <tt>approvees</tt>.
+      * Find the transactions which match the specified input and return.
+      * All input values are lists, for which a list of return values (transaction hashes), in the same order, is returned for all individual elements.
+      * The input fields can either be <tt>bundles</tt>, <tt>addresses</tt>, <tt>tags</tt> or <tt>approvees</tt>.
       * </p>
       * 
       * Using multiple of these input fields returns the intersection of the values.
@@ -1179,7 +1179,7 @@ public class API {
       *
       * @param request The map with input fields
       *                Must contain at least one of 'bundles', 'addresses', 'tags' or 'approvees'.
-      * @return {@link com.iota.iri.service.dto.FindTransactionsResponse}.
+      * @return {@link com.iota.iri.service.dto.FindTransactionsResponse}
       * @throws Exception If a model cannot be loaded, no valid input fields were supplied 
       *                   or the total transactions to find exceeds {@link APIConfig#getMaxFindTransactions()}.
       **/
@@ -1323,7 +1323,7 @@ public class API {
       * The trytes to be used for this call should be valid, attached transaction trytes.
       * These trytes are returned by <tt>attachToTangle</tt>, or by doing proof of work somewhere else.
       * 
-      * @param trytes the list of transaction trytes to broadcast
+      * @param trytes The list of transaction trytes to broadcast
       **/
     @Document(name="broadcastTransactions")
     public void broadcastTransactionsStatement(List<String> trytes) {
@@ -1347,12 +1347,12 @@ public class API {
 
     /**
       * <p>
-      *     Calculates the confirmed balance, as viewed by the specified <tt>tips</tt>. 
-      *     If you do not specify the referencing <tt>tips</tt>, 
-      *     the returned balance is based on the latest confirmed milestone.
-      *     In addition to the balances, it also returns the referencing <tt>tips</tt> (or milestone), 
-      *     as well as the index with which the confirmed balance was determined.
-      *     The balances are returned as a list in the same order as the addresses were provided as input.
+      * Calculates the confirmed balance, as viewed by the specified <tt>tips</tt>. 
+      * If you do not specify the referencing <tt>tips</tt>, 
+      * the returned balance is based on the latest confirmed milestone.
+      * In addition to the balances, it also returns the referencing <tt>tips</tt> (or milestone), 
+      * as well as the index with which the confirmed balance was determined.
+      * The balances are returned as a list in the same order as the addresses were provided as input.
       * </p>
       * Returns an {@link ErrorResponse} if tips are not found, inconsistent or the threshold is invalid.
       *
@@ -1471,22 +1471,22 @@ public class API {
 
     /**
       * <p>
-      *     Prepares the specified transactions (trytes) for attachment to the Tangle by doing Proof of Work.
-      *     You need to supply <tt>branchTransaction</tt> as well as <tt>trunkTransaction</tt>.
-      *     These are the tips which you're going to validate and reference with this transaction. 
-      *     These are obtainable by the <tt>getTransactionsToApprove</tt> API call.
+      * Prepares the specified transactions (trytes) for attachment to the Tangle by doing Proof of Work.
+      * You need to supply <tt>branchTransaction</tt> as well as <tt>trunkTransaction</tt>.
+      * These are the tips which you're going to validate and reference with this transaction. 
+      * These are obtainable by the <tt>getTransactionsToApprove</tt> API call.
       * </p>
       * <p>
-      *     The returned value is a different set of tryte values which you can input into 
-      *     <tt>broadcastTransactions</tt> and <tt>storeTransactions</tt>.
-      *     The last 243 trytes of the return value consist of the following:
-      *     <ul>
-      *         <li><code>trunkTransaction</code></li>
-      *         <li><code>branchTransaction</code></li>
-      *         <li><code>nonce</code></li>
-      *     </ul>
-      *     These are valid trytes which are then accepted by the network.
+      * The returned value is a different set of tryte values which you can input into 
+      * <tt>broadcastTransactions</tt> and <tt>storeTransactions</tt>.
+      * The last 243 trytes of the return value consist of the following:
+      * <ul>
+      * <li><code>trunkTransaction</code></li>
+      * <li><code>branchTransaction</code></li>
+      * <li><code>nonce</code></li>
+      * </ul>
       * </p>
+      * These are valid trytes which are then accepted by the network.
       * @param trunkTransaction A reference to an external transaction (tip) used as trunk.
       *                         The transaction with index 0 will have this tip in its trunk.
       *                         All other transactions reference the previous transaction in the bundle (Their index-1).
@@ -1498,7 +1498,7 @@ public class API {
       *                           Each 0-trit on the end of the transaction represents 1 magnitude. 
       *                           A 9-tryte represents 3 magnitudes, since a 9 is represented by 3 0-trits.
       *                           Transactions with a different minWeightMagnitude are compatible.
-      * @param trytes the list of trytes to prepare for network attachment, by doing proof of work.
+      * @param trytes The list of trytes to prepare for network attachment, by doing proof of work.
       * @return The list of transactions in trytes, ready to be broadcast to the network.
       **/
     @Document(name="attachToTangle", returnParam="trytes")

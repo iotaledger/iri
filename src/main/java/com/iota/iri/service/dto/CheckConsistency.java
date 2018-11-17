@@ -12,11 +12,11 @@ public class CheckConsistency extends AbstractResponse {
 
     /**
      * The state of all the provided tails, which is set to {@code false} on the following checks<br/>
-     * <ol>
-     *     <li>Missing a reference transaction<li/>
-     *     <li>Invalid bundle<li/>
-     *     <li>Tails of tails are invalid<li/>
-     * </ol>
+     * <ul>
+     * <li>Missing a reference transaction</li>
+     * <li>Invalid bundle</li>
+     * <li>Tails of tails are invalid</li>
+     * </ul>
      */
     private boolean state;
     

@@ -61,7 +61,7 @@ public abstract class Neighbor {
 		return address;
 	}
 
-    public boolean matches(SocketAddress address) {
+    protected boolean matches(SocketAddress address) {
         // check if socket address (hostname/ip:port or /ip:port) contains ip (== host address)
         return StringUtils.contains(address.toString(), getHostAddress());
     }

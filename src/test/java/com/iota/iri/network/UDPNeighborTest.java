@@ -5,7 +5,8 @@ import org.junit.Test;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public class UDPNeighborTest {
 
@@ -13,18 +14,18 @@ public class UDPNeighborTest {
 
     @Test
     public void sameIpWhenMatchesThenTrue() {
-        assertThat(neighbor.matches(address("localhost", 42))).isTrue();
-        assertThat(neighbor.matches(address("localhost", 666))).isTrue();
-        assertThat(neighbor.matches(address("127.0.0.1", 42))).isTrue();
-        assertThat(neighbor.matches(address("127.0.0.1", 666))).isTrue();
+        assertTrue(neighbor.matches(address("localhost", 42)));
+        assertTrue(neighbor.matches(address("localhost", 666)));
+        assertTrue(neighbor.matches(address("127.0.0.1", 42)));
+        assertTrue(neighbor.matches(address("127.0.0.1", 666)));
     }
 
     @Test
     public void differentIpWhenMatchesThenFalse() {
-        assertThat(neighbor.matches(address("foo.bar.com", 42))).isFalse();
-        assertThat(neighbor.matches(address("8.8.8.8", 42))).isFalse();
-        assertThat(neighbor.matches(null)).isFalse();
-        assertThat(neighbor.matches(new SocketAddress() {})).isFalse();
+        assertFalse(neighbor.matches(address("foo.bar.com", 42)));
+        assertFalse(neighbor.matches(address("8.8.8.8", 42)));
+        assertFalse(neighbor.matches(null));
+        assertFalse(neighbor.matches(new SocketAddress() {}));
     }
 
     private InetSocketAddress address(String hostOrIp, int port) {

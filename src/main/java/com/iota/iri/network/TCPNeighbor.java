@@ -15,6 +15,13 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by paul on 4/15/17.
  */
+ 
+ /**
+ * This class Extends {@link Neighbor} base class with TCP specific functionality. 
+ * It keeps reference of Source and Sink while maintaining a sendQueue for keeping
+ * outgoing requests. 
+ * 
+ */
 public class TCPNeighbor extends Neighbor {
     private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
     private int tcpPort;

@@ -9,57 +9,78 @@ import java.util.List;
 public interface NetworkConfig extends Config {
 
     /**
-     * @return Descriptions#UDP_RECEIVER_PORT
+     * Default Value: {@value BaseIotaConfig.Defaults#UDP_RECEIVER_PORT}
+     *
+     * @return {@value NetworkConfig.Descriptions#UDP_RECEIVER_PORT}
      */
     int getUdpReceiverPort();
 
     /**
-     * @return Descriptions#TCP_RECEIVER_PORT
+     * Default Value: {@value BaseIotaConfig.Defaults#TCP_RECEIVER_PORT}
+     *
+     * @return {@value NetworkConfig.Descriptions#TCP_RECEIVER_PORT}
      */
     int getTcpReceiverPort();
 
     /**
-     * @return Descriptions#P_REMOVE_REQUEST
+     * Default Value: {@value BaseIotaConfig.Defaults#P_REMOVE_REQUEST}
+     *
+     * @return {@value NetworkConfig.Descriptions#P_REMOVE_REQUEST}
      */
     double getpRemoveRequest();
 
     /**
-     * @return Descriptions#SEND_LIMIT
+     * Default Value: {@value BaseIotaConfig.Defaults#SEND_LIMIT}
+     *
+     * @return {@value NetworkConfig.Descriptions#SEND_LIMIT}
      */
     int getSendLimit();
 
     /**
-     * @return Descriptions#MAX_PEERS
+     * Default Value: {@value BaseIotaConfig.Defaults#MAX_PEERS}
+     *
+     * @return {@value NetworkConfig.Descriptions#MAX_PEERS}
      */
     int getMaxPeers();
 
     /**
-     * @return Descriptions#DNS_REFRESHER_ENABLED
+     * Default Value: {@value BaseIotaConfig.Defaults#DNS_REFRESHER_ENABLED}
+     *
+     * @return {@value NetworkConfig.Descriptions#DNS_REFRESHER_ENABLED}
      */
     boolean isDnsRefresherEnabled();
 
     /**
-     * @return Descriptions#DNS_RESOLUTION_ENABLED
+     * Default Value: {@value BaseIotaConfig.Defaults#DNS_RESOLUTION_ENABLED}
+     *
+     * @return {@value NetworkConfig.Descriptions#DNS_RESOLUTION_ENABLED}
      */
     boolean isDnsResolutionEnabled();
 
     /**
-     * @return Descriptions#NEIGHBORS
+     * Default Value: {@code {}}
+     *
+     * @return {@value NetworkConfig.Descriptions#NEIGHBORS}
      */
     List<String> getNeighbors();
 
     /**
-     * @return Descriptions#Q_SIZE_NODE
+     * Default Value: {@value BaseIotaConfig.Defaults#QUEUE_SIZE}
+     * @return {@value NetworkConfig.Descriptions#Q_SIZE_NODE}
      */
     int getqSizeNode();
 
     /**
-     * @return Descriptions#P_DROP_CACHE_ENTRY
+     * Default Value: {@value BaseIotaConfig.Defaults#P_DROP_CACHE_ENTRY}
+     *
+     * @return {@value NetworkConfig.Descriptions#P_DROP_CACHE_ENTRY}
      */
     double getpDropCacheEntry();
 
     /**
-     * @return Descriptions#CACHE_SIZE_BYTES
+     * Default Value: {@value BaseIotaConfig.Defaults#CACHE_SIZE_BYTES}
+     *
+     * @return {@value NetworkConfig.Descriptions#CACHE_SIZE_BYTES}
      */
     int getCacheSizeBytes();
 

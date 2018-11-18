@@ -6,67 +6,93 @@ package com.iota.iri.conf;
 public interface SnapshotConfig extends Config {
 
     /**
-     * @return {@value Descriptions#LOCAL_SNAPSHOTS_ENABLED}
+     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_ENABLED}
+     *
+     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_ENABLED}
      */
     boolean getLocalSnapshotsEnabled();
 
     /**
-     * @return {@value Descriptions#LOCAL_SNAPSHOTS_PRUNING_ENABLED}
+     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_PRUNING_ENABLED}
+     *
+     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_PRUNING_ENABLED}
      */
     boolean getLocalSnapshotsPruningEnabled();
 
     /**
-     * @return {@value Descriptions#LOCAL_SNAPSHOTS_PRUNING_DELAY}
+     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_PRUNING_DELAY}
+     *
+     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_PRUNING_DELAY}
      */
     int getLocalSnapshotsPruningDelay();
 
     /**
-     * @return {@value Descriptions#LOCAL_SNAPSHOTS_INTERVAL_SYNCED}
+     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_INTERVAL_SYNCED}
+     *
+     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_INTERVAL_SYNCED}
      */
     int getLocalSnapshotsIntervalSynced();
 
     /**
-     * @return {@value Descriptions#LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED}
+     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED}
+     *
+     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED}
      */
     int getLocalSnapshotsIntervalUnsynced();
 
     /**
-     * @return {@value Descriptions#LOCAL_SNAPSHOTS_DEPTH}
+     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_DEPTH}
+     *
+     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_DEPTH}
      */
     int getLocalSnapshotsDepth();
 
     /**
-     * @return {@value Descriptions#SNAPSHOT_TIME}
+     * Default Value: {@value BaseIotaConfig.Defaults#GLOBAL_SNAPSHOT_TIME}
+     *
+     * @return {@value SnapshotConfig.Descriptions#SNAPSHOT_TIME}
      */
     long getSnapshotTime();
 
     /**
-     * return {@value Descriptions#SNAPSHOT_FILE}
+     * Default Value: {@value BaseIotaConfig.Defaults#SNAPSHOT_FILE}
+     *
+     * return {@value SnapshotConfig.Descriptions#SNAPSHOT_FILE}
      */
     String getSnapshotFile();
 
     /**
-     * @return {@value Descriptions#SNAPSHOT_SIGNATURE_FILE}
+     * Default Value: {@value BaseIotaConfig.Defaults#SNAPSHOT_SIG_FILE}
+     *
+     * @return {@value SnapshotConfig.Descriptions#SNAPSHOT_SIGNATURE_FILE}
      */
     String getSnapshotSignatureFile();
 
     /**
-     * @return {@value Descriptions#MILESTONE_START_INDEX}
+     * Default Value: {@value BaseIotaConfig.Defaults#MILESTONE_START_INDEX}
+     *
+     * @return {@value SnapshotConfig.Descriptions#MILESTONE_START_INDEX}
      */
     int getMilestoneStartIndex();
 
     /**
-     * @return {@value Descriptions#LOCAL_SNAPSHOTS_BASE_PATH}
+     * Default Value: {@value BaseIotaConfig.Defaults#LOCAL_SNAPSHOTS_BASE_PATH}
+     *
+     * @return {@value SnapshotConfig.Descriptions#LOCAL_SNAPSHOTS_BASE_PATH}
      */
     String getLocalSnapshotsBasePath();
 
     /**
-     * @return {@value Descriptions#NUMBER_OF_KEYS_IN_A_MILESTONE}
+     * Default Value: {@value BaseIotaConfig.Defaults#NUM_KEYS_IN_MILESTONE}
+     *
+     * @return {@value SnapshotConfig.Descriptions#NUMBER_OF_KEYS_IN_A_MILESTONE}
      */
     int getNumberOfKeysInMilestone();
 
     /**
-     * @return {@value Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE}
+     * Default Value: {@value BaseIotaConfig.Defaults#PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT}
+     *
+     * @return {@value SnapshotConfig.Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE}
      */
     String getPreviousEpochSpentAddressesFiles();
 

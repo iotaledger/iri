@@ -7,34 +7,59 @@ package com.iota.iri.conf;
 public interface ProtocolConfig extends Config {
 
     /**
-     * @return Descriptions#MWM
+     * Default Value: {@value BaseIotaConfig.Defaults#MWM}
+     *
+     * @return {@value ProtocolConfig.Descriptions#MWM}
      */
     int getMwm();
 
     /**
-     * @return Descriptions#TRANSACTION_PACKET_SIZE
+     * Default Value: {@value BaseIotaConfig.Defaults#PACKET_SIZE}
+     *
+     * @return {@value ProtocolConfig.Descriptions#TRANSACTION_PACKET_SIZE}
      */
     int getTransactionPacketSize();
 
     /**
-     * @return Descriptions#REQUEST_HASH_SIZE
+     * Default Value: {@value BaseIotaConfig.Defaults#REQ_HASH_SIZE}
+     *
+     * @return {@value ProtocolConfig.Descriptions#REQUEST_HASH_SIZE}
      */
     int getRequestHashSize();
 
     /**
-     * @return Descriptions#P_REPLY_RANDOM_TIP
+     * Default Value: {@value BaseIotaConfig.Defaults#P_REPLY_RANDOM_TIP}
+     *
+     * @return {@value ProtocolConfig.Descriptions#P_REPLY_RANDOM_TIP}
      */
     double getpReplyRandomTip();
 
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#P_DROP_TRANSACTION}
+     *
+     * @return {@value ProtocolConfig.Descriptions#P_DROP_TRANSACTION}
+     */
     double getpDropTransaction();
 
     /**
-     * @return Descriptions#P_SELECT_MILESTONE
+     * Default Value: {@value BaseIotaConfig.Defaults#P_SELECT_MILESTONE_CHILD}
+     *
+     * @return {@value ProtocolConfig.Descriptions#P_SELECT_MILESTONE}
      */
     double getpSelectMilestoneChild();
 
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#P_SEND_MILESTONE}
+     *
+     * @return {@value ProtocolConfig.Descriptions#P_SEND_MILESTONE}
+     */
     double getpSendMilestone();
 
+    /**
+     * Default Value: {@value BaseIotaConfig.Defaults#P_PROPAGATE_REQUEST}
+     *
+     * @return {@value ProtocolConfig.Descriptions#P_PROPAGATE_REQUEST}
+     */
     double getpPropagateRequest();
 
     interface Descriptions {

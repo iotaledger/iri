@@ -6,12 +6,16 @@ package com.iota.iri.conf;
 public interface MilestoneConfig extends Config {
 
     /**
-     * @return Descriptions#COORDINATOR
+     * Default Value: {@value BaseIotaConfig.Defaults#COORDINATOR_ADDRESS}
+     *
+     * @return {@value MilestoneConfig.Descriptions#COORDINATOR}
      */
     String getCoordinator();
 
     /**
-     * @return {@value Descriptions#DONT_VALIDATE_TESTNET_MILESTONE_SIG}
+     * Default Value: <tt>false</tt>
+     *
+     * @return {@value MilestoneConfig.Descriptions#DONT_VALIDATE_TESTNET_MILESTONE_SIG}
      */
     boolean isDontValidateTestnetMilestoneSig();
 

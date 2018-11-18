@@ -18,6 +18,8 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 
+// Some description goes here
+
 public class CumulativeWeightWithEdgeCalculatorTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();

@@ -213,7 +213,7 @@ public class TransactionViewModel {
         return tangle.saveBatch(batch);
     }
 
-    public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
+	public ApproveeViewModel getApprovers(Tangle tangle) throws Exception {
         if(approovers == null) {
             approovers = ApproveeViewModel.load(tangle, hash);
         }

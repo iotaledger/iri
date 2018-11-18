@@ -673,17 +673,12 @@ public class API {
       * @param trytes List of raw data of transactions to be rebroadcast.
       **/
     public void storeTransactionsStatement(final List<String> trytes) throws Exception {
-        final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String trytesPart : trytes) {
             //validate all trytes
             Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
-            elements.add(transactionViewModel);
-        }
-        for (final TransactionViewModel transactionViewModel : elements) {
-            //store transactions
             if(transactionViewModel.store(instance.tangle)) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);

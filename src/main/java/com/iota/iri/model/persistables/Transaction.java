@@ -96,7 +96,6 @@ public class Transaction implements Persistable {
         buffer.put(Serializer.serialize(arrivalTime));
         buffer.put(Serializer.serialize(height));
         //buffer.put((byte) (confirmed ? 1:0));
-
         // encode booleans in 1 byte
         byte flags = 0;
         flags |= solid ? IS_SOLID_BITMASK : 0;

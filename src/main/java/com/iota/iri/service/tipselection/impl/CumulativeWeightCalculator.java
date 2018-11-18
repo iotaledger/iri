@@ -45,7 +45,7 @@ public class CumulativeWeightCalculator implements RatingCalculator{
     }
 
     //Uses DFS algorithm to sort
-    private LinkedHashSet<Hash> sortTransactionsInTopologicalOrder(Hash startTx) throws Exception {
+    protected LinkedHashSet<Hash> sortTransactionsInTopologicalOrder(Hash startTx) throws Exception {
         LinkedHashSet<Hash> sortedTxs = new LinkedHashSet<>();
         Deque<Hash> stack = new ArrayDeque<>();
         Map<Hash, Collection<Hash>> txToDirectApprovers = new HashMap<>();

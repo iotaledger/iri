@@ -14,18 +14,18 @@ public class UDPNeighborTest {
 
     @Test
     public void sameIpWhenMatchesThenTrue() {
-        assertTrue(neighbor.matches(address("localhost", 42)));
-        assertTrue(neighbor.matches(address("localhost", 666)));
-        assertTrue(neighbor.matches(address("127.0.0.1", 42)));
-        assertTrue(neighbor.matches(address("127.0.0.1", 666)));
+        assertTrue("expected match", neighbor.matches(address("localhost", 42)));
+        assertTrue("expected match", neighbor.matches(address("localhost", 666)));
+        assertTrue("expected match", neighbor.matches(address("127.0.0.1", 42)));
+        assertTrue("expected match", neighbor.matches(address("127.0.0.1", 666)));
     }
 
     @Test
     public void differentIpWhenMatchesThenFalse() {
-        assertFalse(neighbor.matches(address("foo.bar.com", 42)));
-        assertFalse(neighbor.matches(address("8.8.8.8", 42)));
-        assertFalse(neighbor.matches(null));
-        assertFalse(neighbor.matches(new SocketAddress() {}));
+        assertFalse("expected no match", neighbor.matches(address("foo.bar.com", 42)));
+        assertFalse("expected no match", neighbor.matches(address("8.8.8.8", 42)));
+        assertFalse("expected no match", neighbor.matches(null));
+        assertFalse("expected no match", neighbor.matches(new SocketAddress() {}));
     }
 
     private InetSocketAddress address(String hostOrIp, int port) {

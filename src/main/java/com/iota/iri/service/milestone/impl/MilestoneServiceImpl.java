@@ -10,7 +10,6 @@ import com.iota.iri.crypto.ISSInPlace;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.model.StateDiff;
 import com.iota.iri.service.milestone.MilestoneException;
 import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.milestone.MilestoneValidity;
@@ -102,18 +101,6 @@ public class MilestoneServiceImpl implements MilestoneService {
         updateMilestoneIndexOfMilestoneTransactions(milestoneHash, index, index, new HashSet<>());
     }
 
-    /**
-     * {@inheritDoc}
-     * <br />
-     * We redirect the call to {@link #resetCorruptedMilestone(int, Set)} while initiating the set of {@code
-     * processedTransactions} with an empty {@link HashSet} which will ensure that we reset all found
-     * transactions.<br />
-     */
-    @Override
-    public void resetCorruptedMilestone(int index) throws MilestoneException {
-        resetCorruptedMilestone(index, new HashSet<>());
-    }
-
     @Override
     public MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, SpongeFactory.Mode mode,
             int securityLevel) throws MilestoneException {
@@ -170,16 +157,6 @@ public class MilestoneServiceImpl implements MilestoneService {
                                         transactionViewModel.getHash());
                                 newMilestoneViewModel.store(tangle);
 
-                                // if we find a NEW milestone that should have been processed before our latest solid
-                                // milestone -> reset the ledger state and check the milestones again
-                                //
-                                // NOTE: this can happen if a new subtangle becomes solid before a previous one while
-                                //       syncing
-                                if (milestoneIndex < snapshotProvider.getLatestSnapshot().getIndex() &&
-                                        milestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
-
-                                    resetCorruptedMilestone(newMilestoneViewModel.index());
-                                }
                                 return VALID;
                             } else {
                                 return INVALID;
@@ -229,8 +206,8 @@ public class MilestoneServiceImpl implements MilestoneService {
         Set<TransactionViewModel> transactionsToUpdate = new HashSet<>();
 
         try {
-            prepareMilestoneIndexUpdate(TransactionViewModel.fromHash(tangle, milestoneHash), correctIndex, newIndex,
-                    inconsistentMilestones, transactionsToUpdate);
+            prepareMilestoneIndexUpdate(TransactionViewModel.fromHash(tangle, milestoneHash), newIndex,
+                    transactionsToUpdate);
 
             DAGHelper.get(tangle).traverseApprovees(
                 milestoneHash,
@@ -243,16 +220,11 @@ public class MilestoneServiceImpl implements MilestoneService {
                         return false;
                     }
                 },
-                currentTransaction -> prepareMilestoneIndexUpdate(currentTransaction, correctIndex, newIndex,
-                        inconsistentMilestones, transactionsToUpdate),
+                currentTransaction -> prepareMilestoneIndexUpdate(currentTransaction, newIndex, transactionsToUpdate),
                 processedTransactions
             );
         } catch (Exception e) {
             throw new MilestoneException("error while updating the milestone index", e);
-        }
-
-        for(int inconsistentMilestoneIndex : inconsistentMilestones) {
-            resetCorruptedMilestone(inconsistentMilestoneIndex, processedTransactions);
         }
 
         for (TransactionViewModel transactionToUpdate : transactionsToUpdate) {
@@ -289,27 +261,17 @@ public class MilestoneServiceImpl implements MilestoneService {
      * This method prepares the update of the milestone index by checking the current {@code snapshotIndex} of the given
      * transaction.<br />
      * <br />
-     * If the {@code snapshotIndex} is higher than the "correct one", we know that we applied the milestones in the
-     * wrong order and need to reset the corresponding milestone that wrongly approved this transaction. We therefore
-     * add its index to the {@code corruptMilestones} set.<br />
-     * <br />
      * If the milestone does not have the new value set already we add it to the set of {@code transactionsToUpdate} so
      * it can be updated by the caller accordingly.<br />
      *
      * @param transaction the transaction that shall get its milestoneIndex updated
-     * @param correctMilestoneIndex the milestone index that this transaction should be associated to (the index of the
-     *                              milestone that should "confirm" this transaction)
      * @param newMilestoneIndex the new milestone index that we want to assign (either 0 or the correctMilestoneIndex)
-     * @param corruptMilestones a set that is used to collect all corrupt milestones indexes [output parameter]
      * @param transactionsToUpdate a set that is used to collect all transactions that need to be updated [output
      *                             parameter]
      */
-    private void prepareMilestoneIndexUpdate(TransactionViewModel transaction, int correctMilestoneIndex,
-            int newMilestoneIndex, Set<Integer> corruptMilestones, Set<TransactionViewModel> transactionsToUpdate) {
+    private void prepareMilestoneIndexUpdate(TransactionViewModel transaction, int newMilestoneIndex,
+            Set<TransactionViewModel> transactionsToUpdate) {
 
-        if(transaction.snapshotIndex() > correctMilestoneIndex) {
-            corruptMilestones.add(transaction.snapshotIndex());
-        }
         if (transaction.snapshotIndex() != newMilestoneIndex) {
             transactionsToUpdate.add(transaction);
         }
@@ -355,45 +317,6 @@ public class MilestoneServiceImpl implements MilestoneService {
                 .limit(securityLevel)
                 .map(TransactionViewModel::getBranchTransactionHash)
                 .allMatch(branchTransactionHash -> branchTransactionHash.equals(headTransactionHash));
-    }
-
-    /**
-     * This method does the same as {@link #resetCorruptedMilestone(int)} but additionally receives a set of {@code
-     * processedTransactions} that will allow us to not process the same transactions over and over again while
-     * resetting additional milestones in recursive calls.<br />
-     * <br />
-     * It first checks if the desired {@code milestoneIndex} is reachable by this node and then triggers the reset
-     * by:<br />
-     * <br />
-     * 1. resetting the ledger state if it addresses a milestone before the current latest solid milestone<br />
-     * 2. resetting the {@code milestoneIndex} of all transactions that were confirmed by the current milestone<br />
-     * 3. deleting the corresponding {@link StateDiff} entry from the database<br />
-     *
-     * @param index milestone index that shall
-     * @param processedTransactions a set of transactions that have been processed already
-     * @throws MilestoneException if anything goes wrong while resetting the corrupted milestone
-     */
-    private void resetCorruptedMilestone(int index, Set<Hash> processedTransactions) throws MilestoneException {
-        if(index <= snapshotProvider.getInitialSnapshot().getIndex()) {
-            return;
-        }
-
-        log.info("resetting corrupted milestone #" + index);
-
-        try {
-            MilestoneViewModel milestoneToRepair = MilestoneViewModel.get(tangle, index);
-            if(milestoneToRepair != null) {
-                if(milestoneToRepair.index() <= snapshotProvider.getLatestSnapshot().getIndex()) {
-                    snapshotService.rollBackMilestones(snapshotProvider.getLatestSnapshot(), milestoneToRepair.index());
-                }
-
-                updateMilestoneIndexOfMilestoneTransactions(milestoneToRepair.getHash(), milestoneToRepair.index(), 0,
-                        processedTransactions);
-                tangle.delete(StateDiff.class, milestoneToRepair.getHash());
-            }
-        } catch (Exception e) {
-            throw new MilestoneException("failed to repair corrupted milestone with index #" + index, e);
-        }
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

@@ -6,7 +6,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneException;
-import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.milestone.LatestSolidMilestoneTracker;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -47,11 +46,6 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     private final SnapshotProvider snapshotProvider;
 
     /**
-     * Holds a reference to the service instance containing the business logic of the milestone package.<br />
-     */
-    private final MilestoneService milestoneService;
-
-    /**
      * Holds a reference to the manager that keeps track of the latest milestone.<br />
      */
     private final LatestMilestoneTracker latestMilestoneTracker;
@@ -73,16 +67,6 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
             "Latest Solid Milestone Tracker", log.delegate());
 
     /**
-     * Holds the milestone index of the milestone that caused the repair logic to get started.<br />
-     */
-    private int errorCausingMilestoneIndex = Integer.MAX_VALUE;
-
-    /**
-     * Counter for the backoff repair strategy (see {@link #revertPrecedingMilestones(MilestoneViewModel)}.<br />
-     */
-    private int repairBackoffCounter = 0;
-
-    /**
      * Creates a manager that keeps track of the latest solid milestones and that triggers the application of these
      * milestones and their corresponding balance changes to the latest {@link Snapshot} by incorporating a background
      * worker that periodically checks for new solid milestones.<br />
@@ -91,18 +75,15 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
-     * @param milestoneService contains the important business logic when dealing with milestones
      * @param latestMilestoneTracker the manager that keeps track of the latest milestone
      * @param ledgerService the manager for
      * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      */
     public LatestSolidMilestoneTrackerImpl(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneService milestoneService, LedgerService ledgerService,
-            LatestMilestoneTracker latestMilestoneTracker, MessageQ messageQ) {
+            LedgerService ledgerService, LatestMilestoneTracker latestMilestoneTracker, MessageQ messageQ) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
-        this.milestoneService = milestoneService;
         this.ledgerService = ledgerService;
         this.latestMilestoneTracker = latestMilestoneTracker;
         this.messageQ = messageQ;
@@ -136,7 +117,11 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
                         TransactionViewModel.fromHash(tangle, nextMilestone.getHash()).isSolid()) {
 
                     syncLatestMilestoneTracker(nextMilestone);
-                    applySolidMilestoneToLedger(nextMilestone);
+
+                    if (!ledgerService.applyMilestoneToLedger(nextMilestone)) {
+                        throw new MilestoneException("failed to apply milestone to ledger due to db inconsistencies");
+                    }
+
                     logChange(currentSolidMilestoneIndex);
 
                     currentSolidMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex();
@@ -158,39 +143,6 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
             checkForNewLatestSolidMilestones();
         } catch (MilestoneException e) {
             log.error("error while updating the solid milestone", e);
-        }
-    }
-
-    /**
-     * This method tries to apply the given milestone to the ledger.<br />
-     * <br />
-     * If the application of the milestone fails, we start a repair routine which will revert the milestones preceding
-     * our current milestone and consequently try to reapply them in the next iteration of the {@link
-     * #checkForNewLatestSolidMilestones()} method (until the problem is solved).<br />
-     *
-     * @param milestone the milestone that shall be applied to the ledger state
-     * @throws Exception if anything unexpected goes wrong while applying the milestone to the ledger
-     */
-    private void applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
-        if (!ledgerService.applyMilestoneToLedger(milestone)) {
-            revertPrecedingMilestones(milestone);
-        } else {
-            resetRepairBackoffCounterIfProblemSolved(milestone);
-        }
-    }
-
-    /**
-     * This method resets the internal variables that are used to keep track of the repair process.<br />
-     * <br />
-     * It gets called whenever we advance to a milestone that has a higher milestone index than the milestone that
-     * initially caused the repair routine to kick in (see {@link #revertPrecedingMilestones(MilestoneViewModel)}.<br />
-     *
-     * @param processedMilestone the milestone that currently gets processed
-     */
-    private void resetRepairBackoffCounterIfProblemSolved(MilestoneViewModel processedMilestone) {
-        if(repairBackoffCounter != 0 && processedMilestone.index() > errorCausingMilestoneIndex) {
-            repairBackoffCounter = 0;
-            errorCausingMilestoneIndex = Integer.MAX_VALUE;
         }
     }
 
@@ -232,33 +184,4 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
             messageQ.publish("lmhs %s", latestMilestoneHash);
         }
     }
-
-    /**
-     * This method tries to actively repair the ledger by reverting the milestones preceding the given milestone.<br />
-     * <br />
-     * It gets called when a milestone could not be applied to the ledger state because of problems like "inconsistent
-     * balances". While this should theoretically never happen (because milestones are by definition "consistent"), it
-     * can still happen because IRI crashed or got stopped in the middle of applying a milestone or if a milestone
-     * was processed in the wrong order.<br />
-     * <br />
-     * Every time we call this method the internal {@link #repairBackoffCounter} gets increased which causes the next
-     * call of this method to repair an additional milestone. This means that whenever we face an error we first try to
-     * reset only the last milestone, then the two last milestones, then the three last milestones (and so on ...) until
-     * the problem was fixed.<br />
-     * <br />
-     * To be able to tell when the problem is fixed and the {@link #repairBackoffCounter} can be reset, we store the
-     * milestone index that caused the problem the first time we call this method.<br />
-     *
-     * @param errorCausingMilestone the milestone that failed to be applied
-     * @throws MilestoneException if we failed to reset the corrupted milestone
-     */
-    private void revertPrecedingMilestones(MilestoneViewModel errorCausingMilestone) throws MilestoneException {
-        if(repairBackoffCounter++ == 0) {
-            errorCausingMilestoneIndex = errorCausingMilestone.index();
-        }
-
-        for (int i = errorCausingMilestone.index(); i > errorCausingMilestone.index() - repairBackoffCounter; i--) {
-            milestoneService.resetCorruptedMilestone(i);
-        }
-     }
 }

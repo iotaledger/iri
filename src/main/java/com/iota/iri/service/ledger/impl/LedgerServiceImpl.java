@@ -227,12 +227,6 @@ public class LedgerServiceImpl implements LedgerService {
             final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
             boolean successfullyProcessed = transactionSnapshotIndex == milestone.index();
             if (!successfullyProcessed) {
-                // if the snapshotIndex of our transaction was set already, we have processed our milestones in
-                // the wrong order (i.e. while rescanning the db)
-                if (transactionSnapshotIndex != 0) {
-                    milestoneService.resetCorruptedMilestone(milestone.index());
-                }
-
                 snapshotProvider.getLatestSnapshot().lockRead();
                 try {
                     Hash tail = transactionViewModel.getHash();

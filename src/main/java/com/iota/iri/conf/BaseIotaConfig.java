@@ -1,16 +1,18 @@
 package com.iota.iri.conf;
 
+import com.iota.iri.IRI;
+import com.iota.iri.utils.IotaUtils;
+
+import java.util.Collections;
+import java.util.List;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.iota.iri.IRI;
-import com.iota.iri.utils.IotaUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.commons.lang3.ArrayUtils;
 
 /*
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -45,7 +47,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxPeers = Defaults.MAX_PEERS;
     protected boolean dnsRefresherEnabled = Defaults.DNS_REFRESHER_ENABLED;
     protected boolean dnsResolutionEnabled = Defaults.DNS_RESOLUTION_ENABLED;
-    protected List<String> neighbors = new ArrayList<>();
+    protected List<String> neighbors = Collections.EMPTY_LIST;
 
     //IXI
     protected String ixiDir = Defaults.IXI_DIR;
@@ -354,15 +356,15 @@ public abstract class BaseIotaConfig implements IotaConfig {
         return mainDb;
     }
 
-    @Override
-    public boolean isRevalidate() {
-        return revalidate;
-    }
-
     @JsonProperty
     @Parameter(names = {"--db"}, description = DbConfig.Descriptions.MAIN_DB)
     protected void setMainDb(String mainDb) {
         this.mainDb = mainDb;
+    }
+
+    @Override
+    public boolean isRevalidate() {
+        return revalidate;
     }
 
     @JsonProperty

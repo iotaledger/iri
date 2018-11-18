@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.5.6-SNAPSHOT</version>
+    <version>1.5.5</version>
 
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
@@ -180,13 +180,6 @@
             <groupId>com.beust</groupId>
             <artifactId>jcommander</artifactId>
             <version>1.72</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.assertj</groupId>
-            <artifactId>assertj-core</artifactId>
-            <version>3.11.1</version>
-            <scope>test</scope>
         </dependency>
 
         <dependency>

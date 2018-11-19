@@ -51,12 +51,9 @@ public class AddressViewModel implements HashesViewModel {
     }
 
     /**
-     * Stores the {@link Address} set indexed by its {@link Hash} identifier in the database.
-     *
-     * @param tangle The tangle reference for the database
-     * @return True if the object was saved correctly, False if not
-     * @throws Exception Thrown if the {@link Address} set or index {@link Hash} are null
+     * {@inheritDoc}
      */
+    @Override
     public boolean store(Tangle tangle) throws Exception {
         return tangle.save(self, hash);
     }

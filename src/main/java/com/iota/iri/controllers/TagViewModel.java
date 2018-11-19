@@ -102,12 +102,9 @@ public class TagViewModel implements HashesViewModel {
     }
 
     /**
-     * Stores the {@link Tag} set indexed by its {@link Hash} identifier in the database.
-     *
-     * @param tangle The tangle reference for the database
-     * @return True if the object was saved correctly, False if not
-     * @throws Exception Thrown if the {@link Tag} set or index {@link Hash} are null
+     * {@inheritDoc}
      */
+    @Override
     public boolean store(Tangle tangle) throws Exception {
         return tangle.save(self, hash);
     }

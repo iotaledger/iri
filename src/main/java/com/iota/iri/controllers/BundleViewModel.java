@@ -77,12 +77,9 @@ public class BundleViewModel implements HashesViewModel {
     */
 
     /**
-     * Stores the {@link Bundle} set indexed by its {@link Hash} identifier in the database.
-     *
-     * @param tangle The tangle reference for the database
-     * @return True if the object was saved correctly, False if not
-     * @throws Exception Thrown if the {@link Bundle} set or index {@link Hash} are null
+     * {@inheritDoc}
      */
+    @Override
     public boolean store(Tangle tangle) throws Exception {
         return tangle.save(self, hash);
     }

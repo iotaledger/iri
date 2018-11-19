@@ -11,7 +11,13 @@ import com.iota.iri.storage.Tangle;
  */
 public interface HashesViewModel {
 
-    /**Store the {@link com.iota.iri.model.persistables.Hashes} set and {@link Hash} reference to the database*/
+    /**
+     * Store the {@link com.iota.iri.model.persistables.Hashes} set and {@link Hash} reference to the database
+     *
+     * @param tangle The tangle reference for the database
+     * @return True if the object was saved correctly, False if not
+     * @throws Exception Thrown if the {@link com.iota.iri.model.persistables.Hashes} set or index {@link Hash} are null
+     */
     boolean store(Tangle tangle) throws Exception;
 
     /**Returns the size of the {@link com.iota.iri.model.persistables.Hashes} set*/

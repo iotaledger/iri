@@ -46,13 +46,13 @@ public class ReplicatorSourcePool implements Runnable {
                 try {
                     Socket request = server.accept();
                     request.setSoLinger(true, 0);
-                    Runnable proc = new ReplicatorSourceProcessor( replicatorSinkPool, request, node, maxPeers, testnet);
+                    Runnable proc = new ReplicatorSourceProcessor(replicatorSinkPool, request, node, maxPeers, testnet);
                     pool.submit(proc);
                 } catch (IOException ex) {
                     log.error("Error accepting connection", ex);
                 }
             }
-            log.info("ReplicatorSinkPool shutting down");
+            log.info("ReplicatorSourcePool shutting down");
         } catch (IOException e) {
             log.error("***** NETWORK ALERT ***** Cannot create server socket on port {}, {}", port, e.getMessage());
         } finally {

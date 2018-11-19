@@ -12,13 +12,9 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
-/**
- * Created by paul on 4/15/17.
- */
- 
  /**
  * This class Extends {@link Neighbor} base class with TCP specific functionality. 
- * It keeps reference of Source and Sink while maintaining a sendQueue for keeping
+ * It keeps reference of {@code Source} and {@code Sink} while maintaining a {@code sendQueue} for keeping
  * outgoing requests. 
  * 
  */
@@ -85,6 +81,7 @@ public class TCPNeighbor extends Neighbor {
     }
 
     /**
+     * {@inheritDoc}
      * This is a non-blocking write and that makes it necessary to make a defensive copy of the sent data.
      *
      * @param packet the data to be queued for sending.

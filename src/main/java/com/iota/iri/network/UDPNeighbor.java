@@ -8,13 +8,9 @@ import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 
-/**
- * Created by paul on 4/15/17.
- */
- 
   /**
  * This class Extends {@link Neighbor} base class with UDP specific functionality. 
- * It keeps reference of socket and doesnt maintains any queue for UDP outgoing packets. 
+ * It keeps reference of {@code socket} and does not maintain any queue for UDP outgoing packets.
  * 
  */
 public class UDPNeighbor extends Neighbor {
@@ -28,6 +24,7 @@ public class UDPNeighbor extends Neighbor {
     }
 
     /**
+     * {@inheritDoc}
      * This is a blocking write and it is not necessary to copy the sent data.
      *
      * @param packet the packet to be sent immediately.

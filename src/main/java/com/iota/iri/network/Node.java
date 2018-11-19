@@ -38,7 +38,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * parts - the transaction in binary encoded format followed by a hash of another transaction to 
  * be requested. The receiving entity will save the newly received transaction into
  * its own database and will respond with the received requested transaction - if 
- * available in its own storgage. 
+ * available in its own storage.
  * 
  */
 public class Node {
@@ -117,7 +117,7 @@ public class Node {
     }
 
     /**
-     * Intialize the operations by spawning all the worker threads.
+     * Initialize the operations by spawning all the worker threads.
      * 
      */
     public void init() throws Exception {
@@ -143,7 +143,7 @@ public class Node {
      * Keeps the passed UDP DatagramSocket reference from {@link UDPReceiver}.
      * This is currently only used in creating a new {@link UDPNeighbor}. 
      * 
-     * @param {@link DatagramSocket} socket created by UDPReceiver 
+     * @param socket {@link DatagramSocket} socket created by UDPReceiver
      */
     public void setUDPSocket(final DatagramSocket socket) {
         this.udpSocket = socket;
@@ -164,8 +164,8 @@ public class Node {
     private final Map<String, String> neighborIpCache = new HashMap<>();
 
     /**
-     * One of the problem of dynamic DNS is neighbor could reconnect and get assigned
-     * a new IP address. This thread periodically resovles the DNS to make sure 
+     * One of the problems of dynamic DNS is a neighbor could reconnect and get assigned
+     * a new IP address. This thread periodically resolves the DNS to make sure
      * the IP is updated in the quickest possible manner. Doing it fast will increase
      * the detection of change - however will generate lot of unnecessary DNS outbound
      * traffic - so a balance is sought between speed and resource utilization. 
@@ -236,7 +236,7 @@ public class Node {
      * Checks whether the passed DNS is an IP address in string form or a DNS
      * hostname. 
      *
-     * @return An IP address (decimal form) in string resolved from the given DNS
+     * @return An IP address (decimal form) in string resolved from the given DNS, or {@code EMPTY} otherwise.
      * 
      */
     private Optional<String> checkIp(final String dnsName) {
@@ -270,7 +270,7 @@ public class Node {
      * a {@link TransactionViewModel} object from it and perform some basic validation
      * on the received transaction via  {@link TransactionValidator#runValidation}
      * 
-     * The packet is then added to  {@link receiveQueue} for further processing. 
+     * The packet is then added to {@link #receiveQueue} for further processing.
      */
      
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
@@ -397,9 +397,9 @@ public class Node {
     }
     
     /**
-     * Adds incoming transactions to the {@link receiveQueue} to be processed later.
+     * Adds incoming transactions to the {@link #receiveQueue} to be processed later.
      */
-    public void addReceivedDataToReceiveQueue(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
+    private void addReceivedDataToReceiveQueue(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
         receiveQueue.add(new ImmutablePair<>(receivedTransactionViewModel, neighbor));
         if (receiveQueue.size() > RECV_QUEUE_SIZE) {
             receiveQueue.pollLast();
@@ -408,9 +408,9 @@ public class Node {
     }
 
     /**
-     * Adds incoming transactions to the {@link replyQueue} to be processed later
+     * Adds incoming transactions to the {@link #replyQueue} to be processed later
      */
-    public void addReceivedDataToReplyQueue(Hash requestedHash, Neighbor neighbor) {
+    private void addReceivedDataToReplyQueue(Hash requestedHash, Neighbor neighbor) {
         replyQueue.add(new ImmutablePair<>(requestedHash, neighbor));
         if (replyQueue.size() > REPLY_QUEUE_SIZE) {
             replyQueue.pollLast();
@@ -419,9 +419,9 @@ public class Node {
 
     /**
      * Picks up a transaction and neighbor pair from receive queue. Calls 
-     * {@link processReceivedData} on the pair. 
+     * {@link #processReceivedData} on the pair.
      */
-    public void processReceivedDataFromQueue() {
+    private void processReceivedDataFromQueue() {
         final Pair<TransactionViewModel, Neighbor> receivedData = receiveQueue.pollFirst();
         if (receivedData != null) {
             processReceivedData(receivedData.getLeft(), receivedData.getRight());
@@ -430,9 +430,9 @@ public class Node {
 
     /**
      * Picks up a transaction hash and neighbor pair from reply queue. Calls 
-     * {@link replyToRequest} on the pair. 
+     * {@link #replyToRequest} on the pair.
      */
-    public void replyToRequestFromQueue() {
+    private void replyToRequestFromQueue() {
         final Pair<Hash, Neighbor> receivedData = replyQueue.pollFirst();
         if (receivedData != null) {
             replyToRequest(receivedData.getLeft(), receivedData.getRight());
@@ -440,12 +440,12 @@ public class Node {
     }
 
     /**
-     * This is second step of incoming transaction processing. The newly received 
-     * and validated transactions are stored in {@link receiveQueue}. This function
-     * picks up these transaction and stores them into the {@link Tangle} Database. The 
-     * transaction is then added to the broadcast queue, to be fruther spammed to the neighbors. 
+     * This is the second step of incoming transaction processing. The newly received
+     * and validated transactions are stored in {@link #receiveQueue}. This function
+     * picks up these transaction and saves them to the {@link Tangle} Database. The
+     * transaction is then added to the broadcast queue, to be further relayed to the neighbors.
      */
-    public void processReceivedData(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
+    private void processReceivedData(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
 
         boolean stored = false;
 
@@ -474,12 +474,14 @@ public class Node {
     }
 
     /**
-     * This is second step of incoming transaction processing. The newly received 
-     * and validated transactions are stored in {@link receiveQueue}. This function
-     * picks up these transaction and stores them into the {@link Tangle} Database. The 
-     * transaction is then added to the broadcast queue, to be fruther spammed to the neighbors. 
+     * This is the second step of incoming transaction requests. The newly requests
+     * are stored in {@link #replyQueue}. This function picks up these requested (by hash) transactions
+     * and replies with the transaction's content, if present in the Database. <br>
+     *
+     * unspecific requests are represented as {@link Hash#NULL_HASH} and are replied by a random tip,
+     * only if the node needs to request some transaction itself.
      */
-    public void replyToRequest(Hash requestedHash, Neighbor neighbor) {
+    private void replyToRequest(Hash requestedHash, Neighbor neighbor) {
 
         TransactionViewModel transactionViewModel = null;
         Hash transactionPointer;
@@ -545,16 +547,16 @@ public class Node {
     }
 
     /**
-     * Sends a Datagram to the neighbour. Also appends a random hash request 
+     * Sends a Datagram to the neighbor. Also appends a hash of a requested transaction
      * to the outgoing packet. Note that this is only used for UDP handling. For TCP
-     * the outgoing packets are sent by {@link ReplicatorSinkProcessor}
+     * the outgoing packets are sent by {@link com.iota.iri.network.replicator.ReplicatorSinkProcessor}
      * 
-     * @param {@link DatagramPacket} sendingPacket the UDP payload buffer
-     * @param {@link TransactionViewModel} transactionViewModel which should be sent.  
-     * @praram {@link Neighbor} the neighbor where this should be sent. 
+     * @param sendingPacket {@link DatagramPacket} the UDP payload buffer
+     * @param transactionViewModel {@link TransactionViewModel} which should be sent.
+     * @param neighbor {@link Neighbor} the neighbor where this should be sent.
      * 
-     */     
-    public void sendPacket(DatagramPacket sendingPacket, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {
+     */
+    private void sendPacket(DatagramPacket sendingPacket, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {
 
         //limit amount of sends per second
         long now = System.currentTimeMillis();
@@ -583,8 +585,8 @@ public class Node {
 
     /**
      * This thread picks up a new transaction from the broadcast queue and 
-     * spams it to all of the neigbors. Sadly, this also includes the neigbor who
-     * originally sent us the transaction. This could be improved in future. 
+     * relays it to all of the neighbors. This also includes the neighbor who
+     * originally sent us the transaction.
      * 
      */    
     private Runnable spawnBroadcasterThread() {
@@ -616,8 +618,8 @@ public class Node {
     }
     
     /**
-     * We send a tip request packet (transaction corresponding to the latest milestone)
-     * to all of our neighbors periodically. 
+     * This thread sends a random tip request (transaction corresponding to the latest milestone, and its hash)
+     * to all of our neighbors periodically.
      */    
     private Runnable spawnTipRequesterThread() {
         return () -> {
@@ -836,15 +838,15 @@ public class Node {
         return neighbors;
     }
 
-    public int getBroadcastQueueSize() {
+    private int getBroadcastQueueSize() {
         return broadcastQueue.size();
     }
 
-    public int getReceiveQueueSize() {
+    private int getReceiveQueueSize() {
         return receiveQueue.size();
     }
 
-    public int getReplyQueueSize() {
+    private int getReplyQueueSize() {
         return replyQueue.size();
     }
 

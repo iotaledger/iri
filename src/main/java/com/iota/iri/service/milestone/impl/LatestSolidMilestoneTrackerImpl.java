@@ -75,7 +75,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
-     * @param latestMilestoneTracker the manager that keeps track of the latest milestone
+     * @param latestMilestoneTracker the manager that keeps track of the late st milestone
      * @param ledgerService the manager for
      * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      */

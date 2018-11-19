@@ -15,14 +15,10 @@ import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.milestone.MilestoneValidity;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.dag.DAGHelper;
 import com.iota.iri.zmq.MessageQ;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.*;
@@ -39,11 +35,6 @@ import static com.iota.iri.service.milestone.MilestoneValidity.VALID;
  */
 public class MilestoneServiceImpl implements MilestoneService {
     /**
-     * Holds the logger of this class.<br />
-     */
-    private final static Logger log = LoggerFactory.getLogger(MilestoneServiceImpl.class);
-
-    /**
      * Holds the tangle object which acts as a database interface.<br />
      */
     private final Tangle tangle;
@@ -52,11 +43,6 @@ public class MilestoneServiceImpl implements MilestoneService {
      * Holds the snapshot provider which gives us access to the relevant snapshots.<br />
      */
     private final SnapshotProvider snapshotProvider;
-
-    /**
-     * Holds a reference to the service instance of the snapshot package that allows us to rollback ledger states.<br />
-     */
-    private final SnapshotService snapshotService;
 
     /**
      * Holds the ZeroMQ interface that allows us to emit messages for external recipients.<br />
@@ -75,16 +61,14 @@ public class MilestoneServiceImpl implements MilestoneService {
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
-     * @param snapshotService service instance of the snapshot package that allows us to rollback ledger states
      * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      * @param config config with important milestone specific settings
      */
-    public MilestoneServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            MessageQ messageQ, IotaConfig config) {
+    public MilestoneServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
+            IotaConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
-        this.snapshotService = snapshotService;
         this.messageQ = messageQ;
         this.config = config;
     }
@@ -202,7 +186,6 @@ public class MilestoneServiceImpl implements MilestoneService {
 
         processedTransactions.add(milestoneHash);
 
-        Set<Integer> inconsistentMilestones = new HashSet<>();
         Set<TransactionViewModel> transactionsToUpdate = new HashSet<>();
 
         try {

@@ -31,11 +31,12 @@ import static com.iota.iri.service.milestone.MilestoneValidity.INVALID;
 import static com.iota.iri.service.milestone.MilestoneValidity.VALID;
 
 /**
- * This class implements the basic contract of the {@link LatestMilestoneTracker} that keeps track of the latest
- * milestone by incorporating a background worker that periodically checks if new milestones have arrived.<br />
+ * Creates a tracker that automatically detects new milestones by incorporating a background worker that periodically
+ * checks all transactions that are originating from the coordinator address and that exposes the found latest milestone
+ * via getters.<br />
  * <br />
- * Knowing about the latest milestone and being able to compare it to the latest solid milestone allows us to determine
- * if our node is "in sync".<br />
+ * It can be used to determine the sync-status of the node by comparing these values against the latest solid
+ * milestone.<br />
  */
 public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     /**
@@ -56,39 +57,39 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     /**
      * Holds the Tangle object which acts as a database interface.<br />
      */
-    private final Tangle tangle;
+    private Tangle tangle;
 
     /**
      * The snapshot provider which gives us access to the relevant snapshots that the node uses (for faster
      * bootstrapping).<br />
      */
-    private final SnapshotProvider snapshotProvider;
+    private SnapshotProvider snapshotProvider;
 
     /**
      * Service class containing the business logic of the milestone package.<br />
      */
-    private final MilestoneService milestoneService;
+    private MilestoneService milestoneService;
 
     /**
      * Holds a reference to the manager that takes care of solidifying milestones.<br />
      */
-    private final MilestoneSolidifier milestoneSolidifier;
+    private MilestoneSolidifier milestoneSolidifier;
 
     /**
      * Holds a reference to the ZeroMQ interface that allows us to emit messages for external recipients.<br />
      */
-    private final MessageQ messageQ;
+    private MessageQ messageQ;
+
+    /**
+     * Holds the coordinator address which is used to filter possible milestone candidates.<br />
+     */
+    private Hash coordinatorAddress;
 
     /**
      * Holds a reference to the manager of the background worker.<br />
      */
     private final SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
             "Latest Milestone Tracker", log.delegate());
-
-    /**
-     * Holds the coordinator address which is used to filter possible milestone candidates.<br />
-     */
-    private final Hash coordinatorAddress;
 
     /**
      * Holds the milestone index of the latest milestone that we have seen / processed.<br />
@@ -123,13 +124,17 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     private boolean initialized = false;
 
     /**
-     * Creates a tracker that automatically detects new milestones by incorporating a background worker that
-     * periodically checks all transactions that are originating from the coordinator address and that exposes the found
-     * latest milestone via getters.<br />
+     * This method initializes the instance and registers its dependencies.<br />
      * <br />
-     * It can be used to determine the sync-status of the node by comparing these values against the latest solid
-     * milestone. It simply stores the passed in parameters in their corresponding properties and bootstraps the
-     * tracker with values for the latest milestone that can be found quickly.<br />
+     * It simply stores the passed in values in their corresponding private properties and bootstraps the latest
+     * milestone with values for the latest milestone that can be found quickly.<br />
+     * <br />
+     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
+     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
+     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
+     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
+     *       <br />
+     *       {@code LatestMilestoneTracker latestMilestoneTracker = new LatestMilestoneTrackerImpl().init(...);}
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
@@ -137,8 +142,9 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * @param milestoneSolidifier manager that takes care of solidifying milestones
      * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      * @param config configuration object which allows us to determine the important config parameters of the node
+     * @return the initialized instance itself to allow chaining
      */
-    public LatestMilestoneTrackerImpl(Tangle tangle, SnapshotProvider snapshotProvider,
+    public LatestMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
             MilestoneService milestoneService, MilestoneSolidifier milestoneSolidifier, MessageQ messageQ,
             IotaConfig config) {
 
@@ -151,6 +157,8 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         coordinatorAddress = HashFactory.ADDRESS.create(config.getCoordinator());
 
         bootstrapLatestMilestoneValue();
+
+        return this;
     }
 
     /**

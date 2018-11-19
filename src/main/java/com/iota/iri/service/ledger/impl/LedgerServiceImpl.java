@@ -17,8 +17,7 @@ import com.iota.iri.storage.Tangle;
 import java.util.*;
 
 /**
- * Represents the service that contains all the relevant business logic for modifying and calculating the ledger
- * state.<br />
+ * Creates a service instance that allows us to perform ledger state specific operations.<br />
  * <br />
  * This class is stateless and does not hold any domain specific models.<br />
  */
@@ -26,40 +25,50 @@ public class LedgerServiceImpl implements LedgerService {
     /**
      * Holds the tangle object which acts as a database interface.<br />
      */
-    private final Tangle tangle;
+    private Tangle tangle;
 
     /**
      * Holds the snapshot provider which gives us access to the relevant snapshots.<br />
      */
-    private final SnapshotProvider snapshotProvider;
+    private SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the service instance containing the business logic of the snapshot package.<br />
      */
-    private final SnapshotService snapshotService;
+    private SnapshotService snapshotService;
 
     /**
      * Holds a reference to the service instance containing the business logic of the milestone package.<br />
      */
-    private final MilestoneService milestoneService;
+    private MilestoneService milestoneService;
 
     /**
-     * Creates a service instance that allows us to perform ledger state specific operations.<br />
+     * This method initializes the instance and registers its dependencies.<br />
      * <br />
-     * It simply stores the passed in dependencies in the internal properties.<br />
+     * It simply stores the passed in values in their corresponding private properties.<br />
+     * <br />
+     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
+     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
+     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
+     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
+     *       <br />
+     *       {@code LedgerService ledgerService = new LedgerServiceImpl().init(...);}
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
-     * @param snapshotService service instance of the snapshot package that allows us to rollback ledger states
+     * @param snapshotService service instance of the snapshot package that gives us access to packages' business logic
      * @param milestoneService contains the important business logic when dealing with milestones
+     * @return the initialized instance itself to allow chaining
      */
-    public LedgerServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
+    public LedgerServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
             MilestoneService milestoneService) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.milestoneService = milestoneService;
+
+        return this;
     }
 
     @Override

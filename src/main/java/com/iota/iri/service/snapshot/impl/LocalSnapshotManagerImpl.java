@@ -7,7 +7,6 @@ import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
-import com.iota.iri.storage.Tangle;
 
 import com.iota.iri.utils.thread.ThreadIdentifier;
 import com.iota.iri.utils.thread.ThreadUtils;

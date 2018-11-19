@@ -95,7 +95,9 @@ public interface NetworkConfig extends Config {
         String DNS_RESOLUTION_ENABLED = "Enable using DNS for neighbor peering.";
         String NEIGHBORS = "Urls of peer iota nodes.";
         String Q_SIZE_NODE = "The size of the REPLY, BROADCAST, and RECEIVE network queues.";
-        String P_DROP_CACHE_ENTRY = DescriptionHelper.PROB_OF + "dropping recently seen transactions out of the network cache.";
+        String P_DROP_CACHE_ENTRY = DescriptionHelper.PROB_OF +
+                "dropping recently seen transactions out of the network cache. " +
+                "It may relieve cases of spam or transactions that weren't stored properly in the database";
         String CACHE_SIZE_BYTES = "The size of the network cache in bytes";
     }
 }

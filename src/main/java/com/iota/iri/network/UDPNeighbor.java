@@ -11,6 +11,12 @@ import java.net.SocketAddress;
 /**
  * Created by paul on 4/15/17.
  */
+ 
+  /**
+ * This class Extends {@link Neighbor} base class with UDP specific functionality. 
+ * It keeps reference of socket and doesnt maintains any queue for UDP outgoing packets. 
+ * 
+ */
 public class UDPNeighbor extends Neighbor {
     private static final Logger log = LoggerFactory.getLogger(UDPNeighbor.class);
 

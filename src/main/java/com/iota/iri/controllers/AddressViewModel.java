@@ -66,56 +66,36 @@ public class AddressViewModel implements HashesViewModel {
         return null;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean store(Tangle tangle) throws Exception {
         return tangle.save(self, hash);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public int size() {
         return self.set.size();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean addHash(Hash theHash) {
         return getHashes().add(theHash);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Indexable getIndex() {
         return hash;
     }
 
-    /**
-     * {@inheritDoc}
-     */
+    @Override
     public Set<Hash> getHashes() {
         return self.set;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Address.class,hash);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public AddressViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.next(Address.class, hash);

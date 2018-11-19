@@ -76,48 +76,31 @@ public class BundleViewModel implements HashesViewModel {
         return tangle.save(self, hash);
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override    public int size() {
+    @Override
+    public int size() {
         return self.set.size();
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public boolean addHash(Hash theHash) {
         return getHashes().add(theHash);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Indexable getIndex() {
         return hash;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public Set<Hash> getHashes() {
         return self.set;
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Bundle.class,hash);
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public BundleViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.next(Bundle.class, hash);

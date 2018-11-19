@@ -1,0 +1,37 @@
+defaults: &db_1
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Validation_tests_db.tar
+  db_checksum: 40874a129db910be2466244b3cdeea2dde9f9601221cb94b837f55ac2be384f5
+  iri_args: ['--testnet-coordinator',
+  'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
+  '--milestone-keys',
+  '18',
+  '--milestone-start',
+  '2',
+  '--testnet-no-coo-validation',
+  '--testnet'
+  ]
+
+db_with_validation: &db_2
+  db: https://s3.amazonaws.com/iota-db-files/dbs/machine4/validation_test_db.tar
+  db_checksum: 40874a129db910be2466244b3cdeea2dde9f9601221cb94b837f55ac2be384f5
+  iri_args: ['--testnet-coordinator',
+  'EFPNKGPCBXXXLIBYFGIGYBYTFFPIOQVNNVVWTTIYZO9NFREQGVGDQQHUUQ9CLWAEMXVDFSSMOTGAHVIBH',
+  '--milestone-keys',
+  '18',
+  '--milestone-start',
+  '2',
+  '--testnet'
+  ]
+
+
+
+seeds: # For internal use by the regression system. 
+    - SEED
+    - SIID
+
+nodes:
+  nodeA: #name
+    <<: *db_1
+  
+  nodeB:
+    <<: *db_2

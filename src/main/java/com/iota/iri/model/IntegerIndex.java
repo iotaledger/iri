@@ -6,7 +6,6 @@ import com.iota.iri.utils.Serializer;
 /**
  An integer key that indexes {@link Persistable} objects in the database.
  */
-
 public class IntegerIndex implements Indexable{
 
     /**The internally stored index value*/
@@ -27,16 +26,11 @@ public class IntegerIndex implements Indexable{
         return value;
     }
 
-    /**@return The byte representation of the stored index*/
     @Override
     public byte[] bytes() {
         return Serializer.serialize(value);
     }
 
-    /**
-     * Stores the integer index value of the given bytes
-     * @param bytes The bytes you would like to store as an index
-     */
     @Override
     public void read(byte[] bytes) {
         this.value = Serializer.getInteger(bytes);

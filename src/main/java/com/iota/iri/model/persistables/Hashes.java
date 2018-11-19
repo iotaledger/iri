@@ -52,10 +52,6 @@ public class Hashes implements Persistable {
         }
     }
 
-    /**
-     * Creates an empty byte array
-     * @return The newly created empty array
-     */
     @Override
     public byte[] metadata() {
         return new byte[0];

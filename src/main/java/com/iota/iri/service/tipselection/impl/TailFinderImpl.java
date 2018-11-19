@@ -9,13 +9,17 @@ import java.util.Optional;
 import java.util.Set;
 
 /**
- * Implementation of <tt>TailFinder</tt> that given a transaction hash finds the tail of the associated bundle.
+ * Implementation of {@link TailFinder} that given a transaction hash finds the tail of the associated bundle.
  *
  */
 public class TailFinderImpl implements TailFinder {
 
     private final Tangle tangle;
 
+    /**
+     * Constructor for Tail Finder
+     * @param tangle Tangle object which acts as a database interface
+     */
     public TailFinderImpl(Tangle tangle) {
         this.tangle = tangle;
     }

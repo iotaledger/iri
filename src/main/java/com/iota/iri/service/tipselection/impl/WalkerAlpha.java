@@ -32,6 +32,15 @@ public class WalkerAlpha implements Walker {
 
     private final TailFinder tailFinder;
 
+    /**
+     * Constructor for Walker Alpha.
+     *
+     * @param tailFinder instance of tailFinder, used to step from tail to tail in random walk.
+     * @param tangle Tangle object which acts as a database interface
+     * @param messageQ ZMQ handle to publish telemetrics.
+     * @param random a source of randomness.
+     * @param config configurations to set internal parameters.
+     */
     public WalkerAlpha(TailFinder tailFinder, Tangle tangle, MessageQ messageQ, Random random, TipSelConfig config) {
         this.tangle = tangle;
         this.messageQ = messageQ;
@@ -40,10 +49,16 @@ public class WalkerAlpha implements Walker {
         this.alpha = config.getAlpha();
     }
 
+    /**
+     * @return {@link WalkerAlpha#alpha}
+     */
     public double getAlpha() {
         return alpha;
     }
 
+    /**
+     * @param alpha {@link WalkerAlpha#alpha}
+     */
     public void setAlpha(double alpha) {
         this.alpha = alpha;
     }

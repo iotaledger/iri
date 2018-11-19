@@ -11,15 +11,10 @@ import com.iota.iri.model.Hash;
 @FunctionalInterface
 public interface TailFinder {
     /**
-     *Method for finding tails of bundles
-     *
-     * <p>
-     *  This method is used to find a tail (current_index=0) of a bundle,
-     *  given any transaction hash in the bundle.
-     * </p>
+     *Method for finding a tail (current_index=0) of a bundle given any transaction in the associated bundle.
      *
      * @param hash The transaction hash of any transaction in the bundle.
-     * @return  Hash of the tail transaction.
+     * @return Hash of the tail transaction, or {@code Empty} is tail not found.
      * @throws Exception If DB fails to retrieve transactions
      */
     Optional<Hash> findTail(Hash hash) throws Exception;

@@ -5,7 +5,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
 import com.iota.iri.model.HashPrefix;
-import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.utils.collections.impl.TransformingBoundedHashSet;
 import com.iota.iri.storage.Tangle;
@@ -31,11 +31,11 @@ public class CumulativeWeightCalculator implements RatingCalculator{
     public static final int MAX_FUTURE_SET_SIZE = 5000;
 
     public final Tangle tangle;
-    private final Snapshot initialSnapshot;
+    private final SnapshotProvider snapshotProvider;
 
-    public CumulativeWeightCalculator(Tangle tangle, Snapshot initialSnapshot) {
+    public CumulativeWeightCalculator(Tangle tangle, SnapshotProvider snapshotProvider) {
         this.tangle = tangle;
-        this.initialSnapshot = initialSnapshot;
+        this.snapshotProvider = snapshotProvider;
     }
 
     @Override
@@ -89,7 +89,7 @@ public class CumulativeWeightCalculator implements RatingCalculator{
             txApprovers = new HashSet<>(appHashes.size());
             for (Hash appHash : appHashes) {
                 //if not genesis (the tx that confirms itself)
-                if (!initialSnapshot.hasSolidEntryPoint(appHash)) {
+                if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(appHash)) {
                     txApprovers.add(appHash);
                 }
             }

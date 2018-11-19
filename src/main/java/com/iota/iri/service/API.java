@@ -701,7 +701,7 @@ public class API {
      **/
     @Document(name="getNeighbors")
     private AbstractResponse getNeighborsStatement() {
-       return GetNeighborsResponse.create(instance.node.getNeighbors());
+        return GetNeighborsResponse.create(instance.node.getNeighbors());
     }
     
     /**
@@ -718,9 +718,9 @@ public class API {
      **/
     @Document(name="addNeighbors")
     private AbstractResponse addNeighborsStatement(List<String> uris) {
-       int numberOfAddedNeighbors = 0;
-       try {
-           for (final String uriString : uris) {
+        int numberOfAddedNeighbors = 0;
+        try {
+            for (final String uriString : uris) {
                log.info("Adding neighbor: " + uriString);
                final Neighbor neighbor = instance.node.newNeighbor(new URI(uriString), true);
                if (!instance.node.getNeighbors().contains(neighbor)) {
@@ -728,12 +728,12 @@ public class API {
                    numberOfAddedNeighbors++;
                }
            }
-       } catch (URISyntaxException|RuntimeException e) {
+        } catch (URISyntaxException|RuntimeException e) {
            return ErrorResponse.create("Invalid uri scheme: " + e.getLocalizedMessage());
-       }
-       return AddedNeighborsResponse.create(numberOfAddedNeighbors);
+        }
+        return AddedNeighborsResponse.create(numberOfAddedNeighbors);
     }
-
+    
     /**
       * Temporarily removes a list of neighbors from your node.
       * The added neighbors will be added again after relaunching IRI.

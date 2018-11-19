@@ -4,8 +4,8 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 
 /**
- * This interface defines the contract for the manager that keeps track of the latest milestone by incorporating a
- * background worker that periodically checks if new milestones have arrived.<br />
+ * The manager that keeps track of the latest milestone by incorporating a background worker that periodically checks if
+ * new milestones have arrived.<br />
  * <br />
  * Knowing about the latest milestone and being able to compare it to the latest solid milestone allows us to determine
  * if our node is "in sync".<br />
@@ -21,7 +21,7 @@ public interface LatestMilestoneTracker {
     int getLatestMilestoneIndex();
 
     /**
-     * This method returns the transaction hash of the latest milestone that was seen by this tracker.<br />
+     * Returns the transaction hash of the latest milestone that was seen by this tracker.<br />
      * <br />
      * It simply returns the internal property that is used to store the latest milestone index.<br />
      *
@@ -30,7 +30,7 @@ public interface LatestMilestoneTracker {
     Hash getLatestMilestoneHash();
 
     /**
-     * This method allows to set the latest milestone.<br />
+     * Sets the latest milestone.<br />
      * <br />
      * It simply stores the passed in values in their corresponding internal properties and can therefore be used to
      * inform the {@link LatestSolidMilestoneTracker} about a new milestone. It is internally used to set the new
@@ -43,7 +43,7 @@ public interface LatestMilestoneTracker {
     void setLatestMilestone(Hash latestMilestoneHash, int latestMilestoneIndex);
 
     /**
-     * This method analyzes the given transaction to determine if it is a valid milestone.<br />
+     * Analyzes the given transaction to determine if it is a valid milestone.<br />
      * <br />
      * If the transaction that was analyzed represents a milestone, we check if it is younger than the current latest
      * milestone and update the internal properties accordingly.<br />
@@ -74,7 +74,7 @@ public interface LatestMilestoneTracker {
      *
      * @return {@code true} if the initial scan of milestones has finished and {@code false} otherwise
      */
-    boolean initialScanComplete();
+    boolean isInitialScanComplete();
 
     /**
      * This method starts the background worker that automatically calls {@link #analyzeMilestoneCandidate(Hash)} on all

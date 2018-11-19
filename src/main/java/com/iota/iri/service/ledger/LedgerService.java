@@ -15,7 +15,7 @@ import java.util.Set;
  */
 public interface LedgerService {
     /**
-     * This method applies the given milestone to the ledger state.<br />
+     * Applies the given milestone to the ledger state.<br />
      * <br />
      * It first marks the transactions that were confirmed by this milestones as confirmed by setting their
      * corresponding {@code snapshotIndex} value. Then it generates the {@link com.iota.iri.model.StateDiff} that
@@ -28,7 +28,7 @@ public interface LedgerService {
     boolean applyMilestoneToLedger(MilestoneViewModel milestone) throws LedgerException;
 
     /**
-     * This method checks the consistency of the combined balance changes of the given tips.<br />
+     * Checks the consistency of the combined balance changes of the given tips.<br />
      * <br />
      * It simply calculates the balance changes of the tips and then combines them to verify that they are leading to a
      * consistent ledger state (which means that they are not containing any double-spends or spends of non-existent
@@ -41,8 +41,7 @@ public interface LedgerService {
     boolean tipsConsistent(List<Hash> hashes) throws LedgerException;
 
     /**
-     * This method checks if the balance changes of the transactions that are referenced by the given tip are
-     * consistent.<br />
+     * Checks if the balance changes of the transactions that are referenced by the given tip are consistent.<br />
      * <br />
      * It first calculates the balance changes, then adds them to the given {@code diff} and finally checks their
      * consistency. If we are only interested in the changes that are referenced by the given {@code tip} we need to
@@ -61,8 +60,7 @@ public interface LedgerService {
     boolean isBalanceDiffConsistent(Set<Hash> approvedHashes, Map<Hash, Long> diff, Hash tip) throws LedgerException;
 
     /**
-     * This method generates the accumulated balance changes of the transactions that are "approved" by the given
-     * milestone.<br />
+     * Generates the accumulated balance changes of the transactions that are "approved" by the given milestone.<br />
      * <br />
      * It simply iterates over all approvees that still belong to the given milestone and that have not been
      * processed already (by being part of the {@code visitedNonMilestoneSubtangleHashes} set) and collects their

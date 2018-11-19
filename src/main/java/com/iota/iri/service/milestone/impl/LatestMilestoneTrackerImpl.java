@@ -235,7 +235,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     }
 
     @Override
-    public boolean initialScanComplete() {
+    public boolean isInitialScanComplete() {
         return initialized;
     }
 

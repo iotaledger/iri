@@ -1,8 +1,7 @@
 package com.iota.iri.service.milestone;
 
 /**
- * This interface defines the contract for the manager that tries to retrieve the milestones that have been defined in
- * the local snapshots file.<br />
+ * Attempts to retrieve the milestones that have been defined in the local snapshots file.<br />
  * <br />
  * The manager incorporates a background worker that proactively requests the missing milestones until all defined
  * milestones are known. After all milestones have been retrieved the manager shuts down automatically (to free the
@@ -18,21 +17,20 @@ package com.iota.iri.service.milestone;
  */
 public interface SeenMilestonesRetriever {
     /**
-     * This method triggers the retrieval of the milestones by issuing transaction requests to the nodes
-     * neighbours.<br />
+     * Triggers the retrieval of the milestones by issuing transaction requests to the nodes neighbours.<br />
      * <br />
      * It gets periodically called by the background worker to automatically retrieve all missing milestones.<br />
      */
     void retrieveSeenMilestones();
 
     /**
-     * This method starts the background worker that automatically calls {@link #retrieveSeenMilestones()}
+     * Starts the background worker that automatically calls {@link #retrieveSeenMilestones()}
      * periodically to retrieves all "seen" missing milestones.<br />
      */
     void start();
 
     /**
-     * This method stops the background worker that retrieves all "seen" missing milestones.<br />
+     * Stops the background worker that retrieves all "seen" missing milestones.<br />
      */
     void shutdown();
 }

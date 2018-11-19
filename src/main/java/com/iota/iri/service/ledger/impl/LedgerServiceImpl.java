@@ -199,9 +199,9 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     /**
-     * This method generates the {@link com.iota.iri.model.StateDiff} that belongs to the given milestone in the
-     * database and marks all transactions that have been approved by the milestone accordingly by setting their
-     * {@code snapshotIndex} value.<br />
+     * Generates the {@link com.iota.iri.model.StateDiff} that belongs to the given milestone in the database and marks
+     * all transactions that have been approved by the milestone accordingly by setting their {@code snapshotIndex}
+     * value.<br />
      * <br />
      * It first checks if the {@code snapshotIndex} of the transaction belonging to the milestone was correctly set
      * already (to determine if this milestone was processed already) and proceeds to generate the {@link

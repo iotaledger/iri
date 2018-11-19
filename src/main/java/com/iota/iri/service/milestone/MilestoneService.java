@@ -11,7 +11,7 @@ import com.iota.iri.model.Hash;
  */
 public interface MilestoneService {
     /**
-     * This method analyzes the given transaction to determine if it is a valid milestone.<br />
+     * Analyzes the given transaction to determine if it is a valid milestone.<br />
      * <br />
      * It first checks if all transactions that belong to the milestone bundle are known already and only then verifies
      * the signature to analyze if the given milestone was really issued by the coordinator.<br />
@@ -26,7 +26,7 @@ public interface MilestoneService {
             int securityLevel) throws MilestoneException;
 
     /**
-     * This method updates the milestone index of all transactions that belong to a milestone.<br />
+     * Updates the milestone index of all transactions that belong to a milestone.<br />
      * <br />
      * It does that by iterating through all approvees of the milestone defined by the given {@code milestoneHash} until
      * it reaches transactions that have been approved by a previous milestone. This means that this method only works
@@ -51,7 +51,7 @@ public interface MilestoneService {
     void updateMilestoneIndexOfMilestoneTransactions(Hash milestoneHash, int newIndex) throws MilestoneException;
 
     /**
-     * This method checks if the given transaction "belongs" to the milestone with the given index.<br />
+     * Checks if the given transaction "belongs" to the milestone with the given index.<br />
      * <br />
      * We determine if a transaction still belongs to the milestone with the given index by examining its {@code
      * snapshotIndex} value. For this method to work we require that the previous milestones have been processed already
@@ -65,7 +65,7 @@ public interface MilestoneService {
     boolean transactionBelongsToMilestone(TransactionViewModel transaction, int milestoneIndex);
 
     /**
-     * This method retrieves the milestone index of the given transaction by decoding the {@code OBSOLETE_TAG}.<br />
+     * Retrieves the milestone index of the given transaction by decoding the {@code OBSOLETE_TAG}.<br />
      * <br />
      * The returned result will of cause only have a reasonable value if we hand in a transaction that represents a real
      * milestone.<br />

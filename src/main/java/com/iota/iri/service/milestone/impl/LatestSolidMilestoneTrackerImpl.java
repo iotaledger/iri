@@ -18,9 +18,9 @@ import com.iota.iri.zmq.MessageQ;
 import java.util.concurrent.TimeUnit;
 
 /**
- * This class implements the basic contract of the {@link LatestSolidMilestoneTracker} and extends it with mechanisms to
- * recover from database corruptions by incorporating a backoff strategy that reverts the changes introduced by previous
- * milestones whenever an error is detected until the problem causing milestone was found.<br />
+ * Creates a manager that keeps track of the latest solid milestones and that triggers the application of these
+ * milestones and their corresponding balance changes to the latest {@link Snapshot} by incorporating a background
+ * worker that periodically checks for new solid milestones.<br />
  */
 public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTracker {
     /**
@@ -133,7 +133,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     }
 
     /**
-     * This method contains the logic for the background worker.<br />
+     * Contains the logic for the background worker.<br />
      * <br />
      * It simply calls {@link #checkForNewLatestSolidMilestones()} and wraps with a log handler that prevents the {@link
      * MilestoneException} to crash the worker.<br />
@@ -147,8 +147,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     }
 
     /**
-     * This method is a utility method that allows us to keep the {@link LatestMilestoneTracker} in sync with our
-     * current progress.<br />
+     * Keeps the {@link LatestMilestoneTracker} in sync with our current progress.<br />
      * <br />
      * Since the {@link LatestMilestoneTracker} scans all old milestones during its startup (which can take a while to
      * finish) it can happen that we see a newer latest milestone faster than this manager.<br />
@@ -165,7 +164,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     }
 
     /**
-     * This method emits a log message whenever the latest solid milestone changes.<br />
+     * Emits a log message whenever the latest solid milestone changes.<br />
      * <br />
      * It simply compares the current latest milestone index against the previous milestone index and emits the log
      * messages using the {@link #log} and the {@link #messageQ} instances if it differs.<br />

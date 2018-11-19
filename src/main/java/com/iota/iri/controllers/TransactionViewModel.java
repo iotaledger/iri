@@ -29,7 +29,7 @@ public class TransactionViewModel {
     /**Total supply of IOTA available in the network. Used for ensuring a balanced ledger state and bundle balances*/
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2
 
-    /**The predefined trit offset position for the varying components of a transaction object*/
+    /**The predefined offset position and size (in trits) for the varying components of a transaction object*/
     public static final int SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET = 0, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE = 6561;
     public static final int ADDRESS_TRINARY_OFFSET = SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET + SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE, ADDRESS_TRINARY_SIZE = 243;
     public static final int VALUE_TRINARY_OFFSET = ADDRESS_TRINARY_OFFSET + ADDRESS_TRINARY_SIZE, VALUE_TRINARY_SIZE = 81, VALUE_USABLE_TRINARY_SIZE = 33;
@@ -67,61 +67,7 @@ public class TransactionViewModel {
     private byte[] trits;
     public int weightMagnitude;
 
-    /**
-     * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is
-     * null, it will return with no response. If the {@link Transaction} object has not been parsed, and the
-     * {@link TransactionViewModel} type is <tt>FILLED_SLOT</tt>, the saved metadata batch will be saved to the
-     * database.
-     *
-     * @param tangle The tangle reference for the database.
-     * @param transactionViewModel The {@link TransactionViewModel} whose Metadata is to be filled.
-     * @throws Exception Thrown if the database fails to save the batch of data.
-     */
-    public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
-        if (Hash.NULL_HASH.equals(transactionViewModel.getHash())) {
-            return;
-        }
-        if(transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
-            tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
-        }
-    }
 
-    /**
-     * Creates a new controller using a byte array that will be converted to a {@link Hash} identifier. The new
-     * {@link TransactionViewModel} is created for the {@link Transaction} object referenced by this {@link Hash}
-     * identifier, provided the {@link Transaction} exists in the database.
-     *
-     * @param tangle The tangle reference for the database
-     * @param hash The source that the {@link Hash} identifier will be created from, and the {@link Transaction} object
-     *             will be fetched from the database from
-     * @return The {@link TransactionViewModel} with its Metadata filled in.
-     * @throws Exception Thrown if the database fails to find the {@link Transaction} object
-     */
-    public static TransactionViewModel find(Tangle tangle, byte[] hash) throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), HashFactory.TRANSACTION.create(hash));
-        fillMetadata(tangle, transactionViewModel);
-        return transactionViewModel;
-    }
-
-    /**
-     * Creates a new controller for a {@link Transaction} set referenced by a given finalized {@link Hash} identifier.
-     * The controller will be created and its metadata filled provided the {@link Transaction} object exists in the
-     * database.
-     *
-     * @param tangle The tangle reference for the database
-     * @param hash The {@link Hash} identifier to search with
-     * @return The {@link TransactionViewModel} with its Metadata filled in.
-     * @throws Exception Thrown if there is an error loading the {@link Transaction} object from the database
-     */
-    public static TransactionViewModel fromHash(Tangle tangle, final Hash hash) throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
-        fillMetadata(tangle, transactionViewModel);
-        return transactionViewModel;
-    }
-
-    public static boolean mightExist(Tangle tangle, Hash hash) throws Exception {
-        return tangle.maybeHas(Transaction.class, hash);
-    }
 
     /**
      * Constructor for a {@link Transaction} set controller interface. This controller is used to interact with and
@@ -138,7 +84,7 @@ public class TransactionViewModel {
 
     /**
      * Constructor for a {@link Transaction} set controller interface. A new {@link Transaction} set is created from
-     * the provided finalized trit array, if the array is of the correct size. If it is not the correct size, a new byte
+     * the provided trit array, if the array is of the correct size. If it is not the correct size, a new byte
      * array of the correct size is created, the trit array is copied into it, and the bytes are stored in the new
      * {@link Transaction} set. This {@link Transaction} set is then indexed by the provided {@link Hash} identifier.
      *
@@ -167,6 +113,47 @@ public class TransactionViewModel {
     }
 
     /**
+     * Creates a new controller for a {@link Transaction} set referenced by a given {@link Hash} identifier.
+     * The controller will be created and its metadata filled provided the {@link Transaction} object exists in the
+     * database.
+     *
+     * @param tangle The tangle reference for the database
+     * @param hash The {@link Hash} identifier to search with
+     * @return The {@link TransactionViewModel} with its Metadata filled in.
+     * @throws Exception Thrown if there is an error loading the {@link Transaction} object from the database
+     */
+    public static TransactionViewModel fromHash(Tangle tangle, final Hash hash) throws Exception {
+        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.load(Transaction.class, hash), hash);
+        fillMetadata(tangle, transactionViewModel);
+        return transactionViewModel;
+    }
+
+    /**
+     * This method checks the {@link com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider} to determine if the
+     * {@link Transaction} object might exist in the database. If it definitively does not exist, it will return False.
+     *
+     * @param tangle The tangle reference for the database
+     * @param hash The {@link Hash} identifier of the object you are looking for
+     * @return True if the key might exist in the database, False if it definitively does not
+     * @throws Exception Thrown if there is an error checking the database
+     */
+    public static boolean mightExist(Tangle tangle, Hash hash) throws Exception {
+        return tangle.maybeHas(Transaction.class, hash);
+    }
+
+    /**
+     * Determines whether the {@link Transaction} object exists in the database or not.
+     *
+     * @param tangle The tangle reference for the database.
+     * @param hash The {@link Hash} identifier for the {@link Transaction} object
+     * @return True if the transaction exists in the database, False if not
+     * @throws Exception Thrown if there is an error determining if the transaction exists or not
+     */
+    public static boolean exists(Tangle tangle, Hash hash) throws Exception {
+        return tangle.exists(Transaction.class, hash);
+    }
+    
+    /**
      * Returns the total number of {@link Transaction} objects stored in a database.
      *
      * @param tangle The tangle reference for the database.
@@ -175,6 +162,100 @@ public class TransactionViewModel {
      */
     public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
         return tangle.getCount(Transaction.class).intValue();
+    }
+
+    /**
+     * Converts the given byte array to the a new trit array of length {@value TRINARY_SIZE}.
+     * @param transactionBytes The byte array to be converted to trits
+     * @return The trit conversion of the byte array
+     */
+    public static byte[] trits(byte[] transactionBytes) {
+        byte[] trits;
+        trits = new byte[TRINARY_SIZE];
+        if(transactionBytes != null) {
+            Converter.getTrits(transactionBytes, trits);
+        }
+        return trits;
+    }
+
+    public static Set<Indexable> getMissingTransactions(Tangle tangle) throws Exception {
+        return tangle.keysWithMissingReferences(Approvee.class, Transaction.class);
+    }
+
+    /**
+     * Creates a new controller using a byte array that will be converted to a {@link Hash} identifier. The new
+     * {@link TransactionViewModel} is created for the {@link Transaction} object referenced by this {@link Hash}
+     * identifier, provided the {@link Transaction} exists in the database.
+     *
+     * @param tangle The tangle reference for the database
+     * @param hash The source that the {@link Hash} identifier will be created from, and the {@link Transaction} object
+     *             will be fetched from the database from
+     * @return The {@link TransactionViewModel} with its Metadata filled in.
+     * @throws Exception Thrown if the database fails to find the {@link Transaction} object
+     */
+    public static TransactionViewModel find(Tangle tangle, byte[] hash) throws Exception {
+        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), HashFactory.TRANSACTION.create(hash));
+        fillMetadata(tangle, transactionViewModel);
+        return transactionViewModel;
+    }
+
+    /**
+     * Fetches the first persistable {@link Transaction} object from the database and generates a new
+     * {@link TransactionViewModel} from it. If no objects exist in the database, it will return null.
+     *
+     * @param tangle the tangle reference for the database.
+     * @return The new {@link TransactionViewModel}.
+     * @throws Exception Thrown if the database fails to return a first object.
+     */
+    public static TransactionViewModel first(Tangle tangle) throws Exception {
+        Pair<Indexable, Persistable> transactionPair = tangle.getFirst(Transaction.class, Hash.class);
+        if(transactionPair != null && transactionPair.hi != null) {
+            return new TransactionViewModel((Transaction) transactionPair.hi, (Hash) transactionPair.low);
+        }
+        return null;
+    }
+
+    /**
+     * Updates a set of {@link Transaction} objects to solid. Used by the {@link com.iota.iri.TransactionValidator} to
+     * solidify groups of analyzed {@link Transaction} sets.
+     *
+     * @param tangle The tangle reference for the database.
+     * @param analyzedHashes A list of {@link TransactionHash} identifiers to be checked for solidity.
+     * @throws Exception Thrown if there is a failure to generate a controller, or if there is a failure to update
+     */
+    public static void updateSolidTransactions(Tangle tangle, final Set<Hash> analyzedHashes) throws Exception {
+        Iterator<Hash> hashIterator = analyzedHashes.iterator();
+        TransactionViewModel transactionViewModel;
+        while(hashIterator.hasNext()) {
+            transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
+
+            transactionViewModel.updateHeights(tangle);
+
+            if(!transactionViewModel.isSolid()) {
+                transactionViewModel.updateSolid(true);
+                transactionViewModel.update(tangle, "solid|height");
+            }
+        }
+    }
+
+    /**
+     * Populates the meta data of the {@link TransactionViewModel}. If the controller {@link Hash} identifier is
+     * null, it will return with no response. If the {@link Transaction} object has not been parsed, and the
+     * {@link TransactionViewModel} type is <tt>FILLED_SLOT</tt>, the saved metadata batch will be saved to the
+     * database.
+     *
+     * @param tangle The tangle reference for the database.
+     * @param transactionViewModel The {@link TransactionViewModel} whose Metadata is to be filled.
+     * @throws Exception Thrown if the database fails to save the batch of data.
+     */
+
+    public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
+        if (Hash.NULL_HASH.equals(transactionViewModel.getHash())) {
+            return;
+        }
+        if(transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
+            tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
+        }
     }
 
     /**
@@ -228,25 +309,12 @@ public class TransactionViewModel {
      * @param tangle The tangle reference for the database.
      * @return The trunk transaction {@link TransactionViewModel}
      * @throws Exception Thrown if no trunk is found when creating the trunk {@link TransactionViewModel}
-     */    public TransactionViewModel getTrunkTransaction(Tangle tangle) throws Exception {
+     */
+    public TransactionViewModel getTrunkTransaction(Tangle tangle) throws Exception {
         if(trunk == null) {
             trunk = TransactionViewModel.fromHash(tangle, getTrunkTransactionHash());
         }
         return trunk;
-    }
-
-    /**
-     * Converts the given byte array to the a new trit array of length {@value TRINARY_SIZE}.
-     * @param transactionBytes The byte array to be converted to trits
-     * @return The trit conversion of the byte array
-     */
-    public static byte[] trits(byte[] transactionBytes) {
-        byte[] trits;
-        trits = new byte[TRINARY_SIZE];
-        if(transactionBytes != null) {
-            Converter.getTrits(transactionBytes, trits);
-        }
-        return trits;
     }
 
     /**
@@ -258,7 +326,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * Removes the {@link Transaction} object from the database
+     * Deletes the {@link Transaction} object from the database
      * @param tangle The tangle reference for the database
      * @throws Exception Thrown if there is an error removing the object
      */
@@ -267,14 +335,11 @@ public class TransactionViewModel {
     }
 
     /**
-     * Creates a list of {@link Hash} objects and {@link Hash} identifier pairings for each of the components of the
-     * {@link Transaction}. Each {@link Hash} object will be indexed by a newly generated {@link Hash} identifier of the
-     * appropriate type, created using the {@link TransactionHash} identifier. Then the method sets the attachment
-     * timestamp data as well as the value and other metadata for the {@link Transaction}. Finally the method returns
-     * the list.
+     * Stores the {@link Transaction} object to the tangle, including the metadata and indexing based on {@link Bundle},
+     * {@link Address}, {@link Tag}, {@link #trunk} and {@link #branch}.
      *
-     * @return The list of {@link Hash} objects indexed by the {@link TransactionHash} identifier.
-     * @throws Exception Thrown if there is an error with populating the list, or setting the attachment data/metadata
+     * @return The list of {@link Hash} objects indexed by the {@link TransactionHash} identifier. Returns False if
+     *         there is a problem populating the list.
      */
 
     public List<Pair<Indexable, Persistable>> getMetadataSaveBatch() throws Exception {
@@ -304,22 +369,6 @@ public class TransactionViewModel {
         getBytes();
         hashesList.add(new Pair<>(hash, transaction));
         return hashesList;
-    }
-
-    /**
-     * Fetches the first persistable {@link Transaction} object from the database and generates a new
-     * {@link TransactionViewModel} from it. If no objects exist in the database, it will return null.
-     *
-     * @param tangle the tangle reference for the database.
-     * @return The new {@link TransactionViewModel}.
-     * @throws Exception Thrown if the database fails to return a first object.
-     */
-    public static TransactionViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> transactionPair = tangle.getFirst(Transaction.class, Hash.class);
-        if(transactionPair != null && transactionPair.hi != null) {
-            return new TransactionViewModel((Transaction) transactionPair.hi, (Hash) transactionPair.low);
-        }
-        return null;
     }
 
     /**
@@ -361,8 +410,11 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the {@link ApproveeViewModel} of a {@link Transaction}. If the current
-     * {@link ApproveeViewModel} is null, a new one is created using the transaction {@link Hash} identifier.
+     * Gets the {@link ApproveeViewModel} of a {@link Transaction}. If the current {@link ApproveeViewModel} is null,
+     * a new one is created using the transaction {@link Hash} identifier.
+     *
+     * An {@link Approvee} is a transaction in the tangle that references, and therefore approves, this transaction
+     * directly.
      *
      * @param tangle The tangle reference for the database
      * @return The {@link ApproveeViewModel}
@@ -376,7 +428,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the {@link Transaction#type}. The type can be one of 3:
+     * Gets the {@link Transaction#type}. The type can be one of 3:
      * <ul>
      *     <li>PREFILLED_SLOT: 1</li>
      *     <li>FILLED_SLOT: -1</li>
@@ -390,7 +442,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a setter for the {@link Transaction#arrivalTime}.
+     * Sets the {@link Transaction#arrivalTime}.
      * @param time The time to be set in the {@link Transaction}
      */
     public void setArrivalTime(long time) {
@@ -403,7 +455,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the stored {@link Transaction#bytes}. If the {@link Transaction#bytes} are null, a new byte
+     * Gets the stored {@link Transaction#bytes}. If the {@link Transaction#bytes} are null, a new byte
      * array is created and stored from the {@link #trits}. If the {@link #trits} are also null, then a null byte array
      * is returned.
      *
@@ -425,7 +477,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the {@link AddressViewModel} associated with this {@link Transaction}.
+     * Gets the {@link AddressViewModel} associated with this {@link Transaction}.
      *
      * @param tangle The tangle reference for the database.
      * @return The {@link AddressViewModel} of the {@link Transaction}.
@@ -439,7 +491,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the {@link TagViewModel} associated with this {@link Transaction}.
+     * Gets the {@link TagViewModel} associated with this {@link Transaction}.
      *
      * @param tangle The tangle reference for the database.
      * @return The {@link TagViewModel} of the {@link Transaction}.
@@ -450,8 +502,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the {@link AddressHash} identifier of a {@link Transaction}. If the {@link Hash} is null, a
-     * new one is created from the stored {@link #trits}.
+     * Gets the {@link AddressHash} identifier of a {@link Transaction}.
      *
      * @return The {@link AddressHash} identifier.
      */
@@ -463,8 +514,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the {@link ObsoleteTagHash} identifier of a {@link Transaction}. If the {@link Hash} is
-     * null, a new one is created from the stored {@link #trits}.
+     * Gets the {@link ObsoleteTagHash} identifier of a {@link Transaction}.
      *
      * @return The {@link ObsoleteTagHash} identifier.
      */
@@ -479,8 +529,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the {@link BundleHash} identifier of a {@link Transaction}. If the {@link Hash} is null, a
-     * new one is created from the stored {@link #trits}.
+     * Gets the {@link BundleHash} identifier of a {@link Transaction}.
      *
      * @return The {@link BundleHash} identifier.
      */
@@ -492,8 +541,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the trunk {@link TransactionHash} identifier of a {@link Transaction}. If the {@link Hash}
-     * is null, a new one is created from the stored {@link #trits}.
+     * Gets the trunk {@link TransactionHash} identifier of a {@link Transaction}.
      *
      * @return The trunk {@link TransactionHash} identifier.
      */
@@ -505,8 +553,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the branch {@link TransactionHash} identifier of a {@link Transaction}. If the {@link Hash}
-     * is null, a new one is created from the stored {@link #trits}.
+     * Gets the branch {@link TransactionHash} identifier of a {@link Transaction}.
      *
      * @return The branch {@link TransactionHash} identifier.
      */
@@ -518,8 +565,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This is a getter for the {@link TagHash} identifier of a {@link Transaction}. If the {@link Hash} is null, a
-     * new one is created from the stored {@link #trits}.
+     * Gets the {@link TagHash} identifier of a {@link Transaction}.
      *
      * @return The {@link TagHash} identifier.
      */
@@ -533,7 +579,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * Getter for the {@link Transaction#attachmentTimestamp}. The <tt>Attachment Timestapm</tt> is used to show when
+     * Gets the {@link Transaction#attachmentTimestamp}. The <tt>Attachment Timestapm</tt> is used to show when
      * a transaction has been attached to the database.
      *
      * @return The {@link Transaction#attachmentTimestamp}
@@ -541,7 +587,7 @@ public class TransactionViewModel {
     public long getAttachmentTimestamp() { return transaction.attachmentTimestamp; }
 
     /**
-     * Getter for the {@link Transaction#attachmentTimestampLowerBound}. The <tt>Attachment Timestamp Lower Bound</tt>
+     * Gets the {@link Transaction#attachmentTimestampLowerBound}. The <tt>Attachment Timestamp Lower Bound</tt>
      * is the earliest timestamp a transaction can have.
      *
      * @return The {@link Transaction#attachmentTimestampLowerBound}
@@ -551,7 +597,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * Getter for the {@link Transaction#attachmentTimestampUpperBound}. The <tt>Attachment Timestamp Upper Bound</tt>
+     * Gets the {@link Transaction#attachmentTimestampUpperBound}. The <tt>Attachment Timestamp Upper Bound</tt>
      * is the maximum timestamp a transaction can have.
      *
      * @return The {@link Transaction#attachmentTimestampUpperBound}
@@ -568,6 +614,8 @@ public class TransactionViewModel {
     /**
      * Updates the {@link Transaction#validity} in the database.
      *
+     * The validity can be one of three states:
+     * <tt>1: Valid; -1: Invalid; 0: Unknown</tt>
      * @param tangle The tangle reference for the database
      * @param validity The state of validity that the {@link Transaction} will be updated to
      * @throws Exception Thrown if there is an error with the update
@@ -648,44 +696,6 @@ public class TransactionViewModel {
         transaction.type = transaction.bytes == null ? TransactionViewModel.PREFILLED_SLOT : TransactionViewModel.FILLED_SLOT;
     }
 
-    /**
-     * Determines whether the {@link Transaction} object exists in the database or not.
-     *
-     * @param tangle The tangle reference for the database.
-     * @param hash The {@link Hash} identifier for the {@link Transaction} object
-     * @return True if the transaction exists in the database, False if not
-     * @throws Exception Thrown if there is an error determining if the transaction exists or not
-     */
-    public static boolean exists(Tangle tangle, Hash hash) throws Exception {
-        return tangle.exists(Transaction.class, hash);
-    }
-
-    public static Set<Indexable> getMissingTransactions(Tangle tangle) throws Exception {
-        return tangle.keysWithMissingReferences(Approvee.class, Transaction.class);
-    }
-
-    /**
-     * Updates a set of {@link Transaction} objects to solid. Used by the {@link com.iota.iri.TransactionValidator} to
-     * solidify groups of analyzed {@link Transaction} sets.
-     *
-     * @param tangle The tangle reference for the database.
-     * @param analyzedHashes A list of {@link TransactionHash} identifiers to be checked for solidity.
-     * @throws Exception Thrown if there is a failure to generate a controller, or if there is a failure to update
-     */
-    public static void updateSolidTransactions(Tangle tangle, final Set<Hash> analyzedHashes) throws Exception {
-        Iterator<Hash> hashIterator = analyzedHashes.iterator();
-        TransactionViewModel transactionViewModel;
-        while(hashIterator.hasNext()) {
-            transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
-
-            transactionViewModel.updateHeights(tangle);
-
-            if(!transactionViewModel.isSolid()) {
-                transactionViewModel.updateSolid(true);
-                transactionViewModel.update(tangle, "solid|height");
-            }
-        }
-    }
 
     /**
      * Updates the {@link Transaction#solid} value of the referenced {@link Transaction} object.
@@ -730,7 +740,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This method is the setter for the {@link Transaction#milestone} flag.
+     * This method sets the {@link Transaction#milestone} flag.
      *
      * It gets automatically called by the {@link com.iota.iri.MilestoneTracker} and marks transactions that represent
      * a milestone accordingly. It first checks if the {@link Transaction#milestone} flag has changed and if so, it
@@ -748,7 +758,7 @@ public class TransactionViewModel {
     }
 
     /**
-     * This method is the getter for the {@link Transaction#milestone}.
+     * This method gets the {@link Transaction#milestone}.
      *
      * The {@link Transaction#milestone} flag indicates if the {@link Transaction} is a coordinator issued milestone. It
      * allows us to differentiate the two types of transactions (normal transactions / milestones) very fast and

@@ -91,9 +91,9 @@ public class TipsViewModel {
     }
 
     /**
-     * Generates a random integer within the range of the <tt>SolidTips</tt> set, and iterates through the set until
-     * a hash is returned. If there are no <tt>Solid</tt> tips available, then <tt>getRandomNonSolidTipHash</tt> is
-     * called and returned instead.
+     * Returns a random tip by generating a random integer within the range of the <tt>SolidTips</tt> set, and iterates
+     * through the set until a hash is returned. If there are no <tt>Solid</tt> tips available, then
+     * <tt>getRandomNonSolidTipHash</tt> is called and returned instead.
      *
      * @return A random <tt>Solid</tt> tip if available, a random <tt>NonSolid</tt> tip if not
      */
@@ -116,8 +116,8 @@ public class TipsViewModel {
     }
 
     /**
-     * Generates a random integer within the range of the <tt>Tips</tt> set, and iterates through the set until a hash
-     * is returned. If there are no tips available, then null is returned instead.
+     * Returns a random tip by generating integer within the range of the <tt>Tips</tt> set, and iterates through the
+     * set until a hash is returned. If there are no tips available, then null is returned instead.
      *
      * @return A random tip if available, null if not
      */

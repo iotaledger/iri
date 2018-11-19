@@ -308,7 +308,7 @@ public class TransactionViewModel {
 
     /**
      * Fetches the first persistable {@link Transaction} object from the database and generates a new
-     * {@link TransactionViewModel} from it. If no objects exist in the database, it will return a null pair.
+     * {@link TransactionViewModel} from it. If no objects exist in the database, it will return null.
      *
      * @param tangle the tangle reference for the database.
      * @return The new {@link TransactionViewModel}.
@@ -324,7 +324,7 @@ public class TransactionViewModel {
 
     /**
      * Fetches the next indexed persistable {@link Transaction} object from the database and generates a new
-     * {@link TransactionViewModel} from it. If no objects exist in the database, it will return a null pair.
+     * {@link TransactionViewModel} from it. If no objects exist in the database, it will return null.
      *
      * @param tangle the tangle reference for the database.
      * @return The new {@link TransactionViewModel}.

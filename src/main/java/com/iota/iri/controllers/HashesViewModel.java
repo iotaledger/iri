@@ -20,28 +20,45 @@ public interface HashesViewModel {
      */
     boolean store(Tangle tangle) throws Exception;
 
-    /**Returns the size of the {@link com.iota.iri.model.persistables.Hashes} set*/
+    /**
+     * @return The size of the {@link com.iota.iri.model.persistables.Hashes} set referenced by the controller
+     */
     int size();
 
-    /**Add a hash object to the controllers referenced {@link com.iota.iri.model.persistables.Hashes} set*/
+    /**
+     * Add a hash object to the controllers referenced {@link com.iota.iri.model.persistables.Hashes} set
+     *
+     * @param theHash The {@link Hash} identifier to be added to the set
+     * @return True if the {@link com.iota.iri.model.persistables.Hashes} set is added correctly, False if not
+     */
     boolean addHash(Hash theHash);
 
-    /**Returns the {@link Hash} identifier of the {@link com.iota.iri.model.persistables.Hashes} set*/
+    /**
+     * @return The {@link Hash} identifier of the {@link com.iota.iri.model.persistables.Hashes} set
+     */
     Indexable getIndex();
 
-    /**Returns the {@link Hash} identifiers stored in the {@link com.iota.iri.model.persistables.Hashes} set*/
+    /**
+     * @return The {@link com.iota.iri.model.persistables.Hashes} set referenced by the controller
+     */
     Set<Hash> getHashes();
 
     /**
-     * Removes a referenced {@link com.iota.iri.model.persistables.Hashes} set from the database
+     * Deletes a referenced {@link com.iota.iri.model.persistables.Hashes} set from the database
      *
+     * @param tangle The tangle reference for the database
      * @throws Exception If the {@link com.iota.iri.model.persistables.Hashes} set does not exist or fails to be removed
      */
     void delete(Tangle tangle) throws Exception;
 
     /**
-     * Returns the next indexed {@link com.iota.iri.model.persistables.Hashes} set in the database.
-     * @throws Exception If there is no next available {@link com.iota.iri.model.persistables.Hashes} set
+     * Fetches the next indexed persistable {@link com.iota.iri.model.persistables.Hashes} set from the database and
+     * generates a new {@link HashesViewModel} from it. If no {@link com.iota.iri.model.persistables.Hashes} sets exist
+     * in the database, it will return null.
+     *
+     * @param tangle The tangle reference for the database
+     * @return The new {@link HashesViewModel}
+     * @throws Exception If the database fails to return a next {@link com.iota.iri.model.persistables.Hashes} set
      */
     HashesViewModel next(Tangle tangle) throws Exception;
 }

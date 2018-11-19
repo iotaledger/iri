@@ -86,19 +86,19 @@ public class TagViewModel implements HashesViewModel {
     }
 
     /**
-     * Creates a new {@link Tag} set and stores the {@link Hash} set referenced by the second given {@link Hash}
-     * identifier within it. Then a new entry is created, mapping the newly created {@link Tag} set to the first
-     * given {@link Hash} identifier.
+     * Fetches the first persistable {@link Tag} set from the database and generates a new
+     * {@link TagViewModel} from it. If no {@link Tag} sets exist in the database, it will return null.
      *
-     * @param hash The intended index {@link Hash} identifier
-     * @param hashToMerge The {@link Hash} identifier for the set that will be stored within the new {@link Tag} set
-     * @return The newly created entry, mapping the {@link Tag} set with the given index {@link Hash} identifier
-     * @throws Exception Thrown if there is an error adding the second hash to the {@link Tag} object
+     * @param tangle the tangle reference for the database
+     * @return The new {@link TagViewModel}
+     * @throws Exception Thrown if the database fails to return a first object
      */
-    public static Map.Entry<Indexable, Persistable> getEntry(Hash hash, Hash hashToMerge) throws Exception {
-        Tag hashes = new Tag();
-        hashes.set.add(hashToMerge);
-        return new HashMap.SimpleEntry<>(hash, hashes);
+    public static TagViewModel first(Tangle tangle) throws Exception {
+        Pair<Indexable, Persistable> tagPair = tangle.getFirst(Tag.class, Hash.class);
+        if(tagPair != null && tagPair.hi != null) {
+            return new TagViewModel((Tag) tagPair.hi, (Hash) tagPair.low);
+        }
+        return null;
     }
 
     /**
@@ -109,64 +109,53 @@ public class TagViewModel implements HashesViewModel {
         return tangle.save(self, hash);
     }
 
-    /**@return The size of the {@link Tag} set referenced by the controller*/
-    public int size() {
+    /**
+     * {@inheritDoc}
+     */
+    @Override    public int size() {
         return self.set.size();
     }
 
     /**
-     * Adds the {@link Tag} set referenced by the provided {@link Hash} to the stored {@link Tag} set.
-     *
-     * @param theHash The {@link Hash} identifier to be added to the set
-     * @return True if the {@link Tag} set is added correctly, False if not
+     * {@inheritDoc}
      */
+    @Override
     public boolean addHash(Hash theHash) {
         return getHashes().add(theHash);
     }
 
-    /**@return The index {@link Hash} identifier of the {@link Tag} set*/
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Indexable getIndex() {
         return hash;
     }
 
-    /**@return The {@link Tag} set referenced by the controller*/
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Set<Hash> getHashes() {
         return self.set;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Tag.class,hash);
     }
 
     /**
-     * Fetches the first persistable {@link Tag} set from the database and generates a new
-     * {@link TagViewModel} from it. If no {@link Tag} sets exist in the database, it will return a null pair.
-     *
-     * @param tangle the tangle reference for the database
-     * @return The new {@link TagViewModel}
-     * @throws Exception Thrown if the database fails to return a first object
+     * {@inheritDoc}
      */
-    public static TagViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Tag.class, Hash.class);
-        if(bundlePair != null && bundlePair.hi != null) {
-            return new TagViewModel((Tag) bundlePair.hi, (Hash) bundlePair.low);
-        }
-        return null;
-    }
-
-    /**
-     * Fetches the next indexed persistable {@link Tag} set from the database and generates a new
-     * {@link TagViewModel}from it. If no {@link Tag} sets in the database, it will return a null pair.
-     *
-     * @param tangle the tangle reference for the database
-     * @return The new {@link TagViewModel}
-     * @throws Exception Thrown if the database fails to return a next {@link Tag} set
-     */
+    @Override
     public TagViewModel next(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.next(Tag.class, hash);
-        if(bundlePair != null && bundlePair.hi != null) {
-            return new TagViewModel((Tag) bundlePair.hi, (Hash) bundlePair.low);
+        Pair<Indexable, Persistable> tagPair = tangle.next(Tag.class, hash);
+        if(tagPair != null && tagPair.hi != null) {
+            return new TagViewModel((Tag) tagPair.hi, (Hash) tagPair.low);
         }
         return null;
     }

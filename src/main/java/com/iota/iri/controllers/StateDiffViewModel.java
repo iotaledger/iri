@@ -62,7 +62,7 @@ public class StateDiffViewModel {
      * @param diff The finalized {@link StateDiff} the controller will be made for
      * @param hash The finalized {@link Hash} identifier of the controller
      */
-    StateDiffViewModel(final StateDiff diff, final Hash hash) {
+    private StateDiffViewModel(final StateDiff diff, final Hash hash) {
         this.hash = hash;
         this.stateDiff = diff == null || diff.state == null ? new StateDiff(): diff;
     }

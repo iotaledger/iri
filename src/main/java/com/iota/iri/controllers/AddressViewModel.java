@@ -51,46 +51,8 @@ public class AddressViewModel implements HashesViewModel {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public boolean store(Tangle tangle) throws Exception {
-        return tangle.save(self, hash);
-    }
-
-    /**@return The size of the {@link Address} set referenced by the controller*/
-    public int size() {
-        return self.set.size();
-    }
-
-    /**
-     * Adds the {@link Address} set referenced by the provided {@link Hash} to the stored {@link Address} set.
-     *
-     * @param theHash The {@link Hash} identifier to be added to the set
-     * @return True if the {@link Address} set is added correctly, False if not
-     */
-    public boolean addHash(Hash theHash) {
-        return getHashes().add(theHash);
-    }
-
-    /**@return The index {@link Hash} identifier of the {@link Address} set*/
-    public Indexable getIndex() {
-        return hash;
-    }
-
-    /**@return The {@link Address} set referenced by the controller*/
-    public Set<Hash> getHashes() {
-        return self.set;
-    }
-
-    @Override
-    public void delete(Tangle tangle) throws Exception {
-        tangle.delete(Address.class,hash);
-    }
-
-    /**
      * Fetches the first persistable {@link Address} set from the database and generates a new {@link AddressViewModel}
-     * from it. If no {@link Address} sets exist in the database, it will return a null pair.
+     * from it. If no {@link Address} sets exist in the database, it will return null.
      *
      * @param tangle the tangle reference for the database
      * @return The new {@link AddressViewModel}
@@ -105,13 +67,56 @@ public class AddressViewModel implements HashesViewModel {
     }
 
     /**
-     * Fetches the next indexed persistable {@link Address} set from the database and generates a new
-     * {@link AddressViewModel} from it. If no {@link Address} sets exist in the database, it will return a null pair.
-     *
-     * @param tangle the tangle reference for the database
-     * @return The new {@link AddressViewModel}
-     * @throws Exception Thrown if the database fails to return a next {@link Address} set
+     * {@inheritDoc}
      */
+    @Override
+    public boolean store(Tangle tangle) throws Exception {
+        return tangle.save(self, hash);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public int size() {
+        return self.set.size();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean addHash(Hash theHash) {
+        return getHashes().add(theHash);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Indexable getIndex() {
+        return hash;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public Set<Hash> getHashes() {
+        return self.set;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void delete(Tangle tangle) throws Exception {
+        tangle.delete(Address.class,hash);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public AddressViewModel next(Tangle tangle) throws Exception {
         Pair<Indexable, Persistable> bundlePair = tangle.next(Address.class, hash);
         if(bundlePair != null && bundlePair.hi != null) {

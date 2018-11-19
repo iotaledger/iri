@@ -26,7 +26,7 @@ public class IntervalLogger implements Logger {
     /**
      * Holds a reference to the underlying logback logger.
      */
-    private final org.slf4j.Logger logger;
+    private final org.slf4j.Logger delegate;
 
     /**
      * Holds the interval in milliseconds that status messages get printed.
@@ -82,10 +82,10 @@ public class IntervalLogger implements Logger {
      * Does the same as {@link #IntervalLogger(org.slf4j.Logger, int)} but defaults to the {@link #DEFAULT_LOG_INTERVAL}
      * for the interval.
      *
-     * @param logger logback logger for issuing the messages
+     * @param delegate logback logger for issuing the messages
      */
-    public IntervalLogger(org.slf4j.Logger logger) {
-        this(logger, DEFAULT_LOG_INTERVAL);
+    public IntervalLogger(org.slf4j.Logger delegate) {
+        this(delegate, DEFAULT_LOG_INTERVAL);
     }
 
     /**
@@ -104,12 +104,24 @@ public class IntervalLogger implements Logger {
      *
      * It simply stores the passed in parameters in its private properties to be able to access them later on.
      *
-     * @param logger logback logger for issuing the messages
+     * @param delegate logback logger for issuing the messages
      * @param logInterval time in milliseconds between log messages
      */
-    public IntervalLogger(org.slf4j.Logger logger, int logInterval) {
-        this.logger = logger;
+    public IntervalLogger(org.slf4j.Logger delegate, int logInterval) {
+        this.delegate = delegate;
         this.logInterval = logInterval;
+    }
+
+    /**
+     * This method returns the underlying logback Logger.<br />
+     * <br />
+     * It can be used to issue log entries directly to the underlying logger without interfering with the logic of this
+     * class.<br />
+     *
+     * @return the underlying logback Logger
+     */
+    public org.slf4j.Logger delegate() {
+        return delegate;
     }
 
     /**
@@ -354,7 +366,7 @@ public class IntervalLogger implements Logger {
          */
         @Override
         protected void print() {
-            logger.info(message);
+            delegate().info(message);
         }
     }
 
@@ -376,7 +388,7 @@ public class IntervalLogger implements Logger {
          */
         @Override
         protected void print() {
-            logger.debug(message);
+            delegate().debug(message);
         }
     }
 
@@ -425,9 +437,9 @@ public class IntervalLogger implements Logger {
         @Override
         protected void print() {
             if (cause == null) {
-                logger.error(message);
+                delegate().error(message);
             } else {
-                logger.error(message, cause);
+                delegate().error(message, cause);
             }
         }
     }

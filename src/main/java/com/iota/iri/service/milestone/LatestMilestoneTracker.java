@@ -12,7 +12,7 @@ import com.iota.iri.model.Hash;
  */
 public interface LatestMilestoneTracker {
     /**
-     * This method returns the index of the latest milestone that was seen by this tracker.<br />
+     * Returns the index of the latest milestone that was seen by this tracker.<br />
      * <br />
      * It simply returns the internal property that is used to store the latest milestone index.<br />
      *

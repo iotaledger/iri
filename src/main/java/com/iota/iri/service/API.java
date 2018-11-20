@@ -2,7 +2,6 @@ package com.iota.iri.service;
 
 import com.iota.iri.*;
 import com.iota.iri.conf.APIConfig;
-import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
 import com.iota.iri.controllers.TagViewModel;
@@ -16,7 +15,7 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
-import com.iota.iri.service.snapshot.impl.SnapshotImpl;
+import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
@@ -226,7 +225,7 @@ public class API {
                 .split(" ");
 
         for (String previousEpochsSpentAddressesFile : previousEpochsSpentAddressesFiles) {
-            InputStream in = SnapshotImpl.class.getResourceAsStream(previousEpochsSpentAddressesFile);
+            InputStream in = Snapshot.class.getResourceAsStream(previousEpochsSpentAddressesFile);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
                 String line;
                 while ((line = reader.readLine()) != null) {

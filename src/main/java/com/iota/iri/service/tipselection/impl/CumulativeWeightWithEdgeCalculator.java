@@ -114,13 +114,8 @@ public class CumulativeWeightWithEdgeCalculator extends CumulativeWeightCalculat
 			// get the point's weight
 			float preWeight = txHashToCumulativeWeightFloat.get(prover);
 			// get the edge weight
-                        float edgeWeight = 0;
-                        if(isUseUnifiedEdgeWeight)
-                        {
-                            edgeWeight = 1; 
-                        }
-                        else
-                        {
+                        float edgeWeight = 1;
+                        if(!isUseUnifiedEdgeWeight) {
                             edgeWeight = (float) edgeMap.get(txHash.toString() + prover.toString()) / maxTimeDiff;
                         }
 			iteratorWeight += edgeWeight * preWeight;

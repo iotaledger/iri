@@ -469,7 +469,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-pruning-enabled"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_ENABLED)
+    @Parameter(names = {"--local-snapshots-pruning-enabled"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_ENABLED)
     protected void setLocalSnapshotsPruningEnabled(boolean localSnapshotsPruningEnabled) {
         this.localSnapshotsPruningEnabled = localSnapshotsPruningEnabled;
     }
@@ -480,8 +481,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-pruning-delay"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
+    @Parameter(names = {"--local-snapshots-pruning-delay"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
     protected void setLocalSnapshotsPruningDelay(int localSnapshotsPruningDelay) {
+        if (localSnapshotsPruningDelay < 0) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be positive (found " +
+                    localSnapshotsPruningDelay +")");
+        }
+
         this.localSnapshotsPruningDelay = localSnapshotsPruningDelay;
     }
 
@@ -491,8 +498,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-interval-synced"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_SYNCED)
+    @Parameter(names = {"--local-snapshots-interval-synced"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_SYNCED)
     protected void setLocalSnapshotsIntervalSynced(int localSnapshotsIntervalSynced) {
+        if (localSnapshotsIntervalSynced < 1) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_INTERVAL_SYNCED should be at least 1 (found " +
+                    localSnapshotsIntervalSynced +")");
+        }
+
         this.localSnapshotsIntervalSynced = localSnapshotsIntervalSynced;
     }
 
@@ -502,8 +515,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-interval-unsynced"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED)
+    @Parameter(names = {"--local-snapshots-interval-unsynced"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED)
     protected void setLocalSnapshotsIntervalUnsynced(int localSnapshotsIntervalUnsynced) {
+        if (localSnapshotsIntervalUnsynced < 1) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED should be at least 1 (found " +
+                    localSnapshotsIntervalUnsynced +")");
+        }
+
         this.localSnapshotsIntervalUnsynced = localSnapshotsIntervalUnsynced;
     }
 
@@ -515,6 +534,11 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @JsonProperty
     @Parameter(names = {"--local-snapshots-depth"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DEPTH)
     protected void setLocalSnapshotsDepth(int localSnapshotsDepth) {
+        if (localSnapshotsDepth < 50) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_DEPTH should be at least 50 (found " +
+                    localSnapshotsDepth +")");
+        }
+
         this.localSnapshotsDepth = localSnapshotsDepth;
     }
 
@@ -524,7 +548,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-base-path"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_BASE_PATH)
+    @Parameter(names = {"--local-snapshots-base-path"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_BASE_PATH)
     protected void setLocalSnapshotsBasePath(String localSnapshotsBasePath) {
         this.localSnapshotsBasePath = localSnapshotsBasePath;
     }

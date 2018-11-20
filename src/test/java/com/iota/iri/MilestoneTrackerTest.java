@@ -43,7 +43,7 @@ public class MilestoneTrackerTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         tangle = new Tangle();
-        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
         dbFolder.create();
         logFolder.create();
         tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
@@ -63,7 +63,7 @@ public class MilestoneTrackerTest {
         configuration.parseConfigFromArgs(args);
 
         MessageQ messageQ = Mockito.mock(MessageQ.class);
-        TransactionValidator transactionValidator = new TransactionValidator(tangle, snapshotProvider.getInitialSnapshot(), new TipsViewModel(), new TransactionRequester(tangle, snapshotProvider.getInitialSnapshot(), messageQ));
+        TransactionValidator transactionValidator = new TransactionValidator(tangle, snapshotProvider, new TipsViewModel(), new TransactionRequester(tangle, snapshotProvider, messageQ));
         milestoneTracker = new MilestoneTracker(tangle, snapshotProvider, transactionValidator, messageQ, Snapshot.init(configuration).clone(), configuration);
     }
 

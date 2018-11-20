@@ -36,15 +36,15 @@ public class TransactionValidatorTest {
     dbFolder.create();
     logFolder.create();
     tangle = new Tangle();
-    snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+    snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());;
     tangle.addPersistenceProvider(
         new RocksDBPersistenceProvider(
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
     MessageQ messageQ = Mockito.mock(MessageQ.class);
-    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider.getInitialSnapshot(), messageQ);
-    txValidator = new TransactionValidator(tangle, snapshotProvider.getInitialSnapshot(), tipsViewModel, txRequester);
+    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider, messageQ);
+    txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester);
     txValidator.setMwm(false, MAINNET_MWM);
   }
 

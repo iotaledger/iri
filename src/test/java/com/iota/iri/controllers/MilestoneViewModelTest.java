@@ -1,10 +1,8 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.*;
@@ -175,8 +173,7 @@ public class MilestoneViewModelTest {
         int next = first + 1;
         new MilestoneViewModel(next, HashFactory.TRANSACTION.create("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
         new MilestoneViewModel(first, HashFactory.TRANSACTION.create("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
-        assertEquals(next, MilestoneViewModel.findClosestNextMilestone(
-                tangle, first, next).index().intValue());
+        assertEquals(next, MilestoneViewModel.findClosestNextMilestone(tangle, first, next).index().intValue());
     }
 
     @Test

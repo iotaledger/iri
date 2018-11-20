@@ -23,6 +23,18 @@ public class MilestoneViewModel {
         milestones.clear();
     }
 
+    /**
+     * This method removes a {@link MilestoneViewModel} from the cache.
+     *
+     * It is used by the {@link com.iota.iri.service.transactionpruning.TransactionPruner} to remove milestones that
+     * were deleted in the database, so that the runtime environment correctly reflects the database state.
+     *
+     * @param milestoneIndex the index of the milestone
+     */
+    public static void clear(int milestoneIndex) {
+        milestones.remove(milestoneIndex);
+    }
+
     public MilestoneViewModel(final int index, final Hash milestoneHash) {
         this.milestone = new Milestone();
         this.milestone.index = new IntegerIndex(index);
@@ -82,24 +94,38 @@ public class MilestoneViewModel {
         return null;
     }
 
-    public static MilestoneViewModel findClosestPrevMilestone(Tangle tangle, int index) throws Exception {
-        Pair<Indexable, Persistable> milestonePair = tangle.previous(Milestone.class, new IntegerIndex(index));
-        if(milestonePair != null && milestonePair.hi != null) {
-            return new MilestoneViewModel((Milestone) milestonePair.hi);
+    public static MilestoneViewModel findClosestPrevMilestone(Tangle tangle, int index, int minIndex) throws Exception {
+        // search for the previous milestone preceding our index
+        MilestoneViewModel previousMilestoneViewModel = null;
+        int currentIndex = index;
+        while(previousMilestoneViewModel == null && --currentIndex >= minIndex) {
+            previousMilestoneViewModel = MilestoneViewModel.get(tangle, currentIndex);
         }
-        return null;
+
+        return previousMilestoneViewModel;
     }
 
-    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index, boolean testnet,
-                                                              int milestoneStartIndex) throws Exception {
-        if(!testnet && index <= milestoneStartIndex) {
-            return first(tangle);
+    /**
+     * This method looks for the next milestone after a given index.
+     *
+     * In contrast to the {@link #next} method we do not rely on the insertion order in the database but actively search
+     * for the milestone that was issued next by the coordinator (coo-order preserved).
+     *
+     * @param tangle Tangle object which acts as a database interface
+     * @param index milestone index where the search shall start
+     * @param maxIndex milestone index where the search shall stop
+     * @return the milestone which follows directly after the given index or null if none was found
+     * @throws Exception if anything goes wrong while loading entries from the database
+     */
+    public static MilestoneViewModel findClosestNextMilestone(Tangle tangle, int index, int maxIndex) throws Exception {
+        // search for the next milestone following our index
+        MilestoneViewModel nextMilestoneViewModel = null;
+        int currentIndex = index;
+        while(nextMilestoneViewModel == null && ++currentIndex <= maxIndex) {
+            nextMilestoneViewModel = MilestoneViewModel.get(tangle, currentIndex);
         }
-        Pair<Indexable, Persistable> milestonePair = tangle.next(Milestone.class, new IntegerIndex(index));
-        if(milestonePair != null && milestonePair.hi != null) {
-            return new MilestoneViewModel((Milestone) milestonePair.hi);
-        }
-        return null;
+
+        return nextMilestoneViewModel;
     }
 
     public boolean store(Tangle tangle) throws Exception {
@@ -117,4 +143,15 @@ public class MilestoneViewModel {
         tangle.delete(Milestone.class, milestone.index);
     }
 
+    /**
+     * This method creates a human readable string representation of the milestone.
+     *
+     * It can be used to directly append the milestone in error and debug messages.
+     *
+     * @return human readable string representation of the milestone
+     */
+    @Override
+    public String toString() {
+        return "milestone #" + index() + " (" + getHash().toString() + ")";
+    }
 }

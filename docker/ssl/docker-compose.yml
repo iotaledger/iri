@@ -1,0 +1,27 @@
+nginx:
+  build: nginx-image
+  links:
+    - letsencrypt
+    - iri
+  environment:
+    - MY_DOMAIN_NAME=__DOMAIN__
+  ports:
+    - "80:80"
+    - "443:443"
+  volumes_from:
+    - letsencrypt
+letsencrypt:
+  image: certbot/certbot@sha256:8a73ec490fc75a29b75552dc328258c74162b204c232e0fc47fe163a2d3aefea
+  command: sh -c "certbot certonly --standalone --email "__EMAIL__" -d "__DOMAIN__" -n --agree-tos"
+  entrypoint: ""
+  volumes:
+    - /etc/letsencrypt
+    - /var/lib/letsencrypt
+  ports:
+    - "80"
+    - "443"
+  environment:
+    - TERM=xterm
+iri:
+  image: iotaledger/iri:latest
+  command: -p 14265

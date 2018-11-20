@@ -1,8 +1,8 @@
 package com.iota.iri.network;
 
 import com.iota.iri.conf.NodeConfig;
-import com.iota.iri.hash.Sponge;
-import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.crypto.Sponge;
+import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 
 import org.slf4j.Logger;
@@ -69,7 +69,7 @@ public class UDPReceiver {
 
             while (!shuttingDown.get()) {
 
-                if (((processed + dropped) % 50000 == 0)) {
+                if (((processed + dropped) % 50000 == 49999)) {
                     log.info("Receiver thread processed/dropped ratio: "+processed+"/"+dropped);
                     processed = 0;
                     dropped = 0;

@@ -40,4 +40,22 @@ public class IntegerIndex implements Indexable{
         IntegerIndex i = new IntegerIndex(Serializer.getInteger(o.bytes()));
         return value - ((IntegerIndex) o).value;
     }
+
+    @Override
+    public int hashCode() {
+        return value;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+
+        if (!(obj instanceof IntegerIndex)) {
+            return false;
+        }
+
+        return ((IntegerIndex) obj).value == value;
+    }
 }

@@ -55,7 +55,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String dbLogPath = Defaults.DB_LOG_PATH;
     protected int dbCacheSize = Defaults.DB_CACHE_SIZE; //KB
     protected String mainDb = Defaults.ROCKS_DB;
-    protected boolean export = Defaults.EXPORT;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
 
@@ -79,6 +78,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
+
+    //PearlDiver
+    protected int powThreads = Defaults.POW_THREADS;
 
     //Snapshot
     protected boolean localSnapshotsEnabled = Defaults.LOCAL_SNAPSHOTS_ENABLED;
@@ -356,18 +358,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--db"}, description = DbConfig.Descriptions.MAIN_DB)
     protected void setMainDb(String mainDb) {
         this.mainDb = mainDb;
-    }
-
-    @Override
-    public boolean isExport() {
-        return export;
-    }
-
-
-    @JsonProperty
-    @Parameter(names = {"--export"}, description = DbConfig.Descriptions.EXPORT)
-    protected void setExport(boolean export) {
-        this.export = export;
     }
 
     @Override
@@ -689,6 +679,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.maxAnalyzedTransactions = maxAnalyzedTransactions;
     }
 
+    @Override
+    public int getPowThreads() {
+        return powThreads;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--pow-threads", description = PearlDiverConfig.Descriptions.POW_THREADS)
+    protected void setPowThreads(int powThreads) {
+        this.powThreads = powThreads;
+    }
+
     public interface Defaults {
         //API
         int API_PORT = 14265;
@@ -717,7 +718,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String DB_LOG_PATH = "mainnet.log";
         int DB_CACHE_SIZE = 100_000;
         String ROCKS_DB = "rocksdb";
-        boolean EXPORT = false;
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
 
@@ -746,18 +746,21 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
 
+        //PearlDiver
+        int POW_THREADS = 0;
+
         //Coo
         String COORDINATOR_ADDRESS =
                 "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
-        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = false;
-        int LOCAL_SNAPSHOTS_PRUNING_DELAY = 1000;
+        boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = true;
+        int LOCAL_SNAPSHOTS_PRUNING_DELAY = 50000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
-        int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 5000;
+        int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 1000;
         String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
-        int LOCAL_SNAPSHOTS_DEPTH = 500;
+        int LOCAL_SNAPSHOTS_DEPTH = 100;
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =

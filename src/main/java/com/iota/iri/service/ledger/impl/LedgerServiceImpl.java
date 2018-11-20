@@ -43,7 +43,7 @@ public class LedgerServiceImpl implements LedgerService {
     private MilestoneService milestoneService;
 
     /**
-     * This method initializes the instance and registers its dependencies.<br />
+     * Initializes the instance and registers its dependencies.<br />
      * <br />
      * It simply stores the passed in values in their corresponding private properties.<br />
      * <br />

@@ -5,10 +5,14 @@ import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.utils.Converter;
 
 public class TransactionHash extends AbstractHash {
+    public TransactionHash()
+    {
+        super();
+    }
 
-	protected TransactionHash(byte[] source, int offset, int sourceSize) {
-		super(source, offset, sourceSize);
-	}
+    protected TransactionHash(byte[] source, int offset, int sourceSize) {
+        super(source, offset, sourceSize);
+    }
 	
     /**
      * Calculates a transaction hash from an array of bytes. Uses the entire trits array

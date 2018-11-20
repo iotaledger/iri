@@ -17,6 +17,10 @@ public abstract class AbstractHash implements Hash, Serializable {
     private ByteSafe byteSafe;
     private TritSafe tritSafe;
 
+    public AbstractHash()
+    {
+    }
+
     public AbstractHash(byte[] source, int sourceOffset, int sourceSize) {
         if(sourceSize < SIZE_IN_TRITS) {
             byte[] dest = new byte[SIZE_IN_BYTES];

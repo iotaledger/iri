@@ -45,7 +45,7 @@ public abstract class DbState {
                 BaseIotaConfig.Defaults.DB_CACHE_SIZE);
         dbProvider.init();
         tangle = new Tangle();
-        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
         tangle.addPersistenceProvider(dbProvider);
         String trytes = "";
         System.out.println("numTxsToTest = [" + numTxsToTest + "]");

@@ -3,7 +3,7 @@ package com.iota.iri.service.milestone.impl;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
-import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
@@ -48,14 +48,14 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private static final IntervalLogger log = new IntervalLogger(MilestoneSolidifier.class);
 
     /**
-     * Holds a reference to the initial Snapshot which allows us to check if milestones are still relevant.<br />
+     * Holds the snapshot provider which gives us access to the relevant snapshots.<br />
      */
-    private final Snapshot initialSnapshot;
+    private SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the TransactionValidator which allows us to issue solidity checks.<br />
      */
-    private final TransactionValidator transactionValidator;
+    private TransactionValidator transactionValidator;
 
     /**
      * Holds a reference to the manager of the background worker.<br />
@@ -91,16 +91,26 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     private Map.Entry<Hash, Integer> youngestMilestoneInQueue = null;
 
     /**
-     * Constructor of the class.<br />
+     * This method initializes the instance and registers its dependencies.<br />
      * <br />
-     * It simply stores the passed in parameters to be able to access them later on.<br />
+     * It simply stores the passed in values in their corresponding private properties.<br />
+     * <br />
+     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
+     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
+     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
+     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
+     *       <br />
+     *       {@code milestoneSolidifier = new MilestoneSolidifierImpl().init(...);}
      *
-     * @param initialSnapshot initial Snapshot instance that is used by the node
+     * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
      * @param transactionValidator TransactionValidator instance that is used by the node
+     * @return the initialized instance itself to allow chaining
      */
-    public MilestoneSolidifierImpl(Snapshot initialSnapshot, TransactionValidator transactionValidator) {
-        this.initialSnapshot = initialSnapshot;
+    public MilestoneSolidifierImpl init(SnapshotProvider snapshotProvider, TransactionValidator transactionValidator) {
+        this.snapshotProvider = snapshotProvider;
         this.transactionValidator = transactionValidator;
+
+        return this;
     }
 
     /**
@@ -113,7 +123,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
     @Override
     public void add(Hash milestoneHash, int milestoneIndex) {
         if (!unsolidMilestonesPool.containsKey(milestoneHash) && !newlyAddedMilestones.containsKey(milestoneHash) &&
-                milestoneIndex > initialSnapshot.getIndex()) {
+                milestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
 
             newlyAddedMilestones.put(milestoneHash, milestoneIndex);
         }
@@ -212,7 +222,7 @@ public class MilestoneSolidifierImpl implements MilestoneSolidifier {
 
             Map.Entry<Hash, Integer> currentEntry = iterator.next();
 
-            if (currentEntry.getValue() <= initialSnapshot.getIndex() || isSolid(currentEntry)) {
+            if (currentEntry.getValue() <= snapshotProvider.getInitialSnapshot().getIndex() || isSolid(currentEntry)) {
                 unsolidMilestonesPool.remove(currentEntry.getKey());
                 iterator.remove();
 

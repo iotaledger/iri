@@ -5,10 +5,10 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.Sponge;
 import com.iota.iri.crypto.SpongeFactory;
-import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +24,7 @@ public class TransactionValidator {
     public static final int SOLID_SLEEP_TIME = 500;
 
     private final Tangle tangle;
-    private final Snapshot initialSnapshot;
+    private final SnapshotProvider snapshotProvider;
     private final TipsViewModel tipsViewModel;
     private final TransactionRequester transactionRequester;
     private int minWeightMagnitude = 81;
@@ -55,13 +55,13 @@ public class TransactionValidator {
      * Constructor for Tangle Validator
      *
      * @param tangle relays tangle data to and from the persistence layer
-     * @param initialSnapshot the initial snapshot that defines the genesis for our ledger state
+     * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param tipsViewModel container that gets updated with the latest tips (transactions with no children)
      * @param transactionRequester used to request missing transactions from neighbors
      */
-    TransactionValidator(Tangle tangle, Snapshot initialSnapshot, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
+    TransactionValidator(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel, TransactionRequester transactionRequester) {
         this.tangle = tangle;
-        this.initialSnapshot = initialSnapshot;
+        this.snapshotProvider = snapshotProvider;
         this.tipsViewModel = tipsViewModel;
         this.transactionRequester = transactionRequester;
     }
@@ -135,10 +135,10 @@ public class TransactionValidator {
         }
 
         if (transactionViewModel.getAttachmentTimestamp() == 0) {
-            return transactionViewModel.getTimestamp() < initialSnapshot.getTimestamp() && !initialSnapshot.hasSolidEntryPoint(transactionViewModel.getHash())
+            return transactionViewModel.getTimestamp() < snapshotProvider.getInitialSnapshot().getTimestamp() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(transactionViewModel.getHash())
                     || transactionViewModel.getTimestamp() > (System.currentTimeMillis() / 1000) + MAX_TIMESTAMP_FUTURE;
         }
-        return transactionViewModel.getAttachmentTimestamp() < (initialSnapshot.getTimestamp() * 1000L)
+        return transactionViewModel.getAttachmentTimestamp() < (snapshotProvider.getInitialSnapshot().getTimestamp() * 1000L)
                 || transactionViewModel.getAttachmentTimestamp() > System.currentTimeMillis() + MAX_TIMESTAMP_FUTURE_MS;
     }
 
@@ -246,7 +246,7 @@ public class TransactionValidator {
         if(fromHash(tangle, hash).isSolid()) {
             return true;
         }
-        Set<Hash> analyzedHashes = new HashSet<>(initialSnapshot.getSolidEntryPoints().keySet());
+        Set<Hash> analyzedHashes = new HashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
         if(maxProcessedTransactions != Integer.MAX_VALUE) {
             maxProcessedTransactions += analyzedHashes.size();
         }
@@ -261,7 +261,7 @@ public class TransactionValidator {
 
                 final TransactionViewModel transaction = fromHash(tangle, hashPointer);
                 if(!transaction.isSolid()) {
-                    if (transaction.getType() == PREFILLED_SLOT && !initialSnapshot.hasSolidEntryPoint(hashPointer)) {
+                    if (transaction.getType() == PREFILLED_SLOT && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
                         solid = false;
 
                         if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
@@ -276,7 +276,7 @@ public class TransactionValidator {
             }
         }
         if (solid) {
-            updateSolidTransactions(tangle, initialSnapshot, analyzedHashes);
+            updateSolidTransactions(tangle, snapshotProvider.getInitialSnapshot(), analyzedHashes);
         }
         analyzedHashes.clear();
         return solid;
@@ -339,7 +339,7 @@ public class TransactionValidator {
                 for(Hash h: approvers) {
                     TransactionViewModel tx = fromHash(tangle, h);
                     if(quietQuickSetSolid(tx)) {
-                        tx.update(tangle, initialSnapshot, "solid|height");
+                        tx.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
                         tipsViewModel.setSolid(h);
                         addSolidTransaction(h);
                     }
@@ -384,7 +384,7 @@ public class TransactionValidator {
         tipsViewModel.removeTipHash(transactionViewModel.getBranchTransactionHash());
 
         if(quickSetSolid(transactionViewModel)) {
-            transactionViewModel.update(tangle, initialSnapshot, "solid|height");
+            transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "solid|height");
             tipsViewModel.setSolid(transactionViewModel.getHash());
             addSolidTransaction(transactionViewModel.getHash());
         }
@@ -422,7 +422,7 @@ public class TransactionValidator {
             }
             if(solid) {
                 transactionViewModel.updateSolid(true);
-                transactionViewModel.updateHeights(tangle, initialSnapshot);
+                transactionViewModel.updateHeights(tangle, snapshotProvider.getInitialSnapshot());
                 return true;
             }
         }
@@ -440,7 +440,7 @@ public class TransactionValidator {
             transactionRequester.requestTransaction(approovee.getHash(), false);
             return false;
         }
-        if(initialSnapshot.hasSolidEntryPoint(approovee.getHash())) {
+        if(snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(approovee.getHash())) {
             return true;
         }
         return approovee.isSolid();

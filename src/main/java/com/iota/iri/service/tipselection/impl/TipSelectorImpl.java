@@ -5,6 +5,7 @@ import com.iota.iri.MilestoneTracker;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
+import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.storage.Tangle;
@@ -29,19 +30,17 @@ public class TipSelectorImpl implements TipSelector {
     private final RatingCalculator ratingCalculator;
     private final Walker walker;
 
-    private final LedgerValidator ledgerValidator;
+    private final LedgerService ledgerService;
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
-    private final MilestoneTracker milestoneTracker;
     private final TipSelConfig config;
 
     public TipSelectorImpl(Tangle tangle,
                            SnapshotProvider snapshotProvider,
-                           LedgerValidator ledgerValidator,
+                           LedgerService ledgerService,
                            EntryPointSelector entryPointSelector,
                            RatingCalculator ratingCalculator,
                            Walker walkerAlpha,
-                           MilestoneTracker milestoneTracker,
                            TipSelConfig config) {
 
         this.entryPointSelector = entryPointSelector;
@@ -50,10 +49,9 @@ public class TipSelectorImpl implements TipSelector {
         this.walker = walkerAlpha;
 
         //used by walkValidator
-        this.ledgerValidator = ledgerValidator;
+        this.ledgerService = ledgerService;
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
-        this.milestoneTracker = milestoneTracker;
         this.config = config;
     }
 
@@ -76,7 +74,7 @@ public class TipSelectorImpl implements TipSelector {
     @Override
     public List<Hash> getTransactionsToApprove(int depth, Optional<Hash> reference) throws Exception {
         try {
-            milestoneTracker.latestSnapshot.rwlock.readLock().lock();
+            snapshotProvider.getLatestSnapshot().lockRead();
 
             //preparation
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
@@ -84,7 +82,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //random walk
             List<Hash> tips = new LinkedList<>();
-            WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator, milestoneTracker, config);
+            WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 
@@ -98,13 +96,13 @@ public class TipSelectorImpl implements TipSelector {
             tips.add(tip);
 
             //validate
-            if (!ledgerValidator.checkConsistency(tips)) {
+            if (!ledgerService.tipsConsistent(tips)) {
                 throw new IllegalStateException(TIPS_NOT_CONSISTENT);
             }
 
             return tips;
         } finally {
-            milestoneTracker.latestSnapshot.rwlock.readLock().unlock();
+            snapshotProvider.getLatestSnapshot().unlockRead();
         }
     }
 

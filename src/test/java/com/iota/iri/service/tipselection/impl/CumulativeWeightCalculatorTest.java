@@ -45,13 +45,13 @@ public class CumulativeWeightCalculatorTest {
     @BeforeClass
     public static void setUp() throws Exception {
         tangle = new Tangle();
-        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
         dbFolder.create();
         logFolder.create();
         tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
                 .getRoot().getAbsolutePath(), 1000));
         tangle.init();
-        cumulativeWeightCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider.getInitialSnapshot());
+        cumulativeWeightCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider);
     }
 
     @Test

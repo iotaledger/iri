@@ -32,7 +32,9 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
 
 /**
- * Implements the basic contract of the {@link SnapshotService}.
+ * Creates a service instance that allows us to access the business logic for {@link Snapshot}s.<br />
+ * <br />
+ * The service instance is stateless and can be shared by multiple other consumers.<br />
  */
 public class SnapshotServiceImpl implements SnapshotService {
     /**
@@ -57,31 +59,41 @@ public class SnapshotServiceImpl implements SnapshotService {
     /**
      * Holds the tangle object which acts as a database interface.<br />
      */
-    private final Tangle tangle;
+    private Tangle tangle;
 
     /**
      * Holds the snapshot provider which gives us access to the relevant snapshots.<br />
      */
-    private final SnapshotProvider snapshotProvider;
+    private SnapshotProvider snapshotProvider;
 
     /**
      * Holds the config with important snapshot specific settings.<br />
      */
-    private final SnapshotConfig config;
+    private SnapshotConfig config;
 
     /**
-     * Creates a service instance that allows us to interact with the snapshots.<br />
+     * This method initializes the instance and registers its dependencies.<br />
      * <br />
-     * It simply stores the passed in dependencies in the internal properties.<br />
+     * It simply stores the passed in values in their corresponding private properties.<br />
+     * <br />
+     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
+     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
+     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
+     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
+     *       <br />
+     *       {@code snapshotService = new SnapshotServiceImpl().init(...);}
      *
      * @param tangle Tangle object which acts as a database interface
-     * @param snapshotProvider data provider for the {@link Snapshot}s that are relevant for the node
+     * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param config important snapshot related configuration parameters
+     * @return the initialized instance itself to allow chaining
      */
-    public SnapshotServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config) {
+    public SnapshotServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.config = config;
+
+        return this;
     }
 
     /**

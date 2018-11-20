@@ -10,9 +10,17 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.service.TipsSolidifier;
+import com.iota.iri.service.ledger.impl.LedgerServiceImpl;
+import com.iota.iri.service.milestone.impl.LatestMilestoneTrackerImpl;
+import com.iota.iri.service.milestone.impl.LatestSolidMilestoneTrackerImpl;
+import com.iota.iri.service.milestone.impl.MilestoneServiceImpl;
+import com.iota.iri.service.milestone.impl.MilestoneSolidifierImpl;
+import com.iota.iri.service.milestone.impl.SeenMilestonesRetrieverImpl;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.impl.LocalSnapshotManagerImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service.snapshot.impl.SnapshotServiceImpl;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.service.tipselection.TailFinder;
@@ -23,6 +31,8 @@ import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
 import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
 import com.iota.iri.service.tipselection.impl.WalkerAlpha;
+import com.iota.iri.service.transactionpruning.TransactionPruningException;
+import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
@@ -73,10 +83,27 @@ import java.util.List;
 public class Iota {
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
-    public final LedgerValidator ledgerValidator;
-    public final MilestoneTracker milestoneTracker;
+    public final SnapshotProviderImpl snapshotProvider;
+
+    public final SnapshotServiceImpl snapshotService;
+
+    public final LocalSnapshotManagerImpl localSnapshotManager;
+
+    public final MilestoneServiceImpl milestoneService;
+
+    public final LatestMilestoneTrackerImpl latestMilestoneTracker;
+
+    public final LatestSolidMilestoneTrackerImpl latestSolidMilestoneTracker;
+
+    public final SeenMilestonesRetrieverImpl seenMilestonesRetriever;
+
+    public final LedgerServiceImpl ledgerService = new LedgerServiceImpl();
+
+    public final AsyncTransactionPruner transactionPruner;
+
+    public final MilestoneSolidifierImpl milestoneSolidifier;
+
     public final Tangle tangle;
-    public final SnapshotProvider snapshotProvider;
     public final TransactionValidator transactionValidator;
     public final TipsSolidifier tipsSolidifier;
     public final TransactionRequester transactionRequester;
@@ -92,27 +119,38 @@ public class Iota {
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
      *
      * @param configuration Information about how this node will be configured.
-     * @throws IOException If the Snapshot fails to initialize.
-     *                     This can happen if the snapshot signature is invalid or the file cannot be read.
+     * @throws TransactionPruningException If the TransactionPruner could not restore its state.
+     * @throws SnapshotException If the Snapshot fails to initialize.
+     *                           This can happen if the snapshot signature is invalid or the file cannot be read.
      */
-    public Iota(IotaConfig configuration) throws SnapshotException, IOException {
+    public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException {
         this.configuration = configuration;
-        Snapshot initialSnapshot = Snapshot.init(configuration).clone();
+
+        // new refactored instances
+        snapshotProvider = new SnapshotProviderImpl();
+        snapshotService = new SnapshotServiceImpl();
+        localSnapshotManager = new LocalSnapshotManagerImpl();
+        milestoneService = new MilestoneServiceImpl();
+        latestMilestoneTracker = new LatestMilestoneTrackerImpl();
+        latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
+        seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
+        milestoneSolidifier = new MilestoneSolidifierImpl();
+        transactionPruner = new AsyncTransactionPruner();
+
+        // legacy code
         tangle = new Tangle();
         messageQ = MessageQ.createWith(configuration);
         tipsViewModel = new TipsViewModel();
-        snapshotProvider = new SnapshotProviderImpl(configuration);
-        transactionRequester = new TransactionRequester(tangle, snapshotProvider.getInitialSnapshot(), messageQ);
-        transactionValidator = new TransactionValidator(tangle, snapshotProvider.getInitialSnapshot(), tipsViewModel,
-                transactionRequester);
-        milestoneTracker = new MilestoneTracker(tangle, snapshotProvider, transactionValidator, messageQ, initialSnapshot, configuration);
-        node = new Node(tangle, snapshotProvider.getInitialSnapshot(), transactionValidator, transactionRequester, tipsViewModel, milestoneTracker, messageQ,
-                configuration);
+        transactionRequester = new TransactionRequester(tangle, snapshotProvider, messageQ);
+        transactionValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester);
+        node = new Node(tangle, snapshotProvider, transactionValidator, transactionRequester, tipsViewModel,
+                latestMilestoneTracker, messageQ, configuration);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
-        ledgerValidator = new LedgerValidator(tangle, snapshotProvider, milestoneTracker, transactionRequester, messageQ);
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
         tipsSelector = createTipSelector(configuration);
+
+        injectDependencies();
     }
 
     /**
@@ -136,13 +174,40 @@ public class Iota {
             tangle.clearColumn(com.iota.iri.model.StateDiff.class);
             tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
         }
-        milestoneTracker.init(SpongeFactory.Mode.CURLP27, 1, ledgerValidator);
+
         transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
         tipsSolidifier.init();
         transactionRequester.init(configuration.getpRemoveRequest());
         udpReceiver.init();
         replicator.init();
         node.init();
+
+        latestMilestoneTracker.start();
+        latestSolidMilestoneTracker.start();
+        seenMilestonesRetriever.start();
+        milestoneSolidifier.start();
+
+        if (configuration.getLocalSnapshotsEnabled()) {
+            localSnapshotManager.start(latestMilestoneTracker);
+
+            if (configuration.getLocalSnapshotsPruningEnabled()) {
+                 transactionPruner.start();
+            }
+        }
+    }
+
+    private void injectDependencies() throws SnapshotException, TransactionPruningException {
+        snapshotProvider.init(configuration);
+        snapshotService.init(tangle, snapshotProvider, configuration);
+        localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
+        milestoneService.init(tangle, snapshotProvider, messageQ, configuration);
+        latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
+                messageQ, configuration);
+        latestSolidMilestoneTracker.init(tangle, snapshotProvider, ledgerService, latestMilestoneTracker, messageQ);
+        seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
+        milestoneSolidifier.init(snapshotProvider, transactionValidator);
+        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService);
+        transactionPruner.init(tangle, snapshotProvider, tipsViewModel, configuration).restoreState();
     }
 
     private void rescanDb() throws Exception {
@@ -175,7 +240,6 @@ public class Iota {
      * Exceptions during shutdown are not caught.
      */
     public void shutdown() throws Exception {
-        milestoneTracker.shutDown();
         tipsSolidifier.shutdown();
         node.shutdown();
         udpReceiver.shutdown();
@@ -183,6 +247,21 @@ public class Iota {
         transactionValidator.shutdown();
         tangle.shutdown();
         messageQ.shutdown();
+
+        // shutdown in reverse starting order (to not break any dependencies)
+        milestoneSolidifier.shutdown();
+        seenMilestonesRetriever.shutdown();
+        latestSolidMilestoneTracker.shutdown();
+        latestMilestoneTracker.shutdown();
+        snapshotProvider.shutdown();
+
+        if (configuration.getLocalSnapshotsEnabled()) {
+            localSnapshotManager.shutdown();
+
+            if (configuration.getLocalSnapshotsPruningEnabled()) {
+                transactionPruner.shutdown();
+            }
+        }
     }
 
     private void initializeTangle() {
@@ -204,11 +283,12 @@ public class Iota {
     }
 
     private TipSelector createTipSelector(TipSelConfig config) {
-        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider, milestoneTracker);
-        RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider.getInitialSnapshot());
+        EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, snapshotProvider,
+                latestMilestoneTracker);
+        RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle, snapshotProvider);
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
-        return new TipSelectorImpl(tangle, snapshotProvider, ledgerValidator, entryPointSelector, ratingCalculator,
-                walker, milestoneTracker, config);
+        return new TipSelectorImpl(tangle, snapshotProvider, ledgerService, entryPointSelector, ratingCalculator,
+                walker, config);
     }
 }

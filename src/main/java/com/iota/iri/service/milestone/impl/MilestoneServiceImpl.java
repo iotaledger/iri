@@ -29,7 +29,7 @@ import static com.iota.iri.service.milestone.MilestoneValidity.INVALID;
 import static com.iota.iri.service.milestone.MilestoneValidity.VALID;
 
 /**
- * Represents the service that contains all the relevant business logic for interacting with milestones.<br />
+ * Creates a service instance that allows us to perform milestone specific operations.<br />
  * <br />
  * This class is stateless and does not hold any domain specific models.<br />
  */
@@ -37,40 +37,50 @@ public class MilestoneServiceImpl implements MilestoneService {
     /**
      * Holds the tangle object which acts as a database interface.<br />
      */
-    private final Tangle tangle;
+    private Tangle tangle;
 
     /**
      * Holds the snapshot provider which gives us access to the relevant snapshots.<br />
      */
-    private final SnapshotProvider snapshotProvider;
+    private SnapshotProvider snapshotProvider;
 
     /**
      * Holds the ZeroMQ interface that allows us to emit messages for external recipients.<br />
      */
-    private final MessageQ messageQ;
+    private MessageQ messageQ;
 
     /**
      * Holds the config with important milestone specific settings.<br />
      */
-    private final ConsensusConfig config;
+    private ConsensusConfig config;
 
     /**
-     * Creates a service instance that allows us to interact with the milestones.<br />
+     * This method initializes the instance and registers its dependencies.<br />
      * <br />
-     * It simply stores the passed in dependencies in the internal properties.<br />
+     * It simply stores the passed in values in their corresponding private properties.<br />
+     * <br />
+     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
+     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
+     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
+     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
+     *       <br />
+     *       {@code milestoneService = new MilestoneServiceImpl().init(...);}
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
      * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      * @param config config with important milestone specific settings
+     * @return the initialized instance itself to allow chaining
      */
-    public MilestoneServiceImpl(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
+    public MilestoneServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ,
             ConsensusConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.messageQ = messageQ;
         this.config = config;
+
+        return this;
     }
 
     //region {PUBLIC METHODS] //////////////////////////////////////////////////////////////////////////////////////////

@@ -37,28 +37,28 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     /**
      * Holds the Tangle object which acts as a database interface.<br />
      */
-    private final Tangle tangle;
+    private Tangle tangle;
 
     /**
      * The snapshot provider which gives us access to the relevant snapshots that the node uses (for the ledger
      * state).<br />
      */
-    private final SnapshotProvider snapshotProvider;
+    private SnapshotProvider snapshotProvider;
 
     /**
      * Holds a reference to the manager that keeps track of the latest milestone.<br />
      */
-    private final LatestMilestoneTracker latestMilestoneTracker;
+    private LatestMilestoneTracker latestMilestoneTracker;
 
     /**
      * Holds a reference to the service that contains the logic for applying milestones to the ledger state.<br />
      */
-    private final LedgerService ledgerService;
+    private LedgerService ledgerService;
 
     /**
      * Holds a reference to the ZeroMQ interface that allows us to emit messages for external recipients.<br />
      */
-    private final MessageQ messageQ;
+    private MessageQ messageQ;
 
     /**
      * Holds a reference to the manager of the background worker.<br />
@@ -67,19 +67,25 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
             "Latest Solid Milestone Tracker", log.delegate());
 
     /**
-     * Creates a manager that keeps track of the latest solid milestones and that triggers the application of these
-     * milestones and their corresponding balance changes to the latest {@link Snapshot} by incorporating a background
-     * worker that periodically checks for new solid milestones.<br />
+     * This method initializes the instance and registers its dependencies.<br />
      * <br />
-     * We simply store the passed in dependencies in their corresponding properties.<br />
+     * It simply stores the passed in values in their corresponding private properties.<br />
+     * <br />
+     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
+     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
+     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
+     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
+     *       <br />
+     *       {@code latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl().init(...);}
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
-     * @param latestMilestoneTracker the manager that keeps track of the late st milestone
      * @param ledgerService the manager for
+     * @param latestMilestoneTracker the manager that keeps track of the latest milestone
      * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
+     * @return the initialized instance itself to allow chaining
      */
-    public LatestSolidMilestoneTrackerImpl(Tangle tangle, SnapshotProvider snapshotProvider,
+    public LatestSolidMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
             LedgerService ledgerService, LatestMilestoneTracker latestMilestoneTracker, MessageQ messageQ) {
 
         this.tangle = tangle;
@@ -87,6 +93,8 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
         this.ledgerService = ledgerService;
         this.latestMilestoneTracker = latestMilestoneTracker;
         this.messageQ = messageQ;
+
+        return this;
     }
 
     @Override

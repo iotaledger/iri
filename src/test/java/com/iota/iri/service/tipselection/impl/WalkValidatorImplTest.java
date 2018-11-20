@@ -1,14 +1,12 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.LedgerValidator;
-import com.iota.iri.MilestoneTracker;
 import com.iota.iri.TransactionTestUtils;
-import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
@@ -35,11 +33,7 @@ public class WalkValidatorImplTest {
     private static SnapshotProvider snapshotProvider;
     private TipSelConfig config = new MainnetConfig();
     @Mock
-    private LedgerValidator ledgerValidator;
-    @Mock
-    private TransactionValidator transactionValidator;
-    @Mock
-    private MilestoneTracker milestoneTrackerTracker;
+    private static LedgerService ledgerService;
 
     @AfterClass
     public static void tearDown() throws Exception {
@@ -52,7 +46,7 @@ public class WalkValidatorImplTest {
     @BeforeClass
     public static void setUp() throws Exception {
         tangle = new Tangle();
-        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
         dbFolder.create();
         logFolder.create();
         tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
@@ -67,11 +61,11 @@ public class WalkValidatorImplTest {
         tx.updateSolid(true);
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getHash();
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = depth;
+        snapshotProvider.getLatestSnapshot().setIndex(depth);
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator, milestoneTrackerTracker, config);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
         Assert.assertTrue("Validation failed", walkValidator.isValid(hash));
     }
 
@@ -82,12 +76,12 @@ public class WalkValidatorImplTest {
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getTrunkTransactionHash();
         tx.updateSolid(true);
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = depth;
+        snapshotProvider.getLatestSnapshot().setIndex(depth);
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertFalse("Validation succeded but should have failed since tx is missing", walkValidator.isValid(hash));
     }
 
@@ -97,12 +91,12 @@ public class WalkValidatorImplTest {
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getHash();
         tx.updateSolid(true);
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
+        snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertFalse("Validation succeded but should have failed since we are not on a tail", walkValidator.isValid(hash));
     }
 
@@ -112,12 +106,12 @@ public class WalkValidatorImplTest {
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getHash();
         tx.updateSolid(false);
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
+        snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertFalse("Validation succeded but should have failed since tx is not solid",
                 walkValidator.isValid(hash));
     }
@@ -129,11 +123,11 @@ public class WalkValidatorImplTest {
         tx.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 2);
         Hash hash = tx.getHash();
         tx.updateSolid(true);
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertFalse("Validation succeeded but should have failed tx is below max depth",
                 walkValidator.isValid(hash));
     }
@@ -152,11 +146,11 @@ public class WalkValidatorImplTest {
             hash = tx.getHash();
             tx.store(tangle, snapshotProvider.getInitialSnapshot());
         }
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = 100;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        snapshotProvider.getLatestSnapshot().setIndex(100);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertTrue("Validation failed but should have succeeded since tx is above max depth",
                 walkValidator.isValid(hash));
     }
@@ -177,11 +171,11 @@ public class WalkValidatorImplTest {
             tx.updateSolid(true);
             tx.store(tangle, snapshotProvider.getInitialSnapshot());
         }
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(true);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = 100;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        snapshotProvider.getLatestSnapshot().setIndex(100);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertFalse("Validation succeeded but should have failed since tx is below max depth",
                 walkValidator.isValid(hash));
     }
@@ -199,11 +193,11 @@ public class WalkValidatorImplTest {
             hash = tx.getHash();
             tx.store(tangle, snapshotProvider.getInitialSnapshot());
         }
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), tx.getHash()))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), tx.getHash()))
                 .thenReturn(true);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = 15;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        snapshotProvider.getLatestSnapshot().setIndex(15);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertTrue("Validation failed but should have succeeded. We didn't exceed the maximal amount of" +
                         "transactions that may be analyzed.",
                 walkValidator.isValid(tx.getHash()));
@@ -223,11 +217,11 @@ public class WalkValidatorImplTest {
             tx.store(tangle, snapshotProvider.getInitialSnapshot());
             hash = tx.getHash();
         }
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), tx.getHash()))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), tx.getHash()))
                 .thenReturn(true);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = 17;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        snapshotProvider.getLatestSnapshot().setIndex(17);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertFalse("Validation succeeded but should have failed. We exceeded the maximal amount of" +
                         "transactions that may be analyzed.",
                 walkValidator.isValid(tx.getHash()));
@@ -239,12 +233,12 @@ public class WalkValidatorImplTest {
         tx.store(tangle, snapshotProvider.getInitialSnapshot());
         Hash hash = tx.getHash();
         tx.updateSolid(true);
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), hash))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), hash))
                 .thenReturn(false);
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = Integer.MAX_VALUE;
+        snapshotProvider.getLatestSnapshot().setIndex(Integer.MAX_VALUE);
 
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertFalse("Validation succeded but should have failed due to inconsistent ledger state",
                 walkValidator.isValid(hash));
     }
@@ -281,14 +275,14 @@ public class WalkValidatorImplTest {
         tx4.updateSolid(true);
         tx4.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), tx4.getHash()))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), tx4.getHash()))
                 .thenReturn(true);
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), tx2.getHash()))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), tx2.getHash()))
                 .thenReturn(true);
 
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = 100;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        snapshotProvider.getLatestSnapshot().setIndex(100);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertFalse("Validation of tx4 succeeded but should have failed since tx is below max depth",
                 walkValidator.isValid(tx4.getHash()));
         Assert.assertTrue("Validation of tx2 failed but should have succeeded since tx is above max depth",
@@ -327,12 +321,12 @@ public class WalkValidatorImplTest {
         tx4.updateSolid(true);
         tx4.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        Mockito.when(ledgerValidator.updateDiff(new HashSet<>(), new HashMap<>(), tx4.getHash()))
+        Mockito.when(ledgerService.isBalanceDiffConsistent(new HashSet<>(), new HashMap<>(), tx4.getHash()))
                 .thenReturn(true);
 
-        milestoneTrackerTracker.latestSolidSubtangleMilestoneIndex = 100;
-        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator,
-        milestoneTrackerTracker, config);
+        snapshotProvider.getLatestSnapshot().setIndex(100);
+        WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService,
+        config);
         Assert.assertFalse("Validation of tx4 succeeded but should have failed since tx is below max depth",
                 walkValidator.isValid(tx4.getHash()));
 

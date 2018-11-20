@@ -33,7 +33,6 @@ public class TipSelectorImpl implements TipSelector {
     private final LedgerService ledgerService;
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
-    private final MilestoneTracker milestoneTracker;
     private final TipSelConfig config;
 
     public TipSelectorImpl(Tangle tangle,
@@ -42,7 +41,6 @@ public class TipSelectorImpl implements TipSelector {
                            EntryPointSelector entryPointSelector,
                            RatingCalculator ratingCalculator,
                            Walker walkerAlpha,
-                           MilestoneTracker milestoneTracker,
                            TipSelConfig config) {
 
         this.entryPointSelector = entryPointSelector;
@@ -54,7 +52,6 @@ public class TipSelectorImpl implements TipSelector {
         this.ledgerService = ledgerService;
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
-        this.milestoneTracker = milestoneTracker;
         this.config = config;
     }
 
@@ -77,7 +74,7 @@ public class TipSelectorImpl implements TipSelector {
     @Override
     public List<Hash> getTransactionsToApprove(int depth, Optional<Hash> reference) throws Exception {
         try {
-            milestoneTracker.latestSnapshot.rwlock.readLock().lock();
+            snapshotProvider.getLatestSnapshot().lockRead();
 
             //preparation
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
@@ -105,7 +102,7 @@ public class TipSelectorImpl implements TipSelector {
 
             return tips;
         } finally {
-            milestoneTracker.latestSnapshot.rwlock.readLock().unlock();
+            snapshotProvider.getLatestSnapshot().unlockRead();
         }
     }
 

@@ -173,7 +173,7 @@ public class MilestoneViewModelTest {
         int next = first + 1;
         new MilestoneViewModel(next, HashFactory.TRANSACTION.create("GBCDEBGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
         new MilestoneViewModel(first, HashFactory.TRANSACTION.create("GBCDEFGHIJKLMNODQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUVWXYZ9ABCDEFGHIJKLMNOPQRSTUV99999")).store(tangle);
-        assertEquals(next, MilestoneViewModel.findClosestNextMilestone(tangle, first, next).index().intValue());
+        assertEquals("the found milestone should be following the previous one", next, MilestoneViewModel.findClosestNextMilestone(tangle, first, next).index().intValue());
     }
 
     @Test

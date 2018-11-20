@@ -4,7 +4,6 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
@@ -17,7 +16,6 @@ import com.iota.iri.service.milestone.impl.MilestoneServiceImpl;
 import com.iota.iri.service.milestone.impl.MilestoneSolidifierImpl;
 import com.iota.iri.service.milestone.impl.SeenMilestonesRetrieverImpl;
 import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.LocalSnapshotManagerImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotServiceImpl;
@@ -45,7 +43,6 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.List;
 
@@ -200,10 +197,11 @@ public class Iota {
         snapshotProvider.init(configuration);
         snapshotService.init(tangle, snapshotProvider, configuration);
         localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
-        milestoneService.init(tangle, snapshotProvider, messageQ, configuration);
+        milestoneService.init(tangle, snapshotProvider, snapshotService, messageQ, configuration);
         latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
                 messageQ, configuration);
-        latestSolidMilestoneTracker.init(tangle, snapshotProvider, ledgerService, latestMilestoneTracker, messageQ);
+        latestSolidMilestoneTracker.init(tangle, snapshotProvider, milestoneService, ledgerService,
+                latestMilestoneTracker, messageQ);
         seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService);

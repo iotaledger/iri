@@ -7,13 +7,19 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
 
 /**
  * Created by paul on 4/15/17.
+ */
+ 
+ /**
+ * This class Extends {@link Neighbor} base class with TCP specific functionality. 
+ * It keeps reference of Source and Sink while maintaining a sendQueue for keeping
+ * outgoing requests. 
+ * 
  */
 public class TCPNeighbor extends Neighbor {
     private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
@@ -70,7 +76,7 @@ public class TCPNeighbor extends Neighbor {
                     this.sink.close();
                     log.info("Sink {} closed", this.getHostAddress());
                 } catch (IOException e) {
-                    log.error("Sink {} close failure", this.getHostAddress(), e);
+                    log.error("Sink {} close failure: {}", this.getHostAddress(), e.toString());
                 }
             }
         }
@@ -113,14 +119,4 @@ public class TCPNeighbor extends Neighbor {
         return (this.sendQueue.poll(10000, TimeUnit.MILLISECONDS));
     }
 
-    @Override
-    public boolean matches(SocketAddress address) {
-        if (address.toString().contains(this.getHostAddress())) {
-            int port = this.getSource().getPort();
-            if (address.toString().contains(Integer.toString(port))) {
-                return true;
-            }
-        }
-        return false;
-    }
 }

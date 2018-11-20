@@ -481,8 +481,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-pruning-delay"},
-            description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
+    @Parameter(names = {"--local-snapshots-pruning-delay"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
     protected void setLocalSnapshotsPruningDelay(int localSnapshotsPruningDelay) {
         if (localSnapshotsPruningDelay < 0) {
             throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be positive (found " +

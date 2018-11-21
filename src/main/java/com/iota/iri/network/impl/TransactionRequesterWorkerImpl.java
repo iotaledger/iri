@@ -23,8 +23,8 @@ import java.util.concurrent.TimeUnit;
  * as new transactions are received.<br />
  * <br />
  * Note: To reduce the overhead for the node we only trigger this worker if the request queue gets bigger than the
- * {@link #REQUESTER_THREAD_ACTIVATION_THRESHOLD}. Otherwise we rely on the processing of the queue due to normal
- * outgoing traffic like transactions that get relayed by our node.<br />
+ *       {@link #REQUESTER_THREAD_ACTIVATION_THRESHOLD}. Otherwise we rely on the processing of the queue due to normal
+ *       outgoing traffic like transactions that get relayed by our node.<br />
  */
 public class TransactionRequesterWorkerImpl implements TransactionRequesterWorker {
     /**

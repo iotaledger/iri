@@ -1,20 +1,22 @@
 package com.iota.iri;
 
 import com.iota.iri.service.dto.AbstractResponse;
+import com.iota.iri.service.dto.ErrorResponse;
+import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
  * Unit tests for {@link IXI}
  */
 public class IXITest {
-    static TemporaryFolder ixiDir = new TemporaryFolder();
-    static IXI ixi;
+    private static TemporaryFolder ixiDir = new TemporaryFolder();
+    private static IXI ixi;
 
     /**
      * Create IXI temporary directory and start IXI.
@@ -43,7 +45,7 @@ public class IXITest {
     @Test
     public void processCommandError() {
         AbstractResponse response = ixi.processCommand("testCommand.testSuffix", null);
-        assertNotNull("Response should not be null", response);
+        assertThat("Wrong type of response", response, CoreMatchers.instanceOf(ErrorResponse.class));
         assertTrue("Wrong error message returned in response", response.toString().contains("Command [testCommand.testSuffix] is unknown"));
     }
 
@@ -53,7 +55,7 @@ public class IXITest {
     @Test
     public void processCommandNull() {
         AbstractResponse response = ixi.processCommand(null, null);
-        assertNotNull("Response should not be null", response);
+        assertThat("Wrong type of response", response, CoreMatchers.instanceOf(ErrorResponse.class));
         assertTrue("Wrong error message returned in response", response.toString().contains("Command can not be null or empty"));
     }
 
@@ -63,7 +65,7 @@ public class IXITest {
     @Test
     public void processCommandEmpty() {
         AbstractResponse response = ixi.processCommand("", null);
-        assertNotNull("Response should not be null", response);
+        assertThat("Wrong type of response", response, CoreMatchers.instanceOf(ErrorResponse.class));
         assertTrue("Wrong error message returned in response", response.toString().contains("Command can not be null or empty"));
     }
 
@@ -73,7 +75,7 @@ public class IXITest {
     @Test
     public void processCommandUnknown() {
         AbstractResponse response = ixi.processCommand("unknown", null);
-        assertNotNull("Response should not be null", response);
+        assertThat("Wrong type of response", response, CoreMatchers.instanceOf(ErrorResponse.class));
         assertTrue("Wrong error message returned in response", response.toString().contains("Command [unknown] is unknown"));
     }
 

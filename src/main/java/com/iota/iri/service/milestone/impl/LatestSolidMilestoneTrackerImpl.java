@@ -82,7 +82,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     private int errorCausingMilestoneIndex = Integer.MAX_VALUE;
 
      /**
-     * Counter for the backoff repair strategy (see {@link #revertPrecedingMilestones(MilestoneViewModel)}.<br />
+     * Counter for the backoff repair strategy (see {@link #repairCorruptedMilestone(MilestoneViewModel)}.<br />
      */
     private int repairBackoffCounter = 0;
 
@@ -184,26 +184,50 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * @throws Exception if anything unexpected goes wrong while applying the milestone to the ledger
      */
     private void applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
-        if (!ledgerService.applyMilestoneToLedger(milestone)) {
-            revertPrecedingMilestones(milestone);
+        if (ledgerService.applyMilestoneToLedger(milestone)) {
+            if (isRepairRunning() && isRepairSuccessful(milestone)) {
+                stopRepair(milestone);
+            }
         } else {
-            resetRepairBackoffCounterIfProblemSolved(milestone);
+            repairCorruptedMilestone(milestone);
         }
+    }
+
+    /**
+     * Checks if we are currently trying to repair a milestone.<br />
+     * <br />
+     * We simply use the {@link #repairBackoffCounter} as an indicator if a repair routine is running.<br />
+     *
+     * @return {@code true} if we are trying to repair a milestone and {@code false} otherwise
+     */
+    private boolean isRepairRunning() {
+        return repairBackoffCounter != 0;
+    }
+
+    /**
+     * Checks if we successfully repaired the corrupted milestone.<br />
+     * <br />
+     * To determine if the repair routine was successful we check if the processed milestone has a higher index than the
+     * one that initially could not get applied to the ledger.<br />
+     *
+     * @param processedMilestone the currently processed milestone
+     * @return {@code true} if we advanced to a milestone following the corrupted one and {@code false} otherwise
+     */
+    private boolean isRepairSuccessful(MilestoneViewModel processedMilestone) {
+        return processedMilestone.index() > errorCausingMilestoneIndex;
     }
 
     /**
      * Resets the internal variables that are used to keep track of the repair process.<br />
      * <br />
      * It gets called whenever we advance to a milestone that has a higher milestone index than the milestone that
-     * initially caused the repair routine to kick in (see {@link #revertPrecedingMilestones(MilestoneViewModel)}.<br />
+     * initially caused the repair routine to kick in (see {@link #repairCorruptedMilestone(MilestoneViewModel)}.<br />
      *
      * @param processedMilestone the milestone that currently gets processed
      */
-    private void resetRepairBackoffCounterIfProblemSolved(MilestoneViewModel processedMilestone) {
-        if(repairBackoffCounter != 0 && processedMilestone.index() > errorCausingMilestoneIndex) {
-            repairBackoffCounter = 0;
-            errorCausingMilestoneIndex = Integer.MAX_VALUE;
-        }
+    private void stopRepair(MilestoneViewModel processedMilestone) {
+        repairBackoffCounter = 0;
+        errorCausingMilestoneIndex = Integer.MAX_VALUE;
     }
 
     /**
@@ -263,7 +287,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * @param errorCausingMilestone the milestone that failed to be applied
      * @throws MilestoneException if we failed to reset the corrupted milestone
      */
-    private void revertPrecedingMilestones(MilestoneViewModel errorCausingMilestone) throws MilestoneException {
+    private void repairCorruptedMilestone(MilestoneViewModel errorCausingMilestone) throws MilestoneException {
         if(repairBackoffCounter++ == 0) {
             errorCausingMilestoneIndex = errorCausingMilestone.index();
         }

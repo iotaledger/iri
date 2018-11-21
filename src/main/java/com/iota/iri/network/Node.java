@@ -584,6 +584,19 @@ public class Node {
         sendPacketsCounter.getAndIncrement();
     }
 
+    /**
+     * Does the same as {@link #sendPacket(DatagramPacket, TransactionViewModel, Neighbor)} but defaults to using the
+     * same internal {@link #sendingPacket} as all the other methods in this class, which allows external callers to
+     * send packets that are in "sync" (sending is synchronized over the packet object) with the rest of the methods
+     * used in this class.<br />
+     *
+     * @param transactionViewModel the transaction that shall be sent
+     * @param neighbor the neighbor that should receive the packet
+     * @throws Exception if anything unexpected happens during the sending of the packet
+     */
+    public void sendPacket(TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {
+        sendPacket(sendingPacket, transactionViewModel, neighbor);
+    }
 
     /**
      * This thread picks up a new transaction from the broadcast queue and

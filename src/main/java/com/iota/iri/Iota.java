@@ -4,9 +4,9 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.service.TipsSolidifier;
@@ -17,7 +17,6 @@ import com.iota.iri.service.milestone.impl.MilestoneServiceImpl;
 import com.iota.iri.service.milestone.impl.MilestoneSolidifierImpl;
 import com.iota.iri.service.milestone.impl.SeenMilestonesRetrieverImpl;
 import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.LocalSnapshotManagerImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotServiceImpl;
@@ -45,7 +44,6 @@ import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 import java.util.List;
 
@@ -103,6 +101,8 @@ public class Iota {
 
     public final MilestoneSolidifierImpl milestoneSolidifier;
 
+    public final TransactionRequesterWorkerImpl transactionRequesterWorker;
+
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
     public final TipsSolidifier tipsSolidifier;
@@ -136,6 +136,7 @@ public class Iota {
         seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
         milestoneSolidifier = new MilestoneSolidifierImpl();
         transactionPruner = new AsyncTransactionPruner();
+        transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code
         tangle = new Tangle();
@@ -186,6 +187,7 @@ public class Iota {
         latestSolidMilestoneTracker.start();
         seenMilestonesRetriever.start();
         milestoneSolidifier.start();
+        transactionRequesterWorker.start();
 
         if (configuration.getLocalSnapshotsEnabled()) {
             localSnapshotManager.start(latestMilestoneTracker);
@@ -208,6 +210,7 @@ public class Iota {
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService);
         transactionPruner.init(tangle, snapshotProvider, tipsViewModel, configuration).restoreState();
+        transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }
 
     private void rescanDb() throws Exception {
@@ -240,6 +243,7 @@ public class Iota {
      * Exceptions during shutdown are not caught.
      */
     public void shutdown() throws Exception {
+        transactionRequesterWorker.shutdown();
         tipsSolidifier.shutdown();
         node.shutdown();
         udpReceiver.shutdown();

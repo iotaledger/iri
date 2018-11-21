@@ -379,7 +379,7 @@ public class MilestoneServiceImpl implements MilestoneService {
      * 2. resetting the {@code milestoneIndex} of all transactions that were confirmed by the current milestone<br />
      * 3. deleting the corresponding {@link StateDiff} entry from the database<br />
      *
-     * @param index milestone index that shall
+     * @param index milestone index that shall be reverted
      * @param processedTransactions a set of transactions that have been processed already
      * @throws MilestoneException if anything goes wrong while resetting the corrupted milestone
      */

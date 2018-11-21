@@ -6,16 +6,16 @@ import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.service.API;
 
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
 
 /**
  * 
@@ -42,7 +42,7 @@ public class IRI {
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
-    public static final String VERSION = "1.5.5";
+    public static final String VERSION = "1.6.0-RC1";
 
     /**
      * The entry point of IRI.

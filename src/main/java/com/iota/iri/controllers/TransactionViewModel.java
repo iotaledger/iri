@@ -94,20 +94,20 @@ public class TransactionViewModel {
 
     public TransactionViewModel(final byte[] trits, Hash hash) {
         transaction = new Transaction();
-        
+
         if(trits.length == 8019) {
             this.trits = new byte[trits.length];
             System.arraycopy(trits, 0, this.trits, 0, trits.length);
             transaction.bytes = Converter.allocateBytesForTrits(trits.length);
             Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
-            
+
             transaction.validity = 0;
             transaction.arrivalTime = 0;
         } else {
             transaction.bytes = new byte[SIZE];
             System.arraycopy(trits, 0, transaction.bytes, 0, SIZE);
         }
-        
+
         this.hash = hash;
         weightMagnitude = this.hash.trailingZeros();
         transaction.type = FILLED_SLOT;
@@ -269,7 +269,7 @@ public class TransactionViewModel {
             byte[] tagBytes = Converter.allocateBytesForTrits(OBSOLETE_TAG_TRINARY_SIZE);
             Converter.bytes(trits(), OBSOLETE_TAG_TRINARY_OFFSET, tagBytes, 0, OBSOLETE_TAG_TRINARY_SIZE);
 
-            transaction.obsoleteTag = HashFactory.TAG.create(tagBytes, 0, TAG_SIZE_IN_BYTES);
+            transaction.obsoleteTag = HashFactory.OBSOLETETAG.create(tagBytes, 0, TAG_SIZE_IN_BYTES);
         }
         return transaction.obsoleteTag;
     }
@@ -412,6 +412,37 @@ public class TransactionViewModel {
         }
     }
 
+    /**
+     * This method is the setter for the milestone flag of a transaction.
+     *
+     * It gets automatically called by the "Latest Milestone Tracker" and marks transactions that represent a milestone
+     * accordingly. It first checks if the value has actually changed and then issues a database update.
+     *
+     * @param tangle Tangle instance which acts as a database interface
+     * @param isMilestone true if the transaction is a milestone and false otherwise
+     * @throws Exception if something goes wrong while saving the changes to the database
+     */
+    public void isMilestone(Tangle tangle, final boolean isMilestone) throws Exception {
+        if (isMilestone != transaction.milestone) {
+            transaction.milestone = isMilestone;
+            update(tangle, "milestone");
+        }
+    }
+
+    /**
+     * This method is the getter for the milestone flag of a transaction.
+     *
+     * The milestone flag indicates if the transaction is a coordinator issued milestone. It allows us to differentiate
+     * the two types of transactions (normal transactions / milestones) very fast and efficiently without issuing
+     * further database queries or even full verifications of the signature. If it is set to true one can for example
+     * use the snapshotIndex() method to retrieve the corresponding MilestoneViewModel object.
+     *
+     * @return true if the transaction is a milestone and false otherwise
+     */
+    public boolean isMilestone() {
+        return transaction.milestone;
+    }
+
     public long getHeight() {
         return transaction.height;
     }
@@ -473,5 +504,17 @@ public class TransactionViewModel {
     @Override
     public int hashCode() {
         return Objects.hash(getHash());
+    }
+
+    /**
+     * This method creates a human readable string representation of the transaction.
+     *
+     * It can be used to directly append the transaction in error and debug messages.
+     *
+     * @return human readable string representation of the transaction
+     */
+    @Override
+    public String toString() {
+        return "transaction " + hash.toString();
     }
 }

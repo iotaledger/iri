@@ -6,12 +6,18 @@ import org.slf4j.LoggerFactory;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetSocketAddress;
-import java.net.SocketAddress;
 
 /**
  * Created by paul on 4/15/17.
  */
+ 
+  /**
+ * This class Extends {@link Neighbor} base class with UDP specific functionality. 
+ * It keeps reference of socket and doesnt maintains any queue for UDP outgoing packets. 
+ * 
+ */
 public class UDPNeighbor extends Neighbor {
+
     private static final Logger log = LoggerFactory.getLogger(UDPNeighbor.class);
 
     private final DatagramSocket socket;
@@ -45,17 +51,6 @@ public class UDPNeighbor extends Neighbor {
     @Override
     public String connectionType() {
         return "udp";
-    }
-
-    @Override
-    public boolean matches(SocketAddress address) {
-        if (this.getAddress().toString().contains(address.toString())) {
-            int port = this.getAddress().getPort();
-            if (address.toString().contains(Integer.toString(port))) {
-                return true;
-            }
-        }
-        return false;
     }
 
 }

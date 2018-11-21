@@ -276,7 +276,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * can still happen because IRI crashed or got stopped in the middle of applying a milestone or if a milestone
      * was processed in the wrong order.<br />
      * <br />
-     * Every time we call this method the internal {@link #repairBackoffCounter} gets increased which causes the next
+     * Every time we call this method the internal {@link #repairBackoffCounter} is incremented which causes the next
      * call of this method to repair an additional milestone. This means that whenever we face an error we first try to
      * reset only the last milestone, then the two last milestones, then the three last milestones (and so on ...) until
      * the problem was fixed.<br />

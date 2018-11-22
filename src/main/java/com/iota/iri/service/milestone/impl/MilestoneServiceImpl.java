@@ -210,7 +210,7 @@ public class MilestoneServiceImpl implements MilestoneService {
             DAGHelper.get(tangle).traverseApprovees(
                 milestoneHash,
                 currentTransaction -> {
-                    // if the transaction was confirmed by a previous milestone -> check if we have a back-referencing
+                    // if the transaction was confirmed by a PREVIOUS milestone -> check if we have a back-referencing
                     // transaction and abort the traversal
                     if (isTransactionConfirmed(currentTransaction, correctIndex - 1)) {
                         patchSolidEntryPointsIfNecessary(snapshotProvider.getInitialSnapshot(), currentTransaction);

@@ -238,6 +238,20 @@ public class Iota {
      * Exceptions during shutdown are not caught.
      */
     public void shutdown() throws Exception {
+        // shutdown in reverse starting order (to not break any dependencies)
+        milestoneSolidifier.shutdown();
+        seenMilestonesRetriever.shutdown();
+        latestSolidMilestoneTracker.shutdown();
+        latestMilestoneTracker.shutdown();
+
+        if (configuration.getLocalSnapshotsEnabled()) {
+            if (configuration.getLocalSnapshotsPruningEnabled()) {
+                transactionPruner.shutdown();
+            }
+
+            localSnapshotManager.shutdown();
+        }
+
         tipsSolidifier.shutdown();
         node.shutdown();
         udpReceiver.shutdown();
@@ -246,20 +260,8 @@ public class Iota {
         tangle.shutdown();
         messageQ.shutdown();
 
-        // shutdown in reverse starting order (to not break any dependencies)
-        milestoneSolidifier.shutdown();
-        seenMilestonesRetriever.shutdown();
-        latestSolidMilestoneTracker.shutdown();
-        latestMilestoneTracker.shutdown();
+        // free the resources of the snapshot provider last because all other instances need it
         snapshotProvider.shutdown();
-
-        if (configuration.getLocalSnapshotsEnabled()) {
-            localSnapshotManager.shutdown();
-
-            if (configuration.getLocalSnapshotsPruningEnabled()) {
-                transactionPruner.shutdown();
-            }
-        }
     }
 
     private void initializeTangle() {

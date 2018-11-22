@@ -135,7 +135,7 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash milestoneHash, int milestoneIndex)
+    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex)
             throws LedgerException {
 
         Map<Hash, Long> state = new HashMap<>();
@@ -146,17 +146,15 @@ public class LedgerServiceImpl implements LedgerService {
             countedTx.add(solidEntryPointHash);
         });
 
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestoneHash));
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(startTransaction));
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedTransactions.add(transactionPointer)) {
-
                 try {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle,
                             transactionPointer);
-
-                    if (milestoneService.transactionBelongsToMilestone(transactionViewModel, milestoneIndex)) {
-
+                    // only take transactions into account that have not been confirmed by the referenced milestone, yet
+                    if (!milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;
                         } else {
@@ -225,7 +223,6 @@ public class LedgerServiceImpl implements LedgerService {
      * @throws LedgerException if anything unexpected happens while generating the {@link com.iota.iri.model.StateDiff}
      */
     private boolean generateStateDiff(MilestoneViewModel milestone) throws LedgerException {
-
         try {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestone.getHash());
 

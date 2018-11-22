@@ -135,8 +135,8 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash milestoneHash, int milestoneIndex)
-            throws LedgerException {
+    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash milestoneHash,
+            int latestSolidMilestoneIndex) throws LedgerException {
 
         Map<Hash, Long> state = new HashMap<>();
         Set<Hash> countedTx = new HashSet<>();
@@ -150,12 +150,12 @@ public class LedgerServiceImpl implements LedgerService {
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedTransactions.add(transactionPointer)) {
-
                 try {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle,
                             transactionPointer);
 
-                    if (milestoneService.transactionBelongsToMilestone(transactionViewModel, milestoneIndex)) {
+                    if (milestoneService.transactionBelongsToMilestone(transactionViewModel,
+                            latestSolidMilestoneIndex + 1)) {
 
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;

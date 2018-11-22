@@ -68,11 +68,11 @@ public interface LedgerService {
      *
      * @param visitedTransactions a set of transaction hashes that shall be considered to be visited already
      * @param milestoneHash the milestone  that is examined regarding its approved transactions
-     * @param milestoneIndex the milestone index
+     * @param latestSolidMilestoneIndex the latest solid milestone index
      * @return a map of the balance changes (addresses associated to their balance) or {@code null} if the balance could
      *         not be generated due to inconsistencies
      * @throws LedgerException if anything unexpected happens while generating the balance changes
      */
-    Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash milestoneHash, int milestoneIndex) throws
-            LedgerException;
+    Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash milestoneHash,
+            int latestSolidMilestoneIndex) throws LedgerException;
 }

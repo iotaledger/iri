@@ -153,8 +153,7 @@ public class LedgerServiceImpl implements LedgerService {
                 try {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle,
                             transactionPointer);
-                    // only take transactions into account that have not been confirmed, yet (that are not included in
-                    // the ledger state)
+                    // only take transactions into account that have not been confirmed by the referenced milestone, yet
                     if (!milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;

@@ -61,7 +61,7 @@ public interface MilestoneService {
      * It recursively resets additional milestones if inconsistencies are found within the resetted milestone (wrong
      * {@code milestoneIndex}es).<br />
      *
-     * @param index milestone index that shall
+     * @param index milestone index that shall be reverted
      * @throws MilestoneException if anything goes wrong while resetting the corrupted milestone
      */
     void resetCorruptedMilestone(int index) throws MilestoneException;

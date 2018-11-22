@@ -187,7 +187,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                                 if (milestoneIndex < snapshotProvider.getLatestSnapshot().getIndex() &&
                                         milestoneIndex > snapshotProvider.getInitialSnapshot().getIndex()) {
 
-                                     resetCorruptedMilestone(newMilestoneViewModel.index());
+                                     resetCorruptedMilestone(milestoneIndex);
                                 }
 
                                 return VALID;

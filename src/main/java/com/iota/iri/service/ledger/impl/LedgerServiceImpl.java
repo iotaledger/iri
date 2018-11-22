@@ -135,7 +135,7 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash transactionHash, int milestoneIndex)
+    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash startTransaction, int milestoneIndex)
             throws LedgerException {
 
         Map<Hash, Long> state = new HashMap<>();
@@ -146,7 +146,7 @@ public class LedgerServiceImpl implements LedgerService {
             countedTx.add(solidEntryPointHash);
         });
 
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(transactionHash));
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(startTransaction));
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedTransactions.add(transactionPointer)) {

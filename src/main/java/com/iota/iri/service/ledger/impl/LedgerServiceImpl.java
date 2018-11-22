@@ -115,7 +115,8 @@ public class LedgerServiceImpl implements LedgerService {
             return true;
         }
         Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
-        Map<Hash, Long> currentState = generateBalanceDiff(visitedHashes, tip);
+        Map<Hash, Long> currentState = generateBalanceDiff(visitedHashes, tip,
+                snapshotProvider.getLatestSnapshot().getIndex());
         if (currentState == null) {
             return false;
         }
@@ -134,8 +135,8 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash transactionHash) throws
-            LedgerException {
+    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash transactionHash, int milestoneIndex)
+            throws LedgerException {
 
         Map<Hash, Long> state = new HashMap<>();
         Set<Hash> countedTx = new HashSet<>();
@@ -154,7 +155,7 @@ public class LedgerServiceImpl implements LedgerService {
                             transactionPointer);
                     // only take transactions into account that have not been confirmed, yet (that are not included in
                     // the ledger state)
-                    if (!milestoneService.isTransactionConfirmed(transactionViewModel)) {
+                    if (!milestoneService.isTransactionConfirmed(transactionViewModel, milestoneIndex)) {
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;
                         } else {
@@ -236,7 +237,8 @@ public class LedgerServiceImpl implements LedgerService {
                 snapshotProvider.getLatestSnapshot().lockRead();
                 try {
                     Hash tail = transactionViewModel.getHash();
-                    Map<Hash, Long> balanceChanges = generateBalanceDiff(new HashSet<>(), tail);
+                    Map<Hash, Long> balanceChanges = generateBalanceDiff(new HashSet<>(), tail,
+                            snapshotProvider.getLatestSnapshot().getIndex());
                     successfullyProcessed = balanceChanges != null;
                     if (successfullyProcessed) {
                         successfullyProcessed = snapshotProvider.getLatestSnapshot().patchedState(

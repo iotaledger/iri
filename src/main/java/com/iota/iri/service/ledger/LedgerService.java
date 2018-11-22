@@ -60,19 +60,18 @@ public interface LedgerService {
     boolean isBalanceDiffConsistent(Set<Hash> approvedHashes, Map<Hash, Long> diff, Hash tip) throws LedgerException;
 
     /**
-     * Generates the accumulated balance changes of the transactions that are "approved" by the given milestone.<br />
+     * Generates the accumulated balance changes of the unconfirmed transactions that are directly or indirectly
+     * referenced by the given transaction.<br />
      * <br />
-     * It simply iterates over all approvees that still belong to the given milestone and that have not been
-     * processed already (by being part of the {@code visitedNonMilestoneSubtangleHashes} set) and collects their
-     * balance changes.<br />
+     * It simply iterates over all approvees that have not been confirmed yet and that have not been processed already
+     * (by being part of the {@code visitedNonMilestoneSubtangleHashes} set) and collects their balance changes.<br />
      *
      * @param visitedTransactions a set of transaction hashes that shall be considered to be visited already
-     * @param milestoneHash the milestone  that is examined regarding its approved transactions
-     * @param latestSolidMilestoneIndex the latest solid milestone index
+     * @param transactionHash the transaction that marks the start of the dag traversal and that has its approovees
+     *                        examined
      * @return a map of the balance changes (addresses associated to their balance) or {@code null} if the balance could
      *         not be generated due to inconsistencies
      * @throws LedgerException if anything unexpected happens while generating the balance changes
      */
-    Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash milestoneHash,
-            int latestSolidMilestoneIndex) throws LedgerException;
+    Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash transactionHash) throws LedgerException;
 }

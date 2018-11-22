@@ -115,8 +115,7 @@ public class LedgerServiceImpl implements LedgerService {
             return true;
         }
         Set<Hash> visitedHashes = new HashSet<>(approvedHashes);
-        Map<Hash, Long> currentState = generateBalanceDiff(visitedHashes, tip,
-                snapshotProvider.getLatestSnapshot().getIndex());
+        Map<Hash, Long> currentState = generateBalanceDiff(visitedHashes, tip);
         if (currentState == null) {
             return false;
         }
@@ -135,8 +134,8 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
-    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash milestoneHash,
-            int latestSolidMilestoneIndex) throws LedgerException {
+    public Map<Hash, Long> generateBalanceDiff(Set<Hash> visitedTransactions, Hash transactionHash) throws
+            LedgerException {
 
         Map<Hash, Long> state = new HashMap<>();
         Set<Hash> countedTx = new HashSet<>();
@@ -146,17 +145,16 @@ public class LedgerServiceImpl implements LedgerService {
             countedTx.add(solidEntryPointHash);
         });
 
-        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(milestoneHash));
+        final Queue<Hash> nonAnalyzedTransactions = new LinkedList<>(Collections.singleton(transactionHash));
         Hash transactionPointer;
         while ((transactionPointer = nonAnalyzedTransactions.poll()) != null) {
             if (visitedTransactions.add(transactionPointer)) {
                 try {
                     final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle,
                             transactionPointer);
-
-                    if (milestoneService.transactionBelongsToMilestone(transactionViewModel,
-                            latestSolidMilestoneIndex + 1)) {
-
+                    // only take transactions into account that have not been confirmed, yet (that are not included in
+                    // the ledger state)
+                    if (!milestoneService.isTransactionConfirmed(transactionViewModel)) {
                         if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                             return null;
                         } else {
@@ -225,7 +223,6 @@ public class LedgerServiceImpl implements LedgerService {
      * @throws LedgerException if anything unexpected happens while generating the {@link com.iota.iri.model.StateDiff}
      */
     private boolean generateStateDiff(MilestoneViewModel milestone) throws LedgerException {
-
         try {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, milestone.getHash());
 
@@ -239,8 +236,7 @@ public class LedgerServiceImpl implements LedgerService {
                 snapshotProvider.getLatestSnapshot().lockRead();
                 try {
                     Hash tail = transactionViewModel.getHash();
-                    Map<Hash, Long> balanceChanges = generateBalanceDiff(new HashSet<>(), tail,
-                            snapshotProvider.getLatestSnapshot().getIndex());
+                    Map<Hash, Long> balanceChanges = generateBalanceDiff(new HashSet<>(), tail);
                     successfullyProcessed = balanceChanges != null;
                     if (successfullyProcessed) {
                         successfullyProcessed = snapshotProvider.getLatestSnapshot().patchedState(

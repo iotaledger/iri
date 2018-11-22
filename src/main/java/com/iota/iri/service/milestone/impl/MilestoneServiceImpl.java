@@ -172,8 +172,13 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     @Override
-    public boolean transactionBelongsToMilestone(TransactionViewModel transaction, int milestoneIndex) {
-        return transaction.snapshotIndex() == 0 || transaction.snapshotIndex() >= milestoneIndex;
+    public boolean isTransactionConfirmed(TransactionViewModel transaction, int milestoneIndex) {
+        return transaction.snapshotIndex() != 0 && transaction.snapshotIndex() <= milestoneIndex;
+    }
+
+    @Override
+    public boolean isTransactionConfirmed(TransactionViewModel transaction) {
+        return isTransactionConfirmed(transaction, snapshotProvider.getLatestSnapshot().getIndex());
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -205,13 +210,15 @@ public class MilestoneServiceImpl implements MilestoneService {
             DAGHelper.get(tangle).traverseApprovees(
                 milestoneHash,
                 currentTransaction -> {
-                    if (transactionBelongsToMilestone(currentTransaction, correctIndex)) {
-                        return true;
-                    } else {
+                    // if the transaction was confirmed by a previous milestone -> check if we have a back-referencing
+                    // transaction and abort the traversal
+                    if (isTransactionConfirmed(currentTransaction, correctIndex - 1)) {
                         patchSolidEntryPointsIfNecessary(snapshotProvider.getInitialSnapshot(), currentTransaction);
 
                         return false;
                     }
+
+                    return true;
                 },
                 currentTransaction -> prepareMilestoneIndexUpdate(currentTransaction, newIndex, transactionsToUpdate),
                 processedTransactions

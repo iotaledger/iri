@@ -186,7 +186,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     private void applySolidMilestoneToLedger(MilestoneViewModel milestone) throws Exception {
         if (ledgerService.applyMilestoneToLedger(milestone)) {
             if (isRepairRunning() && isRepairSuccessful(milestone)) {
-                stopRepair(milestone);
+                stopRepair();
             }
         } else {
             repairCorruptedMilestone(milestone);
@@ -222,10 +222,8 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * <br />
      * It gets called whenever we advance to a milestone that has a higher milestone index than the milestone that
      * initially caused the repair routine to kick in (see {@link #repairCorruptedMilestone(MilestoneViewModel)}.<br />
-     *
-     * @param processedMilestone the milestone that currently gets processed
      */
-    private void stopRepair(MilestoneViewModel processedMilestone) {
+    private void stopRepair() {
         repairBackoffCounter = 0;
         errorCausingMilestoneIndex = Integer.MAX_VALUE;
     }

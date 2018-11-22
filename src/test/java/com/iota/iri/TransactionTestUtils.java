@@ -27,6 +27,14 @@ public class TransactionTestUtils {
         return tx;
     }
 
+    public static TransactionViewModel createBundleHead(int index, Hash trunk, Hash branch) {
+        TransactionViewModel tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(trunk, branch), 
+                                                           TransactionViewModelTest.getRandomTransactionHash());
+        setLastIndex(tx, index);
+        setCurrentIndex(tx, index);
+        return tx;
+    }
+
     public static TransactionViewModel createTransactionWithTrunkBundleHash(TransactionViewModel trunkTx, Hash branchHash) {
         TransactionViewModel tx = new TransactionViewModel(
                 TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(trunkTx.getHash(), branchHash),

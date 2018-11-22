@@ -22,9 +22,17 @@ public class CumulativeWeightWithEdgeCalculator extends CumulativeWeightCalculat
 
 	private static final int UNIT_WEIGHT = 1;
 
+        private boolean isUseUnifiedEdgeWeight;
+
 	public CumulativeWeightWithEdgeCalculator(Tangle tangle) {
 		super(tangle);
+                isUseUnifiedEdgeWeight = false;
 	}
+
+        public void setIsUseUnifiedEdgeWeight(boolean isUseUnifiedEdgeWeight)
+        {
+            this.isUseUnifiedEdgeWeight = isUseUnifiedEdgeWeight;
+        }
 
 	@Override
 	public UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
@@ -106,7 +114,10 @@ public class CumulativeWeightWithEdgeCalculator extends CumulativeWeightCalculat
 			// get the point's weight
 			float preWeight = txHashToCumulativeWeightFloat.get(prover);
 			// get the edge weight
-			float edgeWeight = (float) edgeMap.get(txHash.toString() + prover.toString()) / maxTimeDiff;
+                        float edgeWeight = 1;
+                        if(!isUseUnifiedEdgeWeight) {
+                            edgeWeight = (float) edgeMap.get(txHash.toString() + prover.toString()) / maxTimeDiff;
+                        }
 			iteratorWeight += edgeWeight * preWeight;
 		}
 		weight += iteratorWeight;

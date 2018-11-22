@@ -51,18 +51,29 @@ public interface MilestoneService {
     void updateMilestoneIndexOfMilestoneTransactions(Hash milestoneHash, int newIndex) throws MilestoneException;
 
     /**
-     * Checks if the given transaction "belongs" to the milestone with the given index.<br />
+     * Checks if the given transaction was confirmed by the milestone with the given index (or any of its
+     * predecessors).<br />
      * <br />
-     * We determine if a transaction still belongs to the milestone with the given index by examining its {@code
-     * snapshotIndex} value. For this method to work we require that the previous milestones have been processed already
-     * (which is enforce by the {@link com.iota.iri.service.milestone.LatestSolidMilestoneTracker} which applies the
-     * milestones in the order that they are issued by the coordinator).<br />
+     * We determine if the transaction was confirmed by examining its {@code snapshotIndex} value. For this method to
+     * work we require that the previous milestones have been processed already (which is enforced by the {@link
+     * com.iota.iri.service.milestone.LatestSolidMilestoneTracker} which applies the milestones in the order that they
+     * are issued by the coordinator).<br />
      *
      * @param transaction the transaction that shall be examined
      * @param milestoneIndex the milestone index that we want to check against
      * @return {@code true} if the transaction belongs to the milestone and {@code false} otherwise
      */
-    boolean transactionBelongsToMilestone(TransactionViewModel transaction, int milestoneIndex);
+    boolean isTransactionConfirmed(TransactionViewModel transaction, int milestoneIndex);
+
+    /**
+     * Does the same as {@link #isTransactionConfirmed(TransactionViewModel, int)} but defaults to the latest solid
+     * milestone index for the {@code milestoneIndex} which means that the transaction has been included in our current
+     * ledger state.<br />
+     *
+     * @param transaction the transaction that shall be examined
+     * @return {@code true} if the transaction belongs to the milestone and {@code false} otherwise
+     */
+    boolean isTransactionConfirmed(TransactionViewModel transaction);
 
     /**
      * Retrieves the milestone index of the given transaction by decoding the {@code OBSOLETE_TAG}.<br />

@@ -118,7 +118,7 @@ public class Node {
 
     /**
      * Intialize the operations by spawning all the worker threads.
-     * 
+     * @throws Exception if unable to start threads
      */
     public void init() throws Exception {
 
@@ -143,7 +143,7 @@ public class Node {
      * Keeps the passed UDP DatagramSocket reference from {@link UDPReceiver}.
      * This is currently only used in creating a new {@link UDPNeighbor}. 
      * 
-     * @param {@link DatagramSocket} socket created by UDPReceiver 
+     * @param socket {@link DatagramSocket} socket created by UDPReceiver 
      */
     public void setUDPSocket(final DatagramSocket socket) {
         this.udpSocket = socket;
@@ -271,6 +271,9 @@ public class Node {
      * on the received transaction via  {@link TransactionValidator#runValidation}
      * 
      * The packet is then added to  {@link receiveQueue} for further processing. 
+     * @param receivedData Byte array containing received payload
+     * @param senderAddress Sender information
+     * @param uriScheme A string indicating UDP or TCP protocol
      */
      
     public void preProcessReceivedData(byte[] receivedData, SocketAddress senderAddress, String uriScheme) {
@@ -397,7 +400,9 @@ public class Node {
     }
     
     /**
-     * Adds incoming transactions to the {@link receiveQueue} to be processed later.
+     * Adds incoming transactions to the {@link #receiveQueue} to be processed later.
+     * @param receivedTransactionViewModel received transaction view model {@link TransactionViewModel} 
+     * @param neighbor {@link Neighbor} 
      */
     public void addReceivedDataToReceiveQueue(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
         receiveQueue.add(new ImmutablePair<>(receivedTransactionViewModel, neighbor));
@@ -408,7 +413,9 @@ public class Node {
     }
 
     /**
-     * Adds incoming transactions to the {@link replyQueue} to be processed later
+     * Adds incoming transactions to the {@link #replyQueue} to be processed later
+     * @param requestedHash requested Hash {@link Hash} 
+     * @param neighbor {@link Neighbor} 
      */
     public void addReceivedDataToReplyQueue(Hash requestedHash, Neighbor neighbor) {
         replyQueue.add(new ImmutablePair<>(requestedHash, neighbor));
@@ -441,9 +448,11 @@ public class Node {
 
     /**
      * This is second step of incoming transaction processing. The newly received 
-     * and validated transactions are stored in {@link receiveQueue}. This function
+     * and validated transactions are stored in {@link #receiveQueue}. This function
      * picks up these transaction and stores them into the {@link Tangle} Database. The 
      * transaction is then added to the broadcast queue, to be fruther spammed to the neighbors. 
+     * @param receivedTransactionViewModel Received Transaction view model 
+     * @param neighbor The neigbor
      */
     public void processReceivedData(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
 
@@ -478,6 +487,8 @@ public class Node {
      * and validated transactions are stored in {@link receiveQueue}. This function
      * picks up these transaction and stores them into the {@link Tangle} Database. The 
      * transaction is then added to the broadcast queue, to be fruther spammed to the neighbors. 
+     * @param requestedHash The transaction hash which has been requested. 
+     * @param neighbor Neighbor which requested the hash.
      */
     public void replyToRequest(Hash requestedHash, Neighbor neighbor) {
 
@@ -546,12 +557,12 @@ public class Node {
 
     /**
      * Sends a Datagram to the neighbour. Also appends a random hash request 
-     * to the outgoing packet. Note that this is only used for UDP handling. For TCP
-     * the outgoing packets are sent by {@link ReplicatorSinkProcessor}
+     * to the outgoing packet. Note that though the payload is encapsulated in {@link DatagramPacket},
+     * this function is used for both TCP and UDP.
      * 
-     * @param {@link DatagramPacket} sendingPacket the UDP payload buffer
-     * @param {@link TransactionViewModel} transactionViewModel which should be sent.  
-     * @praram {@link Neighbor} the neighbor where this should be sent. 
+     * @param sendingPacket {@link DatagramPacket} payload buffer
+     * @param transactionViewModel {@link TransactionViewModel}  which should be sent.  
+     * @param neighbor {@link Neighbor} the neighbor where this should be sent. 
      * 
      */     
     public void sendPacket(DatagramPacket sendingPacket, TransactionViewModel transactionViewModel, Neighbor neighbor) throws Exception {

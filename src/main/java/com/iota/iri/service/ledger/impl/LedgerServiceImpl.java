@@ -52,7 +52,7 @@ public class LedgerServiceImpl implements LedgerService {
      *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
      *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
      *       <br />
-     *       {@code LedgerService ledgerService = new LedgerServiceImpl().init(...);}
+     *       {@code ledgerService = new LedgerServiceImpl().init(...);}
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
@@ -233,6 +233,12 @@ public class LedgerServiceImpl implements LedgerService {
             final int transactionSnapshotIndex = transactionViewModel.snapshotIndex();
             boolean successfullyProcessed = transactionSnapshotIndex == milestone.index();
             if (!successfullyProcessed) {
+                // if the snapshotIndex of our transaction was set already, we have processed our milestones in
+                // the wrong order (i.e. while rescanning the db)
+                if (transactionSnapshotIndex != 0) {
+                    milestoneService.resetCorruptedMilestone(milestone.index());
+                }
+
                 snapshotProvider.getLatestSnapshot().lockRead();
                 try {
                     Hash tail = transactionViewModel.getHash();

@@ -51,8 +51,24 @@ public interface MilestoneService {
     void updateMilestoneIndexOfMilestoneTransactions(Hash milestoneHash, int newIndex) throws MilestoneException;
 
     /**
+     * Resets all milestone related information of the transactions that were "confirmed" by the given milestone and
+     * rolls back the ledger state to the moment before the milestone was applied.<br />
+     * <br />
+     * This allows us to reprocess the milestone in case of errors where the given milestone could not be applied to the
+     * ledger state. It is for example used by the automatic repair routine of the {@link LatestSolidMilestoneTracker}
+     * (to recover from inconsistencies due to crashes of IRI).<br />
+     * <br />
+     * It recursively resets additional milestones if inconsistencies are found within the resetted milestone (wrong
+     * {@code milestoneIndex}es).<br />
+     *
+     * @param index milestone index that shall be reverted
+     * @throws MilestoneException if anything goes wrong while resetting the corrupted milestone
+     */
+    void resetCorruptedMilestone(int index) throws MilestoneException;
+
+    /**
      * Checks if the given transaction was confirmed by the milestone with the given index (or any of its
-     * predecessors).<br />
+     * predecessors).
      * <br />
      * We determine if the transaction was confirmed by examining its {@code snapshotIndex} value. For this method to
      * work we require that the previous milestones have been processed already (which is enforced by the {@link

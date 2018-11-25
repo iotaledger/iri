@@ -6,6 +6,7 @@ import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
+import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
 import com.iota.iri.service.TipsSolidifier;
@@ -100,6 +101,8 @@ public class Iota {
 
     public final MilestoneSolidifierImpl milestoneSolidifier;
 
+    public final TransactionRequesterWorkerImpl transactionRequesterWorker;
+
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
     public final TipsSolidifier tipsSolidifier;
@@ -133,6 +136,7 @@ public class Iota {
         seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
         milestoneSolidifier = new MilestoneSolidifierImpl();
         transactionPruner = new AsyncTransactionPruner();
+        transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code
         tangle = new Tangle();
@@ -183,6 +187,7 @@ public class Iota {
         latestSolidMilestoneTracker.start();
         seenMilestonesRetriever.start();
         milestoneSolidifier.start();
+        transactionRequesterWorker.start();
 
         if (configuration.getLocalSnapshotsEnabled()) {
             localSnapshotManager.start(latestMilestoneTracker);
@@ -206,6 +211,7 @@ public class Iota {
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService);
         transactionPruner.init(tangle, snapshotProvider, tipsViewModel, configuration).restoreState();
+        transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }
 
     private void rescanDb() throws Exception {
@@ -239,6 +245,7 @@ public class Iota {
      */
     public void shutdown() throws Exception {
         // shutdown in reverse starting order (to not break any dependencies)
+        transactionRequesterWorker.shutdown();
         milestoneSolidifier.shutdown();
         seenMilestonesRetriever.shutdown();
         latestSolidMilestoneTracker.shutdown();

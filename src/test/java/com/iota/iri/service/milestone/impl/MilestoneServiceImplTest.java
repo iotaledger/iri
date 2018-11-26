@@ -69,7 +69,7 @@ public class MilestoneServiceImplTest {
     //region [TESTS] ///////////////////////////////////////////////////////////////////////////////////////////////////
 
     @Test
-    public void findLatestProcessedSolidMilestoneInDatabase_atEnd() throws Exception {
+    public void findLatestProcessedSolidMilestoneInDatabaseAtEnd() throws Exception {
         // hash / index / processed
         mockMilestones(
                 "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,
@@ -84,7 +84,7 @@ public class MilestoneServiceImplTest {
     }
 
     @Test
-    public void findLatestProcessedSolidMilestoneInDatabase_nearEnd() throws Exception {
+    public void findLatestProcessedSolidMilestoneInDatabaseNearEnd() throws Exception {
         // hash / index / processed
         mockMilestones(
                 "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,
@@ -99,7 +99,7 @@ public class MilestoneServiceImplTest {
     }
 
     @Test
-    public void findLatestProcessedSolidMilestoneInDatabase_atStart() throws Exception {
+    public void findLatestProcessedSolidMilestoneInDatabaseAtStart() throws Exception {
         // hash / index / processed
         mockMilestones(
                 "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,
@@ -114,7 +114,7 @@ public class MilestoneServiceImplTest {
     }
 
     @Test
-    public void findLatestProcessedSolidMilestoneInDatabase_nearStart() throws Exception {
+    public void findLatestProcessedSolidMilestoneInDatabaseNearStart() throws Exception {
         // hash / index / processed
         mockMilestones(
                 "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,
@@ -129,7 +129,7 @@ public class MilestoneServiceImplTest {
     }
 
     @Test
-    public void findLatestProcessedSolidMilestoneInDatabase_inMiddle() throws Exception {
+    public void findLatestProcessedSolidMilestoneInDatabaseInMiddle() throws Exception {
         // hash / index / processed
         mockMilestones(
                 "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,

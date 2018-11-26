@@ -43,6 +43,21 @@ public class SnapshotServiceImpl implements SnapshotService {
     private static final Logger log = LoggerFactory.getLogger(SnapshotServiceImpl.class);
 
     /**
+     * Holds a limit for the amount of milestones we go back in time when generating the solid entry points (to speed up
+     * the snapshot creation).<br />
+     * <br />
+     * Note: Since the snapshot creation is a "continuous" process where we build upon the information gathered during
+     *       the creation of previous snapshots, we do not need to analyze all previous milestones but can rely on
+     *       slowly gathering the missing information over time. While this might lead to a situation where the very
+     *       first snapshots taken by a node might generate snapshot files that can not reliably be used by other nodes
+     *       to sync it is still a reasonable trade-off to reduce the load on the nodes. We just assume that anybody who
+     *       wants to share his snapshots with the community as a way to bootstrap new nodes will run his snapshot
+     *       enabled node for a few hours before sharing his files (this is a problem in very rare edge cases when
+     *       having back-referencing transactions anyway).<br />
+     */
+    private static final int OUTER_SHELL_SIZE = 100;
+
+    /**
      * If transactions got orphaned we wait this additional time (in seconds) until we consider them orphaned.
      */
     private static final int ORPHANED_TRANSACTION_GRACE_TIME = 3600;
@@ -620,7 +635,8 @@ public class SnapshotServiceImpl implements SnapshotService {
                 "Taking local snapshot [generating solid entry points]", log);
 
         try {
-            progressLogger.start(targetMilestone.index() - snapshotProvider.getInitialSnapshot().getIndex());
+            progressLogger.start(Math.min(targetMilestone.index() - snapshotProvider.getInitialSnapshot().getIndex(),
+                    OUTER_SHELL_SIZE));
 
             MilestoneViewModel nextMilestone = targetMilestone;
             while (nextMilestone != null && nextMilestone.index() > snapshotProvider.getInitialSnapshot().getIndex() &&

@@ -9,9 +9,11 @@ import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.SnapshotState;
 import com.iota.iri.storage.Tangle;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -52,19 +54,20 @@ public class SnapshotServiceImplTest {
 
     //region [BOILERPLATE] /////////////////////////////////////////////////////////////////////////////////////////////
 
-    private SnapshotServiceImpl snapshotService;
+    private static SnapshotServiceImpl snapshotService;
+    private static SnapshotProvider snapshotProvider;
+    private static Tangle tangle;
 
-    private SnapshotProvider snapshotProvider;
-
-    @Mock
-    private Tangle tangle;
-
-    @Before
-    public void setup() throws SnapshotException {
+    @BeforeClass
+    public static void setupClass() {
         MainnetConfig config = new MainnetConfig();
 
-        snapshotProvider = new SnapshotProviderImpl().init(config);
+        tangle = Mockito.mock(Tangle.class);
+        snapshotProvider = Mockito.mock(SnapshotProvider.class);
+
         snapshotService = new SnapshotServiceImpl().init(tangle, snapshotProvider, config);
+
+        mockSnapshotProvider();
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -73,7 +76,8 @@ public class SnapshotServiceImplTest {
 
     @Test
     public void replayMilestones() throws Exception {
-        int milestoneStartIndex = snapshotProvider.getInitialSnapshot().getIndex();
+        int milestoneStartIndex = snapshotProvider.getInitialSnapshot()
+                .getIndex();
         Hash milestoneStartHash = snapshotProvider.getInitialSnapshot().getHash();
         Long milestoneStartTimestamp = snapshotProvider.getInitialSnapshot().getTimestamp();
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();
@@ -129,6 +133,24 @@ public class SnapshotServiceImplTest {
 
     //region [UTILITY METHODS] /////////////////////////////////////////////////////////////////////////////////////////
 
+    private static void mockSnapshotProvider() {
+        Snapshot initialSnapshot = new SnapshotImpl(
+                new SnapshotStateImpl(createMap(
+                        ADDRESS_0, 10000L
+                )),
+                new SnapshotMetaDataImpl(MILESTONE_1, 0, 1l, new HashMap<>(), new HashMap<>())
+        );
+        Snapshot latestSnapshot = new SnapshotImpl(
+                new SnapshotStateImpl(createMap(
+                        ADDRESS_0, 10000L
+                )),
+                new SnapshotMetaDataImpl(MILESTONE_1, 0, 1l, new HashMap<>(), new HashMap<>())
+        );
+
+        Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(initialSnapshot);
+        Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(latestSnapshot);
+    }
+
     private void mockMilestone(Hash hash, int index, Map<Hash, Long> balanceChanges) throws Exception {
         mockMilestone(hash, index);
         mockStateDiff(hash, balanceChanges);
@@ -151,7 +173,7 @@ public class SnapshotServiceImplTest {
         Mockito.when(tangle.load(StateDiff.class, milestoneTransactionHash)).thenReturn(mockedStateDiff);
     }
 
-    private <KEY, VALUE> Map<KEY, VALUE> createMap(Object... mapEntries) {
+    private static <KEY, VALUE> Map<KEY, VALUE> createMap(Object... mapEntries) {
         Map<KEY, VALUE> result = new HashMap<>();
 
         for (int i = 0; i < mapEntries.length / 2; i++) {

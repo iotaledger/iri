@@ -76,8 +76,7 @@ public class SnapshotServiceImplTest {
 
     @Test
     public void replayMilestones() throws Exception {
-        int milestoneStartIndex = snapshotProvider.getInitialSnapshot()
-                .getIndex();
+        int milestoneStartIndex = snapshotProvider.getInitialSnapshot().getIndex();
         Hash milestoneStartHash = snapshotProvider.getInitialSnapshot().getHash();
         Long milestoneStartTimestamp = snapshotProvider.getInitialSnapshot().getTimestamp();
         Snapshot latestSnapshot = snapshotProvider.getLatestSnapshot();

@@ -106,7 +106,7 @@ public class MilestoneServiceImpl implements MilestoneService {
      * <br />
      * We first check the trivial case where the node was fully synced. If no processed solid milestone could be found
      * within the last two milestones of the node, we perform a binary search from present to past, which reduces the
-     * amount of database requests to a minimum (even with huge amount of milestones in the database).<br />
+     * amount of database requests to a minimum (even with a huge amount of milestones in the database).<br />
      */
     @Override
     public Optional<MilestoneViewModel> findLatestProcessedSolidMilestoneInDatabase() throws MilestoneException {

@@ -101,6 +101,63 @@ public class MilestoneServiceImpl implements MilestoneService {
 
     //region {PUBLIC METHODS] //////////////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * {@inheritDoc}
+     * <br />
+     * We first check the trivial case where the node was fully synced. If no processed solid milestone could be found
+     * within the last two milestones of the node, we perform a binary search from present to past, which reduces the
+     * amount of database requests to a minimum (even with huge amount of milestones in the database).<br />
+     */
+    @Override
+    public Optional<MilestoneViewModel> findLatestProcessedSolidMilestoneInDatabase() throws MilestoneException {
+        try {
+            // if we have no milestone in our database -> abort
+            MilestoneViewModel latestMilestone = MilestoneViewModel.latest(tangle);
+            if (latestMilestone == null) {
+                return Optional.empty();
+            }
+
+             // trivial case #1: the node was fully synced
+            if (wasMilestoneAppliedToLedger(latestMilestone)) {
+                return Optional.of(latestMilestone);
+            }
+
+             // trivial case #2: the node was fully synced but the last milestone was not processed, yet
+            MilestoneViewModel latestMilestonePredecessor = MilestoneViewModel.findClosestPrevMilestone(tangle,
+                    latestMilestone.index(), snapshotProvider.getInitialSnapshot().getIndex());
+            if (latestMilestonePredecessor != null && wasMilestoneAppliedToLedger(latestMilestonePredecessor)) {
+                return Optional.of(latestMilestonePredecessor);
+            }
+
+             // non-trivial case: do a binary search from the end of the ledger to the front
+            Optional<MilestoneViewModel> lastAppliedCandidate = Optional.empty();
+            int rangeEnd = latestMilestone.index();
+            int rangeStart = snapshotProvider.getInitialSnapshot().getIndex() + 1;
+            while (rangeEnd - rangeStart >= 0) {
+                // if no candidate found in range -> return last candidate
+                MilestoneViewModel currentCandidate = getMilestoneInMiddleOfRange(rangeStart, rangeEnd);
+                if (currentCandidate == null) {
+                    return lastAppliedCandidate;
+                }
+
+                 // if the milestone was applied -> continue to search for later ones that were also applied
+                if (wasMilestoneAppliedToLedger(currentCandidate)) {
+                    rangeStart = currentCandidate.index() + 1;
+                     lastAppliedCandidate = Optional.of(currentCandidate);
+                }
+
+                 // if the milestone was not applied -> continue to search for earlier ones
+                else {
+                    rangeEnd = currentCandidate.index() - 1;
+                }
+            }
+            return lastAppliedCandidate;
+        } catch (Exception e) {
+            throw new MilestoneException(
+                    "unexpected error while trying to find the latest processed solid milestone in the database", e);
+        }
+    }
+
     @Override
     public void updateMilestoneIndexOfMilestoneTransactions(Hash milestoneHash, int index) throws MilestoneException {
         if (index <= 0) {
@@ -223,6 +280,51 @@ public class MilestoneServiceImpl implements MilestoneService {
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //region [PRIVATE UTILITY METHODS] /////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Determines the milestone in the middle of the range defined by {@code rangeStart} and {@code rangeEnd}.<br />
+     * <br />
+     * It is used by the binary search algorithm of {@link #findLatestProcessedSolidMilestoneInDatabase()}. It first
+     * calculates the index that represents the middle of the range and then tries to find the milestone that is closest
+     * to this index.<br/>
+     * <br />
+     * Note: We start looking for younger milestones first, because most of the times the latest processed solid
+     *       milestone is close to the end.<br />
+     *
+     * @param rangeStart the milestone index representing the start of our search range
+     * @param rangeEnd the milestone index representing the end of our search range
+     * @return the milestone that is closest to the middle of the given range or {@code null} if no milestone can be
+     *         found
+     * @throws Exception if anything unexpected happens while trying to get the milestone
+     */
+    private MilestoneViewModel getMilestoneInMiddleOfRange(int rangeStart, int rangeEnd) throws Exception {
+        int range = rangeEnd - rangeStart;
+        int middleOfRange = rangeEnd - range / 2;
+
+        MilestoneViewModel milestone = MilestoneViewModel.findClosestNextMilestone(tangle, middleOfRange - 1, rangeEnd);
+        if (milestone == null) {
+            milestone = MilestoneViewModel.findClosestPrevMilestone(tangle, middleOfRange, rangeStart);
+        }
+
+        return milestone;
+    }
+
+    /**
+     * Checks if the milestone was applied to the ledger at some point in the past (before a restart of IRI).<br />
+     * <br />
+     * Since the {@code snapshotIndex} value is used as a flag to determine if the milestone was already applied to the
+     * ledger, we can use it to determine if it was processed by IRI in the past. If this value is set we should also
+     * have a corresponding {@link StateDiff} entry in the database.<br />
+     *
+     * @param milestone the milestone that shall be checked
+     * @return {@code true} if the milestone has been processed by IRI before and {@code false} otherwise
+     * @throws Exception if anything unexpected happens while checking the milestone
+     */
+    private boolean wasMilestoneAppliedToLedger(MilestoneViewModel milestone) throws Exception {
+        TransactionViewModel milestoneTransaction = TransactionViewModel.fromHash(tangle, milestone.getHash());
+        return milestoneTransaction.getType() != TransactionViewModel.PREFILLED_SLOT &&
+                milestoneTransaction.snapshotIndex() != 0;
+    }
 
     /**
      * This method implements the logic described by {@link #updateMilestoneIndexOfMilestoneTransactions(Hash, int)} but

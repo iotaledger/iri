@@ -1,8 +1,11 @@
 package com.iota.iri.service.milestone;
 
+import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
+
+import java.util.Optional;
 
 /**
  * Represents the service that contains all the relevant business logic for interacting with milestones.<br />
@@ -10,6 +13,19 @@ import com.iota.iri.model.Hash;
  * This class is stateless and does not hold any domain specific models.<br />
  */
 public interface MilestoneService {
+    /**
+     * This method tries to find the latest solid milestone that was previously processed by IRI (before a restart) by
+     * performing a search in the database.<br />
+     * <br />
+     * It determines if the milestones were processed by checking the {@code snapshotIndex} value of their corresponding
+     * transactions.<br />
+     *
+     * @return the latest solid milestone that was previously processed by IRI or an empty value if no previously
+     *         processed solid milestone can be found
+     * @throws MilestoneException if anything unexpected happend while performing the search
+     */
+    Optional<MilestoneViewModel> findLatestProcessedSolidMilestoneInDatabase() throws MilestoneException;
+
     /**
      * Analyzes the given transaction to determine if it is a valid milestone.<br />
      * <br />

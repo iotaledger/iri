@@ -77,6 +77,11 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
             "Latest Solid Milestone Tracker", log.delegate());
 
     /**
+     * Boolean flag that is used to identify the first iteration of the background worker.<br />
+     */
+    private boolean firstRun = true;
+
+    /**
      * Holds the milestone index of the milestone that caused the repair logic to get started.<br />
      */
     private int errorCausingMilestoneIndex = Integer.MAX_VALUE;
@@ -140,6 +145,13 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
     @Override
     public void checkForNewLatestSolidMilestones() throws MilestoneException {
         try {
+            if (firstRun) {
+                firstRun = false;
+
+                ledgerService.restoreLedgerState();
+                logChange(snapshotProvider.getInitialSnapshot().getIndex());
+            }
+
             int currentSolidMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex();
             if (currentSolidMilestoneIndex < latestMilestoneTracker.getLatestMilestoneIndex()) {
                 MilestoneViewModel nextMilestone;
@@ -147,15 +159,18 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
                         (nextMilestone = MilestoneViewModel.get(tangle, currentSolidMilestoneIndex + 1)) != null &&
                         TransactionViewModel.fromHash(tangle, nextMilestone.getHash()).isSolid()) {
 
-                    syncLatestMilestoneTracker(nextMilestone);
+                    syncLatestMilestoneTracker(nextMilestone.getHash(), nextMilestone.index());
                     applySolidMilestoneToLedger(nextMilestone);
                     logChange(currentSolidMilestoneIndex);
 
                     currentSolidMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex();
                 }
+            } else {
+                syncLatestMilestoneTracker(snapshotProvider.getLatestSnapshot().getHash(),
+                        snapshotProvider.getLatestSnapshot().getIndex());
             }
         } catch (Exception e) {
-            throw new MilestoneException(e);
+            throw new MilestoneException("unexpected error while checking for new latest solid milestones", e);
         }
     }
 
@@ -237,11 +252,12 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * Note: This method ensures that the latest milestone index is always bigger or equals the latest solid milestone
      *       index.
      *
-     * @param processedMilestone the milestone that currently gets processed
+     * @param milestoneHash transaction hash of the milestone
+     * @param milestoneIndex milestone index
      */
-    private void syncLatestMilestoneTracker(MilestoneViewModel processedMilestone) {
-        if(processedMilestone.index() > latestMilestoneTracker.getLatestMilestoneIndex()) {
-            latestMilestoneTracker.setLatestMilestone(processedMilestone.getHash(), processedMilestone.index());
+    private void syncLatestMilestoneTracker(Hash milestoneHash, int milestoneIndex) {
+        if(milestoneIndex > latestMilestoneTracker.getLatestMilestoneIndex()) {
+            latestMilestoneTracker.setLatestMilestone(milestoneHash, milestoneIndex);
         }
     }
 

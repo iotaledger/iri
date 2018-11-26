@@ -101,7 +101,7 @@ public class SnapshotServiceImpl implements SnapshotService {
      * <br />
      * To increase the performance of this operation, we do not apply every single milestone separately but first
      * accumulate all the necessary changes and then apply it to the snapshot in a single run. This allows us to
-     * modify its values without having to create a "copy" of the initial state to possible roll back the changes if
+     * modify its values without having to create a "copy" of the initial state to possibly roll back the changes if
      * anything unexpected happens (creating a backup of the state requires a lot of memory).<br />
      */
     @Override

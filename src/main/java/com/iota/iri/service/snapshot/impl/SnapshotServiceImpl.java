@@ -462,17 +462,13 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         snapshotProvider.writeSnapshotToDisk(newSnapshot, config.getLocalSnapshotsBasePath());
 
-        snapshotProvider.getInitialSnapshot().lockWrite();
         snapshotProvider.getLatestSnapshot().lockWrite();
-
-        snapshotProvider.getInitialSnapshot().update(newSnapshot);
-
         snapshotProvider.getLatestSnapshot().setInitialHash(newSnapshot.getHash());
         snapshotProvider.getLatestSnapshot().setInitialIndex(newSnapshot.getIndex());
         snapshotProvider.getLatestSnapshot().setInitialTimestamp(newSnapshot.getTimestamp());
-
-        snapshotProvider.getInitialSnapshot().unlockWrite();
         snapshotProvider.getLatestSnapshot().unlockWrite();
+
+        snapshotProvider.getInitialSnapshot().update(newSnapshot);
     }
 
     /**

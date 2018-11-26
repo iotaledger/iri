@@ -1,6 +1,7 @@
 package com.iota.iri.service.snapshot.impl;
 
 import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.IntegerIndex;
@@ -133,17 +134,21 @@ public class SnapshotServiceImplTest {
     //region [UTILITY METHODS] /////////////////////////////////////////////////////////////////////////////////////////
 
     private static void mockSnapshotProvider() {
+        Hash genesisHash = HashFactory.TRANSACTION.create(
+            "AZYNIHQQTMOPVVSIHGWENIVLJNIODSQBFEW9WUUFIP9BIFBXVLVGZLIZMQBEFHOOZBPVQJLKLGWVA9999");
+        long genesisTimestamp = System.currentTimeMillis() / 1000;
+
         Snapshot initialSnapshot = new SnapshotImpl(
                 new SnapshotStateImpl(createMap(
-                        ADDRESS_0, 10000L
+                        Hash.NULL_HASH, TransactionViewModel.SUPPLY
                 )),
-                new SnapshotMetaDataImpl(MILESTONE_1, 0, 1l, new HashMap<>(), new HashMap<>())
+                new SnapshotMetaDataImpl(genesisHash, 0, genesisTimestamp, new HashMap<>(), new HashMap<>())
         );
         Snapshot latestSnapshot = new SnapshotImpl(
                 new SnapshotStateImpl(createMap(
-                        ADDRESS_0, 10000L
+                        Hash.NULL_HASH, TransactionViewModel.SUPPLY
                 )),
-                new SnapshotMetaDataImpl(MILESTONE_1, 0, 1l, new HashMap<>(), new HashMap<>())
+                new SnapshotMetaDataImpl(genesisHash, 0, genesisTimestamp, new HashMap<>(), new HashMap<>())
         );
 
         Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(initialSnapshot);

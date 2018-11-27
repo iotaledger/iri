@@ -129,29 +129,8 @@ public class MilestoneServiceImpl implements MilestoneService {
                 return Optional.of(latestMilestonePredecessor);
             }
 
-             // non-trivial case: do a binary search from the end of the ledger to the front
-            Optional<MilestoneViewModel> lastAppliedCandidate = Optional.empty();
-            int rangeEnd = latestMilestone.index();
-            int rangeStart = snapshotProvider.getInitialSnapshot().getIndex() + 1;
-            while (rangeEnd - rangeStart >= 0) {
-                // if no candidate found in range -> return last candidate
-                MilestoneViewModel currentCandidate = getMilestoneInMiddleOfRange(rangeStart, rangeEnd);
-                if (currentCandidate == null) {
-                    return lastAppliedCandidate;
-                }
-
-                 // if the milestone was applied -> continue to search for later ones that were also applied
-                if (wasMilestoneAppliedToLedger(currentCandidate)) {
-                    rangeStart = currentCandidate.index() + 1;
-                     lastAppliedCandidate = Optional.of(currentCandidate);
-                }
-
-                 // if the milestone was not applied -> continue to search for earlier ones
-                else {
-                    rangeEnd = currentCandidate.index() - 1;
-                }
-            }
-            return lastAppliedCandidate;
+             // non-trivial case: do a binary search in the database
+            return binarySearchLatestProcessedSolidMilestoneInDatabase(latestMilestone);
         } catch (Exception e) {
             throw new MilestoneException(
                     "unexpected error while trying to find the latest processed solid milestone in the database", e);
@@ -280,6 +259,48 @@ public class MilestoneServiceImpl implements MilestoneService {
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     //region [PRIVATE UTILITY METHODS] /////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Performs a binary search for the latest solid milestone which was already processed by the node and applied to
+     * the ledger state at some point in the past (i.e. before IRI got restarted).<br />
+     * <br />
+     * It searches from present to past using a binary search algorithm which quickly narrows down the amount of
+     * candidates even for big databases.<br />
+     *
+     * @param latestMilestone the latest milestone in the database (used to define the search range)
+     * @return the latest solid milestone that was previously processed by IRI or an empty value if no previously
+     *         processed solid milestone can be found
+     * @throws Exception if anything unexpected happens while performing the search
+     */
+    private Optional<MilestoneViewModel> binarySearchLatestProcessedSolidMilestoneInDatabase(
+            MilestoneViewModel latestMilestone) throws Exception {
+
+        Optional<MilestoneViewModel> lastAppliedCandidate = Optional.empty();
+
+        int rangeEnd = latestMilestone.index();
+        int rangeStart = snapshotProvider.getInitialSnapshot().getIndex() + 1;
+        while (rangeEnd - rangeStart >= 0) {
+            // if no candidate found in range -> return last candidate
+            MilestoneViewModel currentCandidate = getMilestoneInMiddleOfRange(rangeStart, rangeEnd);
+            if (currentCandidate == null) {
+                return lastAppliedCandidate;
+            }
+
+             // if the milestone was applied -> continue to search for "later" ones that might have also been applied
+            if (wasMilestoneAppliedToLedger(currentCandidate)) {
+                rangeStart = currentCandidate.index() + 1;
+
+                lastAppliedCandidate = Optional.of(currentCandidate);
+            }
+
+             // if the milestone was not applied -> continue to search for "earlier" ones
+            else {
+                rangeEnd = currentCandidate.index() - 1;
+            }
+        }
+
+        return lastAppliedCandidate;
+    }
 
     /**
      * Determines the milestone in the middle of the range defined by {@code rangeStart} and {@code rangeEnd}.<br />

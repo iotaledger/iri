@@ -1,201 +1,169 @@
 package com.iota.iri.service.milestone.impl;
 
-import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.TangleMockUtils;
+import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
-import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.model.IntegerIndex;
-import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.milestone.MilestoneException;
-import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
+import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.Optional;
 
 @RunWith(MockitoJUnitRunner.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class MilestoneServiceImplTest {
     //region [BOILERPLATE] /////////////////////////////////////////////////////////////////////////////////////////////
 
-    private static MilestoneServiceImpl milestoneService;
+    @Mock
+    private Tangle tangle;
 
     @Mock
-    private static Tangle tangle;
+    private SnapshotProvider snapshotProvider;
 
     @Mock
-    private static SnapshotProvider snapshotProvider;
+    private SnapshotService snapshotService;
 
     @Mock
-    private static SnapshotService snapshotService;
+    private MessageQ messageQ;
 
     @Mock
-    private static MessageQ messageQ;
+    private ConsensusConfig config;
 
-    @BeforeClass
-    public static void setupClass() {
-        tangle = Mockito.mock(Tangle.class);
-        snapshotProvider = Mockito.mock(SnapshotProvider.class);
-        snapshotService = Mockito.mock(SnapshotService.class);
-        messageQ = Mockito.mock(MessageQ.class);
-
-        milestoneService = new MilestoneServiceImpl().init(tangle, snapshotProvider, snapshotService, messageQ,
-                new MainnetConfig());
-
-        mockSnapshotProvider();
-    }
+    @InjectMocks
+    private MilestoneServiceImpl milestoneService;
 
     @Before
-    public void setupTest() {
+    public void setup() {
+        SnapshotMockUtils.mockSnapshotProvider(snapshotProvider);
+
         MilestoneViewModel.clear();
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    //region [TESTS] ///////////////////////////////////////////////////////////////////////////////////////////////////
+    //region [findLatestProcessedSolidMilestoneInDatabase] /////////////////////////////////////////////////////////////
+
+    private enum MockedMilestone {
+        MILESTONE_1("ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 70001),
+        MILESTONE_2("BRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 70002),
+        MILESTONE_3("CRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 70003),
+        MILESTONE_4("JRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 70010),
+        MILESTONE_5("KRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 70011),
+        MILESTONE_6("LRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 70012);
+
+        private final Hash transactionHash;
+
+        private final int milestoneIndex;
+
+        MockedMilestone(String transactionHash, int milestoneIndex) {
+            this.transactionHash = HashFactory.TRANSACTION.create(transactionHash);
+            this.milestoneIndex = milestoneIndex;
+        }
+
+        public void mockProcessed(Tangle tangle, boolean applied) {
+            TangleMockUtils.mockMilestone(tangle, transactionHash, milestoneIndex, applied);
+        }
+    }
+
+    @Test
+    public void findLatestProcessedSolidMilestoneInDatabaseNone() throws Exception {
+        MockedMilestone.MILESTONE_1.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_2.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_3.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_4.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_5.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_6.mockProcessed(tangle, false);
+
+        assertLatestProcessedSolidMilestoneEquals(null);
+    }
 
     @Test
     public void findLatestProcessedSolidMilestoneInDatabaseAtEnd() throws Exception {
-        // hash / index / processed
-        mockMilestones(
-                "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,
-                "BRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 2,  false,
-                "CRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 3,  false,
-                "JRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 10, false,
-                "KRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 11, false,
-                "LRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 12, true
-        );
+        MockedMilestone.MILESTONE_1.mockProcessed(tangle, true);
+        MockedMilestone.MILESTONE_2.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_3.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_4.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_5.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_6.mockProcessed(tangle, true);
 
-        checkLatestProcessedSolidMilestone(12);
+        assertLatestProcessedSolidMilestoneEquals(MockedMilestone.MILESTONE_6);
     }
 
     @Test
     public void findLatestProcessedSolidMilestoneInDatabaseNearEnd() throws Exception {
-        // hash / index / processed
-        mockMilestones(
-                "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,
-                "BRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 2,  false,
-                "CRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 3,  false,
-                "JRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 10, false,
-                "KRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 11, true,
-                "LRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 12, false
-        );
+        MockedMilestone.MILESTONE_1.mockProcessed(tangle, true);
+        MockedMilestone.MILESTONE_2.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_3.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_4.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_5.mockProcessed(tangle, true);
+        MockedMilestone.MILESTONE_6.mockProcessed(tangle, false);
 
-        checkLatestProcessedSolidMilestone(11);
+        assertLatestProcessedSolidMilestoneEquals(MockedMilestone.MILESTONE_5);
     }
 
     @Test
     public void findLatestProcessedSolidMilestoneInDatabaseAtStart() throws Exception {
-        // hash / index / processed
-        mockMilestones(
-                "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,
-                "BRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 2,  false,
-                "CRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 3,  false,
-                "JRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 10, false,
-                "KRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 11, false,
-                "LRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 12, false
-        );
+        MockedMilestone.MILESTONE_1.mockProcessed(tangle, true);
+        MockedMilestone.MILESTONE_2.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_3.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_4.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_5.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_6.mockProcessed(tangle, false);
 
-        checkLatestProcessedSolidMilestone(1);
+        assertLatestProcessedSolidMilestoneEquals(MockedMilestone.MILESTONE_1);
     }
 
     @Test
     public void findLatestProcessedSolidMilestoneInDatabaseNearStart() throws Exception {
-        // hash / index / processed
-        mockMilestones(
-                "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,
-                "BRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 2,  true,
-                "CRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 3,  false,
-                "JRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 10, false,
-                "KRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 11, false,
-                "LRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 12, false
-        );
+        MockedMilestone.MILESTONE_1.mockProcessed(tangle, true);
+        MockedMilestone.MILESTONE_2.mockProcessed(tangle, true);
+        MockedMilestone.MILESTONE_3.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_4.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_5.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_6.mockProcessed(tangle, false);
 
-        checkLatestProcessedSolidMilestone(2);
+        assertLatestProcessedSolidMilestoneEquals(MockedMilestone.MILESTONE_2);
     }
 
     @Test
     public void findLatestProcessedSolidMilestoneInDatabaseInMiddle() throws Exception {
-        // hash / index / processed
-        mockMilestones(
-                "ARWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 1,  true,
-                "BRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 2,  true,
-                "CRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 3,  true,
-                "JRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 10, false,
-                "KRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 11, false,
-                "LRWY9LWHXEWNL9DTN9IGMIMIVSBQUIEIDSFRYTCSXQARRTVEUFSBWFZRQOJUQNAGQLWHTFNVECELCOFYB", 12, false
-        );
+        MockedMilestone.MILESTONE_1.mockProcessed(tangle, true);
+        MockedMilestone.MILESTONE_2.mockProcessed(tangle, true);
+        MockedMilestone.MILESTONE_3.mockProcessed(tangle, true);
+        MockedMilestone.MILESTONE_4.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_5.mockProcessed(tangle, false);
+        MockedMilestone.MILESTONE_6.mockProcessed(tangle, false);
 
-        checkLatestProcessedSolidMilestone(3);
+        assertLatestProcessedSolidMilestoneEquals(MockedMilestone.MILESTONE_3);
     }
 
-    //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-    //region [UTILITY METHODS] /////////////////////////////////////////////////////////////////////////////////////////
-
-    private static void checkLatestProcessedSolidMilestone(int index) throws MilestoneException {
-        milestoneService.findLatestProcessedSolidMilestoneInDatabase().ifPresent(milestone -> {
-            try {
-                Assert.assertEquals((long) milestone.index(), ((Milestone) tangle.load(Milestone.class,
-                        new IntegerIndex(index))).index.getValue());
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+    private void assertLatestProcessedSolidMilestoneEquals(MockedMilestone mockedMilestone) throws MilestoneException {
+        Optional<MilestoneViewModel> latestMilestone = milestoneService.findLatestProcessedSolidMilestoneInDatabase();
+        if (latestMilestone.isPresent()) {
+            if (mockedMilestone == null) {
+                Assert.fail("expected to find no latest processed solid milestone");
+            } else {
+                Assert.assertEquals((long) latestMilestone.get().index(), mockedMilestone.milestoneIndex);
             }
-        });
-    }
-
-    private static void mockSnapshotProvider() {
-        Snapshot initialSnapshot = Mockito.mock(Snapshot.class);
-
-        Mockito.when(initialSnapshot.getIndex()).thenReturn(0);
-        Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(initialSnapshot);
-    }
-
-    private static void mockMilestones(Object... params) throws Exception {
-        Pair<Indexable, Persistable> latestMilestone = null;
-        for (int i = 0; i < params.length / 3; i++) {
-            latestMilestone = mockMilestone(
-                    (String)  params[i * 3    ],
-                    (int)     params[i * 3 + 1],
-                    (boolean) params[i * 3 + 2]
-            );
+        } else {
+            if (mockedMilestone != null) {
+                Assert.fail("expected to find a latest processed solid milestone");
+            }
         }
-
-        Mockito.when(tangle.getLatest(Milestone.class, IntegerIndex.class)).thenReturn(latestMilestone);
-    }
-
-    private static Pair<Indexable, Persistable> mockMilestone(String hash, int index, boolean applied) throws
-            Exception {
-
-        Milestone latestMilestone = new Milestone();
-        latestMilestone.hash = HashFactory.TRANSACTION.create(hash);
-        latestMilestone.index = new IntegerIndex(index);
-
-        Mockito.when(tangle.load(Milestone.class, new IntegerIndex(index))).thenReturn(latestMilestone);
-
-        Transaction latestMilestoneTransaction = new Transaction();
-        latestMilestoneTransaction.bytes = new byte[0];
-        latestMilestoneTransaction.type = TransactionViewModel.FILLED_SLOT;
-        latestMilestoneTransaction.snapshot = applied ? index : 0;
-        latestMilestoneTransaction.parsed = true;
-
-        Mockito.when(tangle.load(Transaction.class, latestMilestone.hash)).thenReturn(latestMilestoneTransaction);
-
-        return new Pair<>(latestMilestone.index, latestMilestone);
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

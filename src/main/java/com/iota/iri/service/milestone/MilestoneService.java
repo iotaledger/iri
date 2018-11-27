@@ -14,8 +14,8 @@ import java.util.Optional;
  */
 public interface MilestoneService {
     /**
-     * This method tries to find the latest solid milestone that was previously processed by IRI (before a restart) by
-     * performing a search in the database.<br />
+     * Find the latest solid milestone that was previously processed by IRI (before a restart) by performing a search in
+     * the database.<br />
      * <br />
      * It determines if the milestones were processed by checking the {@code snapshotIndex} value of their corresponding
      * transactions.<br />

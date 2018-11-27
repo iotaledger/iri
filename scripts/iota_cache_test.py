@@ -1,13 +1,10 @@
-#from unittest.mock import MagicMock
 import mock
 from mock import MagicMock
 import unittest
-from iota import TransactionHash, Iota, Address, ProposedTransaction, Tag, Transaction, TryteString, TransactionTrytes, ProposedBundle
-
-
+from iota import Iota, Tag, ProposedBundle
 from iota_cache import IotaCache
 
-# test Count class
+
 class TestIotaCache(unittest.TestCase):
 
     def setUp(self):
@@ -18,7 +15,7 @@ class TestIotaCache(unittest.TestCase):
         self.transfers.append(transfers)
         return 'OK'
 
-    def mock_getApprovedTxns(self, tag):
+    def mock_get_approved_txns(self, tag):
         ret = []
         for txn in self.transfers:
             if txn[0].tag == Tag(tag):
@@ -26,14 +23,14 @@ class TestIotaCache(unittest.TestCase):
         return ret
 
     def mock_find_transactions(self, bundles, address, tags, approvees):
-        ret = {'hashes' : [] }
+        ret = {'hashes': []}
         for txn in self.transfers:
             if txn[0].tag == Tag(tags[0]):
                 ret['hashes'].append(txn[0].hash)
         return ret
 
     def mock_get_trytes(self, txnHashesAll):
-        ret = {'trytes' :[]}
+        ret = {'trytes': []}
         for txnHash in txnHashesAll:
             for txn in self.transfers:
                 if txn[0].hash == txnHash:
@@ -43,32 +40,43 @@ class TestIotaCache(unittest.TestCase):
                     ret['trytes'].append(bundle.as_tryte_strings()[0])
         return ret
 
-    def test_cacheTxnInTangle(self):
+    def test_cache_txn_in_tangle(self):
         cache = IotaCache()
-        cache.api.get_new_addresses = MagicMock(return_value={'addresses' : [b'KA9XBBDIYSTVOTEMAUL9JBYKWDN9WAJQWJO9GQYBNOJBSVRBESQXYETFDCSFFWL9PPSPWWAGSNMQSSMBC']})
+        cache.api.get_new_addresses = MagicMock(
+            return_value={
+                'addresses' : [b'KA9XBBDIYSTVOTEMAUL9JBYKWDN9WAJQWJO9GQYBNOJBSVRBESQXYETFDCSFFWL9PPSPWWAGSNMQSSMBC']
+            }
+        )
         cache.api.send_transfer = MagicMock(return_value='OK')
-        ret = cache.cacheTxnInTangle('addr1', 'TAG')
+        ret = cache.cache_txn_in_tangle('addr1', 'TAG')
         self.assertEqual(ret, 'OK')
 
-    def test_getNonConsumedTxns(self):
+    def test_get_non_consumed_txns(self):
         cache = IotaCache()
-        cache.api.get_new_addresses = MagicMock(return_value={'addresses' : [b'KA9XBBDIYSTVOTEMAUL9JBYKWDN9WAJQWJO9GQYBNOJBSVRBESQXYETFDCSFFWL9PPSPWWAGSNMQSSMBC']})
+        cache.api.get_new_addresses = MagicMock(
+            return_value={
+                'addresses' : [b'KA9XBBDIYSTVOTEMAUL9JBYKWDN9WAJQWJO9GQYBNOJBSVRBESQXYETFDCSFFWL9PPSPWWAGSNMQSSMBC']
+            }
+        )
         cache.api.send_transfer = MagicMock(side_effect=self.mock_send_transfer)
-        ret = cache.cacheTxnInTangle('addr1', 'TAG')
-        ret = cache.cacheTxnInTangle('addr2', 'TAG')
-        ret = cache.cacheTxnInTangle('addr3', 'TAG')
-        ret = cache.cacheTxnInTangle('addr4', 'TAG')
-        ret = cache.cacheTxnInTangle('addr5', 'TAG')
-        ret = cache.cacheTxnInTangle('addr6', 'TAG')
-        ret = cache.cacheTxnInTangle('addr7', 'TAG')
-        ret = cache.cacheTxnInTangle('addr8', 'TAG')
-        ret = cache.cacheTxnInTangle('addr3', 'TAGCONSUMED')
-        ret = cache.cacheTxnInTangle('addr4', 'TAGCONSUMED')
-        ret = cache.cacheTxnInTangle('addr5', 'TAGCONSUMED')
-        cache.getApprovedTxns = MagicMock(side_effect=self.mock_getApprovedTxns)
+        cache.cache_txn_in_tangle('addr1', 'TAG')
+        cache.cache_txn_in_tangle('addr2', 'TAG')
+        cache.cache_txn_in_tangle('addr3', 'TAG')
+        cache.cache_txn_in_tangle('addr4', 'TAG')
+        cache.cache_txn_in_tangle('addr5', 'TAG')
+        cache.cache_txn_in_tangle('addr6', 'TAG')
+        cache.cache_txn_in_tangle('addr7', 'TAG')
+        cache.cache_txn_in_tangle('addr8', 'TAG')
+        cache.set_txn_as_synced('addr3', 'TAG')
+        cache.set_txn_as_synced('addr4', 'TAG')
+        cache.set_txn_as_synced('addr5', 'TAG')
+        cache.get_approved_txns = MagicMock(side_effect=self.mock_get_approved_txns)
         cache.api.get_trytes = MagicMock(side_effect=self.mock_get_trytes)
         cache.api.find_transactions = MagicMock(side_effect=self.mock_find_transactions)
-        print cache.getNonConsumedTxns('TAG')
+        ret = cache.get_non_consumed_txns('TAG')
+        self.assertEqual(len(ret), 5)
+
 
 if __name__ == '__main__':
     unittest.main()
+

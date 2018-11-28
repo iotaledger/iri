@@ -1,6 +1,10 @@
 package com.iota.iri.service;
 
-import com.iota.iri.*;
+import com.iota.iri.BundleValidator;
+import com.iota.iri.IRI;
+import com.iota.iri.IXI;
+import com.iota.iri.Iota;
+import com.iota.iri.Snapshot;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
@@ -15,7 +19,24 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.Neighbor;
-import com.iota.iri.service.dto.*;
+import com.iota.iri.service.dto.AbstractResponse;
+import com.iota.iri.service.dto.AccessLimitedResponse;
+import com.iota.iri.service.dto.AddedNeighborsResponse;
+import com.iota.iri.service.dto.AttachToTangleResponse;
+import com.iota.iri.service.dto.CheckConsistency;
+import com.iota.iri.service.dto.ErrorResponse;
+import com.iota.iri.service.dto.ExceptionResponse;
+import com.iota.iri.service.dto.FindTransactionsResponse;
+import com.iota.iri.service.dto.GetBalancesResponse;
+import com.iota.iri.service.dto.GetInclusionStatesResponse;
+import com.iota.iri.service.dto.GetIotaConfigResponse;
+import com.iota.iri.service.dto.GetNeighborsResponse;
+import com.iota.iri.service.dto.GetNodeInfoResponse;
+import com.iota.iri.service.dto.GetTipsResponse;
+import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
+import com.iota.iri.service.dto.GetTrytesResponse;
+import com.iota.iri.service.dto.RemoveNeighborsResponse;
+import com.iota.iri.service.dto.WereAddressesSpentFrom;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
@@ -25,6 +46,12 @@ import com.iota.iri.utils.MapIdentityManager;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
+import io.undertow.util.HeaderMap;
+import io.undertow.util.Headers;
+import io.undertow.util.HttpString;
+import io.undertow.util.Methods;
+import io.undertow.util.MimeMappings;
+import io.undertow.util.StatusCodes;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,7 +84,6 @@ import io.undertow.security.idm.IdentityManager;
 import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
-import io.undertow.util.*;
 
 import static io.undertow.Handlers.path;
 
@@ -102,6 +128,11 @@ public class API {
     private final static int TRYTES_SIZE = 2673;
 
     private final static long MAX_TIMESTAMP_VALUE = (long) (Math.pow(3, 27) - 1) / 2; // max positive 27-trits value
+
+    private static int counterGetTxToApprove = 0;
+    private static long ellapsedTime_getTxToApprove = 0L;
+    private static int counter_PoW = 0;
+    private static long ellapsedTime_PoW = 0L;
 
     private final int maxFindTxs;
     private final int maxRequestList;
@@ -319,7 +350,7 @@ public class API {
 
         final long beginningTime = System.currentTimeMillis();
         final String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
-        final AbstractResponse response;
+        AbstractResponse response;
 
         if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
             response = ErrorResponse.create("Invalid API Version");
@@ -448,6 +479,9 @@ public class API {
                 }
                 case "getNodeInfo": {
                     return getNodeInfoStatement();
+                }
+                case "getIotaConfig": {
+                    return getIotaConfigStatement();
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -780,9 +814,6 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    
-    private static int counterGetTxToApprove = 0;
-    
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * Each increase indicates another 2 tips send.
@@ -800,8 +831,6 @@ public class API {
         counterGetTxToApprove++;
     }
 
-    private static long ellapsedTime_getTxToApprove = 0L;
-    
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * 
@@ -809,15 +838,6 @@ public class API {
      */
     private static long getEllapsedTimeGetTxToApprove() {
         return ellapsedTime_getTxToApprove;
-    }
-    
-    /**
-     * Increases the current amount of time spent on sending transactions to approve
-     * 
-     * @param ellapsedTime the time to add, in milliseconds
-     */
-    private static void incEllapsedTimeGetTxToApprove(long ellapsedTime) {
-        ellapsedTime_getTxToApprove += ellapsedTime;
     }
 
     /**
@@ -969,6 +989,15 @@ public class API {
                 instance.transactionRequester.numberOfTransactionsToRequest(),
                 features,
                 instance.configuration.getCoordinator());
+    }
+
+    /**
+     *  Returns information about this node configuration.
+     *
+     * @return {@link GetIotaConfigResponse}
+     */
+    private AbstractResponse getIotaConfigStatement() {
+        return GetIotaConfigResponse.create(instance.configuration);
     }
 
     /**
@@ -1361,12 +1390,12 @@ public class API {
                 .map(address -> (HashFactory.ADDRESS.create(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
         
-        final List<Hash> hashes;
+        List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
         instance.milestoneTracker.latestSnapshot.rwlock.readLock().lock();
         final int index = instance.milestoneTracker.latestSnapshot.index();
         
-        if (tips == null || tips.size() == 0) {
+        if (tips == null || tips.isEmpty()) {
             hashes = Collections.singletonList(instance.milestoneTracker.latestSolidSubtangleMilestone);
         } else {
             hashes = tips.stream()
@@ -1413,8 +1442,6 @@ public class API {
                 .collect(Collectors.toList()), index);
     }
 
-    private static int counter_PoW = 0;
-    
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * Each increase indicates another 2 tips sent.
@@ -1433,8 +1460,6 @@ public class API {
         API.counter_PoW++;
     }
 
-    private static long ellapsedTime_PoW = 0L;
-    
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * 

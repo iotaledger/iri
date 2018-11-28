@@ -34,6 +34,13 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.fail;
 
+/**
+ * Windows developer notes:
+ * For running this tests on windows you need the RocksDB dependencies. You need to install the
+ * Visual C++ Redistributable for Visual Studio 2015 x64 from
+ * https://www.microsoft.com/en-us/download/confirmation.aspx?id=48145
+ * Make sure your Java JDK is a 64x version and your JAVA_HOME is set correctly.
+ */
 public class APIIntegrationTests {
 
     private static final Boolean spawnNode = true; //can be changed to false to use already deployed node
@@ -61,7 +68,7 @@ public class APIIntegrationTests {
     private static API api;
     private static IXI ixi;
     private static IotaConfig configuration;
-    private static Logger log = LoggerFactory.getLogger(APIIntegrationTests.class);
+    private static final Logger log = LoggerFactory.getLogger(APIIntegrationTests.class);
 
 
     @BeforeClass
@@ -177,6 +184,26 @@ public class APIIntegrationTests {
             body(containsString("time")).
             body(containsString("tips")).
             body(containsString("transactionsToRequest"));
+    }
+
+    @Test
+    public void shouldTestGetIotaConfig() {
+
+        final Map<String, Object> request = new HashMap<>();
+        request.put("command", "getIotaConfig");
+
+        given().
+            body(gson().toJson(request)).
+            when().
+            post("/").
+            then().
+            spec(responseSpec).
+            body(containsString("maxFindTransactions")).
+            body(containsString("maxRequestList")).
+            body(containsString("maxGetTrytes")).
+            body(containsString("maxBodyLength")).
+            body(containsString("testNet")).
+            body(containsString("milestoneStartIndex"));
     }
 
     @Test

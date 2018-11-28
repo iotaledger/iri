@@ -337,14 +337,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     try {
                         writeBatch.delete(handle, keyBytes);
                     } catch (RocksDBException e) {
-                        log.error("Could not delete handle: " + handle.getName());
+                        log.error("Could not delete handle: " + handle.getID());
                     }
                     ColumnFamilyHandle metadataHandle = metadataReference.get(entry.hi);
                     if (metadataHandle != null) {
                         try {
                             writeBatch.delete(metadataHandle, keyBytes);
                         } catch (RocksDBException e) {
-                            log.error("Could not delete metadataHandle: " + metadataHandle.getName());
+                            log.error("Could not delete metadataHandle: " + metadataHandle.getID());
                         }
                     }
                 });

@@ -334,10 +334,18 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     Indexable indexable = entry.low;
                     byte[] keyBytes = indexable.bytes();
                     ColumnFamilyHandle handle = classTreeMap.get(entry.hi);
-                    writeBatch.remove(handle, keyBytes);
+                    try {
+                        writeBatch.delete(handle, keyBytes);
+                    } catch (RocksDBException e) {
+                        log.error("Could not delete handle: " + handle.getName());
+                    }
                     ColumnFamilyHandle metadataHandle = metadataReference.get(entry.hi);
                     if (metadataHandle != null) {
-                        writeBatch.remove(metadataHandle, keyBytes);
+                        try {
+                            writeBatch.delete(metadataHandle, keyBytes);
+                        } catch (RocksDBException e) {
+                            log.error("Could not delete metadataHandle: " + metadataHandle.getName());
+                        }
                     }
                 });
 
@@ -520,15 +528,15 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
         columnFamilies.add(0, familyDescriptors.get(0));
 
-        List<ColumnFamilyDescriptor> missingFromDatabase = familyDescriptors.stream().filter(d -> columnFamilies.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
-        List<ColumnFamilyDescriptor> missingFromDescription = columnFamilies.stream().filter(d -> familyDescriptors.stream().filter(desc -> new String(desc.columnFamilyName()).equals(new String(d.columnFamilyName()))).toArray().length == 0).collect(Collectors.toList());
+        List<ColumnFamilyDescriptor> missingFromDatabase = familyDescriptors.stream().filter(d -> columnFamilies.stream().filter(desc -> new String(desc.getName()).equals(new String(d.getName()))).toArray().length == 0).collect(Collectors.toList());
+        List<ColumnFamilyDescriptor> missingFromDescription = columnFamilies.stream().filter(d -> familyDescriptors.stream().filter(desc -> new String(desc.getName()).equals(new String(d.getName()))).toArray().length == 0).collect(Collectors.toList());
 
         if (missingFromDatabase.size() != 0) {
             missingFromDatabase.remove(familyDescriptors.get(0));
 
             try (RocksDB rocksDB = db = RocksDB.open(options, path, columnFamilies, columnFamilyHandles)) {
                 for (ColumnFamilyDescriptor description : missingFromDatabase) {
-                    addColumnFamily(description.columnFamilyName(), rocksDB);
+                    addColumnFamily(description.getName(), rocksDB);
                 }
             }
         }

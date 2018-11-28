@@ -147,6 +147,18 @@ public class APIIntegrationTests {
     }
 
     @Test
+    public void sendNonJsonBody() {
+        responseSpec.statusCode(500);
+        given().
+            body("thisIsInvalidJson").
+            when().
+            post("/").
+            then().
+            spec(responseSpec).
+            body(containsString("Invalid JSON syntax"));
+    }
+
+    @Test
     public void shouldTestGetNodeInfo() {
 
         final Map<String, Object> request = new HashMap<>();

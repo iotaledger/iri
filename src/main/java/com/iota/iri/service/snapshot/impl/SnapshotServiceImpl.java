@@ -43,11 +43,6 @@ public class SnapshotServiceImpl implements SnapshotService {
     private static final Logger log = LoggerFactory.getLogger(SnapshotServiceImpl.class);
 
     /**
-     * If transactions got orphaned we wait this additional time (in seconds) until we consider them orphaned.
-     */
-    private static final int ORPHANED_TRANSACTION_GRACE_TIME = 3600;
-
-    /**
      * Maximum age in milestones since creation of solid entry points.
      *
      * Since it is possible to artificially keep old solid entry points alive by periodically attaching new transactions
@@ -491,7 +486,7 @@ public class SnapshotServiceImpl implements SnapshotService {
     private boolean isOrphaned(Tangle tangle, TransactionViewModel transaction,
             TransactionViewModel referenceTransaction, Set<Hash> processedTransactions) throws SnapshotException {
 
-        long arrivalTime = transaction.getArrivalTime() / 1000L + ORPHANED_TRANSACTION_GRACE_TIME;
+        long arrivalTime = transaction.getArrivalTime() / 1000L;
         if (arrivalTime > referenceTransaction.getTimestamp()) {
             return false;
         }

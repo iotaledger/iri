@@ -15,7 +15,7 @@ public interface Walker {
      * Walk algorithm
      * <p>
      * Starts from a given {@code entryPoint} to select valid transactions to be used
-     * as tips. It will return a valid transaction as a tip.
+     * as tips. Returns a valid transaction as a tip.
      * </p>
      *
      * @param entryPoint  Transaction hash to start walk from.

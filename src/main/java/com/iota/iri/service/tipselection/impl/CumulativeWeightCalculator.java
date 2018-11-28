@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Implementation of {@link RatingCalculator} that gives the cumulative weight
+ * Implementation of {@link RatingCalculator} that calculates the cumulative weight
  * for each transaction referencing {@code entryPoint}. <br>
  * Used to create a weighted random walks.
  *

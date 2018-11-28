@@ -1,7 +1,6 @@
 package com.iota.iri.service.dto;
 
 import com.iota.iri.conf.IotaConfig;
-import com.sun.istack.internal.NotNull;
 
 /**
  * Contains information about the result of a successful {@code getIotaConfigStatement} API call.
@@ -28,7 +27,7 @@ public class GetIotaConfigResponse extends AbstractResponse {
      * @param configuration {@link IotaConfig} used to create response.
      * @return an {@link GetIotaConfigResponse} filled with actual config options.
      */
-    public static AbstractResponse create(@NotNull IotaConfig configuration) {
+    public static AbstractResponse create(IotaConfig configuration) {
         if(configuration == null) {
             throw new IllegalStateException("configuration must not be null!");
         }

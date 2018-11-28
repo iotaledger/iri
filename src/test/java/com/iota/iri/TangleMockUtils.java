@@ -16,9 +16,7 @@ import java.util.Map;
 public class TangleMockUtils {
     //region [mockMilestone] ///////////////////////////////////////////////////////////////////////////////////////////
 
-    public static Milestone mockMilestone(Tangle tangle, Hash hash, int index, boolean applied,
-            Map<Hash, Long> balanceDiff) {
-
+    public static Milestone mockMilestone(Tangle tangle, Hash hash, int index) {
         Milestone milestone = new Milestone();
         milestone.hash = hash;
         milestone.index = new IntegerIndex(index);
@@ -31,23 +29,7 @@ public class TangleMockUtils {
             // the exception can not be raised since we mock
         }
 
-        if (!balanceDiff.isEmpty()) {
-            mockStateDiff(tangle, milestone.hash, balanceDiff);
-        }
-
-        Transaction milestoneTransaction = mockTransaction(tangle, milestone.hash);
-        milestoneTransaction.snapshot = applied ? index : 0;
-        milestoneTransaction.milestone = true;
-
         return milestone;
-    }
-
-    public static Milestone mockMilestone(Tangle tangle, Hash hash, int index, boolean applied) {
-        return mockMilestone(tangle, hash, index, applied, new HashMap<>());
-    }
-
-    public static Milestone mockMilestone(Tangle tangle, Hash hash, int index) {
-        return mockMilestone(tangle, hash, index, true, new HashMap<>());
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

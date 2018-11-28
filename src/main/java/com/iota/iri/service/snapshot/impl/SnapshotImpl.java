@@ -9,6 +9,7 @@ import com.iota.iri.service.snapshot.SnapshotStateDiff;
 
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -64,6 +65,9 @@ public class SnapshotImpl implements Snapshot {
             new SnapshotStateImpl(((SnapshotImpl) snapshot).state),
             new SnapshotMetaDataImpl(((SnapshotImpl) snapshot).metaData)
         );
+
+        skippedMilestones.addAll(((SnapshotImpl) snapshot).skippedMilestones);
+
     }
 
     /**
@@ -127,6 +131,26 @@ public class SnapshotImpl implements Snapshot {
         } finally {
             unlockWrite();
         }
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClass(), state.hashCode(), metaData.hashCode(), skippedMilestones);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+
+        if (obj == null || !getClass().equals(obj.getClass())) {
+            return false;
+        }
+
+        return Objects.equals(state, ((SnapshotImpl) obj).state) &&
+               Objects.equals(metaData, ((SnapshotImpl) obj).metaData) &&
+               Objects.equals(skippedMilestones, ((SnapshotImpl) obj).skippedMilestones);
     }
 
     //region [THREAD-SAFE METADATA METHODS] ////////////////////////////////////////////////////////////////////////////

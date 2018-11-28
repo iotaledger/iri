@@ -46,7 +46,8 @@ public class APIIntegrationTests {
     // Expect to connect to any service worldwide in under 100 ms
     // and to any online machine local in 1 ms. The 50 ms default value is a suggested compromise.
     private static final int CONNECTION_TIMEOUT = 50;
-    private static ResponseSpecification responseSpec;
+    private static ResponseSpecification specResponseSuccess;
+    private static ResponseSpecification specResponseError;
     // Constants used in tests
     private static final String[] URIS = {"udp://8.8.8.8:14266", "udp://8.8.8.5:14266"};
     private static final String[] ADDRESSES = {"RVORZ9SIIP9RCYMREUIXXVPQIPHVCNPQ9HZWYKFWYWZRE9JQKG9REPKIASHUUECPSQO9JT9XNMVKWYGVA"};
@@ -115,10 +116,17 @@ public class APIIntegrationTests {
         RestAssured.port = Integer.parseInt(portStr);
         RestAssured.baseURI = hostName;
 
-        ResponseSpecBuilder builder = new ResponseSpecBuilder();
-        builder.expectStatusCode(200);
-        builder.expectBody(containsString("duration"));
-        responseSpec = builder.build();
+        // Define response specification for http status code 200
+        specResponseSuccess = new ResponseSpecBuilder().
+                expectStatusCode(200).
+                expectBody(containsString("duration")).
+                build();
+
+        // Define response specification for http status code 500
+        specResponseError = new ResponseSpecBuilder().
+                expectStatusCode(500).
+                expectBody(containsString("duration")).
+                build();
     }
 
     /**
@@ -148,13 +156,12 @@ public class APIIntegrationTests {
 
     @Test
     public void sendNonJsonBody() {
-        responseSpec.statusCode(500);
         given().
             body("thisIsInvalidJson").
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseError).
             body(containsString("Invalid JSON syntax"));
     }
 
@@ -169,7 +176,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("appName")).
             body(containsString("appVersion")).
             body(containsString("duration")).
@@ -202,7 +209,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("neighbors")).
             body(containsString("address")).
             body(containsString("numberOfAllTransactions")).
@@ -222,7 +229,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("addedNeighbors"));
     }
 
@@ -237,7 +244,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("removedNeighbors"));
     }
 
@@ -252,7 +259,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("hashes"));
     }
 
@@ -267,7 +274,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("hashes"));
     }
 
@@ -282,7 +289,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("trytes"));
     }
 
@@ -299,7 +306,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("states"));
     }
 
@@ -317,7 +324,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("milestone"));
     }
 
@@ -334,7 +341,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             body(containsString("trunkTransaction")).
             body(containsString("branchTransaction"));
     }
@@ -351,7 +358,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             log().all().and();
     }
 
@@ -367,7 +374,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specResponseSuccess).
             log().all().and();
     }
 
@@ -386,7 +393,7 @@ public class APIIntegrationTests {
                 when().
                 post("/").
                 then().
-                spec(responseSpec).
+                spec(specResponseSuccess).
                 body(containsString("trytes"));
     }
 
@@ -420,7 +427,7 @@ public class APIIntegrationTests {
                 when().
                 post("/").
                 then().
-                log().all().and().spec(responseSpec);
+                log().all().and().spec(specResponseSuccess);
 
         return trytes;
     }

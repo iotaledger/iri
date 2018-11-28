@@ -23,6 +23,10 @@ import java.util.stream.Collectors;
  */
 public class WalkerAlpha implements Walker {
 
+    /**
+    * {@code alpha}: a positive number that controls the randomness of the walk. 
+    * The closer it is to 0, the less bias the random walk will be.
+    */
     private double alpha;
     private final Random random;
 

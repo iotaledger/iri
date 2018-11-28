@@ -14,6 +14,8 @@ public class SnapshotMockUtils {
 
     private static final Hash DEFAULT_GENESIS_HASH = Hash.NULL_HASH;
 
+    private static final Hash DEFAULT_GENESIS_ADDRESS = Hash.NULL_HASH;
+
     private static final long DEFAULT_GENESIS_TIMESTAMP = 1522146728;
 
     //region [mockSnapshotProvider] ////////////////////////////////////////////////////////////////////////////////////
@@ -36,7 +38,7 @@ public class SnapshotMockUtils {
             Hash genesisHash, long genesisTimestamp) {
 
         Map<Hash, Long> balances = new HashMap<>();
-        balances.put(Hash.NULL_HASH, TransactionViewModel.SUPPLY);
+        balances.put(DEFAULT_GENESIS_ADDRESS, TransactionViewModel.SUPPLY);
 
         return mockSnapshotProvider(snapshotProvider, milestoneStartIndex, genesisHash, genesisTimestamp, balances);
     }

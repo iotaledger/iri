@@ -8,6 +8,7 @@ import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotMockUtils;
 import com.iota.iri.storage.Tangle;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
@@ -66,6 +67,11 @@ public class MilestoneServiceImplTest {
     public void setUp() {
         SnapshotMockUtils.mockSnapshotProvider(snapshotProvider);
 
+        MilestoneViewModel.clear();
+    }
+
+    @After
+    public void tearDown() {
         MilestoneViewModel.clear();
     }
 

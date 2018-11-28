@@ -167,7 +167,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
                 }
             } else {
                 syncLatestMilestoneTracker(snapshotProvider.getLatestSnapshot().getHash(),
-                        snapshotProvider.getLatestSnapshot().getIndex());
+                        currentSolidMilestoneIndex);
             }
         } catch (Exception e) {
             throw new MilestoneException("unexpected error while checking for new latest solid milestones", e);

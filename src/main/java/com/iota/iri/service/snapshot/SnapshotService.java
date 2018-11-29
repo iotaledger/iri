@@ -17,15 +17,15 @@ import java.util.Map;
  */
 public interface SnapshotService {
     /**
-     * This method applies the balance changes that are introduced by future milestones to the current Snapshot.
-     *
+     * This method applies the balance changes that are introduced by future milestones to the current Snapshot.<br />
+     * <br />
      * It iterates over the milestone indexes starting from the current index to the target index and applies all found
      * milestone balances. If it can not find a milestone for a certain index it keeps track of these skipped
      * milestones, which allows us to revert the changes even if the missing milestone was received and processed in the
      * mean time. If the application of changes fails, we restore the state of the snapshot to the one it had before the
-     * application attempt so this method only modifies the Snapshot if it succeeds.
-     *
-     * Note: the changes done by this method can be reverted by using {@link #rollBackMilestones(Snapshot, int)}
+     * application attempt so this method only modifies the Snapshot if it succeeds.<br />
+     * <br />
+     * Note: the changes done by this method can be reverted by using {@link #rollBackMilestones(Snapshot, int)}<br />
      *
      * @param snapshot the Snapshot that shall get modified
      * @param targetMilestoneIndex the index of the milestone that should be applied

@@ -54,7 +54,7 @@ public class SnapshotMockUtils {
                 new SnapshotMetaDataImpl(genesisHash, milestoneStartIndex, genesisTimestamp, solidEntryPoints,
                         new HashMap<>())
         );
-        Snapshot latestSnapshot = new SnapshotImpl(initialSnapshot);
+        Snapshot latestSnapshot = initialSnapshot.clone();
 
         Mockito.when(snapshotProvider.getInitialSnapshot()).thenReturn(initialSnapshot);
         Mockito.when(snapshotProvider.getLatestSnapshot()).thenReturn(latestSnapshot);

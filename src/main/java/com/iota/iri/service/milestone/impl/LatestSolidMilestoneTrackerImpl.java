@@ -29,7 +29,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTracker {
     /**
-     * Holds the interval (in milliseconds) in which the {@link #checkForNewLatestSolidMilestones()} method gets
+     * Holds the interval (in milliseconds) in which the {@link #trackLatestSolidMilestone()} method gets
      * called by the background worker.<br />
      */
     private static final int RESCAN_INTERVAL = 5000;
@@ -75,6 +75,11 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      */
     private final SilentScheduledExecutorService executorService = new DedicatedScheduledExecutorService(
             "Latest Solid Milestone Tracker", log.delegate());
+
+    /**
+     * Boolean flag that is used to identify the first iteration of the background worker.<br />
+     */
+    private boolean firstRun = true;
 
     /**
      * Holds the milestone index of the milestone that caused the repair logic to get started.<br />
@@ -138,7 +143,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * {@link LatestMilestoneTracker} in sync (if we happen to process a new latest milestone faster).<br />
      */
     @Override
-    public void checkForNewLatestSolidMilestones() throws MilestoneException {
+    public void trackLatestSolidMilestone() throws MilestoneException {
         try {
             int currentSolidMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex();
             if (currentSolidMilestoneIndex < latestMilestoneTracker.getLatestMilestoneIndex()) {
@@ -147,28 +152,38 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
                         (nextMilestone = MilestoneViewModel.get(tangle, currentSolidMilestoneIndex + 1)) != null &&
                         TransactionViewModel.fromHash(tangle, nextMilestone.getHash()).isSolid()) {
 
-                    syncLatestMilestoneTracker(nextMilestone);
+                    syncLatestMilestoneTracker(nextMilestone.getHash(), nextMilestone.index());
                     applySolidMilestoneToLedger(nextMilestone);
                     logChange(currentSolidMilestoneIndex);
 
                     currentSolidMilestoneIndex = snapshotProvider.getLatestSnapshot().getIndex();
                 }
+            } else {
+                syncLatestMilestoneTracker(snapshotProvider.getLatestSnapshot().getHash(),
+                        currentSolidMilestoneIndex);
             }
         } catch (Exception e) {
-            throw new MilestoneException(e);
+            throw new MilestoneException("unexpected error while checking for new latest solid milestones", e);
         }
     }
 
     /**
      * Contains the logic for the background worker.<br />
      * <br />
-     * It simply calls {@link #checkForNewLatestSolidMilestones()} and wraps with a log handler that prevents the {@link
+     * It simply calls {@link #trackLatestSolidMilestone()} and wraps with a log handler that prevents the {@link
      * MilestoneException} to crash the worker.<br />
      */
     private void latestSolidMilestoneTrackerThread() {
         try {
-            checkForNewLatestSolidMilestones();
-        } catch (MilestoneException e) {
+            if (firstRun) {
+                firstRun = false;
+
+                ledgerService.restoreLedgerState();
+                logChange(snapshotProvider.getInitialSnapshot().getIndex());
+            }
+
+            trackLatestSolidMilestone();
+        } catch (Exception e) {
             log.error("error while updating the solid milestone", e);
         }
     }
@@ -178,7 +193,7 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * <br />
      * If the application of the milestone fails, we start a repair routine which will revert the milestones preceding
      * our current milestone and consequently try to reapply them in the next iteration of the {@link
-     * #checkForNewLatestSolidMilestones()} method (until the problem is solved).<br />
+     * #trackLatestSolidMilestone()} method (until the problem is solved).<br />
      *
      * @param milestone the milestone that shall be applied to the ledger state
      * @throws Exception if anything unexpected goes wrong while applying the milestone to the ledger
@@ -237,11 +252,12 @@ public class LatestSolidMilestoneTrackerImpl implements LatestSolidMilestoneTrac
      * Note: This method ensures that the latest milestone index is always bigger or equals the latest solid milestone
      *       index.
      *
-     * @param processedMilestone the milestone that currently gets processed
+     * @param milestoneHash transaction hash of the milestone
+     * @param milestoneIndex milestone index
      */
-    private void syncLatestMilestoneTracker(MilestoneViewModel processedMilestone) {
-        if(processedMilestone.index() > latestMilestoneTracker.getLatestMilestoneIndex()) {
-            latestMilestoneTracker.setLatestMilestone(processedMilestone.getHash(), processedMilestone.index());
+    private void syncLatestMilestoneTracker(Hash milestoneHash, int milestoneIndex) {
+        if(milestoneIndex > latestMilestoneTracker.getLatestMilestoneIndex()) {
+            latestMilestoneTracker.setLatestMilestone(milestoneHash, milestoneIndex);
         }
     }
 

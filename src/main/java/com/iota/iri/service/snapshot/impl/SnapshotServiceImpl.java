@@ -43,6 +43,21 @@ public class SnapshotServiceImpl implements SnapshotService {
     private static final Logger log = LoggerFactory.getLogger(SnapshotServiceImpl.class);
 
     /**
+     * Holds a limit for the amount of milestones we go back in time when generating the solid entry points (to speed up
+     * the snapshot creation).<br />
+     * <br />
+     * Note: Since the snapshot creation is a "continuous" process where we build upon the information gathered during
+     *       the creation of previous snapshots, we do not need to analyze all previous milestones but can rely on
+     *       slowly gathering the missing information over time. While this might lead to a situation where the very
+     *       first snapshots taken by a node might generate snapshot files that can not reliably be used by other nodes
+     *       to sync it is still a reasonable trade-off to reduce the load on the nodes. We just assume that anybody who
+     *       wants to share his snapshots with the community as a way to bootstrap new nodes will run his snapshot
+     *       enabled node for a few hours before sharing his files (this is a problem in very rare edge cases when
+     *       having back-referencing transactions anyway).<br />
+     */
+    private static final int OUTER_SHELL_SIZE = 100;
+
+    /**
      * Maximum age in milestones since creation of solid entry points.
      *
      * Since it is possible to artificially keep old solid entry points alive by periodically attaching new transactions
@@ -93,12 +108,17 @@ public class SnapshotServiceImpl implements SnapshotService {
 
     /**
      * {@inheritDoc}
+     * <br />
+     * To increase the performance of this operation, we do not apply every single milestone separately but first
+     * accumulate all the necessary changes and then apply it to the snapshot in a single run. This allows us to
+     * modify its values without having to create a "copy" of the initial state to possibly roll back the changes if
+     * anything unexpected happens (creating a backup of the state requires a lot of memory).<br />
      */
     @Override
     public void replayMilestones(Snapshot snapshot, int targetMilestoneIndex) throws SnapshotException {
-        snapshot.lockWrite();
-
-        Snapshot snapshotBeforeChanges = new SnapshotImpl(snapshot);
+        Map<Hash, Long> balanceChanges = new HashMap<>();
+        Set<Integer> skippedMilestones = new HashSet<>();
+        MilestoneViewModel lastAppliedMilestone = null;
 
         try {
             for (int currentMilestoneIndex = snapshot.getIndex() + 1; currentMilestoneIndex <= targetMilestoneIndex;
@@ -108,30 +128,41 @@ public class SnapshotServiceImpl implements SnapshotService {
                 if (currentMilestone != null) {
                     StateDiffViewModel stateDiffViewModel = StateDiffViewModel.load(tangle, currentMilestone.getHash());
                     if(!stateDiffViewModel.isEmpty()) {
-                        snapshot.applyStateDiff(new SnapshotStateDiffImpl(stateDiffViewModel.getDiff()));
+                        stateDiffViewModel.getDiff().forEach((address, change) -> {
+                            balanceChanges.compute(address, (k, balance) -> (balance == null ? 0 : balance) + change);
+                        });
                     }
 
-                    snapshot.setIndex(currentMilestone.index());
-                    snapshot.setHash(currentMilestone.getHash());
-
-                    TransactionViewModel currentMilestoneTransaction = TransactionViewModel.fromHash(tangle,
-                            currentMilestone.getHash());
-
-                    if(currentMilestoneTransaction != null &&
-                            currentMilestoneTransaction.getType() != TransactionViewModel.PREFILLED_SLOT) {
-
-                        snapshot.setTimestamp(currentMilestoneTransaction.getTimestamp());
-                    }
+                    lastAppliedMilestone = currentMilestone;
                 } else {
-                    snapshot.addSkippedMilestone(currentMilestoneIndex);
+                    skippedMilestones.add(currentMilestoneIndex);
+                }
+            }
+
+            if (lastAppliedMilestone != null) {
+                try {
+                    snapshot.lockWrite();
+
+                    snapshot.applyStateDiff(new SnapshotStateDiffImpl(balanceChanges));
+
+                    snapshot.setIndex(lastAppliedMilestone.index());
+                    snapshot.setHash(lastAppliedMilestone.getHash());
+
+                    TransactionViewModel milestoneTransaction = TransactionViewModel.fromHash(tangle,
+                            lastAppliedMilestone.getHash());
+                    if(milestoneTransaction.getType() != TransactionViewModel.PREFILLED_SLOT) {
+                        snapshot.setTimestamp(milestoneTransaction.getTimestamp());
+                    }
+
+                    for (int skippedMilestoneIndex : skippedMilestones) {
+                        snapshot.addSkippedMilestone(skippedMilestoneIndex);
+                    }
+                } finally {
+                    snapshot.unlockWrite();
                 }
             }
         } catch (Exception e) {
-            snapshot.update(snapshotBeforeChanges);
-
-            throw new SnapshotException("failed to replay the the state of the ledger", e);
-        } finally {
-            snapshot.unlockWrite();
+            throw new SnapshotException("failed to replay the state of the ledger", e);
         }
     }
 
@@ -146,7 +177,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         snapshot.lockWrite();
 
-        Snapshot snapshotBeforeChanges = new SnapshotImpl(snapshot);
+        Snapshot snapshotBeforeChanges = snapshot.clone();
 
         try {
             boolean rollbackSuccessful = true;
@@ -211,11 +242,11 @@ public class SnapshotServiceImpl implements SnapshotService {
                     targetMilestone.index());
 
             if (distanceFromInitialSnapshot <= distanceFromLatestSnapshot) {
-                snapshot = new SnapshotImpl(snapshotProvider.getInitialSnapshot());
+                snapshot = snapshotProvider.getInitialSnapshot().clone();
 
                 replayMilestones(snapshot, targetMilestone.index());
             } else {
-                snapshot = new SnapshotImpl(snapshotProvider.getLatestSnapshot());
+                snapshot = snapshotProvider.getLatestSnapshot().clone();
 
                 rollBackMilestones(snapshot, targetMilestone.index() + 1);
             }
@@ -611,7 +642,8 @@ public class SnapshotServiceImpl implements SnapshotService {
                 "Taking local snapshot [generating solid entry points]", log);
 
         try {
-            progressLogger.start(targetMilestone.index() - snapshotProvider.getInitialSnapshot().getIndex());
+            progressLogger.start(Math.min(targetMilestone.index() - snapshotProvider.getInitialSnapshot().getIndex(),
+                    OUTER_SHELL_SIZE));
 
             MilestoneViewModel nextMilestone = targetMilestone;
             while (nextMilestone != null && nextMilestone.index() > snapshotProvider.getInitialSnapshot().getIndex() &&

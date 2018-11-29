@@ -15,6 +15,20 @@ import java.util.Set;
  */
 public interface LedgerService {
     /**
+     * Restores the ledger state after a restart of IRI, which allows us to fast forward to the point where we
+     * stopped before the restart.<br />
+     * <br />
+     * It looks for the last solid milestone that was applied to the ledger in the database and then replays all
+     * milestones leading up to this point by applying them to the latest snapshot. We do not check every single
+     * milestone again but assume that the data in the database is correct. If the database would have any
+     * inconsistencies and the application fails, the latest solid milestone tracker will check and apply the milestones
+     * one by one and repair the corresponding inconsistencies.<br />
+     *
+     * @throws LedgerException if anything unexpected happens while trying to restore the ledger state
+     */
+    void restoreLedgerState() throws LedgerException;
+
+    /**
      * Applies the given milestone to the ledger state.<br />
      * <br />
      * It first marks the transactions that were confirmed by this milestones as confirmed by setting their

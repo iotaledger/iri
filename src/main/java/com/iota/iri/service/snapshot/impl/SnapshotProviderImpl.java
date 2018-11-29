@@ -164,7 +164,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             initialSnapshot = loadBuiltInSnapshot();
         }
 
-        latestSnapshot = new SnapshotImpl(initialSnapshot);
+        latestSnapshot = initialSnapshot.clone();
     }
 
     /**
@@ -259,7 +259,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             );
         }
 
-        return new SnapshotImpl(builtinSnapshot);
+        return builtinSnapshot.clone();
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

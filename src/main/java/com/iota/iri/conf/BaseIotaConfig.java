@@ -49,7 +49,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean dnsResolutionEnabled = Defaults.DNS_RESOLUTION_ENABLED;
     protected List<String> neighbors = new ArrayList<>();
     protected List<InetAddress> remoteTrustedApiHosts = new ArrayList(){{
-        // add localhost as trusted client by default
+        // add localhost as trusted host by default
         add(InetAddress.getLoopbackAddress());
     }};
 

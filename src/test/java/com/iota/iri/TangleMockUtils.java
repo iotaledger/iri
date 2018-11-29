@@ -10,7 +10,6 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 import org.mockito.Mockito;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**

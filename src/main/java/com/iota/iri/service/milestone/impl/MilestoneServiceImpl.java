@@ -158,10 +158,9 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     @Override
-    public MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, SpongeFactory.Mode mode,
-            int securityLevel) throws MilestoneException {
+    public MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, int milestoneIndex,
+            SpongeFactory.Mode mode, int securityLevel) throws MilestoneException {
 
-        int milestoneIndex = getMilestoneIndex(transactionViewModel);
         if (milestoneIndex < 0 || milestoneIndex >= 0x200000) {
             return INVALID;
         }

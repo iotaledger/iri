@@ -33,13 +33,14 @@ public interface MilestoneService {
      * the signature to analyze if the given milestone was really issued by the coordinator.<br />
      *
      * @param transactionViewModel transaction that shall be analyzed
+     * @param milestoneIndex milestone index of the transaction (see {@link #getMilestoneIndex(TransactionViewModel)})
      * @param mode mode that gets used for the signature verification
      * @param securityLevel security level that gets used for the signature verification
      * @return validity status of the transaction regarding its role as a milestone
      * @throws MilestoneException if anything unexpected goes wrong while validating the milestone transaction
      */
-    MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, SpongeFactory.Mode mode,
-            int securityLevel) throws MilestoneException;
+    MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, int milestoneIndex,
+            SpongeFactory.Mode mode, int securityLevel) throws MilestoneException;
 
     /**
      * Updates the milestone index of all transactions that belong to a milestone.<br />

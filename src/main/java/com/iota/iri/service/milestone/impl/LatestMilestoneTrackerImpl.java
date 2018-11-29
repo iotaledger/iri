@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import static com.iota.iri.crypto.SpongeFactory.Mode.CURLP27;
 import static com.iota.iri.service.milestone.MilestoneValidity.*;
 
 /**
@@ -207,8 +208,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                     transaction.getCurrentIndex() == 0) {
 
                 int milestoneIndex = milestoneService.getMilestoneIndex(transaction);
-
-                switch (milestoneService.validateMilestone(transaction, SpongeFactory.Mode.CURLP27, 1)) {
+                switch (milestoneService.validateMilestone(transaction, milestoneIndex, CURLP27, 1)) {
                     case VALID:
                         if (milestoneIndex > latestMilestoneIndex) {
                             setLatestMilestone(transaction.getHash(), milestoneIndex);

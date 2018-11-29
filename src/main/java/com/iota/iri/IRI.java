@@ -109,6 +109,9 @@ public class IRI {
         public static void main(String [] args) throws Exception {
             IotaConfig config = createConfiguration(args);
             log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, VERSION);
+            config.getRemoteTrustedApiHosts().forEach(h->{
+                log.info("set remote trusted api hosts to ip: {} with dns: {}", h.getHostAddress(), h.getHostName());
+            });
 
             iota = new Iota(config);
             ixi = new IXI(iota);

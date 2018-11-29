@@ -1,5 +1,6 @@
 package com.iota.iri.conf;
 
+import java.net.InetAddress;
 import java.util.List;
 
 /**
@@ -27,7 +28,7 @@ public interface APIConfig extends Config {
     /**
      * @return {@value Descriptions#REMOTE_TRUSTED_API_HOSTS}
      */
-    List<String> getRemoteTrustedApiHosts();
+    List<InetAddress> getRemoteTrustedApiHosts();
 
     /**
      * @return {@value Descriptions#MAX_FIND_TRANSACTIONS}

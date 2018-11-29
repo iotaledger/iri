@@ -10,6 +10,7 @@ import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,9 +48,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean dnsRefresherEnabled = Defaults.DNS_REFRESHER_ENABLED;
     protected boolean dnsResolutionEnabled = Defaults.DNS_RESOLUTION_ENABLED;
     protected List<String> neighbors = new ArrayList<>();
-    protected List<String> remoteTrustedApiHosts = new ArrayList(){{
+    protected List<InetAddress> remoteTrustedApiHosts = new ArrayList(){{
         // add localhost as trusted client by default
-        add(InetAddress.getLoopbackAddress().getHostAddress());
+        add(InetAddress.getLoopbackAddress());
     }};
 
     //IXI
@@ -168,14 +169,20 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public List<String> getRemoteTrustedApiHosts() {
+    public List<InetAddress> getRemoteTrustedApiHosts() {
         return remoteTrustedApiHosts;
     }
 
     @JsonProperty
     @Parameter(names = {"--remote-trusted-api-hosts"}, description = APIConfig.Descriptions.REMOTE_TRUSTED_API_HOSTS)
     public void setRemoteTrustedApiHosts(String remoteTrustedApiHosts) {
-        this.remoteTrustedApiHosts = IotaUtils.splitStringToImmutableList(remoteTrustedApiHosts, SPLIT_STRING_TO_LIST_REGEX);;
+        IotaUtils.splitStringToImmutableList(remoteTrustedApiHosts, SPLIT_STRING_TO_LIST_REGEX).forEach(host -> {
+            try {
+                this.remoteTrustedApiHosts.add(InetAddress.getByName(host));
+            } catch (UnknownHostException e) {
+                // lets ignore invalid entries.
+            }
+        });
     }
 
     @Override

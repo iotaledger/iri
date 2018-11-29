@@ -382,7 +382,7 @@ public class API {
             // Is this command allowed to be run from this request address?
             // We check the remote limit API configuration.
             if (instance.configuration.getRemoteLimitApi().contains(command) &&
-                    !instance.configuration.getRemoteTrustedApiHosts().contains(sourceAddress.getAddress().getHostAddress())) {
+                    !instance.configuration.getRemoteTrustedApiHosts().contains(sourceAddress.getAddress())) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 

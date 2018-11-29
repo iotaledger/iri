@@ -159,7 +159,6 @@ public class SnapshotImpl implements Snapshot {
 
     //region [THREAD-SAFE METADATA METHODS] ////////////////////////////////////////////////////////////////////////////
 
-
     /**
      * {@inheritDoc}
      *

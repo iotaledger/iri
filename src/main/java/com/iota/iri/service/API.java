@@ -369,7 +369,7 @@ public class API {
 
         try {
             // Request JSON data into map
-            final Map<String, Object> request;
+            Map<String, Object> request;
             try {
                 request = gson.fromJson(requestString, Map.class);
             }

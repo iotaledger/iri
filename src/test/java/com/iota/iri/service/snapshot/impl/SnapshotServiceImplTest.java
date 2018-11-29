@@ -232,7 +232,7 @@ public class SnapshotServiceImplTest {
 
         replayMilestonesMultiple();
 
-        Snapshot clonedSnapshot = new SnapshotImpl(latestSnapshot);
+        Snapshot clonedSnapshot = latestSnapshot.clone();
 
         Assert.assertEquals("the cloned snapshots should be equal to the source", clonedSnapshot, latestSnapshot);
 

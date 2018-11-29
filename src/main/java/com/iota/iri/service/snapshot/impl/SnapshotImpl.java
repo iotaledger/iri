@@ -56,18 +56,17 @@ public class SnapshotImpl implements Snapshot {
     }
 
     /**
-     * Creates a deep clone of the passed in {@link Snapshot}.
+     * Creates a deep clone of the passed in snapshot.
      *
      * @param snapshot object that shall be cloned
      */
-    public SnapshotImpl(Snapshot snapshot) {
+    private SnapshotImpl(SnapshotImpl snapshot) {
         this(
-            new SnapshotStateImpl(((SnapshotImpl) snapshot).state),
-            new SnapshotMetaDataImpl(((SnapshotImpl) snapshot).metaData)
+            new SnapshotStateImpl(snapshot.state),
+            new SnapshotMetaDataImpl(snapshot.metaData)
         );
 
-        skippedMilestones.addAll(((SnapshotImpl) snapshot).skippedMilestones);
-
+        skippedMilestones.addAll(snapshot.skippedMilestones);
     }
 
     /**
@@ -151,6 +150,11 @@ public class SnapshotImpl implements Snapshot {
         return Objects.equals(state, ((SnapshotImpl) obj).state) &&
                Objects.equals(metaData, ((SnapshotImpl) obj).metaData) &&
                Objects.equals(skippedMilestones, ((SnapshotImpl) obj).skippedMilestones);
+    }
+
+    @Override
+    public SnapshotImpl clone() {
+        return new SnapshotImpl(this);
     }
 
     //region [THREAD-SAFE METADATA METHODS] ////////////////////////////////////////////////////////////////////////////

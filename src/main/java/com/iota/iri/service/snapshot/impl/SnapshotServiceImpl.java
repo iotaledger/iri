@@ -118,10 +118,8 @@ public class SnapshotServiceImpl implements SnapshotService {
                 if (currentMilestone != null) {
                     StateDiffViewModel stateDiffViewModel = StateDiffViewModel.load(tangle, currentMilestone.getHash());
                     if(!stateDiffViewModel.isEmpty()) {
-                        stateDiffViewModel.getDiff().forEach((address, balance) -> {
-                            if (balanceChanges.computeIfPresent(address, (hash, value) -> balance + value) == null) {
-                                balanceChanges.putIfAbsent(address, balance);
-                            }
+                        stateDiffViewModel.getDiff().forEach((address, change) -> {
+                            balanceChanges.compute(address, (k, balance) -> (balance == null ? 0 : balance) + change);
                         });
                     }
 
@@ -169,7 +167,7 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         snapshot.lockWrite();
 
-        Snapshot snapshotBeforeChanges = new SnapshotImpl(snapshot);
+        Snapshot snapshotBeforeChanges = snapshot.clone();
 
         try {
             boolean rollbackSuccessful = true;
@@ -234,11 +232,11 @@ public class SnapshotServiceImpl implements SnapshotService {
                     targetMilestone.index());
 
             if (distanceFromInitialSnapshot <= distanceFromLatestSnapshot) {
-                snapshot = new SnapshotImpl(snapshotProvider.getInitialSnapshot());
+                snapshot = snapshotProvider.getInitialSnapshot().clone();
 
                 replayMilestones(snapshot, targetMilestone.index());
             } else {
-                snapshot = new SnapshotImpl(snapshotProvider.getLatestSnapshot());
+                snapshot = snapshotProvider.getLatestSnapshot().clone();
 
                 rollBackMilestones(snapshot, targetMilestone.index() + 1);
             }

@@ -71,4 +71,15 @@ public interface Snapshot extends SnapshotMetaData, SnapshotState {
      * @param snapshot the new snapshot details that shall overwrite the current ones
      */
     void update(Snapshot snapshot);
+
+    /**
+     * Creates a deep clone of the Snapshot which can be modified without affecting the values of the original
+     * one.<br />
+     * <br />
+     * Since the data structures inside the Snapshot are extremely big, this method is relatively expensive and should
+     * only be used when it is really necessary.<br />
+     *
+     * @return a deep clone of the snapshot
+     */
+    Snapshot clone();
 }

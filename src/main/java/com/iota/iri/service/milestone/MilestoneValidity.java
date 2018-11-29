@@ -6,5 +6,6 @@ package com.iota.iri.service.milestone;
 public enum MilestoneValidity {
     VALID,
     INVALID,
-    INCOMPLETE
+    INCOMPLETE,
+    IRRELEVANT
 }

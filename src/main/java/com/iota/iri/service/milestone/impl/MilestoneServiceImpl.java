@@ -29,9 +29,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 
 import static com.iota.iri.controllers.TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET;
-import static com.iota.iri.service.milestone.MilestoneValidity.INCOMPLETE;
-import static com.iota.iri.service.milestone.MilestoneValidity.INVALID;
-import static com.iota.iri.service.milestone.MilestoneValidity.VALID;
+import static com.iota.iri.service.milestone.MilestoneValidity.*;
 
 /**
  * Creates a service instance that allows us to perform milestone specific operations.<br />
@@ -166,6 +164,10 @@ public class MilestoneServiceImpl implements MilestoneService {
         int milestoneIndex = getMilestoneIndex(transactionViewModel);
         if (milestoneIndex < 0 || milestoneIndex >= 0x200000) {
             return INVALID;
+        }
+
+        if (milestoneIndex <= snapshotProvider.getInitialSnapshot().getIndex()) {
+            return IRRELEVANT;
         }
 
         try {

@@ -26,9 +26,7 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.iota.iri.service.milestone.MilestoneValidity.INCOMPLETE;
-import static com.iota.iri.service.milestone.MilestoneValidity.INVALID;
-import static com.iota.iri.service.milestone.MilestoneValidity.VALID;
+import static com.iota.iri.service.milestone.MilestoneValidity.*;
 
 /**
  * Creates a tracker that automatically detects new milestones by incorporating a background worker that periodically
@@ -230,6 +228,9 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                         transaction.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
 
                         return INCOMPLETE;
+
+                    case IRRELEVANT:
+                        return IRRELEVANT;
 
                     default:
                         return INVALID;

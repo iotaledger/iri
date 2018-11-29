@@ -374,10 +374,10 @@ public class API {
                 request = gson.fromJson(requestString, Map.class);
             }
             catch(JsonSyntaxException jsonSyntaxException) {
-                return ExceptionResponse.create("Invalid JSON syntax: " + jsonSyntaxException.getMessage());
+                return ErrorResponse.create("Invalid JSON syntax: " + jsonSyntaxException.getMessage());
             }
             if (request == null) {
-                return ExceptionResponse.create("Invalid request payload: '" + requestString + "'");
+                return ErrorResponse.create("Invalid request payload: '" + requestString + "'");
             }
 
             // Did the requester ask for a command?

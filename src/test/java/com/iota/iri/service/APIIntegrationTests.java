@@ -46,8 +46,8 @@ public class APIIntegrationTests {
     // Expect to connect to any service worldwide in under 100 ms
     // and to any online machine local in 1 ms. The 50 ms default value is a suggested compromise.
     private static final int CONNECTION_TIMEOUT = 50;
-    private static ResponseSpecification specResponseSuccess;
-    private static ResponseSpecification specResponseError;
+    private static ResponseSpecification specSuccessResponse;
+    private static ResponseSpecification specErrorResponse;
     // Constants used in tests
     private static final String[] URIS = {"udp://8.8.8.8:14266", "udp://8.8.8.5:14266"};
     private static final String[] ADDRESSES = {"RVORZ9SIIP9RCYMREUIXXVPQIPHVCNPQ9HZWYKFWYWZRE9JQKG9REPKIASHUUECPSQO9JT9XNMVKWYGVA"};
@@ -117,14 +117,14 @@ public class APIIntegrationTests {
         RestAssured.baseURI = hostName;
 
         // Define response specification for http status code 200
-        specResponseSuccess = new ResponseSpecBuilder().
+        specSuccessResponse = new ResponseSpecBuilder().
                 expectStatusCode(200).
                 expectBody(containsString("duration")).
                 build();
 
         // Define response specification for http status code 500
-        specResponseError = new ResponseSpecBuilder().
-                expectStatusCode(500).
+        specErrorResponse = new ResponseSpecBuilder().
+                expectStatusCode(400).
                 expectBody(containsString("duration")).
                 build();
     }
@@ -161,7 +161,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseError).
+            spec(specErrorResponse).
             body(containsString("Invalid JSON syntax"));
     }
 
@@ -176,7 +176,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("appName")).
             body(containsString("appVersion")).
             body(containsString("duration")).
@@ -209,7 +209,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("neighbors")).
             body(containsString("address")).
             body(containsString("numberOfAllTransactions")).
@@ -229,7 +229,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("addedNeighbors"));
     }
 
@@ -244,7 +244,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("removedNeighbors"));
     }
 
@@ -259,7 +259,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("hashes"));
     }
 
@@ -274,7 +274,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("hashes"));
     }
 
@@ -289,7 +289,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("trytes"));
     }
 
@@ -306,7 +306,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("states"));
     }
 
@@ -324,7 +324,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("milestone"));
     }
 
@@ -341,7 +341,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             body(containsString("trunkTransaction")).
             body(containsString("branchTransaction"));
     }
@@ -358,7 +358,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             log().all().and();
     }
 
@@ -374,7 +374,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(specResponseSuccess).
+            spec(specSuccessResponse).
             log().all().and();
     }
 
@@ -393,7 +393,7 @@ public class APIIntegrationTests {
                 when().
                 post("/").
                 then().
-                spec(specResponseSuccess).
+                spec(specSuccessResponse).
                 body(containsString("trytes"));
     }
 
@@ -427,7 +427,7 @@ public class APIIntegrationTests {
                 when().
                 post("/").
                 then().
-                log().all().and().spec(specResponseSuccess);
+                log().all().and().spec(specSuccessResponse);
 
         return trytes;
     }

@@ -26,8 +26,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.iota.iri.crypto.SpongeFactory.Mode.CURLP27;
-import static com.iota.iri.service.milestone.MilestoneValidity.*;
+import static com.iota.iri.service.milestone.MilestoneValidity.INCOMPLETE;
+import static com.iota.iri.service.milestone.MilestoneValidity.INVALID;
 
 /**
  * Creates a tracker that automatically detects new milestones by incorporating a background worker that periodically
@@ -208,7 +208,10 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                     transaction.getCurrentIndex() == 0) {
 
                 int milestoneIndex = milestoneService.getMilestoneIndex(transaction);
-                switch (milestoneService.validateMilestone(transaction, milestoneIndex, CURLP27, 1)) {
+
+                MilestoneValidity validity = milestoneService.validateMilestone(transaction, milestoneIndex,
+                        SpongeFactory.Mode.CURLP27, 1);
+                switch (validity) {
                     case VALID:
                         if (milestoneIndex > latestMilestoneIndex) {
                             setLatestMilestone(transaction.getHash(), milestoneIndex);
@@ -220,20 +223,17 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
 
                         transaction.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
 
-                        return VALID;
+                        return validity;
 
                     case INCOMPLETE:
                         milestoneSolidifier.add(transaction.getHash(), milestoneIndex);
 
                         transaction.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
 
-                        return INCOMPLETE;
-
-                    case IRRELEVANT:
-                        return IRRELEVANT;
+                        return validity;
 
                     default:
-                        return INVALID;
+                        return validity;
                 }
             }
 

@@ -9,6 +9,7 @@ import com.iota.iri.IRI;
 import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -46,6 +47,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean dnsRefresherEnabled = Defaults.DNS_REFRESHER_ENABLED;
     protected boolean dnsResolutionEnabled = Defaults.DNS_RESOLUTION_ENABLED;
     protected List<String> neighbors = new ArrayList<>();
+    protected List<String> remoteTrustedApiHosts = new ArrayList(){{
+        // add localhost as trusted client by default
+        add(InetAddress.getLoopbackAddress().getHostAddress());
+    }};
 
     //IXI
     protected String ixiDir = Defaults.IXI_DIR;
@@ -160,6 +165,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--remote-limit-api"}, description = APIConfig.Descriptions.REMOTE_LIMIT_API)
     protected void setRemoteLimitApi(String remoteLimitApi) {
         this.remoteLimitApi = IotaUtils.splitStringToImmutableList(remoteLimitApi, SPLIT_STRING_TO_LIST_REGEX);
+    }
+
+    @Override
+    public List<String> getRemoteTrustedApiHosts() {
+        return remoteTrustedApiHosts;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--remote-trusted-api-hosts"}, description = APIConfig.Descriptions.REMOTE_TRUSTED_API_HOSTS)
+    public void setRemoteTrustedApiHosts(String remoteTrustedApiHosts) {
+        this.remoteTrustedApiHosts = IotaUtils.splitStringToImmutableList(remoteTrustedApiHosts, SPLIT_STRING_TO_LIST_REGEX);;
     }
 
     @Override

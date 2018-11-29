@@ -379,10 +379,10 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            // Is this command allowed to be run from this request address? 
+            // Is this command allowed to be run from this request address?
             // We check the remote limit API configuration.
             if (instance.configuration.getRemoteLimitApi().contains(command) &&
-                    !sourceAddress.getAddress().isLoopbackAddress()) {
+                    !instance.configuration.getRemoteTrustedApiHosts().contains(sourceAddress.getAddress().getHostAddress())) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 

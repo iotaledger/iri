@@ -25,6 +25,11 @@ public interface APIConfig extends Config {
     List<String> getRemoteLimitApi();
 
     /**
+     * @return {@value Descriptions#REMOTE_TRUSTED_API_HOSTS}
+     */
+    List<String> getRemoteTrustedApiHosts();
+
+    /**
      * @return {@value Descriptions#MAX_FIND_TRANSACTIONS}
      */
     int getMaxFindTransactions();
@@ -49,11 +54,15 @@ public interface APIConfig extends Config {
      */
     String getRemoteAuth();
 
+    /**
+     * These descriptions are used by JCommander when you enter <code>java iri.jar --help</code> at the command line.
+     */
     interface Descriptions {
         String PORT = "The port that will be used by the API.";
         String API_HOST = "The host on which the API will listen to. Set to 0.0.0.0 to accept any host.";
         String REMOTE_LIMIT_API = "Commands that should be ignored by API.";
-        String REMOTE_AUTH = "A string in the form of <user>:<password>. Used to access the API";
+        String REMOTE_TRUSTED_API_HOSTS = "Open the API interface to defined hosts. You can specify multiple hosts in a comma separated list. Warning: \"--remote-limit-api\" will have no effect for these hosts.";
+        String REMOTE_AUTH = "A string in the form of <user>:<password>. Used to access the API. You can provide a clear text or an hashed password.";
         String MAX_FIND_TRANSACTIONS = "The maximal number of transactions that may be returned by the \"findTransactions\" API call. If the number of transactions found exceeds this number an error will be returned.";
         String MAX_REQUESTS_LIST = "The maximal number of parameters one can place in an API call. If the number parameters exceeds this number an error will be returned";
         String MAX_GET_TRYTES = "The maximal number of trytes that may be returned by the \"getTrytes\" API call. If the number of transactions found exceeds this number an error will be returned.";

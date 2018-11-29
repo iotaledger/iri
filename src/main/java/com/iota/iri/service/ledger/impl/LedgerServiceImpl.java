@@ -72,6 +72,18 @@ public class LedgerServiceImpl implements LedgerService {
     }
 
     @Override
+    public void restoreLedgerState() throws LedgerException {
+        try {
+            Optional<MilestoneViewModel> milestone = milestoneService.findLatestProcessedSolidMilestoneInDatabase();
+            if (milestone.isPresent()) {
+                snapshotService.replayMilestones(snapshotProvider.getLatestSnapshot(), milestone.get().index());
+            }
+        } catch (Exception e) {
+            throw new LedgerException("unexpected error while restoring the ledger state", e);
+        }
+    }
+
+    @Override
     public boolean applyMilestoneToLedger(MilestoneViewModel milestone) throws LedgerException {
         if(generateStateDiff(milestone)) {
             try {

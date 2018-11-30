@@ -53,8 +53,7 @@ public class TipsViewModel {
      * cache.
      *
      * <p>
-     *     A solid tip is a transaction that has been stored in the database, and is referenced by at least one other
-     *     transaction also in the database.
+     *     A solid tip is a transaction that has been stored in the database, and there are no missing transactions in its history.
      * </p>
      *
      * @param tip The {@link Hash} identifier for the object that will be set to solid

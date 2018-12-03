@@ -9,6 +9,7 @@ ipfile       = open(sys.argv[1])
 master       = sys.argv[2]
 master_port  = sys.argv[3]
 iri_jar      = sys.argv[4]
+iri_version  = "test_v"+iri_jar.split('-')[1].replace(".jar", "")
 
 ips = ipfile.readlines()
 
@@ -66,5 +67,5 @@ for i in range(0, len(ip_pubs)):
                        -e TCP_PORT=13600 \
                        -v /home/ubuntu/iota/run_time/data1:/iri/data \
                        -v /home/ubuntu/iota/run_time/neighbors:/iri/conf/neighbors \
-                       stplaydog/iota-node:test_v1.5.5 \
-                       /docker-entrypoint.sh'])
+                       stplaydog/iota-node:%s \
+                       /docker-entrypoint.sh'%iri_version])

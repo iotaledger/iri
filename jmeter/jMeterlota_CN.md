@@ -54,9 +54,9 @@
 # 9.在If Controller下创建三个Http Request
 - 在这个逻辑控制器IfController下面创建三个HttpRequest,分别命名为：attachToTangle，storeTransactions和broadcastTransactions，其参数设置除了BodyData均跟getTransactionsToApprove一样。
 - 其Body Data分别为：
-     ![AttachToTangle body](attachToTangle_body.png)
-     ![StoreTransactions body](storeTransactions_body.png)
-     ![BroadcastTransactions body](broadcastTransactions_body.png)
+    - ![AttachToTangle body](attachToTangle_body.png)
+    - ![StoreTransactions body](storeTransactions_body.png)
+    - ![BroadcastTransactions body](broadcastTransactions_body.png)
      
 # 10.创建Summary Report......
 - 继续在器If Controller下面创建Summary Report和Aggregate Report以及View Results in Table。
@@ -97,6 +97,6 @@
   ![Image result1](image_result2.png)
   ![Image result1](image_result3.png)
   ![Image result1](image_result4.png)
-  ![Image result1](image_result5.png)
   ![Image result1](image_result6.png)
+  ![Image result1](image_result5.png)
     

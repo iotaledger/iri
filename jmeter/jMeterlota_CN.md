@@ -29,7 +29,6 @@
     - Ramp-Up Period:相当于是线程所用的首次循环的时间范围（设置为：5秒）
     - Loop count:虚拟的次数（设置为：30次）
     - 它所表达的含义就是：1人在5秒时间内请求了30次,10人在5秒时间内就请求了120次
-    ![Image thread group](image_thread_group.png)
 
 # 6.创建View Results Tree.......
 - 创建一个和Thread Group同等级的View Results Tree和Graph Results以及Aggregate Graph。
@@ -54,9 +53,24 @@
 # 9.在If Controller下创建三个Http Request
 - 在这个逻辑控制器IfController下面创建三个HttpRequest,分别命名为：attachToTangle，storeTransactions和broadcastTransactions，其参数设置除了BodyData均跟getTransactionsToApprove一样。
 - 其Body Data分别为：
-    - ![AttachToTangle body](attachToTangle_body.png)
-    - ![StoreTransactions body](storeTransactions_body.png)
-    - ![BroadcastTransactions body](broadcastTransactions_body.png)
+ - 
+        {
+	       "command": "attachToTangle",
+    	    "trunkTransaction": "${trunk_1}",
+	       "branchTransaction": "${branch_1}",
+	       "minWeightMagnitude": ${mwm},
+	       "trytes": ["${bundleTrytes}"]
+        }
+ - 
+        {
+	        "command": "storeTransactions", 
+	        "trytes": ${attached_trytes_1}
+        }
+ - 
+        {
+	        "command": "broadcastTransactions", 
+	        "trytes": ${attached_trytes_1}
+        }
      
 # 10.创建Summary Report......
 - 继续在器If Controller下面创建Summary Report和Aggregate Report以及View Results in Table。
@@ -94,9 +108,6 @@
 - 至此测试文件已经创建成功了，来看一下创建之后的整体图：![Iri panorama](iri_panorama.png)
 - 下面我们来测试一下，其测试结果我以图片的形式进行展示：
   ![Image result1](image_result1.png)
-  ![Image result1](image_result2.png)
   ![Image result1](image_result3.png)
-  ![Image result1](image_result4.png)
-  ![Image result1](image_result6.png)
   ![Image result1](image_result5.png)
     

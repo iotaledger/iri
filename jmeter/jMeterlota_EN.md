@@ -48,9 +48,9 @@ Right click Add-->Threads(Users)-->Thread Group and name it: spammers
 # 9. Create three Http Requests under If Controller
 - Create three HttpRequests under this logic controller IfController, named: attachToTangle, storeTransactions and broadcastTransactions, whose parameters are the same as getTransactionsToApprove except BodyData.
 - Its Body Data is:
-    ![AttachToTangle body](attachToTangle_body.png)
-    ![StoreTransactions body](storeTransactions_body.png)
-    ![BroadcastTransactions body](broadcastTransactions_body.png)
+    - ![AttachToTangle body](attachToTangle_body.png)
+    - ![StoreTransactions body](storeTransactions_body.png)
+    - ![BroadcastTransactions body](broadcastTransactions_body.png)
 
 # 10.Create a Summary Report...
 - Continue to create the Summary Report and Aggregate Report and View Results in Table under the If Controller.
@@ -91,5 +91,5 @@ Right click Add-->Threads(Users)-->Thread Group and name it: spammers
   ![Image result1](image_result2.png)
   ![Image result1](image_result3.png)
   ![Image result1](image_result4.png)
-  ![Image result1](image_result5.png)
   ![Image result1](image_result6.png)
+  ![Image result1](image_result5.png)

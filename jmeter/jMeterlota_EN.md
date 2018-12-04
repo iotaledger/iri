@@ -23,7 +23,6 @@ Right click Add-->Threads(Users)-->Thread Group and name it: spammers
     - Ramp-Up Period: Equivalent to the time range of the first loop used by the thread (Set as 5)
     - Loop count: the number of virtual times (Set as 30)
     - What it means is: 1 person requested 30 times in 5 seconds, 10 people requested 120 times in 5 seconds
-    ![Image thread group](image_thread_group.png)
 
 # 6.Create View Results Tree.......
 - Create a View Results Tree and Graph Results and Aggregate Graph at the same level as the Thread Group.
@@ -48,9 +47,23 @@ Right click Add-->Threads(Users)-->Thread Group and name it: spammers
 # 9. Create three Http Requests under If Controller
 - Create three HttpRequests under this logic controller IfController, named: attachToTangle, storeTransactions and broadcastTransactions, whose parameters are the same as getTransactionsToApprove except BodyData.
 - Its Body Data is:
-    - ![AttachToTangle body](attachToTangle_body.png)
-    - ![StoreTransactions body](storeTransactions_body.png)
-    - ![BroadcastTransactions body](broadcastTransactions_body.png)
+  -     {
+	      "command": "attachToTangle",
+    	   "trunkTransaction": "${trunk_1}",
+	       "branchTransaction": "${branch_1}",
+	       "minWeightMagnitude": ${mwm},
+	       "trytes": ["${bundleTrytes}"]
+        }
+  - 
+        {
+	        "command": "storeTransactions", 
+	        "trytes": ${attached_trytes_1}
+        }
+  - 
+        {
+	        "command": "broadcastTransactions", 
+	        "trytes": ${attached_trytes_1}
+        }
 
 # 10.Create a Summary Report...
 - Continue to create the Summary Report and Aggregate Report and View Results in Table under the If Controller.
@@ -88,8 +101,5 @@ Right click Add-->Threads(Users)-->Thread Group and name it: spammers
 - At this point the test file has been created successfully. Let's take a look at the overall picture after creation: ![Iri panorama](iri_panorama.png)
 - Let's test it. The test results are shown in the form of an image:
   ![Image result1](image_result1.png)
-  ![Image result1](image_result2.png)
   ![Image result1](image_result3.png)
-  ![Image result1](image_result4.png)
-  ![Image result1](image_result6.png)
   ![Image result1](image_result5.png)

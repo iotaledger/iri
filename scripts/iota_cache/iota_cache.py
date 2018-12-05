@@ -14,7 +14,7 @@ class IotaCache(object):
             self.seed = 'EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9Q'
         else:
             self.seed = seed
-        self.api = Iota(self.uri, self.seed)
+        self.api = Iota(self.uri, self.seed, testnet=True)
 
     def cache_txn_in_tangle(self, ipfs_addr, tag):
         api_response = self.api.get_new_addresses()

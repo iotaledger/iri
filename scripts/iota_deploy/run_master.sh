@@ -13,7 +13,7 @@ python /home/ubuntu/iota/run-time/iota_cache/app.py &> /home/ubuntu/iota/run-tim
 
 # start the sync server
 kill $(ps aux | grep "timer.py" | grep -v grep | awk "{print \$2}")
-python timer.py &
+python timer.py &> /home/ubuntu/iota/run-time/out & 
 
 # TODO we need to have a coordinator server as well
 #sleep 10

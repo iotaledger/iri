@@ -208,6 +208,9 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                     transaction.getCurrentIndex() == 0) {
 
                 int milestoneIndex = milestoneService.getMilestoneIndex(transaction);
+                if (milestoneIndex <= snapshotProvider.getInitialSnapshot().getIndex()) {
+                    return INVALID;
+                }
 
                 MilestoneValidity validity = milestoneService.validateMilestone(transaction, milestoneIndex,
                         SpongeFactory.Mode.CURLP27, 1);
@@ -222,19 +225,16 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                         }
 
                         transaction.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
-
-                        return validity;
+                    break;
 
                     case INCOMPLETE:
                         milestoneSolidifier.add(transaction.getHash(), milestoneIndex);
 
                         transaction.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
-
-                        return validity;
-
-                    default:
-                        return validity;
+                    break;
                 }
+
+                return validity;
             }
 
             return INVALID;

@@ -31,7 +31,6 @@ import java.util.*;
 import static com.iota.iri.controllers.TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET;
 import static com.iota.iri.service.milestone.MilestoneValidity.INCOMPLETE;
 import static com.iota.iri.service.milestone.MilestoneValidity.INVALID;
-import static com.iota.iri.service.milestone.MilestoneValidity.IRRELEVANT;
 import static com.iota.iri.service.milestone.MilestoneValidity.VALID;
 
 /**
@@ -166,10 +165,6 @@ public class MilestoneServiceImpl implements MilestoneService {
 
         if (milestoneIndex < 0 || milestoneIndex >= 0x200000) {
             return INVALID;
-        }
-
-        if (milestoneIndex <= snapshotProvider.getInitialSnapshot().getIndex()) {
-            return IRRELEVANT;
         }
 
         try {

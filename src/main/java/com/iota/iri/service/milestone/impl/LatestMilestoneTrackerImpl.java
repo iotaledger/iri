@@ -204,6 +204,8 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                     transaction.getCurrentIndex() == 0) {
 
                 int milestoneIndex = milestoneService.getMilestoneIndex(transaction);
+
+                // if the milestone is older than our ledger start point: we already processed it in the past
                 if (milestoneIndex <= snapshotProvider.getInitialSnapshot().getIndex()) {
                     return true;
                 }

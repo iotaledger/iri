@@ -460,7 +460,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-enabled"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_ENABLED)
+    @Parameter(names = {"--local-snapshots-enabled"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_ENABLED,
+            arity = 1)
     protected void setLocalSnapshotsEnabled(boolean localSnapshotsEnabled) {
         this.localSnapshotsEnabled = localSnapshotsEnabled;
     }
@@ -472,7 +473,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @JsonProperty
     @Parameter(names = {"--local-snapshots-pruning-enabled"}, description =
-            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_ENABLED)
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_ENABLED, arity = 1)
     protected void setLocalSnapshotsPruningEnabled(boolean localSnapshotsPruningEnabled) {
         this.localSnapshotsPruningEnabled = localSnapshotsPruningEnabled;
     }

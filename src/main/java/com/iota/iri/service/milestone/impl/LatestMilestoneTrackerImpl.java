@@ -11,7 +11,6 @@ import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.milestone.MilestoneException;
 import com.iota.iri.service.milestone.MilestoneService;
 import com.iota.iri.service.milestone.MilestoneSolidifier;
-import com.iota.iri.service.milestone.MilestoneValidity;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
@@ -25,9 +24,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
-
-import static com.iota.iri.service.milestone.MilestoneValidity.INCOMPLETE;
-import static com.iota.iri.service.milestone.MilestoneValidity.INVALID;
 
 /**
  * Creates a tracker that automatically detects new milestones by incorporating a background worker that periodically
@@ -187,9 +183,9 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
     }
 
     @Override
-    public MilestoneValidity analyzeMilestoneCandidate(Hash transactionHash) throws MilestoneException {
+    public boolean processMilestoneCandidate(Hash transactionHash) throws MilestoneException {
         try {
-            return analyzeMilestoneCandidate(TransactionViewModel.fromHash(tangle, transactionHash));
+            return processMilestoneCandidate(TransactionViewModel.fromHash(tangle, transactionHash));
         } catch (Exception e) {
             throw new MilestoneException("unexpected error while analyzing the transaction " + transactionHash, e);
         }
@@ -202,19 +198,17 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * {@link MilestoneSolidifier} that takes care of requesting the missing parts of the milestone bundle.<br />
      */
     @Override
-    public MilestoneValidity analyzeMilestoneCandidate(TransactionViewModel transaction) throws MilestoneException {
+    public boolean processMilestoneCandidate(TransactionViewModel transaction) throws MilestoneException {
         try {
             if (coordinatorAddress.equals(transaction.getAddressHash()) &&
                     transaction.getCurrentIndex() == 0) {
 
                 int milestoneIndex = milestoneService.getMilestoneIndex(transaction);
                 if (milestoneIndex <= snapshotProvider.getInitialSnapshot().getIndex()) {
-                    return INVALID;
+                    return true;
                 }
 
-                MilestoneValidity validity = milestoneService.validateMilestone(transaction, milestoneIndex,
-                        SpongeFactory.Mode.CURLP27, 1);
-                switch (validity) {
+                switch (milestoneService.validateMilestone(transaction, milestoneIndex, SpongeFactory.Mode.CURLP27, 1)) {
                     case VALID:
                         if (milestoneIndex > latestMilestoneIndex) {
                             setLatestMilestone(transaction.getHash(), milestoneIndex);
@@ -231,13 +225,12 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                         milestoneSolidifier.add(transaction.getHash(), milestoneIndex);
 
                         transaction.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
-                    break;
-                }
 
-                return validity;
+                        return false;
+                }
             }
 
-            return INVALID;
+            return true;
         } catch (Exception e) {
             throw new MilestoneException("unexpected error while analyzing the " + transaction, e);
         }
@@ -351,7 +344,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
             }
 
             Hash candidateTransactionHash = milestoneCandidatesToAnalyze.pollFirst();
-            if(analyzeMilestoneCandidate(candidateTransactionHash) == INCOMPLETE) {
+            if(!processMilestoneCandidate(candidateTransactionHash)) {
                 seenMilestoneCandidates.remove(candidateTransactionHash);
             }
         }

@@ -1,16 +1,18 @@
 package com.iota.iri.conf;
 
+import com.iota.iri.IRI;
+import com.iota.iri.utils.IotaUtils;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.iota.iri.IRI;
-import com.iota.iri.utils.IotaUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.commons.lang3.ArrayUtils;
 
 /*
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -465,7 +467,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public boolean getLocalSnapshotsPruningEnabled() {
-        return this.localSnapshotsPruningEnabled;
+        return this.localSnapshotsEnabled && this.localSnapshotsPruningEnabled;
     }
 
     @JsonProperty

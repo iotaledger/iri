@@ -129,13 +129,17 @@ public class Iota {
         // new refactored instances
         snapshotProvider = new SnapshotProviderImpl();
         snapshotService = new SnapshotServiceImpl();
-        localSnapshotManager = new LocalSnapshotManagerImpl();
+        localSnapshotManager = configuration.getLocalSnapshotsEnabled()
+                             ? new LocalSnapshotManagerImpl()
+                             : null;
         milestoneService = new MilestoneServiceImpl();
         latestMilestoneTracker = new LatestMilestoneTrackerImpl();
         latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
         seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
         milestoneSolidifier = new MilestoneSolidifierImpl();
-        transactionPruner = new AsyncTransactionPruner();
+        transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
+                          ? new AsyncTransactionPruner()
+                          : null;
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code
@@ -189,19 +193,20 @@ public class Iota {
         milestoneSolidifier.start();
         transactionRequesterWorker.start();
 
-        if (configuration.getLocalSnapshotsEnabled()) {
+        if (localSnapshotManager != null) {
             localSnapshotManager.start(latestMilestoneTracker);
-
-            if (configuration.getLocalSnapshotsPruningEnabled()) {
-                 transactionPruner.start();
-            }
+        }
+        if (transactionPruner != null) {
+            transactionPruner.start();
         }
     }
 
     private void injectDependencies() throws SnapshotException, TransactionPruningException {
         snapshotProvider.init(configuration);
         snapshotService.init(tangle, snapshotProvider, configuration);
-        localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
+        if (localSnapshotManager != null) {
+            localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
+        }
         milestoneService.init(tangle, snapshotProvider, snapshotService, messageQ, configuration);
         latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
                 messageQ, configuration);
@@ -210,7 +215,9 @@ public class Iota {
         seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService);
-        transactionPruner.init(tangle, snapshotProvider, tipsViewModel, configuration).restoreState();
+        if (transactionPruner != null) {
+            transactionPruner.init(tangle, snapshotProvider, tipsViewModel, configuration).restoreState();
+        }
         transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }
 
@@ -251,11 +258,10 @@ public class Iota {
         latestSolidMilestoneTracker.shutdown();
         latestMilestoneTracker.shutdown();
 
-        if (configuration.getLocalSnapshotsEnabled()) {
-            if (configuration.getLocalSnapshotsPruningEnabled()) {
-                transactionPruner.shutdown();
-            }
-
+        if (transactionPruner != null) {
+            transactionPruner.shutdown();
+        }
+        if (localSnapshotManager != null) {
             localSnapshotManager.shutdown();
         }
 

@@ -433,7 +433,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 try {
                     // only clean up if the corresponding milestone transaction was cleaned up already -> otherwise
                     // let the MilestonePrunerJob do this
-                    if (TransactionViewModel.fromHash(tangle, transactionHash).getType() ==
+                    if (transactionPruner != null && TransactionViewModel.fromHash(tangle, transactionHash).getType() ==
                             TransactionViewModel.PREFILLED_SLOT) {
 
                         transactionPruner.addJob(new UnconfirmedSubtanglePrunerJob(transactionHash));
@@ -464,7 +464,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         int startingIndex = config.getMilestoneStartIndex() + 1;
 
         try {
-            if (targetIndex >= startingIndex) {
+            if (transactionPruner != null && targetIndex >= startingIndex) {
                 transactionPruner.addJob(new MilestonePrunerJob(startingIndex, targetIndex));
             }
         } catch (TransactionPruningException e) {

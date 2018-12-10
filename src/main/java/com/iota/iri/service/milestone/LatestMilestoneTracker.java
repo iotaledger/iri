@@ -49,21 +49,20 @@ public interface LatestMilestoneTracker {
      * milestone and update the internal properties accordingly.<br />
      *
      * @param transaction the transaction that shall be examined
-     * @return the result of the analysis translated into the corresponding {@link MilestoneValidity} status
+     * @return {@code true} if the milestone could be processed and {@code false} if the bundle is not complete, yet
      * @throws MilestoneException if anything unexpected happens while trying to analyze the milestone candidate
      */
-    MilestoneValidity analyzeMilestoneCandidate(TransactionViewModel transaction) throws
-            MilestoneException;
+    boolean processMilestoneCandidate(TransactionViewModel transaction) throws MilestoneException;
 
     /**
-     * Does the same as {@link #analyzeMilestoneCandidate(TransactionViewModel)} but automatically retrieves the
+     * Does the same as {@link #processMilestoneCandidate(TransactionViewModel)} but automatically retrieves the
      * transaction belonging to the passed in hash.<br />
      *
      * @param transactionHash the hash of the transaction that shall be examined
-     * @return the result of the analysis translated into the corresponding {@link MilestoneValidity} status
+     * @return {@code true} if the milestone could be processed and {@code false} if the bundle is not complete, yet
      * @throws MilestoneException if anything unexpected happens while trying to analyze the milestone candidate
      */
-    MilestoneValidity analyzeMilestoneCandidate(Hash transactionHash) throws MilestoneException;
+    boolean processMilestoneCandidate(Hash transactionHash) throws MilestoneException;
 
     /**
      * Since the {@link LatestMilestoneTracker} scans all milestone candidates whenever IRI restarts, this flag gives us
@@ -77,7 +76,7 @@ public interface LatestMilestoneTracker {
     boolean isInitialScanComplete();
 
     /**
-     * This method starts the background worker that automatically calls {@link #analyzeMilestoneCandidate(Hash)} on all
+     * This method starts the background worker that automatically calls {@link #processMilestoneCandidate(Hash)} on all
      * newly found milestone candidates to update the latest milestone.<br />
      */
     void start();

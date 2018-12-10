@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
@@ -16,6 +17,7 @@ import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
+import com.iota.iri.service.tipselection.impl.CumulativeWeightWithEdgeCalculator;
 import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
 import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
@@ -152,7 +154,13 @@ public class Iota {
 
     private TipSelector createTipSelector(TipSelConfig config) {
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestoneTracker);
+        
+        // TODO use factory
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
+        if(BaseIotaConfig.getInstance().getWeightCalAlgo() == "CUM_EDGE_WEIGHT"){
+            ratingCalculator = new CumulativeWeightWithEdgeCalculator(tangle);
+        }
+
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
         return new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,

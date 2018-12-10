@@ -211,9 +211,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         if (transactionPruner != null) {
             cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
                     newSnapshot.getSolidEntryPoints(), transactionPruner);
-        }
 
-        if (transactionPruner != null) {
             cleanupOldData(config, transactionPruner, targetMilestone);
         }
 

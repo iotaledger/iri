@@ -229,6 +229,9 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                         transaction.isMilestone(tangle, snapshotProvider.getInitialSnapshot(), true);
 
                         return false;
+
+                    default:
+                        // we can consider the milestone candidate processed and move on w/o farther action
                 }
             }
 

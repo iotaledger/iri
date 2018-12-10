@@ -208,10 +208,14 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
-        cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
-                newSnapshot.getSolidEntryPoints(), transactionPruner);
+        if (transactionPruner != null) {
+            cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
+                    newSnapshot.getSolidEntryPoints(), transactionPruner);
+        }
 
-        cleanupOldData(config, transactionPruner, targetMilestone);
+        if (transactionPruner != null) {
+            cleanupOldData(config, transactionPruner, targetMilestone);
+        }
 
         persistLocalSnapshot(snapshotProvider, newSnapshot, config);
     }
@@ -433,7 +437,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 try {
                     // only clean up if the corresponding milestone transaction was cleaned up already -> otherwise
                     // let the MilestonePrunerJob do this
-                    if (transactionPruner != null && TransactionViewModel.fromHash(tangle, transactionHash).getType() ==
+                    if (TransactionViewModel.fromHash(tangle, transactionHash).getType() ==
                             TransactionViewModel.PREFILLED_SLOT) {
 
                         transactionPruner.addJob(new UnconfirmedSubtanglePrunerJob(transactionHash));
@@ -464,7 +468,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         int startingIndex = config.getMilestoneStartIndex() + 1;
 
         try {
-            if (transactionPruner != null && targetIndex >= startingIndex) {
+            if (targetIndex >= startingIndex) {
                 transactionPruner.addJob(new MilestonePrunerJob(startingIndex, targetIndex));
             }
         } catch (TransactionPruningException e) {

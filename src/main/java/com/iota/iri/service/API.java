@@ -21,11 +21,11 @@ import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
-import com.iota.mdxdoclet.Document;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import org.apache.commons.lang3.StringUtils;
+import org.iota.mddoclet.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.channels.StreamSinkChannel;
@@ -420,8 +420,7 @@ public class API {
                 }
                 case "broadcastTransactions": {
                     final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
-                    broadcastTransactionsStatement(trytes);
-                    return AbstractResponse.createEmptyResponse();
+                    return broadcastTransactionsStatement(trytes);
                 }
                 case "findTransactions": {
                     return findTransactionsStatement(request);
@@ -477,8 +476,7 @@ public class API {
                 case "storeTransactions": {
                     try {
                         final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
-                        storeTransactionsStatement(trytes);
-                        return AbstractResponse.createEmptyResponse();
+                        return storeTransactionsStatement(trytes);
                     } catch (RuntimeException e) {
                         //transaction not valid
                         return ErrorResponse.create("Invalid trytes input");
@@ -919,10 +917,11 @@ public class API {
       * These trytes are returned by <tt>attachToTangle</tt>, or by doing proof of work somewhere else.
       *
       * @param trytes Transaction data to be stored.
+      * @return {@link com.iota.iri.service.dto.AbstractResponse.Emptyness}
       * @throws Exception When storing or updating a transaction fails
       **/
     @Document(name="storeTransactions")
-    public void storeTransactionsStatement(List<String> trytes) throws Exception {
+    public AbstractResponse storeTransactionsStatement(List<String> trytes) throws Exception {
         final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String trytesPart : trytes) {
@@ -942,6 +941,8 @@ public class API {
                 transactionViewModel.update(instance.tangle, "sender");
             }
         }
+        
+        return AbstractResponse.createEmptyResponse();
     }
     
     /**
@@ -1324,9 +1325,10 @@ public class API {
       * These trytes are returned by <tt>attachToTangle</tt>, or by doing proof of work somewhere else.
       * 
       * @param trytes The list of transaction trytes to broadcast
+      * @return {@link com.iota.iri.service.dto.AbstractResponse.Emptyness}
       **/
     @Document(name="broadcastTransactions")
-    public void broadcastTransactionsStatement(List<String> trytes) {
+    public AbstractResponse broadcastTransactionsStatement(List<String> trytes) {
         final List<TransactionViewModel> elements = new LinkedList<>();
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
         for (final String tryte : trytes) {
@@ -1342,6 +1344,7 @@ public class API {
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
             instance.node.broadcast(transactionViewModel);
         }
+        return AbstractResponse.createEmptyResponse();
     }
 
 

@@ -4,13 +4,8 @@ import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotMetaData;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.SnapshotState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.iota.iri.service.snapshot.*;
+import com.iota.iri.utils.IotaIOUtils;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -18,6 +13,9 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates a data provider for the two {@link Snapshot} instances that are relevant for the node.<br />
@@ -161,7 +159,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     private void loadSnapshots() throws SnapshotException {
         initialSnapshot = loadLocalSnapshot();
         if (initialSnapshot == null) {
-            initialSnapshot = loadBuiltInSnapshot();
+            initialSnapshot = loadGenesisSnapshot();
         }
 
         latestSnapshot = initialSnapshot.clone();
@@ -178,13 +176,19 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      */
     private Snapshot loadLocalSnapshot() throws SnapshotException {
         if (config.getLocalSnapshotsEnabled()) {
-            File localSnapshotFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.state");
+            String localSnapshotPath = config.getLocalSnapshotsBasePath() + ".snapshot.state";
+            File localSnapshotFile = new File(localSnapshotPath);
             File localSnapshotMetadDataFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.meta");
 
             if (localSnapshotFile.exists() && localSnapshotFile.isFile() && localSnapshotMetadDataFile.exists() &&
                     localSnapshotMetadDataFile.isFile()) {
 
-                SnapshotState snapshotState = readSnapshotStatefromFile(localSnapshotFile.getAbsolutePath());
+                SnapshotState snapshotState;
+                try {
+                    snapshotState = readSnapshotState(new FileReader(localSnapshotFile));
+                } catch (FileNotFoundException e) {
+                    throw new SnapshotException("couldn't locate " + localSnapshotFile + " for reading", e);
+                }
                 if (!snapshotState.hasCorrectSupply()) {
                     throw new SnapshotException("the snapshot state file has an invalid supply");
                 }
@@ -204,8 +208,8 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * Loads the builtin snapshot (last global snapshot) that is embedded in the jar (if a different path is provided it
-     * can also load from the disk).
+     * Loads the snapshot (last global snapshot). If we can't find it in the current working directory we
+     * look for a jar resource.
      *
      * We first verify the integrity of the snapshot files by checking the signature of the files and then construct
      * a {@link Snapshot} from the retrieved information.
@@ -215,7 +219,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @return the builtin snapshot (last global snapshot) that is embedded in the jar
      * @throws SnapshotException if anything goes wrong while loading the builtin {@link Snapshot}
      */
-    private Snapshot loadBuiltInSnapshot() throws SnapshotException {
+    private Snapshot loadGenesisSnapshot() throws SnapshotException {
         if (builtinSnapshot == null) {
             try {
                 if (!config.isTestnet() && !SignedFiles.isFileSignatureValid(
@@ -233,9 +237,9 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
             SnapshotState snapshotState;
             try {
-                snapshotState = readSnapshotStateFromJAR(config.getSnapshotFile());
-            } catch (SnapshotException e) {
-                snapshotState = readSnapshotStatefromFile(config.getSnapshotFile());
+                snapshotState = readSnapshotState(IotaIOUtils.getFileStreamFromCwdOrResource(config.getSnapshotFile()));
+            } catch (IOException e) {
+                throw new SnapshotException("failed to load global snapshot");
             }
             if (!snapshotState.hasCorrectSupply()) {
                 throw new SnapshotException("the snapshot state file has an invalid supply");
@@ -267,63 +271,31 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     //region SNAPSHOT STATE RELATED UTILITY METHODS ////////////////////////////////////////////////////////////////////
 
     /**
-     * This method reads the balances from the given file on the disk and creates the corresponding SnapshotState.
-     *
-     * It simply creates the corresponding reader and for the file on the given location and passes it on to
-     * {@link #readSnapshotState(BufferedReader)}.
-     *
-     * @param snapshotStateFilePath location of the snapshot state file
-     * @return the unserialized version of the state file
-     * @throws SnapshotException if anything goes wrong while reading the state file
-     */
-    private SnapshotState readSnapshotStatefromFile(String snapshotStateFilePath) throws SnapshotException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(new FileInputStream(snapshotStateFilePath))))) {
-            return readSnapshotState(reader);
-        } catch (IOException e) {
-            throw new SnapshotException("failed to read the snapshot file at " + snapshotStateFilePath, e);
-        }
-    }
-
-    /**
-     * This method reads the balances from the given file in the JAR and creates the corresponding SnapshotState.
-     *
-     * It simply creates the corresponding reader and for the file on the given location in the JAR and passes it on to
-     * {@link #readSnapshotState(BufferedReader)}.
-     *
-     * @param snapshotStateFilePath location of the snapshot state file
-     * @return the unserialized version of the state file
-     * @throws SnapshotException if anything goes wrong while reading the state file
-     */
-    private SnapshotState readSnapshotStateFromJAR(String snapshotStateFilePath) throws SnapshotException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(SnapshotProviderImpl.class.getResourceAsStream(snapshotStateFilePath))))) {
-            return readSnapshotState(reader);
-        } catch (IOException e) {
-            throw new SnapshotException("failed to read the snapshot file from JAR at " + snapshotStateFilePath, e);
-        }
-    }
-
-    /**
-     * This method reads the balances from the given reader.
+     * This method reads the balances from the given snapshot state file.
      *
      * The format of the input is pairs of "address;balance" separated by newlines. It simply reads the input line by
      * line, adding the corresponding values to the map.
      *
-     * @param reader reader allowing us to retrieve the lines of the {@link SnapshotState} file
      * @return the unserialized version of the snapshot state state file
-     * @throws IOException if something went wrong while trying to access the file
      * @throws SnapshotException if anything goes wrong while reading the state file
      */
-    private SnapshotState readSnapshotState(BufferedReader reader) throws IOException, SnapshotException {
+    private SnapshotState readSnapshotState(Reader inputStreamReader) throws SnapshotException {
         Map<Hash, Long> state = new HashMap<>();
 
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String[] parts = line.split(";", 2);
-            if (parts.length == 2) {
-                state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
-            } else {
-                throw new SnapshotException("malformed snapshot state file");
+        try (BufferedReader reader = new BufferedReader(inputStreamReader)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] parts = line.split(";", 2);
+                if (parts.length == 2) {
+                    state.put(HashFactory.ADDRESS.create(parts[0]), Long.valueOf(parts[1]));
+                }
+                else {
+                    throw new SnapshotException("malformed snapshot state file");
+                }
             }
+        }
+        catch (IOException e) {
+            throw new SnapshotException("Encountered a problem while reading the state file" , e);
         }
 
         return new SnapshotStateImpl(state);

@@ -5,19 +5,24 @@ import com.iota.iri.crypto.ISS;
 import com.iota.iri.crypto.Sponge;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.utils.Converter;
-import org.apache.commons.lang3.ArrayUtils;
+import com.iota.iri.utils.IotaIOUtils;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.Arrays;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 public class SignedFiles {
 
-    public static boolean isFileSignatureValid(String filename, String signatureFilename, String publicKey, int depth, int index) throws IOException {
-        byte[] signature = digestFile(filename, SpongeFactory.create(SpongeFactory.Mode.KERL));
-        return validateSignature(signatureFilename, publicKey, depth, index, signature);
+    public static boolean isFileSignatureValid(String filePath, String signatureFilePath, String publicKey, int depth, int index) throws IOException {
+        byte[] signature = digestFile(filePath, SpongeFactory.create(SpongeFactory.Mode.KERL));
+        return validateSignature(signatureFilePath, publicKey, depth, index, signature);
     }
 
-    private static boolean validateSignature(String signatureFilename, String publicKey, int depth, int index, byte[] digest) throws IOException {
+    private static boolean validateSignature(String signatureFilePath, String publicKey, int depth, int index, byte[] digest)
+            throws IOException {
         //validate signature
         SpongeFactory.Mode mode = SpongeFactory.Mode.CURLP81;
         byte[] digests = new byte[0];
@@ -25,9 +30,8 @@ public class SignedFiles {
         byte[] root;
         int i;
 
-        try (InputStream inputStream = SignedFiles.class.getResourceAsStream(signatureFilename);
-             BufferedReader reader = new BufferedReader((inputStream == null)
-                 ? new FileReader(signatureFilename) : new InputStreamReader(inputStream))) {
+        try (BufferedReader reader = new BufferedReader(
+                IotaIOUtils.getFileStreamFromCwdOrResource(signatureFilePath))) {
 
             String line;
             for (i = 0; i < 3 && (line = reader.readLine()) != null; i++) {
@@ -52,11 +56,8 @@ public class SignedFiles {
         }
     }
 
-    private static byte[] digestFile(String filename, Sponge curl) throws IOException {
-        try (InputStream inputStream = SignedFiles.class.getResourceAsStream(filename);
-             BufferedReader reader = new BufferedReader((inputStream == null)
-                 ? new FileReader(filename) : new InputStreamReader(inputStream))) {
-
+    private static byte[] digestFile(String filePath, Sponge curl) throws IOException {
+        try (BufferedReader reader = new BufferedReader(IotaIOUtils.getFileStreamFromCwdOrResource(filePath))) {
             byte[] buffer = new byte[Curl.HASH_LENGTH * 3];
 
             reader.lines().forEach(line -> {

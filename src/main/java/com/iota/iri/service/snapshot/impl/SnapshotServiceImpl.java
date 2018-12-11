@@ -208,10 +208,12 @@ public class SnapshotServiceImpl implements SnapshotService {
 
         Snapshot newSnapshot = generateSnapshot(latestMilestoneTracker, targetMilestone);
 
-        cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
-                newSnapshot.getSolidEntryPoints(), transactionPruner);
+        if (transactionPruner != null) {
+            cleanupExpiredSolidEntryPoints(tangle, snapshotProvider.getInitialSnapshot().getSolidEntryPoints(),
+                    newSnapshot.getSolidEntryPoints(), transactionPruner);
 
-        cleanupOldData(config, transactionPruner, targetMilestone);
+            cleanupOldData(config, transactionPruner, targetMilestone);
+        }
 
         persistLocalSnapshot(snapshotProvider, newSnapshot, config);
     }

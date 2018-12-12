@@ -15,33 +15,65 @@ import com.iota.iri.utils.Pair;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
 
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.ResourceIterator;
+import org.neo4j.graphdb.DynamicLabel;
+import org.neo4j.graphdb.Label;
+import org.neo4j.graphdb.DynamicRelationshipType;
+import org.neo4j.graphdb.MultipleFoundException;
+
+
+import com.iota.iri.model.*;
+import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Approvee;
+import com.iota.iri.model.persistables.Bundle;
+import com.iota.iri.model.persistables.Milestone;
+import com.iota.iri.model.persistables.ObsoleteTag;
+import com.iota.iri.model.persistables.Tag;
+import com.iota.iri.model.persistables.Transaction;
+
+
+
 import java.util.*;
+import java.io.*;
 
 import static org.neo4j.driver.v1.Values.parameters;
 
 public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvider
 {
-    private final Driver driver;
+    GraphDatabaseService graphDb;
     private boolean available;
+    private Map<Class<?>, Label> classLabelMap;
 
-    public Neo4jPersistenceProvider( String uri, String user, String password )
-    {
-        driver = GraphDatabase.driver( uri, AuthTokens.basic( user, password ) );
+    public Neo4jPersistenceProvider( String dbDir) {
+        graphDb = new GraphDatabaseFactory().newEmbeddedDatabase( new File(dbDir));
     }
 
     @Override
-    public void close() throws Exception
-    {
-        driver.close();
+    public void close() throws Exception {
+        graphDb.shutdown();
     }
 
-    public void init() throws Exception
-    {
-        //log.info("Initializing Database Backend... ");
+    public void init() throws Exception {
+        initClassLabelMap();
     }
 
-    public boolean isAvailable()
-    {
+    private void initClassLabelMap() {
+        Map<Class<?>, Label> classMap = new LinkedHashMap<>();
+        classMap.put(com.iota.iri.model.persistables.Transaction.class, DynamicLabel.label("Transaction"));
+        classMap.put(Milestone.class,   DynamicLabel.label("Milestone"));
+        classMap.put(StateDiff.class,   DynamicLabel.label("StateDiff"));
+        classMap.put(Address.class,     DynamicLabel.label("Address"));
+        classMap.put(Approvee.class,    DynamicLabel.label("Approvee"));
+        classMap.put(Bundle.class,      DynamicLabel.label("Bundle"));
+        classMap.put(ObsoleteTag.class, DynamicLabel.label("ObsoleteTag"));
+        classMap.put(Tag.class,         DynamicLabel.label("Tag"));
+        classLabelMap = classMap;
+    }
+
+    public boolean isAvailable() {
         return this.available;
     }
 
@@ -49,110 +81,158 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
     {
         try {
             close();
-        } catch(Exception e) {}
+        } catch(Exception e) {
+            ;
+        }
     }
 
     public boolean save(Persistable model, Indexable index) throws Exception
     {
-        return false;
+        try ( org.neo4j.graphdb.Transaction tx = graphDb.beginTx() ) {
+            String keyStr = new String(index.bytes());
+            String valStr = new String(model.bytes());
+            Label label = classLabelMap.get(model.getClass());
+
+            try {
+                Node node = graphDb.createNode();
+                node.addLabel(label);
+                node.setProperty("key", keyStr);
+                node.setProperty("val", valStr);
+            } catch(Exception e) {
+                // skip saving as for now
+            }
+
+            tx.success();
+        } 
+        return true;
     }
 
     public void delete(Class<?> model, Indexable  index) throws Exception
     {
-
+       // TODO implement this
     }
 
     public boolean update(Persistable model, Indexable index, String item) throws Exception
     {
-        return false;
+        // TODO this function is not implemented or referenced
+        return true;
     }
 
     public boolean exists(Class<?> model, Indexable key) throws Exception
     {
+        // TODO implement this
         return false;
     }
 
     public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception
     {
-        return new Pair<Indexable,Persistable>(new TransactionHash(), new Transaction());
+        // TODO implement this
+        return new Pair<Indexable,Persistable>(new TransactionHash(), new Transaction()); 
     }
 
     public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> otherClass) throws Exception
     {
+        // TODO implement this
         return new HashSet<Indexable>();
     }
 
     public Persistable get(Class<?> model, Indexable index) throws Exception
     {
+        // TODO implement this
         return new Transaction();
     }
 
     public boolean mayExist(Class<?> model, Indexable index) throws Exception
     {
+        // TODO implement this
         return false;
     }
 
     public long count(Class<?> model) throws Exception
     {
+        // TODO implement this
         return (long)0;
     }
 
     public Set<Indexable> keysStartingWith(Class<?> modelClass, byte[] value)
     {
+        // TODO implement this
         return new HashSet<Indexable>();
     }
 
     public Persistable seek(Class<?> model, byte[] key) throws Exception
     {
+        // TODO implement this
         return new Transaction();
     }
 
     public Pair<Indexable, Persistable> next(Class<?> model, Indexable index) throws Exception
     {
+        // TODO implement this
         return new Pair<Indexable,Persistable>(new TransactionHash(), new Transaction());
     }
 
     public Pair<Indexable, Persistable> previous(Class<?> model, Indexable index) throws Exception
     {
+        // TODO implement this
         return new Pair<Indexable,Persistable>(new TransactionHash(), new Transaction());
     }
 
     public Pair<Indexable, Persistable> first(Class<?> model, Class<?> indexModel) throws Exception
     {
+        // TODO implement this
         return new Pair<Indexable,Persistable>(new TransactionHash(), new Transaction());
     }
 
     public boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception
     {
-        Neo4jNode node = new Neo4jNode(models);
-
-        try ( Session session = driver.session() )
+        try ( org.neo4j.graphdb.Transaction tx = graphDb.beginTx() )
         {
-            String greeting = session.writeTransaction( new TransactionWork<String>()
-            {
-                @Override
-                public String execute(org.neo4j.driver.v1.Transaction tx)
-                {
-                    StatementResult result = tx.run( "CREATE (" + node.txnNodeHash + ":txnNode) " +
-                                                     "SET "+ node.txnNodeHash + ".addressHash = $addressHash " +
-                                                     "SET "+ node.txnNodeHash + ".bundleHash = $bundleHash " +
-                                                     "SET "+ node.txnNodeHash + ".trunkHash = $trunkHash " +
-                                                     "SET "+ node.txnNodeHash + ".branchHash = $branchHash " +
-                                                     "SET "+ node.txnNodeHash + ".obsoleteTagHash = $obsoleteTagHash " +
-                                                     "SET "+ node.txnNodeHash + ".tagHash = $tagHash " +
-                                                     "SET "+ node.txnNodeHash + ".txnEncode = $txnEncode " +
-                                                     "RETURN " + node.txnNodeHash + ".addressHash + ', from node ' + id(" + node.txnNodeHash + ")",
-                            parameters( "addressHash", node.addressHash,
-                                        "bundleHash", node.bundleHash,
-                                        "trunkHash", node.trunkHash,
-                                        "branchHash", node.branchHash,
-                                        "obsoleteTagHash", node.obsoleteTagHash,
-                                        "tagHash", node.tagHash,
-                                        "txnEncode", node.txnEncode) );
-                    return result.single().get( 0 ).asString();
+            // find hash node first
+            Node rootNode = graphDb.createNode();
+            for (Pair<Indexable, Persistable> entry : models) {
+                if(entry.hi.getClass().equals(com.iota.iri.model.persistables.Transaction.class)) {
+                    Indexable key = entry.low;
+                    Persistable value = entry.hi;
+                    String keyStr = new String(key.bytes());
+                    String valStr = new String(value.bytes());
+                    Label label = classLabelMap.get(value.getClass());
+
+                    rootNode.addLabel(label);
+                    rootNode.setProperty("key", keyStr);
+                    rootNode.setProperty("val", valStr);
+                    break;
                 }
-            } );
-            System.out.println( greeting );
+            }
+            // create the rest
+            for (Pair<Indexable, Persistable> entry : models) {
+                if(!entry.hi.getClass().equals(com.iota.iri.model.persistables.Transaction.class)) {
+                    Indexable key = entry.low;
+                    Persistable value = entry.hi;
+                    String keyStr = new String(key.bytes());
+                    String valStr = new String(value.bytes());
+                    Label label = classLabelMap.get(value.getClass());
+                    // Database operations go here
+                    Node txnNode = graphDb.createNode();
+                    txnNode.addLabel(label);
+                    txnNode.setProperty("key", keyStr);
+                    txnNode.setProperty("val", valStr);
+                    txnNode.createRelationshipTo(rootNode, DynamicRelationshipType.withName( "BELONGS_TO"));
+
+                    // handle with the trunk and branch
+                    if(value.getClass().equals(Approvee.class))
+                    {
+                        try {
+                            Node prev = graphDb.findNode(DynamicLabel.label("Transaction"), keyStr, valStr);
+                            txnNode.createRelationshipTo(rootNode, DynamicRelationshipType.withName( "APPROVES"));
+                        } catch(MultipleFoundException e) {
+                            ; // TODO should triage problem here
+                        }
+                    }
+                }
+            }
+
+            tx.success();
         }
         
         return false;
@@ -165,16 +245,33 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
      */
     public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception
     {
-
+        // TODO implement this
     }
 
     public void clear(Class<?> column) throws Exception
     {
-
+        // TODO implement this
     }
 
     public void clearMetadata(Class<?> column) throws Exception
     {
-
+        // TODO implement this
     }
-}
+
+    public long getTotalTxns() throws Exception
+    {
+        long ret = 0;
+        Label label = classLabelMap.get(com.iota.iri.model.persistables.Transaction.class);
+        try ( org.neo4j.graphdb.Transaction tx = graphDb.beginTx() )
+        {
+            ResourceIterator<Node> iter = graphDb.findNodes(label);
+            while(iter.hasNext()) {
+                iter.next();
+                ret++;
+            }
+            tx.success();
+        }
+        
+        return ret;
+    }
+} 

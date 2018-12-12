@@ -124,6 +124,14 @@
             <version>${undertow.version}</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j -->
+       <dependency>
+           <groupId>org.neo4j</groupId>
+           <artifactId>neo4j</artifactId>
+           <version>3.4.10</version>
+       </dependency>
+
+
         <!-- test dependencies -->
 
         <!-- https://mvnrepository.com/artifact/com.jayway.restassured/rest-assured -->

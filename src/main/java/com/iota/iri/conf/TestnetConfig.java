@@ -65,17 +65,6 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @Override
-    public int getMilestoneStartIndex() {
-        return milestoneStartIndex;
-    }
-
-    @JsonProperty
-    @Parameter(names = "--milestone-start", description = SnapshotConfig.Descriptions.MILESTONE_START_INDEX)
-    protected void setMilestoneStartIndex(int milestoneStartIndex) {
-        this.milestoneStartIndex = milestoneStartIndex;
-    }
-
-    @Override
     public int getNumberOfKeysInMilestone() {
         return numberOfKeysInMilestone;
     }

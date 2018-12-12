@@ -95,6 +95,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String snapshotFile = Defaults.SNAPSHOT_FILE;
     protected String snapshotSignatureFile = Defaults.SNAPSHOT_SIG_FILE;
     protected long snapshotTime = Defaults.GLOBAL_SNAPSHOT_TIME;
+    protected int milestoneStartIndex = Defaults.MILESTONE_START_INDEX;
 
     public BaseIotaConfig() {
         //empty constructor
@@ -600,7 +601,13 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public int getMilestoneStartIndex() {
-        return Defaults.MILESTONE_START_INDEX;
+        return milestoneStartIndex;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--milestone-start", description = SnapshotConfig.Descriptions.MILESTONE_START_INDEX)
+    protected void setMilestoneStartIndex(int milestoneStartIndex) {
+        this.milestoneStartIndex = milestoneStartIndex;
     }
 
     @Override

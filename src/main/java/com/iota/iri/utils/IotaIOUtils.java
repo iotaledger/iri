@@ -27,7 +27,7 @@ public class IotaIOUtils extends IOUtils {
         File file = new File(path);
         try {
             if (file.exists()) {
-                log.info(path + " has been found in the current working directory");
+                log.info(path + " has been found in the configured path in the file system");
                 return new FileReader(file);
             }
             else {

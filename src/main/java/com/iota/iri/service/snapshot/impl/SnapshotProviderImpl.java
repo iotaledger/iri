@@ -237,7 +237,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
             SnapshotState snapshotState;
             try {
-                snapshotState = readSnapshotState(IotaIOUtils.getFileStreamFromCwdOrResource(config.getSnapshotFile()));
+                snapshotState = readSnapshotState(IotaIOUtils.getFileStreamFromFileOrResource(config.getSnapshotFile()));
             } catch (IOException e) {
                 throw new SnapshotException("failed to load global snapshot");
             }

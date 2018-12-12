@@ -23,7 +23,7 @@ public class IotaIOUtils extends IOUtils {
      * @return A stream reader of the file\resource
      * @throws IOException if no file was loaded
      */
-    public static InputStreamReader getFileStreamFromCwdOrResource(String path) throws IOException {
+    public static InputStreamReader getFileStreamFromFileOrResource(String path) throws IOException {
         File file = new File(path);
         try {
             if (file.exists()) {

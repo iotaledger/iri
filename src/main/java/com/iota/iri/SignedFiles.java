@@ -31,7 +31,7 @@ public class SignedFiles {
         int i;
 
         try (BufferedReader reader = new BufferedReader(
-                IotaIOUtils.getFileStreamFromCwdOrResource(signatureFilePath))) {
+                IotaIOUtils.getFileStreamFromFileOrResource(signatureFilePath))) {
 
             String line;
             for (i = 0; i < 3 && (line = reader.readLine()) != null; i++) {
@@ -57,7 +57,7 @@ public class SignedFiles {
     }
 
     private static byte[] digestFile(String filePath, Sponge curl) throws IOException {
-        try (BufferedReader reader = new BufferedReader(IotaIOUtils.getFileStreamFromCwdOrResource(filePath))) {
+        try (BufferedReader reader = new BufferedReader(IotaIOUtils.getFileStreamFromFileOrResource(filePath))) {
             byte[] buffer = new byte[Curl.HASH_LENGTH * 3];
 
             reader.lines().forEach(line -> {

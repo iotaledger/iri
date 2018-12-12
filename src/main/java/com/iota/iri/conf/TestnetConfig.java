@@ -10,7 +10,6 @@ public class TestnetConfig extends BaseIotaConfig {
 
     protected String coordinator = Defaults.COORDINATOR_ADDRESS;
     protected boolean dontValidateTestnetMilestoneSig = Defaults.DONT_VALIDATE_MILESTONE_SIG;
-    protected long snapshotTime = Defaults.SNAPSHOT_TIME;
     protected int mwm = Defaults.MWM;
     protected int milestoneStartIndex = Defaults.MILESTONE_START_INDEX;
     protected int numberOfKeysInMilestone = Defaults.KEYS_IN_MILESTONE;
@@ -24,6 +23,7 @@ public class TestnetConfig extends BaseIotaConfig {
         localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
         snapshotFile = Defaults.SNAPSHOT_FILE;
         snapshotSignatureFile = Defaults.SNAPSHOT_SIG;
+        snapshotTime = Defaults.SNAPSHOT_TIME;
     }
 
     @Override

@@ -92,6 +92,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
     protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
     protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
+    protected String snapshotFile = Defaults.SNAPSHOT_FILE;
+    protected String snapshotSignatureFile = Defaults.SNAPSHOT_SIG_FILE;
+    protected long snapshotTime = Defaults.GLOBAL_SNAPSHOT_TIME;
 
     public BaseIotaConfig() {
         //empty constructor
@@ -559,17 +562,35 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public long getSnapshotTime() {
-        return Defaults.GLOBAL_SNAPSHOT_TIME;
+        return snapshotTime;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--snapshot-timestamp", description = SnapshotConfig.Descriptions.SNAPSHOT_TIME)
+    protected void setSnapshotTime(long snapshotTime) {
+        this.snapshotTime = snapshotTime;
     }
 
     @Override
     public String getSnapshotFile() {
-        return Defaults.SNAPSHOT_FILE;
+        return snapshotFile;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--snapshot", description = SnapshotConfig.Descriptions.SNAPSHOT_FILE)
+    protected void setSnapshotFile(String snapshotFile) {
+        this.snapshotFile = snapshotFile;
     }
 
     @Override
     public String getSnapshotSignatureFile() {
-        return Defaults.SNAPSHOT_SIG_FILE;
+        return snapshotSignatureFile;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--snapshot-sig", description = SnapshotConfig.Descriptions.SNAPSHOT_SIGNATURE_FILE)
+    protected void setSnapshotSignatureFile(String snapshotSignatureFile) {
+        this.snapshotSignatureFile = snapshotSignatureFile;
     }
 
     @Override

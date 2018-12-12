@@ -271,11 +271,12 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     //region SNAPSHOT STATE RELATED UTILITY METHODS ////////////////////////////////////////////////////////////////////
 
     /**
-     * This method reads the balances from the given snapshot state file.
+     * This method reads the balances from the given snapshot state reader.
      *
      * The format of the input is pairs of "address;balance" separated by newlines. It simply reads the input line by
      * line, adding the corresponding values to the map.
      *
+     * @param inputStreamReader reader of the ledger state stream
      * @return the unserialized version of the snapshot state state file
      * @throws SnapshotException if anything goes wrong while reading the state file
      */

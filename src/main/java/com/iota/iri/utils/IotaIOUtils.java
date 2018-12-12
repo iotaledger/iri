@@ -9,10 +9,21 @@ import org.apache.commons.io.IOUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Utility class that helps access IO
+ */
 public class IotaIOUtils extends IOUtils {
 
     private static final Logger log = LoggerFactory.getLogger(IotaIOUtils.class);
 
+    /**
+     * Looks up a file in the current working directory. If not available checks to see it is available
+     * as a resource bundled in the Jar.
+     *
+     * @param path the relative path of the file\resource we are looking up. Should be prefixed with {@code \}.
+     * @return A stream reader of the file\resource
+     * @throws IOException if no file was loaded
+     */
     public static InputStreamReader getFileStreamFromCwdOrResource(String path) throws IOException {
         String cwdPath = Paths.get("").toAbsolutePath().toString();
         File file = new File(cwdPath + path);

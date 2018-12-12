@@ -2,7 +2,6 @@ package com.iota.iri.utils;
 
 
 import java.io.*;
-import java.nio.file.Paths;
 import java.util.Objects;
 
 import org.apache.commons.io.IOUtils;
@@ -25,8 +24,7 @@ public class IotaIOUtils extends IOUtils {
      * @throws IOException if no file was loaded
      */
     public static InputStreamReader getFileStreamFromCwdOrResource(String path) throws IOException {
-        String cwdPath = Paths.get("").toAbsolutePath().toString();
-        File file = new File(cwdPath + path);
+        File file = new File(path);
         try {
             if (file.exists()) {
                 log.info(path + " has been found in the current working directory");

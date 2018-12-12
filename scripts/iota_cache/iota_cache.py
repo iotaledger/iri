@@ -14,7 +14,7 @@ class IotaCache(object):
             self.seed = 'EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9Q'
         else:
             self.seed = seed
-        self.api = Iota(self.uri, self.seed)
+        self.api = Iota(self.uri, self.seed, testnet=True)
 
     def cache_txn_in_tangle(self, ipfs_addr, tag):
         api_response = self.api.get_new_addresses()
@@ -48,15 +48,18 @@ class IotaCache(object):
         return ret
 
     def get_non_consumed_txns(self, tag):
-        txn_hashes_all = self.get_approved_txns(tag)
-        txn_trytes_all = self.api.get_trytes(txn_hashes_all)
-        txn_hashes_consumed = self.api.find_transactions(None, None, [tag+b"CONSUMED"], None)
-        txn_trytes_consumed = self.api.get_trytes(txn_hashes_consumed['hashes'])
-        consumedSet = []
         ret = []
-        for txnTrytes in txn_trytes_consumed['trytes']:
-            txn = Transaction.from_tryte_string(txnTrytes)
-            consumedSet.append(txn.signature_message_fragment)
+        txn_hashes_all = self.get_approved_txns(tag)
+        if len(txn_hashes_all) == 0:
+            return ret
+        txn_trytes_all = self.api.get_trytes(txn_hashes_all)
+        consumedSet = []
+        txn_hashes_consumed = self.api.find_transactions(None, None, [tag+b"CONSUMED"], None)
+        if len(txn_hashes_consumed['hashes']) != 0:
+            txn_trytes_consumed = self.api.get_trytes(txn_hashes_consumed['hashes'])
+            for txnTrytes in txn_trytes_consumed['trytes']:
+                txn = Transaction.from_tryte_string(txnTrytes)
+                consumedSet.append(txn.signature_message_fragment)
         for txnTrytes in txn_trytes_all['trytes']:
             txn = Transaction.from_tryte_string(txnTrytes)
             if txn.signature_message_fragment not in consumedSet:

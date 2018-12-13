@@ -147,6 +147,9 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
      */
     private TransactionViewModel getTransactionToSendWithRequest() throws Exception {
         Hash tip = tipsViewModel.getRandomSolidTipHash();
+        if (tip == null) {
+            tip = tipsViewModel.getRandomNonSolidTipHash();
+        }
 
         return TransactionViewModel.fromHash(tangle, tip == null ? Hash.NULL_HASH : tip);
     }

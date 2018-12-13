@@ -164,11 +164,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.apiHost = apiHost;
     }
 
-    @JsonIgnore
+    @JsonProperty
     @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE)
     protected void setRemote(boolean remote) {
         this.apiHost = "0.0.0.0";
+        this.remote = remote;
     }
+
+    public boolean isRemote() {
+            return remote;
+        }
 
     @Override
     public List<String> getRemoteLimitApi() {

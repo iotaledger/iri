@@ -167,7 +167,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @JsonProperty
     @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE)
     protected void setRemote(boolean remote) {
-//        this.apiHost = "0.0.0.0";
+        this.apiHost = "0.0.0.0";
         this.remote = remote;
     }
 

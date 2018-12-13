@@ -51,4 +51,6 @@ public interface PersistenceProvider {
 
     void clear(Class<?> column) throws Exception;
     void clearMetadata(Class<?> column) throws Exception;
+
+    long getTotalTxns() throws Exception;
 }

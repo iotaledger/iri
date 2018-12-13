@@ -550,4 +550,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             assert (columnFamilyHandle != null);
         }
     }
+
+    public long getTotalTxns() throws Exception {
+        return 0;
+    }
 }

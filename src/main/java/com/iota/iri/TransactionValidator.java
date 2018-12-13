@@ -260,8 +260,8 @@ public class TransactionValidator {
                 }
 
                 final TransactionViewModel transaction = fromHash(tangle, hashPointer);
-                if(!transaction.isSolid()) {
-                    if (transaction.getType() == PREFILLED_SLOT && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
+                if(!transaction.isSolid() && !snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hashPointer)) {
+                    if (transaction.getType() == PREFILLED_SLOT) {
                         solid = false;
 
                         if (!transactionRequester.isTransactionRequested(hashPointer, milestone)) {
@@ -436,12 +436,14 @@ public class TransactionValidator {
      * @throws Exception if we encounter an error while requesting a transaction
      */
     private boolean checkApproovee(TransactionViewModel approovee) throws Exception {
-        if(approovee.getType() == PREFILLED_SLOT) {
-            transactionRequester.requestTransaction(approovee.getHash(), false);
-            return false;
-        }
         if(snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(approovee.getHash())) {
             return true;
+        }
+        if(approovee.getType() == PREFILLED_SLOT) {
+            // don't solidify from the bottom until cuckoo filters can identify where we deleted -> otherwise we will
+            // continue requesting old transactions forever
+            //transactionRequester.requestTransaction(approovee.getHash(), false);
+            return false;
         }
         return approovee.isSolid();
     }

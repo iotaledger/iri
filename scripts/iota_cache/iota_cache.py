@@ -15,6 +15,7 @@ class IotaCache(object):
         else:
             self.seed = seed
         self.api = Iota(self.uri, self.seed, testnet=True)
+        self.mwm = 1 
 
     def cache_txn_in_tangle(self, ipfs_addr, tag):
         api_response = self.api.get_new_addresses()
@@ -31,6 +32,7 @@ class IotaCache(object):
                     message=TryteString.from_string(ipfs_addr),
                 ),
             ],
+            min_weight_magnitude=self.mwm,
         )
         return result
 

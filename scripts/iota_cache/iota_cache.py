@@ -1,5 +1,5 @@
 import time
-from iota import Iota, Address, ProposedTransaction, Tag, Transaction, TryteString, TransactionTrytes, ProposedBundle
+from iota import Iota, Address, ProposedTransaction, Tag, Transaction, TryteString, TransactionTrytes, ProposedBundle, Nonce, BundleHash,TransactionHash
 from six import binary_type, moves as compat, text_type
 
 
@@ -17,7 +17,7 @@ class IotaCache(object):
         self.api = Iota(self.uri, self.seed, testnet=True)
         self.mwm = 1 
 
-    def cache_txn_in_tangle(self, ipfs_addr, tag):
+    def cache_txn_in_tangle_sdk(self, ipfs_addr, tag):
         api_response = self.api.get_new_addresses()
         addy = api_response['addresses'][0]
         address = binary_type(addy).decode('ascii')
@@ -35,6 +35,17 @@ class IotaCache(object):
             min_weight_magnitude=self.mwm,
         )
         return result
+
+    def cache_txn_in_tangle_simple(self, ipfs_addr, tag):
+        address = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
+        txns = self.api.get_transactions_to_approve(1)
+        tr = self.api.get_trytes([txns[u'branchTransaction']])
+        txn = Transaction.from_tryte_string(tr[u'trytes'][0], txns[u'branchTransaction'])
+        txn.trunk_transaction_hash = txns[u'trunkTransaction']
+        txn.branch_transaction_hash = txns[u'branchTransaction']
+        attach_trytes = api.attachToTangle(self.uri, txns[u'trunkTransaction'].__str__(), txns[u'branchTransaction'].__str__(), 1, txn.as_tryte_string().__str__())
+        res = self.api.broadcast_and_store(attach_trytes[u'trytes'])
+        return res
 
     def get_approved_txns(self, tag):
         ret = []

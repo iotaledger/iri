@@ -179,4 +179,8 @@ public class ZmqPublishProvider implements PersistenceProvider {
     public void clearMetadata(Class<?> column) throws Exception {
 
     }
+
+    public long getTotalTxns() throws Exception {
+        return 0;
+    }    
 }

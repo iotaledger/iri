@@ -124,6 +124,14 @@
             <version>${undertow.version}</version>
         </dependency>
 
+        <!-- https://mvnrepository.com/artifact/org.neo4j/neo4j -->
+       <dependency>
+           <groupId>org.neo4j</groupId>
+           <artifactId>neo4j</artifactId>
+           <version>3.4.10</version>
+       </dependency>
+
+
         <!-- test dependencies -->
 
         <!-- https://mvnrepository.com/artifact/com.jayway.restassured/rest-assured -->
@@ -194,6 +202,13 @@
             <version>1.21</version>
             <scope>test</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.neo4j.driver</groupId>
+            <artifactId>neo4j-java-driver</artifactId>
+            <version>1.4.4</version>
+        </dependency>
+
 
     </dependencies>
 

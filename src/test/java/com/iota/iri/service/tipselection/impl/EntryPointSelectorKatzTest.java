@@ -12,6 +12,7 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
+import com.sun.tools.internal.ws.processor.model.jaxb.JAXBModel;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.model.persistables.Bundle;
 import org.junit.AfterClass;
@@ -60,8 +61,6 @@ public class EntryPointSelectorKatzTest {
         tangle2.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder1.getRoot().getAbsolutePath(), logFolder1
                     .getRoot().getAbsolutePath(), 1000));
         tangle2.init();
-        selector1 = new EntryPointSelectorKatz(tangle1);
-        selector2 = new EntryPointSelectorKatz(tangle2);
     }
 
     @Test
@@ -92,7 +91,7 @@ public class EntryPointSelectorKatzTest {
         G.store(tangle1);
         H.store(tangle1);
 
-        Map<Hash, String> tag = new HashMap<Hash, String>();
+        HashMap<Hash, String> tag = new HashMap<Hash, String>();
         tag.put(A.getHash(), "A");
         tag.put(B.getHash(), "B");
         tag.put(C.getHash(), "C");
@@ -101,13 +100,18 @@ public class EntryPointSelectorKatzTest {
         tag.put(F.getHash(), "F");
         tag.put(G.getHash(), "G");
         tag.put(H.getHash(), "H");
-
-        Hash ret = selector1.getEntryPoint(0);
+        selector1 = new EntryPointSelectorKatz(tangle1, tag);
+        Hash ret = selector1.getEntryPoint(-1);
+        Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
+        ret = selector1.getEntryPoint(2);
+        Assert.assertEquals(tag.get(D.getHash()),tag.get(ret));
+        ret = selector1.getEntryPoint(3);
         Assert.assertEquals(tag.get(B.getHash()),tag.get(ret));
     }
 
     @Test
     public void testGetEntryPointKatzTwo() throws Exception {
+        
         TransactionViewModel A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, One, Two;
         A = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
         B = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(A.getHash(),
@@ -192,7 +196,7 @@ public class EntryPointSelectorKatzTest {
         Y.store(tangle2);
         Z.store(tangle2);
 
-        Map<Hash, String> tag = new HashMap<Hash, String>();
+        HashMap<Hash, String> tag = new HashMap<Hash, String>();
         tag.put(A.getHash(), "A");
         tag.put(B.getHash(), "B");
         tag.put(C.getHash(), "C");
@@ -220,11 +224,18 @@ public class EntryPointSelectorKatzTest {
         tag.put(Y.getHash(), "Y");
         tag.put(Z.getHash(), "Z");
 
-        Hash ret = selector2.getEntryPoint(0);
+        selector2 = new EntryPointSelectorKatz(tangle2, tag);
+        
+        Hash ret = selector2.getEntryPoint(-1);
         for(Hash v : selector2.score.keySet())
         {
             System.out.println(tag.get(v)+" : "+selector2.score.get(v));
         }
+        
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
+        ret = selector2.getEntryPoint(3);
+        Assert.assertEquals(tag.get(M.getHash()),tag.get(ret));
+        ret = selector2.getEntryPoint(4);
+        Assert.assertEquals(tag.get(J.getHash()),tag.get(ret));
     }
 }

@@ -1,4 +1,4 @@
-package com.iota.iri;
+package com.iota.iri.validator;
 
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TipsViewModel;
@@ -53,7 +53,7 @@ public class TransactionValidator {
         newSolidThread.start();
     }
 
-    void setMwm(boolean testnet, int mwm) {
+    public void setMwm(boolean testnet, int mwm) {
         minWeightMagnitude = mwm;
 
         //lowest allowed MWM encoded in 46 bytes.
@@ -211,7 +211,7 @@ public class TransactionValidator {
         };
     }
 
-    void propagateSolidTransactions() {
+    public void propagateSolidTransactions() {
         Set<Hash> newSolidHashes = new HashSet<>();
         useFirst.set(!useFirst.get());
         //synchronized to make sure no one is changing the newSolidTransactions collections during addAll
@@ -298,7 +298,7 @@ public class TransactionValidator {
     }
 
     //for testing
-    boolean isNewSolidTxSetsEmpty () {
+    public boolean isNewSolidTxSetsEmpty () {
         return newSolidTransactionsOne.isEmpty() && newSolidTransactionsTwo.isEmpty();
     }
 

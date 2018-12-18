@@ -1,6 +1,6 @@
 package com.iota.iri.service;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.validator.TransactionValidator;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;

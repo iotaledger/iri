@@ -1,6 +1,6 @@
 package com.iota.iri.service.snapshot.impl;
 
-import com.iota.iri.MilestoneTracker;
+import com.iota.iri.validator.MilestoneTracker;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;

@@ -1,6 +1,6 @@
 package com.iota.iri.service.snapshot.impl;
 
-import com.iota.iri.MilestoneTracker;
+import com.iota.iri.validator.MilestoneTracker;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.service.snapshot.LocalSnapshotManager;
 import com.iota.iri.service.snapshot.SnapshotService;
@@ -14,7 +14,7 @@ import com.iota.iri.utils.thread.ThreadUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.iota.iri.MilestoneTracker.Status.INITIALIZED;
+import static com.iota.iri.validator.MilestoneTracker.Status.INITIALIZED;
 
 /**
  * Implements the basic contract of the {@link LocalSnapshotManager}.

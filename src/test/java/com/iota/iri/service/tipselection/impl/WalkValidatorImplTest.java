@@ -1,9 +1,9 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.LedgerValidator;
-import com.iota.iri.MilestoneTracker;
+import com.iota.iri.validator.LedgerValidator;
+import com.iota.iri.validator.MilestoneTracker;
 import com.iota.iri.TransactionTestUtils;
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.validator.TransactionValidator;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TransactionViewModel;

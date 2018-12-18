@@ -1,6 +1,6 @@
 package com.iota.iri.service.milestone;
 
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.validator.TransactionValidator;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.utils.log.Logger;

@@ -32,6 +32,8 @@ import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.iota.iri.validator.*;
+import com.iota.iri.validator.impl.*;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -71,7 +73,7 @@ public class Iota {
                 configuration);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
-        ledgerValidator = new LedgerValidator(tangle, milestoneTracker, transactionRequester, messageQ);
+        ledgerValidator = createLedgerValidator();
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
         tipsSelector = createTipSelector(configuration);
     }
@@ -157,7 +159,7 @@ public class Iota {
         
         // TODO use factory
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
-        if(BaseIotaConfig.getInstance().getWeightCalAlgo() == "CUM_EDGE_WEIGHT"){
+        if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("CUM_EDGE_WEIGHT")){
             ratingCalculator = new CumulativeWeightWithEdgeCalculator(tangle);
         }
 
@@ -165,5 +167,13 @@ public class Iota {
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
         return new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
                 walker, milestoneTracker, config);
+    }
+
+    private LedgerValidator createLedgerValidator() {
+        LedgerValidator validator = new LedgerValidatorImpl(tangle, milestoneTracker, transactionRequester, messageQ);
+        if(BaseIotaConfig.getInstance().getLedgerValidator().equals("NULL")){
+            validator = new LedgerValidatorNull(tangle, milestoneTracker, transactionRequester, messageQ);
+        }
+        return validator;
     }
 }

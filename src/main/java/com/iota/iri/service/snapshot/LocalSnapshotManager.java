@@ -1,6 +1,6 @@
 package com.iota.iri.service.snapshot;
 
-import com.iota.iri.MilestoneTracker;
+import com.iota.iri.validator.MilestoneTracker;
 
 /**
  * Represents the manager for local {@link Snapshot}s that takes care of periodically creating a new {@link Snapshot}

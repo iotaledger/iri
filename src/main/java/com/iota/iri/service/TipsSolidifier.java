@@ -1,6 +1,7 @@
 package com.iota.iri.service;
 
 import com.iota.iri.TransactionValidator;
+import com.iota.iri.conf.SolidificationConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -14,20 +15,28 @@ public class TipsSolidifier {
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
     private final TransactionValidator transactionValidator;
-
+    private final SolidificationConfig config;
+    
     private boolean shuttingDown = false;
     private int RESCAN_TX_TO_REQUEST_INTERVAL = 750;
     private Thread solidityRescanHandle;
+    
 
     public TipsSolidifier(final Tangle tangle,
                           final TransactionValidator transactionValidator,
-                          final TipsViewModel tipsViewModel) {
+                          final TipsViewModel tipsViewModel,
+                          final SolidificationConfig config) {
         this.tangle = tangle;
         this.transactionValidator = transactionValidator;
         this.tipsViewModel = tipsViewModel;
+        this.config = config;
     }
 
     public void init() {
+        if (!enabled()) {
+            return;
+        }
+        
         solidityRescanHandle = new Thread(() -> {
 
             long lastTime = 0;
@@ -36,7 +45,7 @@ public class TipsSolidifier {
                     scanTipsForSolidity();
                     if (log.isDebugEnabled()) {
                         long now = System.currentTimeMillis();
-                        if ((now - lastTime) > 10000L) {
+                        if ((now - lastTime) > getLogDelay()) {
                             lastTime = now;
                             log.debug("#Solid/NonSolid: {}/{}", tipsViewModel.solidSize(), tipsViewModel.nonSolidSize());
                         }
@@ -45,7 +54,7 @@ public class TipsSolidifier {
                     log.error("Error during solidity scan : {}", e);
                 }
                 try {
-                    Thread.sleep(RESCAN_TX_TO_REQUEST_INTERVAL);
+                    Thread.sleep(getRescanInterval());
                 } catch (InterruptedException e) {
                     log.error("Solidity rescan interrupted.");
                 }
@@ -71,6 +80,10 @@ public class TipsSolidifier {
     }
 
     public void shutdown() {
+        if (!enabled()) {
+            return;
+        }
+        
         shuttingDown = true;
         try {
             if (solidityRescanHandle != null && solidityRescanHandle.isAlive()) {
@@ -80,5 +93,17 @@ public class TipsSolidifier {
             log.error("Error in shutdown", e);
         }
 
+    }
+    
+    private boolean enabled() {
+        return config.isTipSolidifierEnabled();
+    }
+    
+    private int getRescanInterval() {
+        return RESCAN_TX_TO_REQUEST_INTERVAL;
+    }
+    
+    private long getLogDelay() {
+        return 10000L;
     }
 }

@@ -8,7 +8,9 @@ package com.iota.iri.conf;
 public interface SolidificationConfig extends Config {
 
     /**
-     * @return {@value Descriptions#TIP_SOLIDIFIER_ENABLED}
+     * Default Value: {@value BaseIotaConfig.Defaults#TIP_SOLIDIFIER_ENABLED}
+     * 
+     * @return {@value SolidificationConfig.Descriptions#TIP_SOLIDIFIER}
      */
     boolean isTipSolidifierEnabled();
     
@@ -17,6 +19,6 @@ public interface SolidificationConfig extends Config {
      */
     interface Descriptions {
 
-        String TIP_SOLIDIFIER_ENABLED = "Flag that determines if tip solidification is enabled.";
+        String TIP_SOLIDIFIER = "Scan the current tips and attempt to mark them as solid";
     }
 }

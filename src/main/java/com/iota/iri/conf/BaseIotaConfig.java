@@ -705,13 +705,13 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER_ENABLED, 
+    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER, 
         arity = 1)
     protected void setTipSolidifierEnabled(boolean tipSolidifierEnabled) {
         this.tipSolidifierEnabled = tipSolidifierEnabled;
     }
 
-    @Parameter(names = "--disable-tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER_ENABLED)
+    @Parameter(names = "--disable-tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER)
     protected void setTipSolidifierEnabled() {
         this.tipSolidifierEnabled = false;
     }

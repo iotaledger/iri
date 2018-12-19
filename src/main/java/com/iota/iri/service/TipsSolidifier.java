@@ -11,6 +11,9 @@ import org.slf4j.LoggerFactory;
 
 public class TipsSolidifier {
 
+    private static final int RESCAN_TX_TO_REQUEST_INTERVAL = 750;
+    private static final long LOG_DELAY = 10000l;
+    
     private final Logger log = LoggerFactory.getLogger(TipsSolidifier.class);
     private final Tangle tangle;
     private final TipsViewModel tipsViewModel;
@@ -18,7 +21,6 @@ public class TipsSolidifier {
     private final SolidificationConfig config;
     
     private boolean shuttingDown = false;
-    private int RESCAN_TX_TO_REQUEST_INTERVAL = 750;
     private Thread solidityRescanHandle;
     
 
@@ -45,7 +47,7 @@ public class TipsSolidifier {
                     scanTipsForSolidity();
                     if (log.isDebugEnabled()) {
                         long now = System.currentTimeMillis();
-                        if ((now - lastTime) > getLogDelay()) {
+                        if ((now - lastTime) > LOG_DELAY) {
                             lastTime = now;
                             log.debug("#Solid/NonSolid: {}/{}", tipsViewModel.solidSize(), tipsViewModel.nonSolidSize());
                         }
@@ -54,7 +56,7 @@ public class TipsSolidifier {
                     log.error("Error during solidity scan : {}", e);
                 }
                 try {
-                    Thread.sleep(getRescanInterval());
+                    Thread.sleep(RESCAN_TX_TO_REQUEST_INTERVAL);
                 } catch (InterruptedException e) {
                     log.error("Solidity rescan interrupted.");
                 }
@@ -97,13 +99,5 @@ public class TipsSolidifier {
     
     private boolean enabled() {
         return config.isTipSolidifierEnabled();
-    }
-    
-    private int getRescanInterval() {
-        return RESCAN_TX_TO_REQUEST_INTERVAL;
-    }
-    
-    private long getLogDelay() {
-        return 10000L;
     }
 }

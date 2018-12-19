@@ -7,4 +7,10 @@ package com.iota.iri.conf;
  * the current code base and will be changed in the future
  */
 public interface NodeConfig extends ProtocolConfig, NetworkConfig {
+
+    boolean getWASMSupport();
+
+    interface Descriptions {
+        String ENABLE_WASMVM = "If enabling the WASM virtual machine or not";
+    }
 }

@@ -2,6 +2,7 @@ package com.iota.iri.service;
 
 import com.iota.iri.*;
 import com.iota.iri.conf.APIConfig;
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
@@ -19,6 +20,7 @@ import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
+import com.iota.iri.validator.*;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -685,6 +687,15 @@ public class API {
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(instance.tangle, "sender");
             }
+
+            if(BaseIotaConfig.getInstance().getWASMSupport()) {
+                // execute branch
+                TransactionViewModel branch = transactionViewModel.getBranchTransaction(instance.tangle);
+                String branchTagVal = new String(branch.getTagValue().bytes());
+                log.info("zhaoming"+branchTagVal);
+
+                // execute trunk
+            }
         }
     }
 
@@ -1106,6 +1117,7 @@ public class API {
                 }
                 //validate PoW - throws exception if invalid
                 final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(transactionTrits, instance.transactionValidator.getMinWeightMagnitude());
+                log.info("zhaoming1: " + transactionViewModel.getTagValue());
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();

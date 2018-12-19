@@ -11,6 +11,7 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.zmq.MessageQ;
+import com.iota.iri.validator.*;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;

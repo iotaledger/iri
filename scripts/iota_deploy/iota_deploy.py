@@ -1,6 +1,7 @@
 import sys
 import os
 from subprocess import call
+import time
 
 # example usage:
 # python iota_deploy.py pssh_hosts 13.229.64.41 14700 iri-1.5.5.jar
@@ -9,6 +10,7 @@ ipfile       = open(sys.argv[1])
 master       = sys.argv[2]
 master_port  = sys.argv[3]
 iri_jar      = sys.argv[4]
+iri_version  = "test_v"+iri_jar.split('-')[1].replace(".jar", "")
 
 ips = ipfile.readlines()
 
@@ -30,9 +32,8 @@ for i in range(0, len(ip_pubs)):
     ip_pvt = ip_pvts[i]
     if ip_pub == master:
         call(["pssh", "-i", "-H", "ubuntu@"+ip_pub, "-x", "\"-oStrictHostKeyChecking=no\"", "-x", "-i%s/gitlocal/dag.pem"%os.path.expanduser("~"), \
-                'kill $(ps aux | grep "java \-jar" | grep -v grep | awk "{print \$2}")'])
-        call(["pssh", "-i", "-H", "ubuntu@"+ip_pub, "-x", "\"-oStrictHostKeyChecking=no\"", "-x", "-i%s/gitlocal/dag.pem"%os.path.expanduser("~"), \
-                'java -jar ~/iota/run-time/' + iri_jar + ' --testnet --testnet-no-coo-validation --snapshot=/home/ubuntu/iota/run-time/Snapshot.txt -p '+ master_port + ' --max-peers 40 --remote &'])
+                'cd ~/iota/run-time/ ; bash  ./run_master.sh'])
+        time.sleep(5)
     call(["pssh", "-i", "-H", "ubuntu@"+ip_pub, "-x", "\"-oStrictHostKeyChecking=no\"", "-x", "-i%s/gitlocal/dag.pem"%os.path.expanduser("~"), \
             'mkdir -p ~/iota/run_time/data; touch ~/iota/run_time/neighbors'])
     call(["pssh", "-i", "-H", "ubuntu@"+ip_pub, "-x", "\"-oStrictHostKeyChecking=no\"", "-x", "-i%s/gitlocal/dag.pem"%os.path.expanduser("~"), \
@@ -64,7 +65,7 @@ for i in range(0, len(ip_pubs)):
                        -e API_PORT=13700 \
                        -e UDP_PORT=13600 \
                        -e TCP_PORT=13600 \
-                       -v /home/ubuntu/iota/run_time/data1:/iri/data \
+                       -v /home/ubuntu/iota/run_time/data:/iri/data \
                        -v /home/ubuntu/iota/run_time/neighbors:/iri/conf/neighbors \
-                       stplaydog/iota-node:test_v1.5.5 \
-                       /docker-entrypoint.sh'])
+                       stplaydog/iota-node:%s \
+                       /docker-entrypoint.sh'%iri_version])

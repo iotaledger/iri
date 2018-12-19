@@ -289,7 +289,10 @@ public class ConfigTest {
         if (jsonIgnore != null) {
             return null;
         }
-
+        if(setter.getName() == "setInstance") {
+            return null;
+        }
+        
         JsonProperty jsonProperty = setter.getAnnotation(JsonProperty.class);
         //Code works w/o annotation but we wish to enforce its usage
         Assert.assertNotNull("Setter " + setter.getName() + "must have JsonProperty annotation", jsonProperty);

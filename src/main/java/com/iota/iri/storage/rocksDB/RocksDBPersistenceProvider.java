@@ -341,12 +341,13 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     }
                 });
 
-                WriteOptions writeOptions = new WriteOptions()
+                try(WriteOptions writeOptions = new WriteOptions()
                         //We are explicit about what happens if the node reboots before a flush to the db
                         .setDisableWAL(false)
                         //We want to make sure deleted data was indeed deleted
-                        .setSync(true);
-                db.write(writeOptions, writeBatch);
+                        .setSync(true)) {
+                    db.write(writeOptions, writeBatch);
+                }
             }
         }
     }
@@ -490,6 +491,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         } catch (Exception e) {
             log.error("Error while initializing RocksDb", e);
             IotaIOUtils.closeQuietly(db);
+        } finally {
+            options.close();
+//            mergeOperator.close();
+//            columnFamilyDescriptors.close();
         }
     }
 
@@ -539,9 +544,14 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     // 2018 March 28 - Unused Code
     private void addColumnFamily(byte[] familyName, RocksDB db) throws RocksDBException {
-        final ColumnFamilyHandle columnFamilyHandle = db.createColumnFamily(
-            new ColumnFamilyDescriptor(familyName, new ColumnFamilyOptions()));
+        try(final ColumnFamilyHandle columnFamilyHandle = db.createColumnFamily(
+            new ColumnFamilyDescriptor(familyName, new ColumnFamilyOptions()))) {
 
-        assert (columnFamilyHandle != null);
+            assert (columnFamilyHandle != null);
+        }
+    }
+
+    public long getTotalTxns() throws Exception {
+        return 0;
     }
 }

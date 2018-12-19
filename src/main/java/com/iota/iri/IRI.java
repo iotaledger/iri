@@ -1,5 +1,6 @@
 package com.iota.iri;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
@@ -67,6 +68,7 @@ public class IRI {
 
         public static void main(String [] args) throws Exception {
             IotaConfig config = createConfiguration(args);
+            BaseIotaConfig.setInstance((BaseIotaConfig)config);
             log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, VERSION);
 
             iota = new Iota(config);

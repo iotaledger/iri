@@ -710,11 +710,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setTipSolidifierEnabled(boolean tipSolidifierEnabled) {
         this.tipSolidifierEnabled = tipSolidifierEnabled;
     }
-
-    @Parameter(names = "--disable-tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER)
-    protected void setTipSolidifierEnabled() {
-        this.tipSolidifierEnabled = false;
-    }
     
     @Override
     public int getBelowMaxDepthTransactionLimit() {

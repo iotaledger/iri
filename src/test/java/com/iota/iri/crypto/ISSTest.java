@@ -58,6 +58,43 @@ public class ISSTest {
     }
 
     @Test
+    public void testSignatureResolvesToAddressISSInPlace() throws Exception {
+        int index = 10;
+        int nof = 1;
+        SpongeFactory.Mode[] modes = {SpongeFactory.Mode.CURLP81, SpongeFactory.Mode.KERL};
+
+        byte[] seedTrits = new byte[Sponge.HASH_LENGTH];
+
+        for (SpongeFactory.Mode mode: modes) {
+            Converter.trits(seed, seedTrits, 0);
+            ISS.subseedInPlace(mode, seedTrits, index);
+            byte[] key = new byte[ISS.FRAGMENT_LENGTH * nof];
+            ISS.keyInPlace(mode, seedTrits, key);
+
+            Kerl curl = new Kerl();
+            byte[] messageTrits = Converter.allocateTritsForTrytes(message.length());
+            Converter.trits(message, messageTrits, 0);
+            curl.absorb(messageTrits, 0, messageTrits.length);
+            byte[] messageHash = new byte[Curl.HASH_LENGTH];
+            curl.squeeze(messageHash, 0, Curl.HASH_LENGTH);
+            byte[] normalizedFragment = new byte[Curl.HASH_LENGTH / ISS.TRYTE_WIDTH];
+            ISS.normalizedBundleInPlace(messageHash, normalizedFragment);
+            normalizedFragment = Arrays.copyOf(normalizedFragment, ISS.NUMBER_OF_FRAGMENT_CHUNKS * nof);
+            byte[] signature = new byte[ISS.FRAGMENT_LENGTH * nof];
+            ISS.signatureFragmentInPlace(mode, normalizedFragment, key, signature);
+            byte[] sigDigest = new byte[Curl.HASH_LENGTH];
+            ISS.digestInPlace(mode, normalizedFragment, 0, signature, 0, sigDigest);
+            byte[] signedAddress = new byte[Curl.HASH_LENGTH];
+            ISS.addressInPlace(mode, sigDigest, signedAddress);
+            byte[] digest = new byte[key.length / ISS.FRAGMENT_LENGTH * Curl.HASH_LENGTH];
+            ISS.digestsInPlace(mode, key, digest);
+            byte[] address = new byte[Curl.HASH_LENGTH];
+            ISS.addressInPlace(mode, digest, address);
+            assertTrue(Arrays.equals(address, signedAddress));
+        }
+    }
+
+    @Test
     public void addressGenerationISS() throws Exception {
         int index = 0;
         int nof = 2;

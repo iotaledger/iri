@@ -6,7 +6,6 @@ import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.ISS;
-import com.iota.iri.crypto.ISSInPlace;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
@@ -241,7 +240,7 @@ public class MilestoneTracker {
                         byte[] digest = new byte[Curl.HASH_LENGTH];
 
                         for (int i = 0; i < securityLevel; i++) {
-                            ISSInPlace.digest(mode, signedHash, ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
+                            ISS.digestInPlace(mode, signedHash, ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
                                     bundleTransactionViewModels.get(i).getSignature(), 0, digest);
                             bb.put(digest);
                         }

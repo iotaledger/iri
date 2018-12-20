@@ -115,9 +115,9 @@ public class BundleValidator {
                                 }
                                 curlInstance.squeeze(bundleHashTrits, 0, bundleHashTrits.length);
                                 //verify bundle hash is correct
-                                if (Arrays.equals(instanceTransactionViewModels.get(0).getBundleHash().trits(), bundleHashTrits))  {
+                                if (Arrays.equals(instanceTransactionViewModels.get(0).getBundleHash().trits(), bundleHashTrits)) {
                                     //normalizing the bundle in preparation for signature verification
-                                    ISSInPlace.normalizedBundle(bundleHashTrits, normalizedBundle);
+                                    ISS.normalizedBundleInPlace(bundleHashTrits, normalizedBundle);
 
                                     for (int j = 0; j < instanceTransactionViewModels.size(); ) {
 
@@ -129,7 +129,7 @@ public class BundleValidator {
                                             int offset = 0, offsetNext = 0;
                                             do {
                                                 offsetNext = (offset + ISS.NUMBER_OF_FRAGMENT_CHUNKS - 1) % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE) + 1;
-                                                ISSInPlace.digest(SpongeFactory.Mode.KERL,
+                                                ISS.digestInPlace(SpongeFactory.Mode.KERL,
                                                     normalizedBundle,
                                                     offset % (Curl.HASH_LENGTH / Converter.NUMBER_OF_TRITS_IN_A_TRYTE),
                                                     instanceTransactionViewModels.get(j).trits(),

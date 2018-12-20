@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.iota.iri.IRI;
 import com.iota.iri.conf.converters.InetAddressConverter;
-import com.iota.iri.conf.validators.InetAddressValidator;
 import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -174,6 +173,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
+    @Parameter(names = {"--remote-trusted-api-hosts"}, description = APIConfig.Descriptions.REMOTE_TRUSTED_API_HOSTS)
     public void setRemoteTrustedApiHosts(String remoteTrustedApiHosts) {
         InetAddressConverter converter = new InetAddressConverter();
         List<String> addresses = IotaUtils.splitStringToImmutableList(remoteTrustedApiHosts, SPLIT_STRING_TO_LIST_REGEX);
@@ -186,16 +186,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
             inetAddresses.add(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
         }
         this.remoteTrustedApiHosts = Collections.unmodifiableList(inetAddresses);
-    }
-
-    @Parameter(validateWith = InetAddressValidator.class, converter = InetAddressConverter.class,
-            names = {"--remote-trusted-api-hosts"}, description = APIConfig.Descriptions.REMOTE_TRUSTED_API_HOSTS)
-    public void setRemoteTrustedApiHosts(List<InetAddress> remoteTrustedApiHosts) {
-        // always make sure that localhost exists as trusted host
-        if(!remoteTrustedApiHosts.contains(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST)) {
-            remoteTrustedApiHosts.add(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
-        }
-        this.remoteTrustedApiHosts = Collections.unmodifiableList(remoteTrustedApiHosts);
     }
 
     @Override

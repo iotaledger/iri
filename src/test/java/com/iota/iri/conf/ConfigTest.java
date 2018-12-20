@@ -97,9 +97,9 @@ public class ConfigTest {
                 iotaConfig.getRemoteLimitApi());
 
         List<InetAddress> expectedTrustedApiHosts = new ArrayList<>();
-        expectedTrustedApiHosts.add(InetAddress.getByName("127.0.0.1"));
         expectedTrustedApiHosts.add(InetAddress.getByName("192.168.0.55"));
         expectedTrustedApiHosts.add(InetAddress.getByName("10.0.0.10"));
+        expectedTrustedApiHosts.add(InetAddress.getByName("127.0.0.1"));
         Assert.assertEquals("remote trusted api hosts", expectedTrustedApiHosts, iotaConfig.getRemoteTrustedApiHosts());
 
         Assert.assertEquals("max find transactions", 500, iotaConfig.getMaxFindTransactions());

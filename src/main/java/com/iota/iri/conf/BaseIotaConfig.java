@@ -491,7 +491,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
             SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
     protected void setLocalSnapshotsPruningDelay(int localSnapshotsPruningDelay) {
         if (localSnapshotsPruningDelay < Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN) {
-            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be higher than " 
+            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be at least " 
                     + Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN 
                     + "(found " + localSnapshotsPruningDelay +")");
         }

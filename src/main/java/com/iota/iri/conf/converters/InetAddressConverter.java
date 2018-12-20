@@ -1,7 +1,6 @@
 package com.iota.iri.conf.converters;
 
 import com.beust.jcommander.IStringConverter;
-import com.iota.iri.conf.APIConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -10,7 +9,7 @@ import java.net.UnknownHostException;
 
 /**
  * Used by JCommander to convert a string from command line into an InetAddress.
- * Refer to {@link APIConfig.Descriptions#REMOTE_TRUSTED_API_HOSTS} for more details.
+ * Refer to {@link com.iota.iri.conf.APIConfig.Descriptions#REMOTE_TRUSTED_API_HOSTS} for more details.
  *
  * @author legacycode
  */

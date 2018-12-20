@@ -14,6 +14,7 @@ import org.apache.commons.lang3.ArrayUtils;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 /*
@@ -173,14 +174,28 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
+    public void setRemoteTrustedApiHosts(String remoteTrustedApiHosts) {
+        InetAddressConverter converter = new InetAddressConverter();
+        List<String> addresses = IotaUtils.splitStringToImmutableList(remoteTrustedApiHosts, SPLIT_STRING_TO_LIST_REGEX);
+        List<InetAddress> inetAddresses = new ArrayList<>();
+        for (String address : addresses) {
+            inetAddresses.add(converter.convert(address));
+        }
+        // always make sure that localhost exists as trusted host
+        if(!inetAddresses.contains(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST)) {
+            inetAddresses.add(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
+        }
+        this.remoteTrustedApiHosts = Collections.unmodifiableList(inetAddresses);
+    }
+
     @Parameter(validateWith = InetAddressValidator.class, converter = InetAddressConverter.class,
             names = {"--remote-trusted-api-hosts"}, description = APIConfig.Descriptions.REMOTE_TRUSTED_API_HOSTS)
     public void setRemoteTrustedApiHosts(List<InetAddress> remoteTrustedApiHosts) {
-        this.remoteTrustedApiHosts = remoteTrustedApiHosts;
         // always make sure that localhost exists as trusted host
-        if(!this.remoteTrustedApiHosts.contains(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST)) {
-            this.remoteTrustedApiHosts.add(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
+        if(!remoteTrustedApiHosts.contains(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST)) {
+            remoteTrustedApiHosts.add(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
         }
+        this.remoteTrustedApiHosts = Collections.unmodifiableList(remoteTrustedApiHosts);
     }
 
     @Override

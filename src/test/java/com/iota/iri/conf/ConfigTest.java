@@ -195,6 +195,7 @@ public class ConfigTest {
                 .append("[IRI]").append(System.lineSeparator())
                 .append("PORT = 17000").append(System.lineSeparator())
                 .append("NEIGHBORS = udp://neighbor1 neighbor, tcp://neighbor2").append(System.lineSeparator())
+                .append("REMOTE_TRUSTED_API_HOSTS = 192.168.0.55, 10.0.0.10").append(System.lineSeparator())
                 .append("ZMQ_ENABLED = true").append(System.lineSeparator())
                 .append("P_REMOVE_REQUEST = 0.4").append(System.lineSeparator())
                 .append("MWM = 4").append(System.lineSeparator())
@@ -211,6 +212,13 @@ public class ConfigTest {
         Assert.assertEquals("PORT", 17000, iotaConfig.getPort());
         Assert.assertEquals("NEIGHBORS", Arrays.asList("udp://neighbor1", "neighbor", "tcp://neighbor2"),
                 iotaConfig.getNeighbors());
+
+        List<InetAddress> expectedTrustedApiHosts = new ArrayList<>();
+        expectedTrustedApiHosts.add(InetAddress.getByName("192.168.0.55"));
+        expectedTrustedApiHosts.add(InetAddress.getByName("10.0.0.10"));
+        expectedTrustedApiHosts.add(BaseIotaConfig.Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
+        Assert.assertEquals("REMOTE_TRUSTED_API_HOSTS", expectedTrustedApiHosts, iotaConfig.getRemoteTrustedApiHosts());
+
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());
         Assert.assertEquals("P_REMOVE_REQUEST", 0.4d, iotaConfig.getpRemoveRequest(), 0);
         Assert.assertNotEquals("MWM", 4, iotaConfig.getMwm());

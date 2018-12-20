@@ -22,6 +22,7 @@ public class RatingOne implements RatingCalculator {
         this.tangle = tangle;
     }
 
+    @Override
     public UnIterableMap<HashId, Integer> calculate(Hash entryPoint) throws Exception {
         UnIterableMap<HashId, Integer> rating = new TransformingMap<>(null, null);
 

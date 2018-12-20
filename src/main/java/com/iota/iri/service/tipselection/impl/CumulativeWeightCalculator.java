@@ -20,7 +20,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Implementation of <tt>RatingCalculator</tt> that gives the cumulative for each transaction referencing entryPoint.
+ * Implementation of {@link RatingCalculator} that calculates the cumulative weight
+ * for each transaction referencing {@code entryPoint}. <br>
  * Used to create a weighted random walks.
  *
  * @see <a href="cumulative.md">https://github.com/alongalky/iota-docs/blob/master/cumulative.md</a>
@@ -28,10 +29,14 @@ import java.util.*;
 public class CumulativeWeightCalculator implements RatingCalculator{
 
     private static final Logger log = LoggerFactory.getLogger(CumulativeWeightCalculator.class);
-    public static final int MAX_FUTURE_SET_SIZE = 5000;
+    private static final int MAX_FUTURE_SET_SIZE = 5000;
 
     public final Tangle tangle;
 
+    /**
+     * Constructor for Cumulative Weight Calculator
+     * @param tangle Tangle object which acts as a database interface
+     */
     public CumulativeWeightCalculator(Tangle tangle) {
         this.tangle = tangle;
     }

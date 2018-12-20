@@ -21,8 +21,8 @@ import java.util.Optional;
  */
 public class TipSelectorImpl implements TipSelector {
 
-    public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
-    public static final String TIPS_NOT_CONSISTENT = "inconsistent tips pair selected";
+    private static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
+    private static final String TIPS_NOT_CONSISTENT = "inconsistent tips pair selected";
 
     private final EntryPointSelector entryPointSelector;
     private final RatingCalculator ratingCalculator;
@@ -33,6 +33,17 @@ public class TipSelectorImpl implements TipSelector {
     private final MilestoneTracker milestoneTracker;
     private final TipSelConfig config;
 
+    /**
+     * Constructor for Tip Selector.
+     *
+     * @param tangle Tangle object which acts as a database interface.
+     * @param ledgerValidator instance of the ledger validator, used by walk validator to check ledger consistency.
+     * @param entryPointSelector instance of the entry point selector to get tip selection starting points.
+     * @param ratingCalculator instance of rating calculator, to calculate weighted walks.
+     * @param walkerAlpha instance of walker (alpha), to perform weighted random walks as per the IOTA white paper.
+     * @param milestoneTracker instance of the milestone tracker, used by walk validator to check ledger consistency.
+     * @param config configurations to set internal parameters.
+     */
     public TipSelectorImpl(Tangle tangle,
                            LedgerValidator ledgerValidator,
                            EntryPointSelector entryPointSelector,
@@ -54,6 +65,8 @@ public class TipSelectorImpl implements TipSelector {
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Implementation of getTransactionsToApprove
      *
      * General process:

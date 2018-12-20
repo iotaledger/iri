@@ -152,7 +152,7 @@ public class Iota {
                 latestMilestoneTracker, messageQ, configuration);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
-        tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
+        tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel, configuration);
         tipsSelector = createTipSelector(configuration);
 
         injectDependencies();

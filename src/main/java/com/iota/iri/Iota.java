@@ -213,7 +213,7 @@ public class Iota {
         spentAddressesProvider.init(tangle, configuration);
         spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider);
         snapshotProvider.init(configuration);
-        snapshotService.init(tangle, snapshotProvider, configuration);
+        snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
             localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
         }

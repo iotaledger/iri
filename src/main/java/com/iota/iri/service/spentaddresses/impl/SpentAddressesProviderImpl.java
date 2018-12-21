@@ -33,9 +33,9 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         this.config = config;
         this.localSnapshotAddressesFile = new File(config.getLocalSnapshotsBasePath() + SNAPSHOT_SPENTADDRESSES_FILE);
 
-        readLocalSpentAddresses();
+        readPreviousEpochsSpentAddresses();
         if (localSnapshotAddressesFile.exists()) {
-            readPreviousEpochsSpentAddresses();
+            readLocalSpentAddresses();
         }
         else {
             try {

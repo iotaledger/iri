@@ -6,12 +6,13 @@ import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ZmqPublishProvider implements PersistenceProvider {
 
@@ -178,5 +179,10 @@ public class ZmqPublishProvider implements PersistenceProvider {
     @Override
     public void clearMetadata(Class<?> column) throws Exception {
 
+    }
+
+    @Override
+    public List<byte[]> loadAllKeysFromTable(Class<? extends Persistable> model) {
+        return null;
     }
 }

@@ -111,8 +111,6 @@ public class API {
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
-    private ConcurrentHashMap<Hash, Boolean> previousEpochsSpentAddresses;
-
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
@@ -135,8 +133,6 @@ public class API {
         maxGetTrytes = configuration.getMaxGetTrytes();
         maxBodyLength = configuration.getMaxBodyLength();
         testNet = configuration.isTestnet();
-
-        previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
         features = Feature.calculateFeatureNames(instance.configuration);
     }
@@ -165,13 +161,8 @@ public class API {
      *        Starts the server, opening it for HTTP API requests
      *    </li>
      * </ol>
-     *
-     * @throws IOException If we are not on the testnet, and the previousEpochsSpentAddresses files cannot be found.
-     *                     Currently this exception is caught in {@link #readPreviousEpochsSpentAddresses(boolean)}
      */
     public void init() throws IOException {
-        readPreviousEpochsSpentAddresses(testNet);
-
         APIConfig configuration = instance.configuration;
         final int apiPort = configuration.getPort();
         final String apiHost = configuration.getApiHost();
@@ -204,37 +195,6 @@ public class API {
                     }
                 }))).build();
         server.start();
-    }
-
-    /**
-     * Read the spend addresses from the previous epoch. Used in {@link #wasAddressSpentFrom(Hash)}.
-     * If this fails, a log is printed. The API will continue to initialize.
-     *
-     * @param isTestnet If this node is running on the testnet. If this is <tt>true</tt>, nothing is loaded.
-     * @throws IOException If we are not on the testnet and previousEpochsSpentAddresses files cannot be found.
-     *                     Currently this exception is caught in {@link #readPreviousEpochsSpentAddresses(boolean)}
-     */
-    private void readPreviousEpochsSpentAddresses(boolean isTestnet) throws IOException {
-        if (isTestnet) {
-            return;
-        }
-
-        String[] previousEpochsSpentAddressesFiles = instance
-                .configuration
-                .getPreviousEpochSpentAddressesFiles()
-                .split(" ");
-
-        for (String previousEpochsSpentAddressesFile : previousEpochsSpentAddressesFiles) {
-            InputStream in = Snapshot.class.getResourceAsStream(previousEpochsSpentAddressesFile);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    this.previousEpochsSpentAddresses.put(HashFactory.ADDRESS.create(line), true);
-                }
-            } catch (Exception e) {
-                log.error("Failed to load resource: {}.", previousEpochsSpentAddressesFile, e);
-            }
-        }
     }
 
     /**
@@ -537,44 +497,9 @@ public class API {
         int index = 0;
 
         for (Hash address : addressesHash) {
-            states[index++] = wasAddressSpentFrom(address);
+            states[index++] = instance.spentAddressesService.wasAddressSpentFrom(address);
         }
         return WereAddressesSpentFrom.create(states);
-    }
-
-    /**
-     * Checks if the address was ever spent from, in the current epoch, or in previous epochs.
-     * If an address has a pending transaction, it is also marked as spent.
-     *
-     * @param address The address to check if it was ever spent from.
-     * @return <tt>true</tt> if it was spent from, otherwise <tt>false</tt>
-     * @throws Exception When a model could not be loaded.
-     */
-    private boolean wasAddressSpentFrom(Hash address) throws Exception {
-        if (previousEpochsSpentAddresses.containsKey(address)) {
-            return true;
-        }
-
-        Set<Hash> hashes = AddressViewModel.load(instance.tangle, address).getHashes();
-        for (Hash hash : hashes) {
-            final TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
-            // Check for spending transactions
-            if (tx.value() < 0) {
-                // Transaction is confirmed
-                if (tx.snapshotIndex() != 0) {
-                    return true;
-                }
-
-                // Transaction is pending
-                Hash tail = findTail(hash);
-                if (tail != null && BundleValidator.validate(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), tail).size() != 0) {
-                    return true;
-                }
-            }
-        }
-
-        // No spending transaction found
-        return false;
     }
 
     /**

@@ -1,30 +1,26 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.model.*;
-import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Approvee;
-import com.iota.iri.model.persistables.Bundle;
-import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.model.persistables.ObsoleteTag;
-import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.StateDiff;
+import com.iota.iri.model.persistables.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.Pair;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.rocksdb.*;
-import org.rocksdb.util.SizeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.rocksdb.*;
+import org.rocksdb.util.SizeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RocksDBPersistenceProvider implements PersistenceProvider {
 
@@ -35,6 +31,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private final List<String> columnFamilyNames = Arrays.asList(
         new String(RocksDB.DEFAULT_COLUMN_FAMILY),
+        "spentAddress",
         "transaction",
         "transaction-metadata",
         "milestone",
@@ -53,6 +50,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private final String logPath;
     private final int cacheSize;
 
+    private ColumnFamilyHandle spentAddressHandle;
     private ColumnFamilyHandle transactionHandle;
     private ColumnFamilyHandle transactionMetadataHandle;
     private ColumnFamilyHandle milestoneHandle;
@@ -94,6 +92,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private void initClassTreeMap() {
         Map<Class<?>, ColumnFamilyHandle> classMap = new LinkedHashMap<>();
+        classMap.put(SpentAddress.class, spentAddressHandle);
         classMap.put(Transaction.class, transactionHandle);
         classMap.put(Milestone.class, milestoneHandle);
         classMap.put(StateDiff.class, stateDiffHandle);
@@ -363,6 +362,19 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         flushHandle(metadataReference.get(column));
     }
 
+    @Override
+    public List<byte[]> loadAllKeysFromTable(Class<? extends Persistable> column) {
+        List<byte[]> keyBytes = new ArrayList<>();
+
+        ColumnFamilyHandle columnFamilyHandle = classTreeMap.get(column);
+        try (RocksIterator iterator = db.newIterator(columnFamilyHandle)) {
+            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                keyBytes.add(iterator.key());
+            }
+        }
+        return keyBytes;
+    }
+
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {
         List<byte[]> itemsToDelete = new ArrayList<>();
         try (RocksIterator iterator = db.newIterator(handle)) {
@@ -495,6 +507,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private void fillModelColumnHandles() throws Exception {
         int i = 0;
+        spentAddressHandle = columnFamilyHandles.get(++i);
         transactionHandle = columnFamilyHandles.get(++i);
         transactionMetadataHandle = columnFamilyHandles.get(++i);
         milestoneHandle = columnFamilyHandles.get(++i);

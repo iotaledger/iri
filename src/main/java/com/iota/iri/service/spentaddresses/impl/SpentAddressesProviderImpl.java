@@ -24,14 +24,26 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
 
     private IotaConfig config;
 
+    private File localSnapshotAddressesFile;
+
     public SpentAddressesProviderImpl() {}
 
-    public SpentAddressesProviderImpl init(Tangle tangle, IotaConfig config) {
+    public SpentAddressesProviderImpl init(Tangle tangle, IotaConfig config) throws SpentAddressesException {
         this.tangle = tangle;
         this.config = config;
+        this.localSnapshotAddressesFile = new File(config.getLocalSnapshotsBasePath() + SNAPSHOT_SPENTADDRESSES_FILE);
 
-        readPreviousEpochsSpentAddresses();
         readLocalSpentAddresses();
+        if (localSnapshotAddressesFile.exists()) {
+            readPreviousEpochsSpentAddresses();
+        }
+        else {
+            try {
+                localSnapshotAddressesFile.createNewFile();
+            } catch (IOException e) {
+                throw new SpentAddressesException("Failed to create missing " + localSnapshotAddressesFile.getName(), e);
+            }
+        }
 
         return this;
     }
@@ -52,12 +64,12 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     }
 
     private void readLocalSpentAddresses() {
-        String pathToLocalStateFile = config.getLocalSnapshotsBasePath() + SNAPSHOT_SPENTADDRESSES_FILE;
+
         try {
             readSpentAddressesFromStream(
-                    new FileInputStream(config.getLocalSnapshotsBasePath() + SNAPSHOT_SPENTADDRESSES_FILE));
+                    new FileInputStream(localSnapshotAddressesFile));
         } catch (Exception e) {
-            log.error("failed to read spent addresses from " + pathToLocalStateFile, e);
+            log.error("failed to read spent addresses from " + localSnapshotAddressesFile.getPath(), e);
         }
     }
 
@@ -94,8 +106,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     public void writeSpentAddressesToDisk(String basePath) throws SpentAddressesException {
         try {
             Collection<Hash> addressHashes = getAllSpentAddresses();
-            File snapshotFile = new File(config.getLocalSnapshotsBasePath() + SNAPSHOT_SPENTADDRESSES_FILE);
-            FileUtils.writeLines(snapshotFile, addressHashes, false);
+            FileUtils.writeLines(localSnapshotAddressesFile, addressHashes, false);
         } catch (Exception e) {
             throw new SpentAddressesException("Failed to dump spent addresses to disk", e);
         }

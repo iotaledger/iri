@@ -45,8 +45,50 @@ def put_file():
 
     return 'ok'
 
+@app.route('/post_contract', methods=['POST'])
+def post_contract():
+    req_json = request.get_json()
+
+    if req_json is None:
+        return 'request error'
+    print("now come here to post contract")
+
+    cache.cache_txn_in_tangle(req_json['ipfs_addr'], TagGenerator.get_current_tag("SC"))
+    return 'ok'
+
+@app.route('/post_action', methods=['POST'])
+def post_action():
+    req_json = request.get_json()
+
+    if req_json is None:
+        return 'request error'
+
+    cache.cache_txn_in_tangle(req_json['ipfs_addr'], TagGenerator.get_current_tag("SA"))
+    return 'ok'
+
+@app.route('/put_contract', methods=['PUT'])
+def put_contract():
+    req_json = request.get_json()
+
+    if req_json is None:
+        return 'request error'
+
+    msg = Fragment(TryteString(req_json['ipfs_addr']))
+    ipfs_addr = msg.decode()
+    wasm.set_contract(ipfs_addr)
+    return 'ok'
+
+@app.route('/put_action', methods=['PUT'])
+def put_action():
+    req_json = request.get_json()
+
+    if req_json is None:
+        return 'request error'
+
+    msg = Fragment(TryteString(req_json['ipfs_addr']))
+    ipfs_addr = msg.decode()
+    wasm.exec_action(ipfs_addr)
+    return 'ok'
 
 if __name__ == '__main__':
     app.run()
-
-

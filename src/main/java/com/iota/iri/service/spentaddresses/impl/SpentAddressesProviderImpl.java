@@ -1,34 +1,61 @@
 package com.iota.iri.service.spentaddresses.impl;
 
 import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Pair;
 
 import java.io.*;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * 
+ * Implementation of <tt>SpentAddressesProvider</tt>.
+ * Addresses are saved/found on the {@link Tangle}.
+ * The addresses will be written to a file called {@value #SNAPSHOT_SPENTADDRESSES_FILE}.
+ * The folder location is provided by {@link IotaConfig#getLocalSnapshotsBasePath()}
+ *
+ */
 public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     private static final Logger log = LoggerFactory.getLogger(SpentAddressesProviderImpl.class);
     private static final String SNAPSHOT_SPENTADDRESSES_FILE = ".snapshot.spentaddresses";
 
     private Tangle tangle;
 
-    private IotaConfig config;
+    private SnapshotConfig config;
 
     private File localSnapshotAddressesFile;
 
-    public SpentAddressesProviderImpl() {}
+    /**
+     * Creates a new instance of SpentAddressesProvider
+     */
+    public SpentAddressesProviderImpl() {
+        
+    }
 
-    public SpentAddressesProviderImpl init(Tangle tangle, IotaConfig config) throws SpentAddressesException {
+    /**
+     * Starts the SpentAddressesProvider by reading the previous spent addresses from file.
+     * If {@value #SNAPSHOT_SPENTADDRESSES_FILE} already exists, these addresses will be read as well.
+     * 
+     * @param tangle Tangle object which acts as a database interface
+     * @param config The snapshot configuration used for file location
+     * @return the current instance
+     * @throws SpentAddressesException if we failed to create a file at the designated location
+     */
+    public SpentAddressesProviderImpl init(Tangle tangle, SnapshotConfig config) throws SpentAddressesException {
         this.tangle = tangle;
         this.config = config;
         this.localSnapshotAddressesFile = new File(config.getLocalSnapshotsBasePath() + SNAPSHOT_SPENTADDRESSES_FILE);
@@ -97,6 +124,22 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     public void addAddress(Hash addressHash) throws SpentAddressesException {
         try {
             tangle.save(new SpentAddress(), addressHash);
+        } catch (Exception e) {
+            throw new SpentAddressesException(e);
+        }
+    }
+    
+    @Override
+    public void addAddressesBatch(List<Hash> addressHash) throws SpentAddressesException {
+        try {
+            // Its bytes are always new byte[0], therefore identical in storage
+            SpentAddress spentAddressModel = new SpentAddress();
+            
+            tangle.saveBatch(addressHash
+                .stream()
+                .map(address -> new Pair<Indexable, Persistable>(address, spentAddressModel))
+                .collect(Collectors.toList())
+            );
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }

@@ -9,24 +9,44 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
+import com.iota.iri.service.tipselection.TailFinder;
+import com.iota.iri.service.tipselection.impl.TailFinderImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.dag.DAGHelper;
 
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+/**
+ * 
+ * Implementation of <tt>SpentAddressesService</tt> that calculates and checks spent addresses using the {@link Tangle}
+ *
+ */
 public class SpentAddressesServiceImpl implements SpentAddressesService {
     private Tangle tangle;
 
     private SnapshotProvider snapshotProvider;
 
     private SpentAddressesProvider spentAddressesProvider;
+    
+    private TailFinder tailFinder;
 
+    /**
+     * Creates a Spent address service using the Tangle
+     * 
+     * @param tangle Tangle object which is used to load models of addresses
+     * @param snapshotProvider {@link SnapshotProvider} to find the genesis, used to verify tails
+     * @param spentAddressesProvider Provider for loading/saving addresses to a database.
+     * @return this instance
+     */
     public SpentAddressesServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SpentAddressesProvider spentAddressesProvider) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.spentAddressesProvider = spentAddressesProvider;
-
+        this.tailFinder = new TailFinderImpl(tangle);
+        
         return this;
     }
 
@@ -79,9 +99,23 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
             throw new SpentAddressesException(e);
         }
 
-        for (Hash address : addressesToCheck) {
-            if (wasAddressSpentFrom(address)) {
-                spentAddressesProvider.addAddress(address);
+        //Can only throw runtime exceptions in streams
+        try {
+            spentAddressesProvider.addAddressesBatch(addressesToCheck.stream()
+                .filter(address -> {
+                    try {
+                        return wasAddressSpentFrom(address);
+                    } catch (SpentAddressesException e) {
+                        throw new RuntimeException(e);
+                    }
+                })
+                .collect(Collectors.toList()));
+            
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof SpentAddressesException) {
+                throw (SpentAddressesException) e.getCause();
+            } else {
+                throw e;
             }
         }
     }
@@ -95,31 +129,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
      * @throws Exception When a model could not be loaded.
      */
     private Hash findTail(Hash hash) throws Exception {
-        TransactionViewModel tx = TransactionViewModel.fromHash(tangle, hash);
-        final Hash bundleHash = tx.getBundleHash();
-        long index = tx.getCurrentIndex();
-        boolean foundApprovee = false;
-
-        // As long as the index is bigger than 0 and we are still traversing the same bundle
-        // If the hash we asked about is already a tail, this loop never starts
-        while (index-- > 0 && tx.getBundleHash().equals(bundleHash)) {
-            Set<Hash> approvees = tx.getApprovers(tangle).getHashes();
-            for (Hash approvee : approvees) {
-                TransactionViewModel nextTx = TransactionViewModel.fromHash(tangle, approvee);
-                if (nextTx.getBundleHash().equals(bundleHash)) {
-                    tx = nextTx;
-                    foundApprovee = true;
-                    break;
-                }
-            }
-            if (!foundApprovee) {
-                break;
-            }
-        }
-
-        if (tx.getCurrentIndex() == 0) {
-            return tx.getHash();
-        }
-        return null;
+        Optional<Hash> optionalTail = tailFinder.findTail(hash);
+        return optionalTail.isPresent() ? optionalTail.get() : null;
     }
 }

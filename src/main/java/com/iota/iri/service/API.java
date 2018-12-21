@@ -111,8 +111,6 @@ public class API {
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
-    private ConcurrentHashMap<Hash, Boolean> previousEpochsSpentAddresses;
-
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
@@ -135,8 +133,6 @@ public class API {
         maxGetTrytes = configuration.getMaxGetTrytes();
         maxBodyLength = configuration.getMaxBodyLength();
         testNet = configuration.isTestnet();
-
-        previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
         features = Feature.calculateFeatureNames(instance.configuration);
     }
@@ -165,13 +161,8 @@ public class API {
      *        Starts the server, opening it for HTTP API requests
      *    </li>
      * </ol>
-     *
-     * @throws IOException If we are not on the testnet, and the previousEpochsSpentAddresses files cannot be found.
-     *                     Currently this exception is caught in {@link #readPreviousEpochsSpentAddresses(boolean)}
      */
     public void init() throws IOException {
-        readPreviousEpochsSpentAddresses(testNet);
-
         APIConfig configuration = instance.configuration;
         final int apiPort = configuration.getPort();
         final String apiHost = configuration.getApiHost();
@@ -204,37 +195,6 @@ public class API {
                     }
                 }))).build();
         server.start();
-    }
-
-    /**
-     * Read the spend addresses from the previous epoch. Used in {@link #wasAddressSpentFrom(Hash)}.
-     * If this fails, a log is printed. The API will continue to initialize.
-     *
-     * @param isTestnet If this node is running on the testnet. If this is <tt>true</tt>, nothing is loaded.
-     * @throws IOException If we are not on the testnet and previousEpochsSpentAddresses files cannot be found.
-     *                     Currently this exception is caught in {@link #readPreviousEpochsSpentAddresses(boolean)}
-     */
-    private void readPreviousEpochsSpentAddresses(boolean isTestnet) throws IOException {
-        if (isTestnet) {
-            return;
-        }
-
-        String[] previousEpochsSpentAddressesFiles = instance
-                .configuration
-                .getPreviousEpochSpentAddressesFiles()
-                .split(" ");
-
-        for (String previousEpochsSpentAddressesFile : previousEpochsSpentAddressesFiles) {
-            InputStream in = Snapshot.class.getResourceAsStream(previousEpochsSpentAddressesFile);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    this.previousEpochsSpentAddresses.put(HashFactory.ADDRESS.create(line), true);
-                }
-            } catch (Exception e) {
-                log.error("Failed to load resource: {}.", previousEpochsSpentAddressesFile, e);
-            }
-        }
     }
 
     /**
@@ -551,7 +511,7 @@ public class API {
      * @throws Exception When a model could not be loaded.
      */
     private boolean wasAddressSpentFrom(Hash address) throws Exception {
-        if (previousEpochsSpentAddresses.containsKey(address)) {
+        if (instance.spentAddressesProvider.containsAddress(address)) {
             return true;
         }
 

@@ -1,13 +1,7 @@
 package com.iota.iri.storage.rocksDB;
 
 import com.iota.iri.model.*;
-import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Approvee;
-import com.iota.iri.model.persistables.Bundle;
-import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.model.persistables.ObsoleteTag;
-import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.model.persistables.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
@@ -35,6 +29,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private final List<String> columnFamilyNames = Arrays.asList(
         new String(RocksDB.DEFAULT_COLUMN_FAMILY),
+        "spentAddress",
         "transaction",
         "transaction-metadata",
         "milestone",
@@ -53,6 +48,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private final String logPath;
     private final int cacheSize;
 
+    private ColumnFamilyHandle spentAddressHandle;
     private ColumnFamilyHandle transactionHandle;
     private ColumnFamilyHandle transactionMetadataHandle;
     private ColumnFamilyHandle milestoneHandle;
@@ -94,6 +90,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private void initClassTreeMap() {
         Map<Class<?>, ColumnFamilyHandle> classMap = new LinkedHashMap<>();
+        classMap.put(SpentAddress.class, spentAddressHandle);
         classMap.put(Transaction.class, transactionHandle);
         classMap.put(Milestone.class, milestoneHandle);
         classMap.put(StateDiff.class, stateDiffHandle);
@@ -495,6 +492,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private void fillModelColumnHandles() throws Exception {
         int i = 0;
+        spentAddressHandle = columnFamilyHandles.get(++i);
         transactionHandle = columnFamilyHandles.get(++i);
         transactionMetadataHandle = columnFamilyHandles.get(++i);
         milestoneHandle = columnFamilyHandles.get(++i);

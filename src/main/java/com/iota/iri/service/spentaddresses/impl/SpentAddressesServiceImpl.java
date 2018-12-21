@@ -2,6 +2,7 @@ package com.iota.iri.service.spentaddresses.impl;
 
 import com.iota.iri.BundleValidator;
 import com.iota.iri.controllers.AddressViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -9,7 +10,9 @@ import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.dag.DAGHelper;
 
+import java.util.HashSet;
 import java.util.Set;
 
 public class SpentAddressesServiceImpl implements SpentAddressesService {
@@ -56,6 +59,31 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         }
 
         return false;
+    }
+
+    @Override
+    public void calculateSpentAddresses(int fromMilestoneIndex, int toMilestoneIndex) throws SpentAddressesException {
+        Set<Hash> addressesToCheck = new HashSet<>();
+        try {
+            for (int i = fromMilestoneIndex; i < toMilestoneIndex; i++) {
+                MilestoneViewModel currentMilestone = MilestoneViewModel.get(tangle, i);
+                if (currentMilestone != null) {
+                    DAGHelper.get(tangle).traverseApprovees(
+                        currentMilestone.getHash(),
+                        transactionViewModel -> transactionViewModel.snapshotIndex() >= currentMilestone.index(),
+                        transactionViewModel -> addressesToCheck.add(transactionViewModel.getAddressHash())
+                    );
+                }
+            }
+        } catch (Exception e) {
+            throw new SpentAddressesException(e);
+        }
+
+        for (Hash address : addressesToCheck) {
+            if (wasAddressSpentFrom(address)) {
+                spentAddressesProvider.addAddress(address);
+            }
+        }
     }
 
     /**

@@ -50,6 +50,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //IXI
     protected String ixiDir = Defaults.IXI_DIR;
 
+    //Node
+    protected boolean wasmSupport = Defaults.WASM_SUPPORT;
+
     //DB
     protected String dbPath = Defaults.DB_PATH;
     protected String dbLogPath = Defaults.DB_LOG_PATH;
@@ -686,6 +689,18 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public boolean getWASMSupport() {
+        return wasmSupport;
+    }
+
+    @JsonProperty("ENABLE_WASM")
+    @Parameter(names = "--enable-wasm", description = NodeConfig.Descriptions.ENABLE_WASMVM)
+    protected void getWASMSupport(Boolean wasmSupport) {
+        this.wasmSupport = wasmSupport;
+    }
+
+
+    @Override
     public double getAlpha() {
         return alpha;
     }
@@ -784,6 +799,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //ixi
         String IXI_DIR = "ixi";
+
+        // Node
+        boolean WASM_SUPPORT = false;
 
         //DB
         String DB_PATH = "mainnetdb";

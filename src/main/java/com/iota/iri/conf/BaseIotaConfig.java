@@ -80,7 +80,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
-
+    
+    //Tip Solidification
+    protected boolean tipSolidifierEnabled = Defaults.TIP_SOLIDIFIER_ENABLED;
+    
     //PearlDiver
     protected int powThreads = Defaults.POW_THREADS;
 
@@ -695,7 +698,19 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setAlpha(double alpha) {
         this.alpha = alpha;
     }
+    
+    @Override
+    public boolean isTipSolidifierEnabled() {
+        return tipSolidifierEnabled;
+    }
 
+    @JsonProperty
+    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER, 
+        arity = 1)
+    protected void setTipSolidifierEnabled(boolean tipSolidifierEnabled) {
+        this.tipSolidifierEnabled = tipSolidifierEnabled;
+    }
+    
     @Override
     public int getBelowMaxDepthTransactionLimit() {
         return maxAnalyzedTransactions;
@@ -773,6 +788,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //TipSel
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
+        
+        //Tip solidification
+        boolean TIP_SOLIDIFIER_ENABLED = true;
 
         //PearlDiver
         int POW_THREADS = 0;

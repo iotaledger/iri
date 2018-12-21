@@ -21,6 +21,7 @@ import com.iota.iri.service.snapshot.impl.LocalSnapshotManagerImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotServiceImpl;
 import com.iota.iri.service.spentaddresses.impl.SpentAddressesProviderImpl;
+import com.iota.iri.service.spentaddresses.impl.SpentAddressesServiceImpl;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.service.tipselection.TailFinder;
@@ -84,6 +85,8 @@ public class Iota {
 
     public final SpentAddressesProviderImpl spentAddressesProvider;
 
+    public final SpentAddressesServiceImpl spentAddressesService;
+
     public final SnapshotProviderImpl snapshotProvider;
 
     public final SnapshotServiceImpl snapshotService;
@@ -131,6 +134,7 @@ public class Iota {
 
         // new refactored instances
         spentAddressesProvider = new SpentAddressesProviderImpl();
+        spentAddressesService = new SpentAddressesServiceImpl();
         snapshotProvider = new SnapshotProviderImpl();
         snapshotService = new SnapshotServiceImpl();
         localSnapshotManager = configuration.getLocalSnapshotsEnabled()
@@ -207,6 +211,7 @@ public class Iota {
 
     private void injectDependencies() throws SnapshotException, TransactionPruningException {
         spentAddressesProvider.init(tangle, configuration);
+        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider);
         snapshotProvider.init(configuration);
         snapshotService.init(tangle, snapshotProvider, configuration);
         if (localSnapshotManager != null) {

@@ -497,44 +497,9 @@ public class API {
         int index = 0;
 
         for (Hash address : addressesHash) {
-            states[index++] = wasAddressSpentFrom(address);
+            states[index++] = instance.spentAddressesService.wasAddressSpentFrom(address);
         }
         return WereAddressesSpentFrom.create(states);
-    }
-
-    /**
-     * Checks if the address was ever spent from, in the current epoch, or in previous epochs.
-     * If an address has a pending transaction, it is also marked as spent.
-     *
-     * @param address The address to check if it was ever spent from.
-     * @return <tt>true</tt> if it was spent from, otherwise <tt>false</tt>
-     * @throws Exception When a model could not be loaded.
-     */
-    private boolean wasAddressSpentFrom(Hash address) throws Exception {
-        if (instance.spentAddressesProvider.containsAddress(address)) {
-            return true;
-        }
-
-        Set<Hash> hashes = AddressViewModel.load(instance.tangle, address).getHashes();
-        for (Hash hash : hashes) {
-            final TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
-            // Check for spending transactions
-            if (tx.value() < 0) {
-                // Transaction is confirmed
-                if (tx.snapshotIndex() != 0) {
-                    return true;
-                }
-
-                // Transaction is pending
-                Hash tail = findTail(hash);
-                if (tail != null && BundleValidator.validate(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), tail).size() != 0) {
-                    return true;
-                }
-            }
-        }
-
-        // No spending transaction found
-        return false;
     }
 
     /**

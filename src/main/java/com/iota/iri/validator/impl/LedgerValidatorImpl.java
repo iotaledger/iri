@@ -1,25 +1,33 @@
-package com.iota.iri;
+package com.iota.iri.validator.impl;
 
 import com.iota.iri.controllers.*;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.validator.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-public class LedgerValidator {
+public class LedgerValidatorImpl implements LedgerValidator{
 
-    private final Logger log = LoggerFactory.getLogger(LedgerValidator.class);
+    private final Logger log = LoggerFactory.getLogger(LedgerValidatorImpl.class);
     private final Tangle tangle;
     private final MilestoneTracker milestoneTracker;
     private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
     private volatile int numberOfConfirmedTransactions;
 
-    public LedgerValidator(Tangle tangle, MilestoneTracker milestoneTracker, TransactionRequester transactionRequester, MessageQ messageQ) {
+    /*public  LedgerValidatorImpl() {
+        tangle = null;
+        milestoneTracker = null;
+        messageQ = null;
+        transactionRequester = null;
+        numberOfConfirmedTransactions = 0;
+    }*/
+    public LedgerValidatorImpl(Tangle tangle, MilestoneTracker milestoneTracker, TransactionRequester transactionRequester, MessageQ messageQ) {
         this.tangle = tangle;
         this.milestoneTracker = milestoneTracker;
         this.transactionRequester = transactionRequester;
@@ -177,14 +185,14 @@ public class LedgerValidator {
     }
 
     /**
-     * Initializes the LedgerValidator. This updates the latest milestone and solid subtangle milestone, and then
+     * Initializes the LedgerValidatorImpl. This updates the latest milestone and solid subtangle milestone, and then
      * builds up the confirmed until it reaches the latest consistent confirmed. If any inconsistencies are detected,
      * perhaps by database corruption, it will delete the milestone confirmed and all that follow.
      * It then starts at the earliest consistent milestone index with a confirmed, and analyzes the tangle until it
      * either reaches the latest solid subtangle milestone, or until it reaches an inconsistent milestone.
      * @throws Exception
      */
-    protected void init() throws Exception {
+    public void init() throws Exception {
         MilestoneViewModel latestConsistentMilestone = buildSnapshot();
         if(latestConsistentMilestone != null) {
             log.info("Loaded consistent milestone: #" + latestConsistentMilestone.index());

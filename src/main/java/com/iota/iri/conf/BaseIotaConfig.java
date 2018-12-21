@@ -79,6 +79,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected double alpha = Defaults.ALPHA;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
     private String weightCalAlgo = Defaults.WEIGHT_CAL_ALGO;
+    private String entryPointSelAlgo = Defaults.ENTRY_POINT_CAL_ALGO;
+    private String walkValidator = Defaults.WALK_VALIDATOR;
+    private String ledgerValidator = Defaults.LEDGER_VALIDATOR;
+
 
     //PearlDiver
     protected int powThreads = Defaults.POW_THREADS;
@@ -715,6 +719,39 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public String getEntryPointSelector() {
+        return entryPointSelAlgo;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--entrypoint-selector-algorithm", description = TipSelConfig.Descriptions.ENTRY_POINT_SEL_ALGO)
+    protected void setEntryPointSelector(String entryPointSelAlgo) {
+        this.entryPointSelAlgo = entryPointSelAlgo;
+    }
+
+    @Override
+    public String getWalkValidator() {
+        return walkValidator;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--walk-validator", description = TipSelConfig.Descriptions.WALK_VALIDATOR)
+    protected void setWalkValidator(String walkValidator) {
+        this.walkValidator = walkValidator;
+    }
+
+    @Override
+    public String getLedgerValidator() {
+        return ledgerValidator;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--ledger-validator", description = TipSelConfig.Descriptions.LEDGER_VALIDATOR)
+    protected void getLedgerValidator(String ledgerValidator) {
+        this.ledgerValidator = ledgerValidator;
+    }
+
+    @Override
     public int getPowThreads() {
         return powThreads;
     }
@@ -781,6 +818,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
         String WEIGHT_CAL_ALGO = "CUM_WEIGHT";
+        String ENTRY_POINT_CAL_ALGO = "DEFAULT";
+        String WALK_VALIDATOR = "DEFAULT";
+        String LEDGER_VALIDATOR = "DEFAULT";
 
         //PearlDiver
         int POW_THREADS = 0;

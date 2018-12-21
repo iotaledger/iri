@@ -1,4 +1,4 @@
-package com.iota.iri;
+package com.iota.iri.validator;
 
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -24,7 +24,7 @@ public class Snapshot {
     private static final int SNAPSHOT_PUBKEY_DEPTH = 6;
     private static final int SNAPSHOT_INDEX = 9;
     private static Snapshot initialSnapshot;
-    protected final Map<Hash, Long> state;
+    public final Map<Hash, Long> state;
     private int index;
 
     public final ReadWriteLock rwlock = new ReentrantReadWriteLock();
@@ -130,7 +130,7 @@ public class Snapshot {
         return patch;
     }
 
-    void apply(Map<Hash, Long> patch, int newIndex) {
+    public void apply(Map<Hash, Long> patch, int newIndex) {
         if (!patch.entrySet().stream().map(Map.Entry::getValue).reduce(Math::addExact).orElse(0L).equals(0L)) {
             throw new IllegalStateException("Diff is not consistent.");
         }

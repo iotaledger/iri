@@ -1,4 +1,4 @@
-package com.iota.iri;
+package com.iota.iri.validator;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.*;

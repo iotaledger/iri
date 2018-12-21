@@ -1,4 +1,4 @@
-package com.iota.iri;
+package com.iota.iri.validator;
 
 import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
@@ -30,9 +30,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static com.iota.iri.MilestoneTracker.Validity.INCOMPLETE;
-import static com.iota.iri.MilestoneTracker.Validity.INVALID;
-import static com.iota.iri.MilestoneTracker.Validity.VALID;
+import static com.iota.iri.validator.MilestoneTracker.Validity.INCOMPLETE;
+import static com.iota.iri.validator.MilestoneTracker.Validity.INVALID;
+import static com.iota.iri.validator.MilestoneTracker.Validity.VALID;
 
 public class MilestoneTracker {
     /**
@@ -43,7 +43,7 @@ public class MilestoneTracker {
         INITIALIZED
     }
 
-    enum Validity {
+    public enum Validity {
         VALID,
         INVALID,
         INCOMPLETE
@@ -210,7 +210,7 @@ public class MilestoneTracker {
         return milestoneStartIndex;
     }
 
-    Validity validateMilestone(SpongeFactory.Mode mode, int securityLevel, TransactionViewModel transactionViewModel, int index) throws Exception {
+    public Validity validateMilestone(SpongeFactory.Mode mode, int securityLevel, TransactionViewModel transactionViewModel, int index) throws Exception {
         if (index < 0 || index >= 0x200000) {
             return INVALID;
         }
@@ -285,11 +285,11 @@ public class MilestoneTracker {
         }
     }
 
-    static int getIndex(TransactionViewModel transactionViewModel) {
+    public static int getIndex(TransactionViewModel transactionViewModel) {
         return (int) Converter.longValue(transactionViewModel.trits(), TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET, 15);
     }
 
-    void shutDown() {
+    public void shutDown() {
         shuttingDown = true;
     }
 

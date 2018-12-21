@@ -19,6 +19,7 @@ import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
+import com.iota.iri.validator.*;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

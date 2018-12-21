@@ -1,7 +1,7 @@
 package com.iota.iri.network;
 
-import com.iota.iri.MilestoneTracker;
-import com.iota.iri.TransactionValidator;
+import com.iota.iri.validator.MilestoneTracker;
+import com.iota.iri.validator.TransactionValidator;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;

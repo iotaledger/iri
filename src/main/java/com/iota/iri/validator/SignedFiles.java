@@ -1,4 +1,4 @@
-package com.iota.iri;
+package com.iota.iri.validator;
 
 import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.ISS;

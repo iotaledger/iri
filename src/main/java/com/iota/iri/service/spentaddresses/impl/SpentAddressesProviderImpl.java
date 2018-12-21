@@ -7,13 +7,18 @@ import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.storage.Tangle;
+
+import java.io.*;
+import java.util.Collection;
+import java.util.List;
+
+import org.apache.commons.io.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
-
 public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     private static final Logger log = LoggerFactory.getLogger(SpentAddressesProviderImpl.class);
+    private static final String SNAPSHOT_SPENTADDRESSES_FILE = ".snapshot.spentaddresses";
 
     private Tangle tangle;
 
@@ -38,7 +43,8 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
 
         for (String previousEpochsSpentAddressesFile : config.getPreviousEpochSpentAddressesFiles().split(" ")) {
             try {
-                readSpentAddressesFromStream(SpentAddressesProviderImpl.class.getResourceAsStream(previousEpochsSpentAddressesFile));
+                readSpentAddressesFromStream(
+                        SpentAddressesProviderImpl.class.getResourceAsStream(previousEpochsSpentAddressesFile));
             } catch (SpentAddressesException e) {
                 log.error("failed to read spent addresses from " + previousEpochsSpentAddressesFile, e);
             }
@@ -46,9 +52,10 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     }
 
     private void readLocalSpentAddresses() {
-        String pathToLocalStateFile = config.getLocalSnapshotsBasePath() + ".snapshot.spentaddresses";
+        String pathToLocalStateFile = config.getLocalSnapshotsBasePath() + SNAPSHOT_SPENTADDRESSES_FILE;
         try {
-            readSpentAddressesFromStream(new FileInputStream(config.getLocalSnapshotsBasePath() + ".snapshot.spentaddresses"));
+            readSpentAddressesFromStream(
+                    new FileInputStream(config.getLocalSnapshotsBasePath() + SNAPSHOT_SPENTADDRESSES_FILE));
         } catch (Exception e) {
             log.error("failed to read spent addresses from " + pathToLocalStateFile, e);
         }
@@ -84,7 +91,17 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     }
 
     @Override
-    public void writeSpentAddressesToDisk(String basePath) {
-        // TODO: iterate over db and dump file
+    public void writeSpentAddressesToDisk(String basePath) throws SpentAddressesException {
+        try {
+            Collection<Hash> addressHashes = getAllSpentAddresses();
+            File snapshotFile = new File(config.getLocalSnapshotsBasePath() + SNAPSHOT_SPENTADDRESSES_FILE);
+            FileUtils.writeLines(snapshotFile, addressHashes, false);
+        } catch (Exception e) {
+            throw new SpentAddressesException("Failed to dump spent addresses to disk", e);
+        }
+    }
+
+    private List<Hash> getAllSpentAddresses() {
+        return tangle.loadAllKeysFromTable(SpentAddress.class, HashFactory.ADDRESS::create);
     }
 }

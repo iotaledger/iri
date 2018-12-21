@@ -1,24 +1,26 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.model.*;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.StateDiff;
 import com.iota.iri.model.persistables.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.Pair;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.lang3.SystemUtils;
-import org.rocksdb.*;
-import org.rocksdb.util.SizeUnit;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.lang3.SystemUtils;
+import org.rocksdb.*;
+import org.rocksdb.util.SizeUnit;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class RocksDBPersistenceProvider implements PersistenceProvider {
 
@@ -358,6 +360,19 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public void clearMetadata(Class<?> column) throws Exception {
         log.info("Deleting: {} metadata", column.getSimpleName());
         flushHandle(metadataReference.get(column));
+    }
+
+    @Override
+    public List<byte[]> loadAllKeysFromTable(Class<? extends Persistable> column) {
+        List<byte[]> keyBytes = new ArrayList<>();
+
+        ColumnFamilyHandle columnFamilyHandle = classTreeMap.get(column);
+        try (RocksIterator iterator = db.newIterator(columnFamilyHandle)) {
+            for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
+                keyBytes.add(iterator.key());
+            }
+        }
+        return keyBytes;
     }
 
     private void flushHandle(ColumnFamilyHandle handle) throws RocksDBException {

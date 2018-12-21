@@ -7,5 +7,5 @@ public interface SpentAddressesProvider {
 
     void addAddress(Hash addressHash) throws SpentAddressesException;
 
-    void writeSpentAddressesToDisk(String basePath);
+    void writeSpentAddressesToDisk(String basePath) throws SpentAddressesException;
 }

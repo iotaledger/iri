@@ -816,7 +816,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
-                "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt";
+                "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt " +
+                        "/previousEpochsSpentAddresses3.txt";
         long GLOBAL_SNAPSHOT_TIME = 1545469620;
         int MILESTONE_START_INDEX = 933_210;
         int NUM_KEYS_IN_MILESTONE = 20;

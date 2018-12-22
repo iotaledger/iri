@@ -4,13 +4,7 @@ import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotMetaData;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.SnapshotState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.iota.iri.service.snapshot.*;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -18,6 +12,9 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates a data provider for the two {@link Snapshot} instances that are relevant for the node.<br />
@@ -48,7 +45,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     /**
      * Snapshot index that is used to verify the builtin snapshot signature.
      */
-    private static final int SNAPSHOT_INDEX = 9;
+    private static final int SNAPSHOT_INDEX = 10;
 
     /**
      * Logger for this class allowing us to dump debug and status messages.

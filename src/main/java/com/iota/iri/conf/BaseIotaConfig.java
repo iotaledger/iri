@@ -490,9 +490,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--local-snapshots-pruning-delay"}, description =
             SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
     protected void setLocalSnapshotsPruningDelay(int localSnapshotsPruningDelay) {
-        if (localSnapshotsPruningDelay < 0) {
-            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be positive (found " +
-                    localSnapshotsPruningDelay +")");
+        if (localSnapshotsPruningDelay < Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be at least " 
+                    + Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN 
+                    + "(found " + localSnapshotsPruningDelay +")");
         }
 
         this.localSnapshotsPruningDelay = localSnapshotsPruningDelay;
@@ -540,9 +541,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @JsonProperty
     @Parameter(names = {"--local-snapshots-depth"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DEPTH)
     protected void setLocalSnapshotsDepth(int localSnapshotsDepth) {
-        if (localSnapshotsDepth < 50) {
-            throw new ParameterException("LOCAL_SNAPSHOTS_DEPTH should be at least 50 (found " +
-                    localSnapshotsDepth +")");
+        if (localSnapshotsDepth < Defaults.LOCAL_SNAPSHOTS_DEPTH_MIN) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_DEPTH should be at least "
+                    + Defaults.LOCAL_SNAPSHOTS_DEPTH_MIN
+                    + "(found " + localSnapshotsDepth +")");
         }
 
         this.localSnapshotsDepth = localSnapshotsDepth;
@@ -802,11 +804,15 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
         boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = true;
+        
         int LOCAL_SNAPSHOTS_PRUNING_DELAY = 50000;
+        int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 40000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
         int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 1000;
-        String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         int LOCAL_SNAPSHOTS_DEPTH = 100;
+        int LOCAL_SNAPSHOTS_DEPTH_MIN = 100;
+        
+        String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =

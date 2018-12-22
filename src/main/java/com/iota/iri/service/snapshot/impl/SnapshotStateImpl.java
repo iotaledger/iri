@@ -16,6 +16,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -112,6 +113,10 @@ public class SnapshotStateImpl implements SnapshotState {
             if (balances.computeIfPresent(addressHash, (hash, aLong) -> balance + aLong) == null) {
                 balances.putIfAbsent(addressHash, balance);
             }
+
+            if (balances.get(addressHash) == 0) {
+                balances.remove(addressHash);
+            }
         });
     }
 
@@ -128,6 +133,24 @@ public class SnapshotStateImpl implements SnapshotState {
                 .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return new SnapshotStateImpl(patchedBalances);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClass(), balances);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+
+        if (obj == null || !getClass().equals(obj.getClass())) {
+            return false;
+        }
+
+        return Objects.equals(balances, ((SnapshotStateImpl) obj).balances);
     }
 
     /**

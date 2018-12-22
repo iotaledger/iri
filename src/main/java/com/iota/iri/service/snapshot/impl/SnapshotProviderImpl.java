@@ -4,13 +4,7 @@ import com.iota.iri.SignedFiles;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotMetaData;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.SnapshotState;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.iota.iri.service.snapshot.*;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -19,8 +13,22 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
- * Implements the basic contract of the {@link SnapshotProvider} interface.
+ * Creates a data provider for the two {@link Snapshot} instances that are relevant for the node.<br />
+ * <br />
+ * It provides access to the two relevant {@link Snapshot} instances:<br />
+ * <ul>
+ *     <li>
+ *         the {@link #initialSnapshot} (the starting point of the ledger based on the last global or local Snapshot)
+ *     </li>
+ *     <li>
+ *         the {@link #latestSnapshot} (the state of the ledger after applying all changes up till the latest confirmed
+ *         milestone)
+ *     </li>
+ * </ul>
  */
 public class SnapshotProviderImpl implements SnapshotProvider {
     /**
@@ -37,7 +45,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     /**
      * Snapshot index that is used to verify the builtin snapshot signature.
      */
-    private static final int SNAPSHOT_INDEX = 9;
+    private static final int SNAPSHOT_INDEX = 10;
 
     /**
      * Logger for this class allowing us to dump debug and status messages.
@@ -56,7 +64,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     /**
      * Holds Snapshot related configuration parameters.
      */
-    private final SnapshotConfig config;
+    private SnapshotConfig config;
 
     /**
      * Internal property for the value returned by {@link SnapshotProvider#getInitialSnapshot()}.
@@ -69,21 +77,28 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     private Snapshot latestSnapshot;
 
     /**
-     * Creates a data provider for the two {@link Snapshot} instances that are relevant for the node.
-     *
-     * It provides access to the two relevant {@link Snapshot} instances:
-     *
-     *     - the initial {@link Snapshot} (the starting point of the ledger based on the last global or local Snapshot)
-     *     - the latest {@link Snapshot} (the state of the ledger after applying all changes up till the latest
-     *       confirmed milestone)
+     * This method initializes the instance and registers its dependencies.<br />
+     * <br />
+     * It simply stores the passed in values in their corresponding private properties and loads the snapshots.<br />
+     * <br />
+     * Note: Instead of handing over the dependencies in the constructor, we register them lazy. This allows us to have
+     *       circular dependencies because the instantiation is separated from the dependency injection. To reduce the
+     *       amount of code that is necessary to correctly instantiate this class, we return the instance itself which
+     *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
+     *       <br />
+     *       {@code snapshotProvider = new SnapshotProviderImpl().init(...);}
      *
      * @param config Snapshot related configuration parameters
      * @throws SnapshotException if anything goes wrong while trying to read the snapshots
+     * @return the initialized instance itself to allow chaining
+     *
      */
-    public SnapshotProviderImpl(SnapshotConfig config) throws SnapshotException {
+    public SnapshotProviderImpl init(SnapshotConfig config) throws SnapshotException {
         this.config = config;
 
         loadSnapshots();
+
+        return this;
     }
 
     /**
@@ -146,7 +161,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             initialSnapshot = loadBuiltInSnapshot();
         }
 
-        latestSnapshot = new SnapshotImpl(initialSnapshot);
+        latestSnapshot = initialSnapshot.clone();
     }
 
     /**
@@ -186,7 +201,8 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * Loads the builtin snapshot (last global snapshot) that is embedded in the jar.
+     * Loads the builtin snapshot (last global snapshot) that is embedded in the jar (if a different path is provided it
+     * can also load from the disk).
      *
      * We first verify the integrity of the snapshot files by checking the signature of the files and then construct
      * a {@link Snapshot} from the retrieved information.
@@ -212,7 +228,12 @@ public class SnapshotProviderImpl implements SnapshotProvider {
                 throw new SnapshotException("failed to validate the signature of the builtin snapshot file", e);
             }
 
-            SnapshotState snapshotState = readSnapshotStateFromJAR(config.getSnapshotFile());
+            SnapshotState snapshotState;
+            try {
+                snapshotState = readSnapshotStateFromJAR(config.getSnapshotFile());
+            } catch (SnapshotException e) {
+                snapshotState = readSnapshotStatefromFile(config.getSnapshotFile());
+            }
             if (!snapshotState.hasCorrectSupply()) {
                 throw new SnapshotException("the snapshot state file has an invalid supply");
             }
@@ -235,7 +256,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
             );
         }
 
-        return new SnapshotImpl(builtinSnapshot);
+        return builtinSnapshot.clone();
     }
 
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////

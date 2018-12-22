@@ -1,8 +1,9 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.MilestoneTracker;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.storage.Tangle;
 
@@ -14,28 +15,32 @@ import com.iota.iri.storage.Tangle;
 public class EntryPointSelectorImpl implements EntryPointSelector {
 
     private final Tangle tangle;
-    private final MilestoneTracker milestoneTracker;
+    private final SnapshotProvider snapshotProvider;
+    private final LatestMilestoneTracker latestMilestoneTracker;
 
     /**
      * Constructor for Entry Point Selector
      * @param tangle Tangle object which acts as a database interface.
-     * @param milestoneTracker  instance of the milestone tracker, used to get latest milestone.
+     * @param snapshotProvider accesses snapshots of the ledger state
+     * @param latestMilestoneTracker  used to get latest milestone.
      */
-    public EntryPointSelectorImpl(Tangle tangle, MilestoneTracker milestoneTracker) {
+    public EntryPointSelectorImpl(Tangle tangle, SnapshotProvider snapshotProvider,
+            LatestMilestoneTracker latestMilestoneTracker) {
         this.tangle = tangle;
-        this.milestoneTracker = milestoneTracker;
+        this.snapshotProvider = snapshotProvider;
+        this.latestMilestoneTracker = latestMilestoneTracker;
     }
 
     @Override
     public Hash getEntryPoint(int depth) throws Exception {
-        int milestoneIndex = Math.max(milestoneTracker.latestSolidSubtangleMilestoneIndex - depth - 1,
-                milestoneTracker.getMilestoneStartIndex());
+        int milestoneIndex = Math.max(snapshotProvider.getLatestSnapshot().getIndex() - depth - 1,
+                snapshotProvider.getInitialSnapshot().getIndex());
         MilestoneViewModel milestoneViewModel = MilestoneViewModel.findClosestNextMilestone(tangle, milestoneIndex,
-                milestoneTracker.latestMilestoneIndex);
+                latestMilestoneTracker.getLatestMilestoneIndex());
         if (milestoneViewModel != null && milestoneViewModel.getHash() != null) {
             return milestoneViewModel.getHash();
         }
 
-        return milestoneTracker.latestSolidSubtangleMilestone;
+        return snapshotProvider.getLatestSnapshot().getHash();
     }
 }

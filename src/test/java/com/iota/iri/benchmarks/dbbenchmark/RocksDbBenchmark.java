@@ -15,7 +15,7 @@ public class RocksDbBenchmark {
     @Benchmark
     public void persistOneByOne(EmptyState state) throws Exception {
         for (TransactionViewModel tvm: state.getTransactions()) {
-            tvm.store(state.getTangle());
+            tvm.store(state.getTangle(), state.getSnapshotProvider().getInitialSnapshot());
         }
     }
 

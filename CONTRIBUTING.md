@@ -1,5 +1,8 @@
 ## How to contribute to IRI
 
+#### **How should a Pull Request look like**?
+Before creating a PR make sure you have read the entire contributing guideline. Ensure the PR description clearly describes the problem and solution by following the template. It is best to discuss your changes in an issue before creating the PR. A PR should address a **specific concern**. If it addresses more than one concern it **should be split**. Small PRs get merged in faster. Very large PRs are difficult to review and test. This makes them less likely to be merged.
+
 #### **Did you find a bug?**
 
 * **Do not open a GitHub issue if the bug is a security vulnerability
@@ -12,8 +15,6 @@
 #### **Did you write a patch that fixes a bug?**
 
 * [New issues](https://github.com/iotaledger/iri/issues/new) should be used for reporting issues. If you already wrote a patch for an issue that you or someone else reported, make sure you link it to the open issue. You can do this by mentioning the issue number in the comment or description on the PR, for example `#123` to link issue "123". 
-
-* Ensure the PR description clearly describes the problem and solution. Very large PRs are difficult to review and test. This makes them less likely to be merged. If possible, split the PR into multiple PRs, each addressing a specific concern or scenario. Only make the code changes necessary to address the actual issue.
 
 #### **Do you intend to add a new feature or change an existing one?**
 

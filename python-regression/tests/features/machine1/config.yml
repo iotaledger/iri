@@ -1,0 +1,14 @@
+defaults: &db_1
+  db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/testnet_files.tgz
+  db_checksum: 6eaa06d5442416b7b8139e337a1598d2bae6a7f55c2d9d01f8c5dac69c004f75
+
+seeds: # For internal use by the regression system. 
+    - SEED
+    - SIID
+
+nodes:
+  nodeA: #name
+    <<: *db_1
+  
+  nodeB:
+    <<: *db_1

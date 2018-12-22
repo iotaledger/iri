@@ -2,8 +2,9 @@ package com.iota.iri;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.controllers.TransactionViewModelTest;
-import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.TransactionHash;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -40,7 +41,7 @@ public class TransactionTestUtils {
     public static TransactionViewModel createTransactionWithTrytes(String trytes) {
         String expandedTrytes  = expandTrytes(trytes);
         byte[] trits = Converter.allocatingTritsFromTrytes(expandedTrytes);
-        return new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURLP81, trits));
+        return new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
     }
 
     public static TransactionViewModel createTransactionWithTrunkAndBranch(String trytes, Hash trunk, Hash branch) {
@@ -50,7 +51,21 @@ public class TransactionTestUtils {
                 TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branch.trits(), 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
                 TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
-        return new TransactionViewModel(trits, Hash.calculate(SpongeFactory.Mode.CURLP81, trits));
+        return new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
+    }
+
+    public static String nextWord(String trytes) {
+        if ("".equals(trytes)) {
+            return "A";
+        }
+        char[] chars = trytes.toUpperCase().toCharArray();
+        for (int i = chars.length -1; i>=0; --i) {
+            if (chars[i] != 'Z') {
+                ++chars[i];
+                return new String(chars);
+            }
+        }
+        return trytes + 'A';
     }
 
     private static String expandTrytes(String trytes) {

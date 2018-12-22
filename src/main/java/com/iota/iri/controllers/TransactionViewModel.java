@@ -1,6 +1,13 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.model.*;
+import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Approvee;
+import com.iota.iri.model.persistables.Bundle;
+import com.iota.iri.model.persistables.ObsoleteTag;
+import com.iota.iri.model.persistables.Tag;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -11,7 +18,7 @@ import java.util.*;
 
 public class TransactionViewModel {
 
-    private final com.iota.iri.model.Transaction transaction;
+    private final Transaction transaction;
 
     public static final int SIZE = 1604;
     private static final int TAG_SIZE_IN_BYTES = 17; // = ceil(81 TRITS / 5 TRITS_PER_BYTE)
@@ -56,16 +63,13 @@ public class TransactionViewModel {
     public int weightMagnitude;
 
     public static void fillMetadata(Tangle tangle, TransactionViewModel transactionViewModel) throws Exception {
-        if (Hash.NULL_HASH.equals(transactionViewModel.getHash())) {
-            return;
-        }
         if(transactionViewModel.getType() == FILLED_SLOT && !transactionViewModel.transaction.parsed) {
             tangle.saveBatch(transactionViewModel.getMetadataSaveBatch());
         }
     }
 
     public static TransactionViewModel find(Tangle tangle, byte[] hash) throws Exception {
-        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), new Hash(hash));
+        TransactionViewModel transactionViewModel = new TransactionViewModel((Transaction) tangle.find(Transaction.class, hash), HashFactory.TRANSACTION.create(hash));
         fillMetadata(tangle, transactionViewModel);
         return transactionViewModel;
     }
@@ -80,42 +84,38 @@ public class TransactionViewModel {
         return tangle.maybeHas(Transaction.class, hash);
     }
 
-    public TransactionViewModel(final Transaction transaction, final Hash hash) {
+    public TransactionViewModel(final Transaction transaction, Hash hash) {
         this.transaction = transaction == null || transaction.bytes == null ? new Transaction(): transaction;
         this.hash = hash == null? Hash.NULL_HASH: hash;
         weightMagnitude = this.hash.trailingZeros();
     }
 
     public TransactionViewModel(final byte[] trits, Hash hash) {
+        transaction = new Transaction();
+
         if(trits.length == 8019) {
-            transaction = new com.iota.iri.model.Transaction();
             this.trits = new byte[trits.length];
             System.arraycopy(trits, 0, this.trits, 0, trits.length);
             transaction.bytes = Converter.allocateBytesForTrits(trits.length);
             Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
-            this.hash = hash;
 
-            transaction.type = FILLED_SLOT;
-
-            weightMagnitude = this.hash.trailingZeros();
             transaction.validity = 0;
             transaction.arrivalTime = 0;
-        }
-        else {
-            transaction = new Transaction();
+        } else {
             transaction.bytes = new byte[SIZE];
             System.arraycopy(trits, 0, transaction.bytes, 0, SIZE);
-            this.hash = hash;
-            weightMagnitude = this.hash.trailingZeros();
-            transaction.type = FILLED_SLOT;
         }
+
+        this.hash = hash;
+        weightMagnitude = this.hash.trailingZeros();
+        transaction.type = FILLED_SLOT;
     }
 
     public static int getNumberOfStoredTransactions(Tangle tangle) throws Exception {
         return tangle.getCount(Transaction.class).intValue();
     }
 
-    public boolean update(Tangle tangle, String item) throws Exception {
+    public boolean update(Tangle tangle, Snapshot initialSnapshot, String item) throws Exception {
         getAddressHash();
         getTrunkTransactionHash();
         getBranchTransactionHash();
@@ -124,7 +124,7 @@ public class TransactionViewModel {
         getObsoleteTagValue();
         setAttachmentData();
         setMetadata();
-        if(hash.equals(Hash.NULL_HASH)) {
+        if (initialSnapshot.hasSolidEntryPoint(hash)) {
             return false;
         }
         return tangle.update(transaction, hash, item);
@@ -199,8 +199,8 @@ public class TransactionViewModel {
         return null;
     }
 
-    public boolean store(Tangle tangle) throws Exception {
-        if (hash.equals(Hash.NULL_HASH) || exists(tangle, hash)) {
+    public boolean store(Tangle tangle, Snapshot initialSnapshot) throws Exception {
+        if (initialSnapshot.hasSolidEntryPoint(hash) || exists(tangle, hash)) {
             return false;
         }
 
@@ -257,7 +257,7 @@ public class TransactionViewModel {
 
     public Hash getAddressHash() {
         if(transaction.address == null) {
-            transaction.address = new Hash(trits(), ADDRESS_TRINARY_OFFSET);
+            transaction.address = HashFactory.ADDRESS.create(trits(), ADDRESS_TRINARY_OFFSET);
         }
         return transaction.address;
     }
@@ -267,28 +267,28 @@ public class TransactionViewModel {
             byte[] tagBytes = Converter.allocateBytesForTrits(OBSOLETE_TAG_TRINARY_SIZE);
             Converter.bytes(trits(), OBSOLETE_TAG_TRINARY_OFFSET, tagBytes, 0, OBSOLETE_TAG_TRINARY_SIZE);
 
-            transaction.obsoleteTag = new Hash(tagBytes, 0, TAG_SIZE_IN_BYTES);
+            transaction.obsoleteTag = HashFactory.OBSOLETETAG.create(tagBytes, 0, TAG_SIZE_IN_BYTES);
         }
         return transaction.obsoleteTag;
     }
 
     public Hash getBundleHash() {
         if(transaction.bundle == null) {
-            transaction.bundle = new Hash(trits(), BUNDLE_TRINARY_OFFSET);
+            transaction.bundle = HashFactory.BUNDLE.create(trits(), BUNDLE_TRINARY_OFFSET);
         }
         return transaction.bundle;
     }
 
     public Hash getTrunkTransactionHash() {
         if(transaction.trunk == null) {
-            transaction.trunk = new Hash(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET);
+            transaction.trunk = HashFactory.TRANSACTION.create(trits(), TRUNK_TRANSACTION_TRINARY_OFFSET);
         }
         return transaction.trunk;
     }
 
     public Hash getBranchTransactionHash() {
         if(transaction.branch == null) {
-            transaction.branch = new Hash(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET);
+            transaction.branch = HashFactory.TRANSACTION.create(trits(), BRANCH_TRANSACTION_TRINARY_OFFSET);
         }
         return transaction.branch;
     }
@@ -297,7 +297,7 @@ public class TransactionViewModel {
         if(transaction.tag == null) {
             byte[] tagBytes = Converter.allocateBytesForTrits(TAG_TRINARY_SIZE);
             Converter.bytes(trits(), TAG_TRINARY_OFFSET, tagBytes, 0, TAG_TRINARY_SIZE);
-            transaction.tag = new Hash(tagBytes, 0, TAG_SIZE_IN_BYTES);
+            transaction.tag = HashFactory.TAG.create(tagBytes, 0, TAG_SIZE_IN_BYTES);
         }
         return transaction.tag;
     }
@@ -315,10 +315,10 @@ public class TransactionViewModel {
         return transaction.value;
     }
 
-    public void setValidity(Tangle tangle, int validity) throws Exception {
+    public void setValidity(Tangle tangle, Snapshot initialSnapshot, int validity) throws Exception {
         if(transaction.validity != validity) {
             transaction.validity = validity;
-            update(tangle, "validity");
+            update(tangle, initialSnapshot, "validity");
         }
     }
 
@@ -372,17 +372,17 @@ public class TransactionViewModel {
         return tangle.keysWithMissingReferences(Approvee.class, Transaction.class);
     }
 
-    public static void updateSolidTransactions(Tangle tangle, final Set<Hash> analyzedHashes) throws Exception {
+    public static void updateSolidTransactions(Tangle tangle, Snapshot initialSnapshot, final Set<Hash> analyzedHashes) throws Exception {
         Iterator<Hash> hashIterator = analyzedHashes.iterator();
         TransactionViewModel transactionViewModel;
         while(hashIterator.hasNext()) {
             transactionViewModel = TransactionViewModel.fromHash(tangle, hashIterator.next());
 
-            transactionViewModel.updateHeights(tangle);
+            transactionViewModel.updateHeights(tangle, initialSnapshot);
 
             if(!transactionViewModel.isSolid()) {
                 transactionViewModel.updateSolid(true);
-                transactionViewModel.update(tangle, "solid|height");
+                transactionViewModel.update(tangle, initialSnapshot, "solid|height");
             }
         }
     }
@@ -403,11 +403,43 @@ public class TransactionViewModel {
         return transaction.snapshot;
     }
 
-    public void setSnapshot(Tangle tangle, final int index) throws Exception {
+    public void setSnapshot(Tangle tangle, Snapshot initialSnapshot, final int index) throws Exception {
         if ( index != transaction.snapshot ) {
             transaction.snapshot = index;
-            update(tangle, "snapshot");
+            update(tangle, initialSnapshot, "snapshot");
         }
+    }
+
+    /**
+     * This method is the setter for the milestone flag of a transaction.
+     *
+     * It gets automatically called by the "Latest Milestone Tracker" and marks transactions that represent a milestone
+     * accordingly. It first checks if the value has actually changed and then issues a database update.
+     *
+     * @param tangle Tangle instance which acts as a database interface
+     * @param initialSnapshot the snapshot representing the starting point of our ledger
+     * @param isMilestone true if the transaction is a milestone and false otherwise
+     * @throws Exception if something goes wrong while saving the changes to the database
+     */
+    public void isMilestone(Tangle tangle, Snapshot initialSnapshot, final boolean isMilestone) throws Exception {
+        if (isMilestone != transaction.milestone) {
+            transaction.milestone = isMilestone;
+            update(tangle, initialSnapshot, "milestone");
+        }
+    }
+
+    /**
+     * This method is the getter for the milestone flag of a transaction.
+     *
+     * The milestone flag indicates if the transaction is a coordinator issued milestone. It allows us to differentiate
+     * the two types of transactions (normal transactions / milestones) very fast and efficiently without issuing
+     * further database queries or even full verifications of the signature. If it is set to true one can for example
+     * use the snapshotIndex() method to retrieve the corresponding MilestoneViewModel object.
+     *
+     * @return true if the transaction is a milestone and false otherwise
+     */
+    public boolean isMilestone() {
+        return transaction.milestone;
     }
 
     public long getHeight() {
@@ -418,11 +450,11 @@ public class TransactionViewModel {
         transaction.height = height;
     }
 
-    public void updateHeights(Tangle tangle) throws Exception {
+    public void updateHeights(Tangle tangle, Snapshot initialSnapshot) throws Exception {
         TransactionViewModel transactionVM = this, trunk = this.getTrunkTransaction(tangle);
         Stack<Hash> transactionViewModels = new Stack<>();
         transactionViewModels.push(transactionVM.getHash());
-        while(trunk.getHeight() == 0 && trunk.getType() != PREFILLED_SLOT && !trunk.getHash().equals(Hash.NULL_HASH)) {
+        while(trunk.getHeight() == 0 && trunk.getType() != PREFILLED_SLOT && !initialSnapshot.hasSolidEntryPoint(trunk.getHash())) {
             transactionVM = trunk;
             trunk = transactionVM.getTrunkTransaction(tangle);
             transactionViewModels.push(transactionVM.getHash());
@@ -430,17 +462,17 @@ public class TransactionViewModel {
         while(transactionViewModels.size() != 0) {
             transactionVM = TransactionViewModel.fromHash(tangle, transactionViewModels.pop());
             long currentHeight = transactionVM.getHeight();
-            if(Hash.NULL_HASH.equals(trunk.getHash()) && trunk.getHeight() == 0
-                    && !Hash.NULL_HASH.equals(transactionVM.getHash())) {
+            if(initialSnapshot.hasSolidEntryPoint(trunk.getHash()) && trunk.getHeight() == 0
+                    && !initialSnapshot.hasSolidEntryPoint(transactionVM.getHash())) {
                 if(currentHeight != 1L ){
                     transactionVM.updateHeight(1L);
-                    transactionVM.update(tangle, "height");
+                    transactionVM.update(tangle, initialSnapshot, "height");
                 }
             } else if ( trunk.getType() != PREFILLED_SLOT && transactionVM.getHeight() == 0){
                 long newHeight = 1L + trunk.getHeight();
                 if(currentHeight != newHeight) {
                     transactionVM.updateHeight(newHeight);
-                    transactionVM.update(tangle, "height");
+                    transactionVM.update(tangle, initialSnapshot, "height");
                 }
             } else {
                 break;
@@ -471,5 +503,17 @@ public class TransactionViewModel {
     @Override
     public int hashCode() {
         return Objects.hash(getHash());
+    }
+
+    /**
+     * This method creates a human readable string representation of the transaction.
+     *
+     * It can be used to directly append the transaction in error and debug messages.
+     *
+     * @return human readable string representation of the transaction
+     */
+    @Override
+    public String toString() {
+        return "transaction " + hash.toString();
     }
 }

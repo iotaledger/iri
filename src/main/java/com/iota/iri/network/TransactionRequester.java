@@ -2,6 +2,7 @@ package com.iota.iri.network;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
@@ -29,16 +30,18 @@ public class TransactionRequester {
 
     private final Object syncObj = new Object();
     private final Tangle tangle;
+    private final SnapshotProvider snapshotProvider;
 
-    public TransactionRequester(Tangle tangle, MessageQ messageQ) {
+    public TransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ) {
         this.tangle = tangle;
+        this.snapshotProvider = snapshotProvider;
         this.messageQ = messageQ;
     }
 
-    public void init(double p_REMOVE_REQUEST) {
+    public void init(double pRemoveRequest) {
         if(!initialized) {
             initialized = true;
-            P_REMOVE_REQUEST = p_REMOVE_REQUEST;
+            P_REMOVE_REQUEST = pRemoveRequest;
         }
     }
 
@@ -62,7 +65,7 @@ public class TransactionRequester {
     }
 
     public void requestTransaction(Hash hash, boolean milestone) throws Exception {
-        if (!hash.equals(Hash.NULL_HASH) && !TransactionViewModel.exists(tangle, hash)) {
+        if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(hash) && !TransactionViewModel.exists(tangle, hash)) {
             synchronized (syncObj) {
                 if(milestone) {
                     transactionsToRequest.remove(hash);
@@ -74,6 +77,22 @@ public class TransactionRequester {
                 }
             }
         }
+    }
+
+    /**
+     * This method allows to check if a transaction was requested by the TransactionRequester.
+     *
+     * It can for example be used to determine if a transaction that was received by the node was actively requested
+     * while i.e. solidifying transactions or if a transaction arrived due to the gossip protocol.
+     *
+     * @param transactionHash hash of the transaction to check
+     * @param milestoneRequest flag that indicates if the hash was requested by a milestone request
+     * @return true if the transaction is in the set of transactions to be requested and false otherwise
+     */
+    public boolean isTransactionRequested(Hash transactionHash, boolean milestoneRequest) {
+        return (milestoneRequest && milestoneTransactionsToRequest.contains(transactionHash))
+                || (!milestoneRequest && milestoneTransactionsToRequest.contains(transactionHash) ||
+                transactionsToRequest.contains(transactionHash));
     }
 
     private boolean transactionsToRequestIsFull() {

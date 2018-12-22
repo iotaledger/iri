@@ -1,7 +1,8 @@
 package com.iota.iri.utils;
 
-import com.iota.iri.model.Hash;
 import org.apache.commons.lang3.StringUtils;
+
+import com.iota.iri.model.Hash;
 
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
@@ -51,4 +52,8 @@ public class IotaUtils {
         }
         return Collections.unmodifiableList(setters);
     }
+
+	public static <T> List<T> createImmutableList(T... values) {
+		return Collections.unmodifiableList(Arrays.asList(values));
+	}
 }

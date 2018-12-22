@@ -11,7 +11,10 @@
 .classpath
 .project
 *.class
-target/*
+target/
+mainnet.log/
+mainnetdb/
+bin/
 *.iri
 *.jar
 src/main/ixi/

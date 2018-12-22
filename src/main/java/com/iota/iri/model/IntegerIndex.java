@@ -3,9 +3,6 @@ package com.iota.iri.model;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Serializer;
 
-/**
- * Created by paul on 5/6/17.
- */
 public class IntegerIndex implements Indexable{
     int value;
     public IntegerIndex(int value) {
@@ -42,5 +39,23 @@ public class IntegerIndex implements Indexable{
     public int compareTo(Indexable o) {
         IntegerIndex i = new IntegerIndex(Serializer.getInteger(o.bytes()));
         return value - ((IntegerIndex) o).value;
+    }
+
+    @Override
+    public int hashCode() {
+        return value;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj == this) {
+            return true;
+        }
+
+        if (!(obj instanceof IntegerIndex)) {
+            return false;
+        }
+
+        return ((IntegerIndex) obj).value == value;
     }
 }

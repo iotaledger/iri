@@ -1,6 +1,13 @@
 package com.iota.iri.storage.rocksDB;
 
 import com.iota.iri.model.*;
+import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Approvee;
+import com.iota.iri.model.persistables.Bundle;
+import com.iota.iri.model.persistables.Milestone;
+import com.iota.iri.model.persistables.ObsoleteTag;
+import com.iota.iri.model.persistables.Tag;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
@@ -144,7 +151,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                 if (db.get(otherHandle, iterator.key()) == null) {
                     indexables = indexables == null ? new HashSet<>() : indexables;
-                    indexables.add(new Hash(iterator.key()));
+                    indexables.add(HashFactory.GENERIC.create(model, iterator.key()));
                 }
             }
             return indexables == null ? Collections.emptySet() : Collections.unmodifiableSet(indexables);
@@ -186,12 +193,12 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         Set<Indexable> keys = null;
         if (handle != null) {
             try (RocksIterator iterator = db.newIterator(handle)) {
-                iterator.seek(new Hash(value, 0, value.length).bytes());
+                iterator.seek(HashFactory.GENERIC.create(modelClass, value, 0, value.length).bytes());
 
                 byte[] found;
                 while (iterator.isValid() && keyStartsWithValue(value, found = iterator.key())) {
                     keys = keys == null ? new HashSet<>() : keys;
-                    keys.add(new Hash(found));
+                    keys.add(HashFactory.GENERIC.create(modelClass, found));
                     iterator.next();
                 }
             }
@@ -329,7 +336,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                     ColumnFamilyHandle handle = classTreeMap.get(entry.hi);
                     writeBatch.remove(handle, keyBytes);
                     ColumnFamilyHandle metadataHandle = metadataReference.get(entry.hi);
-                    if (metadataReference != null) {
+                    if (metadataHandle != null) {
                         writeBatch.remove(metadataHandle, keyBytes);
                     }
                 });

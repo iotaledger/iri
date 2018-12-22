@@ -42,7 +42,7 @@ public class IRI {
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
-    public static final String VERSION = "1.6.0-RC10";
+    public static final String VERSION = "1.6.0-RC11";
 
     /**
      * The entry point of IRI.

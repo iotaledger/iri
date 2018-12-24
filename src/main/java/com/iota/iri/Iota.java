@@ -159,9 +159,10 @@ public class Iota {
         // TODO use factory
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestoneTracker);
         if(BaseIotaConfig.getInstance().getEntryPointSelector().equals("KATZ")) {
-            entryPointSelector = new EntryPointSelectorKatz(tangle);
+            entryPointSelector = new EntryPointSelectorKatz(tangle, null);
         }
-        
+
+        // TODO use factory
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
         if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("CUM_EDGE_WEIGHT")){
             ratingCalculator = new CumulativeWeightWithEdgeCalculator(tangle);

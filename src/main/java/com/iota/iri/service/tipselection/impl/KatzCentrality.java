@@ -15,7 +15,7 @@ import com.iota.iri.controllers.ApproveeViewModel;
 import org.apache.commons.collections4.CollectionUtils;
 import java.util.*;
 
-class KatzCentrality
+public class KatzCentrality
 {
     public static final double DEFAULT_ALPHA = 1.0;
     public static final double DEFAULT_BETA = 1.0;

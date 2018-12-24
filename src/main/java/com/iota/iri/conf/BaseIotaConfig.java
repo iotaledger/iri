@@ -52,6 +52,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     //Node
     protected boolean wasmSupport = Defaults.WASM_SUPPORT;
+    protected boolean streamingGraphSupport = Defaults.STREAMING_GRAPH_SUPPORT;
 
     //DB
     protected String dbPath = Defaults.DB_PATH;
@@ -699,6 +700,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.wasmSupport = wasmSupport;
     }
 
+    @Override
+    public boolean getStreamingGraphSupport() {
+        return streamingGraphSupport;
+    }
+
+    @JsonProperty("STREAMING_GRAPH")
+    @Parameter(names = "--enable-streaming-graph", description = NodeConfig.Descriptions.STREAMING_GRAPH)
+    public void setStreamingGraphSupport(Boolean streamingGraphSupport) {
+        this.streamingGraphSupport = streamingGraphSupport;
+    }
 
     @Override
     public double getAlpha() {
@@ -802,6 +813,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         // Node
         boolean WASM_SUPPORT = false;
+        boolean STREAMING_GRAPH_SUPPORT = false;
 
         //DB
         String DB_PATH = "mainnetdb";

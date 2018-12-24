@@ -44,6 +44,7 @@ for i in range(0, len(ip_pubs)):
             'sudo docker rm iota-node'])
     call(["pssh", "-i", "-H", "ubuntu@"+ip_pub, "-x", "\"-oStrictHostKeyChecking=no\"", "-x", "-i%s/gitlocal/dag.pem"%os.path.expanduser("~"), \
             'echo udp://%s:14600 > ~/iota/run_time/neighbors'%pvt_ip_master])
+    break
 
     prev=""
     nxt=""

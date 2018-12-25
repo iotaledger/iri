@@ -32,6 +32,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
+    protected boolean enableRemoteAuth = Defaults.ENABLE_REMOTE_AUTH;
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
@@ -247,6 +248,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--remote-auth"}, description = APIConfig.Descriptions.REMOTE_AUTH)
     protected void setRemoteAuth(String remoteAuth) {
         this.remoteAuth = remoteAuth;
+    }
+
+    @Override
+    public boolean getEnableRemoteAuth() {
+        return enableRemoteAuth;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--enable-remote-auth"}, description = APIConfig.Descriptions.ENABLE_REMOTE_AUTH)
+    protected void setEnableRemoteAuth(boolean enableRemoteAuth) {
+        this.enableRemoteAuth = enableRemoteAuth;
     }
 
     @Override
@@ -798,6 +810,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_GET_TRYTES = 10_000;
         int MAX_BODY_LENGTH = 1_000_000;
         String REMOTE_AUTH = "";
+        boolean ENABLE_REMOTE_AUTH = false;
 
         //Network
         int UDP_RECEIVER_PORT = 14600;

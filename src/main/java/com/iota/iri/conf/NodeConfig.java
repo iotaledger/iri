@@ -10,7 +10,10 @@ public interface NodeConfig extends ProtocolConfig, NetworkConfig {
 
     boolean getWASMSupport();
 
+    boolean getStreamingGraphSupport();
+
     interface Descriptions {
-        String ENABLE_WASMVM = "If enabling the WASM virtual machine or not";
+        String ENABLE_WASMVM = "If enabling the WASM virtual machine or not.";
+        String STREAMING_GRAPH = "If enabling streaming graph computation or not.";
     }
 }

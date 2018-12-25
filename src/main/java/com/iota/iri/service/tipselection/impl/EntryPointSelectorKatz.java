@@ -3,8 +3,10 @@ package com.iota.iri.service.tipselection.impl;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.model.TransactionHash;
@@ -20,6 +22,7 @@ import java.io.PrintStream;
 public class EntryPointSelectorKatz implements EntryPointSelector {
 
     private final Tangle tangle;
+    private LocalInMemoryGraphProvider localGraph;
 
     public HashMap<Hash, Double> score;
     HashMap<Hash, Set<Hash>> graph;
@@ -31,27 +34,33 @@ public class EntryPointSelectorKatz implements EntryPointSelector {
 
     public EntryPointSelectorKatz(Tangle tangle, HashMap<Hash, String> nMap) {
         this.tangle = tangle;
+        
         graph = new HashMap<>();
         revGraph = new HashMap<>();
         degs = new HashMap<>();
         topOrder = new HashMap<>();
         totalDepth = 0;
         this.nameMap = nMap;
+        localGraph = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
     }
 
     @Override
     public Hash getEntryPoint(int depth) throws Exception {
-        buildGraph();
-        
-        Hash ret;
-        try {
-            KatzCentrality centrality = new KatzCentrality(graph, 0.5);
-            score = centrality.compute();
-        } catch(Exception e) {
-            e.printStackTrace(new PrintStream(System.out));
+        Hash ret = null;
+        if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
+            localGraph.computeToplogicalOrder();
+            localGraph.computeScore();
+            ret = localGraph.getPivotalHash(depth);
+        } else {
+            buildGraph();
+            try {
+                KatzCentrality centrality = new KatzCentrality(graph, 0.5);
+                score = centrality.compute();
+            } catch(Exception e) {
+                e.printStackTrace(new PrintStream(System.out));
+            }
+            ret = getPivotalHash(depth);
         }
-
-        ret = getPivotalHash(depth);
         return ret;
     }
 

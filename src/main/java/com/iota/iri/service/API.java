@@ -213,7 +213,9 @@ public class API {
 
             if (instance.configuration.getRemoteLimitApi().contains(command) &&
                     !sourceAddress.getAddress().isLoopbackAddress()) {
-                return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+                if(BaseIotaConfig.getInstance().getEnableRemoteAuth()) {
+                    return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+                }
             }
 
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);

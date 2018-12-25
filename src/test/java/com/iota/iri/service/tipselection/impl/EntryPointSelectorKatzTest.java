@@ -47,6 +47,7 @@ public class EntryPointSelectorKatzTest {
         tangle1.shutdown();
         tangle2.shutdown();
         dbFolder.delete();
+        BaseIotaConfig.getInstance().setStreamingGraphSupport(false);
     }
 
     @BeforeClass
@@ -87,15 +88,6 @@ public class EntryPointSelectorKatzTest {
         H = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(E.getHash(),
                     F.getHash()), getRandomTransactionHash());
 
-        A.store(tangle1);
-        B.store(tangle1);
-        C.store(tangle1);
-        D.store(tangle1);
-        E.store(tangle1);
-        F.store(tangle1);
-        G.store(tangle1);
-        H.store(tangle1);
-
         HashMap<Hash, String> tag = new HashMap<Hash, String>();
         tag.put(A.getHash(), "A");
         tag.put(B.getHash(), "B");
@@ -105,6 +97,16 @@ public class EntryPointSelectorKatzTest {
         tag.put(F.getHash(), "F");
         tag.put(G.getHash(), "G");
         tag.put(H.getHash(), "H");
+        LocalInMemoryGraphProvider.setNameMap(tag);
+
+        A.store(tangle1);
+        B.store(tangle1);
+        D.store(tangle1);
+        C.store(tangle1);
+        E.store(tangle1);
+        F.store(tangle1);
+        G.store(tangle1);
+        H.store(tangle1);
 
         // Compute without streaming graph
         BaseIotaConfig.getInstance().setStreamingGraphSupport(false);
@@ -117,7 +119,6 @@ public class EntryPointSelectorKatzTest {
         Assert.assertEquals(tag.get(B.getHash()),tag.get(ret));
 
         // Compute with streaming graph
-        LocalInMemoryGraphProvider.setNameMap(tag);
         BaseIotaConfig.getInstance().setStreamingGraphSupport(true);
         ret = selector1.getEntryPoint(-1);
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));

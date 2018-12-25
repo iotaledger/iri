@@ -23,10 +23,12 @@ import java.io.*;
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider
 {
     static HashMap<Hash, Double>       score;
-    public static HashMap<Hash, Set<Hash>>    graph;
+    static HashMap<Hash, Set<Hash>>    graph;
     static HashMap<Hash, Set<Hash>>    revGraph;
     static HashMap<Hash, Integer>      degs;
     static HashMap<Integer, Set<Hash>> topOrder;
+    static HashMap<Integer, Set<Hash>> topOrderStreaming;
+    static HashMap<Hash, Integer>      lvlMap;
     static HashMap<Hash, String>       nameMap;
     static int                         totalDepth;
 
@@ -37,6 +39,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         revGraph = new HashMap<>();
         degs = new HashMap<>();
         topOrder = new HashMap<>();
+        lvlMap = new HashMap<>();
+        topOrderStreaming = new HashMap<>();
         totalDepth = 0;
     }
 
@@ -189,10 +193,31 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 if(degs.get(branch) == null) {
                     degs.put(branch, 0);
                 }
+                updateTopologicalOrder(key, trunk, branch);
+                
                 break;
             }
         }
         return true;
+    }
+
+    private void updateTopologicalOrder(Hash vet, Hash trunk, Hash branch) {
+        if(topOrderStreaming.isEmpty()) {
+            topOrderStreaming.put(1, new HashSet<>());
+            topOrderStreaming.get(1).add(vet);
+            lvlMap.put(vet, 1);
+            totalDepth = 1;
+            return;
+        } else {
+            int trunkLevel = lvlMap.get(trunk);
+            int branchLevel = lvlMap.get(branch);
+            int lvl = Math.min(trunkLevel, branchLevel) +1;
+            if(topOrderStreaming.get(lvl)==null) {
+                topOrderStreaming.put(lvl, new HashSet<>());
+            }
+            topOrderStreaming.get(lvl).add(vet);
+            lvlMap.put(vet, lvl);
+        }
     }
 
     public void computeToplogicalOrder() {
@@ -244,12 +269,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         Hash ret = null;
         printGraph(graph);
         if(depth == -1) {
-            Set<Hash> set = topOrder.get(1);
+            Set<Hash> set = topOrderStreaming.get(1);
             ret = set.iterator().next();
             return ret;
         }
         // TODO if the same score, choose randomly
-        Set<Hash> hashsOnLevel = topOrder.get(totalDepth-depth);
+        Set<Hash> hashsOnLevel = topOrderStreaming.get(totalDepth-depth);
         double maxScore = 0;
         for(Hash h : hashsOnLevel) {
             if(score.get(h)>=maxScore){

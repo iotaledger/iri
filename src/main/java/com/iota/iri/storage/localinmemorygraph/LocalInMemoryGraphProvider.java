@@ -41,6 +41,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         topOrder = new HashMap<>();
         lvlMap = new HashMap<>();
         topOrderStreaming = new HashMap<>();
+        score = new HashMap<>();
         totalDepth = 0;
     }
 
@@ -194,7 +195,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     degs.put(branch, 0);
                 }
                 updateTopologicalOrder(key, trunk, branch);
-                
+                updateScore(key);
                 break;
             }
         }
@@ -214,9 +215,21 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             int lvl = Math.min(trunkLevel, branchLevel) +1;
             if(topOrderStreaming.get(lvl)==null) {
                 topOrderStreaming.put(lvl, new HashSet<>());
+                totalDepth++;
             }
             topOrderStreaming.get(lvl).add(vet);
             lvlMap.put(vet, lvl);
+        }
+    }
+
+    private void updateScore(Hash vet) {
+        score.put(vet, 1.0/(score.size()+1));
+        try {
+            KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
+            centrality.setScore(score);
+            score = centrality.compute();
+        } catch(Exception e) {
+            e.printStackTrace(new PrintStream(System.out));
         }
     }
 
@@ -257,7 +270,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public void computeScore() {
         try {
-            KatzCentrality centrality = new KatzCentrality(graph, 0.5);
+            KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
             score = centrality.compute();
         } catch(Exception e) {
             e.printStackTrace(new PrintStream(System.out));
@@ -267,14 +280,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     public Hash getPivotalHash(int depth)
     {
         Hash ret = null;
-        printGraph(graph);
         if(depth == -1) {
             Set<Hash> set = topOrderStreaming.get(1);
             ret = set.iterator().next();
             return ret;
         }
+
         // TODO if the same score, choose randomly
-        Set<Hash> hashsOnLevel = topOrderStreaming.get(totalDepth-depth);
+        Set<Hash> hashsOnLevel = topOrderStreaming.get(totalDepth-depth+1);
         double maxScore = 0;
         for(Hash h : hashsOnLevel) {
             if(score.get(h)>=maxScore){
@@ -326,6 +339,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     {
         for(Integer key : topOrder.keySet())
         {
+            System.out.print(key+": ");
             for(Hash val : topOrder.get(key))
             {
                 if(nameMap != null) {
@@ -333,6 +347,17 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 } else {
                     System.out.println(val+" ");
                 }
+            }
+            System.out.println();
+        }
+    }
+
+    void printScore() {
+        for(Hash key : score.keySet()) {
+            if(nameMap != null) {
+                System.out.print(nameMap.get(key)+":"+score.get(key));
+            } else {
+                System.out.print(key+":"+score.get(key));
             }
             System.out.println();
         }

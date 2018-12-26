@@ -48,8 +48,6 @@ public class EntryPointSelectorKatz implements EntryPointSelector {
     public Hash getEntryPoint(int depth) throws Exception {
         Hash ret = null;
         if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
-            localGraph.computeToplogicalOrder();
-            localGraph.computeScore();
             ret = localGraph.getPivotalHash(depth);
         } else {
             buildGraph();
@@ -138,7 +136,6 @@ public class EntryPointSelectorKatz implements EntryPointSelector {
             if(!degs.containsKey(h) || degs.get(h) == 0) {
                 bfsQ.addLast(h);
                 level.put(h, 0);
-                //visited.add(h);
                 break;
             }
         }

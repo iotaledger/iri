@@ -55,7 +55,7 @@ public class KatzCentralityTest {
         g.get(F).add(A);
         g.get(F).add(D);
 
-        KatzCentrality  cent = new KatzCentrality(g, 0.5, 0.1);
+        KatzCentrality  cent = new KatzCentrality(g, null, 0.5, 0.1);
         HashMap<Hash, Double> centrality = cent.compute();
 
         Assert.assertEquals(0.595, centrality.get(A), 0.001);

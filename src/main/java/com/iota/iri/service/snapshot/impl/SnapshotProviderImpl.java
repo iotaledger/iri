@@ -121,35 +121,37 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     /**
      * {@inheritDoc}<br />
      * <br />
-     * It first writes two temporary files and then renames them to avoid corruption of the written files in case of IRI
-     * crashes.<br />
+     * It first writes two temporary files, then renames the current files by appending them with a ".bkp" extension and
+     * finally renames the temporary files. This mechanism reduces the chances of the files getting corrupted if IRI
+     * crashes during the snapshot creation and always leaves the node operator with a set of backup files that can be
+     * renamed to resume node operation prior to the failed snapshot.<br />
+     * <br />
+     * Note: We create the temporary files in the same folder as the "real" files to allow the operating system to
+     *       perform a "rename" instead of a "copy" operation.<br />
      */
     @Override
     public void writeSnapshotToDisk(Snapshot snapshot, String basePath) throws SnapshotException {
         snapshot.lockRead();
 
-        File tmpStateFile = null;
-        File tmpMetaFile = null;
         try {
-            tmpStateFile = File.createTempFile("iri.", ".snapshot.state");
-            tmpMetaFile = File.createTempFile("iri.", ".snapshot.meta");
+            // write new temp files
+            writeSnapshotStateToDisk(snapshot, basePath + ".snapshot.state.tmp");
+            writeSnapshotMetaDataToDisk(snapshot, basePath + ".snapshot.meta.tmp");
 
-            writeSnapshotStateToDisk(snapshot, tmpStateFile.getAbsolutePath());
-            writeSnapshotMetaDataToDisk(snapshot, tmpMetaFile.getAbsolutePath());
+            // rename current files by appending ".bkp"
+            if (new File(basePath + ".snapshot.state").exists()) {
+                Files.move(Paths.get(basePath + ".snapshot.state"), Paths.get(basePath + ".snapshot.state.bkp"),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+            if (new File(basePath + ".snapshot.meta").exists()) {
+                Files.move(Paths.get(basePath + ".snapshot.meta"), Paths.get(basePath + ".snapshot.meta.bkp"),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
 
-            Files.move(Paths.get(tmpStateFile.getAbsolutePath()), Paths.get(basePath + ".snapshot.state"),
-                    StandardCopyOption.ATOMIC_MOVE);
-            Files.move(Paths.get(tmpMetaFile.getAbsolutePath()), Paths.get(basePath + ".snapshot.meta"),
-                    StandardCopyOption.ATOMIC_MOVE);
+            // rename temp files to their final name
+            Files.move(Paths.get(basePath + ".snapshot.state.tmp"), Paths.get(basePath + ".snapshot.state"));
+            Files.move(Paths.get(basePath + ".snapshot.meta.tmp"), Paths.get(basePath + ".snapshot.meta"));
         } catch (IOException e) {
-            // issue a delete for both temp files - just to be safe and not pollute the temp folder
-            if (tmpStateFile != null) {
-                tmpStateFile.delete();
-            }
-            if (tmpMetaFile != null) {
-                tmpMetaFile.delete();
-            }
-
             throw new SnapshotException("failed to write snapshot files", e);
         } finally {
             snapshot.unlockRead();

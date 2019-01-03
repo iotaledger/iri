@@ -1,5 +1,6 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.model.AddressHash;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Address;
 import com.iota.iri.storage.Indexable;
@@ -59,7 +60,7 @@ public class AddressViewModel implements HashesViewModel {
      * @throws Exception Thrown if the database fails to return a first object
      */
     public static AddressViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Address.class, Hash.class);
+        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Address.class, AddressHash.class);
         if(bundlePair != null && bundlePair.hi != null) {
             return new AddressViewModel((Address) bundlePair.hi, (Hash) bundlePair.low);
         }

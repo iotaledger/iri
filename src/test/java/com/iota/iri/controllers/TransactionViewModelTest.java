@@ -402,6 +402,16 @@ public class TransactionViewModelTest {
         log.info("Done. #TX: {}", TransactionViewModel.getNumberOfStoredTransactions(tangle));
     }
 
+    @Test
+    public void firstShouldFindTx() throws Exception {
+        byte[] trits = getRandomTransactionTrits();
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
+        transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
+
+        TransactionViewModel result = TransactionViewModel.first(tangle);
+        Assert.assertEquals(transactionViewModel.getHash(), result.getHash());
+    }
+
     private Transaction getRandomTransaction(Random seed) {
         Transaction transaction = new Transaction();
 

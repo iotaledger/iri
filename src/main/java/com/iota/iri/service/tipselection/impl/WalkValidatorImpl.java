@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /**
- * Implementation of <tt>WalkValidator</tt> that checks consistency of the ledger as part of validity checks.
+ * Implementation of {@link WalkValidator} that checks consistency of the ledger as part of validity checks.
  *
  *     A transaction is only valid if:
  *      <ol>
@@ -32,12 +32,19 @@ public class WalkValidatorImpl implements WalkValidator {
     private final LedgerService ledgerService;
     private final TipSelConfig config;
 
-
     private Set<Hash> maxDepthOkMemoization;
     private Map<Hash, Long> myDiff;
     private Set<Hash> myApprovedHashes;
 
-    public WalkValidatorImpl(Tangle tangle, SnapshotProvider snapshotProvider, LedgerService ledgerService, TipSelConfig config) {
+    /**
+     * Constructor of Walk Validator
+     * @param tangle Tangle object which acts as a database interface.
+     * @param snapshotProvider grants access to snapshots od the ledger state.
+     * @param ledgerService allows to perform ledger related logic.
+     * @param config configurations to set internal parameters.
+     */
+    public WalkValidatorImpl(Tangle tangle, SnapshotProvider snapshotProvider, LedgerService ledgerService,
+                             TipSelConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.ledgerService = ledgerService;

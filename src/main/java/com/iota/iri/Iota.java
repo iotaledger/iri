@@ -25,6 +25,7 @@ import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.ZmqPublishProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -126,17 +127,13 @@ public class Iota {
         spentAddressesService = new SpentAddressesServiceImpl();
         snapshotProvider = new SnapshotProviderImpl();
         snapshotService = new SnapshotServiceImpl();
-        localSnapshotManager = configuration.getLocalSnapshotsEnabled()
-                             ? new LocalSnapshotManagerImpl()
-                             : null;
+        localSnapshotManager = null;
         milestoneService = new MilestoneServiceImpl();
         latestMilestoneTracker = new LatestMilestoneTrackerImpl();
         latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
         seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
         milestoneSolidifier = new MilestoneSolidifierImpl();
-        transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
-                          ? new AsyncTransactionPruner()
-                          : null;
+        transactionPruner = null;
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code

@@ -18,12 +18,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * 
+ *
  * Main IOTA Reference Implementation (IRI) starting class.
  * <p>
  *     The IRI software enables the Tangle to operate. Individuals can run IRI to operates Nodes.
- *     The Node running the IRI software enables your device to communicate with neighbors 
- *     in the peer-to-peer network that the Tangle operates on. 
+ *     The Node running the IRI software enables your device to communicate with neighbors
+ *     in the peer-to-peer network that the Tangle operates on.
  * </p>
  * <p>
  *     IRI implements all the core functionality necessary for participating in an IOTA network as a full node.
@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
  *         <li>Loading custom modules that extend the API.</li>
  *     </ul>
  * </p>
- * 
+ *
  * @see <a href="https://docs.iota.org/iri">Online documentation on iri</a>
  */
 public class IRI {
@@ -48,13 +48,13 @@ public class IRI {
      * The entry point of IRI.
      * Starts by configuring the logging settings, then proceeds to {@link IRILauncher#main(String[])}
      * The log level is set to INFO by default.
-     * 
+     *
      * @param args Configuration arguments. See {@link BaseIotaConfig} for a list of all options.
      * @throws Exception If we fail to start the IRI launcher.
      */
     public static void main(String[] args) throws Exception {
         // Logging is configured first before any references to Logger or LoggerFactory.
-        // Any public method or field accessors needed in IRI should be put in IRI and then delegate to IRILauncher. 
+        // Any public method or field accessors needed in IRI should be put in IRI and then delegate to IRILauncher.
         // That ensures that future code does not need to know about this setup.
         configureLogging();
         IRILauncher.main(args);
@@ -98,11 +98,11 @@ public class IRI {
          *     <li>Load the configuration.</li>
          *     <li>Create {@link Iota}, {@link IXI} and {@link API}.</li>
          *     <li>Listen for node shutdown.</li>
-         *     <li>Initialize {@link Iota}, {@link IXI} and {@link API} using their <tt>init()</tt> methods.</li> 
-         * </ul> 
-         * 
+         *     <li>Initialize {@link Iota}, {@link IXI} and {@link API} using their <tt>init()</tt> methods.</li>
+         * </ul>
+         *
          * If no exception is thrown, the node starts synchronizing with the network, and the API can be used.
-         * 
+         *
          * @param args Configuration arguments. See {@link BaseIotaConfig} for a list of all options.
          * @throws Exception If any of the <tt>init()</tt> methods failed to initialize.
          */

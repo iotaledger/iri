@@ -9,6 +9,7 @@ import com.iota.iri.service.snapshot.*;
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -118,15 +119,38 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc}<br />
+     * <br />
+     * It first writes two temporary files and then renames them to avoid corruption of the written files in case of IRI
+     * crashes.<br />
      */
     @Override
     public void writeSnapshotToDisk(Snapshot snapshot, String basePath) throws SnapshotException {
         snapshot.lockRead();
 
+        File tmpStateFile = null;
+        File tmpMetaFile = null;
         try {
-            writeSnapshotStateToDisk(snapshot, basePath + ".snapshot.state");
-            writeSnapshotMetaDataToDisk(snapshot, basePath + ".snapshot.meta");
+            tmpStateFile = File.createTempFile("iri.", ".snapshot.state");
+            tmpMetaFile = File.createTempFile("iri.", ".snapshot.meta");
+
+            writeSnapshotStateToDisk(snapshot, tmpStateFile.getAbsolutePath());
+            writeSnapshotMetaDataToDisk(snapshot, tmpMetaFile.getAbsolutePath());
+
+            Files.move(Paths.get(tmpStateFile.getAbsolutePath()), Paths.get(basePath + ".snapshot.state"),
+                    StandardCopyOption.ATOMIC_MOVE);
+            Files.move(Paths.get(tmpMetaFile.getAbsolutePath()), Paths.get(basePath + ".snapshot.meta"),
+                    StandardCopyOption.ATOMIC_MOVE);
+        } catch (IOException e) {
+            // issue a delete for both temp files - just to be safe and not pollute the temp folder
+            if (tmpStateFile != null) {
+                tmpStateFile.delete();
+            }
+            if (tmpMetaFile != null) {
+                tmpMetaFile.delete();
+            }
+
+            throw new SnapshotException("failed to write snapshot files", e);
         } finally {
             snapshot.unlockRead();
         }

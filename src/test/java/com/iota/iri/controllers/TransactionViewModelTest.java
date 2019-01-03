@@ -11,9 +11,9 @@ import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -36,8 +36,8 @@ public class TransactionViewModelTest {
 
     private static final Random seed = new Random();
 
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
@@ -48,8 +48,8 @@ public class TransactionViewModelTest {
         snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         tangle.shutdown();
         snapshotProvider.shutdown();
         dbFolder.delete();

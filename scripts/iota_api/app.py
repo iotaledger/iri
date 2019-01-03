@@ -53,7 +53,7 @@ def post_contract():
         return 'request error'
     print("now come here to post contract")
 
-    cache.cache_txn_in_tangle(req_json['ipfs_addr'], TagGenerator.get_current_tag("SC"))
+    cache.cache_txn_in_tangle_simple(req_json['ipfs_addr'], TagGenerator.get_current_tag("SC"))
     return 'ok'
 
 @app.route('/post_action', methods=['POST'])
@@ -63,7 +63,7 @@ def post_action():
     if req_json is None:
         return 'request error'
 
-    cache.cache_txn_in_tangle(req_json['ipfs_addr'], TagGenerator.get_current_tag("SA"))
+    cache.cache_txn_in_tangle_simple(req_json['ipfs_addr'], TagGenerator.get_current_tag("SA"))
     return 'ok'
 
 @app.route('/put_contract', methods=['PUT'])

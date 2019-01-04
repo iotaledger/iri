@@ -45,6 +45,75 @@ def put_file():
 
     return 'ok'
 
+json_list = []
+flag = 0
+start_time = time.time()
+WAIT_TIME = 10
+COLLECT_TIME = 2000
+LIST_LEN = 100
+
+@app.route('/put_cache', methods=['POST'])
+def put_cache():
+    global json_list
+    global flag
+    global start_time
+
+    # check flag, if busy, wait for 10s
+    if flag == 0:
+        flag = 1
+    else:
+        wait_time = 0
+        while 1:
+            time.sleep(1)
+            wait_time += 1
+            if flag == 0:
+                flag = 1
+                break
+            if wait_time >= WAIT_TIME:
+                return 'error'
+
+    # timer
+    global timer_thread
+    timer_thread = threading.Timer(300, put_cache)
+    timer_thread.start()
+
+    # time
+    now = time.time()
+
+    # get json
+    req_json = request.get_json()
+    if req_json is None:
+        flag = 0
+        return 'error'
+
+    # cache in local list
+    req_json["timestamp"] = str(time.time())
+    json_list.append(json.dumps(req_json, sort_keys=True))
+
+    if len(json_list) < LIST_LEN and now - start_time < COLLECT_TIME:
+        print("[INFO]Cache json %s locally." % (json.dumps(req_json, sort_keys=True)))
+        flag = 0
+        return 'ok'
+
+    filename = 'jsons'
+    f = open(filename, 'w')
+    for i in json_list:
+        f.write(i)
+        f.flush()
+    f.close()
+
+    ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
+    print("[INFO]Cache jsons in ipfs, the hash is %s." % (ipfs_hash))
+
+    cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag("TA"))
+    print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag("TR")))
+
+    json_list[:] = []
+    start_time = now
+    flag = 0
+
+    return 'ok'
+
 @app.route('/post_contract', methods=['POST'])
 def post_contract():
     req_json = request.get_json()

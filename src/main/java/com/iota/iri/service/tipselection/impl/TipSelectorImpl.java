@@ -1,7 +1,8 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.LedgerValidator;
-import com.iota.iri.MilestoneTracker;
+import com.iota.iri.validator.LedgerValidator;
+import com.iota.iri.validator.MilestoneTracker;
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
@@ -81,6 +82,9 @@ public class TipSelectorImpl implements TipSelector {
             //random walk
             List<Hash> tips = new LinkedList<>();
             WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, milestoneTracker, config);
+            if(BaseIotaConfig.getInstance().getWalkValidator().equals("NULL")){
+                walkValidator = new WalkValidatorNull();
+            }
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 

@@ -1,5 +1,6 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,6 +20,17 @@ public class Tangle {
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
+    }
+
+    public PersistenceProvider getPersistenceProvider(String provider) {
+        if(provider.equals("LOCAL_GRAPH")) {
+            for(PersistenceProvider prov : this.persistenceProviders) {
+                if(prov.getClass().equals(LocalInMemoryGraphProvider.class)) {
+                    return prov;
+                }
+            }
+        }
+        return null;
     }
 
     public void init() throws Exception {

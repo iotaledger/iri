@@ -2,6 +2,7 @@ package com.iota.iri.service;
 
 import com.iota.iri.*;
 import com.iota.iri.conf.APIConfig;
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.ConsensusConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
@@ -19,6 +20,7 @@ import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
+import com.iota.iri.validator.*;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -58,6 +60,9 @@ import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
 
 import static io.undertow.Handlers.path;
+
+import java.io.*;
+import java.net.*;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -208,7 +213,9 @@ public class API {
 
             if (instance.configuration.getRemoteLimitApi().contains(command) &&
                     !sourceAddress.getAddress().isLoopbackAddress()) {
-                return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+                if(BaseIotaConfig.getInstance().getEnableRemoteAuth()) {
+                    return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
+                }
             }
 
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
@@ -685,6 +692,64 @@ public class API {
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(instance.tangle, "sender");
             }
+
+            if(BaseIotaConfig.getInstance().getWASMSupport()) {
+                // execute branch
+                TransactionViewModel branch = transactionViewModel.getBranchTransaction(instance.tangle);
+                String branchTagVal = new String(branch.getTagValue().toString()).substring(18,20);
+                if(branchTagVal.equals("MB") || branchTagVal.equals("KB")) {
+                    String msg = Converter.trytes(branch.getSignature());
+                    log.info("execute contract: {}", msg);
+                    executeContract(msg, branchTagVal);
+                }    
+
+                // execute trunk
+                TransactionViewModel trunk = transactionViewModel.getTrunkTransaction(instance.tangle);
+                String trunkTagVal = new String(trunk.getTagValue().toString()).substring(18,20);
+                if(trunkTagVal.equals("MB") || trunkTagVal.equals("KB")) {
+                    String msg = Converter.trytes(trunk.getSignature());
+                    log.info("execute contract: {}", msg);
+                    executeContract(msg, trunkTagVal);
+                }    
+            }
+        }
+    }
+
+    private void executeContract(String msg, String tagVal) {
+        try {
+            URL url = new URL("http://localhost:5000/put_contract");
+            if(tagVal.equals("KB")) {
+                url = new URL("http://localhost:5000/put_action");
+            }    
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setDoOutput(true);
+            conn.setRequestMethod("PUT");
+            conn.setRequestProperty("Content-Type", "application/json");
+            String input = "{\"ipfs_addr\" :\"" + msg + "\"}";
+            OutputStream os = conn.getOutputStream();
+            os.write(input.getBytes());
+            os.flush();
+            if (conn.getResponseCode() != HttpURLConnection.HTTP_OK) {
+                throw new RuntimeException("Failed : HTTP error code : "
+                        + conn.getResponseCode());
+            }
+            BufferedReader br = new BufferedReader(new InputStreamReader(
+                        (conn.getInputStream())));
+            String output;
+            log.info("Output from Server .... \n");
+            while ((output = br.readLine()) != null) {
+                log.info(output);
+            }
+            conn.disconnect();
+        } catch (MalformedURLException e) {
+            log.info("MalformedURLException {}", e);
+            e.printStackTrace();
+        } catch (IOException e) {
+            log.info("IOException {}", e);
+            e.printStackTrace();
+        }
+        catch (Exception e) {
+            log.info("Exception {}", e);
         }
     }
 

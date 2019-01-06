@@ -32,6 +32,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
+    protected boolean enableRemoteAuth = Defaults.ENABLE_REMOTE_AUTH;
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
@@ -49,6 +50,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     //IXI
     protected String ixiDir = Defaults.IXI_DIR;
+
+    //Node
+    protected boolean wasmSupport = Defaults.WASM_SUPPORT;
+    protected boolean streamingGraphSupport = Defaults.STREAMING_GRAPH_SUPPORT;
 
     //DB
     protected String dbPath = Defaults.DB_PATH;
@@ -79,6 +84,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected double alpha = Defaults.ALPHA;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
     private String weightCalAlgo = Defaults.WEIGHT_CAL_ALGO;
+    private String entryPointSelAlgo = Defaults.ENTRY_POINT_CAL_ALGO;
+    private String walkValidator = Defaults.WALK_VALIDATOR;
+    private String ledgerValidator = Defaults.LEDGER_VALIDATOR;
+
 
     //PearlDiver
     protected int powThreads = Defaults.POW_THREADS;
@@ -239,6 +248,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--remote-auth"}, description = APIConfig.Descriptions.REMOTE_AUTH)
     protected void setRemoteAuth(String remoteAuth) {
         this.remoteAuth = remoteAuth;
+    }
+
+    @Override
+    public boolean getEnableRemoteAuth() {
+        return enableRemoteAuth;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--enable-remote-auth"}, description = APIConfig.Descriptions.ENABLE_REMOTE_AUTH)
+    protected void setEnableRemoteAuth(boolean enableRemoteAuth) {
+        this.enableRemoteAuth = enableRemoteAuth;
     }
 
     @Override
@@ -682,6 +702,28 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public boolean getWASMSupport() {
+        return wasmSupport;
+    }
+
+    @JsonProperty("ENABLE_WASM")
+    @Parameter(names = "--enable-wasm", description = NodeConfig.Descriptions.ENABLE_WASMVM)
+    protected void getWASMSupport(Boolean wasmSupport) {
+        this.wasmSupport = wasmSupport;
+    }
+
+    @Override
+    public boolean getStreamingGraphSupport() {
+        return streamingGraphSupport;
+    }
+
+    @JsonProperty("STREAMING_GRAPH")
+    @Parameter(names = "--enable-streaming-graph", description = NodeConfig.Descriptions.STREAMING_GRAPH)
+    public void setStreamingGraphSupport(Boolean streamingGraphSupport) {
+        this.streamingGraphSupport = streamingGraphSupport;
+    }
+
+    @Override
     public double getAlpha() {
         return alpha;
     }
@@ -715,6 +757,39 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public String getEntryPointSelector() {
+        return entryPointSelAlgo;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--entrypoint-selector-algorithm", description = TipSelConfig.Descriptions.ENTRY_POINT_SEL_ALGO)
+    protected void setEntryPointSelector(String entryPointSelAlgo) {
+        this.entryPointSelAlgo = entryPointSelAlgo;
+    }
+
+    @Override
+    public String getWalkValidator() {
+        return walkValidator;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--walk-validator", description = TipSelConfig.Descriptions.WALK_VALIDATOR)
+    protected void setWalkValidator(String walkValidator) {
+        this.walkValidator = walkValidator;
+    }
+
+    @Override
+    public String getLedgerValidator() {
+        return ledgerValidator;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--ledger-validator", description = TipSelConfig.Descriptions.LEDGER_VALIDATOR)
+    protected void getLedgerValidator(String ledgerValidator) {
+        this.ledgerValidator = ledgerValidator;
+    }
+
+    @Override
     public int getPowThreads() {
         return powThreads;
     }
@@ -735,6 +810,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_GET_TRYTES = 10_000;
         int MAX_BODY_LENGTH = 1_000_000;
         String REMOTE_AUTH = "";
+        boolean ENABLE_REMOTE_AUTH = false;
 
         //Network
         int UDP_RECEIVER_PORT = 14600;
@@ -747,6 +823,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //ixi
         String IXI_DIR = "ixi";
+
+        // Node
+        boolean WASM_SUPPORT = false;
+        boolean STREAMING_GRAPH_SUPPORT = false;
 
         //DB
         String DB_PATH = "mainnetdb";
@@ -781,6 +861,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
         String WEIGHT_CAL_ALGO = "CUM_WEIGHT";
+        String ENTRY_POINT_CAL_ALGO = "DEFAULT";
+        String WALK_VALIDATOR = "DEFAULT";
+        String LEDGER_VALIDATOR = "DEFAULT";
 
         //PearlDiver
         int POW_THREADS = 0;

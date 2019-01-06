@@ -4,13 +4,13 @@ from subprocess import call
 import time
 
 # example usage:
-# python iota_deploy.py pssh_hosts 13.229.64.41 14700 iri-1.5.5.jar
+# python iota_deploy.py pssh_hosts 54.179.133.32 14700 iri-1.5.5.jar StreamNet_v1.0
 
 ipfile       = open(sys.argv[1])
 master       = sys.argv[2]
 master_port  = sys.argv[3]
 iri_jar      = sys.argv[4]
-iri_version  = "test_v"+iri_jar.split('-')[1].replace(".jar", "")
+iri_version  = sys.argv[5] 
 
 ips = ipfile.readlines()
 

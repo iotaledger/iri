@@ -24,6 +24,12 @@ public interface TipSelConfig extends Config {
 
     String getWeightCalAlgo();
 
+    String getWalkValidator();
+
+    String getLedgerValidator();
+
+    String getEntryPointSelector();
+
     interface Descriptions {
 
         String MAX_DEPTH = "The maximal number of previous milestones from where you can perform the random walk";
@@ -32,5 +38,8 @@ public interface TipSelConfig extends Config {
         String BELOW_MAX_DEPTH_TRANSACTION_LIMIT = "The maximal number of unconfirmed transactions that may be analyzed in " +
                 "order to find the latest milestone the transaction that we are stepping on during the walk approves";
         String WEIGHT_CAL_ALGO = "The algorithm used for computing the weight of a transaction when applying tip selection algorithms.";
+        String WALK_VALIDATOR = "The validator that is being chosen.";
+        String LEDGER_VALIDATOR = "The ledger validator logic that is being chosen.";
+        String ENTRY_POINT_SEL_ALGO = "The algorithm being used to select entry point, default using COO (if no COO, will start from genesis).";
     }
 }

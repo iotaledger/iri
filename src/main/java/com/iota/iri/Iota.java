@@ -19,6 +19,7 @@ import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
 import com.iota.iri.service.tipselection.impl.CumulativeWeightWithEdgeCalculator;
 import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
+import com.iota.iri.service.tipselection.impl.EntryPointSelectorKatz;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
 import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
 import com.iota.iri.service.tipselection.impl.WalkerAlpha;
@@ -29,9 +30,12 @@ import com.iota.iri.storage.ZmqPublishProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;;
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import com.iota.iri.validator.*;
+import com.iota.iri.validator.impl.*;
 
 import java.io.IOException;
 import java.security.SecureRandom;
@@ -71,7 +75,7 @@ public class Iota {
                 configuration);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
-        ledgerValidator = new LedgerValidator(tangle, milestoneTracker, transactionRequester, messageQ);
+        ledgerValidator = createLedgerValidator();
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
         tipsSelector = createTipSelector(configuration);
     }
@@ -150,14 +154,21 @@ public class Iota {
         if (configuration.isZmqEnabled()) {
             tangle.addPersistenceProvider(new ZmqPublishProvider(messageQ));
         }
+        if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
+            tangle.addPersistenceProvider(new LocalInMemoryGraphProvider(""));
+        }
     }
 
     private TipSelector createTipSelector(TipSelConfig config) {
+        // TODO use factory
         EntryPointSelector entryPointSelector = new EntryPointSelectorImpl(tangle, milestoneTracker);
-        
+        if(BaseIotaConfig.getInstance().getEntryPointSelector().equals("KATZ")) {
+            entryPointSelector = new EntryPointSelectorKatz(tangle, null);
+        }
+
         // TODO use factory
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
-        if(BaseIotaConfig.getInstance().getWeightCalAlgo() == "CUM_EDGE_WEIGHT"){
+        if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("CUM_EDGE_WEIGHT")){
             ratingCalculator = new CumulativeWeightWithEdgeCalculator(tangle);
         }
 
@@ -165,5 +176,13 @@ public class Iota {
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
         return new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
                 walker, milestoneTracker, config);
+    }
+
+    private LedgerValidator createLedgerValidator() {
+        LedgerValidator validator = new LedgerValidatorImpl(tangle, milestoneTracker, transactionRequester, messageQ);
+        if(BaseIotaConfig.getInstance().getLedgerValidator().equals("NULL")){
+            validator = new LedgerValidatorNull(tangle, milestoneTracker, transactionRequester, messageQ);
+        }
+        return validator;
     }
 }

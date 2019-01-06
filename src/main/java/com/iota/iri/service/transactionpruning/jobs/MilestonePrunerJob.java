@@ -5,6 +5,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJobStatus;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.storage.Indexable;
@@ -12,7 +13,8 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.utils.dag.DAGHelper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a cleanup job for {@link com.iota.iri.service.transactionpruning.TransactionPruner}s that removes
@@ -95,6 +97,11 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
         if (currentIndex > targetIndex) {
             setStatus(TransactionPrunerJobStatus.DONE);
         }
+    }
+
+    @Override
+    public void setSpentAddressesService(SpentAddressesService spentAddressesService) {
+        //Does nothing. Confirmed transactions spent are persisted during the local snapshot.
     }
 
     /**

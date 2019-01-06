@@ -1,8 +1,10 @@
 package com.iota.iri.service.transactionpruning.jobs;
 
+import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJobStatus;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.storage.Indexable;
@@ -10,8 +12,10 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.utils.dag.DAGHelper;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Represents a job for the {@link com.iota.iri.service.transactionpruning.TransactionPruner} that cleans up all
@@ -20,6 +24,8 @@ import java.util.List;
  * It is used to clean up orphaned subtangles when they become irrelevant for the ledger.
  */
 public class UnconfirmedSubtanglePrunerJob extends AbstractTransactionPrunerJob {
+
+    private SpentAddressesService spentAddressesService;
     /**
      * Holds the hash of the transaction that shall have its unconfirmed approvers cleaned.
      */
@@ -48,6 +54,11 @@ public class UnconfirmedSubtanglePrunerJob extends AbstractTransactionPrunerJob 
         this.transactionHash = transactionHash;
     }
 
+    @Override
+    public void setSpentAddressesService(SpentAddressesService spentAddressesService) {
+        this.spentAddressesService = spentAddressesService;
+    }
+
     /**
      * {@inheritDoc}
      *
@@ -59,15 +70,19 @@ public class UnconfirmedSubtanglePrunerJob extends AbstractTransactionPrunerJob 
         if (getStatus() != TransactionPrunerJobStatus.DONE) {
             setStatus(TransactionPrunerJobStatus.RUNNING);
 
+            Collection<TransactionViewModel> unconfirmedTxs = new HashSet<>();
             try {
-                List<Pair<Indexable, ? extends Class<? extends Persistable>>> elementsToDelete = new ArrayList<>();
                 DAGHelper.get(getTangle()).traverseApprovers(
                     transactionHash,
                     approverTransaction -> approverTransaction.snapshotIndex() == 0,
-                    approverTransaction -> elementsToDelete.add(new Pair<>(
-                        approverTransaction.getHash(), Transaction.class
-                    ))
-                );
+                        unconfirmedTxs::add
+                    );
+
+                //Only persist to db
+                spentAddressesService.persistSpentAddresses(unconfirmedTxs);
+                List<Pair<Indexable, ? extends Class<? extends Persistable>>> elementsToDelete = unconfirmedTxs.stream()
+                        .map(tx -> new Pair<>((Indexable) tx.getHash(), Transaction.class))
+                        .collect(Collectors.toList());
 
                 // clean database entries
                 getTangle().deleteBatch(elementsToDelete);

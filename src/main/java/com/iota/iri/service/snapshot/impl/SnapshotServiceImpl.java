@@ -12,6 +12,8 @@ import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
@@ -81,6 +83,10 @@ public class SnapshotServiceImpl implements SnapshotService {
      */
     private SnapshotConfig config;
 
+    private SpentAddressesService spentAddressesService;
+
+    private SpentAddressesProvider spentAddressesProvider;
+
     /**
      * This method initializes the instance and registers its dependencies.<br />
      * <br />
@@ -98,9 +104,14 @@ public class SnapshotServiceImpl implements SnapshotService {
      * @param config important snapshot related configuration parameters
      * @return the initialized instance itself to allow chaining
      */
-    public SnapshotServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config) {
+    public SnapshotServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
+            SpentAddressesService spentAddressesService, SpentAddressesProvider spentAddressesProvider,
+            SnapshotConfig config) {
+
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
+        this.spentAddressesService = spentAddressesService;
+        this.spentAddressesProvider = spentAddressesProvider;
         this.config = config;
 
         return this;
@@ -487,6 +498,16 @@ public class SnapshotServiceImpl implements SnapshotService {
      */
     private void persistLocalSnapshot(SnapshotProvider snapshotProvider, Snapshot newSnapshot, SnapshotConfig config)
             throws SnapshotException {
+
+        try {
+            spentAddressesService.calculateSpentAddresses(snapshotProvider.getInitialSnapshot().getIndex(),
+                    newSnapshot.getIndex());
+
+            spentAddressesProvider.writeSpentAddressesToDisk(config.getLocalSnapshotsBasePath() +
+                    ".snapshot.spentaddresses");
+        } catch (Exception e) {
+            throw new SnapshotException(e);
+        }
 
         snapshotProvider.writeSnapshotToDisk(newSnapshot, config.getLocalSnapshotsBasePath());
 

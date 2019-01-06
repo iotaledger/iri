@@ -1,13 +1,16 @@
 package com.iota.iri.storage;
 
 import com.iota.iri.utils.Pair;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Created by paul on 3/3/17 for iri.
@@ -121,6 +124,23 @@ public class Tangle {
                 }
             }
             return output;
+    }
+
+    public <T extends Indexable> List<T> loadAllKeysFromTable(Class<? extends Persistable> modelClass,
+                                                                     Function<byte[], T> transformer) {
+        List<byte[]> keys = null;
+        for(PersistenceProvider provider: this.persistenceProviders) {
+            if ((keys = provider.loadAllKeysFromTable(modelClass)) != null) {
+                break;
+            }
+        }
+
+        if (keys != null) {
+            return keys.stream()
+                    .map(transformer)
+                    .collect(Collectors.toList());
+        }
+        return null;
     }
 
     public Boolean exists(Class<?> modelClass, Indexable hash) throws Exception {

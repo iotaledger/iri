@@ -16,11 +16,18 @@ import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.impl.LocalSnapshotManagerImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotServiceImpl;
+import com.iota.iri.service.spentaddresses.SpentAddressesException;
+import com.iota.iri.service.spentaddresses.impl.SpentAddressesProviderImpl;
+import com.iota.iri.service.spentaddresses.impl.SpentAddressesServiceImpl;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.storage.*;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.ZmqPublishProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
@@ -66,6 +73,10 @@ import org.slf4j.LoggerFactory;
 public class Iota {
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
+    public final SpentAddressesProviderImpl spentAddressesProvider;
+
+    public final SpentAddressesServiceImpl spentAddressesService;
+
     public final SnapshotProviderImpl snapshotProvider;
 
     public final SnapshotServiceImpl snapshotService;
@@ -108,10 +119,12 @@ public class Iota {
      * @throws SnapshotException If the Snapshot fails to initialize.
      *                           This can happen if the snapshot signature is invalid or the file cannot be read.
      */
-    public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException {
+    public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException, SpentAddressesException {
         this.configuration = configuration;
 
         // new refactored instances
+        spentAddressesProvider = new SpentAddressesProviderImpl();
+        spentAddressesService = new SpentAddressesServiceImpl();
         snapshotProvider = new SnapshotProviderImpl();
         snapshotService = new SnapshotServiceImpl();
         localSnapshotManager = configuration.getLocalSnapshotsEnabled()
@@ -186,9 +199,11 @@ public class Iota {
         }
     }
 
-    private void injectDependencies() throws SnapshotException, TransactionPruningException {
+    private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
+        spentAddressesProvider.init(tangle, configuration);
+        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider);
         snapshotProvider.init(configuration);
-        snapshotService.init(tangle, snapshotProvider, configuration);
+        snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
             localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
         }

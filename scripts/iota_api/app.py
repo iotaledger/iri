@@ -45,60 +45,51 @@ def put_file():
 
     return 'ok'
 
-json_list = []
-flag = 0
-start_time = time.time()
-WAIT_TIME = 10
-COLLECT_TIME = 2000
-LIST_LEN = 100
+
+# txs buffer. dequeue is thread-safe, but it will overwrite early items if buffer is full.
+# TODO: maybe i should implement a 'ring-buffer' class by myself, but for test, dequeue is ok.
+CACHE_SIZE = 10000
+txn_cache = deque(maxlen=CACHE_SIZE)
+
+# timer
+timer_thread = threading.Timer(300, get_cache)
+timer_thread.start()
+
+BATCH_SIZE = 100
 
 @app.route('/put_cache', methods=['POST'])
 def put_cache():
-    global json_list
-    global flag
-    global start_time
-
-    # check flag, if busy, wait for 10s
-    if flag == 0:
-        flag = 1
-    else:
-        wait_time = 0
-        while 1:
-            time.sleep(1)
-            wait_time += 1
-            if flag == 0:
-                flag = 1
-                break
-            if wait_time >= WAIT_TIME:
-                return 'error'
-
-    # timer
-    global timer_thread
-    timer_thread = threading.Timer(300, put_cache)
-    timer_thread.start()
-
     # time
     now = time.time()
+
+    # ring-buffer is full, use 'put_fule' interface, or we can save another buffers
+    if len(txn_cache) >= CACHE_SIZE:
+        put_file()
 
     # get json
     req_json = request.get_json()
     if req_json is None:
-        flag = 0
         return 'error'
-
-    # cache in local list
     req_json["timestamp"] = str(time.time())
-    json_list.append(json.dumps(req_json, sort_keys=True))
 
-    if len(json_list) < LIST_LEN and now - start_time < COLLECT_TIME:
-        print("[INFO]Cache json %s locally." % (json.dumps(req_json, sort_keys=True)))
-        flag = 0
-        return 'ok'
+    # cache in local ring-buffer
+    txn_cache.append(json.dumps(req_json, sort_keys=True))
 
+    return 'ok'
+
+
+@app.route('/get_cache', methods=['POST'])
+def get_cache():
     filename = 'jsons'
     f = open(filename, 'w')
-    for i in json_list:
-        f.write(i)
+
+    nums= min(len(txn_cache), BATCH_SIZE)
+    if nums == 0:
+        return 'ok'
+
+    for i in range(nums):
+        tx = txn_cache.popleft()
+        f.write(tx)
         f.flush()
     f.close()
 
@@ -108,11 +99,8 @@ def put_cache():
     cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag("TA"))
     print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag("TR")))
 
-    json_list[:] = []
-    start_time = now
-    flag = 0
-
     return 'ok'
+
 
 @app.route('/post_contract', methods=['POST'])
 def post_contract():
@@ -125,6 +113,7 @@ def post_contract():
     cache.cache_txn_in_tangle_simple(req_json['ipfs_addr'], TagGenerator.get_current_tag("SC"))
     return 'ok'
 
+
 @app.route('/post_action', methods=['POST'])
 def post_action():
     req_json = request.get_json()
@@ -134,6 +123,7 @@ def post_action():
 
     cache.cache_txn_in_tangle_simple(req_json['ipfs_addr'], TagGenerator.get_current_tag("SA"))
     return 'ok'
+
 
 @app.route('/put_contract', methods=['PUT'])
 def put_contract():
@@ -147,6 +137,7 @@ def put_contract():
     wasm.set_contract(ipfs_addr)
     return 'ok'
 
+
 @app.route('/put_action', methods=['PUT'])
 def put_action():
     req_json = request.get_json()
@@ -158,6 +149,7 @@ def put_action():
     ipfs_addr = msg.decode()
     wasm.exec_action(ipfs_addr)
     return 'ok'
+
 
 if __name__ == '__main__':
     app.run()

@@ -23,11 +23,7 @@ import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.ZmqPublishProvider;
+import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
@@ -127,13 +123,17 @@ public class Iota {
         spentAddressesService = new SpentAddressesServiceImpl();
         snapshotProvider = new SnapshotProviderImpl();
         snapshotService = new SnapshotServiceImpl();
-        localSnapshotManager = null;
+        localSnapshotManager = configuration.getLocalSnapshotsEnabled()
+                             ? new LocalSnapshotManagerImpl()
+                             : null;
         milestoneService = new MilestoneServiceImpl();
         latestMilestoneTracker = new LatestMilestoneTrackerImpl();
         latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
         seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
         milestoneSolidifier = new MilestoneSolidifierImpl();
-        transactionPruner = null;
+        transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
+                          ? new AsyncTransactionPruner()
+                          : null;
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code
@@ -195,9 +195,7 @@ public class Iota {
         }
     }
 
-    private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
-        spentAddressesProvider.init(tangle, configuration);
-        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider);
+    private void injectDependencies() throws SnapshotException, TransactionPruningException {
         snapshotProvider.init(configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {

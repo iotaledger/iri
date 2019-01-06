@@ -114,13 +114,17 @@ public class Iota {
         // new refactored instances
         snapshotProvider = new SnapshotProviderImpl();
         snapshotService = new SnapshotServiceImpl();
-        localSnapshotManager = null;
+        localSnapshotManager = configuration.getLocalSnapshotsEnabled()
+                             ? new LocalSnapshotManagerImpl()
+                             : null;
         milestoneService = new MilestoneServiceImpl();
         latestMilestoneTracker = new LatestMilestoneTrackerImpl();
         latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
         seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
         milestoneSolidifier = new MilestoneSolidifierImpl();
-        transactionPruner = null;
+        transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
+                          ? new AsyncTransactionPruner()
+                          : null;
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code

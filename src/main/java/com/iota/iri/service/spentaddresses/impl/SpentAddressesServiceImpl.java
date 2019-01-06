@@ -128,20 +128,17 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         }
     }
 
-
     private boolean wasTransactionSpentFrom(TransactionViewModel tx) throws Exception {
         Optional<Hash> tailFromTx = tailFinder.findTailFromTx(tx);
-        if (tailFromTx.isPresent()) {
-            if (tx.value() < 0) {
-                // Transaction is confirmed
-                if (tx.snapshotIndex() != 0) {
-                    return true;
-                }
-
-                // transaction is pending
-                Hash tailHash = tailFromTx.get();
-                return isBundleValid(tailHash);
+        if (tailFromTx.isPresent() && tx.value() < 0) {
+            // Transaction is confirmed
+            if (tx.snapshotIndex() != 0) {
+                return true;
             }
+
+            // transaction is pending
+            Hash tailHash = tailFromTx.get();
+            return isBundleValid(tailHash);
         }
 
         return false;

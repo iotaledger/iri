@@ -14,10 +14,12 @@ import com.iota.iri.service.tipselection.impl.TailFinderImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.dag.DAGHelper;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import org.apache.commons.collections4.CollectionUtils;
+
+import pl.touk.throwing.ThrowingPredicate;
 
 /**
  * 
@@ -68,9 +70,9 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
                     }
 
                     // Transaction is pending
-                    Hash tail = findTail(hash);
-                    if (tail != null && BundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), tail).size() != 0) {
-                        return true;
+                    Optional<Hash> tail = tailFinder.findTail(hash);
+                    if (tail.isPresent()) {
+                        return isBundleValid(tail.get());
                     }
                 }
             }
@@ -82,7 +84,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
     }
 
     @Override
-    public void calculateSpentAddresses(int fromMilestoneIndex, int toMilestoneIndex) throws SpentAddressesException {
+    public void persistSpentAddresses(int fromMilestoneIndex, int toMilestoneIndex) throws SpentAddressesException {
         Set<Hash> addressesToCheck = new HashSet<>();
         try {
             for (int i = fromMilestoneIndex; i < toMilestoneIndex; i++) {
@@ -102,15 +104,8 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         //Can only throw runtime exceptions in streams
         try {
             spentAddressesProvider.addAddressesBatch(addressesToCheck.stream()
-                .filter(address -> {
-                    try {
-                        return wasAddressSpentFrom(address);
-                    } catch (SpentAddressesException e) {
-                        throw new RuntimeException(e);
-                    }
-                })
+                .filter(ThrowingPredicate.unchecked(this::wasAddressSpentFrom))
                 .collect(Collectors.toList()));
-            
         } catch (RuntimeException e) {
             if (e.getCause() instanceof SpentAddressesException) {
                 throw (SpentAddressesException) e.getCause();
@@ -120,16 +115,41 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         }
     }
 
-    /**
-     * Walks back from the hash until a tail transaction has been found or transaction aprovee is not found.
-     * A tail transaction is the first transaction in a bundle, thus with <code>index = 0</code>
-     *
-     * @param hash The transaction hash where we start the search from. If this is a tail, its hash is returned.
-     * @return The transaction hash of the tail
-     * @throws Exception When a model could not be loaded.
-     */
-    private Hash findTail(Hash hash) throws Exception {
-        Optional<Hash> optionalTail = tailFinder.findTail(hash);
-        return optionalTail.isPresent() ? optionalTail.get() : null;
+    @Override
+    public void persistSpentAddresses(Collection<TransactionViewModel> transactions) throws SpentAddressesException {
+        try {
+            Collection<Hash> spentAddresses = transactions.stream()
+                    .filter(ThrowingPredicate.unchecked(this::wasTransactionSpentFrom))
+                    .map(TransactionViewModel::getAddressHash).collect(Collectors.toSet());
+
+            spentAddressesProvider.addAddressesBatch(spentAddresses);
+        } catch (RuntimeException e) {
+            throw new SpentAddressesException("Exception while persisting spent addresses", e);
+        }
+    }
+
+
+    private boolean wasTransactionSpentFrom(TransactionViewModel tx) throws Exception {
+        Optional<Hash> tailFromTx = tailFinder.findTailFromTx(tx);
+        if (tailFromTx.isPresent()) {
+            if (tx.value() < 0) {
+                // Transaction is confirmed
+                if (tx.snapshotIndex() != 0) {
+                    return true;
+                }
+
+                // transaction is pending
+                Hash tailHash = tailFromTx.get();
+                return isBundleValid(tailHash);
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isBundleValid(Hash tailHash) throws Exception {
+        List<List<TransactionViewModel>> validation =
+                BundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), tailHash);
+        return (CollectionUtils.isNotEmpty(validation) && validation.get(0).get(0).getValidity() == 1);
     }
 }

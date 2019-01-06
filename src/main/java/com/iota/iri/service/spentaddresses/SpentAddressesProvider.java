@@ -1,8 +1,8 @@
 package com.iota.iri.service.spentaddresses;
 
-import java.util.List;
-
 import com.iota.iri.model.Hash;
+
+import java.util.Collection;
 
 /**
  * Find, mark and store spent addresses
@@ -32,7 +32,7 @@ public interface SpentAddressesProvider {
      * @param addressHashes The addresses we want to mark
      * @throws SpentAddressesException If the provider fails to add an address
      */
-    void addAddressesBatch(List<Hash> addressHashes) throws SpentAddressesException;
+    void addAddressesBatch(Collection<Hash> addressHashes) throws SpentAddressesException;
     
     /**
      * Writes all currently known spent addresses to disk.

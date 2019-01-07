@@ -8,8 +8,12 @@ from iota_cache import IotaCache
 from tag_generator import TagGenerator
 from collections import deque
 
-
+lock = threading.Lock()
 def send_to_ipfs_iota(tx_string):
+    global lock
+
+    lock.acquire()
+
     filename = 'json'
     f = open(filename, 'w')
     f.write(tx_string)
@@ -24,8 +28,9 @@ def send_to_ipfs_iota(tx_string):
 
     print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag()))
 
-    # return 'ok'
+    lock.release()
 
+    # return 'ok'
 
 def get_cache():
     nums= min(len(txn_cache), BATCH_SIZE)
@@ -38,7 +43,6 @@ def get_cache():
         all_txs += tx
 
     send_to_ipfs_iota(all_txs)
-
 
 # txs buffer. dequeue is thread-safe, but it will overwrite early items if buffer is full.
 # TODO: maybe i should implement a 'ring-buffer' class, but for test, dequeue is ok.
@@ -65,7 +69,6 @@ cache = IotaCache(iota_addr, iota_seed)
 def hello_world():
     return 'Hello World!'
 
-
 @app.route('/put_file', methods=['POST'])
 def put_file():
     req_json = request.get_json()
@@ -78,29 +81,26 @@ def put_file():
 
     return 'ok'
 
-
 @app.route('/put_cache', methods=['POST'])
 def put_cache():
-    # time
-    now = time.time()
-
     # get json
     req_json = request.get_json()
     if req_json is None:
         return 'error'
+
     req_json["timestamp"] = str(time.time())
 
     # use '\n' to separate transactions.
+    # TODO: to think a better way to separate transactions.
     tx_string = json.dumps(req_json, sort_keys=True) + '\n'
     if len(txn_cache) >= CACHE_SIZE:
-        # ring-buffer is full, use 'put_fule' interface, or we can save another buffers
+        # ring-buffer is full, send to ipfs and iota directly.
         send_to_ipfs_iota(tx_string)
     else:
         # cache in local ring-buffer
         txn_cache.append(tx_string)
 
     return 'ok'
-
 
 @app.route('/post_contract', methods=['POST'])
 def post_contract():
@@ -113,7 +113,6 @@ def post_contract():
     cache.cache_txn_in_tangle_simple(req_json['ipfs_addr'], TagGenerator.get_current_tag("SC"))
     return 'ok'
 
-
 @app.route('/post_action', methods=['POST'])
 def post_action():
     req_json = request.get_json()
@@ -123,7 +122,6 @@ def post_action():
 
     cache.cache_txn_in_tangle_simple(req_json['ipfs_addr'], TagGenerator.get_current_tag("SA"))
     return 'ok'
-
 
 @app.route('/put_contract', methods=['PUT'])
 def put_contract():
@@ -137,7 +135,6 @@ def put_contract():
     wasm.set_contract(ipfs_addr)
     return 'ok'
 
-
 @app.route('/put_action', methods=['PUT'])
 def put_action():
     req_json = request.get_json()
@@ -149,7 +146,6 @@ def put_action():
     ipfs_addr = msg.decode()
     wasm.exec_action(ipfs_addr)
     return 'ok'
-
 
 if __name__ == '__main__':
     app.run()

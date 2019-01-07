@@ -12,23 +12,24 @@ lock = threading.Lock()
 def send_to_ipfs_iota(tx_string):
     global lock
 
-    lock.acquire()
+    try:
+        lock.acquire()
 
-    filename = 'json'
-    f = open(filename, 'w')
-    f.write(tx_string)
-    f.flush()
-    f.close()
+        filename = 'json'
+        f = open(filename, 'w')
+        f.write(tx_string)
+        f.flush()
+        f.close()
 
-    ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
+        ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
 
-    print("[INFO]Cache json %s in ipfs, the hash is %s." % (json.dumps(req_json, sort_keys=True), ipfs_hash))
+        print("[INFO]Cache json %s in ipfs, the hash is %s." % (json.dumps(req_json, sort_keys=True), ipfs_hash))
 
-    cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag())
+        cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag())
 
-    print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag()))
-
-    lock.release()
+        print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag()))
+    finally:
+        lock.release()
 
     # return 'ok'
 

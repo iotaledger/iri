@@ -70,7 +70,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
                     }
 
                     // Transaction is pending
-                    Optional<Hash> tail = tailFinder.findTail(hash);
+                    Optional<Hash> tail = tailFinder.findTailFromTx(tx);
                     if (tail.isPresent()) {
                         return isBundleValid(tail.get());
                     }

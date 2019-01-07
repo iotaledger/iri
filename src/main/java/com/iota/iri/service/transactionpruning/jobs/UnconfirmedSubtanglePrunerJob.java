@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
  */
 public class UnconfirmedSubtanglePrunerJob extends AbstractTransactionPrunerJob {
 
-    private SpentAddressesService spentAddressesService;
     /**
      * Holds the hash of the transaction that shall have its unconfirmed approvers cleaned.
      */
@@ -52,11 +51,6 @@ public class UnconfirmedSubtanglePrunerJob extends AbstractTransactionPrunerJob 
      */
     public UnconfirmedSubtanglePrunerJob(Hash transactionHash) {
         this.transactionHash = transactionHash;
-    }
-
-    @Override
-    public void setSpentAddressesService(SpentAddressesService spentAddressesService) {
-        this.spentAddressesService = spentAddressesService;
     }
 
     /**

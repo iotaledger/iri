@@ -9,6 +9,8 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import pl.touk.throwing.ThrowingConsumer;
+
 /**
  * This class offers generic functions for recurring tasks that are related to the tangle and that otherwise would have
  * to be implemented over and over again in different parts of the code.
@@ -161,7 +163,7 @@ public class DAGHelper {
      */
     public void traverseApprovees(Hash startingTransactionHash,
                                   Predicate<TransactionViewModel> condition,
-                                  Consumer<TransactionViewModel> currentTransactionConsumer,
+                                  ThrowingConsumer<TransactionViewModel, ? extends Exception> currentTransactionConsumer,
                                   Set<Hash> processedTransactions) throws TraversalException {
         Queue<Hash> transactionsToExamine = new ArrayDeque<>(Collections.singleton(startingTransactionHash));
         try {
@@ -205,7 +207,8 @@ public class DAGHelper {
      */
     public void traverseApprovees(Hash startingTransactionHash,
                                   Predicate<TransactionViewModel> condition,
-                                  Consumer<TransactionViewModel> currentTransactionConsumer) throws TraversalException {
+                                  ThrowingConsumer<TransactionViewModel, ? extends Exception> currentTransactionConsumer)
+            throws TraversalException {
         traverseApprovees(startingTransactionHash, condition, currentTransactionConsumer, new HashSet<>());
     }
 

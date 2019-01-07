@@ -1,10 +1,65 @@
 import ConfigParser
 import time
 import commands
+import threading
 import json
 from flask import Flask, request
 from iota_cache import IotaCache
 from tag_generator import TagGenerator
+from collections import deque
+
+lock = threading.Lock()
+def send_to_ipfs_iota(tx_string):
+    global lock
+
+    lock.acquire()
+
+    try:
+        filename = 'json'
+        f = open(filename, 'w')
+        f.write(tx_string)
+        f.flush()
+        f.close()
+
+        ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
+
+        print("[INFO]Cache json %s in ipfs, the hash is %s." % (json.dumps(req_json, sort_keys=True), ipfs_hash))
+
+        cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag())
+
+        print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag()))
+    except Exception as e:
+        # Maybe it seems ugly as it has only one Exception...
+        print("[ERROR] %s." % e)
+    finally:
+        lock.release()
+
+    # return 'ok'
+
+def get_cache():
+    nums = min(len(txn_cache), BATCH_SIZE)
+    if nums == 0:
+        return
+
+    all_txs = ""
+    for i in range(nums):
+        tx = txn_cache.popleft()
+        # use '\n' to separate transactions.
+        # TODO: to think a better way to separate transactions.
+        all_txs += tx + '\n'
+
+    send_to_ipfs_iota(all_txs)
+
+# txs buffer. dequeue is thread-safe, but it will overwrite early items if buffer is full.
+# TODO: maybe i should implement a 'ring-buffer' class, but for test, dequeue is ok.
+CACHE_SIZE = 10000
+txn_cache = deque(maxlen=CACHE_SIZE)
+
+# timer
+timer_thread = threading.Timer(1, get_cache)
+timer_thread.start()
+
+BATCH_SIZE = 100
 
 
 app = Flask(__name__)
@@ -20,7 +75,6 @@ cache = IotaCache(iota_addr, iota_seed)
 def hello_world():
     return 'Hello World!'
 
-
 @app.route('/put_file', methods=['POST'])
 def put_file():
     req_json = request.get_json()
@@ -28,20 +82,27 @@ def put_file():
     if req_json is None:
         return 'error'
 
-    filename = 'json'
-    f = open(filename, 'w')
     req_json["timestamp"] = str(time.time())
-    f.write(json.dumps(req_json, sort_keys=True))
-    f.flush()
-    f.close()
+    send_to_ipfs_iota(json.dumps(req_json, sort_keys=True))
 
-    ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
+    return 'ok'
 
-    print("[INFO]Cache json %s in ipfs, the hash is %s." % (json.dumps(req_json, sort_keys=True), ipfs_hash))
+@app.route('/put_cache', methods=['POST'])
+def put_cache():
+    # get json
+    req_json = request.get_json()
+    if req_json is None:
+        return 'error'
 
-    cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag())
+    req_json["timestamp"] = str(time.time())
 
-    print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag()))
+    tx_string = json.dumps(req_json, sort_keys=True)
+    if len(txn_cache) >= CACHE_SIZE:
+        # ring-buffer is full, send to ipfs and iota directly.
+        send_to_ipfs_iota(tx_string)
+    else:
+        # cache in local ring-buffer
+        txn_cache.append(tx_string)
 
     return 'ok'
 

@@ -33,14 +33,16 @@ def send_to_ipfs_iota(tx_string):
     # return 'ok'
 
 def get_cache():
-    nums= min(len(txn_cache), BATCH_SIZE)
+    nums = min(len(txn_cache), BATCH_SIZE)
     if nums == 0:
-        return 'ok'
+        return
 
     all_txs = ""
     for i in range(nums):
         tx = txn_cache.popleft()
-        all_txs += tx
+        # use '\n' to separate transactions.
+        # TODO: to think a better way to separate transactions.
+        all_txs += tx + '\n'
 
     send_to_ipfs_iota(all_txs)
 
@@ -90,9 +92,7 @@ def put_cache():
 
     req_json["timestamp"] = str(time.time())
 
-    # use '\n' to separate transactions.
-    # TODO: to think a better way to separate transactions.
-    tx_string = json.dumps(req_json, sort_keys=True) + '\n'
+    tx_string = json.dumps(req_json, sort_keys=True)
     if len(txn_cache) >= CACHE_SIZE:
         # ring-buffer is full, send to ipfs and iota directly.
         send_to_ipfs_iota(tx_string)

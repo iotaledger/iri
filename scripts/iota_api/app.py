@@ -1,10 +1,55 @@
 import ConfigParser
 import time
 import commands
+import threading
 import json
 from flask import Flask, request
 from iota_cache import IotaCache
 from tag_generator import TagGenerator
+from collections import deque
+
+
+def send_to_ipfs_iota(tx_string):
+    filename = 'json'
+    f = open(filename, 'w')
+    f.write(tx_string)
+    f.flush()
+    f.close()
+
+    ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
+
+    print("[INFO]Cache json %s in ipfs, the hash is %s." % (json.dumps(req_json, sort_keys=True), ipfs_hash))
+
+    cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag())
+
+    print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag()))
+
+    # return 'ok'
+
+
+def get_cache():
+    nums= min(len(txn_cache), BATCH_SIZE)
+    if nums == 0:
+        return 'ok'
+
+    all_txs = ""
+    for i in range(nums):
+        tx = txn_cache.popleft()
+        all_txs += tx
+
+    send_to_ipfs_iota(all_txs)
+
+
+# txs buffer. dequeue is thread-safe, but it will overwrite early items if buffer is full.
+# TODO: maybe i should implement a 'ring-buffer' class, but for test, dequeue is ok.
+CACHE_SIZE = 10000
+txn_cache = deque(maxlen=CACHE_SIZE)
+
+# timer
+timer_thread = threading.Timer(1, get_cache)
+timer_thread.start()
+
+BATCH_SIZE = 100
 
 
 app = Flask(__name__)
@@ -28,43 +73,16 @@ def put_file():
     if req_json is None:
         return 'error'
 
-    filename = 'json'
-    f = open(filename, 'w')
     req_json["timestamp"] = str(time.time())
-    f.write(json.dumps(req_json, sort_keys=True))
-    f.flush()
-    f.close()
-
-    ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
-
-    print("[INFO]Cache json %s in ipfs, the hash is %s." % (json.dumps(req_json, sort_keys=True), ipfs_hash))
-
-    cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag())
-
-    print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag()))
+    send_to_ipfs_iota(json.dumps(req_json, sort_keys=True))
 
     return 'ok'
 
-
-# txs buffer. dequeue is thread-safe, but it will overwrite early items if buffer is full.
-# TODO: maybe i should implement a 'ring-buffer' class by myself, but for test, dequeue is ok.
-CACHE_SIZE = 10000
-txn_cache = deque(maxlen=CACHE_SIZE)
-
-# timer
-timer_thread = threading.Timer(300, get_cache)
-timer_thread.start()
-
-BATCH_SIZE = 100
 
 @app.route('/put_cache', methods=['POST'])
 def put_cache():
     # time
     now = time.time()
-
-    # ring-buffer is full, use 'put_fule' interface, or we can save another buffers
-    if len(txn_cache) >= CACHE_SIZE:
-        put_file()
 
     # get json
     req_json = request.get_json()
@@ -72,32 +90,14 @@ def put_cache():
         return 'error'
     req_json["timestamp"] = str(time.time())
 
-    # cache in local ring-buffer
-    txn_cache.append(json.dumps(req_json, sort_keys=True))
-
-    return 'ok'
-
-
-@app.route('/get_cache', methods=['POST'])
-def get_cache():
-    filename = 'jsons'
-    f = open(filename, 'w')
-
-    nums= min(len(txn_cache), BATCH_SIZE)
-    if nums == 0:
-        return 'ok'
-
-    for i in range(nums):
-        tx = txn_cache.popleft()
-        f.write(tx)
-        f.flush()
-    f.close()
-
-    ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
-    print("[INFO]Cache jsons in ipfs, the hash is %s." % (ipfs_hash))
-
-    cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag("TA"))
-    print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag("TR")))
+    # use '\n' to separate transactions.
+    tx_string = json.dumps(req_json, sort_keys=True) + '\n'
+    if len(txn_cache) >= CACHE_SIZE:
+        # ring-buffer is full, use 'put_fule' interface, or we can save another buffers
+        send_to_ipfs_iota(tx_string)
+    else:
+        # cache in local ring-buffer
+        txn_cache.append(tx_string)
 
     return 'ok'
 

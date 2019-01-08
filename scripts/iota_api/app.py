@@ -12,9 +12,7 @@ lock = threading.Lock()
 def send_to_ipfs_iota(tx_string):
     global lock
 
-    lock.acquire()
-
-    try:
+    with lock:
         filename = 'json'
         f = open(filename, 'w')
         f.write(tx_string)
@@ -28,11 +26,6 @@ def send_to_ipfs_iota(tx_string):
         cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag("TR"))
 
         print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag("TR")))
-    except Exception as e:
-        # Maybe it seems ugly as it has only one Exception...
-        print("[ERROR] %s." % e)
-    finally:
-        lock.release()
 
     # return 'ok'
 

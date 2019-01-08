@@ -498,7 +498,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             db.dropColumnFamily(columnFamilyHandles.get(i));
         }
 
-        classTreeMap = classMap;
+        classTreeMap = MapUtils.unmodifiableMap(classMap);
     }
 
     // 2018 March 28 - Unused Code

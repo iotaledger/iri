@@ -1,5 +1,6 @@
 package com.iota.iri.storage.rocksDB;
 
+import com.iota.iri.Iota;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
@@ -23,7 +24,8 @@ public class RocksDBPersistenceProviderTest {
 
     @BeforeClass
     public static void setUpDb() {
-        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbPath, dbLogPath, 10000);
+        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
+               dbPath, dbLogPath,1000, Iota.COLUMN_FAMILIES, Iota.METADATA_COLUMN_FAMILY);
         rocksDBPersistenceProvider.init();
     }
 

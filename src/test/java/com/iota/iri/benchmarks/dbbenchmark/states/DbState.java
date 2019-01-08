@@ -1,5 +1,6 @@
 package com.iota.iri.benchmarks.dbbenchmark.states;
 
+import com.iota.iri.Iota;
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.MainnetConfig;
@@ -41,8 +42,8 @@ public abstract class DbState {
                     + dbFolder.getAbsolutePath());
         }
         logFolder.mkdirs();
-        PersistenceProvider dbProvider = new RocksDBPersistenceProvider(dbFolder.getPath(), logFolder.getPath(),
-                BaseIotaConfig.Defaults.DB_CACHE_SIZE);
+        PersistenceProvider dbProvider = new RocksDBPersistenceProvider(
+                dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(),  BaseIotaConfig.Defaults.DB_CACHE_SIZE, Iota.COLUMN_FAMILIES, Iota.METADATA_COLUMN_FAMILY);
         dbProvider.init();
         tangle = new Tangle();
         snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());

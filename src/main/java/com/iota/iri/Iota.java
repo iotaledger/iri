@@ -23,7 +23,6 @@ import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
-import com.iota.iri.storage.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -216,7 +215,8 @@ public class Iota {
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService);
         if (transactionPruner != null) {
-            transactionPruner.init(tangle, snapshotProvider, tipsViewModel, configuration).restoreState();
+            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, tipsViewModel, configuration)
+                    .restoreState();
         }
         transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }

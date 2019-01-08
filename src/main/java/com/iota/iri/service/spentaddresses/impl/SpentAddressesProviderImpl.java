@@ -130,7 +130,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     }
     
     @Override
-    public void addAddressesBatch(List<Hash> addressHash) throws SpentAddressesException {
+    public void addAddressesBatch(Collection<Hash> addressHash) throws SpentAddressesException {
         try {
             // Its bytes are always new byte[0], therefore identical in storage
             SpentAddress spentAddressModel = new SpentAddress();

@@ -5,6 +5,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJobStatus;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.storage.Indexable;
@@ -12,7 +13,8 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.utils.dag.DAGHelper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a cleanup job for {@link com.iota.iri.service.transactionpruning.TransactionPruner}s that removes
@@ -257,13 +259,17 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                 elementsToDelete.add(new Pair<>(milestoneViewModel.getHash(), Transaction.class));
                 elementsToDelete.add(new Pair<>(new IntegerIndex(milestoneViewModel.index()), Milestone.class));
 
-                DAGHelper.get(getTangle()).traverseApprovees(
-                        milestoneViewModel.getHash(),
+                DAGHelper.get(getTangle()).traverseApprovees(milestoneViewModel.getHash(),
                         approvedTransaction -> approvedTransaction.snapshotIndex() >= milestoneViewModel.index(),
-                        approvedTransaction -> elementsToDelete.add(
-                                new Pair<>(approvedTransaction.getHash(), Transaction.class)
-                        )
-                );
+                        approvedTransaction -> {
+                            if (approvedTransaction.value() < 0 &&
+                                    !spentAddressesService.wasAddressSpentFrom(approvedTransaction.getAddressHash())) {
+                                throw new SpentAddressesException(
+                                        "Pruned spend transaction did not have its spent address recorded");
+                            } else {
+                                elementsToDelete.add(new Pair<>(approvedTransaction.getHash(), Transaction.class));
+                            }
+                        });
             }
 
             return elementsToDelete;

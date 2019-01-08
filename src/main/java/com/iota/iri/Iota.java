@@ -215,7 +215,7 @@ public class Iota {
     }
 
     private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
-        spentAddressesProvider.init(tangle, configuration);
+        spentAddressesProvider.init(configuration);
         spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider);
         snapshotProvider.init(configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);

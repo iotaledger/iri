@@ -23,11 +23,11 @@ def send_to_ipfs_iota(tx_string):
 
         ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
 
-        print("[INFO]Cache json %s in ipfs, the hash is %s." % (json.dumps(req_json, sort_keys=True), ipfs_hash))
+        print("[INFO]Cache json %s in ipfs, the hash is %s." % (tx_string, ipfs_hash))
 
-        cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag())
+        cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag("TR"))
 
-        print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag()))
+        print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag("TR")))
     except Exception as e:
         # Maybe it seems ugly as it has only one Exception...
         print("[ERROR] %s." % e)
@@ -36,7 +36,21 @@ def send_to_ipfs_iota(tx_string):
 
     # return 'ok'
 
+# txs buffer. dequeue is thread-safe
+CACHE_SIZE = 10000
+txn_cache = deque(maxlen=CACHE_SIZE)
+
+# timer interval == 10s
+TIMER_INTERVAL = 10
+
+BATCH_SIZE = 100
+
 def get_cache():
+    # timer
+    global timer_thread
+    timer_thread = threading.Timer(TIMER_INTERVAL, get_cache)
+    timer_thread.start()
+
     nums = min(len(txn_cache), BATCH_SIZE)
     if nums == 0:
         return
@@ -44,22 +58,9 @@ def get_cache():
     all_txs = ""
     for i in range(nums):
         tx = txn_cache.popleft()
-        # use '\n' to separate transactions.
-        # TODO: to think a better way to separate transactions.
-        all_txs += tx + '\n'
+        all_txs += tx
 
     send_to_ipfs_iota(all_txs)
-
-# txs buffer. dequeue is thread-safe, but it will overwrite early items if buffer is full.
-# TODO: maybe i should implement a 'ring-buffer' class, but for test, dequeue is ok.
-CACHE_SIZE = 10000
-txn_cache = deque(maxlen=CACHE_SIZE)
-
-# timer
-timer_thread = threading.Timer(1, get_cache)
-timer_thread.start()
-
-BATCH_SIZE = 100
 
 
 app = Flask(__name__)
@@ -83,6 +84,7 @@ def put_file():
         return 'error'
 
     req_json["timestamp"] = str(time.time())
+
     send_to_ipfs_iota(json.dumps(req_json, sort_keys=True))
 
     return 'ok'
@@ -152,4 +154,5 @@ def put_action():
     return 'ok'
 
 if __name__ == '__main__':
+    get_cache()
     app.run()

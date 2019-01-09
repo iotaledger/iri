@@ -5,6 +5,7 @@ import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.io.FileUtils;
 import org.junit.*;
@@ -25,7 +26,7 @@ public class RocksDBPersistenceProviderTest {
     @BeforeClass
     public static void setUpDb() throws Exception {
         rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
-               dbPath, dbLogPath,1000, Iota.COLUMN_FAMILIES, Iota.METADATA_COLUMN_FAMILY);
+               dbPath, dbLogPath,1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         rocksDBPersistenceProvider.init();
     }
 

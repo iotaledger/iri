@@ -35,7 +35,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private final String logPath;
     private final int cacheSize;
     private final Map<String, Class<? extends Persistable>> columnFamilies;
-    private final Pair<String, Class<? extends Persistable>> metadataColumnFamily;
+    private final Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily;
 
     private Map<Class<?>, ColumnFamilyHandle> classTreeMap;
     private Map<Class<?>, ColumnFamilyHandle> metadataReference = Collections.emptyMap();
@@ -48,7 +48,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
-                                      Pair<String, Class<? extends Persistable>> metadataColumnFamily) {
+                                      Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily) {
         this.dbPath = dbPath;
         this.logPath = logPath;
         this.cacheSize = cacheSize;
@@ -461,7 +461,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             // metadata descriptor is always last
             if (metadataColumnFamily != null) {
                 columnFamilyDescriptors.add(
-                        new ColumnFamilyDescriptor(metadataColumnFamily.low.getBytes(), columnFamilyOptions));
+                        new ColumnFamilyDescriptor(metadataColumnFamily.getKey().getBytes(), columnFamilyOptions));
                 metadataReference = new HashMap<>();
             }
 
@@ -479,7 +479,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     private void initClassTreeMap(List<ColumnFamilyDescriptor> columnFamilyDescriptors) throws Exception {
         Map<Class<?>, ColumnFamilyHandle> classMap = new LinkedHashMap<>();
-        String mcfName = metadataColumnFamily == null ? "" : metadataColumnFamily.low;
+        String mcfName = metadataColumnFamily == null ? "" : metadataColumnFamily.getKey();
         //skip default column
         int i = 1;
         for (; i < columnFamilyDescriptors.size(); i++) {
@@ -487,7 +487,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             String name = new String(columnFamilyDescriptors.get(i).columnFamilyName());
             if (name.equals(mcfName)) {
                 Map<Class<?>, ColumnFamilyHandle> metadataRef = new HashMap<>();
-                metadataRef.put(metadataColumnFamily.hi, columnFamilyHandles.get(i));
+                metadataRef.put(metadataColumnFamily.getValue(), columnFamilyHandles.get(i));
                 metadataReference = MapUtils.unmodifiableMap(metadataRef);
             }
             else {

@@ -34,7 +34,7 @@ public class TangleTest {
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
         rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
                 dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
-                Iota.COLUMN_FAMILIES, Iota.METADATA_COLUMN_FAMILY);
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
         snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());

@@ -25,10 +25,7 @@ import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.ZmqPublishProvider;
+import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
@@ -75,18 +72,6 @@ import org.slf4j.LoggerFactory;
  */
 public class Iota {
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
-    public static final HashMap<String, Class<? extends Persistable>> COLUMN_FAMILIES =
-            new LinkedHashMap<String, Class<? extends Persistable>>() {{
-        put("transaction", Transaction.class);
-        put("milestone", Milestone.class);
-        put("stateDiff", StateDiff.class);
-        put("address", Address.class);
-        put("approvee", Approvee.class);
-        put("bundle", Bundle.class);
-        put("obsoleteTag", ObsoleteTag.class);
-        put("tag", Tag.class);
-    }};
-    public static final Pair<String, Class<? extends Persistable>> METADATA_COLUMN_FAMILY = new Pair<>("transaction-metadata", Transaction.class);
 
     public final SpentAddressesProviderImpl spentAddressesProvider;
 
@@ -300,8 +285,8 @@ public class Iota {
                         configuration.getDbPath(),
                         configuration.getDbLogPath(),
                         configuration.getDbCacheSize(),
-                        COLUMN_FAMILIES,
-                        METADATA_COLUMN_FAMILY)
+                        Tangle.COLUMN_FAMILIES,
+                        Tangle.METADATA_COLUMN_FAMILY)
                 );
                 break;
             }

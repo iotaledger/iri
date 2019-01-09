@@ -43,7 +43,7 @@ public abstract class DbState {
         }
         logFolder.mkdirs();
         PersistenceProvider dbProvider = new RocksDBPersistenceProvider(
-                dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(),  BaseIotaConfig.Defaults.DB_CACHE_SIZE, Iota.COLUMN_FAMILIES, Iota.METADATA_COLUMN_FAMILY);
+                dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(),  BaseIotaConfig.Defaults.DB_CACHE_SIZE, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         dbProvider.init();
         tangle = new Tangle();
         snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());

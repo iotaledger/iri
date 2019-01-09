@@ -874,17 +874,24 @@ public class API {
       **/
     private AbstractResponse getNodeInfoStatement(){
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
-        return GetNodeInfoResponse.create(name, IRI.VERSION,
+        return GetNodeInfoResponse.create(
+                name, 
+                IRI.VERSION,
                 Runtime.getRuntime().availableProcessors(),
                 Runtime.getRuntime().freeMemory(),
                 System.getProperty("java.version"),
+                
                 Runtime.getRuntime().maxMemory(),
                 Runtime.getRuntime().totalMemory(),
                 instance.latestMilestoneTracker.getLatestMilestoneHash(),
                 instance.latestMilestoneTracker.getLatestMilestoneIndex(),
+                
                 instance.snapshotProvider.getLatestSnapshot().getHash(),
                 instance.snapshotProvider.getLatestSnapshot().getIndex(),
+                
                 instance.snapshotProvider.getInitialSnapshot().getIndex(),
+                instance.snapshotProvider.getLatestSnapshot().getInitialIndex(),
+                
                 instance.node.howManyNeighbors(),
                 instance.node.queuedTransactionsSize(),
                 System.currentTimeMillis(),

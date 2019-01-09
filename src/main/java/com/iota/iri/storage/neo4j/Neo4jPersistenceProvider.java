@@ -188,15 +188,15 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
         try ( org.neo4j.graphdb.Transaction tx = graphDb.beginTx() )
         {
             // find hash node first
-            Node rootNode = graphDb.createNode();
+            Node newNode = graphDb.createNode();
             for (Pair<Indexable, Persistable> entry : models) {
                 if(entry.hi.getClass().equals(com.iota.iri.model.persistables.Transaction.class)) {
                     Indexable key = entry.low;
                     Persistable value = entry.hi;
                     Label label = classLabelMap.get(value.getClass());
-                    rootNode.addLabel(label);
+                    newNode.addLabel(label);
                     String keyStr = Converter.trytes(((Hash)key).trits());
-                    rootNode.setProperty("key", keyStr);
+                    newNode.setProperty("key", keyStr);
                     break;
                 }
             }
@@ -207,7 +207,7 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
                     String keyStr = Converter.trytes(((Hash)key).trits());
                     try {
                         Node prev = graphDb.findNode(DynamicLabel.label("Transaction"), "key", keyStr);
-                        rootNode.createRelationshipTo(prev, DynamicRelationshipType.withName( "APPROVES"));
+                        newNode.createRelationshipTo(prev, DynamicRelationshipType.withName( "APPROVES"));
                     } catch(MultipleFoundException e) {
                         ; // TODO should triage problem here
                     } catch(IllegalArgumentException e) {

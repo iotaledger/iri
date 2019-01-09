@@ -58,7 +58,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     }
 
     @Override
-    public void init() {
+    public void init() throws Exception {
         log.info("Initializing Database Backend... ");
         initDB(dbPath, logPath, columnFamilies);
         available = true;
@@ -394,7 +394,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         initDB(path, logPath, columnFamilies);
     }
 
-    private void initDB(String path, String logPath, Map<String, Class<? extends Persistable>> columnFamilies) {
+    private void initDB(String path, String logPath, Map<String, Class<? extends Persistable>> columnFamilies) throws Exception {
         try {
             try {
                 RocksDB.loadLibrary();
@@ -472,8 +472,8 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             initClassTreeMap(columnFamilyDescriptors);
 
         } catch (Exception e) {
-            log.error("Error while initializing RocksDb", e);
             IotaIOUtils.closeQuietly(db);
+            throw e;
         }
     }
 

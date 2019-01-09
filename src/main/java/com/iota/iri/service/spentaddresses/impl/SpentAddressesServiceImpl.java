@@ -103,7 +103,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
         //Can only throw runtime exceptions in streams
         try {
-            spentAddressesProvider.addAddressesBatch(addressesToCheck.stream()
+            spentAddressesProvider.saveAddressesBatch(addressesToCheck.stream()
                 .filter(ThrowingPredicate.unchecked(this::wasAddressSpentFrom))
                 .collect(Collectors.toList()));
         } catch (RuntimeException e) {
@@ -122,7 +122,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
                     .filter(ThrowingPredicate.unchecked(this::wasTransactionSpentFrom))
                     .map(TransactionViewModel::getAddressHash).collect(Collectors.toSet());
 
-            spentAddressesProvider.addAddressesBatch(spentAddresses);
+            spentAddressesProvider.saveAddressesBatch(spentAddresses);
         } catch (RuntimeException e) {
             throw new SpentAddressesException("Exception while persisting spent addresses", e);
         }

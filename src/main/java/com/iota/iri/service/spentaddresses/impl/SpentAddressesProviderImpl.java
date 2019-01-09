@@ -65,18 +65,14 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
         return this;
     }
 
-    private void readPreviousEpochsSpentAddresses() {
+    private void readPreviousEpochsSpentAddresses() throws SpentAddressesException {
         if (config.isTestnet()) {
             return;
         }
 
         for (String previousEpochsSpentAddressesFile : config.getPreviousEpochSpentAddressesFiles().split(" ")) {
-            try {
                 readSpentAddressesFromStream(
                         SpentAddressesProviderImpl.class.getResourceAsStream(previousEpochsSpentAddressesFile));
-            } catch (SpentAddressesException e) {
-                log.error("Failed to read spent addresses from " + previousEpochsSpentAddressesFile, e);
-            }
         }
     }
 
@@ -87,7 +83,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
                 saveAddress(HashFactory.ADDRESS.create(line));
             }
         } catch (Exception e) {
-            throw new SpentAddressesException(e);
+            throw new SpentAddressesException("Failed to read or save spent address", e);
         }
     }
 

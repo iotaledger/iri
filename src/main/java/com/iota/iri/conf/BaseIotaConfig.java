@@ -62,6 +62,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String mainDb = Defaults.ROCKS_DB;
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
+    protected String graphDbPath = Defaults.GRAPH_DB_PATH;
+
 
     //Protocol
     protected double pReplyRandomTip = Defaults.P_REPLY_RANDOM_TIP;
@@ -402,6 +404,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--db"}, description = DbConfig.Descriptions.MAIN_DB)
     protected void setMainDb(String mainDb) {
         this.mainDb = mainDb;
+    }
+
+    @Override
+    public String getGraphDbPath() {
+        return graphDbPath;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--graph-db-path"}, description = DbConfig.Descriptions.GRAPH_DB_PATH)
+    protected void setGraphDbPath(String graphDbPath) {
+        this.graphDbPath = graphDbPath;
     }
 
     @Override
@@ -785,7 +798,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @JsonProperty
     @Parameter(names = "--ledger-validator", description = TipSelConfig.Descriptions.LEDGER_VALIDATOR)
-    protected void getLedgerValidator(String ledgerValidator) {
+    protected void setLedgerValidator(String ledgerValidator) {
         this.ledgerValidator = ledgerValidator;
     }
 
@@ -835,6 +848,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String ROCKS_DB = "rocksdb";
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
+        String GRAPH_DB_PATH = "";
+
 
         //Protocol
         double P_REPLY_RANDOM_TIP = 0.66d;

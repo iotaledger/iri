@@ -25,7 +25,6 @@ import org.slf4j.LoggerFactory;
  *
  * Implementation of <tt>SpentAddressesProvider</tt>.
  * Addresses are saved/found on the {@link Tangle}.
- * The addresses will be written to a file called {@value #SNAPSHOT_SPENTADDRESSES_FILE}.
  * The folder location is provided by {@link IotaConfig#getLocalSnapshotsBasePath()}
  *
  */

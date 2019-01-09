@@ -59,7 +59,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     @Override
     public void init() throws Exception {
-        log.info("Initializing Database Backend... ");
+        log.info("Initializing Database on " + dbPath);
         initDB(dbPath, logPath, columnFamilies);
         available = true;
         log.info("RocksDB persistence provider initialized.");

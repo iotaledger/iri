@@ -4,6 +4,7 @@ import com.iota.iri.*;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TagViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
@@ -870,18 +871,10 @@ public class API {
       * Returns information about this node.
       *
       * @return {@link com.iota.iri.service.dto.GetNodeInfoResponse}
+      * @throws Exception When we cant find the first milestone in the database
       **/
-    private AbstractResponse getNodeInfoStatement(){
+    private AbstractResponse getNodeInfoStatement() throws Exception{
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
-        
-        // Note: When the MilestonePrunerQueue is processing a job, it is possible that this index is out of date.
-        // Chances of this increase when a large localSnapshotsIntervalSynced is chosen.
-        // If pruning is off, return -1
-        MilestonePrunerJobQueue milestoneJobQueue = instance.transactionPruner
-                .getJobQueueByQueueClass(MilestonePrunerJobQueue.class);
-        int initialIndex = milestoneJobQueue != null ? 
-                milestoneJobQueue.getYoungestFullyCleanedMilestoneIndex() : 
-                    instance.snapshotProvider.getInitialSnapshot().getInitialIndex();
         
         return GetNodeInfoResponse.create(
                 name, 
@@ -898,7 +891,7 @@ public class API {
                 instance.snapshotProvider.getLatestSnapshot().getHash(),
                 instance.snapshotProvider.getLatestSnapshot().getIndex(),
                 
-                initialIndex,
+                MilestoneViewModel.first(instance.tangle).index(),
                 instance.snapshotProvider.getLatestSnapshot().getInitialIndex(),
                 
                 instance.node.howManyNeighbors(),

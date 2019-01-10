@@ -1,6 +1,5 @@
 package com.iota.iri.benchmarks.dbbenchmark.states;
 
-import com.iota.iri.Iota;
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.MainnetConfig;

@@ -1,6 +1,5 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.Iota;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.After;

@@ -1,6 +1,5 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.Iota;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;

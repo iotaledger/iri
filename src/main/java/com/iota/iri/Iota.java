@@ -4,8 +4,6 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.StateDiff;
-import com.iota.iri.model.persistables.*;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
@@ -31,8 +29,6 @@ import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
 
 import java.security.SecureRandom;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 
 import org.apache.commons.lang3.NotImplementedException;

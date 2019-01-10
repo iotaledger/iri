@@ -1,6 +1,5 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.Iota;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;

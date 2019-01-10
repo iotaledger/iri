@@ -499,9 +499,7 @@ public class SnapshotServiceImpl implements SnapshotService {
         try {
             spentAddressesService.persistSpentAddresses(snapshotProvider.getInitialSnapshot().getIndex(),
                     newSnapshot.getIndex());
-
-            spentAddressesProvider.writeSpentAddressesToDisk(config.getLocalSnapshotsBasePath() +
-                    ".snapshot.spentaddresses");
+            
         } catch (Exception e) {
             throw new SnapshotException(e);
         }

@@ -1,7 +1,5 @@
 package com.iota.iri.service.transactionpruning;
 
-import com.iota.iri.service.transactionpruning.async.JobQueue;
-
 /**
  * Represents the manager for the cleanup jobs that are issued by the
  * {@link com.iota.iri.service.snapshot.LocalSnapshotManager} in connection with local snapshots and eventually other

@@ -1,6 +1,7 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.TagHash;
 import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.storage.Indexable;
@@ -8,8 +9,6 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -94,7 +93,7 @@ public class TagViewModel implements HashesViewModel {
      * @throws Exception Thrown if the database fails to return a first object
      */
     public static TagViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> tagPair = tangle.getFirst(Tag.class, Hash.class);
+        Pair<Indexable, Persistable> tagPair = tangle.getFirst(Tag.class, TagHash.class);
         if(tagPair != null && tagPair.hi != null) {
             return new TagViewModel((Tag) tagPair.hi, (Hash) tagPair.low);
         }

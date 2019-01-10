@@ -1,13 +1,8 @@
 package com.iota.iri.controllers;
 
 import com.iota.iri.model.*;
+import com.iota.iri.model.persistables.*;
 import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Approvee;
-import com.iota.iri.model.persistables.Bundle;
-import com.iota.iri.model.persistables.ObsoleteTag;
-import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
@@ -246,7 +241,7 @@ public class TransactionViewModel {
      * @throws Exception Thrown if the database fails to return a first object.
      */
     public static TransactionViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> transactionPair = tangle.getFirst(Transaction.class, Hash.class);
+        Pair<Indexable, Persistable> transactionPair = tangle.getFirst(Transaction.class, TransactionHash.class);
         if (transactionPair != null && transactionPair.hi != null) {
             return new TransactionViewModel((Transaction) transactionPair.hi, (Hash) transactionPair.low);
         }

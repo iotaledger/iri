@@ -265,6 +265,32 @@ public class ConfigTest {
         ConfigFactory.createFromFile(configFile, false);
     }
 
+
+    @Test(expected = IllegalArgumentException.class)
+    public void pruningSnpashotDelayBelowMin() throws IOException {
+        String iniContent = new StringBuilder()
+                .append("[IRI]").append(System.lineSeparator())
+                .append("LOCAL_SNAPSHOTS_PRUNING_DELAY = 9999")
+                .toString();
+        try (Writer writer = new FileWriter(configFile)) {
+            writer.write(iniContent);
+        }
+        ConfigFactory.createFromFile(configFile, false);
+    }
+
+    @Test
+    public void pruningSnpashotDelayIsMin() throws IOException {
+        String iniContent = new StringBuilder()
+                .append("[IRI]").append(System.lineSeparator())
+                .append("LOCAL_SNAPSHOTS_PRUNING_DELAY = 10000")
+                .toString();
+        try (Writer writer = new FileWriter(configFile)) {
+            writer.write(iniContent);
+        }
+        IotaConfig iotaConfig = ConfigFactory.createFromFile(configFile, false);
+        Assert.assertEquals("unexpected pruning delay", 10000, iotaConfig.getLocalSnapshotsPruningDelay());
+    }
+
     @Test
     public void backwardsIniCompatibilityTest() {
         Collection<String> configNames = IotaUtils.getAllSetters(TestnetConfig.class)

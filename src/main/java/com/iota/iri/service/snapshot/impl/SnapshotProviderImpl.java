@@ -5,6 +5,8 @@ import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.snapshot.*;
+import com.iota.iri.service.spentaddresses.SpentAddressesException;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -94,7 +96,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @return the initialized instance itself to allow chaining
      *
      */
-    public SnapshotProviderImpl init(SnapshotConfig config) throws SnapshotException {
+    public SnapshotProviderImpl init(SnapshotConfig config) throws SnapshotException, SpentAddressesException {
         this.config = config;
 
         loadSnapshots();
@@ -181,7 +183,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      *
      * @throws SnapshotException if anything goes wrong while loading the snapshots
      */
-    private void loadSnapshots() throws SnapshotException {
+    private void loadSnapshots() throws SnapshotException, SpentAddressesException {
         initialSnapshot = loadLocalSnapshot();
         if (initialSnapshot == null) {
             initialSnapshot = loadBuiltInSnapshot();
@@ -199,13 +201,15 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @return local snapshot of the node
      * @throws SnapshotException if local snapshot files exist but are malformed
      */
-    private Snapshot loadLocalSnapshot() throws SnapshotException {
+    private Snapshot loadLocalSnapshot() throws SnapshotException, SpentAddressesException {
         if (config.getLocalSnapshotsEnabled()) {
             File localSnapshotFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.state");
             File localSnapshotMetadDataFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.meta");
 
             if (localSnapshotFile.exists() && localSnapshotFile.isFile() && localSnapshotMetadDataFile.exists() &&
                     localSnapshotMetadDataFile.isFile()) {
+
+                assertSpentAddressesDbExist();
 
                 SnapshotState snapshotState = readSnapshotStatefromFile(localSnapshotFile.getAbsolutePath());
                 if (!snapshotState.hasCorrectSupply()) {
@@ -224,6 +228,21 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         }
 
         return null;
+    }
+
+    private void assertSpentAddressesDbExist() throws SpentAddressesException {
+        try {
+            File spentAddressFolder = new File(SpentAddressesProvider.SPENT_ADDRESSES_DB);
+            //If there is at least one file in the db the check should pass
+            if (Files.newDirectoryStream(spentAddressFolder.toPath(), "*.sst").iterator().hasNext()) {
+                return;
+            }
+        }
+        catch (IOException e){
+            throw new SpentAddressesException("Can't load " + SpentAddressesProvider.SPENT_ADDRESSES_DB + " folder", e);
+        }
+
+        throw new SpentAddressesException(SpentAddressesProvider.SPENT_ADDRESSES_DB + " folder has no sst files");
     }
 
     /**

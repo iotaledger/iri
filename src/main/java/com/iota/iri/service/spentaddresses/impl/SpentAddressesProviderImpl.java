@@ -39,8 +39,8 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
      * Creates a new instance of SpentAddressesProvider
      */
     public SpentAddressesProviderImpl() {
-        this.rocksDBPersistenceProvider = new RocksDBPersistenceProvider("spent-addresses-db",
-                "spent-addresses-log", 1000,
+        this.rocksDBPersistenceProvider = new RocksDBPersistenceProvider(SPENT_ADDRESSES_DB,
+                SPENT_ADDRESSES_LOG, 1000,
                 new HashMap<String, Class<? extends Persistable>>(1)
                 {{put("spent-addresses", SpentAddress.class);}}, null);
     }

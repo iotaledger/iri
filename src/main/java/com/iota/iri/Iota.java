@@ -196,9 +196,11 @@ public class Iota {
     }
 
     private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
+        //snapshot provider must be initialized first
+        //because we check whether spent addresses data exists
+        snapshotProvider.init(configuration);
         spentAddressesProvider.init(configuration);
         spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider);
-        snapshotProvider.init(configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
             localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);

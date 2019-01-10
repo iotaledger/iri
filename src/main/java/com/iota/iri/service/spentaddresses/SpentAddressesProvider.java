@@ -8,6 +8,15 @@ import java.util.Collection;
  * Find, mark and store spent addresses
  */
 public interface SpentAddressesProvider {
+    /**
+     * Folder where we store spent address data
+     */
+    String SPENT_ADDRESSES_DB = "spent-addresses-db";
+
+    /**
+     * Folder where we store spent address logs
+     */
+    String SPENT_ADDRESSES_LOG = "spent-addresses-log";
     
     /**
      * Checks if this address hash has been spent from

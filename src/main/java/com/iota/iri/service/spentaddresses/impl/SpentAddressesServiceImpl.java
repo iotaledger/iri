@@ -61,19 +61,10 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         try {
             Set<Hash> hashes = AddressViewModel.load(tangle, addressHash).getHashes();
             for (Hash hash : hashes) {
-                final TransactionViewModel tx = TransactionViewModel.fromHash(tangle, hash);
+                TransactionViewModel tx = TransactionViewModel.fromHash(tangle, hash);
                 // Check for spending transactions
-                if (tx.value() < 0) {
-                    // Transaction is confirmed
-                    if (tx.snapshotIndex() != 0) {
-                        return true;
-                    }
-
-                    // Transaction is pending
-                    Optional<Hash> tail = tailFinder.findTailFromTx(tx);
-                    if (tail.isPresent()) {
-                        return isBundleValid(tail.get());
-                    }
+                if (wasTransactionSpentFrom(tx)) {
+                    return true;
                 }
             }
         } catch (Exception e) {

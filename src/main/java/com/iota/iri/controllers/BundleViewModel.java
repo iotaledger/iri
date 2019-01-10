@@ -1,5 +1,6 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.model.BundleHash;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Bundle;
 import com.iota.iri.storage.Indexable;
@@ -7,8 +8,6 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Pair;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -61,7 +60,7 @@ public class BundleViewModel implements HashesViewModel {
      * @throws Exception Thrown if the database fails to return a first object
      */
     public static BundleViewModel first(Tangle tangle) throws Exception {
-        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Bundle.class, Hash.class);
+        Pair<Indexable, Persistable> bundlePair = tangle.getFirst(Bundle.class, BundleHash.class);
         if(bundlePair != null && bundlePair.hi != null) {
             return new BundleViewModel((Bundle) bundlePair.hi, (Hash) bundlePair.low);
         }

@@ -33,7 +33,7 @@ Feature: Test API calls on Machine 1
 		|latestSolidSubtangleMilestone			|
 		|latestSolidSubtangleMilestoneIndex		|
 		|milestoneStartIndex				|
-		|lastSnapshottedMilestoneIndex                |
+		|lastSnapshottedMilestoneIndex                  |
 		|neighbors					|
 		|packetsQueueSize				|
 		|time						|

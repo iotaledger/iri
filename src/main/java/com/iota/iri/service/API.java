@@ -879,9 +879,11 @@ public class API {
         
         // Note: When the MilestonePrunerQueue is processing a job, it is possible that this index is out of date.
         // Chances of this increase when a large localSnapshotsIntervalSynced is chosen.
-        int initialIndex = instance.transactionPruner
-                .getJobQueueByQueueClass(MilestonePrunerJobQueue.class)
-                .getYoungestFullyCleanedMilestoneIndex();
+        // If pruning is off, return -1
+        MilestonePrunerJobQueue job = instance.transactionPruner.getJobQueueByQueueClass(MilestonePrunerJobQueue.class);
+        int initialIndex = job != null ? 
+                job.getYoungestFullyCleanedMilestoneIndex() : 
+                    instance.snapshotProvider.getInitialSnapshot().getInitialIndex();
         
         return GetNodeInfoResponse.create(
                 name, 

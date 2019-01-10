@@ -1,5 +1,7 @@
 package com.iota.iri.service.transactionpruning;
 
+import com.iota.iri.service.transactionpruning.async.JobQueue;
+
 /**
  * Represents the manager for the cleanup jobs that are issued by the
  * {@link com.iota.iri.service.snapshot.LocalSnapshotManager} in connection with local snapshots and eventually other
@@ -19,6 +21,14 @@ public interface TransactionPruner {
      * @throws TransactionPruningException if anything goes wrong while adding the job
      */
     void addJob(TransactionPrunerJob job) throws TransactionPruningException;
+    
+    /**
+     * Finds the specific JobQueue instance from the current queues.
+     * 
+     * @param jobQueueType the class which extends of the JobQueue
+     * @return The JobQueue, or null if it does not exist
+     */
+    <T extends JobQueue> T getJobQueueByQueueClass(Class<T> jobQueueType);
 
     /**
      * This method executes all jobs that where added to the {@link TransactionPruner} through

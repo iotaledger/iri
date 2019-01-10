@@ -18,6 +18,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.slf4j.Logger;
@@ -164,6 +165,18 @@ public class AsyncTransactionPruner implements TransactionPruner {
         getJobQueue(job.getClass()).addJob(job);
 
         saveState();
+    }
+    
+    /**
+     * {@inheritDoc}
+     *
+     * Gets the current job from its corresponding queue.
+     */
+    @Override
+    public <T extends JobQueue> T getJobQueueByQueueClass(Class<T> jobQueueType) {
+        return (T) jobQueues.values().stream().
+                    filter(jobQueue -> jobQueue.getClass().equals(jobQueueType)).
+                    findFirst().orElse(null);
     }
 
     /**

@@ -18,6 +18,8 @@ import com.iota.iri.service.dto.*;
 import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
+import com.iota.iri.service.transactionpruning.async.MilestonePrunerJobQueue;
+import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
@@ -874,6 +876,13 @@ public class API {
       **/
     private AbstractResponse getNodeInfoStatement(){
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
+        
+        // Note: When the MilestonePrunerQueue is processing a job, it is possible that this index is out of date.
+        // Chances of this increase when a large localSnapshotsIntervalSynced is chosen.
+        int initialIndex = instance.transactionPruner
+                .getJobQueueByQueueClass(MilestonePrunerJobQueue.class)
+                .getYoungestFullyCleanedMilestoneIndex();
+        
         return GetNodeInfoResponse.create(
                 name, 
                 IRI.VERSION,
@@ -889,7 +898,7 @@ public class API {
                 instance.snapshotProvider.getLatestSnapshot().getHash(),
                 instance.snapshotProvider.getLatestSnapshot().getIndex(),
                 
-                instance.snapshotProvider.getInitialSnapshot().getIndex(),
+                initialIndex,
                 instance.snapshotProvider.getLatestSnapshot().getInitialIndex(),
                 
                 instance.node.howManyNeighbors(),

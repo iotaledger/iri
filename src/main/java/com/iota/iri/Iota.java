@@ -23,10 +23,7 @@ import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.storage.Tangle;
-import com.iota.iri.storage.ZmqPublishProvider;
+import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
@@ -199,7 +196,7 @@ public class Iota {
     }
 
     private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
-        spentAddressesProvider.init(tangle, configuration);
+        spentAddressesProvider.init(configuration);
         spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider);
         snapshotProvider.init(configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
@@ -283,7 +280,10 @@ public class Iota {
                 tangle.addPersistenceProvider(new RocksDBPersistenceProvider(
                         configuration.getDbPath(),
                         configuration.getDbLogPath(),
-                        configuration.getDbCacheSize()));
+                        configuration.getDbCacheSize(),
+                        Tangle.COLUMN_FAMILIES,
+                        Tangle.METADATA_COLUMN_FAMILY)
+                );
                 break;
             }
             default: {

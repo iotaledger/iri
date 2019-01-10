@@ -21,14 +21,6 @@ public interface TransactionPruner {
      * @throws TransactionPruningException if anything goes wrong while adding the job
      */
     void addJob(TransactionPrunerJob job) throws TransactionPruningException;
-    
-    /**
-     * Finds the specific JobQueue instance from the current queues.
-     * 
-     * @param jobQueueType the class which extends of the JobQueue
-     * @return The JobQueue, or null if it does not exist
-     */
-    <T extends JobQueue> T getJobQueueByQueueClass(Class<T> jobQueueType);
 
     /**
      * This method executes all jobs that where added to the {@link TransactionPruner} through

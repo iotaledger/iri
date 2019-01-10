@@ -165,18 +165,6 @@ public class AsyncTransactionPruner implements TransactionPruner {
 
         saveState();
     }
-    
-    /**
-     * {@inheritDoc}
-     *
-     * Gets the current job from its corresponding queue.
-     */
-    @Override
-    public <T extends JobQueue> T getJobQueueByQueueClass(Class<T> jobQueueType) {
-        return (T) jobQueues.values().stream().
-                    filter(jobQueue -> jobQueue.getClass().equals(jobQueueType)).
-                    findFirst().orElse(null);
-    }
 
     /**
      * {@inheritDoc}

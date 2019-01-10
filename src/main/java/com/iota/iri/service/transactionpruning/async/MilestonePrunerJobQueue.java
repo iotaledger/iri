@@ -165,14 +165,4 @@ public class MilestonePrunerJobQueue implements JobQueue<MilestonePrunerJob> {
 
         return true;
     }
-    
-    /**
-     * Gets the youngest cleaned milestone index.
-     * This is not guaranteed to be the current youngest in the database, since the current job could be making changes.
-     * 
-     * @return The milestone index of the current youngest fully cleaned milestone in the provider
-     */
-    public int getYoungestFullyCleanedMilestoneIndex() {
-        return youngestFullyCleanedMilestoneIndex;
-    }
 }

@@ -14,7 +14,11 @@ import com.iota.iri.utils.Pair;
 import com.iota.iri.utils.dag.DAGHelper;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents a cleanup job for {@link com.iota.iri.service.transactionpruning.TransactionPruner}s that removes
@@ -26,6 +30,9 @@ import java.util.List;
  * time, persisting the progress after each step.
  */
 public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
+
+    private static final Logger log = LoggerFactory.getLogger(MilestonePrunerJob.class);
+
     /**
      * Holds the milestone index where this job starts cleaning up.
      */
@@ -264,11 +271,12 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                         approvedTransaction -> {
                             if (approvedTransaction.value() < 0 &&
                                     !spentAddressesService.wasAddressSpentFrom(approvedTransaction.getAddressHash())) {
-                                throw new SpentAddressesException(
-                                        "Pruned spend transaction did not have its spent address recorded");
-                            } else {
-                                elementsToDelete.add(new Pair<>(approvedTransaction.getHash(), Transaction.class));
+                                log.warn("Pruned spend transaction " + approvedTransaction.getHash() +
+                                                " did not have its spent address recorded. Persisting it now");
+                                spentAddressesService
+                                        .persistSpentAddresses(Collections.singletonList(approvedTransaction));
                             }
+                                elementsToDelete.add(new Pair<>(approvedTransaction.getHash(), Transaction.class));
                         });
             }
 

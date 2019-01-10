@@ -875,6 +875,7 @@ public class API {
       **/
     private AbstractResponse getNodeInfoStatement() throws Exception{
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
+        MilestoneViewModel milestone = MilestoneViewModel.first(instance.tangle);
         
         return GetNodeInfoResponse.create(
                 name, 
@@ -891,7 +892,7 @@ public class API {
                 instance.snapshotProvider.getLatestSnapshot().getHash(),
                 instance.snapshotProvider.getLatestSnapshot().getIndex(),
                 
-                MilestoneViewModel.first(instance.tangle).index(),
+                milestone != null ? milestone.index() : -1,
                 instance.snapshotProvider.getLatestSnapshot().getInitialIndex(),
                 
                 instance.node.howManyNeighbors(),

@@ -17,7 +17,8 @@ import java.util.stream.Stream;
  * logic based on the type of the job.
  */
 public class MilestonePrunerJobQueue implements JobQueue<MilestonePrunerJob> {
-    /** f
+    
+    /** 
      * Holds the youngest (highest) milestone index that was successfully cleaned (gets updated when a job finishes).
      */
     private int youngestFullyCleanedMilestoneIndex;

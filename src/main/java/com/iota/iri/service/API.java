@@ -15,11 +15,9 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
-import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.service.transactionpruning.async.MilestonePrunerJobQueue;
-import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
@@ -41,7 +39,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -880,9 +877,10 @@ public class API {
         // Note: When the MilestonePrunerQueue is processing a job, it is possible that this index is out of date.
         // Chances of this increase when a large localSnapshotsIntervalSynced is chosen.
         // If pruning is off, return -1
-        MilestonePrunerJobQueue job = instance.transactionPruner.getJobQueueByQueueClass(MilestonePrunerJobQueue.class);
-        int initialIndex = job != null ? 
-                job.getYoungestFullyCleanedMilestoneIndex() : 
+        MilestonePrunerJobQueue milestoneJobQueue = instance.transactionPruner
+                .getJobQueueByQueueClass(MilestonePrunerJobQueue.class);
+        int initialIndex = milestoneJobQueue != null ? 
+                milestoneJobQueue.getYoungestFullyCleanedMilestoneIndex() : 
                     instance.snapshotProvider.getInitialSnapshot().getInitialIndex();
         
         return GetNodeInfoResponse.create(

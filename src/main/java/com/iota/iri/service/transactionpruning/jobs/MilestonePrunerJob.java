@@ -127,7 +127,6 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                     }
 
                     getTransactionPruner().saveState();
-                    getSnapshot().setIndex(getCurrentIndex());
                 }
             } catch (TransactionPruningException e) {
                 setStatus(TransactionPrunerJobStatus.FAILED);

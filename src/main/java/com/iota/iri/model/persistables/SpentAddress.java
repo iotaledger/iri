@@ -3,7 +3,7 @@ package com.iota.iri.model.persistables;
 import com.iota.iri.storage.Persistable;
 
 public class SpentAddress implements Persistable {
-    public boolean exists = false;
+    private boolean exists = false;
 
     @Override
     public byte[] bytes() {
@@ -27,5 +27,9 @@ public class SpentAddress implements Persistable {
     @Override
     public boolean merge() {
         return false;
+    }
+
+    public boolean exists() {
+        return exists;
     }
 }

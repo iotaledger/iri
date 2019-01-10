@@ -69,6 +69,7 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
      * get restored from a state file, because we start cleaning up at the {@link #startingIndex}.
      *
      * @param startingIndex milestone index that defines where to start cleaning up
+     * @param targetIndex milestone index which defines the end of this pruning job
      */
     public MilestonePrunerJob(int startingIndex, int targetIndex) {
         this(startingIndex, startingIndex, targetIndex);
@@ -88,6 +89,7 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
      *
      * @param startingIndex milestone index that defines where to start cleaning up
      * @param currentIndex milestone index that defines the next milestone that should be cleaned up by this job
+     * @param targetIndex milestone index which defines the end of this pruning job
      */
     private MilestonePrunerJob(int startingIndex, int currentIndex, int targetIndex) {
         setStartingIndex(startingIndex);

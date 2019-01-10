@@ -4,6 +4,7 @@ import com.iota.iri.*;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.BundleViewModel;
+import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TagViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
@@ -15,9 +16,9 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
-import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
+import com.iota.iri.service.transactionpruning.async.MilestonePrunerJobQueue;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
@@ -39,7 +40,6 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -871,20 +871,30 @@ public class API {
       * Returns information about this node.
       *
       * @return {@link com.iota.iri.service.dto.GetNodeInfoResponse}
+      * @throws Exception When we cant find the first milestone in the database
       **/
-    private AbstractResponse getNodeInfoStatement(){
+    private AbstractResponse getNodeInfoStatement() throws Exception{
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
-        return GetNodeInfoResponse.create(name, IRI.VERSION,
+        MilestoneViewModel milestone = MilestoneViewModel.first(instance.tangle);
+        
+        return GetNodeInfoResponse.create(
+                name, 
+                IRI.VERSION,
                 Runtime.getRuntime().availableProcessors(),
                 Runtime.getRuntime().freeMemory(),
                 System.getProperty("java.version"),
+                
                 Runtime.getRuntime().maxMemory(),
                 Runtime.getRuntime().totalMemory(),
                 instance.latestMilestoneTracker.getLatestMilestoneHash(),
                 instance.latestMilestoneTracker.getLatestMilestoneIndex(),
+                
                 instance.snapshotProvider.getLatestSnapshot().getHash(),
                 instance.snapshotProvider.getLatestSnapshot().getIndex(),
-                instance.snapshotProvider.getInitialSnapshot().getIndex(),
+                
+                milestone != null ? milestone.index() : -1,
+                instance.snapshotProvider.getLatestSnapshot().getInitialIndex(),
+                
                 instance.node.howManyNeighbors(),
                 instance.node.queuedTransactionsSize(),
                 System.currentTimeMillis(),

@@ -11,13 +11,14 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Stream;
 
 /**
- * Represents a queue of {@link MilestonePrunerJob}s thar are being executed by the {@link AsyncTransactionPruner}.
+ * Represents a queue of {@link MilestonePrunerJob}s that are being executed by the {@link AsyncTransactionPruner}.
  *
  * The {@link AsyncTransactionPruner} uses a separate queue for every job type, to be able to adjust the processing
  * logic based on the type of the job.
  */
 public class MilestonePrunerJobQueue implements JobQueue<MilestonePrunerJob> {
-    /**
+    
+    /** 
      * Holds the youngest (highest) milestone index that was successfully cleaned (gets updated when a job finishes).
      */
     private int youngestFullyCleanedMilestoneIndex;

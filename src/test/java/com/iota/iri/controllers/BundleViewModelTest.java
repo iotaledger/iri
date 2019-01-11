@@ -27,8 +27,9 @@ public class BundleViewModelTest {
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
-        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath(),1000);
+        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
         snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());

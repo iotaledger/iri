@@ -34,6 +34,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
+    protected String pathPoWLib = Defaults.PATH_POW_LIB;
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
@@ -225,6 +226,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Override
     public int getUdpReceiverPort() {
         return udpReceiverPort;
+    }
+  
+    @JsonProperty
+    @Parameter(names = {"--pearldiver-exlib"}, description = APIConfig.Descriptions.EXTERNAL_POW_LIB)
+    protected void setExternalPoWLib(String pathPoWLib) {
+        this.pathPoWLib = pathPoWLib;
+    }
+
+    @Override
+    public String getExternalPoWLib() {
+        return pathPoWLib;
     }
 
     @JsonProperty
@@ -745,6 +757,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int MAX_GET_TRYTES = 10_000;
         int MAX_BODY_LENGTH = 1_000_000;
         String REMOTE_AUTH = "";
+        String PATH_POW_LIB = "";
 
         //Network
         int UDP_RECEIVER_PORT = 14600;

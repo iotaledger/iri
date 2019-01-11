@@ -133,6 +133,7 @@ public class API {
         maxGetTrytes = configuration.getMaxGetTrytes();
         maxBodyLength = configuration.getMaxBodyLength();
         testNet = configuration.isTestnet();
+        PearlDiver.init(instance.configuration.getExternalPoWLib());
 
         features = Feature.calculateFeatureNames(instance.configuration);
     }
@@ -755,7 +756,7 @@ public class API {
       * @return {@link com.iota.iri.service.dto.GetTransactionsToApproveResponse}
       * @throws Exception When tip selection has failed. Currently caught and returned as an {@link ErrorResponse}.
       **/
-    private synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
+     private AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
         if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
             return ErrorResponse.create("Invalid depth input");
         }

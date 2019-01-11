@@ -32,6 +32,37 @@ public class PearlDiver {
     private volatile State state;
     private final Object syncObj = new Object();
 
+    private static boolean isExternal = false;
+
+    public static void init(String exlibName) {
+        try {
+            System.loadLibrary(exlibName);
+            if (PearlDiver.exlibInit()) {
+                isExternal = true;
+            }
+        } catch (java.lang.UnsatisfiedLinkError e) {
+            /* Do Nothing */
+        }
+    }
+
+    /* Initialization function of external pow library */
+    private static native boolean exlibInit();
+
+    /* Search function of external pow library */
+    private static native boolean exlibSearch(final byte[] transactionTrits, final int minWeigtMagnitude, int numberOfThreads);
+
+    /* Cancel function of external pow library */
+    private static native void exlibCancel();
+
+    /* Destroy function of external pow library */
+    public static native void exlibDestroy();
+
+    public static void destroy() {
+        if (isExternal) {
+            PearlDiver.exlibDestroy();
+        }
+    }
+
     /**
      * Searches for a nonce such that the hash ends with {@code minWeightMagnitude} zeros.<br>
      * To add the {@value com.iota.iri.controllers.TransactionViewModel#NONCE_TRINARY_SIZE}
@@ -44,10 +75,18 @@ public class PearlDiver {
      * @return <tt>true</tt> if search completed successfully.
      * the nonce will be written to the end of {@code transactionTrits}
      */
-    public synchronized boolean search(final byte[] transactionTrits, final int minWeightMagnitude,
-                                       int numberOfThreads) {
-
+    public boolean search(final byte[] transactionTrits, final int minWeightMagnitude,
+                          int numberOfThreads) {
         validateParameters(transactionTrits, minWeightMagnitude);
+        if (isExternal) {
+            return PearlDiver.exlibSearch(transactionTrits, minWeightMagnitude, numberOfThreads);
+        } else {
+            return isearch(transactionTrits, minWeightMagnitude, numberOfThreads);
+        }
+    }
+
+    public synchronized boolean isearch(final byte[] transactionTrits, final int minWeightMagnitude,
+                                        int numberOfThreads) {
         synchronized (syncObj) {
             state = State.RUNNING;
         }
@@ -87,8 +126,12 @@ public class PearlDiver {
      * Cancels the running search task.
      */
     public void cancel() {
-        synchronized (syncObj) {
-            state = State.CANCELLED;
+        if (isExternal) {
+            PearlDiver.exlibCancel();
+        } else {
+            synchronized (syncObj) {
+                state = State.CANCELLED;
+            }
         }
     }
 
@@ -97,6 +140,7 @@ public class PearlDiver {
             throw new RuntimeException(
                     "Invalid transaction trits length: " + transactionTrits.length);
         }
+
         if (minWeightMagnitude < 0 || minWeightMagnitude > CURL_HASH_LENGTH) {
             throw new RuntimeException("Invalid min weight magnitude: " + minWeightMagnitude);
         }

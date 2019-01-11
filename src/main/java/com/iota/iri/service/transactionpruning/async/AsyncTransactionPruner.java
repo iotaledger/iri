@@ -3,6 +3,7 @@ package com.iota.iri.service.transactionpruning.async;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJob;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
@@ -11,14 +12,16 @@ import com.iota.iri.service.transactionpruning.jobs.UnconfirmedSubtanglePrunerJo
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.thread.ThreadIdentifier;
 import com.iota.iri.utils.thread.ThreadUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates a {@link TransactionPruner} that is able to process it's jobs asynchronously in the background and persists
@@ -58,6 +61,11 @@ public class AsyncTransactionPruner implements TransactionPruner {
      * Data provider for the snapshots that are relevant for the node.
      */
     private SnapshotProvider snapshotProvider;
+
+    /**
+     * Used to check whether an address was spent from before it is pruned.
+     */
+    private SpentAddressesService spentAddressesService;
 
     /**
      * Manager for the tips (required for removing pruned transactions from this manager).
@@ -119,11 +127,13 @@ public class AsyncTransactionPruner implements TransactionPruner {
      * @param config Configuration with important snapshot related configuration parameters
      * @return the initialized instance itself to allow chaining
      */
-    public AsyncTransactionPruner init(Tangle tangle, SnapshotProvider snapshotProvider, TipsViewModel tipsViewModel,
-            SnapshotConfig config) {
+    public AsyncTransactionPruner init(Tangle tangle, SnapshotProvider snapshotProvider,
+                                       SpentAddressesService spentAddressesService, TipsViewModel tipsViewModel,
+                                       SnapshotConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
+        this.spentAddressesService = spentAddressesService;
         this.tipsViewModel = tipsViewModel;
         this.config = config;
 
@@ -144,6 +154,7 @@ public class AsyncTransactionPruner implements TransactionPruner {
     @Override
     public void addJob(TransactionPrunerJob job) throws TransactionPruningException {
         job.setTransactionPruner(this);
+        job.setSpentAddressesService(spentAddressesService);
         job.setTangle(tangle);
         job.setTipsViewModel(tipsViewModel);
         job.setSnapshot(snapshotProvider.getInitialSnapshot());

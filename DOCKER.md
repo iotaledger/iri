@@ -61,7 +61,7 @@ ExecStart=/usr/bin/docker run \
 -p 14265:14265 \
 -p 15600:15600 \
 -p 14600:14600/udp  \
-iotaledger/iri:v1.6.0 \
+iotaledger/iri:v1.6.0-RELEASE \
 -p 14265 \
 --zmq-enabled \
 --testnet

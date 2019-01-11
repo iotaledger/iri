@@ -5,7 +5,6 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.IntegerIndex;
 import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.model.persistables.Transaction;
-import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJobStatus;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.storage.Indexable;

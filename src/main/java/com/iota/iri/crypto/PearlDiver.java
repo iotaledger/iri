@@ -31,6 +31,37 @@ public class PearlDiver {
 
     private volatile State state;
     private final Object syncObj = new Object();
+    
+    private static boolean isExternal = false;
+
+    public static void init(String exlib_name) {
+        try {
+            System.loadLibrary(exlib_name);
+            if (PearlDiver.exlib_init()) {
+                isExternal = true;
+            }
+        } catch (java.lang.UnsatisfiedLinkError e) {
+            /* Do Nothing */
+        }
+    }
+
+    /* Initialization function of external pow library */
+    private static native boolean exlib_init();
+
+    /* Search function of external pow library */
+    private static native boolean exlib_search(final byte[] transactionTrits, final int minWeigtMagnitude);
+
+    /* Cancel function of external pow library */
+    private static native void exlib_cancel();
+
+    /* Destroy function of external pow library */
+    public static native void exlib_destroy();
+
+    public static void destroy() {
+        if (isExternal) {
+            PearlDiver.exlib_destroy();
+        }
+    }
 
     /**
      * Searches for a nonce such that the hash ends with {@code minWeightMagnitude} zeros.<br>

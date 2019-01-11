@@ -53,7 +53,7 @@ public class IRI {
      * @throws Exception If we fail to start the IRI launcher.
      */
     public static void main(String[] args) throws Exception {
-        // Logging is configured first before any references to Logger or LoggerFactory.
+        // Logging is configured first before ANY references to Logger or LoggerFactory.
         // Any public method or field accessors needed in IRI should be put in IRI and then delegate to IRILauncher.
         // That ensures that future code does not need to know about this setup.
         configureLogging();

@@ -11,9 +11,9 @@ import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
-import org.junit.AfterClass;
+import org.junit.After;
 import org.junit.Assert;
-import org.junit.BeforeClass;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
@@ -36,20 +36,21 @@ public class TransactionViewModelTest {
 
     private static final Random seed = new Random();
 
-    @BeforeClass
-    public static void setUp() throws Exception {
+    @Before
+    public void setUp() throws Exception {
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
-        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath(),1000);
+        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
         snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
     }
 
-    @AfterClass
-    public static void tearDown() throws Exception {
+    @After
+    public void tearDown() throws Exception {
         tangle.shutdown();
         snapshotProvider.shutdown();
         dbFolder.delete();
@@ -400,6 +401,16 @@ public class TransactionViewModelTest {
             }
         }
         log.info("Done. #TX: {}", TransactionViewModel.getNumberOfStoredTransactions(tangle));
+    }
+
+    @Test
+    public void firstShouldFindTx() throws Exception {
+        byte[] trits = getRandomTransactionTrits();
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
+        transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
+
+        TransactionViewModel result = TransactionViewModel.first(tangle);
+        Assert.assertEquals(transactionViewModel.getHash(), result.getHash());
     }
 
     private Transaction getRandomTransaction(Random seed) {

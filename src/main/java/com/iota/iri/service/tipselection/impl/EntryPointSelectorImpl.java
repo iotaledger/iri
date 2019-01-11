@@ -8,9 +8,9 @@ import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.storage.Tangle;
 
 /**
- * Implementation of <tt>EntryPointSelector</tt> that given a depth N, returns a N-deep milestone.
- * Meaning <CODE>milestone(latestSolid - depth)</CODE>
- * Used to as a starting point for the random walk.
+ * Implementation of {@link EntryPointSelector} that given a depth {@code N}, returns a N-deep milestone.
+ * Meaning <code>milestone(latestSolid - depth)</code>
+ * Used as a starting point for the random walk.
  */
 public class EntryPointSelectorImpl implements EntryPointSelector {
 
@@ -18,9 +18,14 @@ public class EntryPointSelectorImpl implements EntryPointSelector {
     private final SnapshotProvider snapshotProvider;
     private final LatestMilestoneTracker latestMilestoneTracker;
 
+    /**
+     * Constructor for Entry Point Selector
+     * @param tangle Tangle object which acts as a database interface.
+     * @param snapshotProvider accesses snapshots of the ledger state
+     * @param latestMilestoneTracker  used to get latest milestone.
+     */
     public EntryPointSelectorImpl(Tangle tangle, SnapshotProvider snapshotProvider,
             LatestMilestoneTracker latestMilestoneTracker) {
-
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.latestMilestoneTracker = latestMilestoneTracker;

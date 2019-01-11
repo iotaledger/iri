@@ -76,6 +76,12 @@ public class GetNodeInfoResponse extends AbstractResponse {
     private int milestoneStartIndex;
     
     /**
+     * The index of the milestone used in the latest snapshot. 
+     * This is the most recent milestone in the entire snapshot
+     */
+    private int lastSnapshottedMilestoneIndex;
+    
+    /**
      * Number of neighbors this node is directly connected with.
      */
     private int neighbors;
@@ -132,6 +138,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
      * @param latestSolidSubtangleMilestone {@link #latestSolidSubtangleMilestone}
      * @param latestSolidSubtangleMilestoneIndex {@link #latestSolidSubtangleMilestoneIndex}
      * @param milestoneStartIndex {@link #milestoneStartIndex}
+     * @param lastSnapshottedMilestoneIndex {@link #lastSnapshottedMilestoneIndex}
      * @param neighbors {@link #neighbors}
      * @param packetsQueueSize {@link #packetsQueueSize}
      * @param currentTimeMillis {@link #time}
@@ -144,7 +151,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 	public static AbstractResponse create(String appName, String appVersion, int jreAvailableProcessors, long jreFreeMemory,
 	        String jreVersion, long maxMemory, long totalMemory, Hash latestMilestone, int latestMilestoneIndex,
 	        Hash latestSolidSubtangleMilestone, int latestSolidSubtangleMilestoneIndex, int milestoneStartIndex,
-	        int neighbors, int packetsQueueSize, long currentTimeMillis, int tips, 
+	        int lastSnapshottedMilestoneIndex, int neighbors, int packetsQueueSize, long currentTimeMillis, int tips, 
 	        int numberOfTransactionsToRequest,  String[] features, String coordinatorAddress) {
 		final GetNodeInfoResponse res = new GetNodeInfoResponse();
 		res.appName = appName;
@@ -162,6 +169,7 @@ public class GetNodeInfoResponse extends AbstractResponse {
 		res.latestSolidSubtangleMilestoneIndex = latestSolidSubtangleMilestoneIndex;
 
 		res.milestoneStartIndex = milestoneStartIndex;
+		res.lastSnapshottedMilestoneIndex = lastSnapshottedMilestoneIndex;
 
 		res.neighbors = neighbors;
 		res.packetsQueueSize = packetsQueueSize;
@@ -268,6 +276,14 @@ public class GetNodeInfoResponse extends AbstractResponse {
      */
 	public int getMilestoneStartIndex() {
 		return milestoneStartIndex;
+	}
+	
+	/**
+	 * 
+	 * @return {@link #lastSnapshottedMilestoneIndex}
+	 */
+	public int getLastSnapshottedMilestoneIndex() {
+	    return lastSnapshottedMilestoneIndex;
 	}
 
     /**

@@ -7,22 +7,18 @@ import com.iota.iri.controllers.StateDiffViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.snapshot.SnapshotMetaData;
-import com.iota.iri.service.snapshot.SnapshotService;
-import com.iota.iri.service.snapshot.Snapshot;
-import com.iota.iri.service.snapshot.SnapshotException;
-import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.*;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
 import com.iota.iri.service.transactionpruning.jobs.UnconfirmedSubtanglePrunerJob;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.log.ProgressLogger;
-import com.iota.iri.utils.log.interval.IntervalProgressLogger;
 import com.iota.iri.utils.dag.DAGHelper;
 import com.iota.iri.utils.dag.TraversalException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.iota.iri.utils.log.ProgressLogger;
+import com.iota.iri.utils.log.interval.IntervalProgressLogger;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +26,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Creates a service instance that allows us to access the business logic for {@link Snapshot}s.<br />
@@ -81,6 +80,10 @@ public class SnapshotServiceImpl implements SnapshotService {
      */
     private SnapshotConfig config;
 
+    private SpentAddressesService spentAddressesService;
+
+    private SpentAddressesProvider spentAddressesProvider;
+
     /**
      * This method initializes the instance and registers its dependencies.<br />
      * <br />
@@ -98,9 +101,14 @@ public class SnapshotServiceImpl implements SnapshotService {
      * @param config important snapshot related configuration parameters
      * @return the initialized instance itself to allow chaining
      */
-    public SnapshotServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotConfig config) {
+    public SnapshotServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
+            SpentAddressesService spentAddressesService, SpentAddressesProvider spentAddressesProvider,
+            SnapshotConfig config) {
+
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
+        this.spentAddressesService = spentAddressesService;
+        this.spentAddressesProvider = spentAddressesProvider;
         this.config = config;
 
         return this;
@@ -487,6 +495,14 @@ public class SnapshotServiceImpl implements SnapshotService {
      */
     private void persistLocalSnapshot(SnapshotProvider snapshotProvider, Snapshot newSnapshot, SnapshotConfig config)
             throws SnapshotException {
+
+        try {
+            spentAddressesService.persistSpentAddresses(snapshotProvider.getInitialSnapshot().getIndex(),
+                    newSnapshot.getIndex());
+            
+        } catch (Exception e) {
+            throw new SnapshotException(e);
+        }
 
         snapshotProvider.writeSnapshotToDisk(newSnapshot, config.getLocalSnapshotsBasePath());
 

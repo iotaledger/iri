@@ -232,17 +232,17 @@ public class SnapshotProviderImpl implements SnapshotProvider {
 
     private void assertSpentAddressesDbExist() throws SpentAddressesException {
         try {
-            File spentAddressFolder = new File(SpentAddressesProvider.SPENT_ADDRESSES_DB);
+            File spentAddressFolder = new File(SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH);
             //If there is at least one file in the db the check should pass
             if (Files.newDirectoryStream(spentAddressFolder.toPath(), "*.sst").iterator().hasNext()) {
                 return;
             }
         }
         catch (IOException e){
-            throw new SpentAddressesException("Can't load " + SpentAddressesProvider.SPENT_ADDRESSES_DB + " folder", e);
+            throw new SpentAddressesException("Can't load " + SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH + " folder", e);
         }
 
-        throw new SpentAddressesException(SpentAddressesProvider.SPENT_ADDRESSES_DB + " folder has no sst files");
+        throw new SpentAddressesException(SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH + " folder has no sst files");
     }
 
     /**

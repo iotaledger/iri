@@ -31,8 +31,6 @@ def generate_transaction_and_attach(step, node):
         if arg['keys'] == 'seed' and arg['type'] == 'staticList':
             seed = arg['values']
             arg['type'] = 'ignore'
-            logger.info("seed: {}".format(seed))
-
     if seed != "":
         api = api_utils.prepare_api_call(node, seed=seed)
         is_value_transaction = True
@@ -49,8 +47,6 @@ def generate_transaction_and_attach(step, node):
 
     transaction = transactions.create_and_attach_transaction(api, is_value_transaction, transaction_args)
     api.broadcast_and_store(transaction.get('trytes'))
-    hash = Transaction.from_tryte_string(transaction['trytes'][0]).hash
-    logger.info(hash)
 
     assert len(transaction['trytes']) > 0, "Transaction was not created correctly"
     world.responses['attachToTangle'] = {}
@@ -81,8 +77,6 @@ def create_inconsistent_transaction(step, node):
     transaction = transactions.attach_store_and_broadcast(api, argument_list)
     transaction_trytes = transaction.get('trytes')
     transaction_hash = Transaction.from_tryte_string(transaction_trytes[0])
-
-    logger.info(transaction_hash.hash)
 
     if 'inconsistentTransactions' not in world.responses:
         world.responses['inconsistentTransactions'] = {}
@@ -158,17 +152,17 @@ def issue_multiple_transactions(step, num_transactions, node):
             for index, value in enumerate(stored_values):
                 stored_value_list[index] = value
 
-        for i, v in enumerate(step.hashes):
-            if v['keys'] == "seed" and (v['type'] == "staticList" or v['type'] == "ignore"):
-                if v['type'] != stored_value_list[i]['type']:
-                    v['type'] = stored_value_list[i]['type']
+        for arg_index, arg in enumerate(step.hashes):
+            if arg['keys'] == "seed" and (arg['type'] == "staticList" or arg['type'] == "ignore"):
+                if arg['type'] != stored_value_list[arg_index]['type']:
+                    arg['type'] = stored_value_list[arg_index]['type']
 
-                if v['values'] != stored_value_list[i]['values']:
-                    v['values'] = stored_value_list[i]['values']
+                if arg['values'] != stored_value_list[arg_index]['values']:
+                    arg['values'] = stored_value_list[arg_index]['values']
 
-                new_address = getattr(static, v['values'])
-                v['values'] = new_address[iteration]
-
+                new_address = getattr(static, arg['values'])
+                arg['values'] = new_address[iteration]
+        logger.info('Sending Transaction {}'.format(iteration + 1))
         transaction = generate_transaction_and_attach(step, node)
         transaction_hash = Transaction.from_tryte_string(transaction['trytes'][0]).hash
         transaction_hashes.append(transaction_hash)
@@ -200,4 +194,3 @@ def issue_a_milestone_with_reference(step, index, static_variable):
     milestone_hash = Transaction.from_tryte_string(milestone['trytes'][0]).hash
     milestone_hash2 = Transaction.from_tryte_string(milestone['trytes'][1]).hash
     world.config['latestMilestone'][node] = [milestone_hash, milestone_hash2]
-    logger.info("Milestones transactions: \n{}\n{}".format(milestone_hash, milestone_hash2))

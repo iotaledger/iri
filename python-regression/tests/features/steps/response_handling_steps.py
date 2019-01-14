@@ -89,7 +89,6 @@ def check_response_for_value(step, api_call):
 
             assert expected_value == response_value, "The expected value {} does not match""\
                                                      ""the response value: {}".format(expected_value, response_value)
-
     logger.info('Response contained expected values')
 
 
@@ -220,5 +219,3 @@ def store_response_in_static(step, api_call, node_name, static_variable):
         response = response['hashes']
 
     setattr(static, static_variable, response)
-    logger.info("Response {} stored in variable: {}".format(response, static_variable))
-

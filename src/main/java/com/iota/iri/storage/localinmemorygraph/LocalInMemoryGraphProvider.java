@@ -16,25 +16,28 @@ import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.tipselection.impl.KatzCentrality;
+import com.iota.iri.storage.Tangle;
 
 import java.util.*;
 import java.io.*;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider
 {
-    static HashMap<Hash, Double>       score;
-    static HashMap<Hash, Set<Hash>>    graph;
-    static HashMap<Hash, Set<Hash>>    revGraph;
-    static HashMap<Hash, Integer>      degs;
-    static HashMap<Integer, Set<Hash>> topOrder;
-    static HashMap<Integer, Set<Hash>> topOrderStreaming;
-    static HashMap<Hash, Integer>      lvlMap;
-    static HashMap<Hash, String>       nameMap;
-    static int                         totalDepth;
+    public static HashMap<Hash, Double>       score;
+    public static HashMap<Hash, Set<Hash>>    graph;
+    static HashMap<Hash, Set<Hash>>           revGraph;
+    static HashMap<Hash, Integer>             degs;
+    public static HashMap<Integer, Set<Hash>> topOrder;
+    public static HashMap<Integer, Set<Hash>> topOrderStreaming;
+    static HashMap<Hash, Integer>             lvlMap;
+    static HashMap<Hash, String>              nameMap;
+    public static int                         totalDepth;
+    private Tangle                            tangle;
 
     private boolean available;
 
-    public LocalInMemoryGraphProvider( String dbDir) {
+    public LocalInMemoryGraphProvider(String dbDir, Tangle tangle) {
+        this.tangle = tangle;
         graph = new HashMap<>();
         revGraph = new HashMap<>();
         degs = new HashMap<>();
@@ -43,6 +46,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         topOrderStreaming = new HashMap<>();
         score = new HashMap<>();
         totalDepth = 0;
+        try {
+            buildGraph();
+        } catch (NullPointerException e) {
+            ; // initialization failed because tangle has nothing
+        }
     }
 
     public static void setNameMap(HashMap<Hash, String> nameMap) {
@@ -202,6 +210,53 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return true;
     }
 
+    // Get the graph using the BFS method
+    public void buildGraph() {
+        try {
+            Pair<Indexable, Persistable> one = tangle.getFirst(Transaction.class, TransactionHash.class);
+            while(one != null && one.low != null) {
+                TransactionViewModel model = new TransactionViewModel((Transaction)one.hi, (TransactionHash)one.low);
+                Hash trunk = model.getTrunkTransactionHash();
+                Hash branch = model.getBranchTransactionHash();
+
+                // approve direction
+                if(graph.get(model.getHash()) == null) {
+                    graph.put(model.getHash(), new HashSet<Hash>());
+                }
+                graph.get(model.getHash()).add(trunk);
+                graph.get(model.getHash()).add(branch);
+
+                // approved direction
+                if(revGraph.get(trunk) == null) {
+                    revGraph.put(trunk, new HashSet<Hash>());
+                }
+                if(revGraph.get(branch) == null) {
+                    revGraph.put(branch, new HashSet<Hash>());
+                }
+                revGraph.get(trunk).add(model.getHash());
+                revGraph.get(branch).add(model.getHash());
+
+                // update degrees
+                if(degs.get(model.getHash()) == null || degs.get(model.getHash()) == 0) {
+                    degs.put(model.getHash(), 2);
+                } 
+                if(degs.get(trunk) == null) {
+                    degs.put(trunk, 0);
+                }
+                if(degs.get(branch) == null) {
+                    degs.put(branch, 0);
+                }
+
+                one = tangle.next(Transaction.class, one.low);
+            }
+            computeToplogicalOrder();
+        } catch(NullPointerException e) {
+            throw e;
+        } catch(Exception e) {
+            e.printStackTrace(new PrintStream(System.out));
+        }
+    }
+
     private void updateTopologicalOrder(Hash vet, Hash trunk, Hash branch) {
         if(topOrderStreaming.isEmpty()) {
             topOrderStreaming.put(1, new HashSet<>());
@@ -233,7 +288,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    public void computeToplogicalOrder() {
+    private void computeToplogicalOrder() {
         Deque<Hash> bfsQ = new ArrayDeque<>();
         Map<Hash, Integer> level = new HashMap<Hash, Integer>();
         Set<Hash> visited = new HashSet<Hash>();
@@ -245,7 +300,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 break;
             }
         }
-       
+
         while(!bfsQ.isEmpty()) {
             Hash h = bfsQ.pollFirst();
             int lvl = level.get(h);
@@ -266,6 +321,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 }
             }
         }
+        topOrderStreaming = topOrder;
     }
 
     public void computeScore() {
@@ -287,7 +343,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
 
         // TODO if the same score, choose randomly
-        Set<Hash> hashsOnLevel = topOrderStreaming.get(totalDepth-depth+1);
+        Set<Hash> hashsOnLevel = topOrderStreaming.get(totalDepth-depth);
         double maxScore = 0;
         for(Hash h : hashsOnLevel) {
             if(score.get(h)>=maxScore){

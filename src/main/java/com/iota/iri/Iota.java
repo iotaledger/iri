@@ -157,7 +157,7 @@ public class Iota {
             tangle.addPersistenceProvider(new ZmqPublishProvider(messageQ));
         }
         if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
-            tangle.addPersistenceProvider(new LocalInMemoryGraphProvider(""));
+            tangle.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle));
         }
         if(!BaseIotaConfig.getInstance().getGraphDbPath().equals("")) {
             String graphDbPath = BaseIotaConfig.getInstance().getGraphDbPath();

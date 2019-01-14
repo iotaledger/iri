@@ -61,11 +61,11 @@ public class EntryPointSelectorKatzTest {
         logFolder1.create();
         tangle1.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
                     .getRoot().getAbsolutePath(), 1000));
-        tangle1.addPersistenceProvider(new LocalInMemoryGraphProvider(""));
+        tangle1.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle1));
         tangle1.init();
         tangle2.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder1.getRoot().getAbsolutePath(), logFolder1
                     .getRoot().getAbsolutePath(), 1000));
-        tangle2.addPersistenceProvider(new LocalInMemoryGraphProvider(""));
+        tangle2.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle2));
         tangle2.init();
     }
 
@@ -128,12 +128,13 @@ public class EntryPointSelectorKatzTest {
         Assert.assertEquals(tag.get(B.getHash()),tag.get(ret));
 
         // reset in memory graph
-        LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("");
+        LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle1);
         provider.close();
     }
 
     @Test
     public void testGetEntryPointKatzTwo() throws Exception {
+        LocalInMemoryGraphProvider.topOrderStreaming = new HashMap<>();
         BaseIotaConfig.getInstance().setStreamingGraphSupport(true);
         TransactionViewModel A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, One, Two;
         A = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
@@ -268,7 +269,7 @@ public class EntryPointSelectorKatzTest {
         Assert.assertEquals(tag.get(J.getHash()),tag.get(ret));
 
         // reset in memory graph
-        LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("");
+        LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle2);
         provider.close();
     }
 }

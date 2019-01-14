@@ -1,9 +1,11 @@
+import sys
+sys.path.append("..")
 import json
 import datetime
 import threading
 import commands
 import ConfigParser
-from iota_cache import IotaCache
+from iota_cache.iota_cache import IotaCache
 from tag_generator import TagGenerator
 from tm_rpc_client import Tendermint
 
@@ -27,7 +29,7 @@ def interval_work():
     timer_thread = threading.Timer(300, interval_work)
     timer_thread.start()
 
-    tag = TagGenerator.get_current_tag()
+    tag = TagGenerator.get_current_tag("TT")
     push_and_sync(tag)
 
     # 00:00:00 -> 00:04:59, check previous tag

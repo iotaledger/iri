@@ -1,10 +1,12 @@
+import sys
+sys.path.append("..")
 import ConfigParser
 import time
 import commands
 import threading
 import json
 from flask import Flask, request
-from iota_cache import IotaCache
+from iota_cache.iota_cache import IotaCache
 from tag_generator import TagGenerator
 from collections import deque
 

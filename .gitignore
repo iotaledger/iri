@@ -17,6 +17,7 @@ mainnetdb/
 bin/
 *.iri
 *.jar
+*.pyc
 src/main/ixi/
 dependency-reduced-pom.xml
 

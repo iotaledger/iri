@@ -1,12 +1,14 @@
 package com.iota.iri.model;
 
-import com.iota.iri.hash.Sponge;
-import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.crypto.Sponge;
+import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.utils.Converter;
 
 public class TransactionHash extends AbstractHash {
 
-	protected TransactionHash(byte[] source, int offset, int sourceSize) {
+    public TransactionHash() { }
+
+    protected TransactionHash(byte[] source, int offset, int sourceSize) {
 		super(source, offset, sourceSize);
 	}
 	

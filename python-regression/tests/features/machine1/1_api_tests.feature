@@ -33,11 +33,13 @@ Feature: Test API calls on Machine 1
 		|latestSolidSubtangleMilestone			|
 		|latestSolidSubtangleMilestoneIndex		|
 		|milestoneStartIndex				|
+		|lastSnapshottedMilestoneIndex                  |
 		|neighbors					|
 		|packetsQueueSize				|
 		|time						|
 		|tips						|
 		|transactionsToRequest				|
+		|coordinatorAddress				|
 
 
 	Scenario: GetNeighbors is called
@@ -235,6 +237,9 @@ Feature: Test API calls on Machine 1
 		|address    |TEST_ADDRESS			|staticValue    |
 		|tag        |TEST9TAG9ONE			|string         |
 		|value      |0					|int            |
+
+        #Give the transaction time to propagate
+		And we wait "3" second/seconds
 
 		And "findTransactions" is called on "nodeB" with:
 		|keys       |values             |type           |

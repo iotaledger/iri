@@ -35,6 +35,8 @@ public interface DbConfig extends Config {
      */
     boolean isRescanDb();
 
+    String getGraphDbPath();
+
     interface Descriptions {
 
         String DB_PATH = "The folder where the DB saves its data.";
@@ -44,5 +46,6 @@ public interface DbConfig extends Config {
         String REVALIDATE = "Reload from the db data about confirmed transaction (milestones), state of the ledger, " +
                 "and transaction metadata.";
         String RESCAN_DB = "Rescan all transaction metadata (Approvees, Bundles, and Tags)";
+        String GRAPH_DB_PATH = "Path to the graph database storage.";
     }
 }

@@ -14,7 +14,6 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
-
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 import org.neo4j.graphdb.Node;
@@ -23,8 +22,6 @@ import org.neo4j.graphdb.DynamicLabel;
 import org.neo4j.graphdb.Label;
 import org.neo4j.graphdb.DynamicRelationshipType;
 import org.neo4j.graphdb.MultipleFoundException;
-
-
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.Address;
 import com.iota.iri.model.persistables.Approvee;
@@ -33,6 +30,8 @@ import com.iota.iri.model.persistables.Milestone;
 import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.model.persistables.Transaction;
+
+import com.iota.iri.utils.Converter;
 
 
 
@@ -189,53 +188,37 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
         try ( org.neo4j.graphdb.Transaction tx = graphDb.beginTx() )
         {
             // find hash node first
-            Node rootNode = graphDb.createNode();
+            Node newNode = graphDb.createNode();
             for (Pair<Indexable, Persistable> entry : models) {
                 if(entry.hi.getClass().equals(com.iota.iri.model.persistables.Transaction.class)) {
                     Indexable key = entry.low;
                     Persistable value = entry.hi;
-                    String keyStr = new String(key.bytes());
-                    String valStr = new String(value.bytes());
                     Label label = classLabelMap.get(value.getClass());
-
-                    rootNode.addLabel(label);
-                    rootNode.setProperty("key", keyStr);
-                    rootNode.setProperty("val", valStr);
+                    newNode.addLabel(label);
+                    String keyStr = Converter.trytes(((Hash)key).trits());
+                    newNode.setProperty("key", keyStr);
                     break;
                 }
             }
             // create the rest
             for (Pair<Indexable, Persistable> entry : models) {
-                if(!entry.hi.getClass().equals(com.iota.iri.model.persistables.Transaction.class)) {
+                if(entry.hi.getClass().equals(Approvee.class)) {
                     Indexable key = entry.low;
-                    Persistable value = entry.hi;
-                    String keyStr = new String(key.bytes());
-                    String valStr = new String(value.bytes());
-                    Label label = classLabelMap.get(value.getClass());
-                    // Database operations go here
-                    Node txnNode = graphDb.createNode();
-                    txnNode.addLabel(label);
-                    txnNode.setProperty("key", keyStr);
-                    txnNode.setProperty("val", valStr);
-                    txnNode.createRelationshipTo(rootNode, DynamicRelationshipType.withName( "BELONGS_TO"));
-
-                    // handle with the trunk and branch
-                    if(value.getClass().equals(Approvee.class))
-                    {
-                        try {
-                            Node prev = graphDb.findNode(DynamicLabel.label("Transaction"), keyStr, valStr);
-                            txnNode.createRelationshipTo(rootNode, DynamicRelationshipType.withName( "APPROVES"));
-                        } catch(MultipleFoundException e) {
-                            ; // TODO should triage problem here
-                        }
+                    String keyStr = Converter.trytes(((Hash)key).trits());
+                    try {
+                        Node prev = graphDb.findNode(DynamicLabel.label("Transaction"), "key", keyStr);
+                        newNode.createRelationshipTo(prev, DynamicRelationshipType.withName( "APPROVES"));
+                    } catch(MultipleFoundException e) {
+                        ; // TODO should triage problem here
+                    } catch(IllegalArgumentException e) {
+                        ; // TODO How to handle null relationship?
                     }
                 }
             }
-
             tx.success();
         }
         
-        return false;
+        return true;
     }
 
     /**

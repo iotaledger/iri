@@ -35,35 +35,28 @@ def create_and_attach_transaction(api, value_transaction, arg_list, *reference):
     :param arg_list: The argument list (dictionary) for the transaction
     :return sent: The return value for the attachToTangle call (contains the attached transaction trytes)
     """
-    logger.info("Creating and attaching transaction")
     transaction = ProposedTransaction(**arg_list)
 
-    bundle = ProposedBundle()
-    bundle.add_transaction(transaction)
-
     if value_transaction:
-        logger.info("Looking for inputs")
         inputs = api.get_inputs(start=0, stop=10, threshold=0)
-        logger.info(inputs['inputs'][0])
-        bundle.add_inputs([inputs['inputs'][0]])
-        bundle.send_unspent_inputs_to(Address(getattr(static, "TEST_EMPTY_ADDRESS")))
-
-    bundle.finalize()
-    trytes = str(bundle[0].as_tryte_string())
+        prepared_transaction = api.prepare_transfer(
+            transfers=[transaction],
+            inputs=[inputs['inputs'][0]],
+            change_address=Address(getattr(static, "TEST_EMPTY_ADDRESS"))
+        )
+    else:
+        prepared_transaction = api.prepare_transfer(
+            transfers=[transaction]
+        )
 
     gtta = api.get_transactions_to_approve(depth=3)
     trunk = str(gtta['trunkTransaction'])
     if reference:
         branch = reference[0]
-        logger.info(type(branch))
     else:
         branch = str(gtta['branchTransaction'])
-    logger.info("*******************")
-    logger.info(branch)
-    logger.info(trunk)
-    logger.info("*******************")
-    sent = api.attach_to_tangle(trunk, branch, [trytes], 9)
 
+    sent = api.attach_to_tangle(trunk, branch, prepared_transaction['trytes'], 9)
     return sent
 
 

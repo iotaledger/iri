@@ -2,93 +2,81 @@ package com.iota.iri;
 
 import com.iota.iri.service.dto.AbstractResponse;
 import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.IXIResponse;
+import org.hamcrest.CoreMatchers;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.HashMap;
-import java.util.Map;
-
-import static java.nio.file.StandardOpenOption.CREATE;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
- * Created by paul on 1/4/17.
+ * Unit tests for {@link IXI}
  */
 public class IXITest {
-    static TemporaryFolder ixiDir = new TemporaryFolder();
-    static IXI ixi;
+    private static TemporaryFolder ixiDir = new TemporaryFolder();
+    private static IXI ixi;
 
+    /**
+     * Create IXI temporary directory and start IXI.
+     * @throws Exception if temporary folder can not be created.
+     */
     @BeforeClass
     public static void setUp() throws Exception {
         ixiDir.create();
         ixi = new IXI();
-        ixi.init(ixiDir.getRoot().getAbsolutePath().toString());
+        ixi.init(ixiDir.getRoot().getAbsolutePath());
     }
 
+    /**
+     * Shutdown IXI and delete temporary folder.
+     * @throws InterruptedException if directory watch thread was interrupted.
+     */
     @AfterClass
-    public static void tearDown() throws Exception {
+    public static void tearDown() throws InterruptedException {
         ixi.shutdown();
         ixiDir.delete();
     }
 
+    /**
+     * If an command matches the command pattern, but is not valid, expect an unknown command error message.
+     */
     @Test
-    public void init() throws Exception {
-        AbstractResponse response;
-        IXIResponse ixiResponse;
-
-        /*
-        final String testJs =
-                "var Callable = Java.type(\"com.iota.iri.service.CallableRequest\");\n" +
-                        "print(\"hello world\");\n" +
-                        "var IXIResponse = Java.type(\"com.iota.iri.service.dto.IXIResponse\");\n" +
-                        "API.put(\"getParser\", new Callable({\n" +
-                        "call: function(req) {\n" +
-                        "var IntArray = Java.type(\"int[]\");\n" +
-                        "var out = new IntArray(Math.floor(Math.random()*9)+1);\n" +
-                        "out[0] = 2;\n" +
-                        "var r = IXIResponse.create({\n" +
-                        "myArray: out,\n" +
-                        "name: \"Foo\"\n" +
-                        "});\n" +
-                        "return r;\n" +
-                        "}\n" +
-                        "}));";
-        final String testPackage = "{\"main\": \"index.js\"}";
-
-
-        ixiDir.newFolder("test");
-        try (OutputStream out = new BufferedOutputStream(
-                Files.newOutputStream(Paths.get(ixiDir.getRoot().toString(),"test", "index.js"), CREATE))) {
-            out.write(testJs.getBytes());
-        }
-        try (OutputStream out = new BufferedOutputStream(
-                Files.newOutputStream(Paths.get(ixiDir.getRoot().toString(),"test", "package.json"), CREATE))) {
-            out.write(testPackage.getBytes());
-        }
-        // Allow IXI to load the file
-        Map<String, Object> request = new HashMap<>();
-        Thread.sleep(1000);
-        response = IXI.instance().processCommand("test.getParser", request);
-
-        assertFalse(response instanceof ErrorResponse);
-        assertTrue(response instanceof IXIResponse);
-
-        ixiResponse = ((IXIResponse) response);
-        assertNotNull(ixiResponse.getResponse());
-        */
+    public void processCommandError() {
+        AbstractResponse response = ixi.processCommand("testCommand.testSuffix", null);
+        assertThat("Wrong type of response", response, CoreMatchers.instanceOf(ErrorResponse.class));
+        assertTrue("Wrong error message returned in response", response.toString().contains("Command [testCommand.testSuffix] is unknown"));
     }
 
+    /**
+     * If null is given as a command, expect a parameter check error message.
+     */
     @Test
-    public void processCommand() throws Exception {
+    public void processCommandNull() {
+        AbstractResponse response = ixi.processCommand(null, null);
+        assertThat("Wrong type of response", response, CoreMatchers.instanceOf(ErrorResponse.class));
+        assertTrue("Wrong error message returned in response", response.toString().contains("Command can not be null or empty"));
+    }
 
+    /**
+     * If an empty string is given as a command, expect a parameter check error message.
+     */
+    @Test
+    public void processCommandEmpty() {
+        AbstractResponse response = ixi.processCommand("", null);
+        assertThat("Wrong type of response", response, CoreMatchers.instanceOf(ErrorResponse.class));
+        assertTrue("Wrong error message returned in response", response.toString().contains("Command can not be null or empty"));
+    }
+
+    /**
+     * If an does not match the command pattern, expect an unknown command error message.
+     */
+    @Test
+    public void processCommandUnknown() {
+        AbstractResponse response = ixi.processCommand("unknown", null);
+        assertThat("Wrong type of response", response, CoreMatchers.instanceOf(ErrorResponse.class));
+        assertTrue("Wrong error message returned in response", response.toString().contains("Command [unknown] is unknown"));
     }
 
 }

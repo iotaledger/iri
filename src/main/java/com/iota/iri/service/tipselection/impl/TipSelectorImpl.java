@@ -1,10 +1,10 @@
 package com.iota.iri.service.tipselection.impl;
 
-import com.iota.iri.LedgerValidator;
-import com.iota.iri.Milestone;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
+import com.iota.iri.service.ledger.LedgerService;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
@@ -21,24 +21,35 @@ import java.util.Optional;
  */
 public class TipSelectorImpl implements TipSelector {
 
-    public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
-    public static final String TIPS_NOT_CONSISTENT = "inconsistent tips pair selected";
+    private static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
+    private static final String TIPS_NOT_CONSISTENT = "inconsistent tips pair selected";
 
     private final EntryPointSelector entryPointSelector;
     private final RatingCalculator ratingCalculator;
     private final Walker walker;
 
-    private final LedgerValidator ledgerValidator;
+    private final LedgerService ledgerService;
     private final Tangle tangle;
-    private final Milestone milestone;
+    private final SnapshotProvider snapshotProvider;
     private final TipSelConfig config;
 
+    /**
+     * Constructor for Tip Selector.
+     *
+     * @param tangle Tangle object which acts as a database interface.
+     * @param snapshotProvider allows access to snapshots of the ledger state
+     * @param ledgerService used by walk validator to check ledger consistency.
+     * @param entryPointSelector instance of the entry point selector to get tip selection starting points.
+     * @param ratingCalculator instance of rating calculator, to calculate weighted walks.
+     * @param walkerAlpha instance of walker (alpha), to perform weighted random walks as per the IOTA white paper.
+     * @param config configurations to set internal parameters.
+     */
     public TipSelectorImpl(Tangle tangle,
-                           LedgerValidator ledgerValidator,
+                           SnapshotProvider snapshotProvider,
+                           LedgerService ledgerService,
                            EntryPointSelector entryPointSelector,
                            RatingCalculator ratingCalculator,
                            Walker walkerAlpha,
-                           Milestone milestone,
                            TipSelConfig config) {
 
         this.entryPointSelector = entryPointSelector;
@@ -47,13 +58,15 @@ public class TipSelectorImpl implements TipSelector {
         this.walker = walkerAlpha;
 
         //used by walkValidator
-        this.ledgerValidator = ledgerValidator;
+        this.ledgerService = ledgerService;
         this.tangle = tangle;
-        this.milestone = milestone;
+        this.snapshotProvider = snapshotProvider;
         this.config = config;
     }
 
     /**
+     * {@inheritDoc}
+     *
      * Implementation of getTransactionsToApprove
      *
      * General process:
@@ -72,7 +85,7 @@ public class TipSelectorImpl implements TipSelector {
     @Override
     public List<Hash> getTransactionsToApprove(int depth, Optional<Hash> reference) throws Exception {
         try {
-            milestone.latestSnapshot.rwlock.readLock().lock();
+            snapshotProvider.getLatestSnapshot().lockRead();
 
             //preparation
             Hash entryPoint = entryPointSelector.getEntryPoint(depth);
@@ -80,7 +93,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //random walk
             List<Hash> tips = new LinkedList<>();
-            WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, milestone, config);
+            WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, config);
             Hash tip = walker.walk(entryPoint, rating, walkValidator);
             tips.add(tip);
 
@@ -94,13 +107,13 @@ public class TipSelectorImpl implements TipSelector {
             tips.add(tip);
 
             //validate
-            if (!ledgerValidator.checkConsistency(tips)) {
+            if (!ledgerService.tipsConsistent(tips)) {
                 throw new IllegalStateException(TIPS_NOT_CONSISTENT);
             }
 
             return tips;
         } finally {
-            milestone.latestSnapshot.rwlock.readLock().unlock();
+            snapshotProvider.getLatestSnapshot().unlockRead();
         }
     }
 

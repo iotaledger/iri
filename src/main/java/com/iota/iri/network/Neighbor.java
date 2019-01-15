@@ -1,6 +1,9 @@
 package com.iota.iri.network;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.net.DatagramPacket;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,15 +17,13 @@ public abstract class Neighbor {
     private long numberOfInvalidTransactions;
     private long randomTransactionRequests;
     private long numberOfSentTransactions;
+    private long numberOfStaleTransactions;
 
-    private boolean flagged = false;
+    private final boolean flagged;
     public boolean isFlagged() {
         return flagged;
     }
-    public void setFlagged(boolean flagged) {
-        this.flagged = flagged;
-    }
-    
+
     private final static AtomicInteger numPeers = new AtomicInteger(0);
     public static int getNumPeers() {
         return numPeers.get();
@@ -30,19 +31,12 @@ public abstract class Neighbor {
     public static void incNumPeers() {
         numPeers.incrementAndGet();
     }
-    public static void decNumPeers() {
-        int v = numPeers.decrementAndGet();
-        if (v < 0) {
-            numPeers.set(0);
-        }
-    }
 
     private final String hostAddress;
 
     public String getHostAddress() {
         return hostAddress;
     }
-
 
     public Neighbor(final InetSocketAddress address, boolean isConfigured) {
         this.address = address;
@@ -53,7 +47,6 @@ public abstract class Neighbor {
     public abstract void send(final DatagramPacket packet);
     public abstract int getPort();
     public abstract String connectionType();
-    public abstract boolean matches(SocketAddress address);
 
     @Override
     public boolean equals(final Object obj) {
@@ -68,7 +61,17 @@ public abstract class Neighbor {
     public InetSocketAddress getAddress() {
 		return address;
 	}
-    
+
+    protected boolean matches(SocketAddress address) {
+        if (address instanceof InetSocketAddress) {
+            // faster than fallback
+            InetAddress adr = ((InetSocketAddress) address).getAddress();
+            return adr != null && StringUtils.equals(adr.getHostAddress(), hostAddress);
+        } else { // fallback
+            return address != null && address.toString().contains(hostAddress);
+        }
+    }
+
     void incAllTransactions() {
     	numberOfAllTransactions++;
     }
@@ -84,11 +87,15 @@ public abstract class Neighbor {
     public void incInvalidTransactions() {
     	numberOfInvalidTransactions++;
     }
-    
+
+    void incStaleTransactions() {
+        numberOfStaleTransactions++;
+    }
+
     public void incSentTransactions() {
         numberOfSentTransactions++;
     }
-    
+
     public long getNumberOfAllTransactions() {
 		return numberOfAllTransactions;
 	}
@@ -96,7 +103,11 @@ public abstract class Neighbor {
     public long getNumberOfInvalidTransactions() {
 		return numberOfInvalidTransactions;
 	}
-    
+
+    public long getNumberOfStaleTransactions() {
+        return numberOfStaleTransactions;
+    }
+
     public long getNumberOfNewTransactions() {
 		return numberOfNewTransactions;
 	}
@@ -108,5 +119,5 @@ public abstract class Neighbor {
 	public long getNumberOfSentTransactions() {
 	    return numberOfSentTransactions;
 	}
-    
+
 }

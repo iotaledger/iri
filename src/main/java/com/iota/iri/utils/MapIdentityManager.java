@@ -1,7 +1,7 @@
 package com.iota.iri.utils;
 
-import com.iota.iri.hash.Sponge;
-import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.crypto.Sponge;
+import com.iota.iri.crypto.SpongeFactory;
 import io.undertow.security.idm.IdentityManager;
 
 import io.undertow.security.idm.Account;
@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import com.iota.iri.hash.Curl;
+import com.iota.iri.crypto.Curl;
 
 public class MapIdentityManager implements IdentityManager {
 
@@ -49,20 +49,20 @@ public class MapIdentityManager implements IdentityManager {
         if (credential instanceof PasswordCredential) {
             char[] givenPassword = ((PasswordCredential) credential).getPassword();            
             String trytes = Converter.asciiToTrytes(new String(givenPassword));
-            byte[] in_trits = Converter.allocateTritsForTrytes(trytes.length());
-            Converter.trits(trytes, in_trits, 0);
-            byte[] hash_trits = new byte[Curl.HASH_LENGTH];
+            byte[] inTrits = Converter.allocateTritsForTrytes(trytes.length());
+            Converter.trits(trytes, inTrits, 0);
+            byte[] hashTrits = new byte[Curl.HASH_LENGTH];
             Sponge curl;
             curl = SpongeFactory.create(SpongeFactory.Mode.CURLP81);
-            curl.absorb(in_trits, 0, in_trits.length);
-            curl.squeeze(hash_trits, 0, Curl.HASH_LENGTH);
-            String out_trytes = Converter.trytes(hash_trits);
-            char[] char_out_trytes = out_trytes.toCharArray();
+            curl.absorb(inTrits, 0, inTrits.length);
+            curl.squeeze(hashTrits, 0, Curl.HASH_LENGTH);
+            String outTrytes = Converter.trytes(hashTrits);
+            char[] charOutTrytes = outTrytes.toCharArray();
             char[] expectedPassword = users.get(account.getPrincipal().getName()); 
             boolean verified = Arrays.equals(givenPassword, expectedPassword);
             // Password can either be clear text or the hash of the password
             if (!verified) {
-                verified = Arrays.equals(char_out_trytes, expectedPassword);
+                verified = Arrays.equals(charOutTrytes, expectedPassword);
             }            
             return verified;
         }

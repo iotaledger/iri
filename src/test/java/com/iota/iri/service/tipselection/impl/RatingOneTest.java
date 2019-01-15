@@ -1,7 +1,10 @@
 package com.iota.iri.service.tipselection.impl;
 
+import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.HashId;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -11,8 +14,6 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static com.iota.iri.controllers.TransactionViewModelTest.*;
 
@@ -22,21 +23,25 @@ public class RatingOneTest {
     private static final String TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT =
             "tx%d cumulative weight is not as expected";
     private static Tangle tangle;
+    private static SnapshotProvider snapshotProvider;
     private static RatingCalculator rating;
 
     @AfterClass
     public static void tearDown() throws Exception {
         tangle.shutdown();
+        snapshotProvider.shutdown();
         dbFolder.delete();
     }
 
     @BeforeClass
     public static void setUp() throws Exception {
         tangle = new Tangle();
+        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
         dbFolder.create();
         logFolder.create();
-        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
-                .getRoot().getAbsolutePath(), 1000));
+        tangle.addPersistenceProvider( new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
         rating = new RatingOne(tangle);
     }
@@ -53,11 +58,11 @@ public class RatingOneTest {
                 transaction1.getHash()), getRandomTransactionHash());
         transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction2.getHash(),
                 transaction3.getHash()), getRandomTransactionHash());
-        transaction.store(tangle);
-        transaction1.store(tangle);
-        transaction2.store(tangle);
-        transaction3.store(tangle);
-        transaction4.store(tangle);
+        transaction.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction1.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction2.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction3.store(tangle, snapshotProvider.getInitialSnapshot());
+        transaction4.store(tangle, snapshotProvider.getInitialSnapshot());
         UnIterableMap<HashId, Integer> rate = rating.calculate(transaction.getHash());
 
         Assert.assertEquals(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT,

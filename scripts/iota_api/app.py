@@ -1,10 +1,61 @@
+import sys
+sys.path.append("..")
 import ConfigParser
 import time
 import commands
+import threading
 import json
 from flask import Flask, request
-from iota_cache import IotaCache
+from iota_cache.iota_cache import IotaCache
 from tag_generator import TagGenerator
+from collections import deque
+
+lock = threading.Lock()
+def send_to_ipfs_iota(tx_string):
+    global lock
+
+    with lock:
+        filename = 'json'
+        f = open(filename, 'w')
+        f.write(tx_string)
+        f.flush()
+        f.close()
+
+        ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
+
+        print("[INFO]Cache json %s in ipfs, the hash is %s." % (tx_string, ipfs_hash))
+
+        cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag("TR"))
+
+        print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag("TR")))
+
+    # return 'ok'
+
+# txs buffer. dequeue is thread-safe
+CACHE_SIZE = 10000
+txn_cache = deque(maxlen=CACHE_SIZE)
+
+# timer interval == 10s
+TIMER_INTERVAL = 10
+
+BATCH_SIZE = 100
+
+def get_cache():
+    # timer
+    global timer_thread
+    timer_thread = threading.Timer(TIMER_INTERVAL, get_cache)
+    timer_thread.start()
+
+    nums = min(len(txn_cache), BATCH_SIZE)
+    if nums == 0:
+        return
+
+    all_txs = ""
+    for i in range(nums):
+        tx = txn_cache.popleft()
+        all_txs += tx
+
+    send_to_ipfs_iota(all_txs)
 
 
 app = Flask(__name__)
@@ -20,7 +71,6 @@ cache = IotaCache(iota_addr, iota_seed)
 def hello_world():
     return 'Hello World!'
 
-
 @app.route('/put_file', methods=['POST'])
 def put_file():
     req_json = request.get_json()
@@ -28,20 +78,28 @@ def put_file():
     if req_json is None:
         return 'error'
 
-    filename = 'json'
-    f = open(filename, 'w')
     req_json["timestamp"] = str(time.time())
-    f.write(json.dumps(req_json, sort_keys=True))
-    f.flush()
-    f.close()
 
-    ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
+    send_to_ipfs_iota(json.dumps(req_json, sort_keys=True))
 
-    print("[INFO]Cache json %s in ipfs, the hash is %s." % (json.dumps(req_json, sort_keys=True), ipfs_hash))
+    return 'ok'
 
-    cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag())
+@app.route('/put_cache', methods=['POST'])
+def put_cache():
+    # get json
+    req_json = request.get_json()
+    if req_json is None:
+        return 'error'
 
-    print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag()))
+    req_json["timestamp"] = str(time.time())
+
+    tx_string = json.dumps(req_json, sort_keys=True)
+    if len(txn_cache) >= CACHE_SIZE:
+        # ring-buffer is full, send to ipfs and iota directly.
+        send_to_ipfs_iota(tx_string)
+    else:
+        # cache in local ring-buffer
+        txn_cache.append(tx_string)
 
     return 'ok'
 
@@ -91,4 +149,5 @@ def put_action():
     return 'ok'
 
 if __name__ == '__main__':
+    get_cache()
     app.run()

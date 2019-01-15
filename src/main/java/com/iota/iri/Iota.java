@@ -30,7 +30,9 @@ import com.iota.iri.storage.ZmqPublishProvider;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.zmq.MessageQ;
-import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;;
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
+import com.iota.iri.storage.neo4j.Neo4jPersistenceProvider;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -155,7 +157,11 @@ public class Iota {
             tangle.addPersistenceProvider(new ZmqPublishProvider(messageQ));
         }
         if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
-            tangle.addPersistenceProvider(new LocalInMemoryGraphProvider(""));
+            tangle.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle));
+        }
+        if(!BaseIotaConfig.getInstance().getGraphDbPath().equals("")) {
+            String graphDbPath = BaseIotaConfig.getInstance().getGraphDbPath();
+            tangle.addPersistenceProvider(new Neo4jPersistenceProvider(graphDbPath));
         }
     }
 

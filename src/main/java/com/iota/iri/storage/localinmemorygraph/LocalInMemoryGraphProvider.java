@@ -4,6 +4,7 @@ import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Pair;
+
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -278,8 +279,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     private void updateScore(Hash vet) {
-        score.put(vet, 1.0/(score.size()+1));
         try {
+            score.put(vet, 1.0/(score.size()+1));
             KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
             centrality.setScore(score);
             score = centrality.compute();
@@ -333,10 +334,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    public Hash getPivotalHash(int depth)
+    public static Hash getPivotalHash(int depth)
     {
         Hash ret = null;
-        if(depth == -1) {
+        if(depth == -1 || depth > totalDepth) {
             Set<Hash> set = topOrderStreaming.get(1);
             ret = set.iterator().next();
             return ret;
@@ -408,7 +409,41 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    void printScore() {
+    public static List<Hash> getSiblings(Hash block) {
+        List<Hash> ret = new LinkedList<Hash>();
+        return ret;
+    }
+
+    public static List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder)
+    {
+        List<Hash> ret = new LinkedList<Hash>();
+        Hash b = (Hash)topOrder.get(1).toArray()[0];
+        ret.add(b);
+        while(true) {
+            Set<Hash> children = getChild(b);
+            if(children.isEmpty()) {
+                break;
+            }
+            double maxScore = 0;
+            for (Hash h : children) {
+                if(score.get(h) > maxScore) {
+                    maxScore = score.get(h);
+                    b = h;
+                }
+            }
+            ret.add(b);
+        }
+        return ret;
+    }
+
+    public static Set<Hash> getChild(Hash block) {
+        if(revGraph.containsKey(block)) {
+            return revGraph.get(block);
+        }
+        return new HashSet<>();
+    }
+
+    public static void printScore() {
         for(Hash key : score.keySet()) {
             if(nameMap != null) {
                 System.out.print(nameMap.get(key)+":"+score.get(key));

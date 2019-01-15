@@ -15,32 +15,19 @@ import com.iota.iri.utils.Pair;
 import java.util.*;
 import java.io.PrintStream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 
 /**
  * This is different from the traditional entry point selector, because it ignores the milestone.
  */
 public class EntryPointSelectorKatz implements EntryPointSelector {
 
-    private final Tangle tangle;
     private LocalInMemoryGraphProvider localGraph;
-
-    public HashMap<Hash, Double> score;
-    HashMap<Hash, Set<Hash>> graph;
-    HashMap<Hash, Set<Hash>> revGraph;
-    HashMap<Hash, Integer> degs;
-    HashMap<Integer, Set<Hash>> topOrder;
-    HashMap<Hash, String> nameMap;
-    int totalDepth;
+    private static final Logger log = LoggerFactory.getLogger(EntryPointSelectorKatz.class);
 
     public EntryPointSelectorKatz(Tangle tangle, HashMap<Hash, String> nMap) {
-        this.tangle = tangle;
-        
-        graph = new HashMap<>();
-        revGraph = new HashMap<>();
-        degs = new HashMap<>();
-        topOrder = new HashMap<>();
-        totalDepth = 0;
-        this.nameMap = nMap;
         localGraph = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
     }
 
@@ -50,10 +37,14 @@ public class EntryPointSelectorKatz implements EntryPointSelector {
         if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
             ret = localGraph.getPivotalHash(depth);
         } else {
-            buildGraph();
+            
+            localGraph.buildGraph();
+            
             try {
-                KatzCentrality centrality = new KatzCentrality(graph, 0.5);
-                score = centrality.compute();
+                
+                KatzCentrality centrality = new KatzCentrality(LocalInMemoryGraphProvider.graph, 0.5);
+                LocalInMemoryGraphProvider.score = centrality.compute();
+                
             } catch(Exception e) {
                 e.printStackTrace(new PrintStream(System.out));
             }
@@ -65,154 +56,20 @@ public class EntryPointSelectorKatz implements EntryPointSelector {
     private Hash getPivotalHash(int depth)
     {
         Hash ret = null;
-        if(depth == -1) {
-            Set<Hash> set = topOrder.get(1);
+        if(depth == -1 || depth > LocalInMemoryGraphProvider.totalDepth) {
+            Set<Hash> set = LocalInMemoryGraphProvider.topOrder.get(1);
             ret = set.iterator().next();
             return ret;
         }
         // TODO if the same score, choose randomly
-        Set<Hash> hashsOnLevel = topOrder.get(totalDepth-depth);
+        Set<Hash> hashsOnLevel = LocalInMemoryGraphProvider.topOrder.get(LocalInMemoryGraphProvider.totalDepth-depth);
         double maxScore = 0;
         for(Hash h : hashsOnLevel) {
-            if(score.get(h)>=maxScore){
+            if(LocalInMemoryGraphProvider.score.get(h)>=maxScore){
                 ret = h;
-                maxScore = score.get(h);
+                maxScore = LocalInMemoryGraphProvider.score.get(h);
             }
         }
         return ret;
-    }
-
-    // Get the graph using the BFS method
-    private void buildGraph() {
-        try {
-            Pair<Indexable, Persistable> one = tangle.getFirst(Transaction.class, TransactionHash.class);
-            while(one != null && one.low != null) {
-                TransactionViewModel model = new TransactionViewModel((Transaction)one.hi, (TransactionHash)one.low);
-                Hash trunk = model.getTrunkTransactionHash();
-                Hash branch = model.getBranchTransactionHash();
-
-                // approve direction
-                if(graph.get(model.getHash()) == null) {
-                    graph.put(model.getHash(), new HashSet<Hash>());
-                }
-                graph.get(model.getHash()).add(trunk);
-                graph.get(model.getHash()).add(branch);
-
-                // approved direction
-                if(revGraph.get(trunk) == null) {
-                    revGraph.put(trunk, new HashSet<Hash>());
-                }
-                if(revGraph.get(branch) == null) {
-                    revGraph.put(branch, new HashSet<Hash>());
-                }
-                revGraph.get(trunk).add(model.getHash());
-                revGraph.get(branch).add(model.getHash());
-
-                // update degrees
-                if(degs.get(model.getHash()) == null || degs.get(model.getHash()) == 0) {
-                    degs.put(model.getHash(), 2);
-                } 
-                if(degs.get(trunk) == null) {
-                    degs.put(trunk, 0);
-                }
-                if(degs.get(branch) == null) {
-                    degs.put(branch, 0);
-                }
-
-                one = tangle.next(Transaction.class, one.low);
-            }
-            computeToplogicalOrder();
-        } catch(Exception e) {
-            e.printStackTrace(new PrintStream(System.out));
-        }
-    }
-
-    private void computeToplogicalOrder() {
-        Deque<Hash> bfsQ = new ArrayDeque<>();
-        Map<Hash, Integer> level = new HashMap<Hash, Integer>();
-        Set<Hash> visited = new HashSet<Hash>();
-
-        for(Hash h : degs.keySet()) {
-            if(!degs.containsKey(h) || degs.get(h) == 0) {
-                bfsQ.addLast(h);
-                level.put(h, 0);
-                break;
-            }
-        }
-
-        
-        while(!bfsQ.isEmpty()) {
-            Hash h = bfsQ.pollFirst();
-            int lvl = level.get(h);
-            totalDepth = Math.max(totalDepth, lvl+1);
-            if(!topOrder.containsKey(lvl)) {
-                topOrder.put(lvl, new HashSet<Hash>());
-            }            
-            topOrder.get(lvl).add(h);
-
-            Set<Hash> out = revGraph.get(h);
-            if(out != null) {
-                for(Hash o : out) {
-                    if(!visited.contains(o)){
-                        bfsQ.addLast(o);
-                        visited.add(o);
-                        level.put(o, lvl+1);
-                    }
-                }
-            }
-        }
-    }
-
-    // for graphviz visualization
-    void printGraph(HashMap<Hash, Set<Hash>> graph)
-    {
-        for(Hash key : graph.keySet())
-        {
-            for(Hash val : graph.get(key))
-            {
-                if(nameMap != null) {
-                    System.out.println("\""+nameMap.get(key)+"\"->"+
-                                       "\""+nameMap.get(val)+"\"");
-                } else {
-                    System.out.println("\""+key+"\"->"+
-                                       "\""+val+"\"");
-                }
-            }
-        }
-    }
-
-    // for graphviz visualization
-    void printRevGraph(HashMap<Hash, Set<Hash>> revGraph)
-    {
-        for(Hash key : revGraph.keySet())
-        {
-            for(Hash val : revGraph.get(key))
-            {
-                if(nameMap != null) {
-                    System.out.println("\""+nameMap.get(key)+"\"->"+
-                                       "\""+nameMap.get(val)+"\"");
-                } else {
-                    System.out.println("\""+key+"\"->"+
-                                       "\""+val+"\"");
-                }
-            }
-        }
-    }
-
-    // for graphviz visualization
-    void printTopOrder(HashMap<Integer, Set<Hash>> topOrder)
-    {
-        for(Integer key : topOrder.keySet())
-        {
-            for(Hash val : topOrder.get(key))
-            {
-                if(nameMap != null) {
-                    System.out.print(nameMap.get(val)+" ");
-                } else {
-                    System.out.println(val+" ");
-                }
-            }
-            System.out.println();
-        }
     }
 }

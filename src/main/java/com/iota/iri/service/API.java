@@ -1,5 +1,6 @@
 package com.iota.iri.service;
 
+import com.google.gson.JsonSyntaxException;
 import com.iota.iri.*;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.controllers.AddressViewModel;
@@ -326,9 +327,15 @@ public class API {
 
         try {
             // Request JSON data into map
-            final Map<String, Object> request = gson.fromJson(requestString, Map.class);
+            Map<String, Object> request;
+            try {
+                request = gson.fromJson(requestString, Map.class);
+            }
+            catch(JsonSyntaxException jsonSyntaxException) {
+                return ErrorResponse.create("Invalid JSON syntax: " + jsonSyntaxException.getMessage());
+            }
             if (request == null) {
-                return ExceptionResponse.create("Invalid request payload: '" + requestString + "'");
+                return ErrorResponse.create("Invalid request payload: '" + requestString + "'");
             }
 
             // Did the requester ask for a command?

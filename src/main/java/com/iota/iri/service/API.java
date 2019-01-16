@@ -1727,6 +1727,7 @@ public class API {
     }
 
    /**
+     *
      * <b>Only available on testnet.</b>
      * Creates, attaches, stores, and broadcasts a transaction with this message
      *

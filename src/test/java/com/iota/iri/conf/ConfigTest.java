@@ -19,7 +19,6 @@ import java.io.Writer;
 import java.lang.reflect.Method;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -96,10 +95,10 @@ public class ConfigTest {
         Assert.assertEquals("remote limit api", Arrays.asList("call1", "call2", "call3"),
                 iotaConfig.getRemoteLimitApi());
 
-        List<InetAddress> expectedTrustedApiHosts = new ArrayList<>();
-        expectedTrustedApiHosts.add(InetAddress.getByName("192.168.0.55"));
-        expectedTrustedApiHosts.add(InetAddress.getByName("10.0.0.10"));
-        expectedTrustedApiHosts.add(InetAddress.getByName("127.0.0.1"));
+        List<InetAddress> expectedTrustedApiHosts = Arrays.asList(
+                InetAddress.getByName("192.168.0.55"),
+                InetAddress.getByName("10.0.0.10"),
+                InetAddress.getByName("127.0.0.1"));
         Assert.assertEquals("remote trusted api hosts", expectedTrustedApiHosts, iotaConfig.getRemoteTrustedApiHosts());
 
         Assert.assertEquals("max find transactions", 500, iotaConfig.getMaxFindTransactions());
@@ -213,10 +212,10 @@ public class ConfigTest {
         Assert.assertEquals("NEIGHBORS", Arrays.asList("udp://neighbor1", "neighbor", "tcp://neighbor2"),
                 iotaConfig.getNeighbors());
 
-        List<InetAddress> expectedTrustedApiHosts = new ArrayList<>();
-        expectedTrustedApiHosts.add(InetAddress.getByName("192.168.0.55"));
-        expectedTrustedApiHosts.add(InetAddress.getByName("10.0.0.10"));
-        expectedTrustedApiHosts.add(BaseIotaConfig.Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
+        List<InetAddress> expectedTrustedApiHosts = Arrays.asList(
+                InetAddress.getByName("192.168.0.55"),
+                InetAddress.getByName("10.0.0.10"),
+                BaseIotaConfig.Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
         Assert.assertEquals("REMOTE_TRUSTED_API_HOSTS", expectedTrustedApiHosts, iotaConfig.getRemoteTrustedApiHosts());
 
         Assert.assertEquals("ZMQ_ENABLED", true, iotaConfig.isZmqEnabled());

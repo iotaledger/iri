@@ -318,7 +318,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         topOrderStreaming = topOrder;
     }
 
-    //TODO for public
     public void computeScore() {
         try {
             KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
@@ -328,7 +327,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    //TODO for public
     public Hash getPivotalHash(int depth)
     {
         Hash ret = null;
@@ -420,7 +418,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ret;
     }
 
-    // TODO for public
     public List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder)
     {
         List<Hash> ret = new LinkedList<Hash>();
@@ -443,7 +440,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ret;
     }
 
-    //TODO for public ,move to interface
     public Set<Hash> getChild(Hash block) {
         if(revGraph.containsKey(block)) {
             return revGraph.get(block);

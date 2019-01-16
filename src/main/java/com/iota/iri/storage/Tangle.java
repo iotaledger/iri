@@ -1,5 +1,6 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.model.Hash;
 import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.utils.Pair;
 import org.slf4j.Logger;
@@ -215,6 +216,30 @@ public class Tangle {
         }
     }
 
+    public Hash getPivotalHash(int depth){
+        for(PersistenceProvider provider : persistenceProviders){
+            if (provider instanceof  LocalInMemoryGraphProvider){
+                return provider.getPivotalHash(depth);
+            }
+        }
+        return null;
+    }
+
+    public void buildGraph(){
+        for(PersistenceProvider provider : persistenceProviders){
+            if (provider instanceof  LocalInMemoryGraphProvider){
+                provider.buildGraph();
+            }
+        }
+    }
+
+    public void computeScore(){
+        for(PersistenceProvider provider : persistenceProviders){
+            if (provider instanceof  LocalInMemoryGraphProvider){
+                provider.computeScore();
+            }
+        }
+    }
     /*
     public boolean merge(Persistable model, Indexable index) throws Exception {
         boolean exists = false;

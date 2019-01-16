@@ -1,44 +1,22 @@
 package com.iota.iri.storage.neo4j;
 
-import org.neo4j.driver.v1.AuthTokens;
-import org.neo4j.driver.v1.Driver;
-import org.neo4j.driver.v1.GraphDatabase;
-import org.neo4j.driver.v1.Session;
-import org.neo4j.driver.v1.StatementResult;
-//import org.neo4j.driver.v1.Transaction;
-import org.neo4j.driver.v1.TransactionWork;
-
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.utils.Pair;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.StateDiff;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.factory.GraphDatabaseFactory;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.ResourceIterator;
-import org.neo4j.graphdb.DynamicLabel;
-import org.neo4j.graphdb.Label;
-import org.neo4j.graphdb.DynamicRelationshipType;
-import org.neo4j.graphdb.MultipleFoundException;
-import com.iota.iri.model.*;
-import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Approvee;
-import com.iota.iri.model.persistables.Bundle;
-import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.model.persistables.ObsoleteTag;
-import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.model.persistables.Transaction;
-
+import com.iota.iri.model.persistables.*;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.Pair;
+import org.neo4j.graphdb.*;
+import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 
-
-
+import java.io.File;
 import java.util.*;
-import java.io.*;
 
-import static org.neo4j.driver.v1.Values.parameters;
+//import org.neo4j.driver.v1.Transaction;
 
 public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvider
 {
@@ -256,5 +234,38 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
         }
         
         return ret;
+    }
+
+    @Override
+    public List<Hash> getSiblings(Hash block) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void buildGraph() {
+        //TODO
+    }
+
+    @Override
+    public void computeScore() {
+        //TODO
+    }
+
+    @Override
+    public Hash getPivotalHash(int depth) {
+        //TODO
+        return null;
+    }
+
+    @Override
+    public List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder) {
+        //TODO
+        return null;
+    }
+
+    @Override
+    public Set<Hash> getChild(Hash block) {
+        //TODO
+        return null;
     }
 } 

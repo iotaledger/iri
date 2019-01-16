@@ -1,26 +1,18 @@
 package com.iota.iri.storage.localinmemorygraph;
 
-import com.iota.iri.storage.PersistenceProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.utils.Pair;
-
+import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.*;
-import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Approvee;
-import com.iota.iri.model.persistables.Bundle;
-import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.model.persistables.ObsoleteTag;
-import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.tipselection.impl.KatzCentrality;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
+import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Pair;
 
+import java.io.PrintStream;
 import java.util.*;
-import java.io.*;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider
 {
@@ -54,6 +46,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
+    //FIXME for debug
     public static void setNameMap(HashMap<Hash, String> nameMap) {
         LocalInMemoryGraphProvider.nameMap = nameMap;
     }
@@ -211,7 +204,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return true;
     }
 
-    // Get the graph using the BFS method
+    // TODO for public  :: Get the graph using the BFS method
     public void buildGraph() {
         try {
             Pair<Indexable, Persistable> one = tangle.getFirst(Transaction.class, TransactionHash.class);
@@ -334,7 +327,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    public static Hash getPivotalHash(int depth)
+    public Hash getPivotalHash(int depth)
     {
         Hash ret = null;
         if(depth == -1 || depth > totalDepth) {
@@ -355,7 +348,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ret;
     }
 
-    // for graphviz visualization
+    //FIXME for debug :: for graphviz visualization
     void printGraph(HashMap<Hash, Set<Hash>> graph)
     {
         for(Hash key : graph.keySet())
@@ -373,7 +366,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    // for graphviz visualization
+    //FIXME for debug :: for graphviz visualization
     void printRevGraph(HashMap<Hash, Set<Hash>> revGraph)
     {
         for(Hash key : revGraph.keySet())
@@ -391,7 +384,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    // for graphviz visualization
+    //FIXME for debug :: for graphviz visualization
     void printTopOrder(HashMap<Integer, Set<Hash>> topOrder)
     {
         for(Integer key : topOrder.keySet())
@@ -409,12 +402,23 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
     }
 
-    public static List<Hash> getSiblings(Hash block) {
+    public List<Hash> getSiblings(Hash block) {
+        try {
+            Persistable persistable = this.tangle.find(Transaction.class, block.bytes());
+            if (persistable != null && persistable instanceof Transaction){
+                Set<Hash> children = new LinkedHashSet<>();
+                children.addAll(revGraph.get(((Transaction) persistable).trunk));
+                children.removeIf( t -> t.equals(block) );
+                return new LinkedList<>(children);
+            }
+        } catch (Exception e) {
+            //
+        }
         List<Hash> ret = new LinkedList<Hash>();
         return ret;
     }
 
-    public static List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder)
+    public List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder)
     {
         List<Hash> ret = new LinkedList<Hash>();
         Hash b = (Hash)topOrder.get(1).toArray()[0];
@@ -436,13 +440,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ret;
     }
 
-    public static Set<Hash> getChild(Hash block) {
+    public Set<Hash> getChild(Hash block) {
         if(revGraph.containsKey(block)) {
             return revGraph.get(block);
         }
         return new HashSet<>();
     }
 
+    //TODO for debug
     public static void printScore() {
         for(Hash key : score.keySet()) {
             if(nameMap != null) {

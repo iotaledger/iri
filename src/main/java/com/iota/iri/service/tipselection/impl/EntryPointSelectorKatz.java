@@ -1,22 +1,15 @@
 package com.iota.iri.service.tipselection.impl;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
-import com.iota.iri.storage.Indexable;
-import com.iota.iri.storage.Persistable;
-import com.iota.iri.conf.BaseIotaConfig;
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.persistables.Transaction;
-import com.iota.iri.model.TransactionHash;
-import com.iota.iri.utils.Pair;
-
-import java.util.*;
-import java.io.PrintStream;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.PrintStream;
+import java.util.HashMap;
 
 
 /**
@@ -48,7 +41,7 @@ public class EntryPointSelectorKatz implements EntryPointSelector {
             } catch(Exception e) {
                 e.printStackTrace(new PrintStream(System.out));
             }
-            ret = LocalInMemoryGraphProvider.getPivotalHash(depth);
+            ret = localGraph.getPivotalHash(depth);
         }
         return ret;
     }

@@ -1,13 +1,9 @@
 package com.iota.iri.storage.rocksDB;
 
-import com.iota.iri.model.*;
-import com.iota.iri.model.persistables.Address;
-import com.iota.iri.model.persistables.Approvee;
-import com.iota.iri.model.persistables.Bundle;
-import com.iota.iri.model.persistables.Milestone;
-import com.iota.iri.model.persistables.ObsoleteTag;
-import com.iota.iri.model.persistables.Tag;
-import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.StateDiff;
+import com.iota.iri.model.persistables.*;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
@@ -553,5 +549,35 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
 
     public long getTotalTxns() throws Exception {
         return 0;
+    }
+
+    @Override
+    public List<Hash> getSiblings(Hash block) {
+        return Collections.emptyList();
+    }
+
+    @Override
+    public void buildGraph() {
+
+    }
+
+    @Override
+    public void computeScore() {
+
+    }
+
+    @Override
+    public Hash getPivotalHash(int depth) {
+        return null;
+    }
+
+    @Override
+    public List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder) {
+        return null;
+    }
+
+    @Override
+    public Set<Hash> getChild(Hash block) {
+        return null;
     }
 }

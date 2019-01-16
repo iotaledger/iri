@@ -415,8 +415,8 @@ public class API {
                 case "getNodeInfo": {
                     return getNodeInfoStatement();
                 }
-                case "getIotaConfig": {
-                    return getIotaConfigStatement();
+                case "getNodeAPIConfiguration": {
+                    return getNodeAPIConfigurationStatement();
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -913,10 +913,10 @@ public class API {
     /**
      *  Returns information about this node configuration.
      *
-     * @return {@link GetIotaConfigResponse}
+     * @return {@link GetNodeAPIConfigurationResponse}
      */
-    private AbstractResponse getIotaConfigStatement() {
-        return GetIotaConfigResponse.create(instance.configuration);
+    private AbstractResponse getNodeAPIConfigurationStatement() {
+        return GetNodeAPIConfigurationResponse.create(instance.configuration);
     }
 
     /**

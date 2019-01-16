@@ -211,7 +211,7 @@ public class APIIntegrationTests {
     public void shouldTestGetIotaConfig() {
 
         final Map<String, Object> request = new HashMap<>();
-        request.put("command", "getIotaConfig");
+        request.put("command", "getNodeAPIConfiguration");
 
         given().
             body(gson().toJson(request)).

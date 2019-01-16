@@ -161,26 +161,25 @@ def spam_call(step, api_call, num_tests, node):
 
     # See if call will be made on one node or all
     api_utils.assign_nodes(node, nodes)
-    node = world.config['nodeId']
+    call_node = world.config['nodeId']
 
     def run_call(node, args):
         logger.debug('Running Thread on {}'.format(node))
         api = args['api']
         options = args['options']
         response = api_utils.fetch_call(api_call, api, options)
-        #response = api.get_transactions_to_approve(depth=3)
         return response
 
     args = nodes
-    for node in args:
-        args[node]['options'] = options
+    for current_node in args:
+        args[current_node]['options'] = options
 
     future_results = pool.start_pool(run_call, num_tests, args)
 
     responses.fetch_future_results(future_results, num_tests, response_val)
 
     world.responses[api_call] = {}
-    world.responses[api_call][node] = response_val
+    world.responses[api_call][call_node] = response_val
 
     if api_call == "attachToTangle":
         trytes = []

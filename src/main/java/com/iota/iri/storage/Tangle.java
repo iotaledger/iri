@@ -1,13 +1,14 @@
 package com.iota.iri.storage;
 
-import com.iota.iri.model.Hash;
 import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.utils.Pair;
-import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Created by paul on 3/3/17 for iri.
@@ -214,15 +215,6 @@ public class Tangle {
         }
     }
 
-    public List<Hash> getSiblings(Hash block){
-        for(PersistenceProvider provider: persistenceProviders) {
-            List<Hash> siblings = provider.getSiblings(block);
-            if (CollectionUtils.isNotEmpty(siblings)){
-                return siblings;
-            }
-        }
-        return Collections.emptyList();
-    }
     /*
     public boolean merge(Persistable model, Indexable index) throws Exception {
         boolean exists = false;

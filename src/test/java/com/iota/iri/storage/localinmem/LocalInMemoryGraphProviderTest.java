@@ -86,8 +86,10 @@ public class LocalInMemoryGraphProviderTest {
         G.store(tangle1);
         H.store(tangle1);
 
+        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
+
         Hash[] hashes = {C.getHash(), D.getHash(), F.getHash()};
-        Assert.assertTrue(CollectionUtils.containsAll(tangle1.getSiblings(E.getHash()).stream().collect(Collectors.toList()), Arrays.asList(hashes)));
+        Assert.assertTrue(CollectionUtils.containsAll(localInMemoryGraphProvider.getSiblings(E.getHash()).stream().collect(Collectors.toList()), Arrays.asList(hashes)));
 
         // reset in memory graph
         LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle1);

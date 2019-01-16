@@ -7,11 +7,17 @@ import com.iota.iri.conf.IotaConfig;
  * See {@link com.iota.iri.service.API#getNodeAPIConfigurationStatement()} for how this response is created.
  */
 public class GetNodeAPIConfigurationResponse extends AbstractResponse {
+    /** {@link IotaConfig#getMaxFindTransactions()} */
     private int maxFindTransactions;
-    private int maxRequestList;
+    /** {@link IotaConfig#getMaxRequestsList()} */
+    private int maxRequestsList;
+    /** {@link IotaConfig#getMaxGetTrytes()} */
     private int maxGetTrytes;
+    /** {@link IotaConfig#getMaxBodyLength()} */
     private int maxBodyLength;
+    /** {@link IotaConfig#isTestnet()} */
     private boolean testNet;
+    /** {@link IotaConfig#getMilestoneStartIndex()} */
     private int milestoneStartIndex;
 
     /**
@@ -35,7 +41,7 @@ public class GetNodeAPIConfigurationResponse extends AbstractResponse {
         final GetNodeAPIConfigurationResponse res = new GetNodeAPIConfigurationResponse();
 
         res.maxFindTransactions = configuration.getMaxFindTransactions();
-        res.maxRequestList = configuration.getMaxRequestsList();
+        res.maxRequestsList = configuration.getMaxRequestsList();
         res.maxGetTrytes = configuration.getMaxGetTrytes();
         res.maxBodyLength = configuration.getMaxBodyLength();
         res.testNet = configuration.isTestnet();
@@ -44,44 +50,26 @@ public class GetNodeAPIConfigurationResponse extends AbstractResponse {
         return res;
     }
 
-    /**
-     * {@link IotaConfig#getMaxFindTransactions()}
-     */
     public int getMaxFindTransactions() {
         return maxFindTransactions;
     }
 
-    /**
-     * {@link IotaConfig#getMaxRequestsList()}
-     */
     public int getMaxRequestsList() {
-        return maxRequestList;
+        return maxRequestsList;
     }
 
-    /**
-     * {link {@link IotaConfig#getMaxGetTrytes()}}
-     */
     public int getMaxGetTrytes() {
         return maxGetTrytes;
     }
 
-    /**
-     * {@link IotaConfig#getMaxBodyLength()}
-     */
     public int getMaxBodyLength() {
         return maxBodyLength;
     }
 
-    /**
-     * {@link IotaConfig#isTestnet()}
-     */
     public boolean isTestNet() {
         return testNet;
     }
 
-    /**
-     * {@link IotaConfig#getMilestoneStartIndex()}
-     */
     public int getMilestoneStartIndex() {
         return milestoneStartIndex;
     }

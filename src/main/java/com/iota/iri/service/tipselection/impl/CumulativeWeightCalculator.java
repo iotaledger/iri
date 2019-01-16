@@ -5,6 +5,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
 import com.iota.iri.model.HashPrefix;
+import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.utils.collections.impl.TransformingBoundedHashSet;
 import com.iota.iri.storage.Tangle;
@@ -13,14 +14,14 @@ import com.iota.iri.utils.collections.interfaces.BoundedSet;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 /**
- * Implementation of <tt>RatingCalculator</tt> that gives the cumulative for each transaction referencing entryPoint.
+ * Implementation of {@link RatingCalculator} that calculates the cumulative weight
+ * for each transaction referencing {@code entryPoint}. <br>
  * Used to create a weighted random walks.
  *
  * @see <a href="cumulative.md">https://github.com/alongalky/iota-docs/blob/master/cumulative.md</a>
@@ -28,12 +29,19 @@ import java.util.*;
 public class CumulativeWeightCalculator implements RatingCalculator{
 
     private static final Logger log = LoggerFactory.getLogger(CumulativeWeightCalculator.class);
-    public static final int MAX_FUTURE_SET_SIZE = 5000;
+    private static final int MAX_FUTURE_SET_SIZE = 5000;
 
     public final Tangle tangle;
+    private final SnapshotProvider snapshotProvider;
 
-    public CumulativeWeightCalculator(Tangle tangle) {
+    /**
+     * Constructor for Cumulative Weight Calculator
+     * @param tangle Tangle object which acts as a database interface
+     * @param snapshotProvider acceses ledger's snapshots
+     */
+    public CumulativeWeightCalculator(Tangle tangle, SnapshotProvider snapshotProvider) {
         this.tangle = tangle;
+        this.snapshotProvider = snapshotProvider;
     }
 
     @Override
@@ -87,7 +95,7 @@ public class CumulativeWeightCalculator implements RatingCalculator{
             txApprovers = new HashSet<>(appHashes.size());
             for (Hash appHash : appHashes) {
                 //if not genesis (the tx that confirms itself)
-                if (ObjectUtils.notEqual(Hash.NULL_HASH, appHash)) {
+                if (!snapshotProvider.getInitialSnapshot().hasSolidEntryPoint(appHash)) {
                     txApprovers.add(appHash);
                 }
             }

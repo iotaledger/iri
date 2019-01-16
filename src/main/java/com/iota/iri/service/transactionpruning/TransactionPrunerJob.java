@@ -2,6 +2,7 @@ package com.iota.iri.service.transactionpruning;
 
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.service.snapshot.Snapshot;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.storage.Tangle;
 
 /**
@@ -27,6 +28,14 @@ public interface TransactionPrunerJob {
      * @return manager of the job that schedules it execution
      */
     TransactionPruner getTransactionPruner();
+
+    /**
+     * Allows to set the {@link SpentAddressesService} that will ensure pruned valid transactions will have their
+     * spent addresses persisted the node
+     *
+     * @param spentAddressesService service to be injected
+     */
+    void setSpentAddressesService(SpentAddressesService spentAddressesService);
 
     /**
      * Allows to set the {@link Tangle} object that this job should work on.

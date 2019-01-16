@@ -218,7 +218,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("maxFindTransactions")).
             body(containsString("maxRequestList")).
             body(containsString("maxGetTrytes")).

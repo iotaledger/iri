@@ -1,13 +1,14 @@
 package com.iota.iri.service;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
-import com.iota.iri.*;
+import com.iota.iri.BundleValidator;
+import com.iota.iri.IRI;
+import com.iota.iri.IXI;
+import com.iota.iri.Iota;
 import com.iota.iri.conf.APIConfig;
-import com.iota.iri.controllers.AddressViewModel;
-import com.iota.iri.controllers.BundleViewModel;
-import com.iota.iri.controllers.MilestoneViewModel;
-import com.iota.iri.controllers.TagViewModel;
-import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.controllers.*;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.PearlDiver;
 import com.iota.iri.crypto.Sponge;
@@ -16,47 +17,32 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.Neighbor;
-import com.iota.iri.service.dto.AbstractResponse;
-import com.iota.iri.service.dto.AccessLimitedResponse;
-import com.iota.iri.service.dto.AddedNeighborsResponse;
-import com.iota.iri.service.dto.AttachToTangleResponse;
-import com.iota.iri.service.dto.CheckConsistency;
-import com.iota.iri.service.dto.ErrorResponse;
-import com.iota.iri.service.dto.ExceptionResponse;
-import com.iota.iri.service.dto.FindTransactionsResponse;
-import com.iota.iri.service.dto.GetBalancesResponse;
-import com.iota.iri.service.dto.GetInclusionStatesResponse;
-import com.iota.iri.service.dto.GetIotaConfigResponse;
-import com.iota.iri.service.dto.GetNeighborsResponse;
-import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.dto.GetTipsResponse;
-import com.iota.iri.service.dto.GetTransactionsToApproveResponse;
-import com.iota.iri.service.dto.GetTrytesResponse;
-import com.iota.iri.service.dto.RemoveNeighborsResponse;
-import com.iota.iri.service.dto.WereAddressesSpentFrom;
+import com.iota.iri.service.dto.*;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
-import com.iota.iri.service.transactionpruning.async.MilestonePrunerJobQueue;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import io.undertow.util.HeaderMap;
-import io.undertow.util.Headers;
-import io.undertow.util.HttpString;
-import io.undertow.util.Methods;
-import io.undertow.util.MimeMappings;
-import io.undertow.util.StatusCodes;
+import io.undertow.Undertow;
+import io.undertow.security.api.AuthenticationMechanism;
+import io.undertow.security.api.AuthenticationMode;
+import io.undertow.security.handlers.AuthenticationCallHandler;
+import io.undertow.security.handlers.AuthenticationConstraintHandler;
+import io.undertow.security.handlers.AuthenticationMechanismsHandler;
+import io.undertow.security.handlers.SecurityInitialHandler;
+import io.undertow.security.idm.IdentityManager;
+import io.undertow.security.impl.BasicAuthenticationMechanism;
+import io.undertow.server.HttpHandler;
+import io.undertow.server.HttpServerExchange;
+import io.undertow.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.channels.StreamSinkChannel;
 import org.xnio.streams.ChannelInputStream;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -69,18 +55,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import io.undertow.Undertow;
-import io.undertow.security.api.AuthenticationMechanism;
-import io.undertow.security.api.AuthenticationMode;
-import io.undertow.security.handlers.AuthenticationCallHandler;
-import io.undertow.security.handlers.AuthenticationConstraintHandler;
-import io.undertow.security.handlers.AuthenticationMechanismsHandler;
-import io.undertow.security.handlers.SecurityInitialHandler;
-import io.undertow.security.idm.IdentityManager;
-import io.undertow.security.impl.BasicAuthenticationMechanism;
-import io.undertow.server.HttpHandler;
-import io.undertow.server.HttpServerExchange;
 
 import static io.undertow.Handlers.path;
 
@@ -739,9 +713,6 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-
-    private static int counterGetTxToApprove = 0;
-
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * Each increase indicates another 2 tips send.
@@ -758,8 +729,6 @@ public class API {
     private static void incCounterGetTxToApprove() {
         counterGetTxToApprove++;
     }
-
-    private static long ellapsedTime_getTxToApprove = 0L;
 
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
@@ -1392,8 +1361,6 @@ public class API {
                 .collect(Collectors.toList()), index);
     }
 
-    private static int counter_PoW = 0;
-
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * Each increase indicates another 2 tips sent.
@@ -1411,8 +1378,6 @@ public class API {
     public static void incCounterPoW() {
         API.counter_PoW++;
     }
-
-    private static long ellapsedTime_PoW = 0L;
 
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
@@ -1641,7 +1606,6 @@ public class API {
      * @param trytes The String we validate.
      * @param length The amount of trytes it should contain.
      * @param zeroAllowed If set to '{@value #ZERO_LENGTH_ALLOWED}', an empty string is also valid.
-     * @throws ValidationException If the string is not exactly trytes of <tt>size</tt> length
      * @return <tt>true</tt> if the string is valid, otherwise <tt>false</tt>
      */
     private boolean validTrytes(String trytes, int length, char zeroAllowed) {

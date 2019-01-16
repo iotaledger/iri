@@ -1728,7 +1728,7 @@ public class API {
 
    /**
      * <b>Only available on testnet.</b>
-     * Creates, attaches, and broadcasts a transaction with this message
+     * Creates, attaches, stores, and broadcasts a transaction with this message
      *
      * @param address The address to add the message to
      * @param message The message to store

@@ -12,6 +12,9 @@ If you have general questions on IOTA you can go to https://iota.stackexchange.c
 ### Bug description
 A general description of the bug.
 
+### IRI version
+What version are you running?
+
 ### Hardware Spec
 On what hardware is the node running on?
 

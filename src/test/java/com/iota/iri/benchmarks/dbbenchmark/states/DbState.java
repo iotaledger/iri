@@ -2,8 +2,11 @@ package com.iota.iri.benchmarks.dbbenchmark.states;
 
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.BaseIotaConfig;
+import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
@@ -23,6 +26,7 @@ public abstract class DbState {
     private final File logFolder = new File("db-log-bench");
 
     private Tangle tangle;
+    private SnapshotProvider snapshotProvider;
     private List<TransactionViewModel> transactions;
 
     @Param({"10", "100", "500", "1000", "3000"})
@@ -37,10 +41,11 @@ public abstract class DbState {
                     + dbFolder.getAbsolutePath());
         }
         logFolder.mkdirs();
-        PersistenceProvider dbProvider = new RocksDBPersistenceProvider(dbFolder.getPath(), logFolder.getPath(),
-                BaseIotaConfig.Defaults.DB_CACHE_SIZE);
+        PersistenceProvider dbProvider = new RocksDBPersistenceProvider(
+                dbFolder.getAbsolutePath(), logFolder.getAbsolutePath(),  BaseIotaConfig.Defaults.DB_CACHE_SIZE, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         dbProvider.init();
         tangle = new Tangle();
+        snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
         tangle.addPersistenceProvider(dbProvider);
         String trytes = "";
         System.out.println("numTxsToTest = [" + numTxsToTest + "]");
@@ -56,6 +61,7 @@ public abstract class DbState {
     public void teardown() throws Exception {
         System.out.println("-----------------------trial teardown--------------------------------");
         tangle.shutdown();
+        snapshotProvider.shutdown();
         FileUtils.forceDelete(dbFolder);
         FileUtils.forceDelete(logFolder);
     }
@@ -68,6 +74,10 @@ public abstract class DbState {
 
     public Tangle getTangle() {
         return tangle;
+    }
+
+    public SnapshotProvider getSnapshotProvider() {
+        return snapshotProvider;
     }
 
     public List<TransactionViewModel> getTransactions() {

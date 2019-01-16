@@ -1667,8 +1667,9 @@ public class API {
     }
 
    /**
+     *
      * <b>Only available on testnet.</b>
-     * Creates, attaches, and broadcasts a transaction with this message
+     * Creates, attaches, stores, and broadcasts a transaction with this message
      *
      * @param address The address to add the message to
      * @param message The message to store
@@ -1739,6 +1740,7 @@ public class API {
 
         // do pow
         List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
+        storeTransactionsStatement(powResult);
         broadcastTransactionsStatement(powResult);
         return AbstractResponse.createEmptyResponse();
     }

@@ -220,7 +220,7 @@ public class APIIntegrationTests {
             then().
             spec(specSuccessResponse).
             body(containsString("maxFindTransactions")).
-            body(containsString("maxRequestList")).
+            body(containsString("maxRequestsList")).
             body(containsString("maxGetTrytes")).
             body(containsString("maxBodyLength")).
             body(containsString("testNet")).

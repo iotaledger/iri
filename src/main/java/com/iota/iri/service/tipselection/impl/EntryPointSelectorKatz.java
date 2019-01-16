@@ -48,27 +48,7 @@ public class EntryPointSelectorKatz implements EntryPointSelector {
             } catch(Exception e) {
                 e.printStackTrace(new PrintStream(System.out));
             }
-            ret = getPivotalHash(depth);
-        }
-        return ret;
-    }
-
-    private Hash getPivotalHash(int depth)
-    {
-        Hash ret = null;
-        if(depth == -1 || depth > LocalInMemoryGraphProvider.totalDepth) {
-            Set<Hash> set = LocalInMemoryGraphProvider.topOrder.get(1);
-            ret = set.iterator().next();
-            return ret;
-        }
-        // TODO if the same score, choose randomly
-        Set<Hash> hashsOnLevel = LocalInMemoryGraphProvider.topOrder.get(LocalInMemoryGraphProvider.totalDepth-depth);
-        double maxScore = 0;
-        for(Hash h : hashsOnLevel) {
-            if(LocalInMemoryGraphProvider.score.get(h)>=maxScore){
-                ret = h;
-                maxScore = LocalInMemoryGraphProvider.score.get(h);
-            }
+            ret = LocalInMemoryGraphProvider.getPivotalHash(depth);
         }
         return ret;
     }

@@ -120,10 +120,14 @@ public class KatzCentrality
                 old.put(v, 1.0/size);
             }
         } else {
-            for(Hash v : score.keySet()) {
-                centrality.put(v, score.get(v));
-                old.put(v, score.get(v));
+            double scale = (double)(score.size()-1) / (double)score.size();
+            for(Hash v : all_vertices) {
+                centrality.put(v, score.get(v)*scale);
+                old.put(v, score.get(v)*scale);
             }
+        }
+        if(size <=1) {
+            return centrality;
         }
         
         // Power iteration: O(k(n+m))
@@ -147,7 +151,7 @@ public class KatzCentrality
                 centrality.put(v, alpha*centrality.get(v)+beta/size);
                 sum2 += centrality.get(v)*centrality.get(v);
             }
-            // Normalization	
+            // Normalization
             norm = Math.sqrt(sum2);
             change = 0;	
             for (Hash v : all_vertices)

@@ -28,7 +28,7 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     private static final int LOCAL_SNAPSHOT_RESCAN_INTERVAL = 10000;
     
     /**
-     * To prevent jumping back and forth in and out of sync, there is a buffer in in between.
+     * To prevent jumping back and forth in and out of sync, there is a buffer in between.
      * Only when the latest milestone and latest snapshot differ more than this number, we fall out of sync
      */
     private static final int LOCAL_SNAPSHOT_SYNC_BUFFER = 5;
@@ -57,6 +57,11 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
      * Configuration with important snapshot related parameters.
      */
     private SnapshotConfig config;
+    
+    /**
+     * If this node is currently seen as in sync
+     */
+    private boolean isInSync;
 
     /**
      * Holds a reference to the {@link ThreadIdentifier} for the monitor thread.
@@ -91,6 +96,8 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
         this.snapshotService = snapshotService;
         this.transactionPruner = transactionPruner;
         this.config = config;
+        
+        this.isInSync = false;
 
         return this;
     }
@@ -155,16 +162,30 @@ public class LocalSnapshotManagerImpl implements LocalSnapshotManager {
     
     /**
      * A node is defined in sync when the latest snapshot milestone index and the latest milestone index are equal.
-     * In order to prevent a bounce between in and out of sync, a buffer is placed in between.
+     * In order to prevent a bounce between in and out of sync, a buffer is added when a node became in sync.
      * 
-     * This will always be false if we are not done scanning milestone candidates during initialization.
+     * This will always return false if we are not done scanning milestone candidates during initialization.
      * 
      * @param latestMilestoneTracker tracker we use to determine milestones
      * @return <code>true</code> if we are in sync, otherwise <code>false</code>
      */
     private boolean isInSync(LatestMilestoneTracker latestMilestoneTracker) {
-        int minimumMilestone = latestMilestoneTracker.getLatestMilestoneIndex() - LOCAL_SNAPSHOT_SYNC_BUFFER;
-        return latestMilestoneTracker.isInitialScanComplete() && 
-                snapshotProvider.getLatestSnapshot().getIndex() >= minimumMilestone;
+        if (!latestMilestoneTracker.isInitialScanComplete()) {
+            return false;
+        }
+        
+        int latestIndex = latestMilestoneTracker.getLatestMilestoneIndex();
+        int latestSnapshot = snapshotProvider.getLatestSnapshot().getIndex();
+        
+        // If we are out of sync, only a full sync will get us in
+        if (!isInSync && latestIndex == latestSnapshot) {
+            isInSync = true;
+        
+        // When we are in sync, only dropping below the buffer gets us out of sync 
+        } else if (latestSnapshot < latestIndex - LOCAL_SNAPSHOT_SYNC_BUFFER) {
+            isInSync = false;
+        }
+        
+        return isInSync;
     }
 }

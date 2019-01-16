@@ -1,3 +1,80 @@
+1.5.6
+    - Global Snapshot (#1250)
+    - Refactor: refactored DedicatedScheduledExecutorService
+    - Refactor: refactored AsyncTransactionPruner
+    - Refactor: refactored EntryPointSelectorImpl
+    - Refactor: refactored CumulativeWeightCalculator
+    - Refactor: refactored the SnapshotServiceImpl
+    - Refactor: refactored the SnapshotProviderImpl
+    - Refactor: refactored the LocalSnapshotManagerImpl
+    - Fix remove source port check (#1156)
+    - Documented IRI and Iota (#1150)
+    - Added documentation for networking
+    - Refactor: removed the repair routines for db inconsistencies
+    - Document dto (#1143)
+    - Added javadoc to API (#1140)
+    - Docs: fixed erroneous javadocs
+    - Feat: new MilestoneTracker
+    - Docs: fixed a problem with missing parameters in the docs
+    - split issues template to bug report and feature request (#1149)
+    - Transaction Validator Documentation (#1142)
+    - Document Bundle Validator (#1125)
+    - Document zmq-messageQ (#1141)
+    - Changed generic to always Transaction (#1129)
+    - Document crypto package (#1139)
+    - document converter (#1130)
+    - change `hash` package name to `crypto` (#1136)
+    - Fix: removed spamming logger
+    - Refactor: removed debug messages
+    - Feat: making IRI use the initialSnapshot and the solidEntryPoints
+    - Refactor: refactored changes according to codacy
+    - Feat: introducing several executor services for IRI
+    - add "numberOfStaleTransactions" to getNeighbors API call (#1121)
+    - Documentation explanation in styleguide (#1120)
+    - update regression tests
+    - add 'coordinatorAddress' to 'getNodeInfo' response.
+    - Added PearlDiver config (PoW threads) (#1017)
+    - Obtain features of a node (#1062)
+    - Refactor: changed indentation of IS_SOLID_BITMASK
+    - Refactor: correct name for the isMilestone flag
+    - Refactor: removed the requester thread in favor of a separate PR
+    - Refactor: changed indentation of isTransactionRequested
+    - Refactor: removed wrong * 4
+    - Regression ciglue.sh: avoid git fatal error when cloning TIAB (#1104)
+    - Return early if validating a bundle that has a known invalid status (#1098)
+    - Fixed wrong Hash objects used
+    - Fix: fixed visibility of the Status in the MilestoneTracker
+    - Feat: added hashcode to the Messages in IntervallLogger
+    - Feat: added the isSnapshot accessors
+    - Feat: fixed a few minor issues in IRI + some other improvements
+    - Feat: added the snapshot package
+    - Add Validation Test (#55)
+    - Interrupt wait time fix (#54)
+    - add code coverage to regression tests
+    - use mvn to fetch version
+    - Fix: fixed ThreadUtils to use Map instead of HashMap
+    - Add a Java Styleguide to IRI (#1055)
+    - fix code coverage tool d/l (#1085)
+    - javadocs param fix (#1081)
+    - update undertow to version 1.4.26 (#1083)
+    - Update DB for stitching tests (#60)
+    - Gawk -> Awk
+    - Revert "Kubectl extracted namespace could be empty"
+    - Kubectl extracted namespace could be empty
+    - Force TIAB virtualenv to Python2
+    - add reply to request to "recentSeenBytes" tx cache in order to skip redundant processing.
+    - extract byte digest to a function.
+    - Update DB for stitching tests
+    - Refactor: refactored the transactionpruner
+    - Enable validation of milestones with additional hash modes and security levels  (#1041)
+    - Run regression tests from local (#58)
+    - add formatting files
+    - Fix missing responses placement for interrupt test (#53)
+    - rename addresses to addressList
+    - Move variables to world environment (#50)
+    - fix milestone -> milestoneTracker
+
+
 1.5.5
     - Javadoc on API command methods (#943)
     - Parse case insensitive boolean text (#966)

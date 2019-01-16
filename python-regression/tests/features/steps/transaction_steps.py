@@ -1,5 +1,5 @@
 from aloe import world, step
-from iota import Transaction, Address
+from iota import Transaction
 from util import static_vals as static
 from util.test_logic import api_test_logic as api_utils
 from util.transaction_bundle_logic import transaction_logic as transactions

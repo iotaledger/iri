@@ -21,13 +21,12 @@ def generate_transaction_and_attach(step, node):
     :param step.hashes: A gherkin table present in the feature file specifying the
                         arguments and the associated type.
     """
-    arg_list = step.hashes
     world.config['nodeId'] = node
     world.config['apiCall'] = 'attachToTangle'
     seed = ""
     is_value_transaction = False
 
-    for arg in arg_list:
+    for arg in step.hashes:
         if arg['keys'] == 'seed' and arg['type'] == 'staticList':
             seed = arg['values']
             arg['type'] = 'ignore'
@@ -38,7 +37,7 @@ def generate_transaction_and_attach(step, node):
         api = api_utils.prepare_api_call(node)
 
     options = {}
-    api_utils.prepare_options(arg_list, options)
+    api_utils.prepare_options(step.hashes, options)
 
     transaction_args = {}
     for key in options:

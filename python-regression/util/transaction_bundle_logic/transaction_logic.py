@@ -73,3 +73,41 @@ def attach_store_and_broadcast(api, args_list):
     api.broadcast_transactions(transaction.get('trytes'))
     logger.info('Done attaching, storing and broadcasting')
     return transaction
+
+
+def check_for_seed(arg_list):
+    """
+    Checks the given argument list for a seed, if none is provided, returns an empty string
+
+    :param arg_list: The argument list for the step that will be searched
+    :return: The seed if provided, empty string if not
+    """
+    seed = ""
+    for arg in arg_list:
+        if arg['keys'] == 'seed' and arg['type'] == 'staticList':
+            seed = arg['values']
+            arg['type'] = 'ignore'
+
+    return seed
+
+
+def prepare_transaction_arguments(arg_list, arg_copy, iteration):
+    """
+    Logic required for sending multiple value transactions in a single aloe step.
+    Take the provided argument list and determine if it has a seed in it. If so, it makes sure to
+    replace any changed arguments within that list with the copies of the original arguments.
+
+    :param arg_list: The original list that will be used for the transactions
+    :param arg_copy: The copy of the unmodified list
+    :param iteration: The current iteration, used to pull from the seed list
+    """
+    for arg_index, arg in enumerate(arg_list):
+        if arg['keys'] == "seed" and (arg['type'] == "staticList" or arg['type'] == "ignore"):
+            if arg['type'] != arg_copy[arg_index]['type']:
+                arg['type'] = arg_copy[arg_index]['type']
+
+            if arg['values'] != arg_copy[arg_index]['values']:
+                arg['values'] = arg_copy[arg_index]['values']
+
+            seed_list = getattr(static, arg['values'])
+            arg['values'] = seed_list[iteration]

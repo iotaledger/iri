@@ -1,6 +1,8 @@
 from aloe import world
 from iota import Iota,Address,Tag,TryteString
 from util import static_vals
+from copy import deepcopy
+
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -214,3 +216,20 @@ def prepare_transaction_arguments(arg_list):
             arg_list[key] = Tag(arg_list[key])
         elif key == 'message':
             arg_list[key] = TryteString.from_unicode(arg_list[key])
+
+
+def duplicate_arguments(arg_list):
+    """
+    Duplicates the step arguments, providing a copy for storage and comparison.
+
+    :param arg_list: The original step arguments you would like to copy.
+    :return: Copy of the original argument list.
+    """
+
+    stored_values = deepcopy(arg_list)
+    stored_value_list = {}
+    for index, value in enumerate(stored_values):
+        stored_value_list[index] = value
+
+    return stored_value_list
+

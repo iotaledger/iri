@@ -5,7 +5,6 @@ from util.test_logic import api_test_logic as api_utils
 from util.transaction_bundle_logic import transaction_logic as transactions
 from util.threading_logic import pool_logic as pool
 from util.milestone_logic import milestones
-from copy import deepcopy
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -23,18 +22,14 @@ def generate_transaction_and_attach(step, node):
     """
     world.config['nodeId'] = node
     world.config['apiCall'] = 'attachToTangle'
-    seed = ""
     is_value_transaction = False
 
-    for arg in step.hashes:
-        if arg['keys'] == 'seed' and arg['type'] == 'staticList':
-            seed = arg['values']
-            arg['type'] = 'ignore'
+    seed = transactions.check_for_seed(step.hashes)
+
     if seed != "":
-        api = api_utils.prepare_api_call(node, seed=seed)
         is_value_transaction = True
-    else:
-        api = api_utils.prepare_api_call(node)
+
+    api = api_utils.prepare_api_call(node, seed=seed)
 
     options = {}
     api_utils.prepare_options(step.hashes, options)
@@ -143,24 +138,15 @@ def reference_stitch_transaction(step):
 @step(r'"(\d+)" transactions are issued on "([^"]+)" with:')
 def issue_multiple_transactions(step, num_transactions, node):
     transaction_hashes = []
-    stored_values = ()
+    args_copy = ()
+
     for iteration in range(int(num_transactions)):
+
         if iteration == 0:
-            stored_values = deepcopy(step.hashes)
-            stored_value_list = {}
-            for index, value in enumerate(stored_values):
-                stored_value_list[index] = value
+            args_copy = api_utils.duplicate_arguments(step.hashes)
 
-        for arg_index, arg in enumerate(step.hashes):
-            if arg['keys'] == "seed" and (arg['type'] == "staticList" or arg['type'] == "ignore"):
-                if arg['type'] != stored_value_list[arg_index]['type']:
-                    arg['type'] = stored_value_list[arg_index]['type']
+        transactions.prepare_transaction_arguments(step.hashes, args_copy, iteration)
 
-                if arg['values'] != stored_value_list[arg_index]['values']:
-                    arg['values'] = stored_value_list[arg_index]['values']
-
-                new_address = getattr(static, arg['values'])
-                arg['values'] = new_address[iteration]
         logger.info('Sending Transaction {}'.format(iteration + 1))
         transaction = generate_transaction_and_attach(step, node)
         transaction_hash = Transaction.from_tryte_string(transaction['trytes'][0]).hash

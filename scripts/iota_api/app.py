@@ -11,7 +11,7 @@ from tag_generator import TagGenerator
 from collections import deque
 
 lock = threading.Lock()
-def send_to_ipfs_iota(tx_string):
+def send_to_ipfs_iota(tx_string, tx_num=1):
     global lock
 
     with lock:
@@ -24,8 +24,12 @@ def send_to_ipfs_iota(tx_string):
         ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
 
         print("[INFO]Cache json %s in ipfs, the hash is %s." % (tx_string, ipfs_hash))
+        if tx_num == 1:
+            data = ipfs_hash
+        else:
+            data = json.dumps({"address": ipfs_hash, "tx_num": tx_num}, sort_keys=True)
 
-        cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag("TR"))
+        cache.cache_txn_in_tangle_simple(data, TagGenerator.get_current_tag("TR"))
 
         print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag("TR")))
 
@@ -55,7 +59,7 @@ def get_cache():
         tx = txn_cache.popleft()
         all_txs += tx
 
-    send_to_ipfs_iota(all_txs)
+    send_to_ipfs_iota(all_txs, nums)
 
 
 app = Flask(__name__)

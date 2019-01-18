@@ -24,8 +24,12 @@ def send_to_ipfs_iota(tx_string, tx_num=1):
         ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
 
         print("[INFO]Cache json %s in ipfs, the hash is %s." % (tx_string, ipfs_hash))
+        if tx_num == 1:
+            data = ipfs_hash
+        else:
+            data = json.dumps({"address": ipfs_hash, "tx_num": tx_num}, sort_keys=True)
 
-        cache.cache_txn_in_tangle_simple(ipfs_hash, TagGenerator.get_current_tag("TR"), tx_num)
+        cache.cache_txn_in_tangle_simple(data, TagGenerator.get_current_tag("TR"))
 
         print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag("TR")))
 

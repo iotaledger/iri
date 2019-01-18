@@ -15,15 +15,17 @@ Feature: Test transaction confirmation
         |keys                   |values                     |type           |
         |tags                   |ZERO9VALUE                 |list           |
 
-        Then the response for "findTransactions" on "nodeA" is stored in the static value "FOUND_TRANSACTIONS"
         #In the default DB, the current index is 50. The next milestone issued should be 51.
-        When a milestone is issued with index 51 and referencing a hash from "FOUND_TRANSACTIONS"
+        When a milestone is issued with index 51 and references:
+        |keys                   |values                     |type           |
+        |transactions           |findTransactions           |responseList   |
+
         #Give the node 10 seconds to solidify the milestone
         And we wait "10" second/seconds
 
         Then "getInclusionStates" is called on "nodeA" with:
         |keys                   |values                     |type           |
-        |transactions           |FOUND_TRANSACTIONS         |staticValue    |
+        |transactions           |findTransactions           |responseHashes |
         |tips                   |latestMilestone            |configValue    |
 
         And the response for "getInclusionStates" should return with:
@@ -48,16 +50,17 @@ Feature: Test transaction confirmation
         |keys                   |values                     |type           |
         |tags                   |VALUE9TRANSACTION          |list           |
 
-        Then the response for "findTransactions" on "nodeA" is stored in the static value "FOUND_TRANSACTIONS"
-
         #In the default test, the latest sent index will be 51. The next milestone issued should be 52.
-        When a milestone is issued with index 52 and referencing a hash from "FOUND_TRANSACTIONS"
+        When a milestone is issued with index 52 and references:
+        |keys                   |values                     |type           |
+        |transactions           |findTransactions           |responseList   |
+
         #Give the node time to solidify the milestone
         And we wait "10" second/seconds
 
         Then "getInclusionStates" is called on "nodeA" with:
         |keys                   |values                     |type           |
-        |transactions           |FOUND_TRANSACTIONS         |staticValue    |
+        |transactions           |findTransactions           |responseHashes |
         |tips                   |latestMilestone            |configValue    |
 
         And the response for "getInclusionStates" should return with:

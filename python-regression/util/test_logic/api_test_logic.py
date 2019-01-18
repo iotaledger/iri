@@ -78,6 +78,8 @@ def prepare_options(args, option_list):
     :param args: The gherkin table arguments from the feature file
     :param option_list: The list dictionary that the arguments will be placed into
     """
+    # TODO: Make into dictionary with references to individual modularised value creation methods
+
     for x in range(len(args)):
         if len(args) != 0:
             key = args[x]['keys']
@@ -118,6 +120,11 @@ def prepare_options(args, option_list):
                 config = fetch_config('nodeId')
                 response = fetch_response(value)
                 value = [response[config]]
+
+            elif arg_type == "responseHashes":
+                config = fetch_config('nodeId')
+                response = fetch_response(value)
+                value = response[config]['hashes']
 
             elif arg_type == "configValue":
                 node = fetch_config('nodeId')

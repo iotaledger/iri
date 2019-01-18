@@ -1,5 +1,6 @@
-from iota import ProposedBundle, ProposedTransaction, Address, Tag
+from iota import ProposedBundle, ProposedTransaction, Address, Tag, TransactionHash
 from util import static_vals as static
+from util.test_logic import api_test_logic as api_utils
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -111,3 +112,28 @@ def prepare_transaction_arguments(arg_list, arg_copy, iteration):
 
             seed_list = getattr(static, arg['values'])
             arg['values'] = seed_list[iteration]
+
+
+def fetch_transaction_from_list(args, node):
+    """
+    Fetches a reference transaction from either a static value list in the ../staticValues.py file, or from the response
+    for a previous "findTransactions" call.
+
+    :param args: The step argument list
+    :param node: The current working node
+    :return: The transaction to be used as a reference
+    """
+
+    options = {}
+    api_utils.prepare_options(args, options)
+
+    if args[0]['type'] == 'responseList':
+        transaction_list = api_utils.fetch_response(args[0]['values'])
+        reference_transaction = transaction_list[node]['hashes'][len(transaction_list) - 1]
+    elif args[0]['type'] == 'staticValue':
+        transaction_list = options['transactions']
+        reference_transaction = transaction_list[len(transaction_list) - 1]
+
+    assert reference_transaction, "No reference transaction found (Possibly incorrect argument type, check gherkin file"
+
+    return reference_transaction

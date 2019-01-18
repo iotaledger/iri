@@ -156,10 +156,12 @@ def issue_multiple_transactions(step, num_transactions, node):
     logger.info("Transactions generated and stored")
 
 
-@step(r'a milestone is issued with index (\d+) and referencing a hash from "([^"]+)"')
-def issue_a_milestone_with_reference(step, index, static_variable):
+@step(r'a milestone is issued with index (\d+) and references')
+def issue_a_milestone_with_reference(step, index):
     """
-    This method issues a milestone with a given index, and stores that milestone hash in staticVals.py
+    This method issues a milestone with a given index and reference transaction. The input transaction pointer should
+    always have the key "transactions", but may be a pointer to either a staticValue list stored in staticValues.py, or
+    a responseList for "findTransactions".
 
     :param index: The index of the milestone you are issuing
     """
@@ -168,8 +170,7 @@ def issue_a_milestone_with_reference(step, index, static_variable):
 
     api = api_utils.prepare_api_call(node)
 
-    transactions = getattr(static, static_variable)
-    reference_transaction = transactions[len(transactions) - 1]
+    reference_transaction = transactions.fetch_transaction_from_list(step.hashes, node)
     logger.info('Issuing milestone {}'.format(index))
     milestone = milestones.issue_milestone(address, api, index, reference_transaction)
 

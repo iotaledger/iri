@@ -23,9 +23,7 @@ def issue_milestone(address, api, index, *reference_transaction):
     bundle.add_transaction(txn2)
 
     bundle[0]._legacy_tag = Tag(converter.int_to_trytestring(index, 9))
-    bundle[1]._legacy_tag = Tag(converter.int_to_trytestring(index, 9))
 
-    #bundle.finalize()
     bundle_logic.finalize(bundle)
 
     tips = api.get_transactions_to_approve(depth=3)
@@ -36,7 +34,6 @@ def issue_milestone(address, api, index, *reference_transaction):
         branch = tips['branchTransaction']
 
     bundle_trytes = bundle.as_tryte_strings()
-
     milestone = api.attach_to_tangle(trunk, branch, bundle_trytes, 9)
     api.broadcast_and_store(milestone['trytes'])
 

@@ -209,13 +209,3 @@ def compare_responses(value, milestone_list, transaction_list, transaction_count
             transaction_counter_list.append(1)
             logger.debug('added transaction "{}" to transaction list'.format(value))
 
-
-@step(r'the response for "([^"]+)" on "([^"]+)" is stored in the static value "([^"]+)"')
-def store_response_in_static(step, api_call, node_name, static_variable):
-    world.config['nodeId'] = node_name
-
-    response = world.responses[api_call][node_name]
-    if api_call == 'findTransactions':
-        response = response['hashes']
-
-    setattr(static, static_variable, response)

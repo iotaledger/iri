@@ -13,6 +13,7 @@ public class Converter {
 
     static final byte[][] BYTE_TO_TRITS_MAPPINGS = new byte[243][];
     static final byte[][] TRYTE_TO_TRITS_MAPPINGS = new byte[27][];
+    static final byte[] TRYTE_TO_BYTE_MAPPING = new byte[256];
 
     public static final int HIGH_INTEGER_BITS = 0xFFFFFFFF;
     public static final long HIGH_LONG_BITS = 0xFFFFFFFFFFFFFFFFL;
@@ -34,6 +35,9 @@ public class Converter {
         for (int i = 0; i < 27; i++) {
             TRYTE_TO_TRITS_MAPPINGS[i] = Arrays.copyOf(trits, NUMBER_OF_TRITS_IN_A_TRYTE);
             increment(trits, NUMBER_OF_TRITS_IN_A_TRYTE);
+        }
+        for(int i=0; i<27; i++) {
+            TRYTE_TO_BYTE_MAPPING[TRYTE_ALPHABET.charAt(i)] = (byte)i;
         }
     }
 
@@ -239,6 +243,20 @@ public class Converter {
             int secondValue = (asciiValue - firstValue) / 27;
             sb.append(TRYTE_ALPHABET.charAt(firstValue));
             sb.append(TRYTE_ALPHABET.charAt(secondValue));
+        }
+        return sb.toString();
+    }
+
+    public static String trytesToAscii(String input) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < input.length()-1; i+=2) {
+            byte first = TRYTE_TO_BYTE_MAPPING[input.charAt(i)];
+            byte second = TRYTE_TO_BYTE_MAPPING[input.charAt(i+1)];
+            if((int)first==0 && (int)second==0) {
+                break;
+            }
+            byte asciiVal = (byte)(second*27 + first);
+            sb.append((char)asciiVal);
         }
         return sb.toString();
     }

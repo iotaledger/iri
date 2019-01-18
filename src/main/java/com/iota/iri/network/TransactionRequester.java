@@ -3,7 +3,6 @@ package com.iota.iri.network;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -18,7 +17,6 @@ import java.util.*;
 public class TransactionRequester {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
-    private final MessageQ messageQ;
     private final Set<Hash> milestoneTransactionsToRequest = new LinkedHashSet<>();
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
 
@@ -32,10 +30,9 @@ public class TransactionRequester {
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
 
-    public TransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ) {
+    public TransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
-        this.messageQ = messageQ;
     }
 
     public void init(double pRemoveRequest) {
@@ -120,7 +117,7 @@ public class TransactionRequester {
                 if (TransactionViewModel.exists(tangle, hash)) {
                     // ... dump a log message ...
                     log.info("Removed existing tx from request list: " + hash);
-                    messageQ.publish("rtl %s", hash);
+                    tangle.publish("rtl %s", hash);
 
                     // ... and continue to the next element in the set
                     continue;

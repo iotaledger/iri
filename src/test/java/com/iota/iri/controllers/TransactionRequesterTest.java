@@ -6,7 +6,6 @@ import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.zmq.MessageQ;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -19,7 +18,6 @@ import static org.junit.Assert.*;
 public class TransactionRequesterTest {
     private static Tangle tangle = new Tangle();
     private static SnapshotProvider snapshotProvider;
-    private MessageQ mq;
 
     @Before
     public void setUp() throws Exception {
@@ -78,7 +76,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void nonMilestoneCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
@@ -91,7 +89,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void milestoneCapacityNotLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
@@ -104,7 +102,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void mixedCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 4 ; i++) {

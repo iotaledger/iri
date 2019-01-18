@@ -17,7 +17,6 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
-import com.iota.iri.zmq.MessageQ;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -69,11 +68,6 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * Holds a reference to the manager that takes care of solidifying milestones.<br />
      */
     private MilestoneSolidifier milestoneSolidifier;
-
-    /**
-     * Holds a reference to the ZeroMQ interface that allows us to emit messages for external recipients.<br />
-     */
-    private MessageQ messageQ;
 
     /**
      * Holds the coordinator address which is used to filter possible milestone candidates.<br />
@@ -135,19 +129,16 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
      * @param milestoneService contains the important business logic when dealing with milestones
      * @param milestoneSolidifier manager that takes care of solidifying milestones
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      * @param config configuration object which allows us to determine the important config parameters of the node
      * @return the initialized instance itself to allow chaining
      */
     public LatestMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneService milestoneService, MilestoneSolidifier milestoneSolidifier, MessageQ messageQ,
-            IotaConfig config) {
+            MilestoneService milestoneService, MilestoneSolidifier milestoneSolidifier, IotaConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.milestoneService = milestoneService;
         this.milestoneSolidifier = milestoneSolidifier;
-        this.messageQ = messageQ;
 
         coordinatorAddress = HashFactory.ADDRESS.create(config.getCoordinator());
 
@@ -164,7 +155,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      */
     @Override
     public void setLatestMilestone(Hash latestMilestoneHash, int latestMilestoneIndex) {
-        messageQ.publish("lmi %d %d", this.latestMilestoneIndex, latestMilestoneIndex);
+        tangle.publish("lmi %d %d", this.latestMilestoneIndex, latestMilestoneIndex);
         log.delegate().info("Latest milestone has changed from #" + this.latestMilestoneIndex + " to #" +
                 latestMilestoneIndex);
 

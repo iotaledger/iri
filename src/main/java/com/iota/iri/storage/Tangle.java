@@ -8,6 +8,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import com.iota.iri.zmq.MessageQueueProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,10 +34,14 @@ public class Tangle {
             new AbstractMap.SimpleImmutableEntry<>("transaction-metadata", Transaction.class);
 
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
-
+    private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
+    }
+
+    public void addMessageQueueProvider(MessageQueueProvider provider) {
+        this.messageQueueProviders.add(provider);
     }
 
     public void init() throws Exception {
@@ -45,11 +50,13 @@ public class Tangle {
         }
     }
 
-
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
         this.persistenceProviders.forEach(PersistenceProvider::shutdown);
         this.persistenceProviders.clear();
+        log.info("Shutting down Tangle MessageQueue Providers... ");
+        this.messageQueueProviders.forEach(MessageQueueProvider::shutdown);
+        this.messageQueueProviders.clear();
     }
 
     public Persistable load(Class<?> model, Indexable index) throws Exception {
@@ -107,16 +114,27 @@ public class Tangle {
             return latest;
     }
 
-    public Boolean update(Persistable model, Indexable index, String item) throws Exception {
-            boolean success = false;
-            for(PersistenceProvider provider: this.persistenceProviders) {
-                if(success) {
-                    provider.update(model, index, item);
-                } else {
-                    success = provider.update(model, index, item);
-                }
-            }
-            return success;
+    public void update(Persistable model, Indexable index, String item) throws Exception {
+        updatePersistenceProvider(model, index, item);
+        updateMessageQueueProvider(model, index, item);
+    }
+
+    private void updatePersistenceProvider(Persistable model, Indexable index, String item) throws Exception {
+        for(PersistenceProvider provider: this.persistenceProviders) {
+                provider.update(model, index, item);
+        }
+    }
+
+    private void updateMessageQueueProvider(Persistable model, Indexable index, String item) {
+        for(MessageQueueProvider provider: this.messageQueueProviders) {
+            provider.update(model, index, item);
+        }
+    }
+
+    public void publish(String message, Object... objects) {
+        for(MessageQueueProvider provider: this.messageQueueProviders) {
+            provider.publish(message, objects);
+        }
     }
 
     public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> referencedClass) throws Exception {
@@ -237,18 +255,4 @@ public class Tangle {
             provider.clearMetadata(column);
         }
     }
-
-    /*
-    public boolean merge(Persistable model, Indexable index) throws Exception {
-        boolean exists = false;
-        for(PersistenceProvider provider: persistenceProviders) {
-            if(exists) {
-                provider.save(model, index);
-            } else {
-                exists = provider.merge(model, index);
-            }
-        }
-        return exists;
-    }
-    */
 }

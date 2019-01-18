@@ -43,7 +43,7 @@ def create_and_attach_transaction(api, value_transaction, arg_list, *reference):
         prepared_transaction = api.prepare_transfer(
             transfers=[transaction],
             inputs=[inputs['inputs'][0]],
-            change_address=Address(getattr(static, "TEST_EMPTY_ADDRESS"))
+            change_address=Address(static.TEST_EMPTY_ADDRESS)
         )
     else:
         prepared_transaction = api.prepare_transfer(

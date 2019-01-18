@@ -61,9 +61,9 @@ def create_inconsistent_transaction(step, node):
     """
     world.config['nodeId'] = node
     api = api_utils.prepare_api_call(node)
-    trunk = getattr(static, "NULL_HASH")
+    trunk = static.NULL_HASH
     branch = trunk
-    trytes = getattr(static, "EMPTY_TRANSACTION_TRYTES")
+    trytes = static.EMPTY_TRANSACTION_TRYTES
 
     argument_list = {'trunk_transaction': trunk, 'branch_transaction': branch,
                      'trytes': [trytes], 'min_weight_magnitude': 14}
@@ -89,7 +89,7 @@ def issue_stitching_transaction(step, node, tag):
 
     trunk = side_tangle_transaction
     branch = gtta_transactions['branchTransaction']
-    stitching_address = getattr(static, "STITCHING_ADDRESS")
+    stitching_address = static.STITCHING_ADDRESS
 
     logger.debug('Trunk: ' + str(trunk))
     logger.debug('Branch: ' + str(branch))
@@ -110,7 +110,7 @@ def issue_stitching_transaction(step, node, tag):
 def reference_stitch_transaction(step):
     node = world.config['nodeId']
     stitch = world.responses['previousTransaction'][node]
-    referencing_address = getattr(static, "REFERENCING_ADDRESS")
+    referencing_address = static.REFERENCING_ADDRESS
 
     api = api_utils.prepare_api_call(node)
 
@@ -165,8 +165,7 @@ def issue_a_milestone_with_reference(step, index):
     :param index: The index of the milestone you are issuing
     """
     node = world.config['nodeId']
-    address = getattr(static, "TEST_BLOWBALL_COO")
-
+    address = static.TEST_BLOWBALL_COO
     api = api_utils.prepare_api_call(node)
 
     reference_transaction = transactions.fetch_transaction_from_list(step.hashes, node)

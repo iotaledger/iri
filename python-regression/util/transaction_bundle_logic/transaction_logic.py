@@ -1,4 +1,4 @@
-from iota import ProposedBundle, ProposedTransaction, Address, Tag, TransactionHash
+from iota import ProposedBundle, ProposedTransaction, Address, Tag
 from util import static_vals as static
 from util.test_logic import api_test_logic as api_utils
 import logging

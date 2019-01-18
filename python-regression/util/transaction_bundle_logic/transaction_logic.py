@@ -1,6 +1,7 @@
 from iota import ProposedBundle, ProposedTransaction, Address, Tag
 from util import static_vals as static
 from util.test_logic import api_test_logic as api_utils
+from util.test_logic import value_fetch_logic as value_fetch
 import logging
 
 logging.basicConfig(level=logging.INFO)
@@ -128,7 +129,7 @@ def fetch_transaction_from_list(args, node):
     api_utils.prepare_options(args, options)
 
     if args[0]['type'] == 'responseList':
-        transaction_list = api_utils.fetch_response(args[0]['values'])
+        transaction_list = value_fetch.fetch_response(args[0]['values'])
         reference_transaction = transaction_list[node]['hashes'][len(transaction_list) - 1]
     elif args[0]['type'] == 'staticValue':
         transaction_list = options['transactions']

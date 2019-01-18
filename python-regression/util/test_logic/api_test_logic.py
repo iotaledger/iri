@@ -1,7 +1,7 @@
 from aloe import world
 from iota import Iota,Address,Tag,TryteString
-from util import static_vals
 from copy import deepcopy
+from . import value_fetch_logic as value_fetch
 
 
 import logging
@@ -34,16 +34,8 @@ def check_responses_for_call(api_call):
         return False
 
 
-def fetch_response(api_call):
-    return world.responses[api_call]
-
-
 def place_response(api_call, node, response):
     world.responses[api_call][node] = response
-
-
-def fetch_config(key):
-    return world.config[key]
 
 
 def check_neighbors(step, node):
@@ -78,7 +70,6 @@ def prepare_options(args, option_list):
     :param args: The gherkin table arguments from the feature file
     :param option_list: The list dictionary that the arguments will be placed into
     """
-    # TODO: Make into dictionary with references to individual modularised value creation methods
 
     for x in range(len(args)):
         if len(args) != 0:
@@ -86,56 +77,31 @@ def prepare_options(args, option_list):
             value = args[x]['values']
             arg_type = args[x]['type']
 
-            if arg_type == "int":
-                value = int(value)
+            fetch_list = {
+                'int': value_fetch.fetch_int,
+                'string': value_fetch.fetch_string,
+                'list': value_fetch.fetch_list,
+                'nodeAddress': value_fetch.fetch_node_address,
+                'staticValue': value_fetch.fetch_static_value,
+                'staticList': value_fetch.fetch_static_list,
+                'bool': value_fetch.fetch_bool,
+                'responseValue': value_fetch.fetch_response_value,
+                'responseList': value_fetch.fetch_response_list,
+                'responseHashes': value_fetch.fetch_response_value_hashes,
+                'configValue': value_fetch.fetch_config_value,
+                'configList': value_fetch.fetch_config_list,
+                # TODO: remove the need for this logic
+                'ignore': value_fetch.fetch_string
+            }
 
-            elif arg_type == "list":
-                value = [value]
+            option = fetch_list[arg_type](value)
 
-            elif arg_type == "nodeAddress":
-                host = world.machine['nodes'][value]['host']
-                port = world.machine['nodes'][value]['ports']['gossip-udp']
-                address = "udp://" + host + ":" + str(port)
-                value = [address.decode()]
-
-            elif arg_type == "staticValue":
-                value = getattr(static_vals, value)
-
-            elif arg_type == "staticList":
-                address = getattr(static_vals, value)
-                value = [address]
-
-            elif arg_type == "bool":
-                if value == "False":
-                    value = False
-                else:
-                    value = True
-
-            elif arg_type == "responseValue":
-                config = fetch_config('nodeId')
-                response = fetch_response(value)
-                value = response[config]
-
-            elif arg_type == "responseList":
-                config = fetch_config('nodeId')
-                response = fetch_response(value)
-                value = [response[config]]
-
-            elif arg_type == "responseHashes":
-                config = fetch_config('nodeId')
-                response = fetch_response(value)
-                value = response[config]['hashes']
-
-            elif arg_type == "configValue":
-                node = fetch_config('nodeId')
-                value = world.config[value][node]
-
-            elif arg_type == "configList":
-                node = fetch_config('nodeId')
-                value = [world.config[value][node]]
-
+            '''
+            Fills option_list with the fetched value. Excludes seed as an option, as it's only there for value 
+            transactions and is not required as an argument for any api calls. 
+            '''
             if key != 'seed':
-                option_list[key] = value
+                option_list[key] = option
 
 
 def fetch_call(api_call, api, options):

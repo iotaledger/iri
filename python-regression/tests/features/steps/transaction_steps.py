@@ -152,7 +152,6 @@ def issue_multiple_transactions(step, num_transactions, node):
         transaction_hash = Transaction.from_tryte_string(transaction['trytes'][0]).hash
         transaction_hashes.append(transaction_hash)
 
-    setattr(static, "ATTACHED_TRANSACTIONS", transaction_hashes)
     logger.info("Transactions generated and stored")
 
 

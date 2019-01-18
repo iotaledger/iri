@@ -181,12 +181,6 @@ def spam_call(step, api_call, num_tests, node):
     world.responses[api_call] = {}
     world.responses[api_call][call_node] = response_val
 
-    if api_call == "attachToTangle":
-        trytes = []
-        for response in response_val:
-            trytes.append(response['trytes'][0])
-        setattr(static_vals, "ATTACHED_TRANSACTIONS", trytes)
-
     end = time()
     time_spent = end - start
     logger.info('Time spent on loop: {}'.format(time_spent))

@@ -1,7 +1,6 @@
 from aloe import world, step
 from util.test_logic import api_test_logic as api_utils
 from util.response_logic import response_handling as response_handling
-from util import static_vals as static
 
 import logging
 logging.basicConfig(level=logging.INFO)

@@ -35,7 +35,15 @@ public interface DbConfig extends Config {
      */
     boolean isRescanDb();
 
+    /**
+     * @return {@value Descriptions#GRAPH_DB_PATH}
+     */
     String getGraphDbPath();
+
+    /**
+     * @return {@value Descriptions#ENABLE_BATCH_TXNS}
+     */
+    boolean isEnableBatchTxns();
 
     interface Descriptions {
 
@@ -47,5 +55,6 @@ public interface DbConfig extends Config {
                 "and transaction metadata.";
         String RESCAN_DB = "Rescan all transaction metadata (Approvees, Bundles, and Tags)";
         String GRAPH_DB_PATH = "Path to the graph database storage.";
+        String ENABLE_BATCH_TXNS = "THE DB engine can be used to store batches of transactions.";
     }
 }

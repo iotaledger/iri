@@ -1,6 +1,18 @@
 package com.iota.iri.utils;
 
+import org.junit.Assert;
+import org.junit.Test;
+
 public class ConverterTest {
 
-
+    @Test
+    public void testFromByteToTrites() {
+        String trytes = "LBCBKBSBCBKBKBRBCCAC9999999999999999999999999999999999999999999999999999999999999";
+        try {
+            String res = Converter.trytesToAscii(trytes);
+            Assert.assertEquals(res, "B9AI9AAHTR");
+        } catch(Exception e) {
+            e.printStackTrace();
+        }
+    }
 }

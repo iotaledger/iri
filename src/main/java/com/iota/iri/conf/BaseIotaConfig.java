@@ -63,7 +63,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean revalidate = Defaults.REVALIDATE;
     protected boolean rescanDb = Defaults.RESCAN_DB;
     protected String graphDbPath = Defaults.GRAPH_DB_PATH;
-
+    protected boolean enableBatchTxns = Defaults.ENABLE_BATCH_TXNS;
 
     //Protocol
     protected double pReplyRandomTip = Defaults.P_REPLY_RANDOM_TIP;
@@ -415,6 +415,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--graph-db-path"}, description = DbConfig.Descriptions.GRAPH_DB_PATH)
     protected void setGraphDbPath(String graphDbPath) {
         this.graphDbPath = graphDbPath;
+    }
+
+    @Override
+    public boolean isEnableBatchTxns() {
+        return enableBatchTxns;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--batch-txns"}, description = DbConfig.Descriptions.ENABLE_BATCH_TXNS)
+    protected void setEnableBatchTxns(boolean enableBatchTxns) {
+        this.enableBatchTxns = enableBatchTxns;
     }
 
     @Override
@@ -849,7 +860,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean REVALIDATE = false;
         boolean RESCAN_DB = false;
         String GRAPH_DB_PATH = "";
-
+        boolean ENABLE_BATCH_TXNS = false;
 
         //Protocol
         double P_REPLY_RANDOM_TIP = 0.66d;

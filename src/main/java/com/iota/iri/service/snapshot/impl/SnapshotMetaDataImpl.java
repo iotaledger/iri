@@ -6,6 +6,7 @@ import com.iota.iri.service.snapshot.SnapshotMetaData;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Implements the basic contract of the {@link SnapshotMetaData} interface.
@@ -73,7 +74,7 @@ public class SnapshotMetaDataImpl implements SnapshotMetaData {
         setHash(hash);
         setIndex(index);
         setTimestamp(timestamp);
-        setSolidEntryPoints(new HashMap<>(solidEntryPoints));
+        setSolidEntryPoints(solidEntryPoints);
         setSeenMilestones(new HashMap<>(seenMilestones));
     }
 
@@ -201,7 +202,7 @@ public class SnapshotMetaDataImpl implements SnapshotMetaData {
      */
     @Override
     public void setSolidEntryPoints(Map<Hash, Integer> solidEntryPoints) {
-        this.solidEntryPoints = solidEntryPoints;
+        this.solidEntryPoints = new ConcurrentHashMap<>(solidEntryPoints);
     }
 
     /**
@@ -248,7 +249,7 @@ public class SnapshotMetaDataImpl implements SnapshotMetaData {
         setIndex(newMetaData.getIndex());
         setHash(newMetaData.getHash());
         setTimestamp(newMetaData.getTimestamp());
-        setSolidEntryPoints(new HashMap<>(newMetaData.getSolidEntryPoints()));
+        setSolidEntryPoints(newMetaData.getSolidEntryPoints());
         setSeenMilestones(new HashMap<>(newMetaData.getSeenMilestones()));
     }
 

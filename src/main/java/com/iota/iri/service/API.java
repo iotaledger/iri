@@ -64,6 +64,9 @@ import static io.undertow.Handlers.path;
 import java.io.*;
 import java.net.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+
 @SuppressWarnings("unchecked")
 public class API {
 
@@ -684,8 +687,23 @@ public class API {
         for (final String trytesPart : trytes) {
             //validate all trytes
             Converter.trits(trytesPart, txTrits, 0);
+
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
+
+            if (BaseIotaConfig.getInstance().isEnableBatchTxns()) {
+                byte[] tritsSig =  transactionViewModel.getSignature();
+                String trytesSig = Converter.trytes(tritsSig);
+                String asciiSig = Converter.trytesToAscii(trytesSig);
+
+                ObjectMapper objectMapper = new ObjectMapper();
+                JsonNode rootNode = objectMapper.readTree(asciiSig);
+                JsonNode idNode = rootNode.path("tx_num");
+                int txnCount = idNode.asInt();
+
+                log.info("received batch of {} transactions", txnCount);
+            }
+
             if(transactionViewModel.store(instance.tangle)) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);

@@ -134,7 +134,7 @@ public class EntryPointSelectorKatzTest {
 
     @Test
     public void testGetEntryPointKatzTwo() throws Exception {
-        LocalInMemoryGraphProvider.topOrderStreaming = new HashMap<>();
+//        LocalInMemoryGraphProvider.topOrderStreaming = new HashMap<>();
         BaseIotaConfig.getInstance().setStreamingGraphSupport(true);
         TransactionViewModel A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, One, Two;
         A = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());

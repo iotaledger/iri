@@ -91,6 +91,114 @@ public class LocalInMemoryGraphProviderTest {
         Hash[] hashes = {C.getHash(), D.getHash(), F.getHash()};
         Assert.assertTrue(CollectionUtils.containsAll(localInMemoryGraphProvider.getSiblings(E.getHash()).stream().collect(Collectors.toList()), Arrays.asList(hashes)));
 
+
+        tag.forEach((k, v) -> System.out.println("key:" + k + ",value:" + v));
+        localInMemoryGraphProvider.pivotChain(A.getHash()).forEach(s -> System.out.println(s));
+
+        // reset in memory graph
+        LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle1);
+        provider.close();
+    }
+
+    @Test
+    public void testGetPivotChain() throws Exception {
+        TransactionViewModel A, B, C, D, E, F, G, H;
+        A = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        B = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(A.getHash(),
+                A.getHash()), getRandomTransactionHash());
+        D = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
+                B.getHash()), getRandomTransactionHash());
+        C = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
+                D.getHash()), getRandomTransactionHash());
+        E = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
+                D.getHash()), getRandomTransactionHash());
+        F = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
+                E.getHash()), getRandomTransactionHash());
+        G = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(C.getHash(),
+                D.getHash()), getRandomTransactionHash());
+        H = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(E.getHash(),
+                F.getHash()), getRandomTransactionHash());
+
+        HashMap<Hash, String> tag = new HashMap<Hash, String>();
+        tag.put(A.getHash(), "A");
+        tag.put(B.getHash(), "B");
+        tag.put(C.getHash(), "C");
+        tag.put(D.getHash(), "D");
+        tag.put(E.getHash(), "E");
+        tag.put(F.getHash(), "F");
+        tag.put(G.getHash(), "G");
+        tag.put(H.getHash(), "H");
+        LocalInMemoryGraphProvider.setNameMap(tag);
+
+        A.store(tangle1);
+        B.store(tangle1);
+        D.store(tangle1);
+        C.store(tangle1);
+        E.store(tangle1);
+        F.store(tangle1);
+        G.store(tangle1);
+        H.store(tangle1);
+
+        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
+
+        tag.forEach((k, v) -> System.out.println("key:" + k + ",value:" + v));
+        localInMemoryGraphProvider.confluxOrder(B.getHash()).forEach(s -> System.out.println(s));
+
+        // reset in memory graph
+        LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle1);
+        provider.close();
+    }
+
+    @Test
+    public void testConfluxOrder() throws Exception {
+        TransactionViewModel A, B, C, D, E, F, G, H;
+        A = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        B = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(A.getHash(),
+                A.getHash()), getRandomTransactionHash());
+        D = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
+                B.getHash()), getRandomTransactionHash());
+        C = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
+                D.getHash()), getRandomTransactionHash());
+        E = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
+                D.getHash()), getRandomTransactionHash());
+        F = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
+                E.getHash()), getRandomTransactionHash());
+        G = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(C.getHash(),
+                D.getHash()), getRandomTransactionHash());
+        H = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(E.getHash(),
+                F.getHash()), getRandomTransactionHash());
+
+        HashMap<Hash, String> tag = new HashMap<Hash, String>();
+        tag.put(A.getHash(), "A");
+        tag.put(B.getHash(), "B");
+        tag.put(C.getHash(), "C");
+        tag.put(D.getHash(), "D");
+        tag.put(E.getHash(), "E");
+        tag.put(F.getHash(), "F");
+        tag.put(G.getHash(), "G");
+        tag.put(H.getHash(), "H");
+        LocalInMemoryGraphProvider.setNameMap(tag);
+
+        A.store(tangle1);
+        B.store(tangle1);
+        D.store(tangle1);
+        C.store(tangle1);
+        E.store(tangle1);
+        F.store(tangle1);
+        G.store(tangle1);
+        H.store(tangle1);
+
+        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
+
+        tag.forEach((k, v) -> System.out.println("key:" + k + ",value:" + v));
+//        System.out.println("============pivotChain============");
+//        localInMemoryGraphProvider.pivotChain(H.getHash()).forEach(e -> System.out.println(e));
+//        System.out.println("============parent============");
+//        System.out.println(localInMemoryGraphProvider.getParent(H.getHash()));
+//        localInMemoryGraphProvider.past(localInMemoryGraphProvider.graph,E.getHash()).forEach(s -> System.out.println(s));
+        System.out.println("============confluxOrder============");
+        localInMemoryGraphProvider.confluxOrder(H.getHash()).forEach(s -> System.out.println(s));
+
         // reset in memory graph
         LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle1);
         provider.close();

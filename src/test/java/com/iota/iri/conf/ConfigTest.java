@@ -74,7 +74,7 @@ public class ConfigTest {
                 //we ignore this on mainnet
                 "--mwm", "4",
                 "--testnet-coordinator", "TTTTTTTTT",
-                "--test-no-coo-validation",
+                "--test-no-coo-validation", "true",
                 //this should be ignored everywhere
                 "--fake-config"
         };
@@ -146,7 +146,7 @@ public class ConfigTest {
                 //we ignore this on mainnet
                 "--mwm", "4",
                 "--testnet-coordinator", "TTTTTTTTT",
-                "--testnet-no-coo-validation",
+                "--testnet-no-coo-validation", "true",
                 //this should be ignored everywhere
                 "--fake-config"
         };

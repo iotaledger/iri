@@ -1,0 +1,63 @@
+This is BibTeX, Version 0.99d (TeX Live 2012/Debian)
+Capacity: max_strings=35307, hash_size=35307, hash_prime=30011
+The top-level auxiliary file: StreamNet.aux
+The style file: IEEEtran.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Database file #1: StreamNet.bib
+-- IEEEtranS.bst version 1.14 (2015/08/26) by Michael Shell.
+-- http://www.michaelshell.org/tex/ieeetran/bibtex/
+-- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
+** Sorting version - not for normal IEEE work.
+Warning--to sort, need author, organization, or key in pow_tangle
+Warning--to sort, need author, organization, or key in iota_presentation
+Warning--to sort, need author, organization, or key in iota_confirm
+Warning--to sort, need author, organization, or key in iota_collision
+Warning--to sort, need author, organization, or key in iota_proof
+
+Done.
+You've used 9 entries,
+            4566 wiz_defined-function locations,
+            947 strings with 9156 characters,
+and the built_in function-call counts, 4465 in all, are:
+= -- 400
+> -- 46
+< -- 13
++ -- 27
+- -- 10
+* -- 232
+:= -- 733
+add.period$ -- 18
+call.type$ -- 9
+change.case$ -- 32
+chr.to.int$ -- 18
+cite$ -- 14
+duplicate$ -- 332
+empty$ -- 378
+format.name$ -- 11
+if$ -- 969
+int.to.chr$ -- 0
+int.to.str$ -- 9
+missing$ -- 60
+newline$ -- 62
+num.names$ -- 8
+pop$ -- 204
+preamble$ -- 1
+purify$ -- 23
+quote$ -- 2
+skip$ -- 319
+stack$ -- 0
+substring$ -- 109
+swap$ -- 188
+text.length$ -- 7
+text.prefix$ -- 0
+top$ -- 6
+type$ -- 93
+warning$ -- 5
+while$ -- 14
+width$ -- 10
+write$ -- 103
+(There were 5 warnings)

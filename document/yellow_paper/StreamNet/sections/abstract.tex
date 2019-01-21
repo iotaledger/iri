@@ -1,0 +1,8 @@
+%TRIAS StreamNet is a DAG (Directed Asyclyc Graph) blockchain design rooted from the existing mature systems. 
+Considering major issues in the existing DAG systems such as centralization caused by the introduction of Coordinator, double-spending and sybil attacks, slow transaction speed etc. 
+We designed and implemented the StreamNet system which is forked from the IOTA implementation.
+By leveraging the Topological sorting and Katz centrality computation, we infer a pivotal chain along the path of each topological level in the graph,
+and each block in the pivotal chain will have the highest Katz centrality score, which could be used as the entry point for the tip selection algorithm.
+In addtion, with comprehensive integration of information such as transaction (vertices), 
+transaction approval information (edges), and network structure (such as community structure) we designed the tip selection algorithm that obeys the local modifier method and can detect and avoid double spend / sybil attacks.
+

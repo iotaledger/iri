@@ -153,7 +153,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonIgnore
-    @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE)
+    @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE, arity = 1)
     protected void setRemote(boolean remote) {
         this.apiHost = "0.0.0.0";
     }
@@ -373,7 +373,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--revalidate"}, description = DbConfig.Descriptions.REVALIDATE)
+    @Parameter(names = {"--revalidate"}, description = DbConfig.Descriptions.REVALIDATE, arity = 1)
     protected void setRevalidate(boolean revalidate) {
         this.revalidate = revalidate;
     }
@@ -384,7 +384,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--rescan"}, description = DbConfig.Descriptions.RESCAN_DB)
+    @Parameter(names = {"--rescan"}, description = DbConfig.Descriptions.RESCAN_DB, arity = 1)
     protected void setRescanDb(boolean rescanDb) {
         this.rescanDb = rescanDb;
     }
@@ -622,7 +622,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--zmq-enabled", description = ZMQConfig.Descriptions.ZMQ_ENABLED)
+    @Parameter(names = "--zmq-enabled", description = ZMQConfig.Descriptions.ZMQ_ENABLED, arity = 1)
     protected void setZmqEnabled(boolean zmqEnabled) {
         this.zmqEnabled = zmqEnabled;
     }
@@ -743,7 +743,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--max-analyzed-transactions", description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
+    @Parameter(names = "--max-analyzed-transactions", 
+        description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
     protected void setBelowMaxDepthTransactionLimit(int maxAnalyzedTransactions) {
         this.maxAnalyzedTransactions = maxAnalyzedTransactions;
     }

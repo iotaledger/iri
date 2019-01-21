@@ -8,6 +8,7 @@ defaults: &db_1
   '--milestone-start',
   '2',
   '--testnet-no-coo-validation',
+  'true',
   '--testnet'
   ]
 

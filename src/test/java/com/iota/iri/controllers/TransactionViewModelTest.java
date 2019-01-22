@@ -436,4 +436,14 @@ public class TransactionViewModelTest {
 
         return HashFactory.TRANSACTION.create(out);
     }
+
+    @Test
+    public void addBatchTxnCount() throws Exception {
+        byte[] trits = getRandomTransactionTrits();
+        TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
+
+        long count = tangle.getTxnCount();
+        transactionViewModel.addBatchTxnCount(tangle);
+        Assert.assertEquals("batch txs count should be increased 1.", tangle.getTxnCount(), count + 1);
+    }
 }

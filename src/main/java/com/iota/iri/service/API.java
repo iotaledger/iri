@@ -687,24 +687,17 @@ public class API {
         for (final String trytesPart : trytes) {
             //validate all trytes
             Converter.trits(trytesPart, txTrits, 0);
-
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
 
-            if (BaseIotaConfig.getInstance().isEnableBatchTxns()) {
-                byte[] tritsSig =  transactionViewModel.getSignature();
-                String trytesSig = Converter.trytes(tritsSig);
-                String asciiSig = Converter.trytesToAscii(trytesSig);
-
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode rootNode = objectMapper.readTree(asciiSig);
-                JsonNode idNode = rootNode.path("tx_num");
-                int txnCount = idNode.asInt();
-
-                log.info("received batch of {} transactions", txnCount);
-            }
-
             if(transactionViewModel.store(instance.tangle)) {
+                // add batch of txns count.
+                if (BaseIotaConfig.getInstance().isEnableBatchTxns()) {
+                    long count = transactionViewModel.addBatchTxnCount(instance.tangle);
+
+                    log.info("received batch of {} transactions from api.", count);
+                }
+
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");

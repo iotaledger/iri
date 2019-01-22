@@ -1,5 +1,7 @@
 package com.iota.iri.controllers;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.Address;
 import com.iota.iri.model.persistables.Approvee;
@@ -516,5 +518,25 @@ public class TransactionViewModel {
     @Override
     public String toString() {
         return "transaction " + hash.toString();
+    }
+
+    public long addBatchTxnCount(Tangle tangle) {
+        byte[] tritsSig = getSignature();
+        String trytesSig = Converter.trytes(tritsSig);
+        String asciiSig = Converter.trytesToAscii(trytesSig);
+
+        long txnCount;
+        try {
+            ObjectMapper objectMapper = new ObjectMapper();
+            JsonNode rootNode = objectMapper.readTree(asciiSig);
+            JsonNode idNode = rootNode.path("tx_num");
+            txnCount = idNode.asLong();
+        } catch (Exception _e) {
+            txnCount = 1;
+        }
+
+        tangle.addTxnCount(txnCount);
+
+        return txnCount;
     }
 }

@@ -65,4 +65,11 @@ public class TangleTest {
         return out;
     }
 
+    @Test
+    public void txnCount() throws Exception {
+        long count = tangle.getTxnCount();
+        tangle.addTxnCount(100);
+        Assert.assertEquals("batch txs count should be 100", tangle.getTxnCount(), count + 100);
+    }
+
 }

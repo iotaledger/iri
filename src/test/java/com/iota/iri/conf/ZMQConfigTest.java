@@ -8,6 +8,18 @@ import static org.junit.Assert.assertTrue;
 public class ZMQConfigTest {
 
     @Test
+    public void isZmqEnabledLegacy() {
+        String[] args = {
+                "--zmq-enabled", "true",
+        };
+        IotaConfig config = ConfigFactory.createIotaConfig(false);
+        config.parseConfigFromArgs(args);
+        assertTrue("ZMQ must be globally enabled", config.isZmqEnabled());
+        assertTrue("ZMQ TCP must be enabled", config.isZmqEnableTcp());
+        assertTrue("ZMQ IPC must be enabled", config.isZmqEnableIpc());
+    }
+
+    @Test
     public void isZmqEnabled() {
         String[] args = {
                 "--zmq-enable-tcp", "true",

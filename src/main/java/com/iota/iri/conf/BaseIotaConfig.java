@@ -75,7 +75,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String zmqIpc = Defaults.ZMQ_IPC;
     protected int qSizeNode = Defaults.QUEUE_SIZE;
     protected int cacheSizeBytes = Defaults.CACHE_SIZE_BYTES;
-
+    /**
+     * @deprecated This field was replaced by {@link #zmqEnableTcp} and {@link #zmqEnableIpc}. It is only needed
+     * for backward compatibility to --zmq-enabled parameter with JCommander.
+     */
+    @Deprecated
+    private boolean zmqEnabled;
 
     //Tip Selection
     protected int maxDepth = Defaults.MAX_DEPTH;

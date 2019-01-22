@@ -20,6 +20,11 @@ matrix:
   allow_failures:
     - jdk: oraclejdk9
 
+install:
+  # install python env
+    - sudo apt-get install python
+    - pip install -e .
+
 script:
   #run tests and integration tests
   # see  https://stackoverflow.com/questions/34405047/how-do-you-merge-into-another-branch-using-travis-with-git-commands?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa

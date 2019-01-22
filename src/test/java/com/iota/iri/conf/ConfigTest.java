@@ -76,7 +76,7 @@ public class ConfigTest {
                 "--testnet-coordinator", "TTTTTTTTT",
                 "--test-no-coo-validation", "true",
                 //this should be ignored everywhere
-                "--fake-config"
+                "--fake-config", "true"
         };
         IotaConfig iotaConfig = ConfigFactory.createIotaConfig(false);
         Assert.assertThat("wrong config class created", iotaConfig, CoreMatchers.instanceOf(MainnetConfig.class));
@@ -148,7 +148,7 @@ public class ConfigTest {
                 "--testnet-coordinator", "TTTTTTTTT",
                 "--testnet-no-coo-validation", "true",
                 //this should be ignored everywhere
-                "--fake-config"
+                "--fake-config", "true"
         };
         IotaConfig iotaConfig = ConfigFactory.createIotaConfig(true);
         Assert.assertThat("wrong config class created", iotaConfig, CoreMatchers.instanceOf(TestnetConfig.class));

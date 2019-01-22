@@ -9,7 +9,8 @@ defaults: &db_1
   '2',
   '--testnet-no-coo-validation',
   'true',
-  '--testnet'
+  '--testnet',
+  'true'
   ]
 
 db_with_validation: &db_2
@@ -21,7 +22,8 @@ db_with_validation: &db_2
   '18',
   '--milestone-start',
   '2',
-  '--testnet'
+  '--testnet',
+  'true'
   ]
 
 

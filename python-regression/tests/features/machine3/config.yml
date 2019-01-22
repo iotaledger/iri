@@ -9,7 +9,8 @@ defaults: &db_1
   '2',
   '--testnet-no-coo-validation',
   'true',
-  '--testnet'
+  '--testnet',
+  'true'
   ]
 
 seeds: # For internal use by the regression system. 

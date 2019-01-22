@@ -134,6 +134,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setTestnet(boolean testnet) {
         // We force the user to supply a true/false here, but don't actually set the value
     }
+    
+    @JsonIgnore
+    @Parameter(names = {"--fake-config"}, description = Config.Descriptions.TESTNET, arity = 1)
+    protected void setFakeConfig(boolean fakeconfig) {
+        // We force the user to supply a true/false here, but don't actually set the value
+    }
 
     @JsonProperty
     @Parameter(names = {"--help", "-h"} , help = true, hidden = true)

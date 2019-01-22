@@ -22,8 +22,15 @@ matrix:
 
 install:
   # install python env
-    - sudo apt-get install pip 
-    - pip install -e .
+    - sudo apt-get install software-properties-common
+    - sudo apt-add-repository universe
+    - sudo apt-get update
+    - sudo apt-get install pip ipfs 
+    - sudo pip install ipfsapi
+    - sudo pip install flask
+    - sudo pip install pyOpenSSL
+    - sudo pip install pyota
+    - sudo pip install docker
 
 script:
   #run tests and integration tests

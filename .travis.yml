@@ -62,6 +62,8 @@ script:
   - cd ..
   #jacoco append to report
   - mvn jacoco:report
+  - cd scripts/iota_cache/
+  - python iota_cache_test.py  
 
 after_success:
   #codacy-coverage send report. Uses Travis Env variable (CODACY_PROJECT_TOKEN)

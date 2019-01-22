@@ -1,7 +1,7 @@
 import time
 from iota import Iota, Address, ProposedTransaction, Tag, Transaction, TryteString, TransactionTrytes, ProposedBundle, Nonce, BundleHash,TransactionHash, Fragment
 from six import binary_type, moves as compat, text_type
-import api
+import iota_api.api
 
 class IotaCache(object):
 
@@ -83,6 +83,6 @@ class IotaCache(object):
         return ret
 
     def set_txn_as_synced(self, ipfs_addr, tag):
-        result = self.cache_txn_in_tangle(ipfs_addr, tag+b"CONSUMED")
+        result = self.cache_txn_in_tangle_sdk(ipfs_addr, tag+b"CONSUMED")
         return result
 

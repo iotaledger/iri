@@ -22,7 +22,7 @@ matrix:
 
 install:
   # install python env
-    - sudo apt-get install python
+    - sudo apt-get install pip 
     - pip install -e .
 
 script:

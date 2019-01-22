@@ -1,0 +1,76 @@
+%<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
+%  <rect x="79.927" y="70.0106" w="9.86732" h="9.71781" lw="0.50"/>
+%  <text x="83.423" y="73.5169" t="0" h="5"/>
+%  <rect x="135.721" y="108.354" w="9.86731" h="9.71782" lw="0.50" fill="silver"/>
+%  <text x="139.218" y="111.861" t="4" h="5"/>
+%  <rect x="148.381" y="85.6384" w="9.86732" h="9.71781" lw="0.50" fill="silver"/>
+%  <text x="151.877" y="89.1447" t="3" h="5"/>
+%  <rect x="141.745" y="40.1474" w="9.86732" h="9.71782" lw="0.50" fill="silver"/>
+%  <text x="145.241" y="43.6537" t="1" h="5"/>
+%  <rect x="158.189" y="23.3884" w="9.86732" h="9.71781" lw="0.50" fill="silver"/>
+%  <text x="161.685" y="26.8947" t="5" h="5"/>
+%  <rect x="148.911" y="59.8083" w="9.86732" h="9.71781" lw="0.50" fill="silver"/>
+%  <text x="152.407" y="63.3146" t="2" h="5"/>
+%  <rect x="189.467" y="73.6875" w="9.86732" h="9.71781" lw="0.50" fill="silver"/>
+%  <text x="192.963" y="77.1937" t="7" h="5"/>
+%  <rect x="185.135" y="41.9434" w="9.86732" h="9.71782" lw="0.50" fill="silver"/>
+%  <text x="188.631" y="45.4496" t="8" h="5" fill="silver"/>
+%  <rect x="182.87" y="102.927" w="9.86731" h="9.71781" lw="0.50" fill="silver"/>
+%  <text x="186.367" y="106.433" t="6" h="5"/>
+%  <rect x="222.193" y="108.345" w="9.86731" h="9.71782" lw="0.50" fill="silver"/>
+%  <text x="225.689" y="111.851" t="9" h="5" fill="silver"/>
+%  <rect x="223.107" y="86.876" w="9.86731" h="9.71782" lw="0.50" fill="silver"/>
+%  <text x="227.767" y="90.5761" t="10" h="5" halign="c"/>
+%  <rect x="220.984" y="57.7745" w="9.86731" h="9.71781" lw="0.50" fill="silver"/>
+%  <text x="223.51" y="61.2808" t="11" h="5"/>
+%  <line x1="220.966" y1="62.3375" x2="220.966" y2="62.3375" arr2="h40"/>
+%  <line x1="141.991" y1="46.3605" x2="89.6643" y2="74.4674" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="148.955" y1="64.0174" x2="89.7537" y2="75.0119" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="148.32" y1="90.6578" x2="89.7537" y2="76.2805" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="135.634" y1="113.281" x2="89.9651" y2="77.9719" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="158.531" y1="27.0459" x2="89.7584" y2="71.2994" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="183.049" y1="107.779" x2="90.3564" y2="76.9806" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="189.03" y1="79.6716" x2="89.7584" y2="75.1865" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="185.441" y1="48.5746" x2="90.0574" y2="73.6915" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="223.117" y1="92.23" x2="89.7584" y2="75.1865" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="221.024" y1="64.1231" x2="90.3564" y2="74.2895" arr2="h44" arrs="4" li="dash"/>
+%  <line x1="222.396" y1="112.896" x2="90.0501" y2="76.4662" arr2="h43" arrs="4" li="dash"/>
+%</TpX>
+\begin{figure}
+\centering
+\ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(445.17, 279.73)(0,0)
+  \put(0,0){\includegraphics{fast_txn.pdf}}
+  \put(15.58,147.77){\fontsize{14.23}{17.07}\selectfont 0}
+  \put(173.74,256.46){\fontsize{14.23}{17.07}\selectfont 4}
+  \put(209.62,192.07){\fontsize{14.23}{17.07}\selectfont 3}
+  \put(190.81,63.11){\fontsize{14.23}{17.07}\selectfont 1}
+  \put(237.42,15.61){\fontsize{14.23}{17.07}\selectfont 5}
+  \put(211.13,118.85){\fontsize{14.23}{17.07}\selectfont 2}
+  \put(326.09,158.19){\fontsize{14.23}{17.07}\selectfont 7}
+  \put(313.81,68.21){\fontsize{14.23}{17.07}\selectfont 8}
+  \put(307.39,241.07){\fontsize{14.23}{17.07}\selectfont 6}
+  \put(418.85,256.43){\fontsize{14.23}{17.07}\selectfont 9}
+  \put(424.74,196.12){\fontsize{14.23}{17.07}\selectfont \makebox[0pt]{10}}
+  \put(412.68,113.08){\fontsize{14.23}{17.07}\selectfont 11}
+  \end{picture}%
+\else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(445.17, 279.73)(0,0)
+  \put(0,0){\includegraphics{fast_txn}}
+  \put(15.58,147.77){\fontsize{14.23}{17.07}\selectfont 0}
+  \put(173.74,256.46){\fontsize{14.23}{17.07}\selectfont 4}
+  \put(209.62,192.07){\fontsize{14.23}{17.07}\selectfont 3}
+  \put(190.81,63.11){\fontsize{14.23}{17.07}\selectfont 1}
+  \put(237.42,15.61){\fontsize{14.23}{17.07}\selectfont 5}
+  \put(211.13,118.85){\fontsize{14.23}{17.07}\selectfont 2}
+  \put(326.09,158.19){\fontsize{14.23}{17.07}\selectfont 7}
+  \put(313.81,68.21){\fontsize{14.23}{17.07}\selectfont 8}
+  \put(307.39,241.07){\fontsize{14.23}{17.07}\selectfont 6}
+  \put(418.85,256.43){\fontsize{14.23}{17.07}\selectfont 9}
+  \put(424.74,196.12){\fontsize{14.23}{17.07}\selectfont \makebox[0pt]{10}}
+  \put(412.68,113.08){\fontsize{14.23}{17.07}\selectfont 11}
+  \end{picture}%
+\fi
+\end{figure}

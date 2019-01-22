@@ -19,45 +19,45 @@ Warning--to sort, need author, organization, or key in iota_collision
 Warning--to sort, need author, organization, or key in iota_proof
 
 Done.
-You've used 9 entries,
+You've used 10 entries,
             4566 wiz_defined-function locations,
-            947 strings with 9156 characters,
-and the built_in function-call counts, 4465 in all, are:
-= -- 400
-> -- 46
+            951 strings with 9344 characters,
+and the built_in function-call counts, 5134 in all, are:
+= -- 458
+> -- 78
 < -- 13
-+ -- 27
-- -- 10
-* -- 232
-:= -- 733
-add.period$ -- 18
-call.type$ -- 9
-change.case$ -- 32
++ -- 42
+- -- 20
+* -- 271
+:= -- 843
+add.period$ -- 20
+call.type$ -- 10
+change.case$ -- 40
 chr.to.int$ -- 18
-cite$ -- 14
-duplicate$ -- 332
-empty$ -- 378
-format.name$ -- 11
-if$ -- 969
+cite$ -- 15
+duplicate$ -- 376
+empty$ -- 424
+format.name$ -- 22
+if$ -- 1112
 int.to.chr$ -- 0
-int.to.str$ -- 9
-missing$ -- 60
-newline$ -- 62
-num.names$ -- 8
-pop$ -- 204
+int.to.str$ -- 10
+missing$ -- 69
+newline$ -- 65
+num.names$ -- 10
+pop$ -- 235
 preamble$ -- 1
-purify$ -- 23
+purify$ -- 30
 quote$ -- 2
-skip$ -- 319
+skip$ -- 361
 stack$ -- 0
-substring$ -- 109
-swap$ -- 188
+substring$ -- 115
+swap$ -- 213
 text.length$ -- 7
 text.prefix$ -- 0
 top$ -- 6
-type$ -- 93
+type$ -- 104
 warning$ -- 5
-while$ -- 14
-width$ -- 10
-write$ -- 103
+while$ -- 16
+width$ -- 12
+write$ -- 111
 (There were 5 warnings)

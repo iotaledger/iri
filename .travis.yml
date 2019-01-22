@@ -33,6 +33,7 @@ install:
     - sudo pip install pyOpenSSL
     - sudo pip install pyota
     - sudo pip install docker
+    - sudo pip install mock 
 
 script:
   #run tests and integration tests

@@ -40,22 +40,22 @@ class MessageQ {
     private final ExecutorService publisherService = Executors.newSingleThreadExecutor();
 
     public static MessageQ createWith(ZMQConfig config) {
-        return new MessageQ(config.getZmqPort(), config.getZmqIpc(), config.getZmqThreads());
+        return new MessageQ(config);
     }
 
     /**
      * Creates and starts a ZMQ publisher.
      *
-     * @param port port the publisher will be bound to
-     * @param ipc IPC socket the publisher will be bound to
-     * @param nthreads number of threads used by the ZMQ publisher
+     * @param config {@link ZMQConfig} that should be used.
      */
-    private MessageQ(int port, String ipc, int nthreads) {
-        context = ZMQ.context(nthreads);
+    private MessageQ(ZMQConfig config) {
+        context = ZMQ.context(config.getZmqThreads());
         publisher = context.socket(ZMQ.PUB);
-        publisher.bind(String.format("tcp://*:%d", port));
-        if (ipc != null) {
-            publisher.bind(ipc);
+        if (config.isZmqEnableTcp()) {
+            publisher.bind(String.format("tcp://*:%d", config.getZmqPort()));
+        }
+        if (config.isZmqEnableIpc()) {
+            publisher.bind(config.getZmqIpc());
         }
     }
 

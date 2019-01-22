@@ -24,6 +24,8 @@ install:
   # install python env
     - sudo apt-get install software-properties-common
     - sudo apt-add-repository universe
+    - sudo add-apt-repository restricted
+    - sudo add-apt-repository multiverse
     - sudo apt-get update
     - sudo apt-get install pip ipfs 
     - sudo pip install ipfsapi

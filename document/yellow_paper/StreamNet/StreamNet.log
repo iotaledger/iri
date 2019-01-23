@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012/Debian) (format=pdflatex 2018.7.5)  21 JAN 2019 05:47
+This is pdfTeX, Version 3.1415926-2.4-1.40.13 (TeX Live 2012/Debian) (format=pdflatex 2018.7.5)  23 JAN 2019 02:12
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -1010,127 +1010,242 @@ LaTeX Warning: No \author given.
 
 LaTeX Warning: No \author given.
 
-(./sections/abstract.tex) (./sections/introduction.tex
-<figures/simple_sn.png, id=1, 293.59688pt x 91.09032pt>
-File: figures/simple_sn.png Graphic file (type png)
+(./sections/abstract.tex) (./sections/introduction.tex)
+(./sections/concepts.tex
+Package epstopdf Info: Source file: <figures/simple_sn.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 20072 bytes
+(epstopdf)             Output file: <figures/simple_sn-eps-converted-to.pdf>
+(epstopdf)                    date: 2019-01-22 09:49:52
+(epstopdf)                    size: 4975 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/simple_sn-eps-conv
+erted-to.pdf figures/simple_sn.eps>
+(epstopdf)             \includegraphics on input line 11.
+Package epstopdf Info: Output file is already uptodate.
 
-<use figures/simple_sn.png>
-Package pdftex.def Info: figures/simple_sn.png used on input line 11.
-(pdftex.def)             Requested size: 227.64894pt x 70.629pt.
+<figures/simple_sn-eps-converted-to.pdf, id=1, 6264.40375pt x 1669.23625pt>
+File: figures/simple_sn-eps-converted-to.pdf Graphic file (type pdf)
 
-<figures/genesis.png, id=3, 111.41624pt x 71.51718pt>
-File: figures/genesis.png Graphic file (type png)
+<use figures/simple_sn-eps-converted-to.pdf>
+Package pdftex.def Info: figures/simple_sn-eps-converted-to.pdf used on input l
+ine 11.
+(pdftex.def)             Requested size: 227.64894pt x 60.64516pt.
+Package epstopdf Info: Source file: <figures/genesis.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 730 bytes
+(epstopdf)             Output file: <figures/genesis-eps-converted-to.pdf>
+(epstopdf)                    date: 2019-01-22 09:49:52
+(epstopdf)                    size: 5650 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/genesis-eps-conver
+ted-to.pdf figures/genesis.eps>
+(epstopdf)             \includegraphics on input line 26.
+Package epstopdf Info: Output file is already uptodate.
 
-<use figures/genesis.png>
-Package pdftex.def Info: figures/genesis.png used on input line 26.
-(pdftex.def)             Requested size: 75.8804pt x 48.70741pt.
+<figures/genesis-eps-converted-to.pdf, id=2, 523.9575pt x 245.91875pt>
+File: figures/genesis-eps-converted-to.pdf Graphic file (type pdf)
 
-<figures/simple_transfer.png, id=4, 185.19188pt x 106.14656pt>
-File: figures/simple_transfer.png Graphic file (type png)
+<use figures/genesis-eps-converted-to.pdf>
+Package pdftex.def Info: figures/genesis-eps-converted-to.pdf used on input lin
+e 26.
+(pdftex.def)             Requested size: 75.8804pt x 35.61415pt.
+Package epstopdf Info: Source file: <figures/simple_transfer.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 4521 bytes
+(epstopdf)             Output file: <figures/simple_transfer-eps-converted-to.p
+df>
+(epstopdf)                    date: 2019-01-22 09:49:53
+(epstopdf)                    size: 6171 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/simple_transfer-ep
+s-converted-to.pdf figures/simple_transfer.eps>
+(epstopdf)             \includegraphics on input line 42.
+Package epstopdf Info: Output file is already uptodate.
 
-<use figures/simple_transfer.png>
-Package pdftex.def Info: figures/simple_transfer.png used on input line 42.
-(pdftex.def)             Requested size: 177.06458pt x 101.48976pt.
+<figures/simple_transfer-eps-converted-to.pdf, id=3, 1225.57875pt x 438.63875pt
+>
+File: figures/simple_transfer-eps-converted-to.pdf Graphic file (type pdf)
+ <use figures/simple_transfer-eps-converted-to.pdf>
+Package pdftex.def Info: figures/simple_transfer-eps-converted-to.pdf used on i
+nput line 42.
+(pdftex.def)             Requested size: 177.06458pt x 63.37007pt.
+Package epstopdf Info: Source file: <figures/txn_success.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 6175 bytes
+(epstopdf)             Output file: <figures/txn_success-eps-converted-to.pdf>
+(epstopdf)                    date: 2019-01-22 09:49:53
+(epstopdf)                    size: 6714 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/txn_success-eps-co
+nverted-to.pdf figures/txn_success.eps>
+(epstopdf)             \includegraphics on input line 62.
+Package epstopdf Info: Output file is already uptodate.
 
-<figures/txn_success.png, id=5, 248.42813pt x 111.41624pt>
-File: figures/txn_success.png Graphic file (type png)
+<figures/txn_success-eps-converted-to.pdf, id=4, 1704.3675pt x 438.63875pt>
+File: figures/txn_success-eps-converted-to.pdf Graphic file (type pdf)
 
-<use figures/txn_success.png>
-Package pdftex.def Info: figures/txn_success.png used on input line 62.
-(pdftex.def)             Requested size: 177.06458pt x 79.4121pt.
+<use figures/txn_success-eps-converted-to.pdf>
+Package pdftex.def Info: figures/txn_success-eps-converted-to.pdf used on input
+ line 62.
+(pdftex.def)             Requested size: 177.06458pt x 45.56648pt.
  [1{/var/lib/texmf/fonts/map/pdftex/updmap/pdftex.map}
 
 
- <./figures/simple_sn.png> <./figures/genesis.png (PNG copy)> <./figures/simple
-_transfer.png> <./figures/txn_success.png>]
-<figures/txn_fail.png, id=21, 238.64156pt x 103.13531pt>
-File: figures/txn_fail.png Graphic file (type png)
+ <./figures/simple_sn-eps-converted-to.pdf> <./figures/genesis-eps-converted-to
+.pdf> <./figures/simple_transfer-eps-converted-to.pdf> <./figures/txn_success-e
+ps-converted-to.pdf>]
+Package epstopdf Info: Source file: <figures/txn_fail.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 6553 bytes
+(epstopdf)             Output file: <figures/txn_fail-eps-converted-to.pdf>
+(epstopdf)                    date: 2019-01-22 09:49:53
+(epstopdf)                    size: 6824 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/txn_fail-eps-conve
+rted-to.pdf figures/txn_fail.eps>
+(epstopdf)             \includegraphics on input line 89.
+Package epstopdf Info: Output file is already uptodate.
 
-<use figures/txn_fail.png>
-Package pdftex.def Info: figures/txn_fail.png used on input line 89.
-(pdftex.def)             Requested size: 177.06458pt x 76.52193pt.
+<figures/txn_fail-eps-converted-to.pdf, id=38, 1701.35625pt x 438.63875pt>
+File: figures/txn_fail-eps-converted-to.pdf Graphic file (type pdf)
 
-<figures/slow_txn.png, id=22, 305.64188pt x 98.61844pt>
-File: figures/slow_txn.png Graphic file (type png)
+<use figures/txn_fail-eps-converted-to.pdf>
+Package pdftex.def Info: figures/txn_fail-eps-converted-to.pdf used on input li
+ne 89.
+(pdftex.def)             Requested size: 177.06458pt x 45.64679pt.
+Package epstopdf Info: Source file: <figures/slow_txn.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 7310 bytes
+(epstopdf)             Output file: <figures/slow_txn-eps-converted-to.pdf>
+(epstopdf)                    date: 2019-01-22 09:49:53
+(epstopdf)                    size: 5173 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/slow_txn-eps-conve
+rted-to.pdf figures/slow_txn.eps>
+(epstopdf)             \includegraphics on input line 107.
+Package epstopdf Info: Output file is already uptodate.
 
-<use figures/slow_txn.png>
-Package pdftex.def Info: figures/slow_txn.png used on input line 107.
-(pdftex.def)             Requested size: 177.06458pt x 57.131pt.
+<figures/slow_txn-eps-converted-to.pdf, id=39, 702.625pt x 181.67876pt>
+File: figures/slow_txn-eps-converted-to.pdf Graphic file (type pdf)
 
-<figures/fast_txn.png, id=23, 280.79906pt x 118.94438pt>
-File: figures/fast_txn.png Graphic file (type png)
+<use figures/slow_txn-eps-converted-to.pdf>
+Package pdftex.def Info: figures/slow_txn-eps-converted-to.pdf used on input li
+ne 107.
+(pdftex.def)             Requested size: 177.06458pt x 45.78273pt.
+Package epstopdf Info: Source file: <figures/fast_txn.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 7793 bytes
+(epstopdf)             Output file: <figures/fast_txn-eps-converted-to.pdf>
+(epstopdf)                    date: 2019-01-22 09:49:54
+(epstopdf)                    size: 5213 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/fast_txn-eps-conve
+rted-to.pdf figures/fast_txn.eps>
+(epstopdf)             \includegraphics on input line 117.
+Package epstopdf Info: Output file is already uptodate.
 
-<use figures/fast_txn.png>
-Package pdftex.def Info: figures/fast_txn.png used on input line 117.
-(pdftex.def)             Requested size: 177.06458pt x 75.00249pt.
+<figures/fast_txn-eps-converted-to.pdf, id=40, 447.6725pt x 281.05pt>
+File: figures/fast_txn-eps-converted-to.pdf Graphic file (type pdf)
 
-<figures/random_equal.png, id=24, 239.39438pt x 107.65219pt>
-File: figures/random_equal.png Graphic file (type png)
+<use figures/fast_txn-eps-converted-to.pdf>
+Package pdftex.def Info: figures/fast_txn-eps-converted-to.pdf used on input li
+ne 117.
+(pdftex.def)             Requested size: 177.06458pt x 111.16147pt.
+Package epstopdf Info: Source file: <figures/random_equal.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 5748 bytes
+(epstopdf)             Output file: <figures/random_equal-eps-converted-to.pdf>
 
-<use figures/random_equal.png>
-Package pdftex.def Info: figures/random_equal.png used on input line 132.
-(pdftex.def)             Requested size: 177.06458pt x 79.62358pt.
+(epstopdf)                    date: 2019-01-22 09:49:54
+(epstopdf)                    size: 6793 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/random_equal-eps-c
+onverted-to.pdf figures/random_equal.eps>
+(epstopdf)             \includegraphics on input line 132.
+Package epstopdf Info: Output file is already uptodate.
 
-<figures/lazy_txn.png, id=25, 300.3722pt x 136.25906pt>
-File: figures/lazy_txn.png Graphic file (type png)
+<figures/random_equal-eps-converted-to.pdf, id=41, 1717.41624pt x 438.63875pt>
+File: figures/random_equal-eps-converted-to.pdf Graphic file (type pdf)
 
-<use figures/lazy_txn.png>
-Package pdftex.def Info: figures/lazy_txn.png used on input line 142.
-(pdftex.def)             Requested size: 177.06458pt x 80.3256pt.
+<use figures/random_equal-eps-converted-to.pdf>
+Package pdftex.def Info: figures/random_equal-eps-converted-to.pdf used on inpu
+t line 132.
+(pdftex.def)             Requested size: 177.06458pt x 45.21844pt.
+Package epstopdf Info: Source file: <figures/lazy_txn.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 15435 bytes
+(epstopdf)             Output file: <figures/lazy_txn-eps-converted-to.pdf>
+(epstopdf)                    date: 2019-01-22 09:49:54
+(epstopdf)                    size: 6568 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/lazy_txn-eps-conve
+rted-to.pdf figures/lazy_txn.eps>
+(epstopdf)             \includegraphics on input line 142.
+Package epstopdf Info: Output file is already uptodate.
 
-<figures/random_unequal.png, id=26, 230.36063pt x 101.62968pt>
-File: figures/random_unequal.png Graphic file (type png)
+<figures/lazy_txn-eps-converted-to.pdf, id=42, 828.09375pt x 291.0875pt>
+File: figures/lazy_txn-eps-converted-to.pdf Graphic file (type pdf)
 
-<use figures/random_unequal.png>
-Package pdftex.def Info: figures/random_unequal.png used on input line 152.
-(pdftex.def)             Requested size: 177.06458pt x 78.11552pt.
+<use figures/lazy_txn-eps-converted-to.pdf>
+Package pdftex.def Info: figures/lazy_txn-eps-converted-to.pdf used on input li
+ne 142.
+(pdftex.def)             Requested size: 177.06458pt x 62.24059pt.
+Package epstopdf Info: Source file: <figures/random_unequal.eps>
+(epstopdf)                    date: 2019-01-22 09:48:26
+(epstopdf)                    size: 5744 bytes
+(epstopdf)             Output file: <figures/random_unequal-eps-converted-to.pd
+f>
+(epstopdf)                    date: 2019-01-22 09:49:54
+(epstopdf)                    size: 6903 bytes
+(epstopdf)             Command: <repstopdf --outfile=figures/random_unequal-eps
+-converted-to.pdf figures/random_unequal.eps>
+(epstopdf)             \includegraphics on input line 152.
+Package epstopdf Info: Output file is already uptodate.
 
-<figures/super_weight.png, id=27, 316.93407pt x 123.46124pt>
+<figures/random_unequal-eps-converted-to.pdf, id=43, 1702.36pt x 438.63875pt>
+File: figures/random_unequal-eps-converted-to.pdf Graphic file (type pdf)
+
+<use figures/random_unequal-eps-converted-to.pdf>
+Package pdftex.def Info: figures/random_unequal-eps-converted-to.pdf used on in
+put line 152.
+(pdftex.def)             Requested size: 177.06458pt x 45.62003pt.
+
+<figures/super_weight.png, id=44, 316.93407pt x 123.46124pt>
 File: figures/super_weight.png Graphic file (type png)
 
 <use figures/super_weight.png>
 Package pdftex.def Info: figures/super_weight.png used on input line 162.
 (pdftex.def)             Requested size: 177.06458pt x 68.97768pt.
- [2 <./figures/txn_fail.png> <./figures/slow_txn.png> <./figures/fast_txn.png> 
-<./figures/random_equal.png> <./figures/lazy_txn.png> <./figures/random_unequal
-.png>]
-<figures/full_confirmation.png, id=39, 453.19313pt x 196.48407pt>
+ [2 <./figures/txn_fail-eps-converted-to.pdf> <./figures/slow_txn-eps-converted
+-to.pdf> <./figures/fast_txn-eps-converted-to.pdf> <./figures/random_equal-eps-
+converted-to.pdf> <./figures/lazy_txn-eps-converted-to.pdf> <./figures/random_u
+nequal-eps-converted-to.pdf> <./figures/super_weight.png>] <figures/full_confir
+mation.png, id=82, 453.19313pt x 196.48407pt>
 File: figures/full_confirmation.png Graphic file (type png)
 
 <use figures/full_confirmation.png>
 Package pdftex.def Info: figures/full_confirmation.png used on input line 196.
 (pdftex.def)             Requested size: 328.82541pt x 142.56271pt.
 ) (./sections/problems.tex
-Underfull \vbox (badness 1603) has occurred while \output is active []
-
-
-<figures/offline.png, id=40, 453.19313pt x 179.92218pt>
+<figures/offline.png, id=83, 453.19313pt x 179.92218pt>
 File: figures/offline.png Graphic file (type png)
 
 <use figures/offline.png>
 Package pdftex.def Info: figures/offline.png used on input line 16.
 (pdftex.def)             Requested size: 328.82541pt x 130.54593pt.
 
-<figures/double_spend.png, id=41, 453.19313pt x 180.675pt>
+<figures/double_spend.png, id=84, 453.19313pt x 180.675pt>
 File: figures/double_spend.png Graphic file (type png)
 
 <use figures/double_spend.png>
 Package pdftex.def Info: figures/double_spend.png used on input line 24.
 (pdftex.def)             Requested size: 328.82541pt x 131.09215pt.
 
-<figures/alpha.png, id=42, 254.45062pt x 154.32657pt>
+<figures/alpha.png, id=85, 254.45062pt x 154.32657pt>
 File: figures/alpha.png Graphic file (type png)
  <use figures/alpha.png>
 Package pdftex.def Info: figures/alpha.png used on input line 48.
 (pdftex.def)             Requested size: 177.06458pt x 107.3944pt.
 
-<figures/dagvis.png, id=43, 453.19313pt x 338.01282pt>
+<figures/dagvis.png, id=86, 453.19313pt x 338.01282pt>
 File: figures/dagvis.png Graphic file (type png)
 
 <use figures/dagvis.png>
 Package pdftex.def Info: figures/dagvis.png used on input line 56.
 (pdftex.def)             Requested size: 379.4175pt x 282.99013pt.
- [3 <./figures/super_weight.png>]
+ [3 <./figures/alpha.png>]
 Underfull \vbox (badness 10000) has occurred while \output is active []
 
 
@@ -1138,16 +1253,14 @@ Underfull \vbox (badness 10000) has occurred while \output is active []
 
  [4 <./figures/full_confirmation.png> <./figures/offline.png> <./figures/double
 _spend.png>]) (./sections/methods.tex
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [5 <./figures/dagvis.png> <./figures/alpha.png>]
-<figures/spc.png, id=62, 290.58563pt x 127.22531pt>
+<figures/spc.png, id=100, 290.58563pt x 127.22531pt>
 File: figures/spc.png Graphic file (type png)
  <use figures/spc.png>
 Package pdftex.def Info: figures/spc.png used on input line 40.
 (pdftex.def)             Requested size: 227.64894pt x 99.67212pt.
 
-<figures/edge_info.png, id=63, 392.96812pt x 157.33781pt>
+[5 <./figures/dagvis.png>]
+<figures/edge_info.png, id=106, 392.96812pt x 157.33781pt>
 File: figures/edge_info.png Graphic file (type png)
 
 <use figures/edge_info.png>
@@ -1159,7 +1272,7 @@ Overfull \hbox (34.32979pt too wide) in paragraph at lines 69--72
  []
 
 ) (./sections/applications.tex
-<figures/trias.png, id=64, 336.50719pt x 151.3153pt>
+<figures/trias.png, id=107, 336.50719pt x 151.3153pt>
 File: figures/trias.png Graphic file (type png)
  <use figures/trias.png>
 Package pdftex.def Info: figures/trias.png used on input line 5.
@@ -1169,26 +1282,24 @@ Overfull \hbox (9.03374pt too wide) in paragraph at lines 5--6
  [] 
  []
 
-) (./sections/experiments.tex [6 <./figures/spc.png> <./figures/edge_info.png> 
-<./figures/trias.png>]) (./StreamNet.bbl
-Underfull \hbox (badness 2818) in paragraph at lines 26--29
-\OT1/ptm/m/n/9 able: https://blog.iota.org/confirmation-rates-in-the-tangle-
- []
-
-
-Underfull \hbox (badness 2744) in paragraph at lines 32--35
+) (./sections/experiments.tex) (./StreamNet.bbl
+Underfull \hbox (badness 2213) in paragraph at lines 32--35
 []\OT1/ptm/m/n/9 ``Cryptographic vul-ner-a-bil-i-ties in iota.'' [On-
  []
 
 
-Underfull \hbox (badness 2221) in paragraph at lines 51--54
+Underfull \hbox (badness 1845) in paragraph at lines 51--54
 []\OT1/ptm/m/n/9 ``Pow on the tan-gle.'' [On-line]. Avail-able:
  []
 
 Missing character: There is no â in font ptmr7t!
 Missing character: There is no € in font ptmr7t!
 Missing character: There is no “ in font ptmr7t!
-)
+
+Package balance Warning: You have called \balance in second column
+(balance)                Columns might not be balanced.
+
+[6 <./figures/spc.png> <./figures/edge_info.png> <./figures/trias.png>])
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -1206,11 +1317,11 @@ LaTeX Warning: There were multiply-defined labels.
 
  ) 
 Here is how much of TeX's memory you used:
- 13857 strings out of 493485
- 270913 string characters out of 3143527
- 394596 words of memory out of 3000000
- 16912 multiletter control sequences out of 15000+200000
- 41835 words of font info for 94 fonts, out of 3000000 for 9000
+ 13876 strings out of 493485
+ 271800 string characters out of 3143527
+ 393600 words of memory out of 3000000
+ 16921 multiletter control sequences out of 15000+200000
+ 43853 words of font info for 102 fonts, out of 3000000 for 9000
  960 hyphenation exceptions out of 8191
  38i,9n,33p,382b,539s stack positions out of 5000i,500n,10000p,200000b,50000s
 {/usr/share/texlive/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/share/texliv
@@ -1219,17 +1330,18 @@ f-dist/fonts/type1/public/amsfonts/cm/cmmi10.pfb></usr/share/texlive/texmf-dist
 /fonts/type1/public/amsfonts/cm/cmmi5.pfb></usr/share/texlive/texmf-dist/fonts/
 type1/public/amsfonts/cm/cmmi7.pfb></usr/share/texlive/texmf-dist/fonts/type1/p
 ublic/amsfonts/cm/cmmi8.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/a
-msfonts/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts
-/cm/cmr7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy
-10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb>
-</usr/share/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/tex
-live/texmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dis
-t/fonts/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/u
-rw/times/utmri8a.pfb>
-Output written on StreamNet.pdf (7 pages, 686983 bytes).
+msfonts/cm/cmmi9.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts
+/cm/cmr10.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmr
+7.pfb></usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy10.pfb>
+</usr/share/texlive/texmf-dist/fonts/type1/public/amsfonts/cm/cmsy7.pfb></usr/s
+hare/texlive/texmf-dist/fonts/type1/urw/times/utmb8a.pfb></usr/share/texlive/te
+xmf-dist/fonts/type1/urw/times/utmbi8a.pfb></usr/share/texlive/texmf-dist/fonts
+/type1/urw/times/utmr8a.pfb></usr/share/texlive/texmf-dist/fonts/type1/urw/time
+s/utmri8a.pfb>
+Output written on StreamNet.pdf (7 pages, 603353 bytes).
 PDF statistics:
- 119 PDF objects out of 1000 (max. 8388607)
- 59 compressed objects within 1 object stream
+ 165 PDF objects out of 1000 (max. 8388607)
+ 102 compressed objects within 2 object streams
  0 named destinations out of 1000 (max. 500000)
  96 words of extra memory for PDF output out of 10000 (max. 10000000)
 

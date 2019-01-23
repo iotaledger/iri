@@ -1,0 +1,23 @@
+%<TpX v="5" ArrowsSize="0.7" StarsSize="1" DefaultFontHeight="5" DefaultSymbolSize="30" ApproximationPrecision="0.01" PicScale="1" Border="2" BitmapRes="20000" HatchingStep="2" DottedSize="0.5" DashSize="1" LineWidth="0.3">
+%  <rect x="100.27" y="49.6537" w="100.408" h="49.241"/>
+%  <text x="150.337" y="72.2111" t="Genesis:5i" h="10" halign="c" lw="2.00"/>
+%  <text x="156.025" y="20.7865" t="Creation trading block" h="20" halign="c" lw="0.50"/>
+%</TpX>
+\begin{figure}
+\centering
+\ifpdf
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(521.52, 244.99)(0,0)
+  \put(0,0){\includegraphics{genesis.pdf}}
+  \put(244.64,163.69){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:5i}}
+  \put(260.76,17.91){\fontsize{56.91}{68.29}\selectfont \makebox[0pt]{Creation trading block}}
+  \end{picture}%
+\else
+  \setlength{\unitlength}{1bp}%
+  \begin{picture}(521.52, 244.99)(0,0)
+  \put(0,0){\includegraphics{genesis}}
+  \put(244.64,163.69){\fontsize{28.45}{34.14}\selectfont \makebox[0pt]{Genesis:5i}}
+  \put(260.76,17.91){\fontsize{56.91}{68.29}\selectfont \makebox[0pt]{Creation trading block}}
+  \end{picture}%
+\fi
+\end{figure}

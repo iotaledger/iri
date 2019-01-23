@@ -1,219 +1,42 @@
-\section{Basic concepts}
-\subsection{Basic data structure}
-StreamNet is a Directed Acyclic Graph, where each node in the DAG represents a transaction and the directed edge represents a confirmation relationship between transactions.
-For instance, node $0$ in Figure~\ref{simple_sn} represents the Genesis transaction, which is by default a confirmed transaction (in theory, it is also a 100\%confirmed transaction).
-Node $1$, on the other hand, represents the first transaction, which is confirmed by the subsequent Node $2$, $3$ and $4$. 
-When a new transaction is not confirmed, it is called a tip.
-For example, in Figure~\ref{simple_sn}, Node $6$ is a tip.
+\section{Introduction}
+Ever since bitcoin \cite{nakamoto2008bitcoin} has been proposed, blockchain technology has been widely studied for $10$ years. 
+Extensive adoptions of blockchain technologies was seen in real world applications such as 
+financial services with potential regulation challenges \cite{michael2018blockchain, tapscott2017blockchain}, 
+supply chains \cite{korpela2017digital,tian2016agri, abeyratne2016blockchain}, 
+health cares \cite{azaria2016medrec,yue2016healthcare} and $IOT$ devices \cite{christidis2016blockchains}.
+The core of blockchain technology resides in the consensus algorihtms applying to the real distrubuted computing world.
+Where computers can join and leave the network and these copmuters can cheat.
 
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.45\textwidth]{figures/simple_sn.png}
-    \caption{
-        Example of the StreamNet data structure \cite{gal_2018}.
-     }
-\label{simple_sn}
-\end{center}
-\end{figure}
+As the first protocol that can solve the so called Byzantine general's problem, 
+bitcoin system suffers from the problem of low throughput with a transaction per second ($TPS$) of approximately $7$, and long confirmation time (about an hour).
+As more and more machines joined the network, they are competing for the privileges to attach the block (miners) which result in huge waste of electric power.
+While sky rocketing fees are payed to make sure the transfers of money will be placed in the chain.
+On par, there are multiple proposals to solve the low transaction speed issue. 
 
+One method intends to solve the speed problem without changing the chain data structure, for instance, 
+the bitcoin cash (BCH) fork of bitcoin (BTC) system tries to improve the throughput of the system by enlarging the data size of each block from $1$ $Mb$ to $4$ $Mb$. 
+To minimize the cost of $POW$, a proof of stake method $POS$ \cite{wood2014ethereum} is proposed to make sure that only those who in the network can have the privilege to attach the block only if they have a large amount of token shares.
+Anohter idea targeting at utilizing the power in $POW$ to do useful and meaningful tasks such as training machine learning models are also proposed \cite{matthew2017aion}.
+In addition, inspired by the $PBFT$ algorithm \cite{castro1999practical} and a set of its relateted variations, so called hybrid chain was proposed. 
+The general idea is to use two step algorithm, the first step is to elect a commiette, the second step is collecting committee power to employ $PBFT$ for consensus.
+Bitcoin-NG \cite{eyal2016bitcoin} is the early adoptor of this idea, which splits the blocks of bitcoin into two groups, one is for master election and another for regular transaction blocks. 
+Honey-badger \cite{miller2016honey} is the system that firstly introducted the consensus commitee, it uses a predefined memebers to perform $PBFT$ algorithm to reach consensus.  
+The Byzcoin system \cite{kogias2016enhancing} brought forth the idea of $POW$ for the commitee election, and uses a variation of $PBFT$ called collective signing for speed purposes.
+The Algorand \cite{gilad2017algorand} utilizes a random function to anonymously elect commetee and use this commitee to commit blocks, and the member of the commitee only have one chance to commit block.
+All these systems have one common feature, the split of layers of players in the network, which results in the complexity of the implementation of the system.
 
+While aforemetioned methods are trying to avoid side chains, another thread of effort is put on using direct acyclic graph $DAG$ to merge side chains.
+The first ever idea comes with growing the blockchain with trees instead of chains \cite{sompolinsky2013accelerating}, which results in the well known $GHOST$ protocol \cite{sompolinsky2015secure}.
+If one block links to $\geq 2$ previous blocks, then the data structure grows like a $DAG$ instead of tree \cite{sompolinsky2016spectre, sompolinskyphantom}.
+There is a improvement of the $GHOST$ based $DAG$ algorithm which can achieve $6000$ of $TPS$ in reality \cite{li2018scaling}.
+Another set of methods tried to avoid finality of constructing a linear total order by introducing the probability of confirmation in the network \cite{popov2016tangle, churyumov2016byteball}. 
+However, suffering from engineering issues, mainly due to the lack of transaction frquency and the growing complexity due to the network expansion.
+These system in reality are rely on centralized mehods to maintain their stability.
+Some of the side chain methods also borrows the idea of $DAG$, such as nano \cite{lemahieu2018nano} and vite \cite{liuvite}
 
-\subsection{Transaction}
-\subsubsection{Genesis transaction}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.15\textwidth]{figures/genesis.png}
-    \caption{
-        The creation of genesis node.
-     }
-\label{genesis}
-\end{center}
-\end{figure}
-
-There is no concept of mining in StreamNet, and all tokens are included in the Genesis Node.
-In Figure~\ref{genesis}, an initial transaction is created with $5$ tokens.
-
-
-\subsubsection{Transaction Content}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/simple_transfer.png}
-    \caption{
-        An example of token transfers.
-     }
-\label{simple_transfer}
-\end{center}
-\end{figure}
-
-Assume that in Figure~\ref{genesis}, Genesis wants to transfer $1$ token to Alice, 
-and then hopes to transfer $1$ token to Bob and attach the transaction node to StreamNet, the resulting $DAG$ is shown in Figure~\ref{simple_transfer}.
-Here, each transaction must find two tip transactions to confirm, namely trunk and branch transactions.
-For example, the Genesis $\rightarrow$ Alice transaction confirms the Genesis transaction itself,
-while the Genesis $\rightarrow$ Bob transaction confirms the Genesis transaction and the Genesis $\rightarrow$ Alice transaction.
-When a transaction wants to be attached to StreamNet, it must do enough Proof of Work (POW) \cite{pow_tangle},
-but this POW differs from Bitcoin in that its difficulty is fixed and therefore does not need the participation of miners.
-
-\subsubsection{Transaction validation (approve)}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/txn_success.png}
-    \caption{
-        An example of succesfull token transfer.
-     }
-\label{txn_success}
-\end{center}
-\end{figure}
-
-Because a new transaction needs to find two tip transactions to approve, the validation process is diveded into two steps:
-
-\begin{itemize}
-\item Start from Genesis, verify all transactions that are directly or indirectly referenced, 
-mainly to see if this will result in a negative balance or loss of the token \cite{gal_2018}.
-For example, in Figure~\ref{txn_success}, the Alice $\rightarrow$ Sam transfer needs to validate transactions it indirectly or directly approves.
-It constructs a topological transfer sequence, 
-namely (Genesis) $\rightarrow$ (Genesis $\rightarrow$ Alice) $\rightarrow$ (Genesis $\rightarrow$ Bob) $\rightarrow$ (Alice $\rightarrow$ Sam),
-and find that each step does not violate the principle of transfer, which means the verification is successful.
-In Figure~\ref{txn_fail}, the same topology sequence, when verifying (Genesis $\rightarrow$ Bob), 
-because the Genesis balance will be reduced to -1, the verification fails.
-As an honest node, Alice $\rightarrow$ Sam transaction Will find a new tip to verify,
-but it can also choose to cheat, attach this transaction to the selected tip.
-However, it is likely to result in subsequent rejection of this transaction.
-\item At the mean time, the signature of the transaction needs to be checked to ensure that the link relationship has not been tampered with.
-\end{itemize}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/txn_fail.png}
-    \caption{
-        An example of errornous token transfer.
-     }
-\label{txn_fail}
-\end{center}
-\end{figure}
-
-\subsubsection{Tip Selection}
-There are two basic concepts in StreamNet, one is the transaction rate $\lambda$, which indicates the number of transactions per time unit.
-For convenience, we set the time unit to seconds.
-The other is invisible period $h$, indicating how many time units a transaction has not been seen by other incoming blocks after attachment.
-Because of $h$, the transaction rate $\lambda$ has an important influence on the shape of StreamNet.
-For example, in Figure~\ref{slow_txn}, when the transaction rate is slow, StreamNet is more like a chain.
-In the case of high throughput transaction in Figure~\ref{fast_txn}, the shape of StreamNet is a star.
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/slow_txn.png}
-    \caption{
-        The shape of StreamNet when the txn rate is low. 
-     }
-\label{slow_txn}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/fast_txn.png}
-    \caption{
-        The shape of StreamNet when the txn rate is high. 
-     }
-\label{fast_txn}
-\end{center}
-\end{figure}
-
-One of simplest tip selection algorithms is the random walk with equal probability starting from Genesis, as shown in Figure~\ref{random_equal}.
-Suppose Alice $\rightarrow$ Sam transaction wants to select tip, which starts from Genesis transaction.
-There are two options, one is Genesis $\rightarrow$ Alice, the other is Genesis $\rightarrow$ Bob,
-the probability of selecting Genesis $\rightarrow$ Alice is $\frac{1}{2}$, while Genesis $\rightarrow$ Bob is $\frac{1}{2}$. 
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/random_equal.png}
-    \caption{
-        Random walk with equal probability.
-     }
-\label{random_equal}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/lazy_txn.png}
-    \caption{
-        An example of lazy transaction.
-     }
-\label{lazy_txn}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/random_unequal.png}
-    \caption{
-        Random walk with equal probability.
-     }
-\label{random_unequal}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/super_weight.png}
-    \caption{
-        Example of the result using super-weight algorithm.
-     }
-\label{super_weight}
-\end{center}
-\end{figure}
-
-The problem with the simple random walk algorithm is that it produces lazy transactions.
-For example, in Figure~\ref{lazy_txn}, transaction $14$ is a lazy transaction that causes new transactions to approve older transactions without being penalized.
-This problem can be solved by using Monte Carlo Random Walk (MCMC).
-In Figure~\ref{random_unequal}, there is a weight on both transactions, for example, Genesis $\rightarrow$ Alice is $8$, and Genesis $\rightarrow$ Bob is $2$,
-then the probability of selecting Genesis $\rightarrow$ Alice is $\frac{8}{10}$,
-and Genesis $\rightarrow$ Bob is $\frac{2}{10}$. 
-The weight is determined by how many transactions have directly or indirectly approved the transaction.
-The more approved transactions, the greater the weight.
-If only weights are used then it is a super-weight algorithm, meaning that large-weight transactions are always preferred.
-The problem with this algorithm is that there are many transactions that can never be confirmed.
-Figure~\ref{super_weight} shows the results of a super-weighted algorithm. 
-If purely using probability weighting, then it is a
-super-probability algorithm. The trade-off between the two is represented by a $\alpha$, and it can be considered that the
-larger the $\alpha$ is, the smaller the randomness is.
-The method of specifically using $\alpha$ to calculate the jump probability is expressed in the formula (1).
-Which represents the weight of the trading node.Where $P_{xy}$ represents the probability of jumping from $x$ to $y$. $H_{y}$ represents the weight of the trading node $y$.
-
-\begin{equation}
-\label{simple_equation}
-P_{xy} = \frac{e^{\alpha H_{y}}}{\Sigma_{z:z \rightarrow x}e^{\alpha H_{z}}}
-\end{equation}
-
-\subsubsection{Transaction Consensus in the Gossip network}
-
-\begin{figure*}[ht]
-\begin{center}
-\includegraphics[width=0.65\textwidth]{figures/full_confirmation.png}
-    \caption{
-        Example of fully confirmed transactions.
-     }
-\label{full_confirmation}
-\end{center}
-\end{figure*}
-
-There are currently three ways to confirm a transaction in StreamNet:
-\begin{itemize}
-\item The first way is that the common nodes covered by all the previous tips are considered to be fully confirmed; for example, in Figure~\ref{full_confirmation}, 
-    the nodes referenced or indirectly referenced by tip1 are blue and yellow line covered transactions, 
-    while the tip2 reference Or the indirectly referenced node is a yellow line covered transaction.
-    If there are only 1, 2 tips in StreamNet, then the green node is a fully confirmed transaction, while the green node is an unconfirmed transaction.
-\item The second way is that the system sends a Coordinator tip every 1 minute.
-    This tip is called milestone and is attached to StreamNet.
-    All transactions referenced by this Coordinator tip are confirmed.
-\item The third way is to use Monte Carlo Random Walk (MCMC). 
-    Call N times to select a tip using the tip selection algorithm.
-    If a block is referenced by this tip, its credibility is increased by 1.
-    After M selections have been cited M times, then the credibility is M / N.
-\end{itemize}
-
-
+All of the current $DAG$ systems used the idea of head counting method to infer main chains which does not consider the network structure.
+Dating back to the time $Google$ uses $PageRank$ \cite{page1999pagerank} to sort importance of web page instead of number of references, and this method has achieved a huge susccess.
+And this method can also be utilized to help growing the $DAG$, in this paper, we use the Katz centrality metric \cite{katz1953new}.
+Emerging social network research has introduced the method of streaming graph analysis \cite{ediger2011tracking, green2012fast} which deals
+with how to quickly maintain information on a temporally or spatially changing graph without traversing the whole graph. 
+The main contribution of this paper is how to utilize the streaming graph analysis methods to bring the $DAG$ systems into real decentralized, and stabilized growing system.

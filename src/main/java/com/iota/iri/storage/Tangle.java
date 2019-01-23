@@ -1,7 +1,14 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.model.Hash;
 import com.iota.iri.model.StateDiff;
-import com.iota.iri.model.persistables.*;
+import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Approvee;
+import com.iota.iri.model.persistables.Bundle;
+import com.iota.iri.model.persistables.Milestone;
+import com.iota.iri.model.persistables.ObsoleteTag;
+import com.iota.iri.model.persistables.Tag;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.utils.Pair;
 
 import java.util.*;
@@ -40,6 +47,10 @@ public class Tangle {
         this.persistenceProviders.add(provider);
     }
 
+    /**
+     * Adds {@link com.iota.iri.storage.MessageQueueProvider} that should be notified.
+     * @param provider that should be notified.
+     */
     public void addMessageQueueProvider(MessageQueueProvider provider) {
         this.messageQueueProviders.add(provider);
     }
@@ -114,6 +125,14 @@ public class Tangle {
             return latest;
     }
 
+    /**
+     * Updates all {@link PersistenceProvider} and publishes message to all {@link com.iota.iri.storage.MessageQueueProvider}.
+     *
+     * @param model with transaction data
+     * @param index {@link Hash} identifier of the {@link Transaction} set
+     * @param item identifying the purpose of the update
+     * @throws Exception when updating the {@link PersistenceProvider} fails
+     */
     public void update(Persistable model, Indexable index, String item) throws Exception {
         updatePersistenceProvider(model, index, item);
         updateMessageQueueProvider(model, index, item);
@@ -127,10 +146,18 @@ public class Tangle {
 
     private void updateMessageQueueProvider(Persistable model, Indexable index, String item) {
         for(MessageQueueProvider provider: this.messageQueueProviders) {
-            provider.update(model, index, item);
+            provider.publishTransaction(model, index, item);
         }
     }
 
+    /**
+     * Notifies all registered {@link com.iota.iri.storage.MessageQueueProvider} and publishes message to MessageQueue.
+     *
+     * @param message that can be formatted by {@link String#format(String, Object...)}
+     * @param objects that should replace the placeholder in message.
+     * @see com.iota.iri.zmq.ZmqMessageQueueProvider#publish(String, Object...)
+     * @see String#format(String, Object...)
+     */
     public void publish(String message, Object... objects) {
         for(MessageQueueProvider provider: this.messageQueueProviders) {
             provider.publish(message, objects);

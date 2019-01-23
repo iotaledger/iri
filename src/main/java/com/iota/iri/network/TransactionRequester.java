@@ -2,6 +2,7 @@ package com.iota.iri.network;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
@@ -30,6 +31,12 @@ public class TransactionRequester {
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
 
+    /**
+     * Create {@link TransactionRequester} for receiving transactions from the tangle.
+     *
+     * @param tangle used to request transaction
+     * @param snapshotProvider that allows to retrieve the {@link Snapshot} instances that are relevant for the node
+     */
     public TransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;

@@ -10,17 +10,25 @@ import com.iota.iri.utils.Converter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Use <a href="http://zeromq.org/" target="_top">zeromq</a> to create a MessageQueue that publishes messages.
+ */
 public class ZmqMessageQueueProvider implements MessageQueueProvider {
 
     private static final Logger log = LoggerFactory.getLogger(ZmqMessageQueueProvider.class);
     private final MessageQ messageQ;
 
+    /**
+     * Factory method to create a new ZmqMessageQueue with the given configuration.
+     *
+     * @param configuration with the zmq properties used to create MessageQueue
+     */
     public ZmqMessageQueueProvider(ZMQConfig configuration) {
         this.messageQ = MessageQ.createWith(configuration);
     }
 
     @Override
-    public boolean update(Persistable model, Indexable index, String item) {
+    public boolean publishTransaction(Persistable model, Indexable index, String item) {
         if(!(model instanceof Transaction)) {
             return false;
         }
@@ -77,6 +85,13 @@ public class ZmqMessageQueueProvider implements MessageQueueProvider {
         }
     }
 
+    /**
+     * Publishes the message to the MessageQueue.
+     *
+     * @param message that can be formatted by {@link String#format(String, Object...)}
+     * @param objects that should replace the placeholder in message.
+     * @see String#format(String, Object...)
+     */
     @Override
     public void publish(String message, Object... objects) {
         this.messageQ.publish(message, objects);

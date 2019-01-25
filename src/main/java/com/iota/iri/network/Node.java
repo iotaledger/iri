@@ -210,7 +210,7 @@ public class Node {
 
                     try {
                         neighbors.forEach(n -> {
-                            final String hostname = n.getAddress().getHostName();
+                            final String hostname = n.getAddress().getHostString();
                             checkIp(hostname).ifPresent(ip -> {
                                 log.info("DNS Checker: Validating DNS Address '{}' with '{}'", hostname, ip);
                                 messageQ.publish("dnscv %s %s", hostname, ip);

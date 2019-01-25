@@ -12,7 +12,12 @@ import com.iota.iri.storage.Persistable;
 import com.iota.iri.utils.Pair;
 import com.iota.iri.utils.dag.DAGHelper;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Represents a cleanup job for {@link com.iota.iri.service.transactionpruning.TransactionPruner}s that removes
@@ -24,6 +29,9 @@ import java.util.*;
  * time, persisting the progress after each step.
  */
 public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
+
+    private static final Logger log = LoggerFactory.getLogger(MilestonePrunerJob.class);
+
     /**
      * Holds the milestone index where this job starts cleaning up.
      */
@@ -67,6 +75,7 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
      * get restored from a state file, because we start cleaning up at the {@link #startingIndex}.
      *
      * @param startingIndex milestone index that defines where to start cleaning up
+     * @param targetIndex milestone index which defines the end of this pruning job
      */
     public MilestonePrunerJob(int startingIndex, int targetIndex) {
         this(startingIndex, startingIndex, targetIndex);
@@ -86,6 +95,7 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
      *
      * @param startingIndex milestone index that defines where to start cleaning up
      * @param currentIndex milestone index that defines the next milestone that should be cleaned up by this job
+     * @param targetIndex milestone index which defines the end of this pruning job
      */
     private MilestonePrunerJob(int startingIndex, int currentIndex, int targetIndex) {
         setStartingIndex(startingIndex);
@@ -257,13 +267,18 @@ public class MilestonePrunerJob extends AbstractTransactionPrunerJob {
                 elementsToDelete.add(new Pair<>(milestoneViewModel.getHash(), Transaction.class));
                 elementsToDelete.add(new Pair<>(new IntegerIndex(milestoneViewModel.index()), Milestone.class));
 
-                DAGHelper.get(getTangle()).traverseApprovees(
-                        milestoneViewModel.getHash(),
+                DAGHelper.get(getTangle()).traverseApprovees(milestoneViewModel.getHash(),
                         approvedTransaction -> approvedTransaction.snapshotIndex() >= milestoneViewModel.index(),
-                        approvedTransaction -> elementsToDelete.add(
-                                new Pair<>(approvedTransaction.getHash(), Transaction.class)
-                        )
-                );
+                        approvedTransaction -> {
+                            if (approvedTransaction.value() < 0 &&
+                                    !spentAddressesService.wasAddressSpentFrom(approvedTransaction.getAddressHash())) {
+                                log.warn("Pruned spend transaction " + approvedTransaction.getHash() +
+                                                " did not have its spent address recorded. Persisting it now");
+                                spentAddressesService
+                                        .persistSpentAddresses(Collections.singletonList(approvedTransaction));
+                            }
+                                elementsToDelete.add(new Pair<>(approvedTransaction.getHash(), Transaction.class));
+                        });
             }
 
             return elementsToDelete;

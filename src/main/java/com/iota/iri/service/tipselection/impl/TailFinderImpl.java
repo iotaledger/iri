@@ -27,6 +27,11 @@ public class TailFinderImpl implements TailFinder {
     @Override
     public Optional<Hash> findTail(Hash hash) throws Exception {
         TransactionViewModel tx = TransactionViewModel.fromHash(tangle, hash);
+        return findTailFromTx(tx);
+    }
+
+    @Override
+    public Optional<Hash> findTailFromTx(TransactionViewModel tx) throws Exception {
         final Hash bundleHash = tx.getBundleHash();
         long index = tx.getCurrentIndex();
         while (index-- > 0 && bundleHash.equals(tx.getBundleHash())) {

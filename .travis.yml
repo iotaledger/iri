@@ -50,6 +50,8 @@ script:
   - mvn jacoco:report
 
 after_success:
+  #digest of packaged jar
+  - test $TRAVIS_JDK_VERSION = "oraclejdk8" && sha256sum target/*.jar*
   #codacy-coverage send report. Uses Travis Env variable (CODACY_PROJECT_TOKEN)
   - test $TRAVIS_PULL_REQUEST = "false" && test $TRAVIS_JDK_VERSION = "oraclejdk8" && wget -O codacy-coverage-reporter-assembly-latest.jar $(curl https://api.github.com/repos/codacy/codacy-coverage-reporter/releases/latest | jq -r '.assets[0].browser_download_url')
   - test $TRAVIS_PULL_REQUEST = "false" && test $TRAVIS_JDK_VERSION = "oraclejdk8" && java -jar codacy-coverage-reporter-assembly-latest.jar report -l Java -r target/site/jacoco/jacoco.xml

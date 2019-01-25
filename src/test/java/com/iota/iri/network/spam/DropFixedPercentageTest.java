@@ -62,9 +62,9 @@ public class DropFixedPercentageTest {
     }
 
     @Test
-    public void givenNoDeltasWhenIsSpammingThenBlockRandom() {
-        Neighbor a = neighbor(0, 0);
-        Neighbor b = neighbor(1, 1);
+    public void givenSameDeltasWhenIsSpammingThenBlockRandom() {
+        Neighbor a = neighbor(0, 10);
+        Neighbor b = neighbor(0, 10);
         neighbors.addAll(Arrays.asList(a, b));
         SpamPreventionStrategy strategy = new DropFixedPercentage(50, neighbors);
         boolean aIsSpamming = false;

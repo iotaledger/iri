@@ -95,6 +95,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
     protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
     protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
+    protected String spentAddressesDbPath = Defaults.SPENT_ADDRESSES_DB_PATH;
+    protected String spentAddressesDbLogPath = Defaults.SPENT_ADDRESSES_DB_LOG_PATH;
 
     public BaseIotaConfig() {
         //empty constructor
@@ -593,6 +595,28 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public String getSpentAddressesDbPath() {
+        return spentAddressesDbPath;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--spent-addresses-db-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_PATH)
+    protected void setSpentAddressesDbPath(String spentAddressesDbPath) {
+        this.spentAddressesDbPath = spentAddressesDbPath;
+    }
+
+    @Override
+    public String getSpentAddressesDbLogPath() {
+        return spentAddressesDbLogPath;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--spent-addresses-db-log-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH)
+    protected void setSpentAddressesDbLogPath(String spentAddressesDbLogPath) {
+        this.spentAddressesDbLogPath = spentAddressesDbLogPath;
+    }
+
+    @Override
     public boolean isZmqEnabled() {
         return zmqEnabled;
     }
@@ -805,12 +829,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
         boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = true;
         
-        int LOCAL_SNAPSHOTS_PRUNING_DELAY = 50000;
-        int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 40000;
+        int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
+        int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
         int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 1000;
         int LOCAL_SNAPSHOTS_DEPTH = 100;
         int LOCAL_SNAPSHOTS_DEPTH_MIN = 100;
+        String SPENT_ADDRESSES_DB_PATH = "spent-addresses-db";
+        String SPENT_ADDRESSES_DB_LOG_PATH = "spent-addresses-log";
         
         String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";

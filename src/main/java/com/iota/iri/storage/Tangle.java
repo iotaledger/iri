@@ -1,13 +1,15 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.model.StateDiff;
+import com.iota.iri.model.persistables.*;
 import com.iota.iri.utils.Pair;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Created by paul on 3/3/17 for iri.
@@ -15,7 +17,23 @@ import java.util.Set;
 public class Tangle {
     private static final Logger log = LoggerFactory.getLogger(Tangle.class);
 
+    public static final Map<String, Class<? extends Persistable>> COLUMN_FAMILIES =
+            new LinkedHashMap<String, Class<? extends Persistable>>() {{
+                put("transaction", Transaction.class);
+                put("milestone", Milestone.class);
+                put("stateDiff", StateDiff.class);
+                put("address", Address.class);
+                put("approvee", Approvee.class);
+                put("bundle", Bundle.class);
+                put("obsoleteTag", ObsoleteTag.class);
+                put("tag", Tag.class);
+            }};
+
+    public static final Map.Entry<String, Class<? extends Persistable>> METADATA_COLUMN_FAMILY =
+            new AbstractMap.SimpleImmutableEntry<>("transaction-metadata", Transaction.class);
+
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
+
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
@@ -121,6 +139,23 @@ public class Tangle {
                 }
             }
             return output;
+    }
+
+    public <T extends Indexable> List<T> loadAllKeysFromTable(Class<? extends Persistable> modelClass,
+                                                                     Function<byte[], T> transformer) {
+        List<byte[]> keys = null;
+        for(PersistenceProvider provider: this.persistenceProviders) {
+            if ((keys = provider.loadAllKeysFromTable(modelClass)) != null) {
+                break;
+            }
+        }
+
+        if (keys != null) {
+            return keys.stream()
+                    .map(transformer)
+                    .collect(Collectors.toList());
+        }
+        return null;
     }
 
     public Boolean exists(Class<?> modelClass, Indexable hash) throws Exception {

@@ -5,10 +5,13 @@ import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.snapshot.*;
+import com.iota.iri.service.spentaddresses.SpentAddressesException;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -93,7 +96,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @return the initialized instance itself to allow chaining
      *
      */
-    public SnapshotProviderImpl init(SnapshotConfig config) throws SnapshotException {
+    public SnapshotProviderImpl init(SnapshotConfig config) throws SnapshotException, SpentAddressesException {
         this.config = config;
 
         loadSnapshots();
@@ -118,15 +121,40 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * {@inheritDoc}
+     * {@inheritDoc}<br />
+     * <br />
+     * It first writes two temporary files, then renames the current files by appending them with a ".bkp" extension and
+     * finally renames the temporary files. This mechanism reduces the chances of the files getting corrupted if IRI
+     * crashes during the snapshot creation and always leaves the node operator with a set of backup files that can be
+     * renamed to resume node operation prior to the failed snapshot.<br />
+     * <br />
+     * Note: We create the temporary files in the same folder as the "real" files to allow the operating system to
+     *       perform a "rename" instead of a "copy" operation.<br />
      */
     @Override
     public void writeSnapshotToDisk(Snapshot snapshot, String basePath) throws SnapshotException {
         snapshot.lockRead();
 
         try {
-            writeSnapshotStateToDisk(snapshot, basePath + ".snapshot.state");
-            writeSnapshotMetaDataToDisk(snapshot, basePath + ".snapshot.meta");
+            // write new temp files
+            writeSnapshotStateToDisk(snapshot, basePath + ".snapshot.state.tmp");
+            writeSnapshotMetaDataToDisk(snapshot, basePath + ".snapshot.meta.tmp");
+
+            // rename current files by appending ".bkp"
+            if (new File(basePath + ".snapshot.state").exists()) {
+                Files.move(Paths.get(basePath + ".snapshot.state"), Paths.get(basePath + ".snapshot.state.bkp"),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+            if (new File(basePath + ".snapshot.meta").exists()) {
+                Files.move(Paths.get(basePath + ".snapshot.meta"), Paths.get(basePath + ".snapshot.meta.bkp"),
+                        StandardCopyOption.REPLACE_EXISTING);
+            }
+
+            // rename temp files to their final name
+            Files.move(Paths.get(basePath + ".snapshot.state.tmp"), Paths.get(basePath + ".snapshot.state"));
+            Files.move(Paths.get(basePath + ".snapshot.meta.tmp"), Paths.get(basePath + ".snapshot.meta"));
+        } catch (IOException e) {
+            throw new SnapshotException("failed to write snapshot files", e);
         } finally {
             snapshot.unlockRead();
         }
@@ -155,7 +183,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      *
      * @throws SnapshotException if anything goes wrong while loading the snapshots
      */
-    private void loadSnapshots() throws SnapshotException {
+    private void loadSnapshots() throws SnapshotException, SpentAddressesException {
         initialSnapshot = loadLocalSnapshot();
         if (initialSnapshot == null) {
             initialSnapshot = loadBuiltInSnapshot();
@@ -173,13 +201,15 @@ public class SnapshotProviderImpl implements SnapshotProvider {
      * @return local snapshot of the node
      * @throws SnapshotException if local snapshot files exist but are malformed
      */
-    private Snapshot loadLocalSnapshot() throws SnapshotException {
+    private Snapshot loadLocalSnapshot() throws SnapshotException, SpentAddressesException {
         if (config.getLocalSnapshotsEnabled()) {
             File localSnapshotFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.state");
             File localSnapshotMetadDataFile = new File(config.getLocalSnapshotsBasePath() + ".snapshot.meta");
 
             if (localSnapshotFile.exists() && localSnapshotFile.isFile() && localSnapshotMetadDataFile.exists() &&
                     localSnapshotMetadDataFile.isFile()) {
+
+                assertSpentAddressesDbExist();
 
                 SnapshotState snapshotState = readSnapshotStatefromFile(localSnapshotFile.getAbsolutePath());
                 if (!snapshotState.hasCorrectSupply()) {
@@ -198,6 +228,21 @@ public class SnapshotProviderImpl implements SnapshotProvider {
         }
 
         return null;
+    }
+
+    private void assertSpentAddressesDbExist() throws SpentAddressesException {
+        try {
+            File spentAddressFolder = new File(SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH);
+            //If there is at least one file in the db the check should pass
+            if (Files.newDirectoryStream(spentAddressFolder.toPath(), "*.sst").iterator().hasNext()) {
+                return;
+            }
+        }
+        catch (IOException e){
+            throw new SpentAddressesException("Can't load " + SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH + " folder", e);
+        }
+
+        throw new SpentAddressesException(SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH + " folder has no sst files");
     }
 
     /**

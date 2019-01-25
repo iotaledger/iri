@@ -7,10 +7,17 @@ import com.iota.iri.model.HashId;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.service.tipselection.RatingCalculator;
+import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 import com.iota.iri.zmq.MessageQ;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
+
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -20,12 +27,9 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
-
-import static com.iota.iri.controllers.TransactionViewModelTest.*;
+import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionHash;
+import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
+import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch;
 
 public class WalkerAlphaTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -49,12 +53,16 @@ public class WalkerAlphaTest {
         snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());
         dbFolder.create();
         logFolder.create();
-        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
-                .getRoot().getAbsolutePath(), 1000));
+        tangle.addPersistenceProvider( new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
 
         MessageQ messageQ = Mockito.mock(MessageQ.class);
-        walker = new WalkerAlpha((Optional::of), tangle, messageQ, new Random(1), new MainnetConfig());
+        TailFinder tailFinder = Mockito.mock(TailFinder.class);
+        Mockito.when(tailFinder.findTail(Mockito.any(Hash.class)))
+                .then(args -> Optional.of(args.getArgumentAt(0, Hash.class)));
+        walker = new WalkerAlpha(tailFinder, tangle, messageQ, new Random(1), new MainnetConfig());
     }
 
 

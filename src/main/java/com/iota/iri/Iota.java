@@ -16,6 +16,9 @@ import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.impl.LocalSnapshotManagerImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.service.snapshot.impl.SnapshotServiceImpl;
+import com.iota.iri.service.spentaddresses.SpentAddressesException;
+import com.iota.iri.service.spentaddresses.impl.SpentAddressesProviderImpl;
+import com.iota.iri.service.spentaddresses.impl.SpentAddressesServiceImpl;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
@@ -66,6 +69,10 @@ import org.slf4j.LoggerFactory;
 public class Iota {
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
 
+    public final SpentAddressesProviderImpl spentAddressesProvider;
+
+    public final SpentAddressesServiceImpl spentAddressesService;
+
     public final SnapshotProviderImpl snapshotProvider;
 
     public final SnapshotServiceImpl snapshotService;
@@ -108,19 +115,25 @@ public class Iota {
      * @throws SnapshotException If the Snapshot fails to initialize.
      *                           This can happen if the snapshot signature is invalid or the file cannot be read.
      */
-    public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException {
+    public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException, SpentAddressesException {
         this.configuration = configuration;
 
         // new refactored instances
+        spentAddressesProvider = new SpentAddressesProviderImpl();
+        spentAddressesService = new SpentAddressesServiceImpl();
         snapshotProvider = new SnapshotProviderImpl();
         snapshotService = new SnapshotServiceImpl();
-        localSnapshotManager = null;
+        localSnapshotManager = configuration.getLocalSnapshotsEnabled()
+                             ? new LocalSnapshotManagerImpl()
+                             : null;
         milestoneService = new MilestoneServiceImpl();
         latestMilestoneTracker = new LatestMilestoneTrackerImpl();
         latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
         seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
         milestoneSolidifier = new MilestoneSolidifierImpl();
-        transactionPruner = null;
+        transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
+                          ? new AsyncTransactionPruner()
+                          : null;
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code
@@ -182,9 +195,13 @@ public class Iota {
         }
     }
 
-    private void injectDependencies() throws SnapshotException, TransactionPruningException {
+    private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
+        //snapshot provider must be initialized first
+        //because we check whether spent addresses data exists
         snapshotProvider.init(configuration);
-        snapshotService.init(tangle, snapshotProvider, configuration);
+        spentAddressesProvider.init(configuration);
+        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider);
+        snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
             localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
         }
@@ -197,7 +214,8 @@ public class Iota {
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService);
         if (transactionPruner != null) {
-            transactionPruner.init(tangle, snapshotProvider, tipsViewModel, configuration).restoreState();
+            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, tipsViewModel, configuration)
+                    .restoreState();
         }
         transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }
@@ -264,7 +282,10 @@ public class Iota {
                 tangle.addPersistenceProvider(new RocksDBPersistenceProvider(
                         configuration.getDbPath(),
                         configuration.getDbLogPath(),
-                        configuration.getDbCacheSize()));
+                        configuration.getDbCacheSize(),
+                        Tangle.COLUMN_FAMILIES,
+                        Tangle.METADATA_COLUMN_FAMILY)
+                );
                 break;
             }
             default: {

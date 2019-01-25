@@ -6,7 +6,7 @@ import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
+import com.iota.iri.service .snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.After;
 import org.junit.Assert;
@@ -31,8 +31,9 @@ public class TangleTest {
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
-        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath(),1000);
+        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
         snapshotProvider = new SnapshotProviderImpl().init(new MainnetConfig());

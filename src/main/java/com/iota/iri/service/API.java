@@ -1,11 +1,14 @@
 package com.iota.iri.service;
 
-import com.iota.iri.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.iota.iri.BundleValidator;
+import com.iota.iri.IRI;
+import com.iota.iri.IXI;
+import com.iota.iri.Iota;
 import com.iota.iri.conf.APIConfig;
-import com.iota.iri.controllers.AddressViewModel;
-import com.iota.iri.controllers.BundleViewModel;
-import com.iota.iri.controllers.TagViewModel;
-import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.controllers.*;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.PearlDiver;
 import com.iota.iri.crypto.Sponge;
@@ -15,37 +18,11 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.Neighbor;
 import com.iota.iri.service.dto.*;
-import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.channels.StreamSinkChannel;
-import org.xnio.streams.ChannelInputStream;
-
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -58,6 +35,26 @@ import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.channels.StreamSinkChannel;
+import org.xnio.streams.ChannelInputStream;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static io.undertow.Handlers.path;
 
@@ -102,6 +99,11 @@ public class API {
 
     private final static long MAX_TIMESTAMP_VALUE = (long) (Math.pow(3, 27) - 1) / 2; // max positive 27-trits value
 
+    private static int counterGetTxToApprove = 0;
+    private static long ellapsedTime_getTxToApprove = 0L;
+    private static int counter_PoW = 0;
+    private static long ellapsedTime_PoW = 0L;
+
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
@@ -110,8 +112,6 @@ public class API {
 
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
-
-    private ConcurrentHashMap<Hash, Boolean> previousEpochsSpentAddresses;
 
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
@@ -135,8 +135,6 @@ public class API {
         maxGetTrytes = configuration.getMaxGetTrytes();
         maxBodyLength = configuration.getMaxBodyLength();
         testNet = configuration.isTestnet();
-
-        previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
         features = Feature.calculateFeatureNames(instance.configuration);
     }
@@ -165,13 +163,8 @@ public class API {
      *        Starts the server, opening it for HTTP API requests
      *    </li>
      * </ol>
-     *
-     * @throws IOException If we are not on the testnet, and the previousEpochsSpentAddresses files cannot be found.
-     *                     Currently this exception is caught in {@link #readPreviousEpochsSpentAddresses(boolean)}
      */
     public void init() throws IOException {
-        readPreviousEpochsSpentAddresses(testNet);
-
         APIConfig configuration = instance.configuration;
         final int apiPort = configuration.getPort();
         final String apiHost = configuration.getApiHost();
@@ -204,37 +197,6 @@ public class API {
                     }
                 }))).build();
         server.start();
-    }
-
-    /**
-     * Read the spend addresses from the previous epoch. Used in {@link #wasAddressSpentFrom(Hash)}.
-     * If this fails, a log is printed. The API will continue to initialize.
-     *
-     * @param isTestnet If this node is running on the testnet. If this is <tt>true</tt>, nothing is loaded.
-     * @throws IOException If we are not on the testnet and previousEpochsSpentAddresses files cannot be found.
-     *                     Currently this exception is caught in {@link #readPreviousEpochsSpentAddresses(boolean)}
-     */
-    private void readPreviousEpochsSpentAddresses(boolean isTestnet) throws IOException {
-        if (isTestnet) {
-            return;
-        }
-
-        String[] previousEpochsSpentAddressesFiles = instance
-                .configuration
-                .getPreviousEpochSpentAddressesFiles()
-                .split(" ");
-
-        for (String previousEpochsSpentAddressesFile : previousEpochsSpentAddressesFiles) {
-            InputStream in = Snapshot.class.getResourceAsStream(previousEpochsSpentAddressesFile);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    this.previousEpochsSpentAddresses.put(HashFactory.ADDRESS.create(line), true);
-                }
-            } catch (Exception e) {
-                log.error("Failed to load resource: {}.", previousEpochsSpentAddressesFile, e);
-            }
-        }
     }
 
     /**
@@ -317,7 +279,7 @@ public class API {
 
         final long beginningTime = System.currentTimeMillis();
         final String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
-        final AbstractResponse response;
+        AbstractResponse response;
 
         if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
             response = ErrorResponse.create("Invalid API Version");
@@ -366,9 +328,15 @@ public class API {
 
         try {
             // Request JSON data into map
-            final Map<String, Object> request = gson.fromJson(requestString, Map.class);
+            Map<String, Object> request;
+            try {
+                request = gson.fromJson(requestString, Map.class);
+            }
+            catch(JsonSyntaxException jsonSyntaxException) {
+                return ErrorResponse.create("Invalid JSON syntax: " + jsonSyntaxException.getMessage());
+            }
             if (request == null) {
-                return ExceptionResponse.create("Invalid request payload: '" + requestString + "'");
+                return ErrorResponse.create("Invalid request payload: '" + requestString + "'");
             }
 
             // Did the requester ask for a command?
@@ -446,6 +414,9 @@ public class API {
                 }
                 case "getNodeInfo": {
                     return getNodeInfoStatement();
+                }
+                case "getNodeAPIConfiguration": {
+                    return getNodeAPIConfigurationStatement();
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -537,44 +508,9 @@ public class API {
         int index = 0;
 
         for (Hash address : addressesHash) {
-            states[index++] = wasAddressSpentFrom(address);
+            states[index++] = instance.spentAddressesService.wasAddressSpentFrom(address);
         }
         return WereAddressesSpentFrom.create(states);
-    }
-
-    /**
-     * Checks if the address was ever spent from, in the current epoch, or in previous epochs.
-     * If an address has a pending transaction, it is also marked as spent.
-     *
-     * @param address The address to check if it was ever spent from.
-     * @return <tt>true</tt> if it was spent from, otherwise <tt>false</tt>
-     * @throws Exception When a model could not be loaded.
-     */
-    private boolean wasAddressSpentFrom(Hash address) throws Exception {
-        if (previousEpochsSpentAddresses.containsKey(address)) {
-            return true;
-        }
-
-        Set<Hash> hashes = AddressViewModel.load(instance.tangle, address).getHashes();
-        for (Hash hash : hashes) {
-            final TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
-            // Check for spending transactions
-            if (tx.value() < 0) {
-                // Transaction is confirmed
-                if (tx.snapshotIndex() != 0) {
-                    return true;
-                }
-
-                // Transaction is pending
-                Hash tail = findTail(hash);
-                if (tail != null && BundleValidator.validate(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), tail).size() != 0) {
-                    return true;
-                }
-            }
-        }
-
-        // No spending transaction found
-        return false;
     }
 
     /**
@@ -777,9 +713,6 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-
-    private static int counterGetTxToApprove = 0;
-
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * Each increase indicates another 2 tips send.
@@ -796,8 +729,6 @@ public class API {
     private static void incCounterGetTxToApprove() {
         counterGetTxToApprove++;
     }
-
-    private static long ellapsedTime_getTxToApprove = 0L;
 
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
@@ -946,20 +877,30 @@ public class API {
       * Returns information about this node.
       *
       * @return {@link com.iota.iri.service.dto.GetNodeInfoResponse}
+      * @throws Exception When we cant find the first milestone in the database
       **/
-    private AbstractResponse getNodeInfoStatement(){
+    private AbstractResponse getNodeInfoStatement() throws Exception{
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
-        return GetNodeInfoResponse.create(name, IRI.VERSION,
+        MilestoneViewModel milestone = MilestoneViewModel.first(instance.tangle);
+        
+        return GetNodeInfoResponse.create(
+                name, 
+                IRI.VERSION,
                 Runtime.getRuntime().availableProcessors(),
                 Runtime.getRuntime().freeMemory(),
                 System.getProperty("java.version"),
+                
                 Runtime.getRuntime().maxMemory(),
                 Runtime.getRuntime().totalMemory(),
                 instance.latestMilestoneTracker.getLatestMilestoneHash(),
                 instance.latestMilestoneTracker.getLatestMilestoneIndex(),
+                
                 instance.snapshotProvider.getLatestSnapshot().getHash(),
                 instance.snapshotProvider.getLatestSnapshot().getIndex(),
-                instance.snapshotProvider.getInitialSnapshot().getIndex(),
+                
+                milestone != null ? milestone.index() : -1,
+                instance.snapshotProvider.getLatestSnapshot().getInitialIndex(),
+                
                 instance.node.howManyNeighbors(),
                 instance.node.queuedTransactionsSize(),
                 System.currentTimeMillis(),
@@ -967,6 +908,15 @@ public class API {
                 instance.transactionRequester.numberOfTransactionsToRequest(),
                 features,
                 instance.configuration.getCoordinator());
+    }
+
+    /**
+     *  Returns information about this node configuration.
+     *
+     * @return {@link GetNodeAPIConfigurationResponse}
+     */
+    private AbstractResponse getNodeAPIConfigurationStatement() {
+        return GetNodeAPIConfigurationResponse.create(instance.configuration);
     }
 
     /**
@@ -1359,12 +1309,12 @@ public class API {
                 .map(address -> (HashFactory.ADDRESS.create(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
 
-        final List<Hash> hashes;
+        List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
         instance.snapshotProvider.getLatestSnapshot().lockRead();
         final int index = instance.snapshotProvider.getLatestSnapshot().getIndex();
 
-        if (tips == null || tips.size() == 0) {
+        if (tips == null || tips.isEmpty()) {
             hashes = Collections.singletonList(instance.snapshotProvider.getLatestSnapshot().getHash());
         } else {
             hashes = tips.stream()
@@ -1411,8 +1361,6 @@ public class API {
                 .collect(Collectors.toList()), index);
     }
 
-    private static int counter_PoW = 0;
-
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * Each increase indicates another 2 tips sent.
@@ -1430,8 +1378,6 @@ public class API {
     public static void incCounterPoW() {
         API.counter_PoW++;
     }
-
-    private static long ellapsedTime_PoW = 0L;
 
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
@@ -1660,7 +1606,6 @@ public class API {
      * @param trytes The String we validate.
      * @param length The amount of trytes it should contain.
      * @param zeroAllowed If set to '{@value #ZERO_LENGTH_ALLOWED}', an empty string is also valid.
-     * @throws ValidationException If the string is not exactly trytes of <tt>size</tt> length
      * @return <tt>true</tt> if the string is valid, otherwise <tt>false</tt>
      */
     private boolean validTrytes(String trytes, int length, char zeroAllowed) {
@@ -1725,8 +1670,9 @@ public class API {
     }
 
    /**
+     *
      * <b>Only available on testnet.</b>
-     * Creates, attaches, and broadcasts a transaction with this message
+     * Creates, attaches, stores, and broadcasts a transaction with this message
      *
      * @param address The address to add the message to
      * @param message The message to store
@@ -1797,6 +1743,7 @@ public class API {
 
         // do pow
         List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
+        storeTransactionsStatement(powResult);
         broadcastTransactionsStatement(powResult);
         return AbstractResponse.createEmptyResponse();
     }

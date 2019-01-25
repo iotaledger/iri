@@ -290,6 +290,15 @@ public class Converter {
         return sb.toString();
     }
 
+    /**
+     * Converts a {@code TryteString} into an {@code ASCII string} representation.
+     * <p>
+     *     every 2 Trytes are converted to a ASCII character.
+     * </p>
+     *
+     * @param input Trytes string
+     * @return ASCII string.
+     */
     public static String trytesToAscii(String input) {
         if (input.length() % 2 != 0) {
             input += '9';
@@ -302,10 +311,6 @@ public class Converter {
 
             if (firstValue == -1 || secondValue == -1) {
                 throw new IllegalArgumentException("Input contains illegal character.");
-            }
-
-            if(firstValue == 0 && secondValue == 0) {
-                break;
             }
 
             int asciiValue = secondValue * 27 + firstValue;

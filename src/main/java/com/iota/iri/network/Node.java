@@ -8,6 +8,8 @@ import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
+import com.iota.iri.network.spam.DropFixedPercentage;
+import com.iota.iri.network.spam.SpamPreventionStrategy;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
@@ -23,6 +25,7 @@ import java.nio.ByteBuffer;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -64,7 +67,7 @@ public class Node {
     private final DatagramPacket sendingPacket;
     private final DatagramPacket tipRequestingPacket;
 
-    private final ExecutorService executor = Executors.newFixedThreadPool(5);
+    private final ExecutorService executor = Executors.newFixedThreadPool(6);
     private final NodeConfig configuration;
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
@@ -73,6 +76,7 @@ public class Node {
     private final LatestMilestoneTracker latestMilestoneTracker;
     private final TransactionRequester transactionRequester;
     private final MessageQ messageQ;
+    private final SpamPreventionStrategy spamPreventionStrategy;
 
     private static final SecureRandom rnd = new SecureRandom();
 
@@ -86,7 +90,7 @@ public class Node {
     private static AtomicLong sendPacketsCounter = new AtomicLong(0L);
     private static AtomicLong sendPacketsTimer = new AtomicLong(0L);
 
-    public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<String>();
+    public static final ConcurrentSkipListSet<String> rejectedAddresses = new ConcurrentSkipListSet<>();
     private DatagramSocket udpSocket;
 
     /**
@@ -117,14 +121,14 @@ public class Node {
         int packetSize = configuration.getTransactionPacketSize();
         this.sendingPacket = new DatagramPacket(new byte[packetSize], packetSize);
         this.tipRequestingPacket = new DatagramPacket(new byte[packetSize], packetSize);
-
+        this.spamPreventionStrategy = new DropFixedPercentage(34, getNeighbors());
     }
 
     /**
      * Intialize the operations by spawning all the worker threads.
      *
      */
-    public void init() throws Exception {
+    public void init() {
 
         //TODO ask Alon
         sendLimit = (long) ((configuration.getSendLimit() * 1000000) / (configuration.getTransactionPacketSize() * 8));
@@ -139,7 +143,7 @@ public class Node {
         executor.submit(spawnNeighborDNSRefresherThread());
         executor.submit(spawnProcessReceivedThread());
         executor.submit(spawnReplyToRequestThread());
-
+        executor.submit(spawnSpamCalculationThread(Duration.ofSeconds(5)));
         executor.shutdown();
     }
 
@@ -166,6 +170,26 @@ public class Node {
      * Internal map used to keep track of neighbor's IP vs DNS name
      */
     private final Map<String, String> neighborIpCache = new HashMap<>();
+
+    /**
+     * Creates a runnable that calculates what neighbors are spamming.
+     * @param interval thread recalculates spamming neighbors at this interval.
+     * @return The created runnable.
+     */
+    private Runnable spawnSpamCalculationThread(Duration interval) {
+        return () -> {
+            log.info("Starting spam prevention thread...");
+            while(!shuttingDown.get()) {
+                try {
+                    spamPreventionStrategy.calculateSpam(getNeighbors());
+                    Thread.sleep(interval.toMillis());
+                } catch (Exception ex) {
+                    log.error("Exception in spam calculation thread.", ex);
+                }
+            }
+            log.info("Shutting down spam prevention thread...");
+        };
+    }
 
     /**
      * One of the problem of dynamic DNS is neighbor could reconnect and get assigned
@@ -394,7 +418,7 @@ public class Node {
                 } else if (rejectedAddresses.add(uriString)) {
                     messageQ.publish("rntn %s %s", uriString, String.valueOf(maxPeersAllowed));
                     log.info("Refused non-tethered neighbor: " + uriString +
-                            " (max-peers = " + String.valueOf(maxPeersAllowed) + ")");
+                            " (max-peers = " + maxPeersAllowed + ")");
                 }
             }
         }
@@ -472,7 +496,9 @@ public class Node {
                 log.error("Error updating transactions.", e);
             }
             neighbor.incNewTransactions();
-            broadcast(receivedTransactionViewModel);
+            if (!spamPreventionStrategy.isSpamming(neighbor)) {
+                broadcast(receivedTransactionViewModel);
+            }
         }
 
     }
@@ -573,7 +599,7 @@ public class Node {
             return;
         }
 
-        synchronized (sendingPacket) {
+        synchronized (sendingPacket) { // TODO check if this synchronization really works. sendingPacket is a method parameter.
             System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
             Hash hash = transactionRequester.transactionToRequest(rnd.nextDouble() < configuration.getpSelectMilestoneChild());
             System.arraycopy(hash != null ? hash.bytes() : transactionViewModel.getHash().bytes(), 0,
@@ -727,7 +753,7 @@ public class Node {
 
     //TODO generalize these weightQueues
     private static ConcurrentSkipListSet<Pair<Hash, Neighbor>> weightQueueHashPair() {
-        return new ConcurrentSkipListSet<Pair<Hash, Neighbor>>((transaction1, transaction2) -> {
+        return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
             Hash tx1 = transaction1.getLeft();
             Hash tx2 = transaction2.getLeft();
 
@@ -742,7 +768,7 @@ public class Node {
     }
 
     private static ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> weightQueueTxPair() {
-        return new ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>>((transaction1, transaction2) -> {
+        return new ConcurrentSkipListSet<>((transaction1, transaction2) -> {
             TransactionViewModel tx1 = transaction1.getLeft();
             TransactionViewModel tx2 = transaction2.getLeft();
 
@@ -833,7 +859,7 @@ public class Node {
         configuration.getNeighbors().stream().distinct()
                 .filter(s -> !s.isEmpty())
                 .map(Node::uri).map(Optional::get)
-                .filter(u -> isUriValid(u))
+                .filter(this::isUriValid)
                 .map(u -> newNeighbor(u, true))
                 .peek(u -> {
                     log.info("-> Adding neighbor : {} ", u.getAddress());

@@ -115,16 +115,6 @@ public class Converter {
     }
 
     /**
-     * Allocates trits (a byte array) large enough to fit trytes, used for converting trytes to trits.
-     *
-     * @param tryteCount length of tryte array (to be converted)
-     * @return a new byte array large enough to fit trytes
-     */
-    public static byte[] allocateTritsForTrytes(int tryteCount) {
-        return new byte[tryteCount * NUMBER_OF_TRITS_IN_A_TRYTE];
-    }
-
-    /**
      * Converts bytes array to trits array based on {@link #NUMBER_OF_TRITS_IN_A_BYTE}.<br>
      *     the inverse of {@link #bytes(byte[], int, byte[], int, int)}. <br>
      *     this method will override the content of {@code trits}
@@ -147,6 +137,17 @@ public class Converter {
 
 
     // Trytes <-> Trits
+
+    /**
+     * Allocates trits (a byte array) large enough to fit trytes, used for converting trytes to trits.
+     *
+     * @param tryteCount length of tryte array (to be converted)
+     * @return a new byte array large enough to fit trytes
+     */
+    public static byte[] allocateTritsForTrytes(int tryteCount) {
+        return new byte[tryteCount * NUMBER_OF_TRITS_IN_A_TRYTE];
+    }
+
     /**
      * Converts a tryte string to trits (bytes array) based on {@link #NUMBER_OF_TRITS_IN_A_TRYTE}.<br>
      *     this method will override the content of {@code dest}
@@ -285,6 +286,33 @@ public class Converter {
             int secondValue = (asciiValue - firstValue) / 27;
             sb.append(TRYTE_ALPHABET.charAt(firstValue));
             sb.append(TRYTE_ALPHABET.charAt(secondValue));
+        }
+        return sb.toString();
+    }
+
+    public static String trytesToAscii(String input) {
+        if (input.length() % 2 != 0) {
+            input += '9';
+        }
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < input.length() - 1; i += 2) {
+            int firstValue = TRYTE_ALPHABET.indexOf(input.charAt(i));
+            int secondValue = TRYTE_ALPHABET.indexOf(input.charAt(i + 1));
+
+            if (firstValue == -1 || secondValue == -1) {
+                throw new IllegalArgumentException("Input contains illegal character.");
+            }
+
+            if(firstValue == 0 && secondValue == 0) {
+                break;
+            }
+
+            int asciiValue = secondValue * 27 + firstValue;
+            if (asciiValue > 255) {
+                throw new IllegalArgumentException("Calculated result exceed the range of ASCII.");
+            }
+            sb.append((char)asciiValue);
         }
         return sb.toString();
     }

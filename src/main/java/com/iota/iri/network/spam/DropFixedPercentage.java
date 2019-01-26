@@ -36,7 +36,10 @@ public class DropFixedPercentage implements SpamPreventionStrategy {
         List<Pair<Long, Neighbor>> deltas = new ArrayList<>(neighbors.size());
         neighbors.forEach(neighbor -> {
             Long previousCount = transactionCount.computeIfAbsent(neighbor, Neighbor::getNumberOfAllTransactions);
-            deltas.add(new Pair<>(neighbor.getNumberOfAllTransactions() - previousCount, neighbor));
+            long delta = neighbor.getNumberOfAllTransactions() - previousCount;
+            if (delta > 0) { // only active neighbors count
+                deltas.add(new Pair<>(delta, neighbor));
+            }
         });
         Collections.shuffle(deltas); // in case we have similar deltas
         int droppedNeighbors = (int) (deltas.size() * (dropPercentage / 100f)); // round down

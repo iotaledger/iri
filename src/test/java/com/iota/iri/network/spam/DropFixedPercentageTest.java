@@ -49,7 +49,7 @@ public class DropFixedPercentageTest {
         Neighbor a = neighbor(0, 42);
         Neighbor b = neighbor(0, 666);
         Neighbor c = neighbor(0, 27);
-        Neighbor d = neighbor(0, 1000);
+        Neighbor d = neighbor(0, 999);
         Neighbor e = neighbor(3, 3333);
         neighbors.addAll(Arrays.asList(a, b, c, d, e));
         SpamPreventionStrategy strategy = new DropFixedPercentage(34, neighbors);
@@ -59,6 +59,31 @@ public class DropFixedPercentageTest {
         assertFalse("not spamming", strategy.isSpamming(c));
         assertFalse("not spamming", strategy.isSpamming(d));
         assertFalse("not spamming", strategy.isSpamming(e));
+    }
+
+    @Test
+    public void givenNewNeighborsWhenCalculateSpamThenIgnoreThemOnFirstCalculation() {
+        Neighbor a = neighbor();
+        Neighbor b = neighbor();
+        Neighbor c = neighbor();
+        neighbors.addAll(Arrays.asList(a, b));
+        SpamPreventionStrategy strategy = new DropFixedPercentage(50, neighbors);
+
+        when(a.getNumberOfAllTransactions()).thenReturn(3L);
+        when(b.getNumberOfAllTransactions()).thenReturn(1L);
+        when(c.getNumberOfAllTransactions()).thenReturn(6L);
+        strategy.calculateSpam(Arrays.asList(a, b, c)); // c is new
+        assertTrue("spamming", strategy.isSpamming(a));
+        assertFalse("not spamming", strategy.isSpamming(b));
+        assertFalse("not spamming yet", strategy.isSpamming(c));
+
+        when(a.getNumberOfAllTransactions()).thenReturn(30L);
+        when(b.getNumberOfAllTransactions()).thenReturn(43L);
+        when(c.getNumberOfAllTransactions()).thenReturn(672L);
+        strategy.calculateSpam(Arrays.asList(a, b, c)); // c has largest delta now
+        assertFalse("not spamming", strategy.isSpamming(a));
+        assertFalse("not spamming", strategy.isSpamming(b));
+        assertTrue("spamming", strategy.isSpamming(c));
     }
 
     @Test
@@ -75,8 +100,8 @@ public class DropFixedPercentageTest {
     @Test
     public void givenSameDeltasWhenIsSpammingThenBlockRandom() {
 
-        Neighbor a = neighbor(0, 0);
-        Neighbor b = neighbor(0, 0);
+        Neighbor a = neighbor();
+        Neighbor b = neighbor();
         neighbors.addAll(Arrays.asList(a, b));
         SpamPreventionStrategy strategy = new DropFixedPercentage(50, neighbors);
         boolean aIsSpamming = false;
@@ -94,9 +119,14 @@ public class DropFixedPercentageTest {
     }
 
     private Neighbor neighbor(long first, long second) {
+        Neighbor neighbor = neighbor();
+        when(neighbor.getNumberOfAllTransactions()).thenReturn(first).thenReturn(second);
+        return neighbor;
+    }
+
+    private Neighbor neighbor() {
         Neighbor neighbor = mock(Neighbor.class);
         when(neighbor.getHostAddress()).thenReturn(RandomStringUtils.randomAlphabetic(10));
-        when(neighbor.getNumberOfAllTransactions()).thenReturn(first).thenReturn(second);
         return neighbor;
     }
 

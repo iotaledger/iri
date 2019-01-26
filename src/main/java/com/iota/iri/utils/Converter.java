@@ -296,18 +296,18 @@ public class Converter {
      *     every 2 Trytes are converted to a ASCII character.
      * </p>
      *
-     * @param input Trytes string
+     * @param trytes Trytes string
      * @return ASCII string.
      */
-    public static String trytesToAscii(String input) {
-        if (input.length() % 2 != 0) {
-            input += '9';
+    public static String trytesToAscii(String trytes) {
+        if (trytes.length() % 2 != 0) {
+            trytes += '9';
         }
 
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < input.length() - 1; i += 2) {
-            int firstValue = TRYTE_ALPHABET.indexOf(input.charAt(i));
-            int secondValue = TRYTE_ALPHABET.indexOf(input.charAt(i + 1));
+        for (int i = 0; i < trytes.length() - 1; i += 2) {
+            int firstValue = TRYTE_ALPHABET.indexOf(trytes.charAt(i));
+            int secondValue = TRYTE_ALPHABET.indexOf(trytes.charAt(i + 1));
 
             if (firstValue == -1 || secondValue == -1) {
                 throw new IllegalArgumentException("Input contains illegal character.");

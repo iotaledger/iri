@@ -4,6 +4,9 @@ import com.iota.iri.network.Neighbor;
 
 import java.util.List;
 
+/**
+ * A spam prevention strategy tries to find the neighbors that are currently sending too much traffic.
+ */
 public interface SpamPreventionStrategy {
 
     /**

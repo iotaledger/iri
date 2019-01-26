@@ -9,34 +9,40 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+/**
+ * Simple spam prevention strategy that considers a percentage of the most active neighbors to be spamming.
+ */
 public class DropFixedPercentage implements SpamPreventionStrategy {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    // needs to be static according to IRI code style
+    private static final Logger LOG = LoggerFactory.getLogger(DropFixedPercentage.class);
 
     private final int dropPercentage;
     private Map<Neighbor, Long> transactionCount;
-    private Set<Neighbor> mostActiveNeighbors = new HashSet<>();
+    private Set<Neighbor> mostActiveNeighbors = Collections.emptySet();
 
     /**
-     * Creates a new spam strategy that drops a fixed percentage of neighbors.
-     * @param dropPercentage The percentage of neighbors to be dropped. Percentage will be rounded down. So 33% of 3
-     *                       neighbors are 0 neighbors that get blocked. 34% of 3 neighbors is one neighbor.
+     * Creates a new spam strategy that marks a fixed percentage of neighbors to be spamming.
+     * @param dropPercentage The percentage of neighbors that are considered to be spamming. Percentage will be rounded
+     *                       down. So 33% of 3 neighbors are 0 neighbors. 34% of 3 neighbors is one neighbor.
      * @param neighbors The list of neighbors that should be examined for finding spamming nodes.
      */
     public DropFixedPercentage(int dropPercentage, List<Neighbor> neighbors) {
-        logger.info("Created fixed percentage spam prevention strategy. Dropping {}% of most active neighbors.", dropPercentage);
+        LOG.info("Created fixed percentage spam prevention strategy. Dropping {}% of most active neighbors.", dropPercentage);
         this.dropPercentage = dropPercentage;
         transactionCount = toMap(neighbors);
     }
 
     /**
-     * @inheritDoc
+     * Recalculates what neighbors are currently spamming. The most active neighbors since the last call of this
+     * method will be marked to be spamming.
+     * @param neighbors The list of neighbors that should be examined for spamming neighbors.
      */
     public void calculateSpam(List<Neighbor> neighbors) {
         List<Pair<Long, Neighbor>> deltas = new ArrayList<>(neighbors.size());
         neighbors.forEach(neighbor -> {
-            Long previousCount = transactionCount.computeIfAbsent(neighbor, Neighbor::getNumberOfAllTransactions);
-            long delta = neighbor.getNumberOfAllTransactions() - previousCount;
+            Long previous = transactionCount.getOrDefault(neighbor, neighbor.getNumberOfAllTransactions());
+            long delta = neighbor.getNumberOfAllTransactions() - previous;
             if (delta > 0) { // only active neighbors count
                 deltas.add(new Pair<>(delta, neighbor));
             }
@@ -60,10 +66,10 @@ public class DropFixedPercentage implements SpamPreventionStrategy {
     }
 
     private void debugLog(List<Pair<Long, Neighbor>> deltas, int droppedNeighbors) {
-        if (logger.isDebugEnabled()) {
-            logger.debug("Deltas: {}", deltas.stream().map(p -> p.hi.getHostAddress() + "=" + p.low).collect(Collectors.joining(", ")));
-            logger.debug("{}% are [{}] neighbor(s).", dropPercentage, droppedNeighbors);
-            logger.debug("Most active neighbor(s): {}", mostActiveNeighbors.stream().map(Neighbor::getHostAddress).collect(Collectors.joining(", ")));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Deltas: {}", deltas.stream().map(p -> p.hi.getHostAddress() + "=" + p.low).collect(Collectors.joining(", ")));
+            LOG.debug("{}% are [{}] neighbor(s).", dropPercentage, droppedNeighbors);
+            LOG.debug("Most active neighbor(s): {}", mostActiveNeighbors.stream().map(Neighbor::getHostAddress).collect(Collectors.joining(", ")));
         }
     }
 

@@ -496,7 +496,7 @@ public class Node {
                 log.error("Error updating transactions.", e);
             }
             neighbor.incNewTransactions();
-            if (!spamPreventionStrategy.isSpamming(neighbor)) {
+            if (spamPreventionStrategy.broadcastTransactionFrom(neighbor)) {
                 broadcast(receivedTransactionViewModel);
             }
         }

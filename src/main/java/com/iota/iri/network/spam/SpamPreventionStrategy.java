@@ -16,10 +16,12 @@ public interface SpamPreventionStrategy {
     void calculateSpam(List<Neighbor> neighbors);
 
     /**
-     * Checks if a neighbor is currently spamming and needs to be blocked.
+     * Checks if a neighbor's transaction should be propagated or if the neighbor is currently spamming and the
+     * transaction should be blocked. Can return different results for several invocations, if for example only
+     * some transactions from this neighbor should be filtered.
      * @param neighbor The neighbor to be checked.
-     * @return <code>true</code> if the neighbor is spamming.
+     * @return <code>true</code> if the transaction should be relayed to other neighbors.
      */
-    boolean isSpamming(Neighbor neighbor);
+    boolean broadcastTransactionFrom(Neighbor neighbor);
 
 }

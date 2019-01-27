@@ -19,14 +19,14 @@ public class DropFixedPercentageTest {
     @Test
     public void givenNewInstanceWhenIsSpammingThenFalse() {
         SpamPreventionStrategy strategy = new DropFixedPercentage(33, new ArrayList<>());
-        assertFalse("No neighbor is spamming yet.", strategy.isSpamming(mock(Neighbor.class)));
+        assertTrue("No neighbor is spamming yet.", strategy.broadcastTransactionFrom(mock(Neighbor.class)));
     }
 
     @Test
     public void givenNoHistoryWhenIsSpammingThenFalse() {
         Neighbor a = neighbor(0, 42);
         SpamPreventionStrategy strategy = new DropFixedPercentage(100, Collections.singletonList(a));
-        assertFalse("not spamming", strategy.isSpamming(a));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(a));
     }
 
     @Test
@@ -37,9 +37,9 @@ public class DropFixedPercentageTest {
         List<Neighbor> neighbors = Arrays.asList(a, b, c);
         SpamPreventionStrategy strategy = new DropFixedPercentage(34, neighbors);
         strategy.calculateSpam(neighbors);
-        assertFalse("not spamming", strategy.isSpamming(a));
-        assertTrue("spamming", strategy.isSpamming(b));
-        assertFalse("not spamming", strategy.isSpamming(c));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(a));
+        assertFalse("spamming", strategy.broadcastTransactionFrom(b));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(c));
     }
 
     @Test
@@ -51,11 +51,11 @@ public class DropFixedPercentageTest {
         Neighbor e = neighbor(3, 3333);
         SpamPreventionStrategy strategy = new DropFixedPercentage(34, Arrays.asList(a, b, c, d, e));
         strategy.calculateSpam(Arrays.asList(a, b, c)); // neighbors d and e are removed
-        assertFalse("not spamming", strategy.isSpamming(a));
-        assertTrue("spamming", strategy.isSpamming(b));
-        assertFalse("not spamming", strategy.isSpamming(c));
-        assertFalse("not spamming", strategy.isSpamming(d));
-        assertFalse("not spamming", strategy.isSpamming(e));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(a));
+        assertFalse("spamming", strategy.broadcastTransactionFrom(b));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(c));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(d));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(e));
     }
 
     @Test
@@ -69,17 +69,17 @@ public class DropFixedPercentageTest {
         when(b.getNumberOfAllTransactions()).thenReturn(1L);
         when(c.getNumberOfAllTransactions()).thenReturn(6L);
         strategy.calculateSpam(Arrays.asList(a, b, c)); // c is new
-        assertTrue("spamming", strategy.isSpamming(a));
-        assertFalse("not spamming", strategy.isSpamming(b));
-        assertFalse("not spamming yet", strategy.isSpamming(c));
+        assertFalse("spamming", strategy.broadcastTransactionFrom(a));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(b));
+        assertTrue("not spamming yet", strategy.broadcastTransactionFrom(c));
 
         when(a.getNumberOfAllTransactions()).thenReturn(30L);
         when(b.getNumberOfAllTransactions()).thenReturn(43L);
         when(c.getNumberOfAllTransactions()).thenReturn(672L);
         strategy.calculateSpam(Arrays.asList(a, b, c)); // c has largest delta now
-        assertFalse("not spamming", strategy.isSpamming(a));
-        assertFalse("not spamming", strategy.isSpamming(b));
-        assertTrue("spamming", strategy.isSpamming(c));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(a));
+        assertTrue("not spamming", strategy.broadcastTransactionFrom(b));
+        assertFalse("spamming", strategy.broadcastTransactionFrom(c));
     }
 
     @Test
@@ -90,7 +90,7 @@ public class DropFixedPercentageTest {
         List<Neighbor> neighbors = Arrays.asList(a, b, c);
         SpamPreventionStrategy strategy = new DropFixedPercentage(34, neighbors);
         strategy.calculateSpam(neighbors);
-        assertFalse("not spamming because 34% of 2 active neighbors is zero", strategy.isSpamming(b));
+        assertTrue("not spamming because 34% of 2 active neighbors is zero", strategy.broadcastTransactionFrom(b));
     }
 
     @Test
@@ -99,18 +99,18 @@ public class DropFixedPercentageTest {
         Neighbor b = neighbor();
         List<Neighbor> neighbors = Arrays.asList(a, b);
         SpamPreventionStrategy strategy = new DropFixedPercentage(50, neighbors);
-        boolean aIsSpamming = false;
-        boolean bIsSpamming = false;
+        boolean aSpamming = false;
+        boolean bSpamming = false;
         for (int i = 1; i < 25; i++) {
             when(a.getNumberOfAllTransactions()).thenReturn(i * 10L);
             when(b.getNumberOfAllTransactions()).thenReturn(i * 10L);
             System.out.println("" + i);
             strategy.calculateSpam(neighbors);
-            aIsSpamming = aIsSpamming || strategy.isSpamming(a);
-            bIsSpamming = bIsSpamming || strategy.isSpamming(b);
+            aSpamming = aSpamming || !strategy.broadcastTransactionFrom(a);
+            bSpamming = bSpamming || !strategy.broadcastTransactionFrom(b);
         }
-        assertTrue("spamming at least once", aIsSpamming);
-        assertTrue("spamming at least once", bIsSpamming);
+        assertTrue("spamming at least once", aSpamming);
+        assertTrue("spamming at least once", bSpamming);
     }
 
     private Neighbor neighbor(long first, long second) {

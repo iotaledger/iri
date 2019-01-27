@@ -57,8 +57,8 @@ public class DropFixedPercentage implements SpamPreventionStrategy {
     /**
      * @inheritDoc
      */
-    public boolean isSpamming(Neighbor neighbor) {
-        return mostActiveNeighbors.contains(neighbor);
+    public boolean broadcastTransactionFrom(Neighbor neighbor) {
+        return !mostActiveNeighbors.contains(neighbor);
     }
 
     private Map<Neighbor, Long> toMap(List<Neighbor> neighbors) {

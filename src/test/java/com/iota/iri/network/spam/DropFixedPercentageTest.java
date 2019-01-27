@@ -17,20 +17,20 @@ import static org.mockito.Mockito.when;
 public class DropFixedPercentageTest {
 
     @Test
-    public void givenNewInstanceWhenIsSpammingThenFalse() {
+    public void givenNewInstanceWhenCheckBroadcastThenTrue() {
         SpamPreventionStrategy strategy = new DropFixedPercentage(33, new ArrayList<>());
         assertTrue("No neighbor is spamming yet.", strategy.broadcastTransactionFrom(mock(Neighbor.class)));
     }
 
     @Test
-    public void givenNoHistoryWhenIsSpammingThenFalse() {
+    public void givenNoHistoryWhenCheckBroadcastThenTrue() {
         Neighbor a = neighbor(0, 42);
         SpamPreventionStrategy strategy = new DropFixedPercentage(100, Collections.singletonList(a));
         assertTrue("not spamming", strategy.broadcastTransactionFrom(a));
     }
 
     @Test
-    public void givenSpammingNeighborWhenIsSpammingThenTrue() {
+    public void givenSpammingNeighborWhenCheckBroadcastThenFalse() {
         Neighbor a = neighbor(0, 42);
         Neighbor b = neighbor(600, 666);
         Neighbor c = neighbor(0, 3);
@@ -59,7 +59,7 @@ public class DropFixedPercentageTest {
     }
 
     @Test
-    public void givenNewNeighborsWhenCalculateSpamThenIgnoreThemOnFirstCalculation() {
+    public void givenNewNeighborsWhenCalculateSpamThenIgnoreThem() {
         Neighbor a = neighbor();
         Neighbor b = neighbor();
         Neighbor c = neighbor();
@@ -71,7 +71,7 @@ public class DropFixedPercentageTest {
         strategy.calculateSpam(Arrays.asList(a, b, c)); // c is new
         assertFalse("spamming", strategy.broadcastTransactionFrom(a));
         assertTrue("not spamming", strategy.broadcastTransactionFrom(b));
-        assertTrue("not spamming yet", strategy.broadcastTransactionFrom(c));
+        assertTrue("new neighbor. not spamming yet", strategy.broadcastTransactionFrom(c));
 
         when(a.getNumberOfAllTransactions()).thenReturn(30L);
         when(b.getNumberOfAllTransactions()).thenReturn(43L);
@@ -94,7 +94,7 @@ public class DropFixedPercentageTest {
     }
 
     @Test
-    public void givenSameDeltasWhenIsSpammingThenBlockRandom() {
+    public void givenSameDeltasWhenCalculateSpamThenChooseRandomNeighbor() {
         Neighbor a = neighbor();
         Neighbor b = neighbor();
         List<Neighbor> neighbors = Arrays.asList(a, b);

@@ -10,7 +10,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
- * Simple spam prevention strategy that considers a percentage of the most active neighbors to be spamming.
+ * Simple spam prevention strategy that considers a percentage of the most active neighbors (the ones that send the
+ * most new transactions) to be spamming.
  */
 public class DropFixedPercentage implements SpamPreventionStrategy {
 
@@ -41,8 +42,8 @@ public class DropFixedPercentage implements SpamPreventionStrategy {
     public void calculateSpam(List<Neighbor> neighbors) {
         List<Pair<Long, Neighbor>> deltas = new ArrayList<>(neighbors.size());
         neighbors.forEach(neighbor -> {
-            Long previous = transactionCount.getOrDefault(neighbor, neighbor.getNumberOfAllTransactions());
-            long delta = neighbor.getNumberOfAllTransactions() - previous;
+            Long previous = transactionCount.getOrDefault(neighbor, neighbor.getNumberOfNewTransactions());
+            long delta = neighbor.getNumberOfNewTransactions() - previous;
             if (delta > 0) { // only active neighbors count
                 deltas.add(new Pair<>(delta, neighbor));
             }
@@ -62,7 +63,7 @@ public class DropFixedPercentage implements SpamPreventionStrategy {
     }
 
     private Map<Neighbor, Long> toMap(List<Neighbor> neighbors) {
-        return neighbors.stream().collect(Collectors.toMap(Function.identity(), Neighbor::getNumberOfAllTransactions));
+        return neighbors.stream().collect(Collectors.toMap(Function.identity(), Neighbor::getNumberOfNewTransactions));
     }
 
     private void debugLog(List<Pair<Long, Neighbor>> deltas, int droppedNeighbors) {

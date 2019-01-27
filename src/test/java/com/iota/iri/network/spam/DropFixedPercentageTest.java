@@ -65,17 +65,17 @@ public class DropFixedPercentageTest {
         Neighbor c = neighbor();
         SpamPreventionStrategy strategy = new DropFixedPercentage(50, Arrays.asList(a, b));
 
-        when(a.getNumberOfAllTransactions()).thenReturn(3L);
-        when(b.getNumberOfAllTransactions()).thenReturn(1L);
-        when(c.getNumberOfAllTransactions()).thenReturn(6L);
+        when(a.getNumberOfNewTransactions()).thenReturn(3L);
+        when(b.getNumberOfNewTransactions()).thenReturn(1L);
+        when(c.getNumberOfNewTransactions()).thenReturn(6L);
         strategy.calculateSpam(Arrays.asList(a, b, c)); // c is new
         assertFalse("spamming", strategy.broadcastTransactionFrom(a));
         assertTrue("not spamming", strategy.broadcastTransactionFrom(b));
         assertTrue("new neighbor. not spamming yet", strategy.broadcastTransactionFrom(c));
 
-        when(a.getNumberOfAllTransactions()).thenReturn(30L);
-        when(b.getNumberOfAllTransactions()).thenReturn(43L);
-        when(c.getNumberOfAllTransactions()).thenReturn(672L);
+        when(a.getNumberOfNewTransactions()).thenReturn(30L);
+        when(b.getNumberOfNewTransactions()).thenReturn(43L);
+        when(c.getNumberOfNewTransactions()).thenReturn(672L);
         strategy.calculateSpam(Arrays.asList(a, b, c)); // c has largest delta now
         assertTrue("not spamming", strategy.broadcastTransactionFrom(a));
         assertTrue("not spamming", strategy.broadcastTransactionFrom(b));
@@ -102,8 +102,8 @@ public class DropFixedPercentageTest {
         boolean aSpamming = false;
         boolean bSpamming = false;
         for (int i = 1; i < 25; i++) {
-            when(a.getNumberOfAllTransactions()).thenReturn(i * 10L);
-            when(b.getNumberOfAllTransactions()).thenReturn(i * 10L);
+            when(a.getNumberOfNewTransactions()).thenReturn(i * 10L);
+            when(b.getNumberOfNewTransactions()).thenReturn(i * 10L);
             System.out.println("" + i);
             strategy.calculateSpam(neighbors);
             aSpamming = aSpamming || !strategy.broadcastTransactionFrom(a);
@@ -115,7 +115,7 @@ public class DropFixedPercentageTest {
 
     private Neighbor neighbor(long first, long second) {
         Neighbor neighbor = neighbor();
-        when(neighbor.getNumberOfAllTransactions()).thenReturn(first).thenReturn(second);
+        when(neighbor.getNumberOfNewTransactions()).thenReturn(first).thenReturn(second);
         return neighbor;
     }
 

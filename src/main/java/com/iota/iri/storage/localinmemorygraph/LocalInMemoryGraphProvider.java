@@ -19,12 +19,15 @@ import java.util.stream.Collectors;
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
     public HashMap<Hash, Double> score;
     public HashMap<Hash, Set<Hash>> graph;
+    public HashMap<Hash, Hash> parentGraph;
     static HashMap<Hash, Set<Hash>> revGraph;
+    public HashMap<Hash, Set<Hash>> parentRevGraph;
     static HashMap<Hash, Integer> degs;
     public HashMap<Integer, Set<Hash>> topOrder;
     public HashMap<Integer, Set<Hash>> topOrderStreaming;
+
     static HashMap<Hash, Integer> lvlMap;
-    static HashMap<Hash, String> nameMap;
+    public static HashMap<Hash, String> nameMap;
     public int totalDepth;
     private Tangle tangle;
     // to use
@@ -36,6 +39,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         this.tangle = tangle;
         graph = new HashMap<>();
         revGraph = new HashMap<>();
+        parentGraph = new HashMap<>();
+        parentRevGraph = new HashMap<>();
         degs = new HashMap<>();
         topOrder = new HashMap<>();
         lvlMap = new HashMap<>();
@@ -62,6 +67,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         degs = new HashMap<>();
         topOrder = new HashMap<>();
         totalDepth = 0;
+        topOrderStreaming = new HashMap<>();
+        lvlMap = new HashMap<>();
     }
 
     public void init() throws Exception {
@@ -164,6 +171,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 graph.get(key).add(trunk);
                 graph.get(key).add(branch);
 
+                //parentGraph
+                parentGraph.put(key, trunk);
+
                 // Approvee graph
                 if (revGraph.get(trunk) == null) {
                     revGraph.put(trunk, new HashSet<>());
@@ -173,6 +183,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     revGraph.put(branch, new HashSet<>());
                 }
                 revGraph.get(branch).add(key);
+
+                if (parentRevGraph.get(trunk) == null) {
+                    parentRevGraph.put(trunk, new HashSet<>());
+                }
+                parentRevGraph.get(trunk).add(key);
 
                 // update degrees
                 if (degs.get(model.getHash()) == null || degs.get(model.getHash()) == 0) {
@@ -240,11 +255,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     // base on graph
-    public void buildPivotChain(){
+    public void buildPivotChain() {
         try {
-            Pair<Indexable, Persistable> one = tangle.getFirst(Transaction.class, TransactionHash.class);
-            TransactionViewModel model = new TransactionViewModel((Transaction) one.hi, (TransactionHash) one.low);
-            this.pivotChain = pivotChain(getGenesis(model.getHash()));
+            this.pivotChain = pivotChain(getGenesis());
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -347,7 +360,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     //FIXME for debug :: for graphviz visualization
-    void printGraph(HashMap<Hash, Set<Hash>> graph) {
+    public void printGraph(HashMap<Hash, Set<Hash>> graph) {
         for (Hash key : graph.keySet()) {
             for (Hash val : graph.get(key)) {
                 if (nameMap != null) {
@@ -459,99 +472,120 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         // TODO implement this
     }
 
-    public long getTotalTxns() throws Exception {
+    public long getTotalTxns() {
         long ret = 0;
         return ret;
     }
 
+    public List<Hash> totalTopOrder() {
+        return confluxOrder(getPivot(getGenesis()));
+    }
+
     public List<Hash> confluxOrder(Hash block) {
-        if (getParent(block) == null) {
-            return new ArrayList() {{
-                add(block);
-            }};
+        LinkedList<Hash> list = new LinkedList<>();
+        if (block == null || !graph.keySet().contains(block)) {
+            return list;
         }
-        List<Hash> list = confluxOrder(getParent(block));
-        List<Hash> diff = new ArrayList<>(past(graph, block));
-        diff.removeAll(past(graph, getParent(block)));
+        do {
+            Hash parent = parentGraph.get(block);
+            List<Hash> subTopOrder = new ArrayList<>();
+            List<Hash> diff = new ArrayList<>(past(block));
+            diff.removeAll(past(parent));
+            while (diff.size() != 0) {
+                Map<Hash, Set<Hash>> subGraph = buildSubGraph(diff);
+                List<Hash> noBeforeInTmpGraph = subGraph.entrySet().stream().filter(e -> CollectionUtils.isEmpty(e.getValue())).map(Map.Entry::getKey).collect(Collectors.toList());
+                noBeforeInTmpGraph.sort(Comparator.comparingInt((Hash o) -> lvlMap.get(o)).thenComparing(o -> o));
+                subTopOrder.addAll(noBeforeInTmpGraph);
+                diff.removeAll(noBeforeInTmpGraph);
+            }
+            list.addAll(0, subTopOrder);
+            block = parentGraph.get(block);
+        } while (parentGraph.get(block) != null && parentGraph.keySet().contains(block));
+        return list;
+    }
+
+    private Map<Hash, Set<Hash>> buildSubGraph(List<Hash> diff) {
         Map<Hash, Set<Hash>> newGraph = new HashMap<>(graph.size());
         graph.entrySet().forEach(e -> newGraph.put(e.getKey(), new HashSet<>(e.getValue())));
-        while (diff.size() != 0) {
-            Map<Hash, Set<Hash>> subMap = new HashMap<>();
-            for (Map.Entry<Hash, Set<Hash>> entry : newGraph.entrySet()) {
-                if (diff.contains(entry.getKey())) {
-                    Iterator<Hash> iterator = entry.getValue().iterator();
-                    while (iterator.hasNext()) {
-                        if (!diff.contains(iterator.next())) {
-                            iterator.remove();
-                        }
-                    }
-                    subMap.put(entry.getKey(), entry.getValue());
+        Map<Hash, Set<Hash>> subMap = new HashMap<>();
+        for (Map.Entry<Hash, Set<Hash>> entry : newGraph.entrySet()) {
+            if (diff.contains(entry.getKey())) {
+                entry.getValue().removeIf(hash -> !diff.contains(hash));
+                subMap.put(entry.getKey(), entry.getValue());
+            }
+        }
+        return subMap;
+    }
+
+    public List<Hash> pivotChain(Hash start) {
+        if (start == null || !graph.keySet().contains(start)) {
+            return Collections.emptyList();
+        }
+        ArrayList<Hash> list = new ArrayList<>();
+        list.add(start);
+        while (!CollectionUtils.isEmpty(parentRevGraph.get(start))) {
+            double width = -1;
+            Hash s = null;
+            for (Hash block : parentRevGraph.get(start)) {
+                if (score.get(block) > width || (score.get(block) == width && block.compareTo(Objects.requireNonNull(s)) < 0)) {
+                    width = score.get(block);
+                    s = block;
                 }
             }
-            List<Hash> noBeforeInTmpGraph = subMap.entrySet().stream().filter(e -> CollectionUtils.isEmpty(e.getValue())).map(Map.Entry::getKey).collect(Collectors.toList());
-            noBeforeInTmpGraph.sort(Comparable::compareTo);
-            list.addAll(noBeforeInTmpGraph);
-            diff.removeAll(noBeforeInTmpGraph);
+            start = s;
+            list.add(s);
         }
         return list;
     }
 
-    //todo pivot block must be child, for fixing
-    public List<Hash> pivotChain(Hash start) {
-        try {
-            if (revGraph.get(start) == null || revGraph.get(start).size() == 0) {
-                return Collections.singletonList(start);
-            }
-            int w = -1;
-            Hash s = null;
-            for (Hash b : revGraph.get(start)) {
-                int width = revGraph.get(b) == null ? 0 : revGraph.get(b).size();
-                if (width > w || (width == w && b.compareTo(s) < 0)) {
-                    w = width;
-                    s = b;
-                }
-            }
-            List<Hash> chain = new ArrayList<>();
-            chain.add(start);
-            chain.addAll(pivotChain(s));
-            return chain;
-        } catch (Exception e) {
-//            e.printStackTrace();
-        }
-        return null;
-    }
-
-    private Hash getParent(Hash block) {
-        Set<Hash> set = graph.get(block);
-        if (CollectionUtils.isEmpty(set) || !CollectionUtils.containsAll(graph.keySet(), set)) {
+    public Hash getPivot(Hash start) {
+        if (start == null || !graph.keySet().contains(start)) {
             return null;
         }
-        List<Hash> pivotChain = pivotChain(getGenesis(block));
-        return pivotChain.get((pivotChain.indexOf(block) < 1 ? 1 : pivotChain.indexOf(block)) - 1);
+        while (!CollectionUtils.isEmpty(parentRevGraph.get(start))) {
+            Set<Hash> children = parentRevGraph.get(start);
+            double width = -1;
+            Hash s = null;
+            for (Hash block : children) {
+                if (score.get(block) > width || (score.get(block) == width && block.compareTo(Objects.requireNonNull(s)) < 0)) {
+                    width = score.get(block);
+                    s = block;
+                }
+            }
+            start = s;
+        }
+        return start;
     }
 
-    private Hash getGenesis(Hash hash) {
-        if (!graph.keySet().containsAll(graph.get(hash))) {
-            return hash;
-        }
-        Set<Hash> parents = graph.get(hash);
-        for (Hash h : parents) {
-            return getGenesis(h);
+    private Hash getGenesis() {
+        try {
+            for (Hash key : parentGraph.keySet()) {
+                if (!parentGraph.keySet().contains(parentGraph.get(key))) {
+                    return key;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         return null;
     }
 
-    public Set<Hash> past(Map<Hash, Set<Hash>> graph, Hash hash) {
-        if (!graph.keySet().containsAll(graph.get(hash))) {
-            return new HashSet() {{
-                add(hash);
-            }};
+    public Set<Hash> past(Hash hash) {
+        if (graph.get(hash) == null) {
+            return Collections.emptySet();
         }
         Set<Hash> past = new HashSet<>();
-        for (Hash h : graph.get(hash)) {
-            past.addAll(past(graph, h));
+        LinkedList<Hash> queue = new LinkedList<>();
+        queue.add(hash);
+        Hash h;
+        while (!queue.isEmpty()) {
+            past.add(h = queue.pop());
+            for (Hash e : graph.get(h)) {
+                if (graph.containsKey(e)) {
+                    queue.add(e);
+                }
+            }
         }
-        past.add(hash);
         return past;
     }
 

@@ -416,7 +416,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 return new LinkedList<>(children);
             }
         } catch (Exception e) {
-            //
+            e.printStackTrace();
         }
         List<Hash> ret = new LinkedList<Hash>();
         return ret;
@@ -496,6 +496,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             while (diff.size() != 0) {
                 Map<Hash, Set<Hash>> subGraph = buildSubGraph(diff);
                 List<Hash> noBeforeInTmpGraph = subGraph.entrySet().stream().filter(e -> CollectionUtils.isEmpty(e.getValue())).map(Map.Entry::getKey).collect(Collectors.toList());
+                //TODO consider using SPECTR for sorting
                 noBeforeInTmpGraph.sort(Comparator.comparingInt((Hash o) -> lvlMap.get(o)).thenComparing(o -> o));
                 subTopOrder.addAll(noBeforeInTmpGraph);
                 diff.removeAll(noBeforeInTmpGraph);
@@ -506,13 +507,13 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return list;
     }
 
-    private Map<Hash, Set<Hash>> buildSubGraph(List<Hash> diff) {
+    public Map<Hash, Set<Hash>> buildSubGraph(List<Hash> blocks) {
         Map<Hash, Set<Hash>> newGraph = new HashMap<>(graph.size());
         graph.entrySet().forEach(e -> newGraph.put(e.getKey(), new HashSet<>(e.getValue())));
         Map<Hash, Set<Hash>> subMap = new HashMap<>();
         for (Map.Entry<Hash, Set<Hash>> entry : newGraph.entrySet()) {
-            if (diff.contains(entry.getKey())) {
-                entry.getValue().removeIf(hash -> !diff.contains(hash));
+            if (blocks.contains(entry.getKey())) {
+                entry.getValue().removeIf(hash -> !blocks.contains(hash));
                 subMap.put(entry.getKey(), entry.getValue());
             }
         }
@@ -526,11 +527,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         ArrayList<Hash> list = new ArrayList<>();
         list.add(start);
         while (!CollectionUtils.isEmpty(parentRevGraph.get(start))) {
-            double width = -1;
+            double tmpMaxScore = -1;
             Hash s = null;
             for (Hash block : parentRevGraph.get(start)) {
-                if (score.get(block) > width || (score.get(block) == width && block.compareTo(Objects.requireNonNull(s)) < 0)) {
-                    width = score.get(block);
+                if (score.get(block) > tmpMaxScore || (score.get(block) == tmpMaxScore && block.compareTo(Objects.requireNonNull(s)) < 0)) {
+                    tmpMaxScore = score.get(block);
                     s = block;
                 }
             }
@@ -546,11 +547,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
         while (!CollectionUtils.isEmpty(parentRevGraph.get(start))) {
             Set<Hash> children = parentRevGraph.get(start);
-            double width = -1;
+            double tmpMaxScore = -1;
             Hash s = null;
             for (Hash block : children) {
-                if (score.get(block) > width || (score.get(block) == width && block.compareTo(Objects.requireNonNull(s)) < 0)) {
-                    width = score.get(block);
+                if (score.get(block) > tmpMaxScore || (score.get(block) == tmpMaxScore && block.compareTo(Objects.requireNonNull(s)) < 0)) {
+                    tmpMaxScore = score.get(block);
                     s = block;
                 }
             }
@@ -583,7 +584,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         while (!queue.isEmpty()) {
             past.add(h = queue.pop());
             for (Hash e : graph.get(h)) {
-                if (graph.containsKey(e)) {
+                if (graph.containsKey(e) && !queue.contains(e)) {
                     queue.add(e);
                 }
             }

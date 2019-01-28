@@ -283,14 +283,14 @@ public class LocalInMemoryGraphProviderTest {
 
     @Test
     public void testConfluxOrder() throws Exception {
-        TransactionViewModel A, B, C, D, E, F, G, H, I;
+        TransactionViewModel A, B, C, D, E, F, G, H, M;
         A = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        I = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(A.getHash(),
+        M = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(A.getHash(),
                 A.getHash()), getRandomTransactionHash());
         B = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(A.getHash(),
                 A.getHash()), getRandomTransactionHash());
         D = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
-                I.getHash()), getRandomTransactionHash());
+                M.getHash()), getRandomTransactionHash());
         C = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
                 D.getHash()), getRandomTransactionHash());
         E = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(B.getHash(),
@@ -311,11 +311,11 @@ public class LocalInMemoryGraphProviderTest {
         tag.put(F.getHash(), "F");
         tag.put(G.getHash(), "G");
         tag.put(H.getHash(), "H");
-        tag.put(I.getHash(), "I");
+        tag.put(M.getHash(), "M");
         LocalInMemoryGraphProvider.setNameMap(tag);
 
         A.store(tangle1);
-        I.store(tangle1);
+        M.store(tangle1);
         B.store(tangle1);
         D.store(tangle1);
         C.store(tangle1);

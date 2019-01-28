@@ -1,3 +1,5 @@
+import sys
+sys.path.append("..")
 import mock
 from mock import MagicMock
 import unittest
@@ -10,7 +12,7 @@ class TestIotaCache(unittest.TestCase):
     def setUp(self):
         self.transfers = []
 
-    def mock_send_transfer(self, depth, transfers):
+    def mock_send_transfer(self, depth, transfers, min_weight_magnitude):
         transfers[0].hash = transfers[0].message
         self.transfers.append(transfers)
         return 'OK'
@@ -48,7 +50,7 @@ class TestIotaCache(unittest.TestCase):
             }
         )
         cache.api.send_transfer = MagicMock(return_value='OK')
-        ret = cache.cache_txn_in_tangle('addr1', 'TAG')
+        ret = cache.cache_txn_in_tangle_sdk('addr1', 'TAG')
         self.assertEqual(ret, 'OK')
 
     def test_get_non_consumed_txns(self):
@@ -59,14 +61,14 @@ class TestIotaCache(unittest.TestCase):
             }
         )
         cache.api.send_transfer = MagicMock(side_effect=self.mock_send_transfer)
-        cache.cache_txn_in_tangle('addr1', 'TAG')
-        cache.cache_txn_in_tangle('addr2', 'TAG')
-        cache.cache_txn_in_tangle('addr3', 'TAG')
-        cache.cache_txn_in_tangle('addr4', 'TAG')
-        cache.cache_txn_in_tangle('addr5', 'TAG')
-        cache.cache_txn_in_tangle('addr6', 'TAG')
-        cache.cache_txn_in_tangle('addr7', 'TAG')
-        cache.cache_txn_in_tangle('addr8', 'TAG')
+        cache.cache_txn_in_tangle_sdk('addr1', 'TAG')
+        cache.cache_txn_in_tangle_sdk('addr2', 'TAG')
+        cache.cache_txn_in_tangle_sdk('addr3', 'TAG')
+        cache.cache_txn_in_tangle_sdk('addr4', 'TAG')
+        cache.cache_txn_in_tangle_sdk('addr5', 'TAG')
+        cache.cache_txn_in_tangle_sdk('addr6', 'TAG')
+        cache.cache_txn_in_tangle_sdk('addr7', 'TAG')
+        cache.cache_txn_in_tangle_sdk('addr8', 'TAG')
         cache.set_txn_as_synced('addr3', 'TAG')
         cache.set_txn_as_synced('addr4', 'TAG')
         cache.set_txn_as_synced('addr5', 'TAG')

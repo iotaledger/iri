@@ -13,7 +13,6 @@ public class Converter {
 
     static final byte[][] BYTE_TO_TRITS_MAPPINGS = new byte[243][];
     static final byte[][] TRYTE_TO_TRITS_MAPPINGS = new byte[27][];
-    static final byte[] TRYTE_TO_BYTE_MAPPING = new byte[256];
 
     public static final int HIGH_INTEGER_BITS = 0xFFFFFFFF;
     public static final long HIGH_LONG_BITS = 0xFFFFFFFFFFFFFFFFL;
@@ -35,9 +34,6 @@ public class Converter {
         for (int i = 0; i < 27; i++) {
             TRYTE_TO_TRITS_MAPPINGS[i] = Arrays.copyOf(trits, NUMBER_OF_TRITS_IN_A_TRYTE);
             increment(trits, NUMBER_OF_TRITS_IN_A_TRYTE);
-        }
-        for(int i=0; i<27; i++) {
-            TRYTE_TO_BYTE_MAPPING[TRYTE_ALPHABET.charAt(i)] = (byte)i;
         }
     }
 
@@ -248,22 +244,35 @@ public class Converter {
     }
 
     public static String trytesToAscii(String input) {
+        if (input.length() % 2 != 0) {
+            input += '9';
+        }
+
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < input.length()-1; i+=2) {
-            byte first = TRYTE_TO_BYTE_MAPPING[input.charAt(i)];
-            byte second = TRYTE_TO_BYTE_MAPPING[input.charAt(i+1)];
-            if((int)first==0 && (int)second==0) {
+        for (int i = 0; i < input.length() - 1; i += 2) {
+            int firstValue = TRYTE_ALPHABET.indexOf(input.charAt(i));
+            int secondValue = TRYTE_ALPHABET.indexOf(input.charAt(i + 1));
+
+            if (firstValue == -1 || secondValue == -1) {
+                throw new IllegalArgumentException("Input contains illegal character.");
+            }
+
+            if(firstValue == 0 && secondValue == 0) {
                 break;
             }
-            byte asciiVal = (byte)(second*27 + first);
-            sb.append((char)asciiVal);
+
+            int asciiValue = secondValue * 27 + firstValue;
+            if (asciiValue > 255) {
+                throw new IllegalArgumentException("Calculated result exceed the range of ASCII.");
+            }
+            sb.append((char)asciiValue);
         }
         return sb.toString();
     }
 
-  public static byte[] allocatingTritsFromTrytes(String trytes) {
+    public static byte[] allocatingTritsFromTrytes(String trytes) {
         byte[] trits = allocateTritsForTrytes(trytes.length());
         trits(trytes, trits, 0);
         return trits;
-  }
+    }
 }

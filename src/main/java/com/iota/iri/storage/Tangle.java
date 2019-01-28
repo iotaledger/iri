@@ -1,5 +1,6 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.utils.Pair;
@@ -8,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
 import java.util.Set;
 
@@ -16,6 +18,17 @@ import java.util.Set;
  */
 public class Tangle {
     private static final Logger log = LoggerFactory.getLogger(Tangle.class);
+
+    // TODO: make 'txnCount' persistable.
+    private static AtomicLong txnCount = new AtomicLong(0);;
+
+    public void addTxnCount(long count) {
+        txnCount.addAndGet(count);
+    }
+
+    public long getTxnCount() {
+        return txnCount.get();
+    }
 
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
 
@@ -155,13 +168,18 @@ public class Tangle {
     }
 
     public Long getCount(Class<?> modelClass) throws Exception {
-            long value = 0;
-            for(PersistenceProvider provider: this.persistenceProviders) {
-                if((value = provider.count(modelClass)) != 0) {
-                    break;
-                }
+        if (BaseIotaConfig.getInstance().isEnableBatchTxns()) {
+            return getTxnCount();
+        }
+
+        long value = 0;
+        for(PersistenceProvider provider: this.persistenceProviders) {
+            if((value = provider.count(modelClass)) != 0) {
+                break;
             }
-            return value;
+        }
+
+        return value;
     }
 
     public Persistable find(Class<?> model, byte[] key) throws Exception {

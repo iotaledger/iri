@@ -64,6 +64,9 @@ import static io.undertow.Handlers.path;
 import java.io.*;
 import java.net.*;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.JsonNode;
+
 @SuppressWarnings("unchecked")
 public class API {
 
@@ -686,7 +689,15 @@ public class API {
             Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
+
             if(transactionViewModel.store(instance.tangle)) {
+                // add batch of txns count.
+                if (BaseIotaConfig.getInstance().isEnableBatchTxns()) {
+                    long count = transactionViewModel.addBatchTxnCount(instance.tangle);
+
+                    log.info("received batch of {} transactions from api.", count);
+                }
+
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");

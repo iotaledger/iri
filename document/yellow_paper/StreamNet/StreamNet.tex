@@ -1,0 +1,81 @@
+\documentclass[10pt, conference, compsocconf]{IEEEtran}
+
+\usepackage[ruled,linesnumbered,lined,commentsnumbered]{algorithm2e}
+\SetAlFnt{\small}
+\SetAlCapFnt{\small}
+\SetAlCapNameFnt{\small}
+\usepackage{algorithmic}
+\algsetup{linenosize=\tiny}
+\usepackage[tight]{subfigure}
+\usepackage{graphicx}
+\usepackage{multicol,lipsum}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage{siunitx}
+\usepackage{mathtools}
+\usepackage{breqn}
+\usepackage{placeins}
+\usepackage{balance}
+
+
+%
+\ifCLASSINFOpdf
+\else
+\fi
+\hyphenation{op-tical net-works semi-conduc-tor}
+
+\SetKwRepeat{Do}{do}{while}
+
+
+\begin{document}
+\title{StreamNet: Enabling Large Scale DAG based Nakamoto Consensus through Streaming Graph Computing}
+
+\maketitle
+
+
+
+
+\begin{abstract}
+\input{./sections/abstract.tex}
+\end{abstract}
+
+\begin{IEEEkeywords}
+Block chain, DAG
+
+\end{IEEEkeywords}
+
+
+\IEEEpeerreviewmaketitle
+
+
+
+% no \IEEEPARstart
+\input{./sections/introduction.tex}
+
+\input{./sections/concepts.tex}
+% You must have at least 2 lines in the paragraph with the drop letter
+% (should never be an issue)
+
+\input{./sections/problems.tex}
+
+\input{./sections/methods.tex}
+
+\input{./sections/applications.tex}
+
+\input{./sections/experiments}
+
+% conference papers do not normally have an appendix
+
+
+% use section* for acknowledgement
+%\input{./sections/conclusion.tex}
+%\input{./sections/ackowledge.tex}
+
+\bibliographystyle{IEEEtran}
+\balance
+\bibliography{StreamNet}
+
+% that's all folks
+\end{document}
+
+

@@ -443,7 +443,7 @@ public class TransactionViewModelTest {
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
 
         long count = tangle.getTxnCount();
-        transactionViewModel.addBatchTxnCount(tangle);
-        Assert.assertEquals("batch txs count should be increased 1.", tangle.getTxnCount(), count + 1);
+        long addedTxCount = transactionViewModel.addBatchTxnCount(tangle);
+        Assert.assertEquals("batch txs count should be equal.", tangle.getTxnCount(), count + addedTxCount);
     }
 }

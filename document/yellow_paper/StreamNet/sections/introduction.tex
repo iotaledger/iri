@@ -27,7 +27,7 @@ All these systems have one common feature, the split of layers of players in the
 
 While aforemetioned methods are trying to avoid side chains, another thread of effort is put on using direct acyclic graph $DAG$ to merge side chains.
 The first ever idea comes with growing the blockchain with trees instead of chains \cite{sompolinsky2013accelerating}, which results in the well known $GHOST$ protocol \cite{sompolinsky2015secure}.
-If one block links to $\geq 2$ previous blocks, then the data structure grows like a $DAG$ instead of tree \cite{sompolinsky2016spectre, sompolinskyphantom}.
+If one block links to $\geq 2$ previous blocks, then the data structure grows like a $DAG$ instead of tree \cite{sompolinsky2016spectre, sompolinskyphantom, lewenberg2015inclusive}.
 There is a improvement of the $GHOST$ based $DAG$ algorithm which can achieve $6000$ of $TPS$ in reality \cite{li2018scaling}.
 Another set of methods tried to avoid finality of constructing a linear total order by introducing the probability of confirmation in the network \cite{popov2016tangle, churyumov2016byteball}. 
 However, suffering from engineering issues, mainly due to the lack of transaction frquency and the growing complexity due to the network expansion.
@@ -37,6 +37,6 @@ Some of the side chain methods also borrows the idea of $DAG$, such as nano \cit
 All of the current $DAG$ systems used the idea of head counting method to infer main chains which does not consider the network structure.
 Dating back to the time $Google$ uses $PageRank$ \cite{page1999pagerank} to sort importance of web page instead of number of references, and this method has achieved a huge susccess.
 And this method can also be utilized to help growing the $DAG$, in this paper, we use the Katz centrality metric \cite{katz1953new}.
-Emerging social network research has introduced the method of streaming graph analysis \cite{ediger2011tracking, green2012fast} which deals
+Emerging social network research has introduced the method of streaming graph analysis \cite{ediger2011tracking, green2012fast, ediger2012stinger} which deals
 with how to quickly maintain information on a temporally or spatially changing graph without traversing the whole graph. 
 The main contribution of this paper is how to utilize the streaming graph analysis methods to bring the $DAG$ systems into real decentralized, and stabilized growing system.

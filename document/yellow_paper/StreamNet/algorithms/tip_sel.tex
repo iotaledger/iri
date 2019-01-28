@@ -1,0 +1,24 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ Graph $G$, Block $B$, score $S$, random walker $W$, and depth $d$ }
+\KwOut{Parent tip $T_p$ and reference tip $T_r$ }
+
+$totalOrderChain$ = totalOrder($G$, $B$) \;
+$T_p$ = $totalOrderChain$.last() \;
+$entryPoint$ = $totalOrderChain$.at($d$) \; 
+
+\Do {localModifier($T_r$) != $false$} {
+    $T_r$ = $W$.Walk($G$, $S$, $entryPoint$) \;
+}
+%} 
+
+\Return{$T_p$, $T_r$} \;
+
+\caption{{\sc Tip selection tipSel($G$, $B$, $S$, $W$, $d$).}}
+\label{algo:tip_sel}
+\end{algorithm}
+\DecMargin{1em}

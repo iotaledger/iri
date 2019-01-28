@@ -64,6 +64,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     public void close() throws Exception {
         graph = new HashMap<>();
         revGraph = new HashMap<>();
+        parentGraph = new HashMap<>();
+        parentRevGraph = new HashMap<>();
         degs = new HashMap<>();
         topOrder = new HashMap<>();
         totalDepth = 0;

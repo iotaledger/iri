@@ -12,9 +12,9 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.neo4j.cypher.internal.frontend.v2_3.ast.functions.Has;
 
-import java.util.Arrays;
-import java.util.HashMap;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static com.iota.iri.controllers.TransactionViewModelTest.*;
@@ -171,18 +171,62 @@ public class LocalInMemoryGraphProviderTest {
 
         LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
 
-        tag.forEach((key, value) -> System.out.println("key:" + k + ",value:" + v));
         System.out.println("=========pivot=======");
-        System.out.println(tag.get(localInMemoryGraphProvider.getPivot(a.getHash())));
-//        System.out.println(tag.get(localInMemoryGraphProvider.getPivot(e.getHash())));
-//        System.out.println(tag.get(localInMemoryGraphProvider.getPivot(f.getHash())));
-        System.out.println();
+        assert localInMemoryGraphProvider.getPivot(a.getHash()).equals(end2.getHash()) || localInMemoryGraphProvider.getPivot(a.getHash()).equals(f.getHash()) ;
         // reset in memory graph
         localInMemoryGraphProvider.close();
     }
 
     @Test
     public void testPast() throws Exception {
+        TransactionViewModel a, b, c, d, e, f, g, h;
+        a = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        b = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
+                a.getHash()), getRandomTransactionHash());
+        c = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
+                a.getHash()), getRandomTransactionHash());
+        d = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(b.getHash(),
+                b.getHash()), getRandomTransactionHash());
+        e = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(b.getHash(),
+                c.getHash()), getRandomTransactionHash());
+        f = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(d.getHash(),
+                e.getHash()), getRandomTransactionHash());
+        g = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(e.getHash(),
+                c.getHash()), getRandomTransactionHash());
+        h = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(g.getHash(),
+                f.getHash()), getRandomTransactionHash());
+
+        HashMap<Hash, String> tag = new HashMap<Hash, String>();
+        tag.put(a.getHash(), "A");
+        tag.put(b.getHash(), "B");
+        tag.put(c.getHash(), "C");
+        tag.put(d.getHash(), "D");
+        tag.put(e.getHash(), "E");
+        tag.put(f.getHash(), "F");
+        tag.put(g.getHash(), "G");
+        tag.put(h.getHash(), "H");
+        LocalInMemoryGraphProvider.setNameMap(tag);
+
+        a.store(tangle1);
+        b.store(tangle1);
+        d.store(tangle1);
+        c.store(tangle1);
+        e.store(tangle1);
+        f.store(tangle1);
+        g.store(tangle1);
+        h.store(tangle1);
+
+        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
+        System.out.println("============past============");
+        Set<Hash> result = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), c.getHash(), e.getHash(), g.getHash()}).collect(Collectors.toSet());
+        assert result.removeAll(localInMemoryGraphProvider.past(g.getHash())) && result.isEmpty();
+
+        // reset in memory graph
+        localInMemoryGraphProvider.close();
+    }
+
+    @Test
+    public void testGetPivotChain() throws Exception {
         TransactionViewModel a, b, c, d, e, f, g, h;
         a = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
         b = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
@@ -221,62 +265,10 @@ public class LocalInMemoryGraphProviderTest {
         h.store(tangle1);
 
         LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
-        tag.forEach((k, v) -> System.out.println("key:" + k + ",value:" + v));
-
-        localInMemoryGraphProvider.printGraph(localInMemoryGraphProvider.graph);
-        System.out.println("============past============");
-        localInMemoryGraphProvider.past(b.getHash()).forEach(s -> System.out.print(tag.get(s)));
-        System.out.println();
-
-        // reset in memory graph
-        localInMemoryGraphProvider.close();
-    }
-
-    @Test
-    public void testGetPivotChain() throws Exception {
-        TransactionViewModel a, b, c, d, e, f, gg, h;
-        a = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        b = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
-                a.getHash()), getRandomTransactionHash());
-        d = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(b.getHash(),
-                b.getHash()), getRandomTransactionHash());
-        c = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(b.getHash(),
-                d.getHash()), getRandomTransactionHash());
-        e = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(b.getHash(),
-                d.getHash()), getRandomTransactionHash());
-        f = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(b.getHash(),
-                e.getHash()), getRandomTransactionHash());
-        gg = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(c.getHash(),
-                d.getHash()), getRandomTransactionHash());
-        h = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(e.getHash(),
-                f.getHash()), getRandomTransactionHash());
-
-        HashMap<Hash, String> tag = new HashMap<Hash, String>();
-        tag.put(a.getHash(), "A");
-        tag.put(b.getHash(), "B");
-        tag.put(c.getHash(), "C");
-        tag.put(d.getHash(), "D");
-        tag.put(e.getHash(), "E");
-        tag.put(f.getHash(), "F");
-        tag.put(gg.getHash(), "G");
-        tag.put(h.getHash(), "H");
-        LocalInMemoryGraphProvider.setNameMap(tag);
-
-        a.store(tangle1);
-        b.store(tangle1);
-        d.store(tangle1);
-        c.store(tangle1);
-        e.store(tangle1);
-        f.store(tangle1);
-        gg.store(tangle1);
-        h.store(tangle1);
-
-        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
-
-        tag.forEach((k, v) -> System.out.println("key:" + k + ",value:" + v));
-        System.out.println("=========pivot chain=======");
-        localInMemoryGraphProvider.pivotChain(a.getHash()).forEach(s -> System.out.print(tag.get(s)));
-        System.out.println();
+        System.out.println("=========testGetPivotChain=======");
+        List<Hash> result = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), d.getHash()}).collect(Collectors.toList());
+        List<Hash> rs = localInMemoryGraphProvider.pivotChain(a.getHash());
+        assert result.equals(rs);
         // reset in memory graph
         localInMemoryGraphProvider.close();
     }
@@ -326,10 +318,9 @@ public class LocalInMemoryGraphProviderTest {
 
         LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
 
-        tag.forEach((k, v) -> System.out.println("key:" + k + ",value:" + v));
         System.out.println("============confluxOrder============");
-        localInMemoryGraphProvider.confluxOrder(d.getHash()).forEach(s -> System.out.print(tag.get(s)));
-        System.out.println();
+        List<Hash> result = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), i.getHash(), d.getHash()}).collect(Collectors.toList());
+        assert  result.equals(localInMemoryGraphProvider.confluxOrder(d.getHash()));
 
         // reset in memory graph
         localInMemoryGraphProvider.close();
@@ -412,12 +403,14 @@ public class LocalInMemoryGraphProviderTest {
         });
 
         LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
-        System.out.println("============pivot order============");
-        localInMemoryGraphProvider.pivotChain(a.getHash()).forEach(block -> System.out.print(tag.get(block)));
-        System.out.println();
         System.out.println("=============total order=======");
-        localInMemoryGraphProvider.totalTopOrder().forEach(block -> System.out.print(tag.get(block)));
-        System.out.println();
+        List<Hash> result = Arrays.stream(new Hash[]{a.getHash(),e.getHash(),d.getHash(),h.getHash(),b.getHash(),c.getHash(),f.getHash(),g.getHash(),j.getHash(),k.getHash(),i.getHash(),l.getHash(),o.getHash(),m.getHash(),n.getHash(),
+                t.getHash(),r.getHash(),y.getHash(),v.getHash(),z.getHash(),end2.getHash()}).collect(Collectors.toList());
+        List<Hash> result2 = Arrays.stream(new Hash[]{a.getHash(),d.getHash(),e.getHash(),f.getHash()}).collect(Collectors.toList());
+
+        List<Hash> rs = localInMemoryGraphProvider.totalTopOrder();
+        // because the score is unfixed
+        assert result.removeAll(rs) && result.isEmpty() || result2.equals(rs);
 
         // reset in memory graph
         localInMemoryGraphProvider.close();

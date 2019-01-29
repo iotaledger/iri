@@ -6,15 +6,21 @@ package com.iota.iri.conf;
 public interface Config  {
 
     String TESTNET_FLAG = "--testnet";
-
+    String FAKE_CONFIG_FLAG = "--fakeconfig";
     /**
      * @return {@value Descriptions#TESTNET}
      */
     boolean isTestnet();
+    
+    /**
+     * @return {@value Descriptions#FAKE_CONFIG}
+     */
+    boolean isFakeconfig();
 
     interface Descriptions {
 
         String TESTNET = "Start in testnet mode.";
+        String FAKE_CONFIG = "Marker that defines this config as not beeing a real config, but used in e.g. testing.";
     }
 
      class DescriptionHelper {

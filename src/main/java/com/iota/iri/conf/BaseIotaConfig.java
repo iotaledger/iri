@@ -24,7 +24,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected static final String SPLIT_STRING_TO_LIST_REGEX = ",| ";
 
     private boolean help;
-
+    private boolean fakeconfig;
+    private boolean testnet = false;
+    
     //API
     protected int port = Defaults.API_PORT;
     protected String apiHost = Defaults.API_HOST;
@@ -126,19 +128,24 @@ public abstract class BaseIotaConfig implements IotaConfig {
     
     @Override
     public boolean isTestnet() {
-        return false;
+        return testnet;
     }
     
     @JsonIgnore
-    @Parameter(names = {"--testnet"}, description = Config.Descriptions.TESTNET, arity = 1)
+    @Parameter(names = {Config.TESTNET_FLAG}, description = Config.Descriptions.TESTNET, arity = 1)
     protected void setTestnet(boolean testnet) {
-        // We force the user to supply a true/false here, but don't actually set the value
+        this.testnet = testnet;
+    }
+    
+    @Override
+    public boolean isFakeconfig() {
+        return fakeconfig;
     }
     
     @JsonIgnore
-    @Parameter(names = {"--fake-config"}, description = Config.Descriptions.TESTNET, arity = 1)
+    @Parameter(names = {Config.FAKE_CONFIG_FLAG}, description = Config.Descriptions.FAKE_CONFIG, arity = 1)
     protected void setFakeConfig(boolean fakeconfig) {
-        // We force the user to supply a true/false here, but don't actually set the value
+        this.fakeconfig = fakeconfig;
     }
 
     @JsonProperty
@@ -172,7 +179,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @JsonIgnore
     @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE, arity = 1)
     protected void setRemote(boolean remote) {
-        this.apiHost = "0.0.0.0";
+        if (!remote) this.apiHost = "0.0.0.0";
+        this.remote = remote;
     }
 
     @Override

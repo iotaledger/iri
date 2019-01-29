@@ -839,7 +839,7 @@ public class API {
       * These trytes are returned by <tt>attachToTangle</tt>, or by doing proof of work somewhere else.
       *
       * @param trytes Transaction data to be stored.
-      * @throws Exception When storing or updating a transaction fails
+      * @throws Exception When storing or updating a transaction fails.
       **/
     public void storeTransactionsStatement(List<String> trytes) throws Exception {
         final List<TransactionViewModel> elements = new LinkedList<>();

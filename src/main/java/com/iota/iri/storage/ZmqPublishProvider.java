@@ -211,4 +211,9 @@ public class ZmqPublishProvider implements PersistenceProvider {
     public Set<Hash> getChild(Hash block) {
         return null;
     }
+
+    public int getNumOfTips() {
+        // TODO
+        return -1;
+    }
 }

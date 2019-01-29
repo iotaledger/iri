@@ -268,6 +268,15 @@ public class Tangle {
             }
         }
     }
+
+    public int getNumOfTips() {
+        for(PersistenceProvider provider : persistenceProviders){
+            if (provider instanceof  LocalInMemoryGraphProvider){
+                return provider.getNumOfTips();
+            }
+        }
+        return -1;
+    }
     /*
     public boolean merge(Persistable model, Indexable index) throws Exception {
         boolean exists = false;

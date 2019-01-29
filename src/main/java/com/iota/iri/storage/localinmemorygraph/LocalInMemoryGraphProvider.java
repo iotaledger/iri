@@ -15,6 +15,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.io.*;
+
+import com.iota.iri.utils.*;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
     public HashMap<Hash, Double> score;
@@ -286,9 +289,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 }
                 topOrderStreaming.get(lvl).add(vet);
                 lvlMap.put(vet, lvl);
-                if(graph.size()>=50) {
-                    printGraph(graph);
-                }
             } catch(NullPointerException e) {
                 ; // First block, do nothing here
             }
@@ -372,20 +372,37 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     //FIXME for debug :: for graphviz visualization
-    public void printGraph(HashMap<Hash, Set<Hash>> graph) {
-        for (Hash key : graph.keySet()) {
-            for (Hash val : graph.get(key)) {
-                if (nameMap != null) {
-                    System.out.println("\"" + nameMap.get(key) + "\"->" +
-                            "\"" + nameMap.get(val) + "\"");
-                } else {
-                    System.out.println("\"" + key + "\"->" +
-                            "\"" + val + "\"");
+    public void printGraph(HashMap<Hash, Set<Hash>> graph, Hash k) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(IotaUtils.abbrieviateHash(k,4)));
+            for (Hash key : graph.keySet()) {
+                for (Hash val : graph.get(key)) {
+                    if (nameMap != null) {
+                        if(k != null) {
+                            writer.write("\"" + nameMap.get(key) + "\"->" +
+                                    "\"" + nameMap.get(val) + "\"\n");
+                        } else {
+                            System.out.println("\"" + nameMap.get(key) + "\"->" +
+                                    "\"" + nameMap.get(val) + "\"");
+                        }
+                    } else {
+                        if(k != null) {
+                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 4) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 4) + "\"\n");
+                        } else {
+                            System.out.println("\"" + IotaUtils.abbrieviateHash(key, 4) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 4) + "\"");
+                        }
+                    }
                 }
             }
-        }
+            writer.close();
+        } catch(Exception e) {
+
+        } 
     }
 
+    
     //FIXME for debug :: for graphviz visualization
     void printRevGraph(HashMap<Hash, Set<Hash>> revGraph) {
         for (Hash key : revGraph.keySet()) {
@@ -394,8 +411,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     System.out.println("\"" + nameMap.get(key) + "\"->" +
                             "\"" + nameMap.get(val) + "\"");
                 } else {
-                    System.out.println("\"" + key + "\"->" +
-                            "\"" + val + "\"");
+                    System.out.println("\"" + IotaUtils.abbrieviateHash(key, 4) + "\"->" +
+                            "\"" + IotaUtils.abbrieviateHash(val, 4) + "\"");
                 }
             }
         }
@@ -409,7 +426,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 if (nameMap != null) {
                     System.out.print(nameMap.get(val) + " ");
                 } else {
-                    System.out.println(val + " ");
+                    System.out.println(IotaUtils.abbrieviateHash(val, 4) + " ");
                 }
             }
             System.out.println();
@@ -603,4 +620,13 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return past;
     }
 
+    public int getNumOfTips() {
+        int ret = 0;
+        for(Hash h : graph.keySet()) {
+            if(!revGraph.containsKey(h)) {
+                ret++;
+            }
+        }
+        return ret;
+    }
 }

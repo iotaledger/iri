@@ -67,4 +67,6 @@ public interface PersistenceProvider {
     List<Hash> getChain(HashMap<Integer, Set<Hash>> topOrder);
 
     Set<Hash> getChild(Hash block);
+
+    int getNumOfTips();
 }

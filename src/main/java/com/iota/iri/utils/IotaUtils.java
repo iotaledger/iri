@@ -71,4 +71,10 @@ public class IotaUtils {
 
         return HashFactory.TRANSACTION.create(out);
     }
+
+    public static String abbrieviateHash(Hash h, int len) {
+        String full = Converter.trytes(h.trits());
+        return full.substring(0, len);
+    }
+
 }

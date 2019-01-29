@@ -266,22 +266,32 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     private void updateTopologicalOrder(Hash vet, Hash trunk, Hash branch) {
-        if (topOrderStreaming.isEmpty()) {
+        if (topOrderStreaming.isEmpty()) { 
             topOrderStreaming.put(1, new HashSet<>());
             topOrderStreaming.get(1).add(vet);
             lvlMap.put(vet, 1);
+            topOrderStreaming.put(0, new HashSet<>());
+            topOrderStreaming.get(0).add(trunk);
+            topOrderStreaming.get(0).add(branch);
             totalDepth = 1;
             return;
         } else {
-            int trunkLevel = lvlMap.get(trunk);
-            int branchLevel = lvlMap.get(branch);
-            int lvl = Math.min(trunkLevel, branchLevel) + 1;
-            if (topOrderStreaming.get(lvl) == null) {
-                topOrderStreaming.put(lvl, new HashSet<>());
-                totalDepth++;
+            try {
+                int trunkLevel = lvlMap.get(trunk);
+                int branchLevel = lvlMap.get(branch);
+                int lvl = Math.min(trunkLevel, branchLevel) + 1;
+                if (topOrderStreaming.get(lvl) == null) {
+                    topOrderStreaming.put(lvl, new HashSet<>());
+                    totalDepth++;
+                }
+                topOrderStreaming.get(lvl).add(vet);
+                lvlMap.put(vet, lvl);
+                if(graph.size()>=50) {
+                    printGraph(graph);
+                }
+            } catch(NullPointerException e) {
+                ; // First block, do nothing here
             }
-            topOrderStreaming.get(lvl).add(vet);
-            lvlMap.put(vet, lvl);
         }
     }
 
@@ -343,7 +353,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public Hash getPivotalHash(int depth) {
         Hash ret = null;
-        if (depth == -1 || depth > totalDepth) {
+        if (depth == -1 || depth >= totalDepth) {
             Set<Hash> set = topOrderStreaming.get(1);
             ret = set.iterator().next();
             return ret;
@@ -560,7 +570,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return start;
     }
 
-    private Hash getGenesis() {
+    public Hash getGenesis() {
         try {
             for (Hash key : parentGraph.keySet()) {
                 if (!parentGraph.keySet().contains(parentGraph.get(key))) {
@@ -582,12 +592,13 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         queue.add(hash);
         Hash h;
         while (!queue.isEmpty()) {
-            past.add(h = queue.pop());
+            h = queue.pop();
             for (Hash e : graph.get(h)) {
-                if (graph.containsKey(e) && !queue.contains(e)) {
+                if (graph.containsKey(e) && !past.contains(e)) {
                     queue.add(e);
                 }
             }
+            past.add(h);
         }
         return past;
     }

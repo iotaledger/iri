@@ -234,10 +234,20 @@ public class Tangle {
         }
     }
 
-    public Hash getPivotalHash(int depth){
+    public Hash getMaxScoreHashOnLevel(int depth){
         for(PersistenceProvider provider : persistenceProviders){
             if (provider instanceof  LocalInMemoryGraphProvider){
                 return provider.getPivotalHash(depth);
+            }
+        }
+        return null;
+    }
+
+    public Hash getLastPivot(){
+        for(PersistenceProvider provider : persistenceProviders){
+            if (provider instanceof  LocalInMemoryGraphProvider){
+                Hash genesis = ((LocalInMemoryGraphProvider)provider).getGenesis();
+                return ((LocalInMemoryGraphProvider)provider).getPivot(genesis);
             }
         }
         return null;

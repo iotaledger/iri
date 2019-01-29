@@ -27,7 +27,7 @@ public class EntryPointSelectorKatz implements EntryPointSelector {
     public Hash getEntryPoint(int depth) {
         Hash ret;
         if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
-            ret = tangle.getPivotalHash(depth);
+            ret = tangle.getMaxScoreHashOnLevel(depth);
         } else {
             tangle.buildGraph();
             try {
@@ -35,7 +35,7 @@ public class EntryPointSelectorKatz implements EntryPointSelector {
             } catch(Exception e) {
                 e.printStackTrace(new PrintStream(System.out));
             }
-            ret = tangle.getPivotalHash(depth);
+            ret = tangle.getMaxScoreHashOnLevel(depth);
         }
         return ret;
     }

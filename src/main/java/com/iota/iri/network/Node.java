@@ -377,6 +377,8 @@ public class Node {
                 long count = receivedTransactionViewModel.addBatchTxnCount(tangle);
 
                 log.info("received batch of {} transactions from network.", count);
+            } else {
+                tangle.addTxnCount(1);
             }
 
             receivedTransactionViewModel.setArrivalTime(System.currentTimeMillis());

@@ -4,6 +4,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 
 import java.util.Collection;
+import java.util.Set;
 
 /**
  * 
@@ -18,7 +19,7 @@ public interface SpentAddressesService {
      * @return <code>true</code> if it was, else <code>false</code>
      * @throws SpentAddressesException
      */
-    boolean wasAddressSpentFrom(Hash addressHash) throws SpentAddressesException;
+    boolean wasAddressSpentFrom(Hash addressHash, Set<Hash> addressesChecked) throws SpentAddressesException;
 
     /**
      * Calculates and persists all spent addresses in between a range that were validly signed

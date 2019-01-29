@@ -45,7 +45,6 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
     private IotaConfig config;
 
-    private Set<Hash> addressesChecked;
 
     /**
      * Creates a Spent address service using the Tangle
@@ -63,13 +62,11 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         this.tailFinder = new TailFinderImpl(tangle);
         this.config = config;
 
-        addressesChecked = new HashSet<>();
-
         return this;
     }
 
     @Override
-    public boolean wasAddressSpentFrom(Hash addressHash) throws SpentAddressesException {
+    public boolean wasAddressSpentFrom(Hash addressHash, Set<Hash> addressesChecked) throws SpentAddressesException {
         if (spentAddressesProvider.containsAddress(addressHash)) {
             return true;
         }
@@ -115,53 +112,22 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
     @Override
     public void persistSpentAddresses(int fromMilestoneIndex, int toMilestoneIndex) throws SpentAddressesException {
         Set<Hash> addressesToCheck = new HashSet<>();
-        addressesChecked.clear();
+        Set<Hash> addressesChecked = new HashSet<>();
         int interval = 2500;
-        try {
-            double numBatches = Math.ceil(((double)toMilestoneIndex - (double)fromMilestoneIndex) / interval);
-            for (int batch = 0; batch < numBatches; batch++) {
-                int batchStart = batch * interval + fromMilestoneIndex;
-                int batchStop = batchStart + interval <= toMilestoneIndex ? batchStart + interval : toMilestoneIndex;
-
-                for (int i = batchStart; i < batchStop; i++) {
-                    MilestoneViewModel currentMilestone = MilestoneViewModel.get(tangle, i);
-                    if (currentMilestone != null) {
-                        DAGHelper.get(tangle).traverseApprovees(
-                                currentMilestone.getHash(),
-                                transactionViewModel -> transactionViewModel.snapshotIndex() >= currentMilestone.index(),
-                                transactionViewModel -> addressesToCheck.add(transactionViewModel.getAddressHash())
-                        );
-                    }
-                }
-
-                //Can only throw runtime exceptions in streams
-                try {
-                    spentAddressesProvider.saveAddressesBatch(addressesToCheck.stream()
-                            .filter(ThrowingPredicate.unchecked(this::wasAddressSpentFrom))
-                            .collect(Collectors.toList()));
-                    addressesToCheck.clear();
-                } catch (RuntimeException e) {
-                    if (e.getCause() instanceof SpentAddressesException) {
-                        throw (SpentAddressesException) e.getCause();
-                    } else {
-                        throw e;
-                    }
-                }
-            }
-
+        try{
+            processInBatches(fromMilestoneIndex, toMilestoneIndex, addressesToCheck, addressesChecked);
         } catch(Exception e){
             throw new SpentAddressesException(e);
         }
     }
-
-
 
     @Override
     public void persistSpentAddresses(Collection<TransactionViewModel> transactions) throws SpentAddressesException {
         try {
             Collection<Hash> spentAddresses = transactions.stream()
                     .filter(ThrowingPredicate.unchecked(this::wasTransactionSpentFrom))
-                    .map(TransactionViewModel::getAddressHash).collect(Collectors.toSet());
+                    .map(TransactionViewModel::getAddressHash)
+                    .collect(Collectors.toSet());
 
             spentAddressesProvider.saveAddressesBatch(spentAddresses);
         } catch (RuntimeException e) {
@@ -189,5 +155,56 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         List<List<TransactionViewModel>> validation =
                 BundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), tailHash);
         return (CollectionUtils.isNotEmpty(validation) && validation.get(0).get(0).getValidity() == 1);
+    }
+
+    private void processInBatches(int fromMilestoneIndex, int toMilestoneIndex, Set<Hash> addressesToCheck,
+                                  Set<Hash> addressesChecked) throws SpentAddressesException {
+        try {
+            //Process 2500 milestones at a time
+            int interval = 2500;
+            double numBatches = Math.ceil(((double) toMilestoneIndex - fromMilestoneIndex) / interval);
+
+            for (int batch = 0; batch < numBatches; batch++) {
+                int batchStart = batch * interval + fromMilestoneIndex;
+                int batchStop = batchStart + interval <= toMilestoneIndex ? batchStart + interval : toMilestoneIndex;
+
+                for (int i = batchStart; i < batchStop; i++) {
+                    try {
+                        MilestoneViewModel currentMilestone = MilestoneViewModel.get(tangle, i);
+                        if (currentMilestone != null) {
+                            DAGHelper.get(tangle).traverseApprovees(
+                                    currentMilestone.getHash(),
+                                    transactionViewModel -> transactionViewModel.snapshotIndex() >= currentMilestone.index(),
+                                    transactionViewModel -> addressesToCheck.add(transactionViewModel.getAddressHash())
+                            );
+                        }
+                    } catch (Exception e) {
+                        throw new SpentAddressesException(e);
+                    }
+                }
+            }
+            checkAddresses(addressesToCheck, addressesChecked);
+        }catch(SpentAddressesException e) {
+            throw e;
+        }
+    }
+
+    private void checkAddresses(Set<Hash> addressesToCheck, Set<Hash> addressesChecked) throws SpentAddressesException {
+        //Can only throw runtime exceptions in streams
+        try {
+            spentAddressesProvider.saveAddressesBatch(addressesToCheck.stream()
+                    .filter(ThrowingPredicate.unchecked(address -> wasAddressSpentFrom(address, addressesChecked)))
+                    .collect(Collectors.toList()));
+
+            //Clear addressesToCheck for next batch
+            addressesToCheck.clear();
+        } catch (RuntimeException e) {
+            if (e.getCause() instanceof SpentAddressesException) {
+                throw (SpentAddressesException) e.getCause();
+            } else {
+                throw e;
+            }
+        }
+
     }
 }

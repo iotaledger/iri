@@ -181,11 +181,13 @@ public class Iota {
 
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
-        TipSelector tipSel = new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
-                                                 walker, milestoneTracker, config);
+        TipSelector tipSel;
         if(BaseIotaConfig.getInstance().getTipSelector().equals("CONFLUX")) {
             tipSel = new TipSelectorConflux(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
                                                  walker, milestoneTracker, config);
+        } else {
+            tipSel = new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
+                    walker, milestoneTracker, config);
         }
         return tipSel;
     }

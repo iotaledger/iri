@@ -299,9 +299,12 @@ public class Converter {
      * @param trytes Trytes string
      * @return ASCII string.
      */
-    public static String trytesToAscii(String trytes) {
-        if (trytes.length() % 2 != 0) {
-            trytes += '9';
+    public static String trytesToAscii(String input) {
+        String trytes;
+        if (input.length() % 2 != 0) {
+            trytes = input + '9';
+        } else {
+            trytes = input;
         }
 
         StringBuilder sb = new StringBuilder();

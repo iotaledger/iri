@@ -2,6 +2,21 @@ package com.iota.iri.utils;
 
 import java.util.Arrays;
 
+/**
+ * Converts between different representations of trytes, bytes, trits and numbers.
+ *
+ * <p>
+ *     The IOTA protocol is represented in Trits and Trytes, while data is stored and broadcast in Bytes.
+ *     This class is used to convert between the representations.
+ * </p>
+ * <p>
+ *     This class also provides additional conversion tools:
+ *     <ul>
+ *         <li>Converting Trits to numerical values based on <i>Balanced ternary</i> arithmetic</li>
+ *         <li>Converting ascii to a Tryte string</li>
+ *     </ul>
+ * </p>
+ */
 public class Converter {
 
 	public static final int RADIX = 3;
@@ -21,7 +36,7 @@ public class Converter {
 
     public static final int MIN_TRYTE_VALUE = -13, MAX_TRYTE_VALUE = 13;
 
-
+    //lookup tables for bytes->trits and trytes->trits conversion
     static {
 
         final byte[] trits = new byte[NUMBER_OF_TRITS_IN_A_BYTE];
@@ -35,26 +50,42 @@ public class Converter {
             TRYTE_TO_TRITS_MAPPINGS[i] = Arrays.copyOf(trits, NUMBER_OF_TRITS_IN_A_TRYTE);
             increment(trits, NUMBER_OF_TRITS_IN_A_TRYTE);
         }
+
     }
 
-    public static long longValue(final byte[] trits, final int srcPos, final int size) {
-
-        long value = 0;
-        for (int i = size; i-- > 0; ) {
-            value = value * RADIX + trits[srcPos + i];
+    private static void increment(final byte[] trits, final int size) {
+        for (int i = 0; i < size; i++) {
+            if (++trits[i] > Converter.MAX_TRIT_VALUE) {
+                trits[i] = Converter.MIN_TRIT_VALUE;
+            } else {
+                break;
+            }
         }
-        return value;
     }
 
+    // Bytes <-> Trits
+
+    /**
+     * Allocates a byte array large enough to fit trits, used for converting trits to bytes.
+     *
+     * @param tritCount length of trit array (to be converted)
+     * @return a new byte array large enough to fit trits
+     */
     public static byte[] allocateBytesForTrits(int tritCount) {
         final int expectedLength = (tritCount + NUMBER_OF_TRITS_IN_A_BYTE - 1) / NUMBER_OF_TRITS_IN_A_BYTE;
         return new byte[expectedLength];
     }
 
-    public static byte[] allocateTritsForTrytes(int tryteCount) {
-        return new byte[tryteCount * NUMBER_OF_TRITS_IN_A_TRYTE];
-    }
-
+    /**
+     * Converts trits array to bytes array based on {@link #NUMBER_OF_TRITS_IN_A_BYTE}.<br>
+     *     this method will override the content of {@code dest}
+     *
+     * @param trits source trits array
+     * @param srcPos starting position for trits
+     * @param dest destination bytes array
+     * @param destPos starting position for destination bytes array
+     * @param tritsLength amount of trits to convert
+     */
     public static void bytes(final byte[] trits, final int srcPos, byte[] dest, int destPos, final int tritsLength) {
 
         final int expectedLength = (tritsLength + NUMBER_OF_TRITS_IN_A_BYTE - 1) / NUMBER_OF_TRITS_IN_A_BYTE;
@@ -72,10 +103,26 @@ public class Converter {
         }
     }
 
+    /**
+     * Converts trits array to bytes array. <br>
+     * this method will override the content of {@code dest}
+     * @see #bytes(byte[], int, byte[], int, int)
+     *
+     * @param trits source trits array
+     * @param dest destination bytes array
+     */
     public static void bytes(final byte[] trits, byte[] dest) {
         bytes(trits, 0, dest, 0, trits.length);
     }
 
+    /**
+     * Converts bytes array to trits array based on {@link #NUMBER_OF_TRITS_IN_A_BYTE}.<br>
+     *     the inverse of {@link #bytes(byte[], int, byte[], int, int)}. <br>
+     *     this method will override the content of {@code trits}
+     *
+     * @param bytes source bytes array
+     * @param trits destination trits array
+     */
     public static void getTrits(final byte[] bytes, final byte[] trits) {
 
         int offset = 0;
@@ -88,6 +135,28 @@ public class Converter {
         }
     }
 
+
+
+    // Trytes <-> Trits
+
+    /**
+     * Allocates trits (a byte array) large enough to fit trytes, used for converting trytes to trits.
+     *
+     * @param tryteCount length of tryte array (to be converted)
+     * @return a new byte array large enough to fit trytes
+     */
+    public static byte[] allocateTritsForTrytes(int tryteCount) {
+        return new byte[tryteCount * NUMBER_OF_TRITS_IN_A_TRYTE];
+    }
+
+    /**
+     * Converts a tryte string to trits (bytes array) based on {@link #NUMBER_OF_TRITS_IN_A_TRYTE}.<br>
+     *     this method will override the content of {@code dest}
+     *
+     * @param trytes source trytes string
+     * @param dest destination trits array
+     * @param destOffset starting position for destination bytes array
+     */
     public static void trits(final String trytes, byte[] dest, int destOffset) {
         if((dest.length - destOffset) < trytes.length() * NUMBER_OF_TRITS_IN_A_TRYTE) {
             throw new IllegalArgumentException("Destination array is not large enough.");
@@ -99,8 +168,81 @@ public class Converter {
         }
     }
 
-    public static void copyTrits(final long value, final byte[] destination, final int offset, final int size) {
+    /**
+     * Converts trits (bytes array)to a tryte string based on {@link #NUMBER_OF_TRITS_IN_A_TRYTE}.<br>
+     *     the inverse of {@link #trits(String, byte[], int)}.
+     *
+     * @param trits source trits array
+     * @param offset starting position for trits
+     * @param size amount of trits to convert
+     * @return tryte string
+     */
+    public static String trytes(final byte[] trits, final int offset, final int size) {
+        final StringBuilder trytes = new StringBuilder();
+        for (int i = 0; i < (size + NUMBER_OF_TRITS_IN_A_TRYTE - 1) / NUMBER_OF_TRITS_IN_A_TRYTE; i++) {
+            int j = trits[offset + i * 3] + trits[offset + i * 3 + 1] * 3 + trits[offset + i * 3 + 2] * 9;
+            if (j < 0) {
+                j += TRYTE_ALPHABET.length();
+            }
+            trytes.append(TRYTE_ALPHABET.charAt(j));
+        }
+        return trytes.toString();
+    }
 
+    /**
+     * Converts trits (bytes array)to a tryte string.<br>
+     * @see #trytes(byte[], int, int)
+     *
+     * @param trits source trits array
+     * @return tryte string
+     */
+    public static String trytes(final byte[] trits) {
+        return trytes(trits, 0, trits.length);
+    }
+
+    /**
+     * Creates a new trits array with the converted tryte string.<br>
+     *     should be used only for testing as it allocates memory.
+     * @see #allocatingTritsFromTrytes(String)
+     * @see #trits(String, byte[], int)
+     *
+     * @param trytes source trytes string
+     * @return a new trit array
+     */
+    public static byte[] allocatingTritsFromTrytes(String trytes) {
+        byte[] trits = allocateTritsForTrytes(trytes.length());
+        trits(trytes, trits, 0);
+        return trits;
+    }
+
+
+    // Long <-> Trits
+
+    /**
+     * Parses the trits argument as a long value, based on <i>Balanced ternary</i> arithmetic
+     * @param trits Array of trits to be parsed
+     * @param srcPos Starting position in trits array
+     * @param size Amount of trits to parse
+     * @return the long value represented by the trits array
+     */
+    public static long longValue(final byte[] trits, final int srcPos, final int size) {
+
+        long value = 0;
+        for (int i = size; i-- > 0; ) {
+            value = value * RADIX + trits[srcPos + i];
+        }
+        return value;
+    }
+
+    /**
+     * fills a trit array with a representation of the {@code value} argument in <i>Balanced ternary</i> arithmetic
+
+     * @param value a long value
+     * @param destination destination trit array
+     * @param offset starting position of destination array
+     * @param size max amount of trits to fill
+     */
+    public static void copyTrits(final long value, final byte[] destination, final int offset, final int size) {
         long absoluteValue = value < 0 ? -value : value;
         for (int i = 0; i < size; i++) {
 
@@ -122,35 +264,67 @@ public class Converter {
     }
 
 
-    public static String trytes(final byte[] trits, final int offset, final int size) {
+    // Additional conversions
 
-        final StringBuilder trytes = new StringBuilder();
-        for (int i = 0; i < (size + NUMBER_OF_TRITS_IN_A_TRYTE - 1) / NUMBER_OF_TRITS_IN_A_TRYTE; i++) {
-            int j = trits[offset + i * 3] + trits[offset + i * 3 + 1] * 3 + trits[offset + i * 3 + 2] * 9;
-            if (j < 0) {
-                j += TRYTE_ALPHABET.length();
+    /**
+     * Converts an {@code ASCII string} into a {@code TryteString} representation.
+     * <p>
+     *     each ASCII character is converted to 2 Trytes.
+     * </p>
+     *
+     * @param input ASCII string.
+     * @return Trytes string
+     */
+    public static String asciiToTrytes(String input) {
+        StringBuilder sb = new StringBuilder(80);
+        for (int i = 0; i < input.length(); i++) {
+            int asciiValue = input.charAt(i);
+            // If not recognizable ASCII character, return null
+            if (asciiValue > 255) {
+                return null;
             }
-            trytes.append(TRYTE_ALPHABET.charAt(j));
+            int firstValue = asciiValue % 27;
+            int secondValue = (asciiValue - firstValue) / 27;
+            sb.append(TRYTE_ALPHABET.charAt(firstValue));
+            sb.append(TRYTE_ALPHABET.charAt(secondValue));
         }
-        return trytes.toString();
+        return sb.toString();
     }
 
-    public static String trytes(final byte[] trits) {
-        return trytes(trits, 0, trits.length);
-    }
-
-    public static int tryteValue(final byte[] trits, final int offset) {
-        return trits[offset] + trits[offset + 1] * 3 + trits[offset + 2] * 9;
-    }
-
-    public static Pair<byte[], byte[]> intPair(byte[] trits) {
-        byte[] low = new byte[trits.length];
-        byte[] hi = new byte[trits.length];
-        for(int i = 0; i< trits.length; i++) {
-            low[i] = trits[i] != (byte) 1 ? HIGH_INTEGER_BITS: (byte) 0;
-            hi[i] = trits[i] != (byte) -1 ? HIGH_INTEGER_BITS: (byte) 0;
+    /**
+     * Converts a {@code TryteString} into an {@code ASCII string} representation.
+     * <p>
+     *     every 2 Trytes are converted to a ASCII character.
+     * </p>
+     *
+     * @param input Trytes string
+     * @return ASCII string.
+     */
+    public static String trytesToAscii(String input) {
+        if (input.length() % 2 != 0) {
+            input += '9';
         }
-        return new Pair<>(low, hi);
+
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < input.length() - 1; i += 2) {
+            int firstValue = TRYTE_ALPHABET.indexOf(input.charAt(i));
+            int secondValue = TRYTE_ALPHABET.indexOf(input.charAt(i + 1));
+
+            if (firstValue == -1 || secondValue == -1) {
+                throw new IllegalArgumentException("Input contains illegal character.");
+            }
+
+            if(firstValue == 0 && secondValue == 0) {
+                break;
+            }
+
+            int asciiValue = secondValue * 27 + firstValue;
+            if (asciiValue > 255) {
+                throw new IllegalArgumentException("Calculated result exceed the range of ASCII.");
+            }
+            sb.append((char)asciiValue);
+        }
+        return sb.toString();
     }
 
     public static Pair<long[], long[]> longPair(byte[] trits) {
@@ -161,19 +335,6 @@ public class Converter {
             hi[i] = trits[i] != -1 ? HIGH_LONG_BITS: 0;
         }
         return new Pair<>(low, hi);
-    }
-
-    public static void shiftPair(Pair<long[], long[]> source, Pair<long[], long[]> dest) {
-        if(source.low.length == dest.low.length && source.hi.length == dest.hi.length) {
-            for(int i = 0; i < dest.low.length; i++) {
-                dest.low[i] <<= 1;
-                dest.low[i] |= source.low[i] & 1;
-            }
-            for(int i = 0; i < dest.hi.length; i++) {
-                dest.hi[i] <<= 1;
-                dest.hi[i] |= source.hi[i] & 1;
-            }
-        }
     }
 
     public static byte[] trits(final Pair<long[], long[]> pair, final int bitIndex) {
@@ -214,65 +375,6 @@ public class Converter {
         for(int i = 0; i < trits.length; i++) {
             trits[i] = low[i] == 0 ? 1 : hi[i] == 0 ? (byte) -1 : (byte) 0;
         }
-        return trits;
-    }
-
-    private static void increment(final byte[] trits, final int size) {
-        for (int i = 0; i < size; i++) {
-            if (++trits[i] > Converter.MAX_TRIT_VALUE) {
-                trits[i] = Converter.MIN_TRIT_VALUE;
-            } else {
-                break;
-            }
-        }
-    }
-
-    public static String asciiToTrytes(String input) {
-        StringBuilder sb = new StringBuilder(80);
-        for (int i = 0; i < input.length(); i++) {
-            int asciiValue = input.charAt(i);
-            // If not recognizable ASCII character, return null
-            if (asciiValue > 255) {
-                return null;
-            }
-            int firstValue = asciiValue % 27;
-            int secondValue = (asciiValue - firstValue) / 27;
-            sb.append(TRYTE_ALPHABET.charAt(firstValue));
-            sb.append(TRYTE_ALPHABET.charAt(secondValue));
-        }
-        return sb.toString();
-    }
-
-    public static String trytesToAscii(String input) {
-        if (input.length() % 2 != 0) {
-            input += '9';
-        }
-
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < input.length() - 1; i += 2) {
-            int firstValue = TRYTE_ALPHABET.indexOf(input.charAt(i));
-            int secondValue = TRYTE_ALPHABET.indexOf(input.charAt(i + 1));
-
-            if (firstValue == -1 || secondValue == -1) {
-                throw new IllegalArgumentException("Input contains illegal character.");
-            }
-
-            if(firstValue == 0 && secondValue == 0) {
-                break;
-            }
-
-            int asciiValue = secondValue * 27 + firstValue;
-            if (asciiValue > 255) {
-                throw new IllegalArgumentException("Calculated result exceed the range of ASCII.");
-            }
-            sb.append((char)asciiValue);
-        }
-        return sb.toString();
-    }
-
-    public static byte[] allocatingTritsFromTrytes(String trytes) {
-        byte[] trits = allocateTritsForTrytes(trytes.length());
-        trits(trytes, trits, 0);
         return trits;
     }
 }

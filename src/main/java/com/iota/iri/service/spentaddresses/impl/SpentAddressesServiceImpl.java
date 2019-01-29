@@ -122,7 +122,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
             for (int batch = 0; batch < numBatches; batch++) {
                 int batchStart = batch * interval + fromMilestoneIndex;
                 int batchStop = batchStart + interval <= toMilestoneIndex ? batchStart + interval : toMilestoneIndex;
-            
+
                 for (int i = batchStart; i < batchStop; i++) {
                     MilestoneViewModel currentMilestone = MilestoneViewModel.get(tangle, i);
                     if (currentMilestone != null) {
@@ -133,9 +133,6 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
                         );
                     }
                 }
-
-                //Set the
-                toProcess = addressesToCheck.size();
 
                 //Can only throw runtime exceptions in streams
                 try {

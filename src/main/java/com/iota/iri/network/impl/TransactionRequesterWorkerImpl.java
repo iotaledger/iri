@@ -109,7 +109,8 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
         try {
             if (transactionRequester.numberOfTransactionsToRequest() >= REQUESTER_THREAD_ACTIVATION_THRESHOLD) {
                 TransactionViewModel transaction = getTransactionToSendWithRequest();
-                if (transaction != null && transaction.getType() != TransactionViewModel.PREFILLED_SLOT) {
+                if (transaction != null && (transaction.getType() != TransactionViewModel.PREFILLED_SLOT
+                        || transaction.getHash().equals(Hash.NULL_HASH))) {
                     for (Neighbor neighbor : node.getNeighbors()) {
                         try {
                             // automatically adds the hash of a requested transaction when sending a packet

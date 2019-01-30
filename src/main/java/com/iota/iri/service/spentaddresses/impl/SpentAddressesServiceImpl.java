@@ -156,7 +156,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
         try {
             Set<Hash> hashes = AddressViewModel.load(tangle, addressHash).getHashes();
-            int setSizeLimit = 100000;
+            int setSizeLimit = 100_000;
 
             //If the hash set returned contains more than 100 000 entries, it likely will not be a spent address.
             //To avoid unnecessary overhead while processing, the loop will return false

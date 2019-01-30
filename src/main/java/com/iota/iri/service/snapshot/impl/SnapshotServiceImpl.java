@@ -679,6 +679,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                 );
 
                 solidEntryPoints.put(currentMilestone.getHash(), targetMilestone.index());
+
                 nextMilestone = MilestoneViewModel.findClosestPrevMilestone(tangle, currentMilestone.index(),
                         snapshotProvider.getInitialSnapshot().getIndex());
 

@@ -1,6 +1,7 @@
 package com.iota.iri.service.spentaddresses.impl;
 
 import com.iota.iri.BundleValidator;
+import com.iota.iri.conf.MilestoneConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -12,8 +13,8 @@ import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.SafeUtils;
 import com.iota.iri.utils.dag.DAGHelper;
-import com.iota.iri.conf.IotaConfig;
 
 
 import java.util.*;
@@ -35,6 +36,11 @@ import org.slf4j.LoggerFactory;
 public class SpentAddressesServiceImpl implements SpentAddressesService {
     private static final Logger log = LoggerFactory.getLogger(SpentAddressesServiceImpl.class);
 
+    /**
+     * Value for batch processing that was determined by testing
+     */
+    private static final int BATCH_INTERVAL = 2500;
+
     private Tangle tangle;
 
     private SnapshotProvider snapshotProvider;
@@ -43,7 +49,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
     private TailFinder tailFinder;
 
-    private IotaConfig config;
+    private MilestoneConfig config;
 
 
     /**
@@ -55,7 +61,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
      * @return this instance
      */
     public SpentAddressesServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SpentAddressesProvider spentAddressesProvider,
-                                          IotaConfig config) {
+                                          MilestoneConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.spentAddressesProvider = spentAddressesProvider;
@@ -65,57 +71,19 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         return this;
     }
 
+
     @Override
-    public boolean wasAddressSpentFrom(Hash addressHash, Set<Hash> addressesChecked) throws SpentAddressesException {
-        if (spentAddressesProvider.containsAddress(addressHash)) {
-            return true;
-        }
-
-        //If address has already been checked this session, return false
-        if (addressesChecked.contains(addressHash)){
-            return false;
-        }
-
-        //If address is either null or equal to the coordinator address
-        if (addressHash.toString().equals(Hash.NULL_HASH.toString()) ||
-                addressHash.toString().equals(config.getCoordinator())) {
-            return false;
-        }
-
-
-        try {
-            Set<Hash> hashes = AddressViewModel.load(tangle, addressHash).getHashes();
-            int setSizeLimit = 100000;
-
-            //If the hash set returned contains more than 100 000 entries, it likely will not be a spent address.
-            //To avoid unnecessary overhead while processing, the loop will return false
-            if (hashes.size() > setSizeLimit){
-                addressesChecked.add(addressHash);
-                return false;
-            }
-
-            for (Hash hash: hashes) {
-                TransactionViewModel tx = TransactionViewModel.fromHash(tangle, hash);
-                // Check for spending transactions
-                if (wasTransactionSpentFrom(tx)) {
-                    return true;
-                }
-            }
-
-        } catch (Exception e) {
-            throw new SpentAddressesException(e);
-        }
-        addressesChecked.add(addressHash);
-        return false;
+    public boolean wasAddressSpentFrom(Hash addressHash) throws SpentAddressesException {
+        return wasAddressSpentFrom(addressHash, null);
     }
+
 
     @Override
     public void persistSpentAddresses(int fromMilestoneIndex, int toMilestoneIndex) throws SpentAddressesException {
         Set<Hash> addressesToCheck = new HashSet<>();
-        Set<Hash> addressesChecked = new HashSet<>();
-        int interval = 2500;
+        Set<Hash> checkedAddresses = new HashSet<>();
         try{
-            processInBatches(fromMilestoneIndex, toMilestoneIndex, addressesToCheck, addressesChecked);
+            processInBatches(fromMilestoneIndex, toMilestoneIndex, addressesToCheck, checkedAddresses);
         } catch(Exception e){
             throw new SpentAddressesException(e);
         }
@@ -157,11 +125,69 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         return (CollectionUtils.isNotEmpty(validation) && validation.get(0).get(0).getValidity() == 1);
     }
 
+    /**
+     *
+     * @param addressHash the address in question
+     * @param checkedAddresses a list of known unspent addresses, used to skip calculations
+     * @return {@code true} if address was spent from, else {@code false}
+     * @throws SpentAddressesException
+     * @see #wasAddressSpentFrom(Hash)
+     */
+    private boolean wasAddressSpentFrom(Hash addressHash, Set<Hash> checkedAddresses) throws SpentAddressesException {
+        if (addressHash == null) {
+            return false;
+        }
+
+        if (spentAddressesProvider.containsAddress(addressHash)) {
+            return true;
+        }
+
+        //If address has already been checked this session, return false
+        if (SafeUtils.isContaining(checkedAddresses, addressHash)){
+            return false;
+        }
+
+        //If address is either null or equal to the coordinator address
+        if (addressHash.equals(Hash.NULL_HASH) ||
+                addressHash.toString().equals(config.getCoordinator())) {
+            return false;
+        }
+
+
+        try {
+            Set<Hash> hashes = AddressViewModel.load(tangle, addressHash).getHashes();
+            int setSizeLimit = 100000;
+
+            //If the hash set returned contains more than 100 000 entries, it likely will not be a spent address.
+            //To avoid unnecessary overhead while processing, the loop will return false
+            if (hashes.size() > setSizeLimit){
+                checkedAddresses.add(addressHash);
+                return false;
+            }
+
+            for (Hash hash: hashes) {
+                TransactionViewModel tx = TransactionViewModel.fromHash(tangle, hash);
+                // Check for spending transactions
+                if (wasTransactionSpentFrom(tx)) {
+                    return true;
+                }
+            }
+
+        } catch (Exception e) {
+            throw new SpentAddressesException(e);
+        }
+
+        if (checkedAddresses != null) {
+            checkedAddresses.add(addressHash);
+        }
+        return false;
+    }
+
+    //Processing in batches in order to avoid OOM errors
     private void processInBatches(int fromMilestoneIndex, int toMilestoneIndex, Set<Hash> addressesToCheck,
                                   Set<Hash> addressesChecked) throws SpentAddressesException {
         try {
-            //Process 2500 milestones at a time
-            int interval = 2500;
+            int interval = BATCH_INTERVAL;
             double numBatches = Math.ceil(((double) toMilestoneIndex - fromMilestoneIndex) / interval);
 
             for (int batch = 0; batch < numBatches; batch++) {
@@ -182,8 +208,8 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
                         throw new SpentAddressesException(e);
                     }
                 }
+                checkAddresses(addressesToCheck, addressesChecked);
             }
-            checkAddresses(addressesToCheck, addressesChecked);
         }catch(SpentAddressesException e) {
             throw e;
         }

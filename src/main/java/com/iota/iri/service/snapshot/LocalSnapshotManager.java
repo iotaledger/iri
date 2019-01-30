@@ -1,6 +1,6 @@
 package com.iota.iri.service.snapshot;
 
-import com.iota.iri.MilestoneTracker;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
 
 /**
  * Represents the manager for local {@link Snapshot}s that takes care of periodically creating a new {@link Snapshot}
@@ -17,13 +17,13 @@ public interface LocalSnapshotManager {
      * Note: If the node is not fully synced we use
      * {@link com.iota.iri.conf.SnapshotConfig#getLocalSnapshotsIntervalUnsynced()} instead.
      *
-     * @param milestoneTracker tracker for the milestones to determine when a new local snapshot is due
+     * @param latestMilestoneTracker tracker for the milestones to determine when a new local snapshot is due
      */
-    void start(MilestoneTracker milestoneTracker);
+    void start(LatestMilestoneTracker latestMilestoneTracker);
 
     /**
      * Stops the {@link Thread} that takes care of creating the local {@link Snapshot}s and that was spawned by the
-     * {@link #start(MilestoneTracker)} method.
+     * {@link #start(LatestMilestoneTracker)} method.
      */
     void shutdown();
 }

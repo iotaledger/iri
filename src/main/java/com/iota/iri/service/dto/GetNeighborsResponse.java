@@ -20,7 +20,7 @@ public class GetNeighborsResponse extends AbstractResponse {
     private Neighbor[] neighbors;
 
     /**
-     * 
+     * @see com.iota.iri.service.dto.GetNeighborsResponse.Neighbor
      * @return {@link #neighbors}
      */
     public Neighbor[] getNeighbors() {

@@ -14,12 +14,12 @@ import java.util.concurrent.TimeUnit;
 /**
  * Created by paul on 4/15/17.
  */
- 
+
  /**
- * This class Extends {@link Neighbor} base class with TCP specific functionality. 
+ * This class Extends {@link Neighbor} base class with TCP specific functionality.
  * It keeps reference of Source and Sink while maintaining a sendQueue for keeping
- * outgoing requests. 
- * 
+ * outgoing requests.
+ *
  */
 public class TCPNeighbor extends Neighbor {
     private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
@@ -93,13 +93,12 @@ public class TCPNeighbor extends Neighbor {
         synchronized (sendQueue) {
             if (sendQueue.remainingCapacity() == 0) {
                 sendQueue.poll();
-                log.info("Sendqueue full...dropped 1 tx");
+                log.debug("Sendqueue full...dropped 1 tx");
             }
-            log.info("Sendqueue size: {}",sendQueue.size());
             byte[] bytes = packet.getData().clone();
             sendQueue.add(ByteBuffer.wrap(bytes));
         }
-            
+
     }
 
     @Override

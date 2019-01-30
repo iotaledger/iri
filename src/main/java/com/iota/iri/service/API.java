@@ -1,12 +1,14 @@
 package com.iota.iri.service;
 
-import com.iota.iri.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
+import com.iota.iri.BundleValidator;
+import com.iota.iri.IRI;
+import com.iota.iri.IXI;
+import com.iota.iri.Iota;
 import com.iota.iri.conf.APIConfig;
-import com.iota.iri.conf.ConsensusConfig;
-import com.iota.iri.controllers.AddressViewModel;
-import com.iota.iri.controllers.BundleViewModel;
-import com.iota.iri.controllers.TagViewModel;
-import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.controllers.*;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.PearlDiver;
 import com.iota.iri.crypto.Sponge;
@@ -21,30 +23,6 @@ import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.apache.commons.lang3.StringUtils;
-import org.iota.mddoclet.Document;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.channels.StreamSinkChannel;
-import org.xnio.streams.ChannelInputStream;
-
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
@@ -59,18 +37,40 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
 
+import org.apache.commons.lang3.StringUtils;
+import org.iota.mddoclet.Document;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.channels.StreamSinkChannel;
+import org.xnio.streams.ChannelInputStream;
+
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 import static io.undertow.Handlers.path;
 
 /**
  * <p>
- *   The API makes it possible to interact with the node by requesting information or actions to be taken. 
+ *   The API makes it possible to interact with the node by requesting information or actions to be taken.
  *   You can interact with it by passing a JSON object which at least contains a <tt>command</tt>.
  *   Upon successful execution of the command, the API returns your requested information in an {@link AbstractResponse}.
  * </p>
  * <p>
- *   If the request is invalid, an {@link ErrorResponse} is returned. 
+ *   If the request is invalid, an {@link ErrorResponse} is returned.
  *   This, for example, happens when the command does not exist or there is no command section at all.
- *   If there is an error in the given data during the execution of a command, an {@link ErrorResponse} is also sent. 
+ *   If there is an error in the given data during the execution of a command, an {@link ErrorResponse} is also sent.
  * </p>
  * <p>
  *   If an Exception is thrown during the execution of a command, an {@link ExceptionResponse} is returned.
@@ -81,13 +81,12 @@ public class API {
 
     public static final String REFERENCE_TRANSACTION_NOT_FOUND = "reference transaction not found";
     public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
-    
+
     public static final String INVALID_SUBTANGLE = "This operation cannot be executed: "
                                                  + "The subtangle has not been updated yet.";
-    
+
     private static final Logger log = LoggerFactory.getLogger(API.class);
     private final IXI ixi;
-    private final int milestoneStartIndex;
 
     private Undertow server;
 
@@ -103,6 +102,11 @@ public class API {
 
     private final static long MAX_TIMESTAMP_VALUE = (long) (Math.pow(3, 27) - 1) / 2; // max positive 27-trits value
 
+    private static int counterGetTxToApprove = 0;
+    private static long ellapsedTime_getTxToApprove = 0L;
+    private static int counter_PoW = 0;
+    private static long ellapsedTime_PoW = 0L;
+
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
@@ -112,19 +116,17 @@ public class API {
     private final static String overMaxErrorMessage = "Could not complete request";
     private final static String invalidParams = "Invalid parameters";
 
-    private ConcurrentHashMap<Hash, Boolean> previousEpochsSpentAddresses;
-
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
-    
+
     private final String[] features;
 
     /**
      * Starts loading the IOTA API, parameters do not have to be initialized.
-     * 
+     *
      * @param instance The data source we interact with during any API call.
-     * @param ixi If a command is not in the standard API, 
+     * @param ixi If a command is not in the standard API,
      *        we try to process it as a Nashorn JavaScript module through {@link IXI}
      */
     public API(Iota instance, IXI ixi) {
@@ -136,9 +138,6 @@ public class API {
         maxGetTrytes = configuration.getMaxGetTrytes();
         maxBodyLength = configuration.getMaxBodyLength();
         testNet = configuration.isTestnet();
-        milestoneStartIndex = ((ConsensusConfig) configuration).getMilestoneStartIndex();
-
-        previousEpochsSpentAddresses = new ConcurrentHashMap<>();
 
         features = Feature.calculateFeatureNames(instance.configuration);
     }
@@ -153,12 +152,12 @@ public class API {
      *        If reading from the previous epoch fails, a log is printed. The API will continue to initialize.
      *    </li>
      *    <li>
-     *        Get the {@link APIConfig} from the {@link Iota} instance, 
+     *        Get the {@link APIConfig} from the {@link Iota} instance,
      *        and read {@link APIConfig#getPort()} and {@link APIConfig#getApiHost()}
      *    </li>
      *    <li>
-     *        Builds a secure {@link Undertow} server with the port and host. 
-     *        If {@link APIConfig#getRemoteAuth()} is defined, remote authentication is blocked for anyone except 
+     *        Builds a secure {@link Undertow} server with the port and host.
+     *        If {@link APIConfig#getRemoteAuth()} is defined, remote authentication is blocked for anyone except
      *         those defined in {@link APIConfig#getRemoteAuth()} or localhost.
      *        This is done with {@link BasicAuthenticationMechanism} in a {@link AuthenticationMode#PRO_ACTIVE} mode.
      *        By default, this authentication is disabled.
@@ -167,13 +166,8 @@ public class API {
      *        Starts the server, opening it for HTTP API requests
      *    </li>
      * </ol>
-     * 
-     * @throws IOException If we are not on the testnet, and the previousEpochsSpentAddresses files cannot be found. 
-     *                     Currently this exception is caught in {@link #readPreviousEpochsSpentAddresses(boolean)}
      */
     public void init() throws IOException {
-        readPreviousEpochsSpentAddresses(testNet);
-
         APIConfig configuration = instance.configuration;
         final int apiPort = configuration.getPort();
         final String apiHost = configuration.getApiHost();
@@ -209,38 +203,7 @@ public class API {
     }
 
     /**
-     * Read the spend addresses from the previous epoch. Used in {@link #wasAddressSpentFrom(Hash)}.
-     * If this fails, a log is printed. The API will continue to initialize.
-     * 
-     * @param isTestnet If this node is running on the testnet. If this is <tt>true</tt>, nothing is loaded.
-     * @throws IOException If we are not on the testnet and previousEpochsSpentAddresses files cannot be found. 
-     *                     Currently this exception is caught in {@link #readPreviousEpochsSpentAddresses(boolean)}
-     */
-    private void readPreviousEpochsSpentAddresses(boolean isTestnet) throws IOException {
-        if (isTestnet) {
-            return;
-        }
-
-        String[] previousEpochsSpentAddressesFiles = instance
-                .configuration
-                .getPreviousEpochSpentAddressesFiles()
-                .split(" ");
-        
-        for (String previousEpochsSpentAddressesFile : previousEpochsSpentAddressesFiles) {
-            InputStream in = Snapshot.class.getResourceAsStream(previousEpochsSpentAddressesFile);
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    this.previousEpochsSpentAddresses.put(HashFactory.ADDRESS.create(line), true);
-                }
-            } catch (Exception e) {
-                log.error("Failed to load resource: {}.", previousEpochsSpentAddressesFile, e);
-            }
-        }
-    }
-    
-    /**
-     * Sends the API response back as JSON to the requester. 
+     * Sends the API response back as JSON to the requester.
      * Status code of the HTTP request is also set according to the type of response.
      * <ul>
      * <li>{@link ErrorResponse}: 400</li>
@@ -248,12 +211,12 @@ public class API {
      * <li>{@link ExceptionResponse}: 500</li>
      * <li>Default: 200</li>
      * </ul>
-     * 
+     *
      * @param exchange Contains information about what the client sent to us
-     * @param res The response of the API. 
-     *            See {@link #processRequest(HttpServerExchange)} 
+     * @param res The response of the API.
+     *            See {@link #processRequest(HttpServerExchange)}
      *            and {@link #process(String, InetSocketAddress)} for the different responses in each case.
-     * @param beginningTime The time when we received the request, in milliseconds. 
+     * @param beginningTime The time when we received the request, in milliseconds.
      *                      This will be used to set the response duration in {@link AbstractResponse#setDuration(Integer)}
      * @throws IOException When connection to client has been lost - Currently being caught.
      */
@@ -263,13 +226,13 @@ public class API {
 
         if (res instanceof ErrorResponse) {
             // bad request or invalid parameters
-            exchange.setStatusCode(400); 
+            exchange.setStatusCode(400);
         } else if (res instanceof AccessLimitedResponse) {
             // API method not allowed
-            exchange.setStatusCode(401); 
+            exchange.setStatusCode(401);
         } else if (res instanceof ExceptionResponse) {
             // internal error
-            exchange.setStatusCode(500); 
+            exchange.setStatusCode(500);
         }
 
         setupResponseHeaders(exchange);
@@ -309,7 +272,7 @@ public class API {
      * Otherwise it is processed in {@link #process(String, InetSocketAddress)}.
      * The result is sent back to the requester.
      * </p>
-     *   
+     *
      * @param exchange Contains the data the client sent to us
      * @throws IOException If the body of this HTTP request cannot be read
      */
@@ -319,7 +282,7 @@ public class API {
 
         final long beginningTime = System.currentTimeMillis();
         final String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
-        final AbstractResponse response;
+        AbstractResponse response;
 
         if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
             response = ErrorResponse.create("Invalid API Version");
@@ -332,7 +295,7 @@ public class API {
     }
 
     /**
-     * Handles an API request body. 
+     * Handles an API request body.
      * Its returned {@link AbstractResponse} is created using the following logic
      * <ul>
      *     <li>
@@ -351,26 +314,32 @@ public class API {
      *         {@link ExceptionResponse} if we encountered an unexpected exception during command processing.
      *     </li>
      *     <li>
-     *         {@link AbstractResponse} when the command is successfully processed. 
+     *         {@link AbstractResponse} when the command is successfully processed.
      *         The response class depends on the command executed.
      *     </li>
      * </ul>
-     * 
+     *
      * @param requestString The JSON encoded data of the request.
      *                      This String is attempted to be converted into a {@code Map<String, Object>}.
      * @param sourceAddress The address from the sender of this API request.
-     * @return The result of this request. 
-     * @throws UnsupportedEncodingException If the requestString cannot be parsed into a Map. 
+     * @return The result of this request.
+     * @throws UnsupportedEncodingException If the requestString cannot be parsed into a Map.
                                             Currently caught and turned into a {@link ExceptionResponse}.
      */
-    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress) 
+    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress)
             throws UnsupportedEncodingException {
 
         try {
             // Request JSON data into map
-            final Map<String, Object> request = gson.fromJson(requestString, Map.class);
+            Map<String, Object> request;
+            try {
+                request = gson.fromJson(requestString, Map.class);
+            }
+            catch(JsonSyntaxException jsonSyntaxException) {
+                return ErrorResponse.create("Invalid JSON syntax: " + jsonSyntaxException.getMessage());
+            }
             if (request == null) {
-                return ExceptionResponse.create("Invalid request payload: '" + requestString + "'");
+                return ErrorResponse.create("Invalid request payload: '" + requestString + "'");
             }
 
             // Did the requester ask for a command?
@@ -379,7 +348,7 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
-            // Is this command allowed to be run from this request address? 
+            // Is this command allowed to be run from this request address?
             // We check the remote limit API configuration.
             if (instance.configuration.getRemoteLimitApi().contains(command) &&
                     !sourceAddress.getAddress().isLoopbackAddress()) {
@@ -447,6 +416,9 @@ public class API {
                 }
                 case "getNodeInfo": {
                     return getNodeInfoStatement();
+                }
+                case "getNodeAPIConfiguration": {
+                    return getNodeAPIConfigurationStatement();
                 }
                 case "getTips": {
                     return getTipsStatement();
@@ -525,7 +497,7 @@ public class API {
     /**
      * Check if a list of addresses was ever spent from, in the current epoch, or in previous epochs.
      * If an address has a pending transaction, it is also marked as spend.
-     * 
+     *
      * @param addresses List of addresses to check if they were ever spent from.
      * @return {@link com.iota.iri.service.dto.WereAddressesSpentFrom}
      **/
@@ -539,50 +511,15 @@ public class API {
         int index = 0;
 
         for (Hash address : addressesHash) {
-            states[index++] = wasAddressSpentFrom(address);
+            states[index++] = instance.spentAddressesService.wasAddressSpentFrom(address);
         }
         return WereAddressesSpentFrom.create(states);
     }
 
     /**
-     * Checks if the address was ever spent from, in the current epoch, or in previous epochs.
-     * If an address has a pending transaction, it is also marked as spent.
-     * 
-     * @param address The address to check if it was ever spent from.
-     * @return <tt>true</tt> if it was spent from, otherwise <tt>false</tt>
-     * @throws Exception When a model could not be loaded.
-     */
-    private boolean wasAddressSpentFrom(Hash address) throws Exception {
-        if (previousEpochsSpentAddresses.containsKey(address)) {
-            return true;
-        }
-        
-        Set<Hash> hashes = AddressViewModel.load(instance.tangle, address).getHashes();
-        for (Hash hash : hashes) {
-            final TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
-            // Check for spending transactions
-            if (tx.value() < 0) {
-                // Transaction is confirmed
-                if (tx.snapshotIndex() != 0) {
-                    return true;
-                }
-                
-                // Transaction is pending
-                Hash tail = findTail(hash);
-                if (tail != null && BundleValidator.validate(instance.tangle, tail).size() != 0) {
-                    return true;
-                }
-            }
-        }
-        
-        // No spending transaction found
-        return false;
-    }
-
-    /**
      * Walks back from the hash until a tail transaction has been found or transaction aprovee is not found.
      * A tail transaction is the first transaction in a bundle, thus with <code>index = 0</code>
-     * 
+     *
      * @param hash The transaction hash where we start the search from. If this is a tail, its hash is returned.
      * @return The transaction hash of the tail
      * @throws Exception When a model could not be loaded.
@@ -592,7 +529,7 @@ public class API {
         final Hash bundleHash = tx.getBundleHash();
         long index = tx.getCurrentIndex();
         boolean foundApprovee = false;
-        
+
         // As long as the index is bigger than 0 and we are still traversing the same bundle
         // If the hash we asked about is already a tail, this loop never starts
         while (index-- > 0 && tx.getBundleHash().equals(bundleHash)) {
@@ -609,7 +546,7 @@ public class API {
                 break;
             }
         }
-        
+
         if (tx.getCurrentIndex() == 0) {
             return tx.getHash();
         }
@@ -618,17 +555,17 @@ public class API {
 
 
     /**
-     * 
-     * Checks the consistency of the transactions.
-     * Marks state as false on the following checks:
+     *
+     * Check the consistency of the transactions.
+     * A consistent transaction is one where the following statements are true:
      * <ul>
-     * <li>Missing a reference transaction</li>
-     * <li>Invalid bundle</li>
-     * <li>Tails of tails are invalid</li>
+     * <li>Valid bundle</li>
+     * <li>The transaction is not missing a reference transaction</li>
+     * <li>Tails of tails are valid</li>
      * </ul>
-     * 
+     *
      * If a transaction does not exist, or it is not a tail, an {@link ErrorResponse} is returned.
-     * 
+     *
      * @param transactionsList Transactions you want to check the consistency for
      * @return {@link CheckConsistency}
      **/
@@ -653,7 +590,7 @@ public class API {
                 state = false;
                 info = "tails are not solid (missing a referenced tx): " + transaction;
                 break;
-            } else if (BundleValidator.validate(instance.tangle, txVM.getHash()).size() == 0) {
+            } else if (BundleValidator.validate(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), txVM.getHash()).size() == 0) {
                 state = false;
                 info = "tails are not consistent (bundle is invalid): " + transaction;
                 break;
@@ -662,10 +599,10 @@ public class API {
 
         // Transactions are valid, lets check ledger consistency
         if (state) {
-            instance.milestoneTracker.latestSnapshot.rwlock.readLock().lock();
+            instance.snapshotProvider.getLatestSnapshot().lockRead();
             try {
-                WalkValidatorImpl walkValidator = new WalkValidatorImpl(instance.tangle, instance.ledgerValidator,
-                        instance.milestoneTracker, instance.configuration);
+                WalkValidatorImpl walkValidator = new WalkValidatorImpl(instance.tangle, instance.snapshotProvider, instance.ledgerService,
+                        instance.configuration);
                 for (Hash transaction : transactions) {
                     if (!walkValidator.isValid(transaction)) {
                         state = false;
@@ -674,7 +611,7 @@ public class API {
                     }
                 }
             } finally {
-                instance.milestoneTracker.latestSnapshot.rwlock.readLock().unlock();
+                instance.snapshotProvider.getLatestSnapshot().unlockRead();
             }
         }
 
@@ -684,16 +621,16 @@ public class API {
     /**
      * Compares the last received confirmed milestone with the last global snapshot milestone.
      * If these are equal, it means the tangle is empty and therefore invalid.
-     * 
+     *
      * @return <tt>false</tt> if we received at least a solid milestone, otherwise <tt>true</tt>
      */
     public boolean invalidSubtangleStatus() {
-        return (instance.milestoneTracker.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
+        return (instance.snapshotProvider.getLatestSnapshot().getIndex() == instance.snapshotProvider.getInitialSnapshot().getIndex());
     }
-    
+
     /**
-     * Returns the set of neighbors you are connected with, as well as their activity statistics (or counters).
-     * The activity counters are reset after restarting IRI.
+     * Returns an IRI node's neighbors, as well as their activity.
+     * <b>Note:</b> The activity counters are reset after restarting IRI.
      *
      * @return {@link com.iota.iri.service.dto.GetNeighborsResponse}
      **/
@@ -701,11 +638,11 @@ public class API {
     private AbstractResponse getNeighborsStatement() {
         return GetNeighborsResponse.create(instance.node.getNeighbors());
     }
-    
+
     /**
      * Temporarily add a list of neighbors to your node.
      * The added neighbors will not be available after restart.
-     * Add the neighbors to your config file 
+     * Add the neighbors to your config file
      * or supply them in the <tt>-n</tt> command line option if you want to add them permanently.
      *
      * The URI (Unique Resource Identification) for adding neighbors is:
@@ -762,8 +699,8 @@ public class API {
     }
 
     /**
-      * Returns the raw transaction data (trytes) of a specific transaction.
-      * These trytes can then be easily converted into the actual transaction object.
+      * raw transaction data (trytes) of a specific transaction.
+      * These trytes can then be converted into the actual transaction object.
       * See utility and {@link Transaction} functions in an IOTA library for more details.
       *
       * @param hashes The transaction hashes you want to get trytes from.
@@ -784,19 +721,16 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    
-    private static int counterGetTxToApprove = 0;
-    
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * Each increase indicates another 2 tips send.
-     * 
+     *
      * @return The current amount of times this node has returned transactions to approve
      */
     public static int getCounterGetTxToApprove() {
         return counterGetTxToApprove;
     }
-    
+
     /**
      * Increases the amount of tips send for transactions to approve by one
      */
@@ -804,20 +738,18 @@ public class API {
         counterGetTxToApprove++;
     }
 
-    private static long ellapsedTime_getTxToApprove = 0L;
-    
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
-     * 
+     *
      * @return The current amount of time spent on sending transactions to approve in milliseconds
      */
     private static long getEllapsedTimeGetTxToApprove() {
         return ellapsedTime_getTxToApprove;
     }
-    
+
     /**
      * Increases the current amount of time spent on sending transactions to approve
-     * 
+     *
      * @param ellapsedTime the time to add, in milliseconds
      */
     private static void incEllapsedTimeGetTxToApprove(long ellapsedTime) {
@@ -856,12 +788,12 @@ public class API {
     /**
      * Gets tips which can be used by new transactions to approve.
      * If debug is enabled, statistics on tip selection will be gathered.
-     * 
+     *
      * @param depth The milestone depth for finding the transactions to approve.
      * @param reference An optional transaction hash to be referenced by tips.
      * @return The tips which can be approved.
      * @throws Exception if the subtangle is out of date or if we fail to retrieve transaction tips.
-     * @see TipSelector 
+     * @see TipSelector
      */
     List<Hash> getTransactionToApproveTips(int depth, Optional<Hash> reference) throws Exception {
         if (invalidSubtangleStatus()) {
@@ -889,9 +821,9 @@ public class API {
         API.incCounterGetTxToApprove();
         if ((getCounterGetTxToApprove() % 100) == 0) {
             String sb = "Last 100 getTxToApprove consumed "
-                    + API.getEllapsedTimeGetTxToApprove() / 1000000000L 
+                    + API.getEllapsedTimeGetTxToApprove() / 1000000000L
                     + " seconds processing time.";
-            
+
             log.debug(sb);
             counterGetTxToApprove = 0;
             ellapsedTime_getTxToApprove = 0L;
@@ -918,7 +850,7 @@ public class API {
       *
       * @param trytes Transaction data to be stored.
       * @return {@link com.iota.iri.service.dto.AbstractResponse.Emptyness}
-      * @throws Exception When storing or updating a transaction fails
+      * @throws Exception When storing or updating a transaction fails.
       **/
     @Document(name="storeTransactions")
     public AbstractResponse storeTransactionsStatement(List<String> trytes) throws Exception {
@@ -931,20 +863,20 @@ public class API {
                     instance.transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
-        
+
         for (final TransactionViewModel transactionViewModel : elements) {
             //store transactions
-            if(transactionViewModel.store(instance.tangle)) {
+            if(transactionViewModel.store(instance.tangle, instance.snapshotProvider.getInitialSnapshot())) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
-                transactionViewModel.update(instance.tangle, "sender");
+                transactionViewModel.update(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), "sender");
             }
         }
         
         return AbstractResponse.createEmptyResponse();
     }
-    
+
     /**
       * Interrupts and completely aborts the <tt>attachToTangle</tt> process.
       *
@@ -960,23 +892,34 @@ public class API {
       * Returns information about this node.
       *
       * @return {@link com.iota.iri.service.dto.GetNodeInfoResponse}
+      * @throws Exception When we cant find the first milestone in the database
       **/
     @Document(name="getNodeInfo")
-    private AbstractResponse getNodeInfoStatement(){
+    private AbstractResponse getNodeInfoStatement() throws Exception {
         String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
-        return GetNodeInfoResponse.create(name, IRI.VERSION, 
+        MilestoneViewModel milestone = MilestoneViewModel.first(instance.tangle);
+        
+        return GetNodeInfoResponse.create(
+                name, 
+                IRI.VERSION,
                 Runtime.getRuntime().availableProcessors(),
-                Runtime.getRuntime().freeMemory(), 
-                System.getProperty("java.version"), 
+                Runtime.getRuntime().freeMemory(),
+                System.getProperty("java.version"),
+                
                 Runtime.getRuntime().maxMemory(),
-                Runtime.getRuntime().totalMemory(), 
-                instance.milestoneTracker.latestMilestone, instance.milestoneTracker.latestMilestoneIndex,
-                instance.milestoneTracker.latestSolidSubtangleMilestone, 
-                instance.milestoneTracker.latestSolidSubtangleMilestoneIndex, 
-                instance.milestoneTracker.milestoneStartIndex,
-                instance.node.howManyNeighbors(), 
+                Runtime.getRuntime().totalMemory(),
+                instance.latestMilestoneTracker.getLatestMilestoneHash(),
+                instance.latestMilestoneTracker.getLatestMilestoneIndex(),
+                
+                instance.snapshotProvider.getLatestSnapshot().getHash(),
+                instance.snapshotProvider.getLatestSnapshot().getIndex(),
+                
+                milestone != null ? milestone.index() : -1,
+                instance.snapshotProvider.getLatestSnapshot().getInitialIndex(),
+                
+                instance.node.howManyNeighbors(),
                 instance.node.queuedTransactionsSize(),
-                System.currentTimeMillis(), 
+                System.currentTimeMillis(),
                 instance.tipsViewModel.size(),
                 instance.transactionRequester.numberOfTransactionsToRequest(),
                 features,
@@ -984,9 +927,18 @@ public class API {
     }
 
     /**
+     *  Returns information about this node configuration.
+     *
+     * @return {@link GetNodeAPIConfigurationResponse}
+     */
+    private AbstractResponse getNodeAPIConfigurationStatement() {
+        return GetNodeAPIConfigurationResponse.create(instance.configuration);
+    }
+
+    /**
      * <p>
      * Get the inclusion states of a set of transactions.
-     * This is for determining if a transaction was accepted and confirmed by the network or not.
+     * This endpoint determines if a transaction is confirmed by the network (referenced by a valid milestone).
      * You can search for multiple tips (and thus, milestones) to get past inclusion states of transactions.
      * </p>
      * <p>
@@ -996,19 +948,19 @@ public class API {
      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if a tip is missing or the subtangle is not solid
      *
      * @param transactions List of transactions you want to get the inclusion state for.
-     * @param tips List of tips (including milestones) you want to search for the inclusion state.
+     * @param tips List of tip transaction hashes (including milestones) you want to search for
      * @return {@link com.iota.iri.service.dto.GetInclusionStatesResponse}
      * @throws Exception When a transaction cannot be loaded from hash
      **/
     @Document(name="getInclusionStates")
     private AbstractResponse getInclusionStatesStatement(
-            final List<String> transactions, 
+            final List<String> transactions,
             final List<String> tips) throws Exception {
-        
+
         final List<Hash> trans = transactions.stream()
                 .map(HashFactory.TRANSACTION::create)
                 .collect(Collectors.toList());
-        
+
         final List<Hash> tps = tips.stream().
                 map(HashFactory.TRANSACTION::create)
                 .collect(Collectors.toList());
@@ -1025,20 +977,20 @@ public class API {
                 }
             }
         }
-        
+
         // Finds the lowest tips index, or 0
         int minTipsIndex = tipsIndex.stream().reduce((a,b) -> a < b ? a : b).orElse(0);
-        
-        // If the lowest tips index (minTipsIndex) is 0 (or lower), 
+
+        // If the lowest tips index (minTipsIndex) is 0 (or lower),
         // we can't check transactions against snapshots because there were no tips,
         // or tips have not been confirmed by a snapshot yet
         if(minTipsIndex > 0) {
             // Finds the highest tips index, or 0
             int maxTipsIndex = tipsIndex.stream().reduce((a,b) -> a > b ? a : b).orElse(0);
             int count = 0;
-            
+
             // Checks transactions with indexes of tips, and sets inclusionStates byte to 1 or -1 accordingly
-            // Sets to -1 if the transaction is only known by hash, 
+            // Sets to -1 if the transaction is only known by hash,
             // or has no index, or index is above the max tip index (not included).
 
             // Sets to 1 if the transaction index is below the max index of tips (included).
@@ -1058,7 +1010,7 @@ public class API {
         Set<Hash> analyzedTips = new HashSet<>();
         Map<Integer, Integer> sameIndexTransactionCount = new HashMap<>();
         Map<Integer, Queue<Hash>> sameIndexTips = new HashMap<>();
-        
+
         // Sorts all tips per snapshot index. Stops if a tip is not in our database, or just as a hash.
         for (final Hash tip : tps) {
             TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, tip);
@@ -1069,7 +1021,7 @@ public class API {
             sameIndexTips.putIfAbsent(snapshotIndex, new LinkedList<>());
             sameIndexTips.get(snapshotIndex).add(tip);
         }
-        
+
         // Loop over all transactions without a state, and counts the amount per snapshot index
         for(int i = 0; i < inclusionStates.length; i++) {
             if(inclusionStates[i] == 0) {
@@ -1079,18 +1031,18 @@ public class API {
                 sameIndexTransactionCount.put(snapshotIndex, sameIndexTransactionCount.get(snapshotIndex) + 1);
             }
         }
-        
+
         // Loop over all snapshot indexes of transactions that were not confirmed.
         // If we encounter an invalid tangle, stop this function completely.
         for(Integer index : sameIndexTransactionCount.keySet()) {
             // Get the tips from the snapshot indexes we are missing
             Queue<Hash> sameIndexTip = sameIndexTips.get(index);
-            
+
             // We have tips on the same level as transactions, do a manual search.
             if (sameIndexTip != null && !exhaustiveSearchWithinIndex(
-                        sameIndexTip, analyzedTips, trans, 
+                        sameIndexTip, analyzedTips, trans,
                         inclusionStates, sameIndexTransactionCount.get(index), index)) {
-                    
+
                 return ErrorResponse.create(INVALID_SUBTANGLE);
             }
         }
@@ -1099,47 +1051,47 @@ public class API {
             // If a state is 0 by now, we know nothing so assume not included
             inclusionStatesBoolean[i] = inclusionStates[i] == 1;
         }
-        
+
         {
             return GetInclusionStatesResponse.create(inclusionStatesBoolean);
         }
     }
-    
+
     /**
      * Traverses down the tips until all transactions we wish to validate have been found or transaction data is missing.
-     * 
+     *
      * @param nonAnalyzedTransactions Tips we will analyze.
-     * @param analyzedTips The hashes of tips we have analyzed. 
+     * @param analyzedTips The hashes of tips we have analyzed.
      *                     Hashes specified here won't be analyzed again.
-     * @param transactions All transactions we are validating. 
-     * @param inclusionStates The state of each transaction. 
+     * @param transactions All transactions we are validating.
+     * @param inclusionStates The state of each transaction.
      *                        1 means confirmed, -1 means unconfirmed, 0 is unknown confirmation.
      *                        Should be of equal length as <tt>transactions</tt>.
-     * @param count The amount of transactions on the same index level as <tt>nonAnalyzedTransactions</tt>. 
+     * @param count The amount of transactions on the same index level as <tt>nonAnalyzedTransactions</tt>.
      * @param index The snapshot index of the tips in <tt>nonAnalyzedTransactions</tt>.
-     * @return <tt>true</tt> if all <tt>transactions</tt> are directly or indirectly references by 
-     *         <tt>nonAnalyzedTransactions</tt>. 
+     * @return <tt>true</tt> if all <tt>transactions</tt> are directly or indirectly references by
+     *         <tt>nonAnalyzedTransactions</tt>.
      *         If at some point we are missing transaction data <tt>false</tt> is returned immediately.
      * @throws Exception If a {@link TransactionViewModel} cannot be loaded.
      */
     private boolean exhaustiveSearchWithinIndex(
-                Queue<Hash> nonAnalyzedTransactions, 
-                Set<Hash> analyzedTips, 
-                List<Hash> transactions, 
+                Queue<Hash> nonAnalyzedTransactions,
+                Set<Hash> analyzedTips,
+                List<Hash> transactions,
                 byte[] inclusionStates, int count, int index) throws Exception {
-        
+
         Hash pointer;
         MAIN_LOOP:
         // While we have nonAnalyzedTransactions in the Queue
         while ((pointer = nonAnalyzedTransactions.poll()) != null) {
             // Only analyze tips we haven't analyzed yet
             if (analyzedTips.add(pointer)) {
-                
+
                 // Check if the transactions have indeed this index. Otherwise ignore.
                 // Starts off with the tips in nonAnalyzedTransactions, but transaction trunk & branch gets added.
                 final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, pointer);
                 if (transactionViewModel.snapshotIndex() == index) {
-                    // Do we have the complete transaction? 
+                    // Do we have the complete transaction?
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
                         // Incomplete transaction data, stop search.
                         return false;
@@ -1147,17 +1099,17 @@ public class API {
                         // check all transactions we wish to verify confirmation for
                         for (int i = 0; i < inclusionStates.length; i++) {
                             if (inclusionStates[i] < 1 && pointer.equals(transactions.get(i))) {
-                                // A tip, or its branch/trunk points to this transaction. 
+                                // A tip, or its branch/trunk points to this transaction.
                                 // That means this transaction is confirmed by this tip.
                                 inclusionStates[i] = 1;
-                                
+
                                 // Only stop search when we have found all transactions we were looking for
                                 if (--count <= 0) {
                                     break MAIN_LOOP;
                                 }
                             }
                         }
-                        
+
                         // Add trunk and branch to the queue for the transaction confirmation check
                         nonAnalyzedTransactions.offer(transactionViewModel.getTrunkTransactionHash());
                         nonAnalyzedTransactions.offer(transactionViewModel.getBranchTransactionHash());
@@ -1170,18 +1122,17 @@ public class API {
 
     /**
       * <p>
-      * Find the transactions which match the specified input and return.
+      * Find transactions that contain the given values in their transaction fields. 
       * All input values are lists, for which a list of return values (transaction hashes), in the same order, is returned for all individual elements.
       * The input fields can either be <tt>bundles</tt>, <tt>addresses</tt>, <tt>tags</tt> or <tt>approvees</tt>.
       * </p>
-      * 
-      * Using multiple of these input fields returns the intersection of the values.
-      * Returns an {@link com.iota.iri.service.dto.ErrorResponse} if more than maxFindTxs was found.
+      *
+      * <b>Using multiple transaction fields returns transactions hashes at the intersection of those values.</b>
       *
       * @param request The map with input fields
       *                Must contain at least one of 'bundles', 'addresses', 'tags' or 'approvees'.
-      * @return {@link com.iota.iri.service.dto.FindTransactionsResponse}
-      * @throws Exception If a model cannot be loaded, no valid input fields were supplied 
+      * @return {@link com.iota.iri.service.dto.FindTransactionsResponse}.
+      * @throws Exception If a model cannot be loaded, no valid input fields were supplied
       *                   or the total transactions to find exceeds {@link APIConfig#getMaxFindTransactions()}.
       **/
     @Document(name="findTransactions")
@@ -1279,7 +1230,7 @@ public class API {
 
     /**
      * Adds '9' until the String is of {@link #HASH_SIZE} length.
-     * 
+     *
      * @param tag The String to fill.
      * @return The updated 
      * @throws ValidationException If the <tt>tag</tt> is a {@link Hash#NULL_HASH}.
@@ -1296,23 +1247,23 @@ public class API {
 
     /**
      * Runs {@link #getParameterAsList(Map, String, int)} and transforms it into a {@link Set}.
-     * 
+     *
      * @param request All request parameters.
      * @param paramName The name of the parameter we want to turn into a list of Strings.
      * @param size the length each String must have.
      * @return the list of valid Tryte Strings.
-     * @throws ValidationException If the requested parameter does not exist or 
+     * @throws ValidationException If the requested parameter does not exist or
      *                             the string is not exactly trytes of <tt>size</tt> length or
      *                             the amount of Strings in the list exceeds {@link APIConfig#getMaxRequestsList}
      */
     private Set<String> getParameterAsSet(
-            Map<String, Object> request, 
+            Map<String, Object> request,
             String paramName, int size) throws ValidationException {
 
         HashSet<String> result = getParameterAsList(request,paramName,size)
                 .stream()
                 .collect(Collectors.toCollection(HashSet::new));
-        
+
         if (result.contains(Hash.NULL_HASH.toString())) {
             throw new ValidationException("Invalid " + paramName + " input");
         }
@@ -1324,7 +1275,7 @@ public class API {
       * The trytes to be used for this call should be valid, attached transaction trytes.
       * These trytes are returned by <tt>attachToTangle</tt>, or by doing proof of work somewhere else.
       * 
-      * @param trytes The list of transaction trytes to broadcast
+      * @param trytes the list of transaction trytes to broadcast
       * @return {@link com.iota.iri.service.dto.AbstractResponse.Emptyness}
       **/
     @Document(name="broadcastTransactions")
@@ -1336,7 +1287,7 @@ public class API {
             Converter.trits(tryte, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(
                     txTrits, instance.transactionValidator.getMinWeightMagnitude());
-            
+
             elements.add(transactionViewModel);
         }
         for (final TransactionViewModel transactionViewModel : elements) {
@@ -1350,18 +1301,16 @@ public class API {
 
     /**
       * <p>
-      * Calculates the confirmed balance, as viewed by the specified <tt>tips</tt>. 
-      * If you do not specify the referencing <tt>tips</tt>, 
-      * the returned balance is based on the latest confirmed milestone.
-      * In addition to the balances, it also returns the referencing <tt>tips</tt> (or milestone), 
+      * Calculates the confirmed balance, as viewed by the specified <tt>tips</tt>.
+      * If the <tt>tips</tt> parameter is missing, the returned balance is correct as of the latest confirmed milestone.
+      * In addition to the balances, it also returns the referencing <tt>tips</tt> (or milestone),
       * as well as the index with which the confirmed balance was determined.
       * The balances are returned as a list in the same order as the addresses were provided as input.
       * </p>
-      * Returns an {@link ErrorResponse} if tips are not found, inconsistent or the threshold is invalid.
       *
-      * @param addresses The addresses where we will find the balance for.
+      * @param addresses Address for which to get the balance (do not include the checksum)
       * @param tips The optional tips to find the balance through.
-      * @param threshold The confirmation threshold between 0 and 100(inclusive). 
+      * @param threshold The confirmation threshold between 0 and 100(inclusive).
       *                  Should be set to 100 for getting balance by counting only confirmed transactions.
       * @return {@link com.iota.iri.service.dto.GetBalancesResponse}
       * @throws Exception When the database has encountered an error
@@ -1378,24 +1327,24 @@ public class API {
         final List<Hash> addressList = addresses.stream()
                 .map(address -> (HashFactory.ADDRESS.create(address)))
                 .collect(Collectors.toCollection(LinkedList::new));
-        
-        final List<Hash> hashes;
+
+        List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
-        instance.milestoneTracker.latestSnapshot.rwlock.readLock().lock();
-        final int index = instance.milestoneTracker.latestSnapshot.index();
-        
-        if (tips == null || tips.size() == 0) {
-            hashes = Collections.singletonList(instance.milestoneTracker.latestSolidSubtangleMilestone);
+        instance.snapshotProvider.getLatestSnapshot().lockRead();
+        final int index = instance.snapshotProvider.getLatestSnapshot().getIndex();
+
+        if (tips == null || tips.isEmpty()) {
+            hashes = Collections.singletonList(instance.snapshotProvider.getLatestSnapshot().getHash());
         } else {
             hashes = tips.stream()
                     .map(tip -> (HashFactory.TRANSACTION.create(tip)))
                     .collect(Collectors.toCollection(LinkedList::new));
         }
-        
+
         try {
             // Get the balance for each address at the last snapshot
             for (final Hash address : addressList) {
-                Long value = instance.milestoneTracker.latestSnapshot.getBalance(address);
+                Long value = instance.snapshotProvider.getLatestSnapshot().getBalance(address);
                 if (value == null) {
                     value = 0L;
                 }
@@ -1411,15 +1360,15 @@ public class API {
                 if (!TransactionViewModel.exists(instance.tangle, tip)) {
                     return ErrorResponse.create("Tip not found: " + tip.toString());
                 }
-                if (!instance.ledgerValidator.updateDiff(visitedHashes, diff, tip)) {
+                if (!instance.ledgerService.isBalanceDiffConsistent(visitedHashes, diff, tip)) {
                     return ErrorResponse.create("Tips are not consistent");
                 }
             }
-            
+
             // Update the found balance according to 'diffs' balance changes
             diff.forEach((key, value) -> balances.computeIfPresent(key, (hash, aLong) -> value + aLong));
         } finally {
-            instance.milestoneTracker.latestSnapshot.rwlock.readLock().unlock();
+            instance.snapshotProvider.getLatestSnapshot().unlockRead();
         }
 
         final List<String> elements = addressList.stream()
@@ -1431,19 +1380,17 @@ public class API {
                 .collect(Collectors.toList()), index);
     }
 
-    private static int counter_PoW = 0;
-    
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
      * Each increase indicates another 2 tips sent.
-     * 
-     * @return The current amount of times this node has done proof of work. 
+     *
+     * @return The current amount of times this node has done proof of work.
      *         Doesn't distinguish between remote and local proof of work.
      */
     public static int getCounterPoW() {
         return counter_PoW;
     }
-    
+
     /**
      * Increases the amount of times this node has done proof of work by one.
      */
@@ -1451,21 +1398,19 @@ public class API {
         API.counter_PoW++;
     }
 
-    private static long ellapsedTime_PoW = 0L;
-    
     /**
      * Can be 0 or more, and is set to 0 every 100 requests.
-     * 
+     *
      * @return The current amount of time spent on doing proof of work in milliseconds.
-     *         Doesn't distinguish between remote and local proof of work. 
+     *         Doesn't distinguish between remote and local proof of work.
      */
     public static long getEllapsedTimePoW() {
         return ellapsedTime_PoW;
     }
-    
+
     /**
      * Increases the current amount of time spent on doing proof of work.
-     * 
+     *
      * @param ellapsedTime the time to add, in milliseconds.
      */
     public static void incEllapsedTimePoW(long ellapsedTime) {
@@ -1493,12 +1438,12 @@ public class API {
       * @param trunkTransaction A reference to an external transaction (tip) used as trunk.
       *                         The transaction with index 0 will have this tip in its trunk.
       *                         All other transactions reference the previous transaction in the bundle (Their index-1).
-      *                         
+      *
       * @param branchTransaction A reference to an external transaction (tip) used as branch.
       *                          Each Transaction in the bundle will have this tip as their branch, except the last.
       *                          The last one will have the branch in its trunk.
-      * @param minWeightMagnitude The amount of work we should do to confirm this transaction. 
-      *                           Each 0-trit on the end of the transaction represents 1 magnitude. 
+      * @param minWeightMagnitude The amount of work we should do to confirm this transaction.
+      *                           Each 0-trit on the end of the transaction represents 1 magnitude.
       *                           A 9-tryte represents 3 magnitudes, since a 9 is represented by 3 0-trits.
       *                           Transactions with a different minWeightMagnitude are compatible.
       * @param trytes The list of trytes to prepare for network attachment, by doing proof of work.
@@ -1507,7 +1452,7 @@ public class API {
     @Document(name="attachToTangle", returnParam="trytes")
     public synchronized List<String> attachToTangleStatement(Hash trunkTransaction, Hash branchTransaction,
                                                              int minWeightMagnitude, List<String> trytes) {
-        
+
         final List<TransactionViewModel> transactionViewModels = new LinkedList<>();
 
         Hash prevTransaction = null;
@@ -1530,10 +1475,10 @@ public class API {
 
                 //attachment fields: tag and timestamps
                 //tag - copy the obsolete tag to the attachment tag field only if tag isn't set.
-                if(IntStream.range(TransactionViewModel.TAG_TRINARY_OFFSET, 
+                if(IntStream.range(TransactionViewModel.TAG_TRINARY_OFFSET,
                                    TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE)
                         .allMatch(idx -> transactionTrits[idx]  == ((byte) 0))) {
-                    
+
                     System.arraycopy(transactionTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
                     transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
                     TransactionViewModel.TAG_TRINARY_SIZE);
@@ -1563,8 +1508,8 @@ public class API {
                 API.incEllapsedTimePoW(System.nanoTime() - startTime);
                 API.incCounterPoW();
                 if ( ( API.getCounterPoW() % 100) == 0 ) {
-                    String sb = "Last 100 PoW consumed " 
-                                + API.getEllapsedTimePoW() / 1000000000L 
+                    String sb = "Last 100 PoW consumed "
+                                + API.getEllapsedTimePoW() / 1000000000L
                                 + " seconds processing time.";
                     log.info(sb);
                     counter_PoW = 0;
@@ -1579,10 +1524,10 @@ public class API {
         }
         return elements;
     }
-    
+
     /**
-     * Transforms an object parameter into an int. 
-     * 
+     * Transforms an object parameter into an int.
+     *
      * @param request A map of all request parameters
      * @param paramName The parameter we want to get as an int.
      * @return The integer value of this parameter
@@ -1601,12 +1546,12 @@ public class API {
 
     /**
      * Transforms an object parameter into a String.
-     *  
+     *
      * @param request A map of all request parameters
      * @param paramName The parameter we want to get as a String.
      * @param size The expected length of this String
      * @return The String value of this parameter
-     * @throws ValidationException If the requested parameter does not exist or 
+     * @throws ValidationException If the requested parameter does not exist or
      *                             the string is not exactly trytes of <tt>size</tt> length
      */
     private String getParameterAsStringAndValidate(Map<String, Object> request, String paramName, int size) throws ValidationException {
@@ -1619,7 +1564,7 @@ public class API {
     /**
      * Checks if a string is non 0 length, and contains exactly <tt>size</tt> amount of trytes.
      * Trytes are Strings containing only A-Z and the number 9.
-     * 
+     *
      * @param paramName The name of the parameter this String came from.
      * @param size The amount of trytes it should contain.
      * @param result The String we validate.
@@ -1644,15 +1589,15 @@ public class API {
     }
 
     /**
-     * Translates the parameter into a {@link List}. 
-     * We then validate if the amount of elements does not exceed the maximum allowed. 
+     * Translates the parameter into a {@link List}.
+     * We then validate if the amount of elements does not exceed the maximum allowed.
      * Afterwards we verify if each element is valid according to {@link #validateTrytes(String, int, String)}.
-     * 
+     *
      * @param request All request parameters
      * @param paramName The name of the parameter we want to turn into a list of Strings
      * @param size the length each String must have
      * @return the list of valid Tryte Strings.
-     * @throws ValidationException If the requested parameter does not exist or 
+     * @throws ValidationException If the requested parameter does not exist or
      *                             the string is not exactly trytes of <tt>size</tt> length or
      *                             the amount of Strings in the list exceeds {@link APIConfig#getMaxRequestsList}
      */
@@ -1677,11 +1622,10 @@ public class API {
     /**
      * Checks if a string is of a certain length, and contains exactly <tt>size</tt> amount of trytes.
      * Trytes are Strings containing only A-Z and the number 9.
-     * 
+     *
      * @param trytes The String we validate.
      * @param length The amount of trytes it should contain.
      * @param zeroAllowed If set to '{@value #ZERO_LENGTH_ALLOWED}', an empty string is also valid.
-     * @throws ValidationException If the string is not exactly trytes of <tt>size</tt> length
      * @return <tt>true</tt> if the string is valid, otherwise <tt>false</tt>
      */
     private boolean validTrytes(String trytes, int length, char zeroAllowed) {
@@ -1697,7 +1641,7 @@ public class API {
 
     /**
      * Updates the {@link HttpServerExchange} {@link HeaderMap} with the proper response settings.
-     * @param exchange Contains information about what the client has send to us 
+     * @param exchange Contains information about what the client has send to us
      */
     private static void setupResponseHeaders(HttpServerExchange exchange) {
         final HeaderMap headerMap = exchange.getResponseHeaders();
@@ -1707,10 +1651,10 @@ public class API {
 
     /**
      * Sets up the {@link HttpHandler} to have correct security settings.
-     * Remote authentication is blocked for anyone except 
+     * Remote authentication is blocked for anyone except
      * those defined in {@link APIConfig#getRemoteAuth()} or localhost.
      * This is done with {@link BasicAuthenticationMechanism} in a {@link AuthenticationMode#PRO_ACTIVE} mode.
-     * 
+     *
      * @param toWrap the path handler used in creating the server.
      * @return The updated handler
      */
@@ -1727,9 +1671,9 @@ public class API {
         HttpHandler handler = toWrap;
         handler = new AuthenticationCallHandler(handler);
         handler = new AuthenticationConstraintHandler(handler);
-        final List<AuthenticationMechanism> mechanisms = 
+        final List<AuthenticationMechanism> mechanisms =
                 Collections.singletonList(new BasicAuthenticationMechanism("Iota Realm"));
-        
+
         handler = new AuthenticationMechanismsHandler(handler, mechanisms);
         handler = new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, identityManager, handler);
         return handler;
@@ -1746,8 +1690,9 @@ public class API {
     }
 
    /**
+     *
      * <b>Only available on testnet.</b>
-     * Creates, attaches, and broadcasts a transaction with this message
+     * Creates, attaches, stores, and broadcasts a transaction with this message
      *
      * @param address The address to add the message to
      * @param message The message to store
@@ -1762,7 +1707,7 @@ public class API {
         final byte[] timestampTrits = new byte[TransactionViewModel.TIMESTAMP_TRINARY_SIZE];
         Converter.copyTrits(System.currentTimeMillis(), timestampTrits, 0, timestampTrits.length);
         final String timestampTrytes = StringUtils.rightPad(
-                Converter.trytes(timestampTrits), 
+                Converter.trytes(timestampTrits),
                 timestampTrits.length / 3, '9');
 
         final byte[] lastIndexTrits = new byte[TransactionViewModel.LAST_INDEX_TRINARY_SIZE];
@@ -1818,6 +1763,7 @@ public class API {
 
         // do pow
         List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
+        storeTransactionsStatement(powResult);
         broadcastTransactionsStatement(powResult);
         return AbstractResponse.createEmptyResponse();
     }

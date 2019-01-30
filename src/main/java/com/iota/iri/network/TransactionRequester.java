@@ -82,6 +82,11 @@ public class TransactionRequester {
         }
     }
 
+    /**
+     * This method removes the oldest transaction in the transactionsToRequest Set.
+     *
+     * It used when the queue capacity is reached, and new transactions would be dropped as a result.
+     */
     private void popEldestTransactionToRequest() {
         Iterator<Hash> iterator = transactionsToRequest.iterator();
         if (iterator.hasNext()) {
@@ -122,13 +127,13 @@ public class TransactionRequester {
         synchronized (syncObj) {
             // repeat while we have transactions that shall be requested
             while (requestSet.size() != 0) {
-                // remove the first item in our set for further examination
+                // get the first item in our set for further examination
                 Iterator<Hash> iterator = requestSet.iterator();
                 hash = iterator.next();
 
                 // if we have received the transaction in the mean time ....
                 if (TransactionViewModel.exists(tangle, hash)) {
-                    // We remove the transaction from the queue since we got it
+                    // we remove the transaction from the queue since we got it
                     iterator.remove();
                     // ... dump a log message ...
                     log.info("Removed existing tx from request list: " + hash);

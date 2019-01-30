@@ -6,6 +6,7 @@ import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
@@ -13,12 +14,12 @@ import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.SafeUtils;
 import com.iota.iri.utils.dag.DAGHelper;
 
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.collections4.CollectionUtils;
 
@@ -74,16 +75,13 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
     @Override
     public boolean wasAddressSpentFrom(Hash addressHash) throws SpentAddressesException {
-        return wasAddressSpentFrom(addressHash, null);
+        return wasAddressSpentFrom(addressHash, getInitialUnspentAddresses());
     }
-
 
     @Override
     public void persistSpentAddresses(int fromMilestoneIndex, int toMilestoneIndex) throws SpentAddressesException {
-        Set<Hash> addressesToCheck = new HashSet<>();
-        Set<Hash> checkedAddresses = new HashSet<>();
         try{
-            processInBatches(fromMilestoneIndex, toMilestoneIndex, addressesToCheck, checkedAddresses);
+            processInBatches(fromMilestoneIndex, toMilestoneIndex, new HashSet<>(), getInitialUnspentAddresses());
         } catch(Exception e){
             throw new SpentAddressesException(e);
         }
@@ -128,12 +126,14 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
     /**
      *
      * @param addressHash the address in question
-     * @param checkedAddresses a list of known unspent addresses, used to skip calculations
+     * @param checkedAddresses known unspent addresses, used to skip calculations.
+     *                         Must contain at least {@link Hash#NULL_HASH} and the coordinator address.
      * @return {@code true} if address was spent from, else {@code false}
      * @throws SpentAddressesException
      * @see #wasAddressSpentFrom(Hash)
      */
-    private boolean wasAddressSpentFrom(Hash addressHash, Set<Hash> checkedAddresses) throws SpentAddressesException {
+    private boolean wasAddressSpentFrom(Hash addressHash, Collection<Hash> checkedAddresses)
+            throws SpentAddressesException {
         if (addressHash == null) {
             return false;
         }
@@ -143,16 +143,9 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         }
 
         //If address has already been checked this session, return false
-        if (SafeUtils.isContaining(checkedAddresses, addressHash)){
+        if (checkedAddresses.contains(addressHash)){
             return false;
         }
-
-        //If address is either null or equal to the coordinator address
-        if (addressHash.equals(Hash.NULL_HASH) ||
-                addressHash.toString().equals(config.getCoordinator())) {
-            return false;
-        }
-
 
         try {
             Set<Hash> hashes = AddressViewModel.load(tangle, addressHash).getHashes();
@@ -177,15 +170,13 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
             throw new SpentAddressesException(e);
         }
 
-        if (checkedAddresses != null) {
-            checkedAddresses.add(addressHash);
-        }
+        checkedAddresses.add(addressHash);
         return false;
     }
 
     //Processing in batches in order to avoid OOM errors
-    private void processInBatches(int fromMilestoneIndex, int toMilestoneIndex, Set<Hash> addressesToCheck,
-                                  Set<Hash> addressesChecked) throws SpentAddressesException {
+    private void processInBatches(int fromMilestoneIndex, int toMilestoneIndex, Collection<Hash> addressesToCheck,
+                                  Set<Hash> checkedAddresses) throws SpentAddressesException {
         try {
             int interval = BATCH_INTERVAL;
             double numBatches = Math.ceil(((double) toMilestoneIndex - fromMilestoneIndex) / interval);
@@ -208,18 +199,19 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
                         throw new SpentAddressesException(e);
                     }
                 }
-                checkAddresses(addressesToCheck, addressesChecked);
+                checkAddresses(addressesToCheck, checkedAddresses);
             }
         }catch(SpentAddressesException e) {
             throw e;
         }
     }
 
-    private void checkAddresses(Set<Hash> addressesToCheck, Set<Hash> addressesChecked) throws SpentAddressesException {
+    private void checkAddresses(Collection<Hash> addressesToCheck, Collection<Hash> checkedAddresses)
+            throws SpentAddressesException {
         //Can only throw runtime exceptions in streams
         try {
             spentAddressesProvider.saveAddressesBatch(addressesToCheck.stream()
-                    .filter(ThrowingPredicate.unchecked(address -> wasAddressSpentFrom(address, addressesChecked)))
+                    .filter(ThrowingPredicate.unchecked(address -> wasAddressSpentFrom(address, checkedAddresses)))
                     .collect(Collectors.toList()));
 
             //Clear addressesToCheck for next batch
@@ -232,5 +224,10 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
             }
         }
 
+    }
+
+    private Set<Hash> getInitialUnspentAddresses() {
+        return Stream.of(Hash.NULL_HASH, HashFactory.ADDRESS.create(config.getCoordinator()))
+                .collect(Collectors.toSet());
     }
 }

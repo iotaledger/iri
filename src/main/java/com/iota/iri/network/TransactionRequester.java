@@ -114,10 +114,11 @@ public class TransactionRequester {
                 // remove the first item in our set for further examination
                 Iterator<Hash> iterator = requestSet.iterator();
                 hash = iterator.next();
-                iterator.remove();
 
                 // if we have received the transaction in the mean time ....
                 if (TransactionViewModel.exists(tangle, hash)) {
+                    // We remove the transaction from the queue since we got it
+                    iterator.remove();
                     // ... dump a log message ...
                     log.info("Removed existing tx from request list: " + hash);
                     messageQ.publish("rtl %s", hash);
@@ -125,11 +126,6 @@ public class TransactionRequester {
                     // ... and continue to the next element in the set
                     continue;
                 }
-
-                // ... otherwise -> re-add it at the end of the set ...
-                //
-                // Note: we always have enough space since we removed the element before
-                requestSet.add(hash);
 
                 // ... and abort our loop to continue processing with the element we found
                 break;

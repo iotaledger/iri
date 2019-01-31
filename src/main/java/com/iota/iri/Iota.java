@@ -200,7 +200,7 @@ public class Iota {
         //because we check whether spent addresses data exists
         snapshotProvider.init(configuration);
         spentAddressesProvider.init(configuration);
-        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider);
+        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
             localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);

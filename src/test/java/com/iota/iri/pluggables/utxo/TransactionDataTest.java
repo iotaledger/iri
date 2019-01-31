@@ -16,20 +16,20 @@ public class TransactionDataTest {
     @BeforeClass
     public static void setUp() throws Exception {
         transactionData = new TransactionData();
-        transactionData.Init();
+        transactionData.init();
     }
 
     @Test
-    public void TestInitTransaction() {
+    public void testInitTransaction() {
         assert transactionData.transactions.get(0).outputs.size() == 1;
         assert transactionData.transactions.get(0).inputs == null;
         System.out.println(JSON.toJSONString(transactionData.transactions.get(0)));
     }
 
     @Test
-    public void TestReadFromStr(){
+    public void testReadFromStr(){
 
-        transactionData.ReadFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":100}");
+        transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":100}");
         assert transactionData.transactions.size() == 2;
         assert transactionData.transactions.get(1).inputs.size() == 1;
         assert transactionData.transactions.get(1).inputs.get(0).txnHash.equals(
@@ -45,7 +45,7 @@ public class TransactionDataTest {
         System.out.println(JSON.toJSONString(transactionData.transactions.get(1)));
 
 
-        transactionData.ReadFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":200}");
+        transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":200}");
         assert transactionData.transactions.size() == 3;
         assert transactionData.transactions.get(2).inputs.size() == 1;
         assert transactionData.transactions.get(2).inputs.get(0).txnHash.equals(
@@ -61,7 +61,7 @@ public class TransactionDataTest {
         System.out.println(JSON.toJSONString(transactionData.transactions.get(2)));
 
 
-        transactionData.ReadFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":300}");
+        transactionData.readFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":300}");
         assert transactionData.transactions.size() == 4;
         assert transactionData.transactions.get(3).inputs.size() == 2;
         assert transactionData.transactions.get(3).inputs.get(0).txnHash.equals(
@@ -79,7 +79,7 @@ public class TransactionDataTest {
         assert transactionData.transactions.get(3).outputs.get(0).amount == 300;
         System.out.println(JSON.toJSONString(transactionData.transactions.get(3)));
 
-        transactionData.ReadFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":1}");
+        transactionData.readFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":1}");
         assert transactionData.transactions.size() == 4;
 
     }

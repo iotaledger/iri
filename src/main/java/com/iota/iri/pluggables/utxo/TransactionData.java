@@ -33,7 +33,7 @@ public class TransactionData {
         }
     }
 
-    public void ReadFromStr(String txnsStr){
+    public void readFromStr(String txnsStr){
 
         List<RawTxn> transactionList = new ArrayList<>();
 
@@ -43,7 +43,7 @@ public class TransactionData {
         constructTxnsFromRawTxns(transactionList);
     }
 
-    public void ReadFromLines(String[] lines){
+    public void readFromLines(String[] lines){
         List<RawTxn> transactionList = new ArrayList<>();
 
         for (String line:lines) {
@@ -54,13 +54,13 @@ public class TransactionData {
         constructTxnsFromRawTxns(transactionList);
     }
 
-    public void ReadFromIPFSAddr(String ipfsAddr) throws IOException{
+    public void readFromIPFSAddr(String ipfsAddr) throws IOException{
         List<RawTxn> rawTxnsList = readRawTxnInfoFromIPFS(ipfsAddr);
         constructTxnsFromRawTxns(rawTxnsList);
     }
 
 
-    public void Init() {
+    public void init() {
         transactions = new ArrayList<>();
 
         List<TransactionOut> txnOutList = new ArrayList<>();
@@ -140,16 +140,16 @@ public class TransactionData {
                 TransactionOut txnOut = txnOutList.get(j);
                 if (txnOut.userAccount.equals(formAddr)){
 
-                    boolean jump_flag = false;
+                    boolean jumpFlag = false;
                     for (int k = transactions.size() - 1; k > i; k--){
                         for (TransactionIn tempTxnIn: transactions.get(k).inputs) {
                             if (tempTxnIn.txnHash == transactions.get(i).txnHash && tempTxnIn.idx == j){
-                                jump_flag = true; // already spend
+                                jumpFlag = true; // already spend
                                 break;
                             }
                         }
                     }
-                    if (jump_flag == true){
+                    if (jumpFlag == true){
                         continue;
                     }
 

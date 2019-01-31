@@ -86,7 +86,8 @@ class IotaCache(object):
             if txn.signature_message_fragment not in consumedSet:
                 msgTryte = txn.signature_message_fragment.decode()
                 ret.append(msgTryte)
-        return ret 
+
+        return ret
 
     def set_txn_as_synced(self, ipfs_addr, tag):
         result = self.cache_txn_in_tangle_sdk(ipfs_addr, tag+b"CONSUMED")

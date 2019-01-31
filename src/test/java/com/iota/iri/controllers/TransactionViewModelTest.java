@@ -413,7 +413,7 @@ public class TransactionViewModelTest {
         Assert.assertEquals(transactionViewModel.getHash(), result.getHash());
     }
 
-    private Transaction getRandomTransaction(Random seed) {
+    public static Transaction getRandomTransaction(Random seed) {
         Transaction transaction = new Transaction();
 
         byte[] trits = new byte[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
@@ -425,6 +425,7 @@ public class TransactionViewModelTest {
         Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
         return transaction;
     }
+    
     public static byte[] getRandomTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {
         byte[] trits = getRandomTransactionTrits();
         System.arraycopy(trunk.trits(), 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,

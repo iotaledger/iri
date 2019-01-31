@@ -8,10 +8,12 @@ package com.iota.iri.network;
  * as new transactions are received.<br />
  */
 public interface TransactionRequesterWorker {
+    
     /**
      * Works through the request queue by sending a request alongside a random tip to each of our neighbors.<br />
+     * @return <code>true</code> when we have send the request to our neighbors, otherwise <code>false</code>
      */
-    void processRequestQueue();
+    boolean processRequestQueue();
 
     /**
      * Starts the background worker that automatically calls {@link #processRequestQueue()} periodically to process the

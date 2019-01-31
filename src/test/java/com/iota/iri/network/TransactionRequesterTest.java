@@ -1,8 +1,8 @@
-package com.iota.iri.controllers;
+package com.iota.iri.network;
 
 import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
@@ -11,7 +11,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -82,10 +81,6 @@ public class TransactionRequesterTest {
 
     @Test
     public void popEldestTransactionToRequest() throws Exception {
-        // Make private method invokable
-        Method popEldestToRequestTransaction = TransactionRequester.class.getDeclaredMethod("popEldestTransactionToRequest");
-        popEldestToRequestTransaction.setAccessible(true);
-
         TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
         // Add some Txs to the pool and see if the method pops the eldest one
         Hash eldest = TransactionViewModelTest.getRandomTransactionHash();
@@ -94,7 +89,7 @@ public class TransactionRequesterTest {
         txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
         txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
 
-        popEldestToRequestTransaction.invoke(txReq, null);
+        txReq.popEldestTransactionToRequest();
         // Check that the transaction is there no more
         assertEquals(false, txReq.isTransactionRequested(eldest, false));
     }

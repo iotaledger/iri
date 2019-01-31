@@ -11,6 +11,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+
 import static org.junit.Assert.*;
 
 /**
@@ -74,6 +78,52 @@ public class TransactionRequesterTest {
     @Test
     public void instance() throws Exception {
 
+    }
+
+    @Test
+    public void popEldestTransactionToRequest() throws Exception {
+        // Make private method invokable
+        Method popEldestToRequestTransaction = TransactionRequester.class.getDeclaredMethod("popEldestTransactionToRequest");
+        popEldestToRequestTransaction.setAccessible(true);
+
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        // Add some Txs to the pool and see if the method pops the eldest one
+        Hash eldest = TransactionViewModelTest.getRandomTransactionHash();
+        txReq.requestTransaction(eldest, false);
+        txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
+        txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
+        txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
+
+        popEldestToRequestTransaction.invoke(txReq, null);
+        // Check that the transaction is there no more
+        assertEquals(false, txReq.isTransactionRequested(eldest, false));
+    }
+
+    @Test
+    public void transactionRequestedFreshness() throws Exception {
+        // Add some Txs to the pool and see if the method pops the eldest one
+        ArrayList<Hash> eldest = new ArrayList<Hash>(Arrays.asList(
+                TransactionViewModelTest.getRandomTransactionHash(),
+                TransactionViewModelTest.getRandomTransactionHash(),
+                TransactionViewModelTest.getRandomTransactionHash()
+        ));
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
+        //fill tips list
+        for (int i = 0; i < 3; i++) {
+            txReq.requestTransaction(eldest.get(i), false);
+        }
+        for (int i = 0; i < capacity; i++) {
+            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            txReq.requestTransaction(hash,false);
+        }
+
+        //check that limit wasn't breached
+        assertEquals(capacity, txReq.numberOfTransactionsToRequest());
+        // None of the eldest transactions should be in the pool
+        for (int i = 0; i < 3; i++) {
+            assertEquals(false, txReq.isTransactionRequested(eldest.get(i), false));
+        }
     }
 
     @Test

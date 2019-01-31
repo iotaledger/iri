@@ -40,6 +40,7 @@ class TestIotaCache(unittest.TestCase):
                     bundle.add_transaction(txn[0])
                     bundle.finalize()
                     ret['trytes'].append(bundle.as_tryte_strings()[0])
+                    break
         return ret
 
     def test_cache_txn_in_tangle(self):

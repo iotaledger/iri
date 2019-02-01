@@ -35,7 +35,7 @@ def interval_work():
     timer_thread = threading.Timer(60, interval_work)
     timer_thread.start()
 
-    tag = TagGenerator.get_current_tag("TR")
+    tag = TagGenerator.get_current_tag()
     push_and_sync(tag)
 
     # 00:00:00 -> 00:00:59, check previous tag

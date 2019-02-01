@@ -18,6 +18,7 @@ class IotaCache(object):
             self.seed = seed
         self.api = Iota(self.uri, self.seed, testnet=True)
         self.mwm = 1 
+        self.depth = 15
 
     def cache_txn_in_tangle_sdk(self, ipfs_addr, tag):
         api_response = self.api.get_new_addresses()
@@ -25,7 +26,7 @@ class IotaCache(object):
         address = binary_type(addy).decode('ascii')
 
         result = self.api.send_transfer(
-            depth=3,
+            depth=self.depth,
             transfers=[
                 ProposedTransaction(
                     address=Address(address),
@@ -40,7 +41,7 @@ class IotaCache(object):
 
     def cache_txn_in_tangle_simple(self, data, tag):
         address = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
-        txns = self.api.get_transactions_to_approve(1)
+        txns = self.api.get_transactions_to_approve(self.depth)
         tr = self.api.get_trytes([txns[u'branchTransaction']])
         txn = Transaction.from_tryte_string(tr[u'trytes'][0], txns[u'branchTransaction'])
         txn.trunk_transaction_hash = txns[u'trunkTransaction']

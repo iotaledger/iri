@@ -21,6 +21,7 @@ import com.iota.iri.service.tipselection.impl.CumulativeWeightWithEdgeCalculator
 import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
 import com.iota.iri.service.tipselection.impl.EntryPointSelectorKatz;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
+import com.iota.iri.service.tipselection.impl.TipSelectorConflux;
 import com.iota.iri.service.tipselection.impl.TipSelectorImpl;
 import com.iota.iri.service.tipselection.impl.WalkerAlpha;
 import com.iota.iri.storage.Indexable;
@@ -180,8 +181,15 @@ public class Iota {
 
         TailFinder tailFinder = new TailFinderImpl(tangle);
         Walker walker = new WalkerAlpha(tailFinder, tangle, messageQ, new SecureRandom(), config);
-        return new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
-                walker, milestoneTracker, config);
+        TipSelector tipSel;
+        if(BaseIotaConfig.getInstance().getTipSelector().equals("CONFLUX")) {
+            tipSel = new TipSelectorConflux(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
+                                                 walker, milestoneTracker, config);
+        } else {
+            tipSel = new TipSelectorImpl(tangle, ledgerValidator, entryPointSelector, ratingCalculator,
+                    walker, milestoneTracker, config);
+        }
+        return tipSel;
     }
 
     private LedgerValidator createLedgerValidator() {

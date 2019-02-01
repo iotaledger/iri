@@ -87,6 +87,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
     private String weightCalAlgo = Defaults.WEIGHT_CAL_ALGO;
     private String entryPointSelAlgo = Defaults.ENTRY_POINT_CAL_ALGO;
+    private String tipSelectorAlgo = Defaults.TIP_SELECTOR_ALGO;
     private String walkValidator = Defaults.WALK_VALIDATOR;
     private String ledgerValidator = Defaults.LEDGER_VALIDATOR;
 
@@ -792,6 +793,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public String getTipSelector() {
+        return tipSelectorAlgo;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--tip-sel-algo", description = TipSelConfig.Descriptions.TIP_SEL_ALGO)
+    protected void setTipSelector(String tipSelectorAlgo) {
+        this.tipSelectorAlgo = tipSelectorAlgo;
+    }
+
+    @Override
     public String getWalkValidator() {
         return walkValidator;
     }
@@ -888,6 +900,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         double ALPHA = 0.001d;
         String WEIGHT_CAL_ALGO = "CUM_WEIGHT";
         String ENTRY_POINT_CAL_ALGO = "DEFAULT";
+        String TIP_SELECTOR_ALGO = "MCMC";
         String WALK_VALIDATOR = "DEFAULT";
         String LEDGER_VALIDATOR = "DEFAULT";
 

@@ -30,6 +30,8 @@ public interface TipSelConfig extends Config {
 
     String getEntryPointSelector();
 
+    String getTipSelector();
+
     interface Descriptions {
 
         String MAX_DEPTH = "The maximal number of previous milestones from where you can perform the random walk";
@@ -41,5 +43,6 @@ public interface TipSelConfig extends Config {
         String WALK_VALIDATOR = "The validator that is being chosen.";
         String LEDGER_VALIDATOR = "The ledger validator logic that is being chosen.";
         String ENTRY_POINT_SEL_ALGO = "The algorithm being used to select entry point, default using COO (if no COO, will start from genesis).";
+        String TIP_SEL_ALGO = "Tip selector algorithm MCMC/CONFLUX (MCMC by default).";
     }
 }

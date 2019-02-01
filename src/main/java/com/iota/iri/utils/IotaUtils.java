@@ -13,6 +13,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import java.util.Random;
+
 public class IotaUtils {
 
     public static List<String> splitStringToImmutableList(String string, String regexSplit) {
@@ -55,5 +59,22 @@ public class IotaUtils {
 
 	public static <T> List<T> createImmutableList(T... values) {
 		return Collections.unmodifiableList(Arrays.asList(values));
-	}
+    }
+    
+    public static Hash getRandomTransactionHash() {
+        Random seed = new Random();
+        byte[] out = new byte[Hash.SIZE_IN_TRITS];
+
+        for(int i = 0; i < out.length; i++) {
+            out[i] = (byte) (seed.nextInt(3) - 1);
+        }
+
+        return HashFactory.TRANSACTION.create(out);
+    }
+
+    public static String abbrieviateHash(Hash h, int len) {
+        String full = Converter.trytes(h.trits());
+        return full.substring(0, len);
+    }
+
 }

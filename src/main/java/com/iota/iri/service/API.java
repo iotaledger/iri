@@ -59,6 +59,8 @@ import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
 
+import com.iota.iri.utils.IotaUtils;
+
 import static io.undertow.Handlers.path;
 
 import java.io.*;
@@ -548,6 +550,10 @@ public class API {
     }
 
     public boolean invalidSubtangleStatus() {
+        String tipSel = BaseIotaConfig.getInstance().getTipSelector();
+        if(tipSel.equals("CONFLUX")) {
+            return false; // if using conflux, there is no need to check milestone.
+        }
         return (instance.milestoneTracker.latestSolidSubtangleMilestoneIndex == milestoneStartIndex);
     }
 
@@ -635,6 +641,9 @@ public class API {
         }
 
         try {
+            if(instance.tangle.getTxnCount()==0) {
+                return GetTransactionsToApproveResponse.create(IotaUtils.getRandomTransactionHash(), IotaUtils.getRandomTransactionHash());
+            }
             List<Hash> tips = getTransactionToApproveTips(depth, reference);
             return GetTransactionsToApproveResponse.create(tips.get(0), tips.get(1));
 
@@ -696,6 +705,8 @@ public class API {
                     long count = transactionViewModel.addBatchTxnCount(instance.tangle);
 
                     log.info("received batch of {} transactions from api.", count);
+                } else {
+                    instance.tangle.addTxnCount(1);
                 }
 
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);

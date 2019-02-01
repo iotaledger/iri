@@ -28,18 +28,18 @@ class TagGenerator(object):
     ]
 
     @classmethod
-    def get_current_tag(cls, txn_type):
+    def get_current_tag(cls, txn_type=""):
         today = datetime.date.today()
         return TagGenerator.TAG_YEAR[today.year] + \
             TagGenerator.TAG_MONTH[today.month] + \
             TagGenerator.TAG_DAY[today.day] + txn_type
 
     @classmethod
-    def get_previous_tag(cls):
+    def get_previous_tag(cls, txn_type=""):
         today = datetime.date.today()
         one_day = datetime.timedelta(days=1)
         yesterday = today - one_day
         return TagGenerator.TAG_YEAR[yesterday.year] + \
             TagGenerator.TAG_MONTH[yesterday.month] + \
-            TagGenerator.TAG_DAY[yesterday.day]
+            TagGenerator.TAG_DAY[yesterday.day] + txn_type
 

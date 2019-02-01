@@ -186,8 +186,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     /**
-     * Loads the builtin snapshot (last global snapshot) that is embedded in the jar (if a different path is provided it
-     * can also load from the disk).
+     * Loads the builtin snapshot (last global snapshot) that is embedded in the jar.
      *
      * We first verify the integrity of the snapshot files by checking the signature of the files and then construct
      * a {@link Snapshot} from the retrieved information.
@@ -213,12 +212,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
                 throw new SnapshotException("failed to validate the signature of the builtin snapshot file", e);
             }
 
-            SnapshotState snapshotState;
-            try {
-                snapshotState = readSnapshotStateFromJAR(config.getSnapshotFile());
-            } catch (SnapshotException e) {
-                snapshotState = readSnapshotStatefromFile(config.getSnapshotFile());
-            }
+            SnapshotState snapshotState = readSnapshotStateFromJAR(config.getSnapshotFile());
             if (!snapshotState.hasCorrectSupply()) {
                 throw new SnapshotException("the snapshot state file has an invalid supply");
             }

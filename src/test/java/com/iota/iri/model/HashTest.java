@@ -2,7 +2,7 @@ package com.iota.iri.model;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.controllers.TransactionViewModelTest;
-import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.utils.Converter;
 import org.junit.Assert;
 import org.junit.Test;

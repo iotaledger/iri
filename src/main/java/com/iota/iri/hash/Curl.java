@@ -1,4 +1,4 @@
-package com.iota.iri.crypto;
+package com.iota.iri.hash;
 
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;

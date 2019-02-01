@@ -6,12 +6,13 @@ import com.iota.iri.Iota;
 import static com.iota.iri.controllers.TransactionViewModel.*;
 
 import com.iota.iri.conf.*;
-import com.iota.iri.crypto.Curl;
-import com.iota.iri.crypto.Sponge;
-import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.Sponge;
+import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.Node;
+import com.iota.iri.service.API;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.After;

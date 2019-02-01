@@ -1,4 +1,4 @@
-package com.iota.iri.crypto;
+package com.iota.iri.hash;
 
 public interface Sponge {
     int HASH_LENGTH = 243;

@@ -1,7 +1,7 @@
 package com.iota.iri.utils;
 
-import com.iota.iri.crypto.Sponge;
-import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.hash.Sponge;
+import com.iota.iri.hash.SpongeFactory;
 import io.undertow.security.idm.IdentityManager;
 
 import io.undertow.security.idm.Account;
@@ -13,7 +13,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 
-import com.iota.iri.crypto.Curl;
+import com.iota.iri.hash.Curl;
 
 public class MapIdentityManager implements IdentityManager {
 

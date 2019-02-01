@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Objects;
 
-import com.iota.iri.crypto.Curl;
+import com.iota.iri.hash.Curl;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.model.safe.ByteSafe;
 import com.iota.iri.model.safe.TritSafe;

@@ -97,7 +97,7 @@ public class TransactionRequesterTest {
     @Test
     public void transactionRequestedFreshness() throws Exception {
         // Add some Txs to the pool and see if the method pops the eldest one
-        ArrayList<Hash> eldest = new ArrayList<Hash>(Arrays.asList(
+        List<Hash> eldest = new ArrayList<Hash>(Arrays.asList(
                 TransactionViewModelTest.getRandomTransactionHash(),
                 TransactionViewModelTest.getRandomTransactionHash(),
                 TransactionViewModelTest.getRandomTransactionHash()

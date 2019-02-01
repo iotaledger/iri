@@ -91,7 +91,7 @@ public class TransactionRequesterTest {
 
         txReq.popEldestTransactionToRequest();
         // Check that the transaction is there no more
-        assertEquals(false, txReq.isTransactionRequested(eldest, false));
+        assertFalse(txReq.isTransactionRequested(eldest, false));
     }
 
     @Test
@@ -117,7 +117,7 @@ public class TransactionRequesterTest {
         assertEquals(capacity, txReq.numberOfTransactionsToRequest());
         // None of the eldest transactions should be in the pool
         for (int i = 0; i < 3; i++) {
-            assertEquals(false, txReq.isTransactionRequested(eldest.get(i), false));
+            assertFalse(txReq.isTransactionRequested(eldest.get(i), false));
         }
     }
 

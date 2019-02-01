@@ -74,14 +74,19 @@ class IotaCache(object):
         txn_hashes_consumed = self.api.find_transactions(None, None, [tag+b"CONSUMED"], None)
         if len(txn_hashes_consumed['hashes']) != 0:
             txn_trytes_consumed = self.api.get_trytes(txn_hashes_consumed['hashes'])
+            i=0
             for txnTrytes in txn_trytes_consumed['trytes']:
-                txn = Transaction.from_tryte_string(txnTrytes)
+                txn = Transaction.from_tryte_string(txnTrytes, txn_hashes_consumed['hashes'][i])
+                i+=1
                 consumedSet.append(txn.signature_message_fragment)
+        i=0
         for txnTrytes in txn_trytes_all['trytes']:
-            txn = Transaction.from_tryte_string(txnTrytes)
+            txn = Transaction.from_tryte_string(txnTrytes, txn_hashes_all[i])
+            i+=1
             if txn.signature_message_fragment not in consumedSet:
                 msgTryte = txn.signature_message_fragment.decode()
                 ret.append(msgTryte)
+
         return ret
 
     def set_txn_as_synced(self, ipfs_addr, tag):

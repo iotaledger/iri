@@ -6,7 +6,6 @@ import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
-import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
@@ -32,12 +31,10 @@ public class TipSelectorImpl implements TipSelector {
 
     private final LedgerValidator ledgerValidator;
     private final Tangle tangle;
-    private final SnapshotProvider snapshotProvider;
     private final MilestoneTracker milestoneTracker;
     private final TipSelConfig config;
 
     public TipSelectorImpl(Tangle tangle,
-                           SnapshotProvider snapshotProvider,
                            LedgerValidator ledgerValidator,
                            EntryPointSelector entryPointSelector,
                            RatingCalculator ratingCalculator,
@@ -53,7 +50,6 @@ public class TipSelectorImpl implements TipSelector {
         //used by walkValidator
         this.ledgerValidator = ledgerValidator;
         this.tangle = tangle;
-        this.snapshotProvider = snapshotProvider;
         this.milestoneTracker = milestoneTracker;
         this.config = config;
     }
@@ -85,7 +81,7 @@ public class TipSelectorImpl implements TipSelector {
 
             //random walk
             List<Hash> tips = new LinkedList<>();
-            WalkValidator walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerValidator, milestoneTracker, config);
+            WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, milestoneTracker, config);
             if(BaseIotaConfig.getInstance().getWalkValidator().equals("NULL")){
                 walkValidator = new WalkValidatorNull();
             }

@@ -1,10 +1,7 @@
 package com.iota.iri.controllers;
 
-import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.TransactionRequester;
-import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.zmq.MessageQ;
 import org.junit.After;
@@ -18,17 +15,16 @@ import static org.junit.Assert.*;
  */
 public class TransactionRequesterTest {
     private static Tangle tangle = new Tangle();
-    private static SnapshotProvider snapshotProvider;
     private MessageQ mq;
 
     @Before
     public void setUp() throws Exception {
-        snapshotProvider = new SnapshotProviderImpl(new MainnetConfig());
+
     }
 
     @After
     public void tearDown() throws Exception {
-        snapshotProvider.shutdown();
+
     }
 
     @Test
@@ -78,7 +74,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void nonMilestoneCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider.getInitialSnapshot(), mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, mq);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
@@ -91,7 +87,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void milestoneCapacityNotLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider.getInitialSnapshot(), mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, mq);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
@@ -104,7 +100,7 @@ public class TransactionRequesterTest {
 
     @Test
     public void mixedCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider.getInitialSnapshot(), mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, mq);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 4 ; i++) {

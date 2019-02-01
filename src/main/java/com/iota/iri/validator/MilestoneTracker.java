@@ -10,7 +10,6 @@ import com.iota.iri.hash.ISSInPlace;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
-import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.zmq.MessageQ;
@@ -52,7 +51,6 @@ public class MilestoneTracker {
 
     private final Logger log = LoggerFactory.getLogger(MilestoneTracker.class);
     private final Tangle tangle;
-    private final SnapshotProvider snapshotProvider;
     private final Hash coordinator;
     private final TransactionValidator transactionValidator;
     private final boolean testnet;
@@ -77,13 +75,11 @@ public class MilestoneTracker {
     private Status status = Status.INITIALIZING;
 
     public MilestoneTracker(Tangle tangle,
-                            SnapshotProvider snapshotProvider,
                             TransactionValidator transactionValidator,
                             MessageQ messageQ,
                             Snapshot initialSnapshot, ConsensusConfig config
     ) {
         this.tangle = tangle;
-        this.snapshotProvider = snapshotProvider;
         this.transactionValidator = transactionValidator;
         this.messageQ = messageQ;
         this.latestSnapshot = initialSnapshot;
@@ -223,7 +219,7 @@ public class MilestoneTracker {
             // Already validated.
             return VALID;
         }
-        final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
+        final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle, transactionViewModel.getHash());
         if (bundleTransactions.size() == 0) {
             return INCOMPLETE;
         }

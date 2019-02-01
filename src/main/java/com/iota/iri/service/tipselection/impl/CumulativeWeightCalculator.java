@@ -5,7 +5,6 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashId;
 import com.iota.iri.model.HashPrefix;
-import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.tipselection.RatingCalculator;
 import com.iota.iri.utils.collections.impl.TransformingBoundedHashSet;
 import com.iota.iri.storage.Tangle;
@@ -14,6 +13,7 @@ import com.iota.iri.utils.collections.interfaces.BoundedSet;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.SetUtils;
+import org.apache.commons.lang3.ObjectUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,11 +31,9 @@ public class CumulativeWeightCalculator implements RatingCalculator{
     public static final int MAX_FUTURE_SET_SIZE = 5000;
 
     public final Tangle tangle;
-    private final Snapshot initialSnapshot;
 
-    public CumulativeWeightCalculator(Tangle tangle, Snapshot initialSnapshot) {
+    public CumulativeWeightCalculator(Tangle tangle) {
         this.tangle = tangle;
-        this.initialSnapshot = initialSnapshot;
     }
 
     @Override
@@ -89,7 +87,7 @@ public class CumulativeWeightCalculator implements RatingCalculator{
             txApprovers = new HashSet<>(appHashes.size());
             for (Hash appHash : appHashes) {
                 //if not genesis (the tx that confirms itself)
-                if (!initialSnapshot.hasSolidEntryPoint(appHash)) {
+                if (ObjectUtils.notEqual(Hash.NULL_HASH, appHash)) {
                     txApprovers.add(appHash);
                 }
             }

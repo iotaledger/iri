@@ -42,7 +42,7 @@ public class FullState extends DbState {
     public void populateDb() throws Exception {
         System.out.println("-----------------------iteration setup--------------------------------");
         for (TransactionViewModel tvm : getTransactions()) {
-            tvm.store(getTangle(), getSnapshotProvider().getInitialSnapshot());
+            tvm.store(getTangle());
         }
     }
 

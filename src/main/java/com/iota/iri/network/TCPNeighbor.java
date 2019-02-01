@@ -93,7 +93,7 @@ public class TCPNeighbor extends Neighbor {
             byte[] bytes = packet.getData().clone();
             sendQueue.add(ByteBuffer.wrap(bytes));
         }
-
+            
     }
 
     @Override

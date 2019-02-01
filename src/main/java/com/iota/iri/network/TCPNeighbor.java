@@ -89,6 +89,7 @@ public class TCPNeighbor extends Neighbor {
                 sendQueue.poll();
                 log.info("Sendqueue full...dropped 1 tx");
             }
+            log.info("Sendqueue size: {}",sendQueue.size());
             byte[] bytes = packet.getData().clone();
             sendQueue.add(ByteBuffer.wrap(bytes));
         }

@@ -121,7 +121,7 @@ public class Node {
         int packetSize = configuration.getTransactionPacketSize();
         this.sendingPacket = new DatagramPacket(new byte[packetSize], packetSize);
         this.tipRequestingPacket = new DatagramPacket(new byte[packetSize], packetSize);
-        this.spamPreventionStrategy = new DropFixedPercentage(34, getNeighbors());
+        this.spamPreventionStrategy = new DropFixedPercentage(33, getNeighbors());
     }
 
     /**
@@ -599,7 +599,7 @@ public class Node {
             return;
         }
 
-        synchronized (sendingPacket) { // TODO check if this synchronization really works. sendingPacket is a method parameter.
+        synchronized (sendingPacket) {
             System.arraycopy(transactionViewModel.getBytes(), 0, sendingPacket.getData(), 0, TransactionViewModel.SIZE);
             Hash hash = transactionRequester.transactionToRequest(rnd.nextDouble() < configuration.getpSelectMilestoneChild());
             System.arraycopy(hash != null ? hash.bytes() : transactionViewModel.getHash().bytes(), 0,

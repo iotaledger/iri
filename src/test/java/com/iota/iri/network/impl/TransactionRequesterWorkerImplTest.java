@@ -13,6 +13,7 @@ import static org.mockito.Mockito.*;
 
 import java.util.LinkedList;
 
+import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -40,32 +41,25 @@ public class TransactionRequesterWorkerImplTest {
     private static final TransactionViewModel TVMAll9NotNull = new TransactionViewModel(
             get9Transaction(), getRandomTransactionHash()); 
     
-    private static Tangle tangle;
-    private static Node node;
-    private static TipsViewModel tvm;
-    
-    private static TransactionRequester requester;
-    private static TransactionRequesterWorkerImpl worker;
-    
     @Rule 
     public MockitoRule mockitoRule = MockitoJUnit.rule();
     
-    @BeforeClass
-    public static void setUp(){
-        requester = mock(TransactionRequester.class);
-        requester.init(0); //Dont drop anything
-    }
+    @Mock
+    private static TransactionRequester requester;
+    private static TransactionRequesterWorkerImpl worker;
+
+    @Mock
+    private Tangle tangle;
+    
+    @Mock
+    private Node node;
+    
+    @Mock
+    private TipsViewModel tvm;
 
     @Before
     public void before() throws NoSuchFieldException, SecurityException, Exception {
-        tangle = mock(Tangle.class);
-        tvm = mock(TipsViewModel.class);
-        
         worker = new TransactionRequesterWorkerImpl();
-        
-        node = mock(Node.class);
-        when(node.getNeighbors()).thenReturn(new LinkedList<>());
-        
         worker.init(tangle, requester, tvm, node);
     }
     

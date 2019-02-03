@@ -70,8 +70,6 @@ public class TransactionRequesterWorkerImplTest {
         node = mock(Node.class);
         when(node.getNeighbors()).thenReturn(new LinkedList<>());
         
-        //Set start queue to 0 for mocking
-        setFinalStatic(worker.getClass().getDeclaredField("REQUESTER_THREAD_ACTIVATION_THRESHOLD"), 0);
         worker.init(tangle, requester, tvm, node);
     }
     
@@ -110,13 +108,5 @@ public class TransactionRequesterWorkerImplTest {
        assertTrue(worker.isValidTransaction(TVMAll9Null));
        
        assertFalse(worker.isValidTransaction(TVMAll9NotNull));
-    }
-    
-    private static void setFinalStatic(Field field, Object newValue) throws Exception {
-        field.setAccessible(true);        
-        Field modifiersField = Field.class.getDeclaredField("modifiers");
-        modifiersField.setAccessible(true);
-        modifiersField.setInt(field, field.getModifiers() & ~Modifier.FINAL);
-        field.set(null, newValue);
     }
 }

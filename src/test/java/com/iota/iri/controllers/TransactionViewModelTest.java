@@ -26,7 +26,6 @@ import java.util.Set;
 import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.*;
 
-
 public class TransactionViewModelTest {
 
     private static final TemporaryFolder dbFolder = new TemporaryFolder();

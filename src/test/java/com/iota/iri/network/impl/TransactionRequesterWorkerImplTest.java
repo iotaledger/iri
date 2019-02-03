@@ -16,7 +16,6 @@ import java.util.LinkedList;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -31,15 +30,15 @@ public class TransactionRequesterWorkerImplTest {
     
     //Good
     private static final TransactionViewModel TVMRandomNull = new TransactionViewModel(
-            TransactionTestUtils.getRandomTransaction(), Hash.NULL_HASH);
+            getRandomTransaction(), Hash.NULL_HASH);
     private static final TransactionViewModel TVMRandomNotNull = new TransactionViewModel(
-            TransactionTestUtils.getRandomTransaction(), getRandomTransactionHash());
+            getRandomTransaction(), getRandomTransactionHash());
     private static final TransactionViewModel TVMAll9Null = new TransactionViewModel(
-            TransactionTestUtils.get9Transaction(), Hash.NULL_HASH);
+            get9Transaction(), Hash.NULL_HASH);
     
     //Bad
     private static final TransactionViewModel TVMAll9NotNull = new TransactionViewModel(
-            TransactionTestUtils.get9Transaction(), getRandomTransactionHash()); 
+            get9Transaction(), getRandomTransactionHash()); 
     
     private static Tangle tangle;
     private static Node node;

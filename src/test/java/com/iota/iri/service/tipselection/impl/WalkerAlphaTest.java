@@ -27,7 +27,6 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 import static com.iota.iri.TransactionTestUtils.*;
 
 public class WalkerAlphaTest {
@@ -164,7 +163,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
         //set a higher rate for transaction2
         rating.put(transaction2.getHash(), 10);
 
@@ -213,7 +212,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
@@ -240,7 +239,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
@@ -270,7 +269,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));

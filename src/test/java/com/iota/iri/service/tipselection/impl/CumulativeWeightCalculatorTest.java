@@ -22,7 +22,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.iota.iri.controllers.TransactionViewModelTest.*;
+import static com.iota.iri.TransactionTestUtils.*;
 
 public class CumulativeWeightCalculatorTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();

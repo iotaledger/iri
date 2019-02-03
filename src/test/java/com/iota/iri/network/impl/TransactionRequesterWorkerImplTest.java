@@ -20,30 +20,31 @@ import java.util.Random;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.impl.TransactionRequesterWorkerImpl;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Converter;
+
+import static com.iota.iri.TransactionTestUtils.*;
 
 public class TransactionRequesterWorkerImplTest {
     
     //Good
     private static final TransactionViewModel TVMRandomNull = new TransactionViewModel(
-            getRandomTransaction(new Random()), Hash.NULL_HASH);
+            TransactionTestUtils.getRandomTransaction(new Random()), Hash.NULL_HASH);
     private static final TransactionViewModel TVMRandomNotNull = new TransactionViewModel(
-            getRandomTransaction(new Random()), TransactionViewModelTest.getRandomTransactionHash());
+            TransactionTestUtils.getRandomTransaction(new Random()), getRandomTransactionHash());
     private static final TransactionViewModel TVMAll9Null = new TransactionViewModel(
-            get9Transaction(), Hash.NULL_HASH);
+            TransactionTestUtils.get9Transaction(), Hash.NULL_HASH);
     
     //Bad
     private static final TransactionViewModel TVMAll9NotNull = new TransactionViewModel(
-            get9Transaction(), TransactionViewModelTest.getRandomTransactionHash()); 
+            TransactionTestUtils.get9Transaction(), getRandomTransactionHash()); 
     
     private static Tangle tangle;
     private static Node node;
@@ -111,25 +112,6 @@ public class TransactionRequesterWorkerImplTest {
        assertTrue(worker.isValidTransaction(TVMAll9Null));
        
        assertFalse(worker.isValidTransaction(TVMAll9NotNull));
-    }
-    
-    private static Transaction getRandomTransaction(Random seed) {
-        Transaction transaction = TransactionViewModelTest.getRandomTransaction(seed);
-        
-        transaction.type = TransactionViewModel.FILLED_SLOT;
-        transaction.parsed = true;
-        return transaction;
-    }
-    
-    private static Transaction get9Transaction() {
-        Transaction transaction = new Transaction();
-
-        byte[] trits = new byte[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
-        Arrays.fill(trits, (byte) 1);
-
-        transaction.bytes = Converter.allocateBytesForTrits(trits.length);
-        Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
-        return transaction;
     }
     
     private static void setFinalStatic(Field field, Object newValue) throws Exception {

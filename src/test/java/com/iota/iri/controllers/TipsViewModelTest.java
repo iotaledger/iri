@@ -8,11 +8,9 @@ import com.iota.iri.model.Hash;
 
 import java.util.concurrent.ExecutionException;
 
+import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.*;
 
-/**
- * Created by paul on 5/2/17.
- */
 public class TipsViewModelTest {
     @Before
     public void setUp() throws Exception {
@@ -80,7 +78,7 @@ public class TipsViewModelTest {
         int capacity = TipsViewModel.MAX_TIPS;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             tipsVM.addTipHash(hash);
         }
         //check that limit wasn't breached
@@ -93,7 +91,7 @@ public class TipsViewModelTest {
         int capacity = TipsViewModel.MAX_TIPS;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             tipsVM.addTipHash(hash);
             tipsVM.setSolid(hash);
         }
@@ -107,7 +105,7 @@ public class TipsViewModelTest {
         int capacity = TipsViewModel.MAX_TIPS;
         //fill tips list
         for (int i = 0; i <= capacity * 4; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             tipsVM.addTipHash(hash);
             if (i % 2 == 1) {
                 tipsVM.setSolid(hash);

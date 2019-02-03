@@ -11,11 +11,10 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.*;
 
-/**
- * Created by paul on 5/2/17.
- */
+
 public class TransactionRequesterTest {
     private static Tangle tangle = new Tangle();
     private static SnapshotProvider snapshotProvider;
@@ -82,7 +81,7 @@ public class TransactionRequesterTest {
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             txReq.requestTransaction(hash,false);
         }
         //check that limit wasn't breached
@@ -95,7 +94,7 @@ public class TransactionRequesterTest {
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             txReq.requestTransaction(hash,true);
         }
         //check that limit was surpassed
@@ -108,7 +107,7 @@ public class TransactionRequesterTest {
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 4 ; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             txReq.requestTransaction(hash, (i % 2 == 1));
 
         }

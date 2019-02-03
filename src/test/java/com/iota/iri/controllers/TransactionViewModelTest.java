@@ -3,9 +3,7 @@ package com.iota.iri.controllers;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
@@ -16,6 +14,7 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,7 +23,9 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.Set;
 
+import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.*;
+
 
 public class TransactionViewModelTest {
 
@@ -411,46 +412,5 @@ public class TransactionViewModelTest {
 
         TransactionViewModel result = TransactionViewModel.first(tangle);
         Assert.assertEquals(transactionViewModel.getHash(), result.getHash());
-    }
-
-    public static Transaction getRandomTransaction(Random seed) {
-        Transaction transaction = new Transaction();
-
-        byte[] trits = new byte[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
-        for(int i = 0; i < trits.length; i++) {
-            trits[i] = (byte) (seed.nextInt(3) - 1);
-        }
-
-        transaction.bytes = Converter.allocateBytesForTrits(trits.length);
-        Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
-        return transaction;
-    }
-    
-    public static byte[] getRandomTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {
-        byte[] trits = getRandomTransactionTrits();
-        System.arraycopy(trunk.trits(), 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
-                TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
-        System.arraycopy(branch.trits(), 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
-                TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
-        return trits;
-    }
-    public static byte[] getRandomTransactionTrits() {
-        byte[] out = new byte[TransactionViewModel.TRINARY_SIZE];
-
-        for(int i = 0; i < out.length; i++) {
-            out[i] = (byte) (seed.nextInt(3) - 1);
-        }
-
-        return out;
-    }
-
-    public static Hash getRandomTransactionHash() {
-        byte[] out = new byte[Hash.SIZE_IN_TRITS];
-
-        for(int i = 0; i < out.length; i++) {
-            out[i] = (byte) (seed.nextInt(3) - 1);
-        }
-
-        return HashFactory.TRANSACTION.create(out);
     }
 }

@@ -15,7 +15,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static com.iota.iri.controllers.TransactionViewModelTest.*;
+
+import static com.iota.iri.TransactionTestUtils.*;
 
 public class RatingOneTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();

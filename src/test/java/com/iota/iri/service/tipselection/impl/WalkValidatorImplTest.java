@@ -4,7 +4,6 @@ import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -14,29 +13,30 @@ import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
-
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
 import static com.iota.iri.TransactionTestUtils.*;
 
 import java.util.HashMap;
 import java.util.HashSet;
 
-
-
-@RunWith(MockitoJUnitRunner.class)
 public class WalkValidatorImplTest {
+    
+    @Rule 
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
     private static SnapshotProvider snapshotProvider;
     private TipSelConfig config = new MainnetConfig();
+    
     @Mock
     private static LedgerService ledgerService;
 

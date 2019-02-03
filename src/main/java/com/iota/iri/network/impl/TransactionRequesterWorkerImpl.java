@@ -131,11 +131,13 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
         }
     }
 
-    public boolean isActive() {
+    //Package Private For Testing
+    boolean isActive() {
         return transactionRequester.numberOfTransactionsToRequest() >= REQUESTER_THREAD_ACTIVATION_THRESHOLD;
     }
 
-    public boolean isValidTransaction(TransactionViewModel transaction) {
+    //Package Private For Testing
+    boolean isValidTransaction(TransactionViewModel transaction) {
         return transaction != null && (transaction.getType() != TransactionViewModel.PREFILLED_SLOT
                         || transaction.getHash().equals(Hash.NULL_HASH));
     }
@@ -160,7 +162,8 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
      * @return a random tip
      * @throws Exception if anything unexpected happens while trying to retrieve the random tip.
      */
-    public TransactionViewModel getTransactionToSendWithRequest() throws Exception {
+    //Package Private For Testing
+    TransactionViewModel getTransactionToSendWithRequest() throws Exception {
         Hash tip = tipsViewModel.getRandomSolidTipHash();
         if (tip == null) {
             tip = tipsViewModel.getRandomNonSolidTipHash();

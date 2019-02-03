@@ -11,10 +11,7 @@ import static org.junit.Assert.assertFalse;
 
 import static org.mockito.Mockito.*;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.util.LinkedList;
-import java.util.Random;
 
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
@@ -34,9 +31,9 @@ public class TransactionRequesterWorkerImplTest {
     
     //Good
     private static final TransactionViewModel TVMRandomNull = new TransactionViewModel(
-            TransactionTestUtils.getRandomTransaction(new Random()), Hash.NULL_HASH);
+            TransactionTestUtils.getRandomTransaction(), Hash.NULL_HASH);
     private static final TransactionViewModel TVMRandomNotNull = new TransactionViewModel(
-            TransactionTestUtils.getRandomTransaction(new Random()), getRandomTransactionHash());
+            TransactionTestUtils.getRandomTransaction(), getRandomTransactionHash());
     private static final TransactionViewModel TVMAll9Null = new TransactionViewModel(
             TransactionTestUtils.get9Transaction(), Hash.NULL_HASH);
     
@@ -95,18 +92,18 @@ public class TransactionRequesterWorkerImplTest {
         when(fakeWorker.isValidTransaction(any())).thenCallRealMethod();
         when(fakeWorker.processRequestQueue()).thenCallRealMethod();
         
-        assertTrue(fakeWorker.processRequestQueue());
-        assertTrue(fakeWorker.processRequestQueue());
-        assertTrue(fakeWorker.processRequestQueue());
-        assertFalse(fakeWorker.processRequestQueue());
+        assertTrue("Null transaction hash should be processed", fakeWorker.processRequestQueue());
+        assertTrue("Not null transaction hash should be processed", fakeWorker.processRequestQueue());
+        assertTrue("Null transaction hash should be processed", fakeWorker.processRequestQueue());
+        assertFalse("All 9s transaction should not be processed", fakeWorker.processRequestQueue());
     }
     
     @Test
     public void validTipToAddTest() throws Exception {
-       assertTrue(worker.isValidTransaction(TVMRandomNull));
-       assertTrue(worker.isValidTransaction(TVMRandomNotNull));
-       assertTrue(worker.isValidTransaction(TVMAll9Null));
+       assertTrue("Null transaction hash should always be accepted", worker.isValidTransaction(TVMRandomNull));
+       assertTrue("Not null transaction hash should always be accepted", worker.isValidTransaction(TVMRandomNotNull));
+       assertTrue("Null transaction hash should always be accepted", worker.isValidTransaction(TVMAll9Null));
        
-       assertFalse(worker.isValidTransaction(TVMAll9NotNull));
+       assertFalse("All 9s transaction should not be accepted", worker.isValidTransaction(TVMAll9NotNull));
     }
 }

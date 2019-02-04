@@ -76,7 +76,7 @@ public class ConfigTest {
                 "--testnet-coordinator", "TTTTTTTTT",
                 "--test-no-coo-validation", "true",
                 //this should be ignored everywhere
-                "--fake-config", "true"
+                "--fake-config"
         };
         IotaConfig iotaConfig = ConfigFactory.createIotaConfig(false);
         Assert.assertThat("wrong config class created", iotaConfig, CoreMatchers.instanceOf(MainnetConfig.class));
@@ -113,7 +113,7 @@ public class ConfigTest {
 
     @Test
     public void testRemoteFlag() {
-        String[] args = {"--remote", "true"};
+        String[] args = {"--remote", "false"};
         IotaConfig iotaConfig = ConfigFactory.createIotaConfig(false);
         iotaConfig.parseConfigFromArgs(args);
         Assert.assertEquals("The api interface should be open to the public", "0.0.0.0", iotaConfig.getApiHost());
@@ -148,7 +148,7 @@ public class ConfigTest {
                 "--testnet-coordinator", "TTTTTTTTT",
                 "--testnet-no-coo-validation", "true",
                 //this should be ignored everywhere
-                "--fake-config", "true"
+                "--fake-config"
         };
         IotaConfig iotaConfig = ConfigFactory.createIotaConfig(true);
         Assert.assertThat("wrong config class created", iotaConfig, CoreMatchers.instanceOf(TestnetConfig.class));

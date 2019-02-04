@@ -24,7 +24,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected static final String SPLIT_STRING_TO_LIST_REGEX = ",| ";
 
     private boolean help;
-    private boolean fakeconfig;
     private boolean testnet = false;
     
     //API
@@ -36,6 +35,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
+    
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
@@ -136,17 +136,6 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setTestnet(boolean testnet) {
         this.testnet = testnet;
     }
-    
-    @Override
-    public boolean isFakeconfig() {
-        return fakeconfig;
-    }
-    
-    @JsonIgnore
-    @Parameter(names = {Config.FAKE_CONFIG_FLAG}, description = Config.Descriptions.FAKE_CONFIG, arity = 1)
-    protected void setFakeConfig(boolean fakeconfig) {
-        this.fakeconfig = fakeconfig;
-    }
 
     @JsonProperty
     @Parameter(names = {"--help", "-h"} , help = true, hidden = true)
@@ -179,7 +168,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @JsonIgnore
     @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE, arity = 1)
     protected void setRemote(boolean remote) {
-        if (!remote) this.apiHost = "0.0.0.0";
+        if (remote) this.apiHost = "0.0.0.0";
+        
+        // For consistency in this file, we set the field, but this is actually unused
         this.remote = remote;
     }
 

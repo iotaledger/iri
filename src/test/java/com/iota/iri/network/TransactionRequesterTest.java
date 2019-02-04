@@ -118,7 +118,7 @@ public class TransactionRequesterTest {
         assertEquals("Queue capacity breached!!", capacity, txReq.numberOfTransactionsToRequest());
         // None of the eldest transactions should be in the pool
         for (int i = 0; i < 3; i++) {
-            assertFalse(txReq.isTransactionRequested(eldest.get(i), false));
+            assertFalse("Old transaction has been requested", txReq.isTransactionRequested(eldest.get(i), false));
         }
     }
 

@@ -10,10 +10,8 @@ import static org.junit.Assert.assertFalse;
 
 import org.mockito.Answers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
-import org.mockito.stubbing.Answer;
 
 import com.iota.iri.TangleMockUtils;
 import com.iota.iri.controllers.TipsViewModel;
@@ -27,8 +25,12 @@ import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.zmq.MessageQ;
 
-import static com.iota.iri.TransactionTestUtils.*;
-import static org.mockito.Mockito.*;
+import static com.iota.iri.TransactionTestUtils.getRandomTransaction;
+import static com.iota.iri.TransactionTestUtils.get9Transaction;
+import static com.iota.iri.TransactionTestUtils.buildTransaction;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
+
+import static org.mockito.Mockito.when;
 
 public class TransactionRequesterWorkerImplTest {
     

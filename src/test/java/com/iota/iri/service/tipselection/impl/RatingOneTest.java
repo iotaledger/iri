@@ -15,8 +15,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-
-import static com.iota.iri.TransactionTestUtils.*;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionWithTrunkAndBranch;
 
 public class RatingOneTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();

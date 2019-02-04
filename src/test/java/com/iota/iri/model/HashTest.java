@@ -4,7 +4,7 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.utils.Converter;
 
-import static com.iota.iri.TransactionTestUtils.*;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
 
 import org.junit.Assert;
 import org.junit.Test;

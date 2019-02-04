@@ -13,7 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static com.iota.iri.TransactionTestUtils.*;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
 
 public class BundleViewModelTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();

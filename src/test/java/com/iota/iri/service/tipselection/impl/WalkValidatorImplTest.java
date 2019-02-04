@@ -21,7 +21,8 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import static com.iota.iri.TransactionTestUtils.*;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionWithTrunkAndBranch;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
 
 import java.util.HashMap;
 import java.util.HashSet;

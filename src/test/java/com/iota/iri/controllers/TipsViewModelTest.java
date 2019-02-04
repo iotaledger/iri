@@ -8,7 +8,8 @@ import com.iota.iri.model.Hash;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.iota.iri.TransactionTestUtils.*;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
+
 import static org.junit.Assert.*;
 
 public class TipsViewModelTest {

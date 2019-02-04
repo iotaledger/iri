@@ -57,6 +57,14 @@ public class TangleMockUtils {
 
     //region [mockTransaction] /////////////////////////////////////////////////////////////////////////////////////////
 
+    /**
+     * Creates an empty transaction, which is marked filled and parsed.
+     * This transaction is returned when the hash is asked to load in the tangle object
+     * 
+     * @param tangle mocked tangle object that shall retrieve a milestone object when being queried for it
+     * @param hash
+     * @return The newly created (empty) transaction
+     */
     public static Transaction mockTransaction(Tangle tangle, Hash hash) {
         Transaction transaction = new Transaction();
         transaction.bytes = new byte[0];
@@ -66,6 +74,14 @@ public class TangleMockUtils {
         return mockTransaction(tangle, hash, transaction);
     }
     
+    /**
+     * Mocks the tangle object by checking for the hash and returning the transaction.
+     * 
+     * @param tangle mocked tangle object that shall retrieve a milestone object when being queried for it
+     * @param hash transaction hash
+     * @param transaction the transaction we send back
+     * @return The transaction
+     */
     public static Transaction mockTransaction(Tangle tangle, Hash hash, Transaction transaction) {
         try {
             Mockito.when(tangle.load(Transaction.class, hash)).thenReturn(transaction);

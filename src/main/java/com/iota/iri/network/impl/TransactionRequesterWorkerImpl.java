@@ -138,9 +138,10 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
 
     //Package Private For Testing
     boolean isValidTransaction(TransactionViewModel transaction) {
-        return transaction != null && (transaction.getType() != TransactionViewModel.PREFILLED_SLOT
-                        || transaction.getHash().equals(Hash.NULL_HASH));
-    }
+        return transaction != null && (
+                transaction.getType() != TransactionViewModel.PREFILLED_SLOT
+             || transaction.getHash().equals(Hash.NULL_HASH));
+    }                                     
 
     @Override
     public void start() {

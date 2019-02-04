@@ -10,8 +10,10 @@ import static org.junit.Assert.assertFalse;
 
 import org.mockito.Answers;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
+import org.mockito.stubbing.Answer;
 
 import com.iota.iri.TangleMockUtils;
 import com.iota.iri.controllers.TipsViewModel;
@@ -32,15 +34,16 @@ public class TransactionRequesterWorkerImplTest {
     
     //Good
     private static final TransactionViewModel TVMRandomNull = new TransactionViewModel(
-            getRandomTransactionFilledParsed(), Hash.NULL_HASH);
+            getRandomTransaction(), Hash.NULL_HASH);
     private static final TransactionViewModel TVMRandomNotNull = new TransactionViewModel(
-            getRandomTransactionFilledParsed(), getRandomTransactionHash());
+            getRandomTransaction(), getRandomTransactionHash());
     private static final TransactionViewModel TVMAll9Null = new TransactionViewModel(
             get9Transaction(), Hash.NULL_HASH);
-    
-    //Bad
     private static final TransactionViewModel TVMAll9NotNull = new TransactionViewModel(
             get9Transaction(), getRandomTransactionHash()); 
+    
+    //Bad
+    private static final TransactionViewModel TVMNullNull = new TransactionViewModel((Transaction)null, Hash.NULL_HASH); 
     
     @Rule 
     public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -54,6 +57,7 @@ public class TransactionRequesterWorkerImplTest {
     private static TransactionRequester requester;
     private static TransactionRequesterWorkerImpl worker;
 
+    @Mock
     private Tangle tangle;
     
     @Mock
@@ -64,9 +68,6 @@ public class TransactionRequesterWorkerImplTest {
 
     @Before
     public void before() throws NoSuchFieldException, SecurityException, Exception {
-        tangle = new Tangle();
-        tangle.init();
-        
         requester = new TransactionRequester(tangle, snapshotProvider, messageQ);
         
         worker = new TransactionRequesterWorkerImpl();
@@ -89,30 +90,38 @@ public class TransactionRequesterWorkerImplTest {
     
     @Test
     public void processRequestQueueTest() throws Exception {
+        //getTransactionToSendWithRequest starts reading from solid tips, so mock data from that call
         when(tipsVM.getRandomSolidTipHash()).thenReturn(
                 TVMRandomNull.getHash(), 
                 TVMRandomNotNull.getHash(), 
                 TVMAll9Null.getHash(), 
-                TVMAll9NotNull.getHash());
-        TangleMockUtils.mockTransaction(tangle, TVMRandomNull.getHash(), buildTransaction(TVMRandomNull.trits()));
-        TangleMockUtils.mockTransaction(tangle, TVMRandomNotNull.getHash(), buildTransaction(TVMRandomNotNull.trits()));
-        TangleMockUtils.mockTransaction(tangle, TVMAll9Null.getHash(), buildTransaction(TVMAll9Null.trits()));
-        TangleMockUtils.mockTransaction(tangle, TVMAll9NotNull.getHash(), buildTransaction(TVMAll9NotNull.trits()));
+                TVMAll9NotNull.getHash(),
+                TVMNullNull.getHash(),
+                null);
         
-        addRequest(TVMRandomNull);
-        addRequest(TVMRandomNotNull);
-        addRequest(TVMAll9Null);
-        addRequest(TVMAll9NotNull);
+        assertFalse("Unfilled queue shouldnt process", worker.processRequestQueue());
         
+        //Requester never goes down since nodes don't really request
         fillRequester();
         
+        TangleMockUtils.mockTransaction(tangle, TVMRandomNull.getHash(), buildTransaction(TVMRandomNull.trits()));
         assertTrue("Null transaction hash should be processed", worker.processRequestQueue());
-        addRequest();
+        
+        TangleMockUtils.mockTransaction(tangle, TVMRandomNotNull.getHash(), buildTransaction(TVMRandomNotNull.trits()));
         assertTrue("Not null transaction hash should be processed", worker.processRequestQueue());
-        addRequest();
+       
+        TangleMockUtils.mockTransaction(tangle, TVMAll9Null.getHash(), buildTransaction(TVMAll9Null.trits()));
         assertTrue("Null transaction hash should be processed", worker.processRequestQueue());
-        addRequest();
-        assertFalse("All 9s transaction should not be processed", worker.processRequestQueue());
+        
+        TangleMockUtils.mockTransaction(tangle, TVMAll9NotNull.getHash(), buildTransaction(TVMAll9NotNull.trits()));
+        assertTrue("All 9s transaction should be processed", worker.processRequestQueue());
+        
+        // Null gets loaded as all 0, so type is 0 -> Filled
+        TangleMockUtils.mockTransaction(tangle, TVMNullNull.getHash(), null);
+        assertTrue("0 transaction should be processed", worker.processRequestQueue());
+        
+        // null -> NULL_HASH -> gets loaded as all 0 -> filled
+        assertTrue("Null transaction should be processed", worker.processRequestQueue());
     }
 
     @Test
@@ -120,8 +129,12 @@ public class TransactionRequesterWorkerImplTest {
        assertTrue("Null transaction hash should always be accepted", worker.isValidTransaction(TVMRandomNull));
        assertTrue("Not null transaction hash should always be accepted", worker.isValidTransaction(TVMRandomNotNull));
        assertTrue("Null transaction hash should always be accepted", worker.isValidTransaction(TVMAll9Null));
+       assertTrue("All 9s transaction should be accepted", worker.isValidTransaction(TVMAll9NotNull));
        
-       assertFalse("All 9s transaction should not be accepted", worker.isValidTransaction(TVMAll9NotNull));
+       // Null gets loaded as all 0, so type is 0 -> Filled
+       assertTrue("0 transaction should be accepted", worker.isValidTransaction(TVMNullNull));
+       
+       assertFalse("Null transaction should not be accepted", worker.isValidTransaction(null));
     }
     
     private void fillRequester() throws Exception {
@@ -134,14 +147,5 @@ public class TransactionRequesterWorkerImplTest {
         Hash randomHash = getRandomTransactionHash();
         TangleMockUtils.mockTransaction(tangle, randomHash);
         requester.requestTransaction(randomHash, false);
-    }
-    
-    private void addRequest(TransactionViewModel tvm) throws Exception {
-        addRequest(buildTransaction(tvm.trits()), tvm.getHash());
-    }
-    
-    private void addRequest(Transaction transaction, Hash hash) throws Exception {
-        TangleMockUtils.mockTransaction(tangle, hash, transaction);
-        requester.requestTransaction(hash, false);
     }
 }

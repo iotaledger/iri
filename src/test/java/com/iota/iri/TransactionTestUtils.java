@@ -166,21 +166,6 @@ public class TransactionTestUtils {
     }
     
     /**
-     * Generates a random transaction, which is marked as filled and parsed.
-     * 
-     * @return The transaction
-     * @see #getRandomTransaction()
-     */
-    public static Transaction getRandomTransactionFilledParsed() {
-        Transaction transaction = getRandomTransaction();
-        
-        transaction.type = TransactionViewModel.FILLED_SLOT;
-        transaction.parsed = true;
-        
-        return transaction;
-    }
-    
-    /**
      * Generates a random transaction.
      * 
      * @return The transaction
@@ -205,8 +190,8 @@ public class TransactionTestUtils {
      * @return The transaction
      */
     public static Transaction get9Transaction() {
-        byte[] trits = new byte[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
-        Arrays.fill(trits, (byte) 1);
+        byte[] trits = new byte[TransactionViewModel.TRINARY_SIZE];
+        Arrays.fill(trits, (byte) 0);
 
         return buildTransaction(trits);
     }
@@ -232,6 +217,7 @@ public class TransactionTestUtils {
         
         transaction.bytes = Converter.allocateBytesForTrits(trits.length);
         Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
+        transaction.readMetadata( transaction.bytes);
         return transaction;
     }
 

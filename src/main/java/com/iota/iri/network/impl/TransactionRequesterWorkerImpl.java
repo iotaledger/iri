@@ -30,7 +30,7 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
     /**
      * The minimum amount of transactions in the request queue that are required for the worker to trigger.<br />
      */
-    private static final int REQUESTER_THREAD_ACTIVATION_THRESHOLD = 50;
+    public static final int REQUESTER_THREAD_ACTIVATION_THRESHOLD = 50;
 
     /**
      * The time (in milliseconds) that the worker waits between its iterations.<br />

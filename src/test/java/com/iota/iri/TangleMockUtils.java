@@ -63,6 +63,10 @@ public class TangleMockUtils {
         transaction.type = TransactionViewModel.FILLED_SLOT;
         transaction.parsed = true;
 
+        return mockTransaction(tangle, hash, transaction);
+    }
+    
+    public static Transaction mockTransaction(Tangle tangle, Hash hash, Transaction transaction) {
         try {
             Mockito.when(tangle.load(Transaction.class, hash)).thenReturn(transaction);
             Mockito.when(tangle.getLatest(Transaction.class, Hash.class)).thenReturn(new Pair<>(hash, transaction));

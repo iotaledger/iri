@@ -220,6 +220,20 @@ public class TransactionTestUtils {
         byte[] out = getRandomTrits(Hash.SIZE_IN_TRITS);
         return HashFactory.TRANSACTION.create(out);
     }
+    
+    /**
+     * Builds a transaction by transforming trits to bytes.
+     * 
+     * @param trits The trits to build the transaction
+     * @return The created transaction
+     */
+    public static Transaction buildTransaction(byte[] trits) {
+        Transaction transaction = new Transaction();
+        
+        transaction.bytes = Converter.allocateBytesForTrits(trits.length);
+        Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
+        return transaction;
+    }
 
     /**
      * Appends 9s to the supplied trytes until the trytes are of size {@link TransactionViewModel.TRYTES_SIZE}.
@@ -244,19 +258,5 @@ public class TransactionTestUtils {
             out[i] = (byte) (seed.nextInt(3) - 1);
         }
         return out;
-    }
-    
-    /**
-     * Builds a transaction by transforming trits to bytes.
-     * 
-     * @param trits The trits to build the transaction
-     * @return The created transaction
-     */
-    private static Transaction buildTransaction(byte[] trits) {
-        Transaction transaction = new Transaction();
-        
-        transaction.bytes = Converter.allocateBytesForTrits(trits.length);
-        Converter.bytes(trits, 0, transaction.bytes, 0, trits.length);
-        return transaction;
     }
 }

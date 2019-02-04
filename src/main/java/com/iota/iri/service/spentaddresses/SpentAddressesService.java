@@ -13,9 +13,10 @@ import java.util.Collection;
 public interface SpentAddressesService {
     
     /**
-     * 
-     * @param addressHash
-     * @return <code>true</code> if it was, else <code>false</code>
+     * Checks whether the address is associated with a valid signed output
+     *
+     * @param addressHash the address in question
+     * @return <code>true</code> if the address was spent from, else <code>false</code>
      * @throws SpentAddressesException
      */
     boolean wasAddressSpentFrom(Hash addressHash) throws SpentAddressesException;

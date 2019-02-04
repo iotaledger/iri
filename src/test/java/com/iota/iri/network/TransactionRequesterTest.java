@@ -1,8 +1,8 @@
-package com.iota.iri.controllers;
+package com.iota.iri.network;
 
 import com.iota.iri.conf.MainnetConfig;
+import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
@@ -10,6 +10,10 @@ import com.iota.iri.zmq.MessageQ;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.Assert.*;
 
@@ -74,6 +78,48 @@ public class TransactionRequesterTest {
     @Test
     public void instance() throws Exception {
 
+    }
+
+    @Test
+    public void popEldestTransactionToRequest() throws Exception {
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        // Add some Txs to the pool and see if the method pops the eldest one
+        Hash eldest = TransactionViewModelTest.getRandomTransactionHash();
+        txReq.requestTransaction(eldest, false);
+        txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
+        txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
+        txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
+
+        txReq.popEldestTransactionToRequest();
+        // Check that the transaction is there no more
+        assertFalse(txReq.isTransactionRequested(eldest, false));
+    }
+
+    @Test
+    public void transactionRequestedFreshness() throws Exception {
+        // Add some Txs to the pool and see if the method pops the eldest one
+        List<Hash> eldest = new ArrayList<Hash>(Arrays.asList(
+                TransactionViewModelTest.getRandomTransactionHash(),
+                TransactionViewModelTest.getRandomTransactionHash(),
+                TransactionViewModelTest.getRandomTransactionHash()
+        ));
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
+        //fill tips list
+        for (int i = 0; i < 3; i++) {
+            txReq.requestTransaction(eldest.get(i), false);
+        }
+        for (int i = 0; i < capacity; i++) {
+            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            txReq.requestTransaction(hash,false);
+        }
+
+        //check that limit wasn't breached
+        assertEquals("Queue capacity breached!!", capacity, txReq.numberOfTransactionsToRequest());
+        // None of the eldest transactions should be in the pool
+        for (int i = 0; i < 3; i++) {
+            assertFalse("Old transaction has been requested", txReq.isTransactionRequested(eldest.get(i), false));
+        }
     }
 
     @Test

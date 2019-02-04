@@ -71,11 +71,28 @@ public class TransactionRequester {
                     transactionsToRequest.remove(hash);
                     milestoneTransactionsToRequest.add(hash);
                 } else {
-                    if(!milestoneTransactionsToRequest.contains(hash) && !transactionsToRequestIsFull()) {
+                    if(!milestoneTransactionsToRequest.contains(hash)) {
+                        if (transactionsToRequestIsFull()) {
+                            popEldestTransactionToRequest();
+                        }
                         transactionsToRequest.add(hash);
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * This method removes the oldest transaction in the transactionsToRequest Set.
+     *
+     * It used when the queue capacity is reached, and new transactions would be dropped as a result.
+     */
+    // @VisibleForTesting
+    void popEldestTransactionToRequest() {
+        Iterator<Hash> iterator = transactionsToRequest.iterator();
+        if (iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
         }
     }
 
@@ -111,13 +128,14 @@ public class TransactionRequester {
         synchronized (syncObj) {
             // repeat while we have transactions that shall be requested
             while (requestSet.size() != 0) {
-                // remove the first item in our set for further examination
+                // get the first item in our set for further examination
                 Iterator<Hash> iterator = requestSet.iterator();
                 hash = iterator.next();
-                iterator.remove();
 
                 // if we have received the transaction in the mean time ....
                 if (TransactionViewModel.exists(tangle, hash)) {
+                    // we remove the transaction from the queue since we got it
+                    iterator.remove();
                     // ... dump a log message ...
                     log.info("Removed existing tx from request list: " + hash);
                     messageQ.publish("rtl %s", hash);
@@ -125,11 +143,6 @@ public class TransactionRequester {
                     // ... and continue to the next element in the set
                     continue;
                 }
-
-                // ... otherwise -> re-add it at the end of the set ...
-                //
-                // Note: we always have enough space since we removed the element before
-                requestSet.add(hash);
 
                 // ... and abort our loop to continue processing with the element we found
                 break;

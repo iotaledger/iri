@@ -69,7 +69,7 @@ public class TransactionRequesterWorkerImplTest {
     private TipsViewModel tipsVM;
 
     @Before
-    public void before() throws NoSuchFieldException, SecurityException, Exception {
+    public void before() {
         requester = new TransactionRequester(tangle, snapshotProvider, messageQ);
         
         worker = new TransactionRequesterWorkerImpl();
@@ -77,7 +77,7 @@ public class TransactionRequesterWorkerImplTest {
     }
     
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         worker.shutdown();
     }
     

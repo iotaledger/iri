@@ -27,7 +27,9 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.iota.iri.TransactionTestUtils.*;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionWithTrunkAndBranch;
 
 public class WalkerAlphaTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();

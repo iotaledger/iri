@@ -23,7 +23,10 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.Set;
 
-import static com.iota.iri.TransactionTestUtils.*;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionWithTrunkAndBranch;
+
 import static org.junit.Assert.*;
 
 public class TransactionViewModelTest {

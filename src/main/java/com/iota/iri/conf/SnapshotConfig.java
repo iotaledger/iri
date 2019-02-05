@@ -60,10 +60,6 @@ public interface SnapshotConfig extends Config {
      */
     String getLocalSnapshotsBasePath();
 
-    /**
-     * @return {@value Descriptions#NUMBER_OF_KEYS_IN_A_MILESTONE}
-     */
-    int getNumberOfKeysInMilestone();
 
     /**
      * @return {@value Descriptions#PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE}
@@ -94,8 +90,6 @@ public interface SnapshotConfig extends Config {
         String SNAPSHOT_SIGNATURE_FILE = "Path to the file that contains a signature for the snapshot file.";
         String MILESTONE_START_INDEX = "The start index of the milestones. This index is encoded in each milestone " +
                 "transaction by the coordinator.";
-        String NUMBER_OF_KEYS_IN_A_MILESTONE = "The depth of the Merkle tree which in turn determines the number of" +
-                "leaves (private keys) that the coordinator can use to sign a message.";
         String PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE = "The file that contains the list of all used addresses " +
                 "from previous epochs";
         String SPENT_ADDRESSES_DB_PATH = "The folder where the spent addresses DB saves its data.";

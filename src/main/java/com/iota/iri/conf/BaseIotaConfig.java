@@ -1,18 +1,17 @@
 package com.iota.iri.conf;
 
-import com.iota.iri.IRI;
-import com.iota.iri.utils.IotaUtils;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import com.iota.iri.IRI;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /*
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -699,6 +698,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public int getCoordinatorSecurityLevel() {
+        return Defaults.COORDINATOR_SECURITY_LEVEL;
+    }
+
+    @Override
+    public SpongeFactory.Mode getCoordinatorSignatureMode() {
+        return Defaults.COORDINATOR_SIGNATURE_MODE;
+    }
+
+    @Override
     public boolean isDontValidateTestnetMilestoneSig() {
         return false;
     }
@@ -824,6 +833,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //Coo
         String COORDINATOR_ADDRESS =
                 "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
+        int COORDINATOR_SECURITY_LEVEL = 1;
+        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
+        int NUM_KEYS_IN_MILESTONE = 20;
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
@@ -846,7 +858,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
                         "/previousEpochsSpentAddresses3.txt";
         long GLOBAL_SNAPSHOT_TIME = 1545469620;
         int MILESTONE_START_INDEX = 933_210;
-        int NUM_KEYS_IN_MILESTONE = 20;
         int MAX_ANALYZED_TXS = 20_000;
+
     }
 }

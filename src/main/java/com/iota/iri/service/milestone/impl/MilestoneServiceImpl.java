@@ -21,17 +21,17 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.dag.DAGHelper;
 import com.iota.iri.zmq.MessageQ;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 import static com.iota.iri.controllers.TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET;
-import static com.iota.iri.service.milestone.MilestoneValidity.INCOMPLETE;
-import static com.iota.iri.service.milestone.MilestoneValidity.INVALID;
-import static com.iota.iri.service.milestone.MilestoneValidity.VALID;
+import static com.iota.iri.service.milestone.MilestoneValidity.*;
 
 /**
  * Creates a service instance that allows us to perform milestone specific operations.<br />
@@ -65,9 +65,31 @@ public class MilestoneServiceImpl implements MilestoneService {
     private MessageQ messageQ;
 
     /**
-     * Holds the config with important milestone specific settings.<br />
+     * Holds the coordinator address which is used to validate signatures.<br />
      */
-    private ConsensusConfig config;
+    private Hash coordinatorAddress;
+
+    /**
+     * Holds the coordinator signature mode which is used to validate signatures.<br />
+     */
+    private SpongeFactory.Mode coordinatorSignatureMode;
+
+    /**
+     * Holds the coordinator security level is used to validate signatures.<br />
+     */
+    private int coordinatorSecurityLevel;
+
+    /**
+     * Holds the depth of Merkle tree used for coordinator signatures.<br />
+     */
+    private int numberOfKeysInMilestone;
+
+    /**
+     * Specifies if signatures should be validated.<br />
+     */
+    private boolean skipValidation;
+
+    private int maxMilestoneIndex;
 
     /**
      * This method initializes the instance and registers its dependencies.<br />
@@ -94,7 +116,13 @@ public class MilestoneServiceImpl implements MilestoneService {
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.messageQ = messageQ;
-        this.config = config;
+
+        coordinatorAddress = HashFactory.ADDRESS.create(config.getCoordinator());
+        coordinatorSignatureMode = config.getCoordinatorSignatureMode();
+        coordinatorSecurityLevel = config.getCoordinatorSecurityLevel();
+        numberOfKeysInMilestone = config.getNumberOfKeysInMilestone();
+        skipValidation = (config.isTestnet() && config.isDontValidateTestnetMilestoneSig());
+        maxMilestoneIndex = 1 << config.getNumberOfKeysInMilestone();
 
         return this;
     }
@@ -160,10 +188,10 @@ public class MilestoneServiceImpl implements MilestoneService {
     }
 
     @Override
-    public MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, int milestoneIndex,
-            SpongeFactory.Mode mode, int securityLevel) throws MilestoneException {
+    public MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, int milestoneIndex)
+            throws MilestoneException {
 
-        if (milestoneIndex < 0 || milestoneIndex >= 0x200000) {
+        if (milestoneIndex < 0 || milestoneIndex >= maxMilestoneIndex) {
             return INVALID;
         }
 
@@ -184,32 +212,31 @@ public class MilestoneServiceImpl implements MilestoneService {
                     if (tail.getHash().equals(transactionViewModel.getHash())) {
                         //the signed transaction - which references the confirmed transactions and contains
                         // the Merkle tree siblings.
-                        final TransactionViewModel siblingsTx = bundleTransactionViewModels.get(securityLevel);
+                        final TransactionViewModel siblingsTx =
+                                bundleTransactionViewModels.get(coordinatorSecurityLevel);
 
-                        if (isMilestoneBundleStructureValid(bundleTransactionViewModels, securityLevel)) {
+                        if (isMilestoneBundleStructureValid(bundleTransactionViewModels, coordinatorSecurityLevel)) {
                             //milestones sign the normalized hash of the sibling transaction.
                             byte[] signedHash = ISS.normalizedBundle(siblingsTx.getHash().trits());
 
                             //validate leaf signature
-                            ByteBuffer bb = ByteBuffer.allocate(Curl.HASH_LENGTH * securityLevel);
+                            ByteBuffer bb = ByteBuffer.allocate(Curl.HASH_LENGTH * coordinatorSecurityLevel);
                             byte[] digest = new byte[Curl.HASH_LENGTH];
 
-                            for (int i = 0; i < securityLevel; i++) {
-                                ISSInPlace.digest(mode, signedHash, ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
+                            for (int i = 0; i < coordinatorSecurityLevel; i++) {
+                                ISSInPlace.digest(coordinatorSignatureMode, signedHash,
+                                        ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
                                         bundleTransactionViewModels.get(i).getSignature(), 0, digest);
                                 bb.put(digest);
                             }
 
                             byte[] digests = bb.array();
-                            byte[] address = ISS.address(mode, digests);
+                            byte[] address = ISS.address(coordinatorSignatureMode, digests);
 
                             //validate Merkle path
-                            byte[] merkleRoot = ISS.getMerkleRoot(mode, address,
-                                    siblingsTx.trits(), 0, milestoneIndex, config.getNumberOfKeysInMilestone());
-                            if ((config.isTestnet() && config.isDontValidateTestnetMilestoneSig()) ||
-                                    (HashFactory.ADDRESS.create(merkleRoot)).equals(
-                                            HashFactory.ADDRESS.create(config.getCoordinator()))) {
-
+                            byte[] merkleRoot = ISS.getMerkleRoot(coordinatorSignatureMode, address,
+                                    siblingsTx.trits(), 0, milestoneIndex, numberOfKeysInMilestone);
+                            if (skipValidation || coordinatorAddress.equals(HashFactory.ADDRESS.create(merkleRoot))) {
                                 MilestoneViewModel newMilestoneViewModel = new MilestoneViewModel(milestoneIndex,
                                         transactionViewModel.getHash());
                                 newMilestoneViewModel.store(tangle);

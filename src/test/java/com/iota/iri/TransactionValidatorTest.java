@@ -18,7 +18,7 @@ import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mockito;
 
-import static com.iota.iri.controllers.TransactionViewModelTest.*;
+import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 

@@ -27,9 +27,9 @@ import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionHash;
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionTrits;
-import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionWithTrunkAndBranch;
 
 public class WalkerAlphaTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -165,7 +165,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
         //set a higher rate for transaction2
         rating.put(transaction2.getHash(), 10);
 
@@ -214,7 +214,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
@@ -241,7 +241,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));
@@ -271,7 +271,7 @@ public class WalkerAlphaTest {
 
         //calculate rating
         RatingCalculator ratingCalculator = new RatingOne(tangle);
-       UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
+        UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(transaction.getHash());
 
         //reach the tips
         Hash tip = walker.walk(transaction.getHash(), rating, (o -> true));

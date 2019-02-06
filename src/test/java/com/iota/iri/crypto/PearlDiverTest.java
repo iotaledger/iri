@@ -1,5 +1,6 @@
 package com.iota.iri.crypto;
 
+import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
@@ -54,7 +55,7 @@ public class PearlDiverTest {
     @Ignore("to test pearlDiver iteratively")
     public void testNoRandomFail() {
         for (int i = 0; i < 10000; i++) {
-            byte[] trits = TransactionViewModelTest.getRandomTransactionTrits();
+            byte[] trits = TransactionTestUtils.getRandomTransactionTrits();
             pearlDiver.search(trits, MIN_WEIGHT_MAGNITUDE, NUM_CORES);
             Hash hash = TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits);
             for (int j = Hash.SIZE_IN_TRITS - 1; j > Hash.SIZE_IN_TRITS - MIN_WEIGHT_MAGNITUDE; j--) {

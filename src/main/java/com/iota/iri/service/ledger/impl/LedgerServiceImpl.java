@@ -12,9 +12,13 @@ import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.impl.SnapshotStateDiffImpl;
+import com.iota.iri.service.spentaddresses.SpentAddressesException;
+import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.storage.Tangle;
 
 import java.util.*;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 /**
  * Creates a service instance that allows us to perform ledger state specific operations.<br />
@@ -42,6 +46,8 @@ public class LedgerServiceImpl implements LedgerService {
      */
     private MilestoneService milestoneService;
 
+    private SpentAddressesProvider spentAddressesProvider;
+
     /**
      * Initializes the instance and registers its dependencies.<br />
      * <br />
@@ -61,12 +67,13 @@ public class LedgerServiceImpl implements LedgerService {
      * @return the initialized instance itself to allow chaining
      */
     public LedgerServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            MilestoneService milestoneService) {
+            MilestoneService milestoneService, SpentAddressesProvider spentAddressesProvider) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.milestoneService = milestoneService;
+        this.spentAddressesProvider = spentAddressesProvider;
 
         return this;
     }
@@ -178,6 +185,10 @@ public class LedgerServiceImpl implements LedgerService {
 
                                 for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
 
+                                    //ISSUE 1008: generateBalanceDiff should be refactored so we don't have those hidden
+                                    // concerns
+                                    persistValidatedSpentAddresses(bundleTransactionViewModels);
+
                                     if (BundleValidator.isInconsistent(bundleTransactionViewModels)) {
                                         break;
                                     }
@@ -215,6 +226,14 @@ public class LedgerServiceImpl implements LedgerService {
         }
 
         return state;
+    }
+
+    private void persistValidatedSpentAddresses(List<TransactionViewModel> bundleTransactionViewModels) throws SpentAddressesException {
+        List<Hash> spentAddresses = bundleTransactionViewModels.stream()
+                .filter(tx -> tx.value() < 0)
+                .map(TransactionViewModel::getAddressHash)
+                .collect(Collectors.toList());
+        spentAddressesProvider.saveAddressesBatch(spentAddresses);
     }
 
     /**

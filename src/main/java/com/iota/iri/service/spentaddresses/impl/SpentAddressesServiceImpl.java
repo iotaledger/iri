@@ -35,12 +35,6 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class SpentAddressesServiceImpl implements SpentAddressesService {
-    private static final Logger log = LoggerFactory.getLogger(SpentAddressesServiceImpl.class);
-
-    /**
-     * Value for batch processing that was determined by testing
-     */
-    private static final int BATCH_INTERVAL = 2500;
 
     private Tangle tangle;
 
@@ -76,15 +70,6 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
     @Override
     public boolean wasAddressSpentFrom(Hash addressHash) throws SpentAddressesException {
         return wasAddressSpentFrom(addressHash, getInitialUnspentAddresses());
-    }
-
-    @Override
-    public void persistSpentAddresses(int fromMilestoneIndex, int toMilestoneIndex) throws SpentAddressesException {
-        try{
-            processInBatches(fromMilestoneIndex, toMilestoneIndex, new HashSet<>(), getInitialUnspentAddresses());
-        } catch(Exception e){
-            throw new SpentAddressesException(e);
-        }
     }
 
     @Override
@@ -172,58 +157,6 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
         checkedAddresses.add(addressHash);
         return false;
-    }
-
-    //Processing in batches in order to avoid OOM errors
-    private void processInBatches(int fromMilestoneIndex, int toMilestoneIndex, Collection<Hash> addressesToCheck,
-                                  Set<Hash> checkedAddresses) throws SpentAddressesException {
-        try {
-            int interval = BATCH_INTERVAL;
-            double numBatches = Math.ceil(((double) toMilestoneIndex - fromMilestoneIndex) / interval);
-
-            for (int batch = 0; batch < numBatches; batch++) {
-                int batchStart = batch * interval + fromMilestoneIndex;
-                int batchStop = batchStart + interval <= toMilestoneIndex ? batchStart + interval : toMilestoneIndex;
-
-                for (int i = batchStart; i < batchStop; i++) {
-                    try {
-                        MilestoneViewModel currentMilestone = MilestoneViewModel.get(tangle, i);
-                        if (currentMilestone != null) {
-                            DAGHelper.get(tangle).traverseApprovees(
-                                    currentMilestone.getHash(),
-                                    transactionViewModel -> transactionViewModel.snapshotIndex() >= currentMilestone.index(),
-                                    transactionViewModel -> addressesToCheck.add(transactionViewModel.getAddressHash())
-                            );
-                        }
-                    } catch (Exception e) {
-                        throw new SpentAddressesException(e);
-                    }
-                }
-                checkAddresses(addressesToCheck, checkedAddresses);
-            }
-        }catch(SpentAddressesException e) {
-            throw e;
-        }
-    }
-
-    private void checkAddresses(Collection<Hash> addressesToCheck, Collection<Hash> checkedAddresses)
-            throws SpentAddressesException {
-        //Can only throw runtime exceptions in streams
-        try {
-            spentAddressesProvider.saveAddressesBatch(addressesToCheck.stream()
-                    .filter(ThrowingPredicate.unchecked(address -> wasAddressSpentFrom(address, checkedAddresses)))
-                    .collect(Collectors.toList()));
-
-            //Clear addressesToCheck for next batch
-            addressesToCheck.clear();
-        } catch (RuntimeException e) {
-            if (e.getCause() instanceof SpentAddressesException) {
-                throw (SpentAddressesException) e.getCause();
-            } else {
-                throw e;
-            }
-        }
-
     }
 
     private Set<Hash> getInitialUnspentAddresses() {

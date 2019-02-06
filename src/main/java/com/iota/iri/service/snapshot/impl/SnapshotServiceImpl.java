@@ -496,14 +496,6 @@ public class SnapshotServiceImpl implements SnapshotService {
     private void persistLocalSnapshot(SnapshotProvider snapshotProvider, Snapshot newSnapshot, SnapshotConfig config)
             throws SnapshotException {
 
-        try {
-            spentAddressesService.persistSpentAddresses(snapshotProvider.getInitialSnapshot().getIndex(),
-                    newSnapshot.getIndex());
-            
-        } catch (Exception e) {
-            throw new SnapshotException(e);
-        }
-
         snapshotProvider.writeSnapshotToDisk(newSnapshot, config.getLocalSnapshotsBasePath());
 
         snapshotProvider.getLatestSnapshot().lockWrite();

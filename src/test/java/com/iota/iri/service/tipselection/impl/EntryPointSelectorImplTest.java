@@ -14,21 +14,26 @@ import com.iota.iri.storage.Tangle;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
+import org.junit.Rule;
 import org.junit.Test;
-import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
 
-@RunWith(MockitoJUnitRunner.class)
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class EntryPointSelectorImplTest {
 
+    @Rule 
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
+    
     @Mock
     private LatestMilestoneTracker latestMilestoneTracker;
+    
     @Mock
     private Tangle tangle;
+    
     private static SnapshotProvider snapshotProvider;
 
     @BeforeClass

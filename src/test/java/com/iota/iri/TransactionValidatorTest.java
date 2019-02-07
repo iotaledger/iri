@@ -173,7 +173,7 @@ public class TransactionValidatorTest {
     rightChildLeaf.updateSolid(true);
     rightChildLeaf.store(tangle, snapshotProvider.getInitialSnapshot());
 
-    TransactionViewModel parent = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(leftChildLeaf.getHash(),
+    TransactionViewModel parent = new TransactionViewModel(getTransactionWithTrunkAndBranch(leftChildLeaf.getHash(),
             rightChildLeaf.getHash()), getRandomTransactionHash());
     parent.updateSolid(false);
     parent.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -182,7 +182,7 @@ public class TransactionValidatorTest {
     parentSibling.updateSolid(false);
     parentSibling.store(tangle, snapshotProvider.getInitialSnapshot());
 
-    TransactionViewModel grandParent = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(parent.getHash(),
+    TransactionViewModel grandParent = new TransactionViewModel(getTransactionWithTrunkAndBranch(parent.getHash(),
             parentSibling.getHash()), getRandomTransactionHash());
     grandParent.updateSolid(false);
     grandParent.store(tangle, snapshotProvider.getInitialSnapshot());

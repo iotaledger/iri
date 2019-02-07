@@ -46,6 +46,8 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
     private MilestoneConfig config;
 
+    private BundleValidator bundleValidator;
+
 
     /**
      * Creates a Spent address service using the Tangle
@@ -55,11 +57,13 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
      * @param spentAddressesProvider Provider for loading/saving addresses to a database.
      * @return this instance
      */
-    public SpentAddressesServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SpentAddressesProvider spentAddressesProvider,
+    public SpentAddressesServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
+                                          SpentAddressesProvider spentAddressesProvider, BundleValidator bundleValidator,
                                           MilestoneConfig config) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.spentAddressesProvider = spentAddressesProvider;
+        this.bundleValidator = bundleValidator;
         this.tailFinder = new TailFinderImpl(tangle);
         this.config = config;
 
@@ -104,7 +108,7 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
     private boolean isBundleValid(Hash tailHash) throws Exception {
         List<List<TransactionViewModel>> validation =
-                BundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), tailHash);
+                bundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), tailHash);
         return (CollectionUtils.isNotEmpty(validation) && validation.get(0).get(0).getValidity() == 1);
     }
 

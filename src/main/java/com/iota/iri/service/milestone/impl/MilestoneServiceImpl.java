@@ -69,6 +69,8 @@ public class MilestoneServiceImpl implements MilestoneService {
      */
     private ConsensusConfig config;
 
+    private BundleValidator bundleValidator;
+
     /**
      * This method initializes the instance and registers its dependencies.<br />
      * <br />
@@ -88,11 +90,12 @@ public class MilestoneServiceImpl implements MilestoneService {
      * @return the initialized instance itself to allow chaining
      */
     public MilestoneServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            MessageQ messageQ, ConsensusConfig config) {
+            BundleValidator bundleValidator, MessageQ messageQ, ConsensusConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
+        this.bundleValidator = bundleValidator;
         this.messageQ = messageQ;
         this.config = config;
 
@@ -173,7 +176,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                 return VALID;
             }
 
-            final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle,
+            final List<List<TransactionViewModel>> bundleTransactions = bundleValidator.validate(tangle,
                     snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
             if (bundleTransactions.isEmpty()) {

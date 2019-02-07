@@ -48,6 +48,8 @@ public class LedgerServiceImpl implements LedgerService {
 
     private SpentAddressesProvider spentAddressesProvider;
 
+    private BundleValidator bundleValidator;
+
     /**
      * Initializes the instance and registers its dependencies.<br />
      * <br />
@@ -67,13 +69,15 @@ public class LedgerServiceImpl implements LedgerService {
      * @return the initialized instance itself to allow chaining
      */
     public LedgerServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            MilestoneService milestoneService, SpentAddressesProvider spentAddressesProvider) {
+            MilestoneService milestoneService, SpentAddressesProvider spentAddressesProvider,
+                                  BundleValidator bundleValidator) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.milestoneService = milestoneService;
         this.spentAddressesProvider = spentAddressesProvider;
+        this.bundleValidator = bundleValidator;
 
         return this;
     }
@@ -182,7 +186,7 @@ public class LedgerServiceImpl implements LedgerService {
                             if (transactionViewModel.getCurrentIndex() == 0) {
                                 boolean validBundle = false;
 
-                                final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(
+                                final List<List<TransactionViewModel>> bundleTransactions = bundleValidator.validate(
                                         tangle, snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
                                 for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {

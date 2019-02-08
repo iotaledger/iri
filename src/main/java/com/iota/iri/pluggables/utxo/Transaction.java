@@ -5,7 +5,7 @@ import java.util.*;
 import com.alibaba.fastjson.annotation.JSONField;
 import com.iota.iri.model.*;
 
-class Transaction {
+public class Transaction {
 
     @JSONField(serialize=false)
     Hash txnHash;

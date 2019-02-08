@@ -64,6 +64,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean rescanDb = Defaults.RESCAN_DB;
     protected String graphDbPath = Defaults.GRAPH_DB_PATH;
     protected boolean enableBatchTxns = Defaults.ENABLE_BATCH_TXNS;
+    protected boolean enableIPFSTxns = Defaults.ENABLE_IPFS_TXNS;
+    protected boolean enableCompressionTxns = Defaults.ENABLE_COMPRESSION_TXNS;
 
     //Protocol
     protected double pReplyRandomTip = Defaults.P_REPLY_RANDOM_TIP;
@@ -427,6 +429,28 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--batch-txns"}, description = DbConfig.Descriptions.ENABLE_BATCH_TXNS)
     protected void setEnableBatchTxns(boolean enableBatchTxns) {
         this.enableBatchTxns = enableBatchTxns;
+    }
+
+    @Override
+    public boolean isEnableIPFSTxns() {
+        return enableIPFSTxns;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--ipfs-txns"}, description = DbConfig.Descriptions.ENABLE_IPFS_TXNS)
+    protected void setEnableIPFSTxns(boolean enableIPFSTxns) {
+        this.enableIPFSTxns = enableIPFSTxns;
+    }
+
+    @Override
+    public boolean isEnableCompressionTxns() {
+        return enableCompressionTxns;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--compression-txns"}, description = DbConfig.Descriptions.ENABLE_COMPRESSION_TXNS)
+    protected void setEnableCompressionTxns(boolean enableCompressionTxns) {
+        this.enableCompressionTxns = enableCompressionTxns;
     }
 
     @Override
@@ -873,6 +897,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean RESCAN_DB = false;
         String GRAPH_DB_PATH = "";
         boolean ENABLE_BATCH_TXNS = false;
+        boolean ENABLE_IPFS_TXNS = true;
+        boolean ENABLE_COMPRESSION_TXNS = false;
 
         //Protocol
         double P_REPLY_RANDOM_TIP = 0.66d;

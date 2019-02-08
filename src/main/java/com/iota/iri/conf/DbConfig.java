@@ -45,6 +45,16 @@ public interface DbConfig extends Config {
      */
     boolean isEnableBatchTxns();
 
+    /**
+     * @return {@value Descriptions#ENABLE_IPFS_TXNS}
+     */
+    boolean isEnableIPFSTxns();
+
+    /**
+     * @return {@value Descriptions#ENABLE_COMPRESSION_TXNS}
+     */
+    boolean isEnableCompressionTxns();
+
     interface Descriptions {
 
         String DB_PATH = "The folder where the DB saves its data.";
@@ -55,6 +65,8 @@ public interface DbConfig extends Config {
                 "and transaction metadata.";
         String RESCAN_DB = "Rescan all transaction metadata (Approvees, Bundles, and Tags)";
         String GRAPH_DB_PATH = "Path to the graph database storage.";
-        String ENABLE_BATCH_TXNS = "THE DB engine can be used to store batches of transactions.";
+        String ENABLE_BATCH_TXNS = "The DB engine can be used to store batches of transactions.";
+        String ENABLE_IPFS_TXNS = "The message is stored in IPFS.";
+        String ENABLE_COMPRESSION_TXNS = "The message is compressed.";
     }
 }

@@ -1,5 +1,6 @@
 package com.iota.iri.utils;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
 
 /**
@@ -301,21 +302,20 @@ public class Converter {
      * @return ASCII string.
      */
     public static String trytesToAscii(String input) {
+        String trytes;
         if (input.length() % 2 != 0) {
-            input += '9';
+            trytes = input + '9';
+        } else {
+            trytes = input;
         }
 
         StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < input.length() - 1; i += 2) {
-            int firstValue = TRYTE_ALPHABET.indexOf(input.charAt(i));
-            int secondValue = TRYTE_ALPHABET.indexOf(input.charAt(i + 1));
+        for (int i = 0; i < trytes.length() - 1; i += 2) {
+            int firstValue = TRYTE_ALPHABET.indexOf(trytes.charAt(i));
+            int secondValue = TRYTE_ALPHABET.indexOf(trytes.charAt(i + 1));
 
             if (firstValue == -1 || secondValue == -1) {
                 throw new IllegalArgumentException("Input contains illegal character.");
-            }
-
-            if(firstValue == 0 && secondValue == 0) {
-                break;
             }
 
             int asciiValue = secondValue * 27 + firstValue;
@@ -325,6 +325,31 @@ public class Converter {
             sb.append((char)asciiValue);
         }
         return sb.toString();
+    }
+
+    public static byte[] trytesToBytes(String input) {
+        String trytes;
+        if (input.length() % 2 != 0) {
+            trytes = input + '9';
+        } else {
+            trytes = input;
+        }
+
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        for (int i = 0; i < trytes.length() - 1; i += 2) {
+            int firstValue = TRYTE_ALPHABET.indexOf(trytes.charAt(i));
+            int secondValue = TRYTE_ALPHABET.indexOf(trytes.charAt(i + 1));
+
+            if (firstValue == -1 || secondValue == -1) {
+                throw new IllegalArgumentException("Input contains illegal character.");
+            }
+
+            int asciiValue = secondValue * 27 + firstValue;
+
+            output.write((byte)asciiValue);
+        }
+        return output.toByteArray();
     }
 
     public static Pair<long[], long[]> longPair(byte[] trits) {

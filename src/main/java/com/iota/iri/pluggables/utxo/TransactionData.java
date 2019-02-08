@@ -15,6 +15,29 @@ public class TransactionData {
     Tangle tangle;
     List<Transaction> transactions;
 
+    private static TransactionData txnData;
+
+    // TODO make this thread safe
+    public static void setInstance(TransactionData txnData) 
+    {
+        if (txnData == null)
+        {
+            txnData = txnData;
+        }
+    }
+    public static TransactionData getInstance() {
+        if(txnData == null)
+        {
+            txnData = new TransactionData();
+            txnData.init();
+        }
+        return txnData; 
+    }
+
+    public TransactionData() {
+        //empty constructor
+    }
+
     static class RawTxn {
         String from;
         String to;
@@ -76,6 +99,10 @@ public class TransactionData {
         newTxn.txnHash = HashFactory.TRANSACTION.create(JSON.toJSONBytes(newTxn));
 
         transactions.add(newTxn);
+    }
+
+    public Transaction getLast() {
+        return transactions.get(transactions.size()-1);
     }
 
     private boolean constructTxnsFromRawTxns(List<RawTxn> rawTxns) {

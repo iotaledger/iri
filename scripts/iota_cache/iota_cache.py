@@ -3,7 +3,7 @@ sys.path.append("..")
 import time
 from iota import Iota, Address, ProposedTransaction, Tag, Transaction, TryteString, TransactionTrytes, ProposedBundle, Nonce, BundleHash,TransactionHash, Fragment
 from six import binary_type, moves as compat, text_type
-from iota_api.api import attachToTangle
+from iota_api.api import attachToTangle, storeMessage
 
 class IotaCache(object):
 
@@ -47,9 +47,14 @@ class IotaCache(object):
         txn.trunk_transaction_hash = txns[u'trunkTransaction']
         txn.branch_transaction_hash = txns[u'branchTransaction']
         txn.tag = Tag(TryteString.from_string(tag))
-        txn.signature_message_fragment = Fragment(TryteString.from_string(data))
+        txn.signature_message_fragment = Fragment(TryteString.from_bytes(data))
         attach_trytes = attachToTangle(self.uri, txns[u'trunkTransaction'].__str__(), txns[u'branchTransaction'].__str__(), 1, txn.as_tryte_string().__str__())
         res = self.api.broadcast_and_store(attach_trytes[u'trytes'])
+        return res
+
+    def cache_txn_in_tangle_message(self, data):
+        address = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
+        res = storeMessage(self.uri, address, data)
         return res
 
     def get_approved_txns(self, tag):

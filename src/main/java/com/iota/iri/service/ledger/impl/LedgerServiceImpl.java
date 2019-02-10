@@ -8,6 +8,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerException;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
@@ -17,7 +18,6 @@ import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
 import com.iota.iri.storage.Tangle;
 
 import java.util.*;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -160,7 +160,9 @@ public class LedgerServiceImpl implements LedgerService {
         Map<Hash, Long> state = new HashMap<>();
         Set<Hash> countedTx = new HashSet<>();
 
-        snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet().forEach(solidEntryPointHash -> {
+        Snapshot initialSnapshot = snapshotProvider.getInitialSnapshot();
+        Map<Hash, Integer> solidEntryPoints = initialSnapshot.getSolidEntryPoints();
+        solidEntryPoints.keySet().forEach(solidEntryPointHash -> {
             visitedTransactions.add(solidEntryPointHash);
             countedTx.add(solidEntryPointHash);
         });

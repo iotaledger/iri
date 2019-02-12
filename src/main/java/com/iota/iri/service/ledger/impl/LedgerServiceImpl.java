@@ -13,12 +13,10 @@ import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.impl.SnapshotStateDiffImpl;
-import com.iota.iri.service.spentaddresses.SpentAddressesException;
-import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.storage.Tangle;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * Creates a service instance that allows us to perform ledger state specific operations.<br />
@@ -46,7 +44,7 @@ public class LedgerServiceImpl implements LedgerService {
      */
     private MilestoneService milestoneService;
 
-    private SpentAddressesProvider spentAddressesProvider;
+    private SpentAddressesService spentAddressesService;
 
     private BundleValidator bundleValidator;
 
@@ -69,14 +67,14 @@ public class LedgerServiceImpl implements LedgerService {
      * @return the initialized instance itself to allow chaining
      */
     public LedgerServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            MilestoneService milestoneService, SpentAddressesProvider spentAddressesProvider,
+            MilestoneService milestoneService, SpentAddressesService spentAddressesService,
                                   BundleValidator bundleValidator) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.milestoneService = milestoneService;
-        this.spentAddressesProvider = spentAddressesProvider;
+        this.spentAddressesService = spentAddressesService;
         this.bundleValidator = bundleValidator;
 
         return this;
@@ -193,7 +191,8 @@ public class LedgerServiceImpl implements LedgerService {
 
                                     //ISSUE 1008: generateBalanceDiff should be refactored so we don't have those hidden
                                     // concerns
-                                    persistValidatedSpentAddresses(bundleTransactionViewModels);
+                                    spentAddressesService
+                                            .persistValidatedSpentAddressesAsync(bundleTransactionViewModels);
 
                                     if (BundleValidator.isInconsistent(bundleTransactionViewModels)) {
                                         break;
@@ -234,13 +233,6 @@ public class LedgerServiceImpl implements LedgerService {
         return state;
     }
 
-    private void persistValidatedSpentAddresses(List<TransactionViewModel> bundleTransactionViewModels) throws SpentAddressesException {
-        List<Hash> spentAddresses = bundleTransactionViewModels.stream()
-                .filter(tx -> tx.value() < 0)
-                .map(TransactionViewModel::getAddressHash)
-                .collect(Collectors.toList());
-        spentAddressesProvider.saveAddressesBatch(spentAddresses);
-    }
 
     /**
      * Generates the {@link com.iota.iri.model.StateDiff} that belongs to the given milestone in the database and marks

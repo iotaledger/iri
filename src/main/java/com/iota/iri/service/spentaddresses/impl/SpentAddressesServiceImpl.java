@@ -3,7 +3,6 @@ package com.iota.iri.service.spentaddresses.impl;
 import com.iota.iri.BundleValidator;
 import com.iota.iri.conf.MilestoneConfig;
 import com.iota.iri.controllers.AddressViewModel;
-import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
@@ -14,10 +13,11 @@ import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.dag.DAGHelper;
+import com.iota.iri.utils.IotaUtils;
 
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -36,6 +36,8 @@ import org.slf4j.LoggerFactory;
  */
 public class SpentAddressesServiceImpl implements SpentAddressesService {
 
+    private static final Logger log = LoggerFactory.getLogger(SpentAddressesServiceImpl.class);
+
     private Tangle tangle;
 
     private SnapshotProvider snapshotProvider;
@@ -48,9 +50,11 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
 
     private BundleValidator bundleValidator;
 
+    private final ExecutorService asyncSpentAddressesPersistor =
+            IotaUtils.createNamedSingleThreadExecutor("Persist Spent Addresses Async");
 
     /**
-     * Creates a Spent address service using the Tangle
+     * Creates a Spent address service using the Tangler
      *
      * @param tangle                 Tangle object which is used to load models of addresses
      * @param snapshotProvider       {@link SnapshotProvider} to find the genesis, used to verify tails
@@ -88,6 +92,20 @@ public class SpentAddressesServiceImpl implements SpentAddressesService {
         } catch (RuntimeException e) {
             throw new SpentAddressesException("Exception while persisting spent addresses", e);
         }
+    }
+
+    public void persistValidatedSpentAddressesAsync(Collection<TransactionViewModel> transactions) {
+        asyncSpentAddressesPersistor.submit(() -> {
+            try {
+                List<Hash> spentAddresses = transactions.stream()
+                    .filter(tx -> tx.value() < 0)
+                    .map(TransactionViewModel::getAddressHash)
+                    .collect(Collectors.toList());
+                spentAddressesProvider.saveAddressesBatch(spentAddresses);
+            } catch (Exception e) {
+                log.error("Failed to persist spent-addresses... Counting on the Milestone Pruner to finish the job", e);
+            }
+        });
     }
 
     private boolean wasTransactionSpentFrom(TransactionViewModel tx) throws Exception {

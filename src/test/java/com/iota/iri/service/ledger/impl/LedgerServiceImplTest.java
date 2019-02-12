@@ -2,31 +2,23 @@ package com.iota.iri.service.ledger.impl;
 
 import com.iota.iri.BundleValidator;
 import com.iota.iri.TangleMockUtils;
-import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.Hash;
-import com.iota.iri.service.ledger.LedgerException;
 import com.iota.iri.service.milestone.MilestoneService;
-import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
-import com.iota.iri.service.spentaddresses.SpentAddressesException;
-import com.iota.iri.service.spentaddresses.SpentAddressesProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.utils.Converter;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
 
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Answers;
 import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.internal.junit.JUnitRule;
-import org.mockito.internal.util.collections.Sets;
 import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoJUnitRule;
 import org.mockito.junit.MockitoRule;
 
 import static org.mockito.Matchers.eq;
@@ -52,13 +44,13 @@ public class LedgerServiceImplTest {
     private SnapshotService snapshotService;
 
     @Mock
-    MilestoneService milestoneService;
+    private MilestoneService milestoneService;
 
     @Mock
-    SpentAddressesProvider spentAddressesProvider;
+    private SpentAddressesService spentAddressesService;
 
     @Mock
-    BundleValidator bundleValidator;
+    private BundleValidator bundleValidator;
 
 
     public LedgerServiceImplTest() {
@@ -66,8 +58,8 @@ public class LedgerServiceImplTest {
     }
 
     @Before
-    public void setUp() throws Exception {
-        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesProvider,
+    public void setUp() {
+        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
                 bundleValidator);
 
     }
@@ -80,9 +72,7 @@ public class LedgerServiceImplTest {
         int milestoneIndex = 1;
         when(milestoneService.isTransactionConfirmed(tailTx, milestoneIndex)).thenReturn(false);
         when(snapshotProvider.getInitialSnapshot().getSolidEntryPoints()).thenReturn(Collections.emptyMap());
-
         ledgerService.generateBalanceDiff(new HashSet<>(), tailTx.getHash(), milestoneIndex);
-        verify(spentAddressesProvider, times(1)).saveAddressesBatch(
-                eq(Arrays.asList(bundle.get(1).getAddressHash())));
+        verify(spentAddressesService, times(1)).persistValidatedSpentAddressesAsync(eq(bundle));
     }
 }

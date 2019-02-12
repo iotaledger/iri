@@ -215,7 +215,7 @@ public class Iota {
                 latestMilestoneTracker, messageQ);
         seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
-        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesProvider,
+        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
                 bundleValidator);
         if (transactionPruner != null) {
             transactionPruner.init(tangle, snapshotProvider, spentAddressesService, tipsViewModel, configuration)

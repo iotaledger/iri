@@ -28,4 +28,12 @@ public interface SpentAddressesService {
      * @throws SpentAddressesException
      */
     void persistSpentAddresses(Collection<TransactionViewModel> transactions) throws SpentAddressesException;
+
+    /**
+     * Persists the spent addresses of all pre-verified valid transactions in an asynchronous manner
+     *
+     * @param transactions <b>Transactions that have their signatures verified beforehand</b>.
+     *                     Non spent transactions will be filtered out when persisting
+     */
+    void persistValidatedSpentAddressesAsync(Collection<TransactionViewModel> transactions);
 }

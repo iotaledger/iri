@@ -78,3 +78,10 @@ def getTransactionsToApprove(url):
     }
     return API(cmd, url)
 
+def storeMessage(url, address, message):
+    cmd = {
+        "command": "storeMessage",
+        "address": address,
+        "message": message
+    }
+    return API(cmd, url)

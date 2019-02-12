@@ -3,7 +3,7 @@ sys.path.append("..")
 import time
 from iota import Iota, Address, ProposedTransaction, Tag, Transaction, TryteString, TransactionTrytes, ProposedBundle, Nonce, BundleHash,TransactionHash, Fragment
 from six import binary_type, moves as compat, text_type
-from iota_api.api import attachToTangle
+from iota_api.api import attachToTangle, storeMessage
 
 class IotaCache(object):
 
@@ -18,6 +18,7 @@ class IotaCache(object):
             self.seed = seed
         self.api = Iota(self.uri, self.seed, testnet=True)
         self.mwm = 1 
+        self.depth = 15
 
     def cache_txn_in_tangle_sdk(self, ipfs_addr, tag):
         api_response = self.api.get_new_addresses()
@@ -25,7 +26,7 @@ class IotaCache(object):
         address = binary_type(addy).decode('ascii')
 
         result = self.api.send_transfer(
-            depth=3,
+            depth=self.depth,
             transfers=[
                 ProposedTransaction(
                     address=Address(address),
@@ -40,15 +41,20 @@ class IotaCache(object):
 
     def cache_txn_in_tangle_simple(self, data, tag):
         address = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
-        txns = self.api.get_transactions_to_approve(1)
+        txns = self.api.get_transactions_to_approve(self.depth)
         tr = self.api.get_trytes([txns[u'branchTransaction']])
         txn = Transaction.from_tryte_string(tr[u'trytes'][0], txns[u'branchTransaction'])
         txn.trunk_transaction_hash = txns[u'trunkTransaction']
         txn.branch_transaction_hash = txns[u'branchTransaction']
         txn.tag = Tag(TryteString.from_string(tag))
-        txn.signature_message_fragment = Fragment(TryteString.from_string(data))
+        txn.signature_message_fragment = Fragment(TryteString.from_bytes(data))
         attach_trytes = attachToTangle(self.uri, txns[u'trunkTransaction'].__str__(), txns[u'branchTransaction'].__str__(), 1, txn.as_tryte_string().__str__())
         res = self.api.broadcast_and_store(attach_trytes[u'trytes'])
+        return res
+
+    def cache_txn_in_tangle_message(self, data):
+        address = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
+        res = storeMessage(self.uri, address, data)
         return res
 
     def get_approved_txns(self, tag):
@@ -74,14 +80,19 @@ class IotaCache(object):
         txn_hashes_consumed = self.api.find_transactions(None, None, [tag+b"CONSUMED"], None)
         if len(txn_hashes_consumed['hashes']) != 0:
             txn_trytes_consumed = self.api.get_trytes(txn_hashes_consumed['hashes'])
+            i=0
             for txnTrytes in txn_trytes_consumed['trytes']:
-                txn = Transaction.from_tryte_string(txnTrytes)
+                txn = Transaction.from_tryte_string(txnTrytes, txn_hashes_consumed['hashes'][i])
+                i+=1
                 consumedSet.append(txn.signature_message_fragment)
+        i=0
         for txnTrytes in txn_trytes_all['trytes']:
-            txn = Transaction.from_tryte_string(txnTrytes)
+            txn = Transaction.from_tryte_string(txnTrytes, txn_hashes_all[i])
+            i+=1
             if txn.signature_message_fragment not in consumedSet:
                 msgTryte = txn.signature_message_fragment.decode()
                 ret.append(msgTryte)
+
         return ret
 
     def set_txn_as_synced(self, ipfs_addr, tag):

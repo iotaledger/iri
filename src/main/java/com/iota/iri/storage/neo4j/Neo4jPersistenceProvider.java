@@ -268,4 +268,9 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
         //TODO
         return null;
     }
+
+    public int getNumOfTips() {
+        // TODO
+        return -1;
+    }
 } 

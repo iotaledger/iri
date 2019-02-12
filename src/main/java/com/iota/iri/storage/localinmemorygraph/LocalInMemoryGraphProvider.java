@@ -15,6 +15,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.io.*;
+
+import com.iota.iri.utils.*;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
     public HashMap<Hash, Double> score;
@@ -266,22 +269,29 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     private void updateTopologicalOrder(Hash vet, Hash trunk, Hash branch) {
-        if (topOrderStreaming.isEmpty()) {
+        if (topOrderStreaming.isEmpty()) { 
             topOrderStreaming.put(1, new HashSet<>());
             topOrderStreaming.get(1).add(vet);
             lvlMap.put(vet, 1);
+            topOrderStreaming.put(0, new HashSet<>());
+            topOrderStreaming.get(0).add(trunk);
+            topOrderStreaming.get(0).add(branch);
             totalDepth = 1;
             return;
         } else {
-            int trunkLevel = lvlMap.get(trunk);
-            int branchLevel = lvlMap.get(branch);
-            int lvl = Math.min(trunkLevel, branchLevel) + 1;
-            if (topOrderStreaming.get(lvl) == null) {
-                topOrderStreaming.put(lvl, new HashSet<>());
-                totalDepth++;
+            try {
+                int trunkLevel = lvlMap.get(trunk);
+                int branchLevel = lvlMap.get(branch);
+                int lvl = Math.min(trunkLevel, branchLevel) + 1;
+                if (topOrderStreaming.get(lvl) == null) {
+                    topOrderStreaming.put(lvl, new HashSet<>());
+                    totalDepth++;
+                }
+                topOrderStreaming.get(lvl).add(vet);
+                lvlMap.put(vet, lvl);
+            } catch(NullPointerException e) {
+                ; // First block, do nothing here
             }
-            topOrderStreaming.get(lvl).add(vet);
-            lvlMap.put(vet, lvl);
         }
     }
 
@@ -343,7 +353,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public Hash getPivotalHash(int depth) {
         Hash ret = null;
-        if (depth == -1 || depth > totalDepth) {
+        if (depth == -1 || depth >= totalDepth) {
             Set<Hash> set = topOrderStreaming.get(1);
             ret = set.iterator().next();
             return ret;
@@ -362,20 +372,37 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     //FIXME for debug :: for graphviz visualization
-    public void printGraph(HashMap<Hash, Set<Hash>> graph) {
-        for (Hash key : graph.keySet()) {
-            for (Hash val : graph.get(key)) {
-                if (nameMap != null) {
-                    System.out.println("\"" + nameMap.get(key) + "\"->" +
-                            "\"" + nameMap.get(val) + "\"");
-                } else {
-                    System.out.println("\"" + key + "\"->" +
-                            "\"" + val + "\"");
+    public void printGraph(HashMap<Hash, Set<Hash>> graph, Hash k) {
+        try {
+            BufferedWriter writer = new BufferedWriter(new FileWriter(IotaUtils.abbrieviateHash(k,4)));
+            for (Hash key : graph.keySet()) {
+                for (Hash val : graph.get(key)) {
+                    if (nameMap != null) {
+                        if(k != null) {
+                            writer.write("\"" + nameMap.get(key) + "\"->" +
+                                    "\"" + nameMap.get(val) + "\"\n");
+                        } else {
+                            System.out.println("\"" + nameMap.get(key) + "\"->" +
+                                    "\"" + nameMap.get(val) + "\"");
+                        }
+                    } else {
+                        if(k != null) {
+                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 4) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 4) + "\"\n");
+                        } else {
+                            System.out.println("\"" + IotaUtils.abbrieviateHash(key, 4) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 4) + "\"");
+                        }
+                    }
                 }
             }
-        }
+            writer.close();
+        } catch(Exception e) {
+
+        } 
     }
 
+    
     //FIXME for debug :: for graphviz visualization
     void printRevGraph(HashMap<Hash, Set<Hash>> revGraph) {
         for (Hash key : revGraph.keySet()) {
@@ -384,8 +411,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     System.out.println("\"" + nameMap.get(key) + "\"->" +
                             "\"" + nameMap.get(val) + "\"");
                 } else {
-                    System.out.println("\"" + key + "\"->" +
-                            "\"" + val + "\"");
+                    System.out.println("\"" + IotaUtils.abbrieviateHash(key, 4) + "\"->" +
+                            "\"" + IotaUtils.abbrieviateHash(val, 4) + "\"");
                 }
             }
         }
@@ -399,7 +426,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 if (nameMap != null) {
                     System.out.print(nameMap.get(val) + " ");
                 } else {
-                    System.out.println(val + " ");
+                    System.out.println(IotaUtils.abbrieviateHash(val, 4) + " ");
                 }
             }
             System.out.println();
@@ -560,7 +587,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return start;
     }
 
-    private Hash getGenesis() {
+    public Hash getGenesis() {
         try {
             for (Hash key : parentGraph.keySet()) {
                 if (!parentGraph.keySet().contains(parentGraph.get(key))) {
@@ -582,14 +609,24 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         queue.add(hash);
         Hash h;
         while (!queue.isEmpty()) {
-            past.add(h = queue.pop());
+            h = queue.pop();
             for (Hash e : graph.get(h)) {
-                if (graph.containsKey(e) && !queue.contains(e)) {
+                if (graph.containsKey(e) && !past.contains(e)) {
                     queue.add(e);
                 }
             }
+            past.add(h);
         }
         return past;
     }
 
+    public int getNumOfTips() {
+        int ret = 0;
+        for(Hash h : graph.keySet()) {
+            if(!revGraph.containsKey(h)) {
+                ret++;
+            }
+        }
+        return ret;
+    }
 }

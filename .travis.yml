@@ -48,8 +48,6 @@ install:
       && cd ..
 
 before_script:
-  - cd ./scripts/iota_api
-    && python ./app.py &> /tmp/app.log &
   - ipfs init
     && ipfs daemon &> /tmp/ipfs.log &
 

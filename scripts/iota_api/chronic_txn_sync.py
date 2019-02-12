@@ -3,8 +3,8 @@ sys.path.append("..")
 import json
 import datetime
 import threading
-import commands
 import ConfigParser
+import ipfsapi
 from iota_cache.iota_cache import IotaCache
 from tag_generator import TagGenerator
 from tm_rpc_client import Tendermint
@@ -12,12 +12,18 @@ from tm_rpc_client import Tendermint
 
 cf = ConfigParser.ConfigParser()
 cf.read("conf")
+
+
 iota_addr = cf.get("iota", "addr")
 iota_seed = cf.get("iota", "seed")
 cache = IotaCache(iota_addr, iota_seed)
 
 tm_addr = cf.get("tendermint", "addr")
 tm = Tendermint(tm_addr)
+
+ipfs_ip = cf.get("ipfs", "ip")
+ipfs_port = cf.get("ipfs", "port")
+ipfs_client = ipfsapi.connect(ipfs_ip, ipfs_port)
 
 
 def interval_work():
@@ -26,14 +32,14 @@ def interval_work():
     print(now)
 
     global timer_thread
-    timer_thread = threading.Timer(300, interval_work)
+    timer_thread = threading.Timer(60, interval_work)
     timer_thread.start()
 
-    tag = TagGenerator.get_current_tag("TT")
+    tag = TagGenerator.get_current_tag()
     push_and_sync(tag)
 
-    # 00:00:00 -> 00:04:59, check previous tag
-    if now.hour == 0 and 0 <= now.minute <= 4:
+    # 00:00:00 -> 00:00:59, check previous tag
+    if now.hour == 0 and 0 <= now.minute <= 0:
         tag = TagGenerator.get_previous_tag()
         push_and_sync(tag)
 
@@ -46,7 +52,7 @@ def push_and_sync(tag):
     content_dict = {}
 
     for ipfs_addr in result:
-        content = commands.getoutput(' '.join(['ipfs', 'cat', ipfs_addr]))
+        content = ipfs_client.get_json(ipfs_addr)
         content_dict[ipfs_addr] = content
 
     if len(content_dict) > 0:
@@ -54,17 +60,19 @@ def push_and_sync(tag):
         if len(content_dict) > 1:
             content_list = []
             for key in content_dict:
-                content_list.append(json.loads(content_dict[key]))
-            json_str = json.dumps({"txs": content_list}, sort_keys=True)
-            tm.broadcast_txs_async(json_str)
-            print("[INFO]TM broadcast_txs_async %s." % json_str)
-            for key in content_dict:
-                cache.set_txn_as_synced(key, tag)
-                print("[INFO]IOTA setTxnAsSynced %s." % key)
+                content_list.append((content_dict[key], key))
+
+            sorted_content_list = sorted(content_list, key=lambda d: d[0]['timestamp'])
+
+            for item in sorted_content_list:
+                tm.broadcast_tx_async(json.dumps(item[0], sort_keys=True))
+                print("[INFO]TM broadcast_tx_async %s." % item[0])
+                cache.set_txn_as_synced(item[1], tag)
+                print("[INFO]IOTA setTxnAsSynced %s." % item[1])
 
         else:  # len(content_dict) == 1
             for key in content_dict:
-                tm.broadcast_tx_async(content_dict[key])
+                tm.broadcast_tx_async(json.dumps(content_dict[key], sort_keys=True))
                 print("[INFO]TM broadcast_tx_async %s." % content_dict[key])
                 cache.set_txn_as_synced(key, tag)
                 print("[INFO]IOTA setTxnAsSynced %s." % key)
@@ -72,4 +80,3 @@ def push_and_sync(tag):
 
 if __name__ == "__main__":
     interval_work()
-

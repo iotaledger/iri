@@ -439,11 +439,10 @@ public class TransactionViewModelTest {
 
     @Test
     public void addBatchTxnCount() throws Exception {
-        byte[] trits = getRandomTransactionTrits();
+        byte[] trits = new byte[TransactionViewModel.TRINARY_SIZE];
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
 
-        long count = tangle.getTxnCount();
         long addedTxCount = transactionViewModel.addBatchTxnCount(tangle);
-        Assert.assertEquals("batch txs count should be equal.", tangle.getTxnCount(), count + addedTxCount);
+        Assert.assertEquals("batch txs count should be equal.", 1, addedTxCount);
     }
 }

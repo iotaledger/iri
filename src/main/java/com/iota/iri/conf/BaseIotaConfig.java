@@ -64,6 +64,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected boolean rescanDb = Defaults.RESCAN_DB;
     protected String graphDbPath = Defaults.GRAPH_DB_PATH;
     protected boolean enableBatchTxns = Defaults.ENABLE_BATCH_TXNS;
+    protected boolean enableIPFSTxns = Defaults.ENABLE_IPFS_TXNS;
+    protected boolean enableCompressionTxns = Defaults.ENABLE_COMPRESSION_TXNS;
 
     //Protocol
     protected double pReplyRandomTip = Defaults.P_REPLY_RANDOM_TIP;
@@ -87,6 +89,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
     private String weightCalAlgo = Defaults.WEIGHT_CAL_ALGO;
     private String entryPointSelAlgo = Defaults.ENTRY_POINT_CAL_ALGO;
+    private String tipSelectorAlgo = Defaults.TIP_SELECTOR_ALGO;
     private String walkValidator = Defaults.WALK_VALIDATOR;
     private String ledgerValidator = Defaults.LEDGER_VALIDATOR;
 
@@ -426,6 +429,28 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--batch-txns"}, description = DbConfig.Descriptions.ENABLE_BATCH_TXNS)
     protected void setEnableBatchTxns(boolean enableBatchTxns) {
         this.enableBatchTxns = enableBatchTxns;
+    }
+
+    @Override
+    public boolean isEnableIPFSTxns() {
+        return enableIPFSTxns;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--ipfs-txns"}, description = DbConfig.Descriptions.ENABLE_IPFS_TXNS)
+    protected void setEnableIPFSTxns(boolean enableIPFSTxns) {
+        this.enableIPFSTxns = enableIPFSTxns;
+    }
+
+    @Override
+    public boolean isEnableCompressionTxns() {
+        return enableCompressionTxns;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--compression-txns"}, description = DbConfig.Descriptions.ENABLE_COMPRESSION_TXNS)
+    protected void setEnableCompressionTxns(boolean enableCompressionTxns) {
+        this.enableCompressionTxns = enableCompressionTxns;
     }
 
     @Override
@@ -792,6 +817,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public String getTipSelector() {
+        return tipSelectorAlgo;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--tip-sel-algo", description = TipSelConfig.Descriptions.TIP_SEL_ALGO)
+    protected void setTipSelector(String tipSelectorAlgo) {
+        this.tipSelectorAlgo = tipSelectorAlgo;
+    }
+
+    @Override
     public String getWalkValidator() {
         return walkValidator;
     }
@@ -861,6 +897,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         boolean RESCAN_DB = false;
         String GRAPH_DB_PATH = "";
         boolean ENABLE_BATCH_TXNS = false;
+        boolean ENABLE_IPFS_TXNS = true;
+        boolean ENABLE_COMPRESSION_TXNS = false;
 
         //Protocol
         double P_REPLY_RANDOM_TIP = 0.66d;
@@ -888,6 +926,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         double ALPHA = 0.001d;
         String WEIGHT_CAL_ALGO = "CUM_WEIGHT";
         String ENTRY_POINT_CAL_ALGO = "DEFAULT";
+        String TIP_SELECTOR_ALGO = "MCMC";
         String WALK_VALIDATOR = "DEFAULT";
         String LEDGER_VALIDATOR = "DEFAULT";
 

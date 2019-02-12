@@ -162,8 +162,6 @@ public class AsyncTransactionPruner implements TransactionPruner {
         // this call is "unchecked" to a "raw" JobQueue and it is intended since the matching JobQueue is defined by the
         // registered job types
         getJobQueue(job.getClass()).addJob(job);
-
-        saveState();
     }
 
     /**
@@ -184,65 +182,17 @@ public class AsyncTransactionPruner implements TransactionPruner {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * We incorporate a background job that periodically saves the state rather than doing it "live", to reduce the cost
-     * of this operation. While this can theoretically lead to a situation where the saved state is not 100% correct and
-     * the latest changes get lost (if IRI crashes or gets restarted before the new changes could be persisted), the
-     * impact is marginal because it only leads to some floating "zombie" transactions that will stay in the database.
-     * This will be "solved" once we persist the changes in the database instead of a file on the hard disk. For now the
-     * trade off between faster processing times and leaving some garbage is reasonable.
-     */
-    @Override
-    public void saveState() {
-        persistRequested = true;
-    }
 
     /**
-     * {@inheritDoc}
-     *
-     * It reads the state by parsing the state file and passing it into the registered parsers for each job type.
-     *
-     * Every line holds a job entry that starts with the fully qualified class name of the job followed by a ";" and the
-     * serialized representation of the job.
-     */
-    @Override
-    public void restoreState() throws TransactionPruningException {
-        try (BufferedReader reader = new BufferedReader(
-            new InputStreamReader(new BufferedInputStream(new FileInputStream(getStateFile())))
-        )) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                String[] parts = line.split(";", 2);
-                if (parts.length >= 2) {
-                    JobParser jobParser = jobParsers.get(parts[0]);
-                    if (jobParser == null) {
-                        throw new TransactionPruningException("could not determine a parser for cleanup job of type " + parts[0]);
-                    }
-
-                    addJob(jobParser.parse(parts[1]));
-                }
-            }
-        } catch (IOException e) {
-            if (getStateFile().exists()) {
-                throw new TransactionPruningException("could not read the state file", e);
-            }
-        }
-    }
-
-    /**
-     * {@inheritDoc}
+     * This method removes all queued jobs and resets the state of the {@link TransactionPruner}. It can for example be
+     * used to cleanup after tests.
      *
      * It cycles through all registered {@link JobQueue}s and clears them before persisting the state.
      */
-    @Override
-    public void clear() throws TransactionPruningException {
+    void clear() {
         for (JobQueue jobQueue : jobQueues.values()) {
             jobQueue.clear();
         }
-
-        saveStateNow();
     }
 
     /**

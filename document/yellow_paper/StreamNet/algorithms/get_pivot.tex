@@ -1,0 +1,30 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ The local state $G$ = $<B,g,P,E>$  and a starting block $b \in B$ }
+\KwOut{ The last block in the pivot chain for the subtree of $b$ in $G$ }
+
+\Do { Child(G,b) != 0} {
+  $b'$ $\longleftarrow$ Child($G,b$)  \;
+  $tmpMaxScore$ $\longleftarrow$ -1 \;
+  $tmpBlock$ $\longleftarrow$ $\perp$ \;
+  \Do { $b'$ $\neq$ 0 } {
+    $score$ $\longleftarrow$ Score($G, b'$) \;
+    \If { $score$ $>$ $tmpMaxScore$ $||$ ($score$ = $tmpMaxScore$ and \text{the score of $b'$ gather than $tmpBlock$})} {
+      $tmpMaxScore$ $\longleftarrow$ $score$ \;
+      $tmpBlock$ $\longleftarrow$ $b'$ \; 
+    }
+  }
+  $b$ $\longleftarrow$ $tmpBlock$ \;
+}
+
+\Return{$tmpBlock$} \;
+
+\caption{{\sc pivot block($G$, $b$).}}
+\label{algo:getPivot}
+\end{algorithm}
+\DecMargin{1em}
+

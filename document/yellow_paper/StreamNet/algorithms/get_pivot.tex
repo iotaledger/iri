@@ -13,7 +13,7 @@
   $tmpBlock$ $\longleftarrow$ $\perp$ \;
   \Do { $b'$ $\neq$ 0 } {
     $score$ $\longleftarrow$ Score($G, b'$) \;
-    \If { $score$ $>$ $tmpMaxScore$ $||$ ($score$ = $tmpMaxScore$ and \text{the score of $b'$ gather than $tmpBlock$})} {
+    \If { $score$ $>$ $tmpMaxScore$ $||$ ($score$ = $tmpMaxScore$ \text{and Hash($b'$ ) $<$ Hash($tmpBlock$)}} {
       $tmpMaxScore$ $\longleftarrow$ $score$ \;
       $tmpBlock$ $\longleftarrow$ $b'$ \; 
     }

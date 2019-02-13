@@ -26,35 +26,36 @@ we use an incremental algorithm to deal with the streaming graph calculation \ci
 \subsection{DAG total ordering algorithm}
 At any time, the local state of a user in the Conflux protocal is a graph $G = <B,g,P,E>$. $B$ is the set of blocks in $G$. $g \in G$ is the genesis block. $P$ is a function that maps a block $b$ to its parent block $P(b)$. Specially, $P(g) = \perp$. $E$ is the set of directly reference edges and parent edges in this graph. $e = <b,b^'> \in E$ is an edge from the block $b$ to the block $b^'$, which denotes that $b'$ happens before $b$. Note that there is always a parent edge from a block to its parent block (i.e., $\forall b \in B$, $b, P(b)> \in E$). All nodes in the Conflux protocal share a predefined deterministic hash function Hash that maps each block in $B$ to a unique integer id . It satisfies that $\forall {b} \neq {b'}$, Hash($b$) $\neq$ Hash($b'$).
 
-We next define several utility functions and notatons. GetGenesis() returns the Genesis block. Past() returns the set of blocks that are generated before a given block(but include the block itself). BuildSubGraph() returns the sub graph by removing blocks and edges except the certain blocks.  In addition, a map called parentGragh is defined, key presents a block and value is the set of blocks that the block approves. Conversely, parentRevGraph construts a relationship between the block and its approvee block. Score presents the weight of blocks, each block achieves a score when attaching to the graph. 
+We next define several utility functions and notatons. GetGenesis() returns the Genesis block. Past() returns the set of blocks that are generated before a given block(but include the block itself). BuildSubGraph() returns the sub graph by removing blocks and edges except the certain blocks.  In addition, a map called parentGragh is defined, key presents a block and value is the set of blocks that the block approves. Conversely, parentRevGraph construts a relationship between the block and its approvee block. Score presents the weight of blocks, each block achieves a score when attaching to the graph. Figure~\ref{allMethods} represents the definition of these utility functions. 
 
-$Pivot Chain Selection$: Figure x presents our pivot chain selection algorithm(i.e., the definition of Pivot()). Given a DAG state $G$, Pivot($G$,$g$) returns the last block in the pivot chain starting from the genesis block $g$. The algorithm recursively advances to the child block whoes corresponding subtree has the largest number of blocks. When there are multiple child blocks with the same number, the algorithm selects the child block with the largest score. The algorithm terminates until it reaches a tip. block whoes corresponding subtree has the largest number of blocks. When there are multiple child blocks with the same number, the algorithm selects the child block with the largest score. The algorithm terminates until it reaches a tip. block whoes corresponding subtree has the largest number of blocks. When there are multiple child blocks with the same number, the algorithm selects the child block with the largest score. The algorithm terminates until it reaches a tip. The algorithm is as Algorithm~\ref{algo:getPivot} shows.
+\begin{figure}
+\begin{flalign*}
+  &\fbox{G = $<B,g,P,E>$} \\
+  &Chain(G,b) =
+  \begin{cases}
+    g                 & \text{b = g} \\
+    Chain(G,P(b))     & \text{otherwise}
+  \end{cases} \\
+   &Child(G,b) = \{ b'| P(b') = b \} \\
+   &Sibling(G,b) = Child(G,P(b)) \\
+   &Substree(G,b) = (U_{i\in Child(G,b)}Substree(G,i))U\{b\} \\
+   &Before(G,b) = \{b'|b' \in B, <b,b'> \in E \} \\
+   &Past(G,b) = (U_{i\in Before(G,b)}Past(G,i))U\{b\} \\
+   &TotalOrder(G) = ConfluxOrder(G,Pivot(G,g)) 
+\end{flalign*}
+
+\caption{The Definitions of Chain(), Child(), Sibling(), Subtree(), Before(), Past() and TotalOrder(). }
+\label{allMethods}
+\end{figure}
+
+$Pivot Chain Selection$: The algorithm Algorithm~\ref{algo:getPivot} presents our pivot chain selection algorithm(i.e., the definition of Pivot()). Given a DAG state $G$, Pivot($G$,$g$) returns the last block in the pivot chain starting from the genesis block $g$. The algorithm recursively advances to the child block whoes corresponding subtree has the largest number of blocks. When there are multiple child blocks with the same number, the algorithm selects the child block with the largest score. The algorithm terminates until it reaches a tip. block whoes corresponding subtree has the largest number of blocks. When there are multiple child blocks with the same number, the algorithm selects the child block with the largest score. The algorithm terminates until it reaches a tip. block whoes corresponding subtree has the largest number of blocks. When there are multiple child blocks with the same number, the algorithm selects the child block with the largest score. The algorithm terminates until it reaches a tip. 
 
 \input{./algorithms/get_pivot.tex}
 
-$Total Order$: Figure x defines ConfluxOrder(), which corresponds to our block ordering algorithm. Given the local state $G$ and a block $a$ in the pivot chain, ConfluxOrder($G$,$a$) returns the ordered list of all blocks that appear in or before the epoch of $a$. Using ConfluxOrder(), the total order of a local state $G$ is defined as TotalOrder($G$) in Figure x. The algorithm in Figure x first recursively orders all blocks in previous epochs(i.e., the epoch of $P(a)$ and before). It then computes all blocks in the epoch of $a$ as $B_\Delta$. It topologically sorts all blocks in $B_\Delta$ and appends it into the result list. The algorithm uses the unique hash to break ties. The algorithm is as Algorithm~\ref{algo:conflux_order} shows;
+$Total Order$: The algorithm Algorithm~\ref{algo:conflux_order} defines ConfluxOrder(), which corresponds to our block ordering algorithm. Given the local state $G$ and a block $a$ in the pivot chain, ConfluxOrder($G$,$a$) returns the ordered list of all blocks that appear in or before the epoch of $a$. Using ConfluxOrder(), the total order of a local state $G$ is defined as TotalOrder($G$) in Figure x. The algorithm in Figure x first recursively orders all blocks in previous epochs(i.e., the epoch of $P(a)$ and before). It then computes all blocks in the epoch of $a$ as $B_\Delta$. It topologically sorts all blocks in $B_\Delta$ and appends it into the result list. The algorithm uses the unique hash to break ties. 
 
 \input{./algorithms/conflux_order.tex}
 
-\begin{figure}
-\begin{equation*}
-%  Chain(G,b) &= 
-%  \begin{cases}
-%    g                 & b = g\\
-%    Chain(G,P(b))     & \text{otherwise}
-%  \end{cases}\\
-%  Child(G,b) &= \{ b'| P(b') = b \}\\
-%  Sibling(G,b) &= Child(G,P(b))\\
-%  Substree(G,b) &= (U_{i\in Child(G,b)}Substree(G,i))U\{b\}\\
-%  Before(G,b) &= \{b'|b' \in B, <b,b'> \in E \}\\
-%  Past(G,b) = (U_{i\in Before(G,b)}Past(G,i))U\{b\}\\
-%  TotalOrder(G) &= ConfluxOrder(G,Pivot(G,g))
-  \text{ TODO method list }
-\end{equation*}
-\label{totalFormulas}
-\caption{ The Definitions of Chain(),Child(),Sibling(),Subtree(),Before(),Past() and TotalOrder(). }
-\end{figure}
-% TODO how to layout the formulas above ?
 
 \subsection{Tip Selection Algorithm with Configurable Local Modifiers}
 

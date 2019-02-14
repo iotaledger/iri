@@ -88,31 +88,8 @@ def check_for_seed(arg_list):
     for arg in arg_list:
         if arg['keys'] == 'seed' and arg['type'] == 'staticList':
             seed = arg['values']
-            arg['type'] = 'ignore'
 
     return seed
-
-
-def prepare_transaction_arguments(arg_list, arg_copy, iteration):
-    """
-    Logic required for sending multiple value transactions in a single aloe step.
-    Take the provided argument list and determine if it has a seed in it. If so, it makes sure to
-    replace any changed arguments within that list with the copies of the original arguments.
-
-    :param arg_list: The original list that will be used for the transactions
-    :param arg_copy: The copy of the unmodified list
-    :param iteration: The current iteration, used to pull from the seed list
-    """
-    for arg_index, arg in enumerate(arg_list):
-        if arg['keys'] == "seed" and (arg['type'] == "staticList" or arg['type'] == "ignore"):
-            if arg['type'] != arg_copy[arg_index]['type']:
-                arg['type'] = arg_copy[arg_index]['type']
-
-            if arg['values'] != arg_copy[arg_index]['values']:
-                arg['values'] = arg_copy[arg_index]['values']
-
-            seed_list = getattr(static, arg['values'])
-            arg['values'] = seed_list[iteration]
 
 
 def fetch_transaction_from_list(args, node):
@@ -138,3 +115,28 @@ def fetch_transaction_from_list(args, node):
     assert reference_transaction, "No reference transaction found (Possibly incorrect argument type, check gherkin file"
 
     return reference_transaction
+
+
+def evaluate_and_send(api, seed, arg_list):
+    """
+    Prepares a transaction for sending. If the provided seed isn't empty, it changes the bool value to be passed on to
+    to the create_and_attach_transaction() function to instruct it to look for an available balance.
+
+    :param api: The api target you would like to make the call to
+    :param seed: The seed associated with the given api (This can be an empty string if none is used)
+    :param arg_list: The argument list (dictionary) for the transaction
+    :return: The transaction object created in the create_and_attach_transaction() function
+    """
+    is_value_transaction = False
+
+    if seed != "":
+        is_value_transaction = True
+
+    options = {}
+    api_utils.prepare_options(arg_list, options)
+    api_utils.prepare_transaction_arguments(options)
+
+    transaction = create_and_attach_transaction(api, is_value_transaction, options)
+    api.broadcast_and_store(transaction.get('trytes'))
+
+    return transaction

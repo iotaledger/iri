@@ -22,25 +22,10 @@ def generate_transaction_and_attach(step, node):
     """
     world.config['nodeId'] = node
     world.config['apiCall'] = 'attachToTangle'
-    is_value_transaction = False
 
     seed = transactions.check_for_seed(step.hashes)
-
-    if seed != "":
-        is_value_transaction = True
-
     api = api_utils.prepare_api_call(node, seed=seed)
-
-    options = {}
-    api_utils.prepare_options(step.hashes, options)
-
-    transaction_args = {}
-    for key in options:
-        transaction_args[key] = options.get(key)
-    api_utils.prepare_transaction_arguments(transaction_args)
-
-    transaction = transactions.create_and_attach_transaction(api, is_value_transaction, transaction_args)
-    api.broadcast_and_store(transaction.get('trytes'))
+    transaction = transactions.evaluate_and_send(api, seed, step.hashes)
 
     assert len(transaction['trytes']) > 0, "Transaction was not created correctly"
     world.responses['attachToTangle'] = {}
@@ -137,20 +122,24 @@ def reference_stitch_transaction(step):
 
 @step(r'"(\d+)" transactions are issued on "([^"]+)" with:')
 def issue_multiple_transactions(step, num_transactions, node):
-    transaction_hashes = []
-    args_copy = ()
+    # Placeholder values for seed if present
+    seed_value = ""
+    seed_type = ""
+
+    for arg_index, arg in enumerate(step.hashes):
+        if arg['keys'] == "seed" and arg['type'] == "staticList":
+            seed_value = arg['values']
+            seed_type = arg['type']
 
     for iteration in range(int(num_transactions)):
+        seed = ""
+        if seed_value != "" and seed_type == "staticList":
+            seed = getattr(static, seed_value)[iteration]
 
-        if iteration == 0:
-            args_copy = api_utils.duplicate_arguments(step.hashes)
-
-        transactions.prepare_transaction_arguments(step.hashes, args_copy, iteration)
+        api = api_utils.prepare_api_call(node, seed=seed)
 
         logger.info('Sending Transaction {}'.format(iteration + 1))
-        transaction = generate_transaction_and_attach(step, node)
-        transaction_hash = Transaction.from_tryte_string(transaction['trytes'][0]).hash
-        transaction_hashes.append(transaction_hash)
+        transactions.evaluate_and_send(api, seed, step.hashes)
 
     logger.info("Transactions generated and stored")
 

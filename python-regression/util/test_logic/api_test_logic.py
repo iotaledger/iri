@@ -47,12 +47,12 @@ def check_neighbors(step, node):
     for i in response:
         expected_neighbors = step.hashes
         if type(response[i]) != int:
-            for x in range(len(response[i])):    
+            for x in range(len(response[i])):
                 if expected_neighbors[0]['neighbors'] == response[i][x]['address']:
                     contains_neighbor[0] = True
                 if expected_neighbors[1]['neighbors'] == response[i][x]['address']:
                     contains_neighbor[1] = True
-    
+
     return contains_neighbor
 
 
@@ -189,6 +189,7 @@ def prepare_transaction_arguments(arg_list):
             arg_list[key] = Tag(arg_list[key])
         elif key == 'message':
             arg_list[key] = TryteString.from_unicode(arg_list[key])
+
 
 
 def duplicate_arguments(arg_list):

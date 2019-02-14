@@ -169,7 +169,8 @@ kubectl get nodes
 swapoff -a
 ```  
 然后执行:  
-```kubeadm join 192.168.50.128:6443 --token rnrw5t.nedeq3364h7m0t6e --discovery-token-ca-cert-hash \ sha256:0e1090ceed078b2e9e97c5db325c9fe2233ab40cff6452b349eca3814f8f78e9
+```
+kubeadm join 192.168.50.128:6443 --token rnrw5t.nedeq3364h7m0t6e --discovery-token-ca-cert-hash \ sha256:0e1090ceed078b2e9e97c5db325c9fe2233ab40cff6452b349eca3814f8f78e9
 ```  
 
 步骤21.查看node节点加入情况

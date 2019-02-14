@@ -1,6 +1,10 @@
 package com.iota.iri.utils;
 
 import org.apache.commons.io.IOUtils;
+import org.json.JSONTokener;
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.iota.iri.conf.BaseIotaConfig;
@@ -33,7 +37,7 @@ public class IotaIOUtils extends IOUtils {
         }
     }
 
-    public static List<String> processBatchTxnMsg(final String message) {
+    public static String processBatchTxnMsg(final String message) {
         // decompression goes here
         String msgStr = message;
         if(BaseIotaConfig.getInstance().isEnableCompressionTxns()) {
@@ -55,82 +59,59 @@ public class IotaIOUtils extends IOUtils {
             }
         }
 
-        List<String> ret = new ArrayList<>();
+        StringBuilder ret = new StringBuilder();
+        int size = (int)TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
+        BatchTxns tmpBatch = new BatchTxns();
 
         // parse json here
         try {
-            ObjectMapper objectMapper = new ObjectMapper();
-            JsonNode rootNode = objectMapper.readTree(msgStr);
-            JsonNode numNode = rootNode.path("tx_num");
-            JsonNode txsNode = rootNode.path("txn_content");
-            long txnCount = numNode.asLong();
+            JSONObject jo = new JSONObject(msgStr);
+            long txnCount = jo.getLong("tx_num");
+            Object txnObj = jo.get("txn_content");
 
-            int size = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
-            if(txsNode.isArray()) {
-                BatchTxns tmpBatch = new BatchTxns();
-                for (final JsonNode txn : txsNode) {
-                    TransactionData.getInstance().readFromStr(txn.toString());
-                    tmpBatch.addTxn(TransactionData.getInstance().getLast());
-                    if(tmpBatch.getTryteStringLen(tmpBatch) > size) {
+            Object json = new JSONTokener(txnObj.toString()).nextValue();
+            if(json instanceof JSONObject){
+                if (txnCount != 1) {
+                    log.error("Wrong input - tx_num is {}, but txn_content have 1 item!", txnCount);
+                    return null;
+                }
+
+                TransactionData.getInstance().readFromStr(txnObj.toString());
+                Transaction tx = TransactionData.getInstance().getLast();
+                tmpBatch.addTxn(tx);
+                String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
+                ret.append(s);
+            }else if (json instanceof JSONArray) {
+                JSONArray jsonArray = (JSONArray) json;
+                if (jsonArray.length() != txnCount) {
+                    log.error("Wrong input - tx_num is {}, but txn_content have {} items!", txnCount, jsonArray.length());
+                    return null;
+                }
+
+                for (Object object : jsonArray) {
+                    TransactionData.getInstance().readFromStr(object.toString());
+                    Transaction tx = TransactionData.getInstance().getLast();
+                    if (tmpBatch.getTryteStringLen(tmpBatch) + tx.getTryteStringLen(tx) > size) {
                         String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
-                        ret.add(s);
+                        ret.append(s);
                         tmpBatch.clear();
                     }
+                    tmpBatch.addTxn(tx);
                 }
                 if(tmpBatch.tx_num > 0) {
                     String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
-                    ret.add(s);
+                    ret.append(s);
                     tmpBatch.clear();
                 }
+            } else {
+                log.error("Neither JSONObject nor JSONArray!!!");
+                return null;
             }
 
-            return ret;
-        } catch (IOException e) {
-            log.error("Parse json error", e);
+            return ret.toString();
+        } catch (Exception e) {
+            e.printStackTrace();
             return null;
         }
-    }
-
-    public static List<String> processNornalMsg(String address, String msg) {
-        final int txMessageSize = (int) TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
-        final int txCount = (int) (msg.length() + txMessageSize - 1) / txMessageSize;
-
-        final byte[] timestampTrits = new byte[TransactionViewModel.TIMESTAMP_TRINARY_SIZE];
-        Converter.copyTrits(System.currentTimeMillis(), timestampTrits, 0, timestampTrits.length);
-        final String timestampTrytes = StringUtils.rightPad(Converter.trytes(timestampTrits), timestampTrits.length / 3, '9');
-
-        final byte[] lastIndexTrits = new byte[TransactionViewModel.LAST_INDEX_TRINARY_SIZE];
-        byte[] currentIndexTrits = new byte[TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE];
-
-        Converter.copyTrits(txCount - 1, lastIndexTrits, 0, lastIndexTrits.length);
-        final String lastIndexTrytes = Converter.trytes(lastIndexTrits);
-
-        List<String> transactions = new ArrayList<>();
-        for (int i = 0; i < txCount; i++) {
-            String tx;
-            if (i != txCount - 1) {
-                tx = msg.substring(i * txMessageSize, (i + 1) * txMessageSize);
-            } else {
-                tx = msg.substring(i * txMessageSize);
-            }
-
-            Converter.copyTrits(i, currentIndexTrits, 0, currentIndexTrits.length);
-
-            tx = StringUtils.rightPad(tx, txMessageSize, '9');
-            tx += address.substring(0, 81);
-            // value
-            tx += StringUtils.repeat('9', 27);
-            // obsolete tag
-            tx += StringUtils.repeat('9', 27);
-            // timestamp
-            tx += timestampTrytes;
-            // current index
-            tx += StringUtils.rightPad(Converter.trytes(currentIndexTrits), currentIndexTrits.length / 3, '9');
-            // last index
-            tx += StringUtils.rightPad(lastIndexTrytes, lastIndexTrits.length / 3, '9');
-            transactions.add(tx);
-        }
-
-        return transactions;
     }
 }

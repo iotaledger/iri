@@ -1,5 +1,6 @@
 from aloe import world, step
 from util.test_logic import api_test_logic as api_utils
+from util.test_logic import value_fetch_logic
 from util.response_logic import response_handling as response_handling
 
 import logging
@@ -117,8 +118,8 @@ def compare_response(step):
 def compare_gtta_with_milestones(step):
     """Compares the getTransactionsToApprove response values with the collected milestone issuing address"""
     logger.info("Compare GTTA response with milestones")
-    gtta_responses = api_utils.fetch_response('getTransactionsToApprove')
-    find_transactions_responses = api_utils.fetch_response('findTransactions')
+    gtta_responses = value_fetch_logic.fetch_response('getTransactionsToApprove')
+    find_transactions_responses = value_fetch_logic.fetch_response('findTransactions')
     node = world.config['nodeId']
     milestones = list(find_transactions_responses[node]['hashes'])
     world.config['max'] = len(gtta_responses[node])

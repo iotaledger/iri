@@ -11,12 +11,10 @@ import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.zmq.MessageQ;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
 
 import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.assertFalse;
@@ -42,8 +40,7 @@ public class TransactionValidatorTest {
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
-    MessageQ messageQ = Mockito.mock(MessageQ.class);
-    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider, messageQ);
+    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
     txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester);
     txValidator.setMwm(false, MAINNET_MWM);
   }

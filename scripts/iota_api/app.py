@@ -23,12 +23,19 @@ enable_compression = cf.getboolean("iota", "enableCompression")
 enable_batching = cf.getboolean("iota", "enableBatching")
 cache = IotaCache(iota_addr, iota_seed)
 
+# txs buffer. dequeue is thread-safe
+txn_cache = deque()
+TIMER_INTERVAL = 20
+BATCH_SIZE = 20
+COMPRESSED_SIZE = 7
+
+cache_lock = threading.Lock()
+lock = threading.Lock()
+
+
 if (enable_ipfs == True and enable_compression == True) or (enable_batching == False and enable_compression == True):
     print("Error configure!", file=sys.stderr)
     sys.exit(-1)
-
-
-lock = threading.Lock()
 
 def compress_str(data):
     if enable_compression == True:
@@ -79,17 +86,6 @@ def send_to_iota(tx_string, tx_num):
 
         print("[INFO]Cache data in tangle, the tangle tag is %s." % (TagGenerator.get_current_tag("TR")), file=sys.stderr)
 
-# txs buffer. dequeue is thread-safe
-txn_cache = deque()
-
-# timer interval
-TIMER_INTERVAL = 20
-
-BATCH_SIZE = 100
-
-COMPRESSED_SIZE = 7
-
-cache_lock = threading.Lock()
 def get_cache():
     if enable_batching is False:
         return
@@ -105,19 +101,14 @@ def get_cache():
         if nums == 0:
             return
 
-        #all_txs = "["
-        all_txs = ""
+        list = []
         for i in range(nums):
             tx = txn_cache.popleft()
-            #all_txs += tx
-            if i == nums - 1:
-                all_txs += tx
-            else:
-                all_txs += tx + "BADBAD"
-        #all_txs += "]"
-        print("txs = \\", all_txs, "/", file=sys.stderr)
+            list.append(tx)
 
+    all_txs = json.dumps(list)
     send(all_txs, nums)
+
 
 app = Flask(__name__)
 
@@ -148,7 +139,7 @@ def put_cache():
     if req_json is None:
         return 'error'
 
-    req_json["timestamp"] = str(time.time())
+    #req_json["timestamp"] = str(time.time())
 
     tx_string = json.dumps(req_json, sort_keys=True)
 

@@ -1,7 +1,9 @@
 package com.iota.iri.controllers;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.model.*;
 import com.iota.iri.model.persistables.Address;
 import com.iota.iri.model.persistables.Approvee;
@@ -523,7 +525,7 @@ public class TransactionViewModel {
         return "transaction " + hash.toString();
     }
 
-    private boolean addMilestoneTxnCount(Tangle tangle) {
+    private boolean isMilestoneTxn() {
         // milestone
         byte[] tritsSig = getSignature();
         String trytesSig = Converter.trytes(tritsSig);
@@ -531,64 +533,50 @@ public class TransactionViewModel {
         String headerStr = new String((Arrays.copyOfRange(bytesSig, 0, 4)), StandardCharsets.US_ASCII);
 
         if (headerStr.equals("\0\0\0\0")) {
-            tangle.addTxnCount(1);
             return true;
         } else {
             return false;
         }
     }
 
-    public long addBatchTxnCount(Tangle tangle) {
-        // milestone
-        if (addMilestoneTxnCount(tangle)) {
+    public long addTxnCount(Tangle tangle, boolean isMessage) {
+        // TODO: replacing with isMilestone??
+        if (isMilestoneTxn()) {
+            tangle.addTxnCount(1);
             return 1;
         }
 
-        byte[] tritsSig = getSignature();
-        String trytesSig = Converter.trytes(tritsSig);
-
-        try {
-            byte[] bytesSig = Converter.trytesToBytes(trytesSig);
+        if (BaseIotaConfig.getInstance().isEnableBatchTxns()) {
+            byte[] trits;
+            if (isMessage) {
+                trits = Arrays.copyOfRange(trits(), 0, ESSENCE_TRINARY_OFFSET);
+            } else {
+                trits = getSignature();
+            }
+            String trytes = Converter.trytes(trits);
 
             try {
-                ObjectMapper objectMapper = new ObjectMapper();
-                JsonNode rootNode = objectMapper.readTree(bytesSig);
-                JsonNode idNode = rootNode.path("tx_num");
-                long txnCount = idNode.asLong();
-                tangle.addTxnCount(txnCount);
-                return txnCount;
-            } catch (Exception e) {
-                // put_file with ipfs and batch, not json format
-                //e.printStackTrace();
-                tangle.addTxnCount(1);
-                return 1;
+                String bytes = Converter.trytesToAscii(trytes);
+
+                try {
+                    JSONObject jo = new JSONObject(bytes);
+                    long txnCount = jo.getLong("tx_num");
+                    tangle.addTxnCount(txnCount);
+                    return txnCount;
+                } catch (JSONException e) {
+                    // transaction's format is not json,
+                    tangle.addTxnCount(1);
+                    return 1;
+                }
+            } catch (IllegalArgumentException e) {
+                // convert failed, tx content is illegal.
+                e.printStackTrace();
+                return 0;
             }
-        } catch (Exception e) {
-            e.printStackTrace();
-            // json parse error.
-            return 0;
-        }
-    }
-
-    public long addCompressedTxnCount(Tangle tangle) {
-        if (addMilestoneTxnCount(tangle)) {
+        } else {
+            // transaction not in batch, means 'put_file'
+            tangle.addTxnCount(1);
             return 1;
-        }
-
-        byte[] trits = trits();
-        String trytes = Converter.trytes(trits);
-
-        try {
-            String s = Converter.trytesToAscii(trytes.substring(0, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3));
-            int count = StringUtils.countMatches(s, "{");
-
-            tangle.addTxnCount(count);
-
-            return count;
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return 0;
         }
     }
 }

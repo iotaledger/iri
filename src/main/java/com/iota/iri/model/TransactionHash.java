@@ -13,6 +13,13 @@ public class TransactionHash extends AbstractHash {
     protected TransactionHash(byte[] source, int offset, int sourceSize) {
         super(source, offset, sourceSize);
     }
+
+    public byte[] getBytes() {
+        return this.bytes();
+    }
+
+    public void setBytes(byte[] bytes) {
+    }
 	
     /**
      * Calculates a transaction hash from an array of bytes. Uses the entire trits array

@@ -16,8 +16,9 @@ def check_if_neighbors(api, neighbors, expected_neighbor):
     methods in the step.
     """
     is_neighbor = False
-    for neighbor in enumerate(neighbors):
-        if expected_neighbor == neighbors[neighbor]['address']:
+
+    for index, neighbor in enumerate(neighbors):
+        if expected_neighbor == neighbor['address']:
             logger.info("Already a neighbor")
             is_neighbor = True
         else:
@@ -25,6 +26,5 @@ def check_if_neighbors(api, neighbors, expected_neighbor):
 
     if is_neighbor is False:
         udp_address = "udp://" + expected_neighbor
-        logger.info('Adding {} as neighbor'.format(udp_address))
         api.add_neighbors([udp_address.decode()])
         logger.info('{} added as neighbor'.format(udp_address))

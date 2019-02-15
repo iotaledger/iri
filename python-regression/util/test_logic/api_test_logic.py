@@ -96,10 +96,10 @@ def prepare_options(args, option_list):
 
             option = fetch_list[arg_type](value)
 
-            '''
+            """
             Fills option_list with the fetched value. Excludes seed as an option, as it's only there for value 
             transactions and is not required as an argument for any api calls. 
-            '''
+            """
             if key != 'seed':
                 option_list[key] = option
 

@@ -11,7 +11,6 @@ import com.iota.iri.service.tipselection.TailFinder;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import com.iota.iri.zmq.MessageQ;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -58,11 +57,10 @@ public class WalkerAlphaTest {
                 Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
 
-        MessageQ messageQ = Mockito.mock(MessageQ.class);
         TailFinder tailFinder = Mockito.mock(TailFinder.class);
         Mockito.when(tailFinder.findTail(Mockito.any(Hash.class)))
                 .then(args -> Optional.of(args.getArgumentAt(0, Hash.class)));
-        walker = new WalkerAlpha(tailFinder, tangle, messageQ, new Random(1), new MainnetConfig());
+        walker = new WalkerAlpha(tailFinder, tangle, new Random(1), new MainnetConfig());
     }
 
 

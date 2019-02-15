@@ -2,7 +2,6 @@ from __future__ import print_function
 import sys
 sys.path.append("..")
 import ConfigParser
-import time
 import commands
 import threading
 import json
@@ -124,8 +123,6 @@ def put_file():
     if req_json is None:
         return 'error'
 
-    req_json["timestamp"] = str(time.time())
-
     send(json.dumps(req_json, sort_keys=True))
 
     return 'ok'
@@ -138,8 +135,6 @@ def put_cache():
     req_json = request.get_json()
     if req_json is None:
         return 'error'
-
-    #req_json["timestamp"] = str(time.time())
 
     tx_string = json.dumps(req_json, sort_keys=True)
 

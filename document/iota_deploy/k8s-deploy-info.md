@@ -1,6 +1,6 @@
 # k8s环境搭建说明  
 
-## 安装环境
+## 安装环境  
 操作系统:Ubuntu 16.04  
 三台机器  
 192.168.50.128 master  
@@ -20,7 +20,6 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg |apt-key add -
 ```  
 
 步骤3.apt-get update    
-
 
 步骤4.查看aplache docker官方的稳定版本    
 
@@ -46,7 +45,6 @@ systemctl status docker  查看docker是否在运行
 ```
 docker run hello-world --显示正确结果
 ```  
-
 
 步骤8.添加公钥文件  
 
@@ -182,10 +180,9 @@ kubectl get nodes
 
 步骤22.验证集群功能  
 
-```
+``` 
  kubectl run nginx-deploy --image=nginx:1.14-alpine --port=80 --replicas=2
 ```  
 
 ps:步骤1-7,11-13是在所有节点上执行，
    步骤8-10，14-19，21-22在master节点执行
-

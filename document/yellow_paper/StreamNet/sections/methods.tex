@@ -1,8 +1,11 @@
 \section{StreamNet main algorithm}
 
-\subsection{Storage}
+%\subsection{Storage}
 
-\subsection{UTXO and Hash Functions}
+%\subsection{UTXO and Hash Functions}
+
+\subsection{DAG total ordering algorithm}
+
 \subsubsection{Metrics for Pivotal Chain Selection}
 In Phantom \cite{sompolinskyphantom} and Conflux \cite{li2018scaling}, the $GHOST$ rule \cite{sompolinsky2015secure} is applied for selecting the pivotal chain.
 Here we introduce a new metric with Katz centrality \cite{katz1953new} as the weighting criteria. 
@@ -23,7 +26,7 @@ we use an incremental algorithm to deal with the streaming graph calculation \ci
 \sum_{k=1}^{max} \alpha^{k-1}A^{k}=A(I-\alpha A)^{-1}
 \end{equation}
 
-\subsection{DAG total ordering algorithm}
+\subsubsection{Algorithm framework}
 At any time, the local state of a user in the Conflux protocal is a graph $G = <B,g,P,E>$. $B$ is the set of blocks in $G$. $g \in G$ is the genesis block. $P$ is a function that maps a block $b$ to its parent block $P(b)$. Specially, $P(g) = \perp$. $E$ is the set of directly reference edges and parent edges in this graph. $e = <b,b^'> \in E$ is an edge from the block $b$ to the block $b^'$, which denotes that $b'$ happens before $b$. Note that there is always a parent edge from a block to its parent block (i.e., $\forall b \in B$, $b, P(b)> \in E$). All nodes in the Conflux protocal share a predefined deterministic hash function Hash that maps each block in $B$ to a unique integer id . It satisfies that $\forall {b} \neq {b'}$, Hash($b$) $\neq$ Hash($b'$).
 
 We next define several utility functions and notatons. GetGenesis() returns the Genesis block. Past() returns the set of blocks that are generated before a given block(but include the block itself). BuildSubGraph() returns the sub graph by removing blocks and edges except the certain blocks.  In addition, a map called parentGragh is defined, key presents a block and value is the set of blocks that the block approves. Conversely, parentRevGraph construts a relationship between the block and its approvee block. Score presents the weight of blocks, each block achieves a score when attaching to the graph. Figure~\ref{allMethods} represents the definition of these utility functions. 
@@ -109,7 +112,7 @@ and its weight update is similar to the result of the original algorithm.
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=0.55\textwidth]{figures/edge_info.png}
+\includegraphics[width=0.40\textwidth]{figures/edge_info.pdf}
     \caption{
         Weight calculation based on edge information.
      }

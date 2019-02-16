@@ -442,7 +442,7 @@ public class TransactionViewModelTest {
         byte[] trits = new byte[TransactionViewModel.TRINARY_SIZE];
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
 
-        long addedTxCount = transactionViewModel.addTxnCount(tangle, false);
+        long addedTxCount = transactionViewModel.addTxnCount(tangle);
         Assert.assertEquals("batch txs count should be equal.", 1, addedTxCount);
     }
 }

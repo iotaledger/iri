@@ -1,16 +1,15 @@
 \section{Basic concepts}
 \subsection{Basic data structure}
-StreamNet is a Directed Acyclic Graph, where each node in the DAG represents a transaction and the directed edge represents a confirmation relationship between transactions.
-For instance, node $0$ in Figure~\ref{simple_sn} represents the Genesis transaction, which is by default a confirmed transaction (in theory, it is also a 100\%confirmed transaction).
-Node $1$, on the other hand, represents the first transaction, which is confirmed by the subsequent Node $2$, $3$ and $4$. 
-When a new transaction is not confirmed, it is called a tip.
-For example, in Figure~\ref{simple_sn}, Node $6$ is a tip.
+StreamNet is a Directed Acyclic Graph, where each vertex in the $DAG$ represents a block and the directed edge represents a confirmation relationship between blocks.
+For instance, vertex $0$ in Figure~\ref{simple_sn} represents the Genesis block, which is by default a confirmed block.
+Vertex $1$, on the other hand, represents the first block, which is confirmed by the subsequent block $2$, $3$ and $4$. 
+When a new block is not confirmed, it is called a tip. For example, in Figure~\ref{simple_sn}, block $6$ is a tip.
 
 \begin{figure}[!ht]
 \begin{center}
 \includegraphics[width=0.45\textwidth]{figures/simple_sn.eps}
     \caption{
-        Example of the StreamNet data structure \cite{gal_2018}.
+        Example of the StreamNet data structure.
      }
 \label{simple_sn}
 \end{center}
@@ -52,7 +51,7 @@ and then hopes to transfer $1$ token to Bob and attach the transaction node to S
 Here, each transaction must find two tip transactions to confirm, namely trunk and branch transactions.
 For example, the Genesis $\rightarrow$ Alice transaction confirms the Genesis transaction itself,
 while the Genesis $\rightarrow$ Bob transaction confirms the Genesis transaction and the Genesis $\rightarrow$ Alice transaction.
-When a transaction wants to be attached to StreamNet, it must do enough Proof of Work (POW) \cite{pow_tangle},
+When a transaction wants to be attached to StreamNet, it must do enough Proof of Work (POW),
 but this POW differs from Bitcoin in that its difficulty is fixed and therefore does not need the participation of miners.
 
 \subsubsection{Transaction validation (approve)}

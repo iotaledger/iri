@@ -113,8 +113,6 @@ public class API {
     
     private final String[] features;
 
-    private boolean isMessage = false;
-
     public API(Iota instance, IXI ixi) {
         this.instance = instance;
         this.ixi = ixi;
@@ -241,11 +239,9 @@ public class API {
                         return ErrorResponse.create("Invalid params");
                     }
 
-                    isMessage = true;
                     String address = (String) request.get("address");
                     String message = (String) request.get("message");
                     AbstractResponse rsp = storeMessageStatement(address, message);
-                    isMessage = false;
                     return rsp;
                 }
 
@@ -709,7 +705,7 @@ public class API {
                     instance.transactionValidator.getMinWeightMagnitude());
 
             if(transactionViewModel.store(instance.tangle)) {
-                long count = transactionViewModel.addTxnCount(instance.tangle, isMessage);
+                long count = transactionViewModel.addTxnCount(instance.tangle);
                 log.info("received {} transactions.", count);
 
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
@@ -1343,7 +1339,7 @@ public class API {
         // special process
         String msg = message;
 
-        if (isMessage) {
+        if (!BaseIotaConfig.getInstance().isEnableIPFSTxns() && BaseIotaConfig.getInstance().isEnableBatchTxns()) {
             String processed = IotaIOUtils.processBatchTxnMsg(message);
             if (processed == null) {
                 log.error("Special process failed!");
@@ -1411,7 +1407,7 @@ public class API {
         List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
         broadcastTransactionsStatement(powResult);
 
-        if (isMessage) {
+        if (!BaseIotaConfig.getInstance().isEnableIPFSTxns() && BaseIotaConfig.getInstance().isEnableBatchTxns()) {
             storeTransactionsStatement(powResult);
         }
 

@@ -539,7 +539,7 @@ public class TransactionViewModel {
         }
     }
 
-    public long addTxnCount(Tangle tangle, boolean isMessage) {
+    public long addTxnCount(Tangle tangle) {
         // TODO: replacing with isMilestone??
         if (isMilestoneTxn()) {
             tangle.addTxnCount(1);
@@ -547,12 +547,7 @@ public class TransactionViewModel {
         }
 
         if (BaseIotaConfig.getInstance().isEnableBatchTxns()) {
-            byte[] trits;
-            if (isMessage) {
-                trits = Arrays.copyOfRange(trits(), 0, ESSENCE_TRINARY_OFFSET);
-            } else {
-                trits = getSignature();
-            }
+            byte[] trits = getSignature();
             String trytes = Converter.trytes(trits);
 
             try {
@@ -564,12 +559,12 @@ public class TransactionViewModel {
                     tangle.addTxnCount(txnCount);
                     return txnCount;
                 } catch (JSONException e) {
-                    // transaction's format is not json,
+                    // transaction's format is not json
                     tangle.addTxnCount(1);
                     return 1;
                 }
             } catch (IllegalArgumentException e) {
-                // convert failed, tx content is illegal.
+                // failed to convert trytes to ascii, tx content is illegal.
                 e.printStackTrace();
                 return 0;
             }

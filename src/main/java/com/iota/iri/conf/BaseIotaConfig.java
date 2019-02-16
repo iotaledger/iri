@@ -437,7 +437,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--ipfs-txns"}, description = DbConfig.Descriptions.ENABLE_IPFS_TXNS)
+    @Parameter(names = {"--ipfs-txns"}, description = DbConfig.Descriptions.ENABLE_IPFS_TXNS, arity = 1)
     protected void setEnableIPFSTxns(boolean enableIPFSTxns) {
         this.enableIPFSTxns = enableIPFSTxns;
     }

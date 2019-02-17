@@ -105,11 +105,6 @@ public class AsyncTransactionPruner implements TransactionPruner {
     private final Map<Class<? extends TransactionPrunerJob>, JobQueue> jobQueues = new HashMap<>();
 
     /**
-     * Holds a flag that indicates if the state shall be persisted.
-     */
-    private boolean persistRequested = false;
-
-    /**
      * This method initializes the instance and registers its dependencies.<br />
      * <br />
      * It simply stores the passed in values in their corresponding private properties.<br />
@@ -204,7 +199,6 @@ public class AsyncTransactionPruner implements TransactionPruner {
      */
     public void start() {
         ThreadUtils.spawnThread(this::processJobsThread, cleanupThreadIdentifier);
-        ThreadUtils.spawnThread(this::persistThread, persisterThreadIdentifier);
     }
 
     /**
@@ -230,73 +224,6 @@ public class AsyncTransactionPruner implements TransactionPruner {
             }
 
             ThreadUtils.sleep(GARBAGE_COLLECTOR_RESCAN_INTERVAL);
-        }
-    }
-
-    /**
-     * This method contains the logic for persisting the pruner state, that gets executed in a separate {@link Thread}.
-     *
-     * It periodically checks the {@link #persistRequested} flag and triggers the writing of the state file until the
-     * {@link AsyncTransactionPruner} is shutting down.
-     */
-    private void persistThread() {
-        while(!Thread.currentThread().isInterrupted()) {
-            try {
-                if (persistRequested) {
-                    saveStateNow();
-
-                    persistRequested = false;
-                }
-            } catch(TransactionPruningException e) {
-                log.error("could not persist transaction pruner state", e);
-            }
-
-            ThreadUtils.sleep(GARBAGE_COLLECTOR_PERSIST_INTERVAL);
-        }
-    }
-
-    /**
-     * This method creates a serialized version of the given job.
-     *
-     * @param job job that shall get serialized
-     * @return serialized representation of the job
-     */
-    private String serializeJobEntry(TransactionPrunerJob job) {
-        return job.getClass().getCanonicalName() + ";" + job.serialize();
-    }
-
-    /**
-     * Saves the state by serializing the jobs into a state file that is stored on the hard disk of the node.
-     *
-     * If no jobs are queued it removes the state file.
-     *
-     * @throws TransactionPruningException if anything goes wrong while persisting the state
-     */
-    private void saveStateNow() throws TransactionPruningException {
-        try {
-            AtomicInteger jobsPersisted = new AtomicInteger(0);
-
-            Files.write(
-                Paths.get(getStateFile().getAbsolutePath()),
-                () -> jobQueues.values().stream()
-                      .<TransactionPrunerJob>flatMap(JobQueue::stream)
-                      .<CharSequence>map(jobEntry -> {
-                          jobsPersisted.incrementAndGet();
-
-                          return this.serializeJobEntry(jobEntry);
-                      })
-                      .iterator()
-            );
-
-            if (jobsPersisted.get() == 0) {
-                try {
-                    Files.deleteIfExists(Paths.get(getStateFile().getAbsolutePath()));
-                } catch (IOException e) {
-                    throw new TransactionPruningException("failed to remove the state file", e);
-                }
-            }
-        } catch(Exception e) {
-            throw new TransactionPruningException("failed to write the state file", e);
         }
     }
 
@@ -343,19 +270,6 @@ public class AsyncTransactionPruner implements TransactionPruner {
         }
 
         return jobQueue;
-    }
-
-    /**
-     * This method returns a file handle to state file.
-     *
-     * It constructs the path of the file by appending the corresponding file extension to the
-     * {@link com.iota.iri.conf.BaseIotaConfig#localSnapshotsBasePath} config variable. If the path is relative, it
-     * places the file relative to the current working directory, which is usually the location of the iri.jar.
-     *
-     * @return File handle to the state file.
-     */
-    private File getStateFile() {
-        return new File(config.getLocalSnapshotsBasePath() + ".snapshot.gc");
     }
 
     /**

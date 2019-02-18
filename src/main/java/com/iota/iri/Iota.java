@@ -10,6 +10,7 @@ import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
+import com.iota.iri.pluggables.utxo.TransactionData;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.service.tipselection.RatingCalculator;
@@ -81,6 +82,7 @@ public class Iota {
         ledgerValidator = createLedgerValidator();
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
         tipsSelector = createTipSelector(configuration);
+        TransactionData.getInstance().setTangle(tangle);
     }
 
     public void init() throws Exception {

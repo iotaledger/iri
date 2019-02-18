@@ -85,3 +85,10 @@ def storeMessage(url, address, message):
         "message": message
     }
     return API(cmd, url)
+
+def getBalance(url, address, coinType):
+    cmd = {
+        "command": "getBalances",
+        "cointype": coinType 
+    }
+    return API(cmd, url)

@@ -6,7 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iota.iri.utils.Converter;
 
 public class BatchTxns {
-    public List<Transaction> txn_content;
+    public List<Txn> txn_content;
     public int tx_num;
 
     public void clear() {
@@ -19,7 +19,7 @@ public class BatchTxns {
         tx_num = 0;
     }
 
-    public void addTxn(Transaction txn) {
+    public void addTxn(Txn txn) {
         txn_content.add(txn);
         tx_num += 1;
     }

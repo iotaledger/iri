@@ -374,7 +374,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     //FIXME for debug :: for graphviz visualization
     public void printGraph(HashMap<Hash, Set<Hash>> graph, Hash k) {
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(IotaUtils.abbrieviateHash(k,4)));
+            BufferedWriter writer = null;
+            if(k != null) {
+                writer = new BufferedWriter(new FileWriter(IotaUtils.abbrieviateHash(k,4)));
+            }
             for (Hash key : graph.keySet()) {
                 for (Hash val : graph.get(key)) {
                     if (nameMap != null) {
@@ -396,9 +399,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     }
                 }
             }
-            writer.close();
+            if(k != null) {
+                writer.close();
+            }
         } catch(Exception e) {
-
+            e.printStackTrace();
         } 
     }
 

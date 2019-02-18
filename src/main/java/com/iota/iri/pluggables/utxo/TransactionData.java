@@ -26,16 +26,7 @@ public class TransactionData {
     HashMap<Hash, Hash> txnToTangleMap;
     HashMap<Hash, HashSet<Txn>> tangleToTxnMap;
 
-    private static TransactionData txnData;
-
-    // TODO make this thread safe
-    public static void setInstance(TransactionData txnData) 
-    {
-        if (txnData == null)
-        {
-            txnData = txnData;
-        }
-    }
+    private static TransactionData txnData = new TransactionData();
 
     public void setTangle(Tangle tangle) {
         if(this.tangle == null) {
@@ -44,17 +35,13 @@ public class TransactionData {
     }
 
     public static TransactionData getInstance() {
-        if(txnData == null)
-        {
-            txnData = new TransactionData();
-            txnData.init();
-        }
-        return txnData; 
+        return txnData;
     }
 
     public TransactionData() {
         txnToTangleMap = new HashMap<Hash, Hash>();
         tangleToTxnMap = new HashMap<Hash, HashSet<Txn>>();
+        init();
     }
 
     static class RawTxn {

@@ -163,12 +163,10 @@ spec:
   selector:
     app: iota-cli
 ```
-
 创建集群
-
 ```
-sudo kubectl create -f iota_cli_dp.yaml
-sudo kubectl create -f iota_cli_sc.yaml
+sudo kubectl create -f iota_cli_dp.yaml;
+sudo kubectl create -f iota_cli_sc.yaml;
 ```
 
 最后通过 clusterip 和port访问集群

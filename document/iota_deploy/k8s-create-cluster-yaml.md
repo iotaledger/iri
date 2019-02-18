@@ -1,6 +1,6 @@
-# k8s启动集群步骤  
+# k8s启动集群步骤 #
 
-## 启动单个集群
+## 启动单个集群 ##
 
 通过yaml创建集群，新建deployment文件，iota-deploy.yaml内容如下:
 
@@ -59,9 +59,9 @@ service文件中的spec.selector.app 和deployment中labels要对应
 
 最后通过 clusterip 和port访问集群
 
-## 启动服务相互调用的两个集群
+## 启动服务相互调用的两个集群 ##
 
-### 集群2访问集群1中的服务接口
+### 集群2访问集群1中的服务接口 ###
 
 创建集群1
 

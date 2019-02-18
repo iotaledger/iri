@@ -139,7 +139,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         this.milestoneService = milestoneService;
         this.milestoneSolidifier = milestoneSolidifier;
 
-        coordinatorAddress = HashFactory.ADDRESS.create(config.getCoordinator());
+        coordinatorAddress = config.getCoordinator();
 
         bootstrapLatestMilestoneValue();
 

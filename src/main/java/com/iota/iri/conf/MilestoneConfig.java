@@ -18,16 +18,19 @@ public interface MilestoneConfig extends Config {
     boolean isDontValidateTestnetMilestoneSig();
 
     /**
+     * Default Value: {@value BaseIotaConfig.Defaults#NUM_KEYS_IN_MILESTONE}
      * @return {@value Descriptions#NUMBER_OF_KEYS_IN_A_MILESTONE}
      */
     int getNumberOfKeysInMilestone();
 
     /**
+     * Default Value: {@value BaseIotaConfig.Defaults#COORDINATOR_SECURITY_LEVEL}
      * @return {@value Descriptions#COORDINATOR_SECURITY_LEVEL}
      */
     int getCoordinatorSecurityLevel();
 
     /**
+     * Default Value: {@link BaseIotaConfig.Defaults#COORDINATOR_SIGNATURE_MODE}
      * @return {@value Descriptions#COORDINATOR_SIGNATURE_MODE}
      */
     SpongeFactory.Mode getCoordinatorSignatureMode();

@@ -3,6 +3,7 @@
 ## (1)启动单个集群
 
 通过yaml创建集群，新建deployment文件，iota-deploy.yaml内容如下:
+
 ```
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -25,7 +26,9 @@ spec:
       - name: trias-cli
         image: 172.31.23.215:5000/trias-cli:StreamNet_v1.0.6 
 ```  
+
 新建service文件，iota-service.yaml  
+
 ```
 apiVersion: v1
 kind: Service
@@ -41,12 +44,15 @@ spec:
         app: trias-cli
     externalIPs:
     - 172.31.28.12
-```  
-创建集群  
+```
+
+创建集群 
+
 ```
 sudo kubectl create -f iota-deploy.yaml  
 sudo kubectl create -f iota-service.yaml
-```  
+```
+
 注意:  
 spec.selector.matchLabels.app和spec.template.metadata.labels.app要一致  
 service文件中的spec.selector.app 和deployment中labels要对应  
@@ -54,9 +60,13 @@ service文件中的spec.selector.app 和deployment中labels要对应
 最后通过 clusterip 和port访问集群
 
 ## (2)启动服务相互调用的两个集群
-#### 集群2访问集群1中的服务接口  
-创建集群1  
+
+### 集群2访问集群1中的服务接口
+
+创建集群1
+
 新建iota_node_rc.yaml文件
+
 ```
 apiVersioe: v1
 kind: ReplicationController
@@ -83,8 +93,10 @@ spec:
           value: "13600"
         - name: TCP_PORT
           value: "13600"
-```  
+```
+
 新建iota_node_sc.yaml
+
 ```
 apiVersion: v1
 
@@ -104,9 +116,12 @@ spec:
 ```
 sudo kubectl create -f iota_cli_dp.yaml  
 sudo kubectl create -f iota_cli_sc.yaml
-```  
-创建集群2  
-新建iota_cli_dp.yaml文件  
+```
+
+创建集群2
+
+新建iota_cli_dp.yaml文件
+
 ```
 apiVersion: v1
 kind: ReplicationController
@@ -131,8 +146,10 @@ spec:
             value: '192.16.30.12'
           - name: IOTA_NODE_SERVICE_PORT
             value: '14700'
-```  
-新建iota_cli_sc.yaml文件  
+```
+
+新建iota_cli_sc.yaml文件
+
 ```
 apiVersion: v1
 kind: Service
@@ -145,8 +162,10 @@ spec:
       nodePort: 31499
   selector:
     app: iota-cli
-```  
-创建集群  
+```
+
+创建集群
+
 ```
 sudo kubectl create -f iota_cli_dp.yaml  
 sudo kubectl create -f iota_cli_sc.yaml

@@ -218,8 +218,7 @@ public class Iota {
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
                 bundleValidator);
         if (transactionPruner != null) {
-            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, tipsViewModel, configuration)
-                    .restoreState();
+            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, tipsViewModel, configuration);
         }
         transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }

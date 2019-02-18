@@ -1,15 +1,15 @@
 package com.iota.iri.network;
 
 import com.iota.iri.conf.MainnetConfig;
-import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
-import com.iota.iri.zmq.MessageQ;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -17,13 +17,10 @@ import java.util.List;
 
 import static org.junit.Assert.*;
 
-/**
- * Created by paul on 5/2/17.
- */
+
 public class TransactionRequesterTest {
     private static Tangle tangle = new Tangle();
     private static SnapshotProvider snapshotProvider;
-    private MessageQ mq;
 
     @Before
     public void setUp() throws Exception {
@@ -82,13 +79,13 @@ public class TransactionRequesterTest {
 
     @Test
     public void popEldestTransactionToRequest() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         // Add some Txs to the pool and see if the method pops the eldest one
-        Hash eldest = TransactionViewModelTest.getRandomTransactionHash();
+        Hash eldest = getRandomTransactionHash();
         txReq.requestTransaction(eldest, false);
-        txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
-        txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
-        txReq.requestTransaction(TransactionViewModelTest.getRandomTransactionHash(), false);
+        txReq.requestTransaction(getRandomTransactionHash(), false);
+        txReq.requestTransaction(getRandomTransactionHash(), false);
+        txReq.requestTransaction(getRandomTransactionHash(), false);
 
         txReq.popEldestTransactionToRequest();
         // Check that the transaction is there no more
@@ -99,18 +96,18 @@ public class TransactionRequesterTest {
     public void transactionRequestedFreshness() throws Exception {
         // Add some Txs to the pool and see if the method pops the eldest one
         List<Hash> eldest = new ArrayList<Hash>(Arrays.asList(
-                TransactionViewModelTest.getRandomTransactionHash(),
-                TransactionViewModelTest.getRandomTransactionHash(),
-                TransactionViewModelTest.getRandomTransactionHash()
+                getRandomTransactionHash(),
+                getRandomTransactionHash(),
+                getRandomTransactionHash()
         ));
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < 3; i++) {
             txReq.requestTransaction(eldest.get(i), false);
         }
         for (int i = 0; i < capacity; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             txReq.requestTransaction(hash,false);
         }
 
@@ -124,11 +121,11 @@ public class TransactionRequesterTest {
 
     @Test
     public void nonMilestoneCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             txReq.requestTransaction(hash,false);
         }
         //check that limit wasn't breached
@@ -137,11 +134,11 @@ public class TransactionRequesterTest {
 
     @Test
     public void milestoneCapacityNotLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 2 ; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             txReq.requestTransaction(hash,true);
         }
         //check that limit was surpassed
@@ -150,11 +147,11 @@ public class TransactionRequesterTest {
 
     @Test
     public void mixedCapacityLimited() throws Exception {
-        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider, mq);
+        TransactionRequester txReq = new TransactionRequester(tangle, snapshotProvider);
         int capacity = TransactionRequester.MAX_TX_REQ_QUEUE_SIZE;
         //fill tips list
         for (int i = 0; i < capacity * 4 ; i++) {
-            Hash hash = TransactionViewModelTest.getRandomTransactionHash();
+            Hash hash = getRandomTransactionHash();
             txReq.requestTransaction(hash, (i % 2 == 1));
 
         }

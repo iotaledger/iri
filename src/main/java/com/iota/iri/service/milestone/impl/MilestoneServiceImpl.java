@@ -20,7 +20,6 @@ import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.dag.DAGHelper;
-import com.iota.iri.zmq.MessageQ;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,11 +59,6 @@ public class MilestoneServiceImpl implements MilestoneService {
     private SnapshotService snapshotService;
 
     /**
-     * Holds the ZeroMQ interface that allows us to emit messages for external recipients.<br />
-     */
-    private MessageQ messageQ;
-
-    /**
      * Holds the coordinator address which is used to validate signatures.<br />
      */
     private Hash coordinatorAddress;
@@ -86,6 +80,9 @@ public class MilestoneServiceImpl implements MilestoneService {
 
     /**
      * Specifies if signatures should be validated.<br />
+=======
+     * Holds the config with important milestone specific settings.<br />
+>>>>>>> dev
      */
     private boolean skipValidation;
 
@@ -105,17 +102,15 @@ public class MilestoneServiceImpl implements MilestoneService {
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      * @param config config with important milestone specific settings
      * @return the initialized instance itself to allow chaining
      */
     public MilestoneServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            MessageQ messageQ, ConsensusConfig config) {
+            ConsensusConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
-        this.messageQ = messageQ;
 
         coordinatorAddress = HashFactory.ADDRESS.create(config.getCoordinator());
         coordinatorSignatureMode = config.getCoordinatorSignatureMode();
@@ -445,8 +440,8 @@ public class MilestoneServiceImpl implements MilestoneService {
             throw new MilestoneException("error while updating the snapshotIndex of " + transaction, e);
         }
 
-        messageQ.publish("%s %s %d sn", transaction.getAddressHash(), transaction.getHash(), index);
-        messageQ.publish("sn %d %s %s %s %s %s", index, transaction.getHash(), transaction.getAddressHash(),
+        tangle.publish("%s %s %d sn", transaction.getAddressHash(), transaction.getHash(), index);
+        tangle.publish("sn %d %s %s %s %s %s", index, transaction.getHash(), transaction.getAddressHash(),
                 transaction.getTrunkTransactionHash(), transaction.getBranchTransactionHash(),
                 transaction.getBundleHash());
     }

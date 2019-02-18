@@ -10,9 +10,6 @@ import org.junit.rules.TemporaryFolder;
 
 import static org.junit.Assert.*;
 
-/**
- * Created by paul on 4/11/17.
- */
 public class MilestoneViewModelTest {
     final TemporaryFolder dbFolder = new TemporaryFolder();
     final TemporaryFolder logFolder = new TemporaryFolder();

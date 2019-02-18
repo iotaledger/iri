@@ -42,7 +42,6 @@ public class RocksDBPersistenceProviderTest {
         rocksDBPersistenceProvider.clear(Transaction.class);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void testDeleteBatch() throws Exception {
         Persistable tx = new Transaction();

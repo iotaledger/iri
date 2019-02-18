@@ -1,8 +1,8 @@
-# k8sÆô¶¯¼¯Èº²½Öè  
+# k8så¯åŠ¨é›†ç¾¤æ­¥éª¤  
 
-## (1)Æô¶¯µ¥¸ö¼¯Èº
+## (1)å¯åŠ¨å•ä¸ªé›†ç¾¤
 
-Í¨¹ıyaml´´½¨¼¯Èº£¬ĞÂ½¨deploymentÎÄ¼ş£¬iota-deploy.yamlÄÚÈİÈçÏÂ:
+é€šè¿‡yamlåˆ›å»ºé›†ç¾¤ï¼Œæ–°å»ºdeploymentæ–‡ä»¶ï¼Œiota-deploy.yamlå†…å®¹å¦‚ä¸‹:
 ```
 apiVersion: extensions/v1beta1
 kind: Deployment
@@ -24,8 +24,8 @@ spec:
       containers:
       - name: trias-cli
         image: 172.31.23.215:5000/trias-cli:StreamNet_v1.0.6 
-    ```  
-ĞÂ½¨serviceÎÄ¼ş£¬iota-service.yaml  
+```  
+æ–°å»ºserviceæ–‡ä»¶ï¼Œiota-service.yaml  
 ```
 apiVersion: v1
 kind: Service
@@ -42,21 +42,21 @@ spec:
     externalIPs:
     - 172.31.28.12
 ```  
-´´½¨¼¯Èº  
+åˆ›å»ºé›†ç¾¤  
 ```
 sudo kubectl create -f iota-deploy.yaml  
 sudo kubectl create -f iota-service.yaml
 ```  
-×¢Òâ:  
-spec.selector.matchLabels.appºÍspec.template.metadata.labels.appÒªÒ»ÖÂ  
-serviceÎÄ¼şÖĞµÄspec.selector.app ºÍdeploymentÖĞlabelsÒª¶ÔÓ¦  
+æ³¨æ„:  
+spec.selector.matchLabels.appå’Œspec.template.metadata.labels.appè¦ä¸€è‡´  
+serviceæ–‡ä»¶ä¸­çš„spec.selector.app å’Œdeploymentä¸­labelsè¦å¯¹åº”  
 
-×îºóÍ¨¹ı clusterip ºÍport·ÃÎÊ¼¯Èº
+æœ€åé€šè¿‡ clusterip å’Œportè®¿é—®é›†ç¾¤
 
-## (2)Æô¶¯·şÎñÏà»¥µ÷ÓÃµÄÁ½¸ö¼¯Èº
-#### ¼¯Èº2·ÃÎÊ¼¯Èº1ÖĞµÄ·şÎñ½Ó¿Ú  
-´´½¨¼¯Èº1  
-ĞÂ½¨iota_node_rc.yamlÎÄ¼ş
+## (2)å¯åŠ¨æœåŠ¡ç›¸äº’è°ƒç”¨çš„ä¸¤ä¸ªé›†ç¾¤
+#### é›†ç¾¤2è®¿é—®é›†ç¾¤1ä¸­çš„æœåŠ¡æ¥å£  
+åˆ›å»ºé›†ç¾¤1  
+æ–°å»ºiota_node_rc.yamlæ–‡ä»¶
 ```
 apiVersioe: v1
 kind: ReplicationController
@@ -84,7 +84,7 @@ spec:
         - name: TCP_PORT
           value: "13600"
 ```  
-ĞÂ½¨iota_node_sc.yaml
+æ–°å»ºiota_node_sc.yaml
 ```
 apiVersion: v1
 
@@ -105,8 +105,8 @@ spec:
 sudo kubectl create -f iota_cli_dp.yaml  
 sudo kubectl create -f iota_cli_sc.yaml
 ```  
-´´½¨¼¯Èº2  
-ĞÂ½¨iota_cli_dp.yamlÎÄ¼ş  
+åˆ›å»ºé›†ç¾¤2  
+æ–°å»ºiota_cli_dp.yamlæ–‡ä»¶  
 ```
 apiVersion: v1
 kind: ReplicationController
@@ -132,7 +132,7 @@ spec:
           - name: IOTA_NODE_SERVICE_PORT
             value: '14700'
 ```  
-ĞÂ½¨iota_cli_sc.yamlÎÄ¼ş  
+æ–°å»ºiota_cli_sc.yamlæ–‡ä»¶  
 ```
 apiVersion: v1
 kind: Service
@@ -146,10 +146,10 @@ spec:
   selector:
     app: iota-cli
 ```  
-´´½¨¼¯Èº  
+åˆ›å»ºé›†ç¾¤  
 ```
 sudo kubectl create -f iota_cli_dp.yaml  
 sudo kubectl create -f iota_cli_sc.yaml
 ```  
 
-×îºóÍ¨¹ı clusterip ºÍport·ÃÎÊ¼¯Èº
+æœ€åé€šè¿‡ clusterip å’Œportè®¿é—®é›†ç¾¤

@@ -1,6 +1,7 @@
 package com.iota.iri.conf;
 
 import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
 
 /**
  * Configs that should be used for tracking milestones
@@ -10,7 +11,7 @@ public interface MilestoneConfig extends Config {
     /**
      * @return Descriptions#COORDINATOR
      */
-    String getCoordinator();
+    Hash getCoordinator();
 
     /**
      * @return {@value Descriptions#DONT_VALIDATE_TESTNET_MILESTONE_SIG}
@@ -22,6 +23,12 @@ public interface MilestoneConfig extends Config {
      * @return {@value Descriptions#NUMBER_OF_KEYS_IN_A_MILESTONE}
      */
     int getNumberOfKeysInMilestone();
+
+    /**
+     * This is a meta-config. Its value depends on {@link #getNumberOfKeysInMilestone()}
+     * @return the maximal amount of possible milestones that can be issued
+     */
+    int getMaxMilestoneIndex();
 
     /**
      * Default Value: {@value BaseIotaConfig.Defaults#COORDINATOR_SECURITY_LEVEL}

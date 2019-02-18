@@ -4,13 +4,16 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 
 import java.util.Objects;
 
 public class TestnetConfig extends BaseIotaConfig {
 
-    protected String coordinator = Defaults.COORDINATOR_ADDRESS;
+    protected Hash coordinator = Defaults.COORDINATOR_ADDRESS;
     protected int numberOfKeysInMilestone = Defaults.KEYS_IN_MILESTONE;
+    protected int maxMilestoneIndex = Defaults.MAX_MILESTONE_INDEX;
     protected int coordinatorSecurityLevel = Defaults.COORDINATOR_SECURITY_LEVEL;
 
     protected boolean dontValidateTestnetMilestoneSig = Defaults.DONT_VALIDATE_MILESTONE_SIG;
@@ -36,14 +39,14 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @Override
-    public String getCoordinator() {
+    public Hash getCoordinator() {
         return coordinator;
     }
 
     @JsonProperty
     @Parameter(names = "--testnet-coordinator", description = MilestoneConfig.Descriptions.COORDINATOR)
     protected void setCoordinator(String coordinator) {
-        this.coordinator = coordinator;
+        this.coordinator = HashFactory.ADDRESS.create(coordinator);
     }
 
     @Override
@@ -66,6 +69,12 @@ public class TestnetConfig extends BaseIotaConfig {
     @Parameter(names = "--milestone-keys", description = MilestoneConfig.Descriptions.NUMBER_OF_KEYS_IN_A_MILESTONE)
     protected void setNumberOfKeysInMilestone(int numberOfKeysInMilestone) {
         this.numberOfKeysInMilestone = numberOfKeysInMilestone;
+        this.maxMilestoneIndex = 1 << numberOfKeysInMilestone;
+    }
+
+    @Override
+    public int getMaxMilestoneIndex() {
+        return maxMilestoneIndex;
     }
 
     @Override
@@ -186,11 +195,13 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     public interface Defaults {
-        String COORDINATOR_ADDRESS = "EQQFCZBIHRHWPXKMTOLMYUYPCN9XLMJPYZVFJSAY9FQHCCLWTOLLUGKKMXYFDBOOYFBLBI9WUEILGECYM";
+        Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
+                "EQQFCZBIHRHWPXKMTOLMYUYPCN9XLMJPYZVFJSAY9FQHCCLWTOLLUGKKMXYFDBOOYFBLBI9WUEILGECYM");
         boolean DONT_VALIDATE_MILESTONE_SIG = false;
         int COORDINATOR_SECURITY_LEVEL = 1;
         SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
         int KEYS_IN_MILESTONE = 22;
+        int MAX_MILESTONE_INDEX = 1 << KEYS_IN_MILESTONE;
 
         String LOCAL_SNAPSHOTS_BASE_PATH = "testnet";
         String SNAPSHOT_FILE = "/snapshotTestnet.txt";

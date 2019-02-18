@@ -1,7 +1,7 @@
 package com.iota.iri.service.milestone.impl;
 
 import com.iota.iri.BundleValidator;
-import com.iota.iri.conf.ConsensusConfig;
+import com.iota.iri.conf.MilestoneConfig;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.Curl;
@@ -59,34 +59,10 @@ public class MilestoneServiceImpl implements MilestoneService {
     private SnapshotService snapshotService;
 
     /**
-     * Holds the coordinator address which is used to validate signatures.<br />
+     * Configurations for milestone
      */
-    private Hash coordinatorAddress;
+    private MilestoneConfig config;
 
-    /**
-     * Holds the coordinator signature mode which is used to validate signatures.<br />
-     */
-    private SpongeFactory.Mode coordinatorSignatureMode;
-
-    /**
-     * Holds the coordinator security level is used to validate signatures.<br />
-     */
-    private int coordinatorSecurityLevel;
-
-    /**
-     * Holds the depth of Merkle tree used for coordinator signatures.<br />
-     */
-    private int numberOfKeysInMilestone;
-
-    /**
-     * Specifies if signatures should be validated.<br />
-=======
-     * Holds the config with important milestone specific settings.<br />
->>>>>>> dev
-     */
-    private boolean skipValidation;
-
-    private int maxMilestoneIndex;
 
     /**
      * This method initializes the instance and registers its dependencies.<br />
@@ -106,18 +82,12 @@ public class MilestoneServiceImpl implements MilestoneService {
      * @return the initialized instance itself to allow chaining
      */
     public MilestoneServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            ConsensusConfig config) {
+            MilestoneConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
-
-        coordinatorAddress = HashFactory.ADDRESS.create(config.getCoordinator());
-        coordinatorSignatureMode = config.getCoordinatorSignatureMode();
-        coordinatorSecurityLevel = config.getCoordinatorSecurityLevel();
-        numberOfKeysInMilestone = config.getNumberOfKeysInMilestone();
-        skipValidation = (config.isTestnet() && config.isDontValidateTestnetMilestoneSig());
-        maxMilestoneIndex = 1 << config.getNumberOfKeysInMilestone();
+        this.config = config;
 
         return this;
     }
@@ -186,7 +156,7 @@ public class MilestoneServiceImpl implements MilestoneService {
     public MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, int milestoneIndex)
             throws MilestoneException {
 
-        if (milestoneIndex < 0 || milestoneIndex >= maxMilestoneIndex) {
+        if (milestoneIndex < 0 || milestoneIndex >= config.getMaxMilestoneIndex()) {
             return INVALID;
         }
 
@@ -207,6 +177,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                     if (tail.getHash().equals(transactionViewModel.getHash())) {
                         //the signed transaction - which references the confirmed transactions and contains
                         // the Merkle tree siblings.
+                        int coordinatorSecurityLevel = config.getCoordinatorSecurityLevel();
                         final TransactionViewModel siblingsTx =
                                 bundleTransactionViewModels.get(coordinatorSecurityLevel);
 
@@ -218,6 +189,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                             ByteBuffer bb = ByteBuffer.allocate(Curl.HASH_LENGTH * coordinatorSecurityLevel);
                             byte[] digest = new byte[Curl.HASH_LENGTH];
 
+                            SpongeFactory.Mode coordinatorSignatureMode = config.getCoordinatorSignatureMode();
                             for (int i = 0; i < coordinatorSecurityLevel; i++) {
                                 ISSInPlace.digest(coordinatorSignatureMode, signedHash,
                                         ISS.NUMBER_OF_FRAGMENT_CHUNKS * i,
@@ -230,8 +202,9 @@ public class MilestoneServiceImpl implements MilestoneService {
 
                             //validate Merkle path
                             byte[] merkleRoot = ISS.getMerkleRoot(coordinatorSignatureMode, address,
-                                    siblingsTx.trits(), 0, milestoneIndex, numberOfKeysInMilestone);
-                            if (skipValidation || coordinatorAddress.equals(HashFactory.ADDRESS.create(merkleRoot))) {
+                                    siblingsTx.trits(), 0, milestoneIndex, config.getNumberOfKeysInMilestone());
+                            boolean skipValidation = config.isTestnet() && config.isDontValidateTestnetMilestoneSig();
+                            if (skipValidation || config.getCoordinator().equals(HashFactory.ADDRESS.create(merkleRoot))) {
                                 MilestoneViewModel newMilestoneViewModel = new MilestoneViewModel(milestoneIndex,
                                         transactionViewModel.getHash());
                                 newMilestoneViewModel.store(tangle);

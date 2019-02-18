@@ -7,6 +7,8 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.iota.iri.IRI;
 import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -595,6 +597,11 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public int getMaxMilestoneIndex() {
+        return Defaults.MAX_MILESTONE_INDEX;
+    }
+
+    @Override
     public int getNumberOfKeysInMilestone() {
         return Defaults.NUM_KEYS_IN_MILESTONE;
     }
@@ -734,7 +741,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getCoordinator() {
+    public Hash getCoordinator() {
         return Defaults.COORDINATOR_ADDRESS;
     }
 
@@ -873,11 +880,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int POW_THREADS = 0;
 
         //Coo
-        String COORDINATOR_ADDRESS =
-                "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
+        Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
+                        "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
         int COORDINATOR_SECURITY_LEVEL = 1;
         SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
         int NUM_KEYS_IN_MILESTONE = 20;
+        int MAX_MILESTONE_INDEX = 1 << NUM_KEYS_IN_MILESTONE;
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;

@@ -1,6 +1,7 @@
 from aloe import world
-from iota import Iota,Address,Tag,TryteString
+from iota import Iota, Address, Tag, TryteString
 from util import static_vals
+import subprocess
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -198,3 +199,9 @@ def prepare_transaction_arguments(arg_list):
             arg_list[key] = Tag(arg_list[key])
         elif key == 'message':
             arg_list[key] = TryteString.from_unicode(arg_list[key])
+
+def send_kube_command(node, command):
+    podname = world.machine['nodes'][node]['podname']
+    kube_command = "kubectl exec " + podname + " -- " + command
+    command_response = subprocess.check_output(kube_command, shell=True)
+    return command_response

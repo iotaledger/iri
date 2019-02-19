@@ -211,4 +211,3 @@ def make_neighbors(step, node1, node2):
                                  neighbor_info[node2]['node_neighbors'], neighbor_info[node1]['address'])
 
 
-

@@ -41,9 +41,26 @@ Feature: Test Bootstrapping With LS
       |latestMilestoneIndex       |10321            |int              |
       |latestSolidSubtangleIndex  |10321            |int              |
 
+    And Local Snapshot files were created in the "nodeB" directory
+
+
+  Scenario: Check LS files for defined values
+    Read the local snapshot files and ensure that the proper addresses and hashes have been stored correctly.
+
+    Given "nodeA" and "nodeB" are neighbors
+
+    When reading the local snapshot state file on "nodeB" returns with:
+      |keys               |values                   |type             |
+      |address            |LS_TEST_STATE_ADDRESSES  |staticValue      |
+
+    And reading the local snapshot meta file on "nodeB" returns with:
+      |keys               |values                   |type             |
+      |hashes             |LS_TEST_MILESTONE_HASHES |staticValue      |
+
+
 
   Scenario: LS File node is synced
-  Check that the node started with just LS Files is synced correctly.
+    Check that the node started with just LS Files is synced correctly.
 
     #First make sure nodes are neighbored
     Given "nodeC" and "nodeA" are neighbors
@@ -58,3 +75,19 @@ Feature: Test Bootstrapping With LS
       |keys                       |values           |type             |
       |latestMilestoneIndex       |10321            |int              |
       |latestSolidSubtangleIndex  |10321            |int              |
+
+
+  Scenario: Check DB for milestone hashes
+    Give the db-less node some time to receive the latest milestones from the permanode, then check if the milestones
+    are present in the new node.
+
+    Given "nodeC" and "nodeA" are neighbors
+    And we wait "30" second/seconds
+
+    When "checkConsistency" is called on "nodeC" with:
+      |keys               |values                   |type             |
+      |tails              |LS_TEST_MILESTONE_HASHES |staticValue      |
+
+    Then the response for "checkConsistency" should return with:
+      |keys                       |values           |type             |
+      |state		            |True             |bool             |

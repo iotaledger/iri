@@ -74,7 +74,7 @@ def findTransactions(url, tags):
 def getTransactionsToApprove(url):
     cmd = {
         "command": "getTransactionsToApprove",
-        "depth" : 10 
+        "depth" : 10
     }
     return API(cmd, url)
 
@@ -83,5 +83,12 @@ def storeMessage(url, address, message):
         "command": "storeMessage",
         "address": address,
         "message": message
+    }
+    return API(cmd, url)
+
+def getBalance(url, address, coinType):
+    cmd = {
+        "command": "getBalances",
+        "cointype": coinType
     }
     return API(cmd, url)

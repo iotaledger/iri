@@ -2,7 +2,7 @@ package com.iota.iri.pluggables.utxo;
 
 import com.iota.iri.model.*;
 
-public class TransactionIn {
+public class TxnIn {
     Hash txnHash;
     int idx;
     String userAccount;

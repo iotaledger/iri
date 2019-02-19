@@ -7,24 +7,24 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iota.iri.model.*;
 import com.iota.iri.utils.Converter;
 
-public class Transaction {
+public class Txn {
 
     @JSONField(serialize=false)
     Hash txnHash;
 
-    List<TransactionIn> inputs;
+    List<TxnIn> inputs;
 
-    List<TransactionOut> outputs;
+    List<TxnOut> outputs;
 
-    public List<TransactionIn> getInputs() {
+    public List<TxnIn> getInputs() {
         return inputs;
     }
 
-    public List<TransactionOut> getOutputs() {
+    public List<TxnOut> getOutputs() {
         return outputs;
     }
 
-    public int getTryteStringLen(Transaction txn) {
+    public int getTryteStringLen(Txn txn) {
         ObjectMapper mapper = new ObjectMapper();
         try {
             String str = mapper.writeValueAsString(txn);

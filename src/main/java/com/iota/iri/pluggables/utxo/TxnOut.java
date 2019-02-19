@@ -1,6 +1,6 @@
 package com.iota.iri.pluggables.utxo;
 
-public class TransactionOut {
+public class TxnOut {
     long amount;
     String userAccount;
 

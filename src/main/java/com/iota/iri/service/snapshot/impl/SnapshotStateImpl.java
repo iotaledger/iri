@@ -167,7 +167,7 @@ public class SnapshotStateImpl implements SnapshotState {
         balances.forEach((key, value) -> {
             if (value < 0) {
                 if (log.isDebugEnabled()) {
-                    log.debug("negative value for address " + key + ": " + value);
+                    log.debug("negative value for address {}: {}", key, value);
                 }
 
                 result.put(key, value);

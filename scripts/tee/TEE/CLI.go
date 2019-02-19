@@ -2,13 +2,15 @@ package TEE
 
 import (
     "fmt"
+    "net/http"
     "os"
     "flag"
     "log"
+    "strings"
 )
 
 type CLI struct {}
-
+var url = "http://localhost:14266"
 
 func printUsage()  {
 
@@ -27,12 +29,29 @@ func isValidArgs()  {
 }
 
 func (cli *CLI) addAttestationInfo(info []string)  {
+//storeMessage
+//http.PostForm
+    _, err := http.Get(url + "?command=storeMessage&storeMessage&address="+ info[0] + "&message=" + info[1])
+    if err != nil {
+        //request error
+        log.Fatal(err)
+    }
 }
 
 func (cli *CLI) getRank(num string, period []string)  {
+    _, err := http.Get(url + "?command=getBlocksInPeriodStatement&period=" + period[0])
+    if err != nil {
+        //request error
+        log.Fatal(err)
+    }
 }
 
-func (cli *CLI) addAttestationInfo(period []string)  {
+func (cli *CLI) printHCGraph(period string){
+    _, err := http.Get(url + "?command=getBlocksInPeriodStatement&period=" + period)
+    if err != nil {
+        //request error
+        log.Panic(err)
+    }
 }
 
 func (cli *CLI) Run()  {
@@ -70,30 +89,30 @@ func (cli *CLI) Run()  {
     }
 
     if addAttestationInfoCmd.Parsed() {
-        if *flagInfo == ""
+        if *flagInfo == ""{
             printUsage()
             os.Exit(1)
         }
 
-        info := JSONToArray(*flagInfo)
+        info := strings.Split(*flagInfo,",")
         cli.addAttestationInfo(info)
     }
 
     if getRankCmd.Parsed() {
-        if *flagNum == "" ||  *flagPeriod == ""
+        if *flagNum == "" ||  *flagPeriod == "" {
             printUsage()
             os.Exit(1)
         }
-        period := JSONToArray(*flagPeriod)
-        cli.getRank(flagNum, period)
+        period := strings.Split(*flagPeriod, " ")
+        cli.getRank(*flagNum, period)
     }
 
     if printHCGraphCmd.Parsed() {
-        if *flagPeriod1 == ""
+        if *flagPeriod1 == "" {
             printUsage()
             os.Exit(1)
         }
-        period := JSONToArray(*flagPeriod1)
+        period := *flagPeriod1
         cli.printHCGraph(period)
     }
 }

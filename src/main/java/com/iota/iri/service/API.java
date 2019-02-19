@@ -367,6 +367,10 @@ public class API {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                     return wereAddressesSpentFromStatement(addresses);
                 }
+                case "getBlocksInPeriodStatement": {
+                    Integer period = getParameterAsInt(request, "period");
+                    return getBlocksInPeriodStatement(period);
+                }
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?

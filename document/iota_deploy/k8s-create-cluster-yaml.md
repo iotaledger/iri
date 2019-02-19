@@ -148,7 +148,7 @@ spec:
             value: '14700'
 ```
 
-新建iota_cli_sc.yaml文件
+新建iota_cli_sc.yaml文件.
 
 ```
 apiVersion: v1
@@ -163,10 +163,12 @@ spec:
   selector:
     app: iota-cli
 ```
-创建集群
+
+创建集群。
+
 ```
 sudo kubectl create -f iota_cli_dp.yaml;
 sudo kubectl create -f iota_cli_sc.yaml;
 ```
 
-最后通过 clusterip 和port访问集群
+最后通过 clusterip 和port访问集群.

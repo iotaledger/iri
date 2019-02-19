@@ -73,6 +73,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.zip.GZIPInputStream;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.alibaba.fastjson.JSON;
 import com.fasterxml.jackson.databind.JsonNode;
 
 @SuppressWarnings("unchecked")
@@ -241,12 +242,24 @@ public class API {
                         return ErrorResponse.create("Invalid params");
                     }
 
+                    String tag = "TX"; // by default is TX
+                    if(request.containsKey("tag")) {
+                        tag = (String) request.get("tag");
+                        String tagTrytes = Converter.asciiToTrytes(tag);
+                        tag = StringUtils.rightPad(tagTrytes, 27, '9');
+                    }
+
                     String address = (String) request.get("address");
                     String message = (String) request.get("message");
-                    AbstractResponse rsp = storeMessageStatement(address, message);
+                    AbstractResponse rsp = storeMessageStatement(address, message, tag);
                     return rsp;
                 }
-
+                case "getBlocksInPeriod": {
+                    if(!request.containsKey("period")) {
+                        return ErrorResponse.create("Invalid params");
+                    }
+                    long period = Long.parseLong((String)request.get("period")) ;
+                }
                 case "addNeighbors": {
                     List<String> uris = getParameterAsList(request,"uris",0);
                     log.debug("Invoking 'addNeighbors' with {}", uris);
@@ -1343,8 +1356,9 @@ public class API {
      *
      * @param address The address to add the message to
      * @param message The message to store
+     * @param tag     The tag to store, by default is TX
      **/
-    private synchronized AbstractResponse storeMessageStatement(final String address, final String message) throws Exception {
+    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, String tag) throws Exception {
         final List<Hash> txToApprove = getTransactionToApproveTips(3, Optional.empty());
 
         final int txMessageSize = (int) TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
@@ -1389,7 +1403,7 @@ public class API {
             // value
             tx += StringUtils.repeat('9', 27);
             // obsolete tag
-            tx += StringUtils.repeat('9', 27);
+            tx += tag;
             // timestamp
             tx += timestampTrytes;
             // current index
@@ -1425,5 +1439,30 @@ public class API {
         }
 
         return AbstractResponse.createEmptyResponse();
+    }
+
+    private synchronized AbstractResponse getBlocksInPeriodStatement(final long period) {
+        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+        int blocksPerPeriod = (int)BaseIotaConfig.getInstance().getNumBlocksPerPeriod();
+        int p = (int)period;
+        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p);
+        
+        List<String> resArray = new ArrayList<String>();
+        try {
+            for(Hash h : retOrder) {
+                TransactionViewModel model = TransactionViewModel.find(instance.tangle, h.bytes());
+                byte[] sigTrits = model.getSignature();
+                String sigTrytes = Converter.trytes(sigTrits);
+                String info = Converter.trytesToAscii(sigTrytes);
+                resArray.add(info);
+            }
+
+            String finalRes = JSON.toJSONString(resArray);
+
+            return GetBlocksInPeriodResponse.create(finalRes);
+        } catch(Exception e) {
+            e.printStackTrace();
+            return AbstractResponse.createEmptyResponse();
+        }
     }
 }

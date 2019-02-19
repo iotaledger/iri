@@ -12,8 +12,11 @@ public interface NodeConfig extends ProtocolConfig, NetworkConfig {
 
     boolean getStreamingGraphSupport();
 
+    long getNumBlocksPerPeriod();
+
     interface Descriptions {
         String ENABLE_WASMVM = "If enabling the WASM virtual machine or not.";
         String STREAMING_GRAPH = "If enabling streaming graph computation or not.";
+        String PERIOD_SIZE = "Define the number of blocks in a period.";
     }
 }

@@ -3,7 +3,7 @@ sys.path.append("..")
 import time
 from iota import Iota, Address, ProposedTransaction, Tag, Transaction, TryteString, TransactionTrytes, ProposedBundle, Nonce, BundleHash,TransactionHash, Fragment
 from six import binary_type, moves as compat, text_type
-from iota_api.api import attachToTangle, storeMessage, getBalance 
+from iota_api.api import attachToTangle, storeMessage, getBalance
 
 class IotaCache(object):
 
@@ -17,7 +17,7 @@ class IotaCache(object):
         else:
             self.seed = seed
         self.api = Iota(self.uri, self.seed, testnet=True)
-        self.mwm = 1 
+        self.mwm = 1
         self.depth = 15
 
     def cache_txn_in_tangle_sdk(self, ipfs_addr, tag):

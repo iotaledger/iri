@@ -10,7 +10,7 @@ ipfile       = open(sys.argv[1])
 master       = sys.argv[2]
 master_port  = sys.argv[3]
 iri_jar      = sys.argv[4]
-iri_version  = sys.argv[5] 
+iri_version  = sys.argv[5]
 
 ips = ipfile.readlines()
 

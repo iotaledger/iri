@@ -5,6 +5,7 @@ enableIpfs = False
 enableBatching = True 
 enableCompression = False
 listenPort = 6000
+listenAddress = 0.0.0.0
 
 [tendermint]
 addr = http://localhost:26657

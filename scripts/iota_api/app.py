@@ -20,6 +20,7 @@ iota_seed = cf.get("iota", "seed")
 enable_ipfs = cf.getboolean("iota", "enableIpfs")
 enable_compression = cf.getboolean("iota", "enableCompression")
 enable_batching = cf.getboolean("iota", "enableBatching")
+listen_port = cf.get("iota", "listenPort")
 cache = IotaCache(iota_addr, iota_seed)
 
 # txs buffer. dequeue is thread-safe
@@ -50,7 +51,6 @@ def send(tx_string, tx_num=1, tag='TR'):
     if enable_ipfs == True:
         send_to_ipfs_iota(tx_string, tx_num, tag)
     else:
-        print(tag,file=sys.stderr)
         send_to_iota(tx_string, tx_num, tag)
 
 def send_to_ipfs_iota(tx_string, tx_num, tag):
@@ -204,4 +204,4 @@ def put_action():
 
 if __name__ == '__main__':
     get_cache()
-    app.run()
+    app.run(host="0.0.0.0", port=listen_port)

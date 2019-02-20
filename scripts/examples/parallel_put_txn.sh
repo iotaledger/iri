@@ -1,3 +1,5 @@
+#!/bin/bash
+
 curl http://localhost:8000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"A\",\"to\":\"b\",\"amnt\":100,\"tag\":\"TX\"}"
 sleep 1
 curl http://localhost:8000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"A\",\"to\":\"c\",\"amnt\":100,\"tag\":\"TX\"}" &

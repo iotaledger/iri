@@ -51,7 +51,7 @@ func (cli *CLI) getRank(num string, period []string)  {
     data := "{\"command\":\"getBlocksInPeriod\",\"period\":" + period[0] + "}"
     r := doPost([]byte(data))
     var result []string
-    err := json.Unmarshal(r, result)
+    err := json.Unmarshal(r, &result)
     if err != nil {
         log.Fatal(err)
         fmt.Println(r)

@@ -21,6 +21,7 @@ enable_ipfs = cf.getboolean("iota", "enableIpfs")
 enable_compression = cf.getboolean("iota", "enableCompression")
 enable_batching = cf.getboolean("iota", "enableBatching")
 listen_port = cf.get("iota", "listenPort")
+listen_address = cf.get("iota", "listenAddress")
 cache = IotaCache(iota_addr, iota_seed)
 
 # txs buffer. dequeue is thread-safe
@@ -204,4 +205,4 @@ def put_action():
 
 if __name__ == '__main__':
     get_cache()
-    app.run(host="0.0.0.0", port=listen_port)
+    app.run(host=listen_address, port=listen_port)

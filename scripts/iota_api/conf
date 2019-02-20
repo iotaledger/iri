@@ -1,10 +1,10 @@
 [iota]
 addr = http://localhost:14700
 seed = EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9Q
-enableIpfs = False 
-enableBatching = True 
+enableIpfs = True 
+enableBatching = False 
 enableCompression = False
-listenPort = 6000
+listenPort = 5000
 
 [tendermint]
 addr = http://localhost:26657

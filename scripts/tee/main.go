@@ -2,11 +2,11 @@ package main
 
 import (
 
-	"./TEE"
+	"./CLI"
 )
 
 func main()  {
 
-	cli := TEE.CLI{}
+	cli := CLI.CLI{}
 	cli.Run()
 }

@@ -1,4 +1,6 @@
-rm -rf *.jar
+#!/bin/bash
+
+rm -rf iri-1.5.5.jar  
 cd ../../ 
 mvn clean ; mvn package
 cp target/iri-1.5.5.jar scripts/examples/
@@ -6,7 +8,7 @@ cd scripts/examples/
 rm -rf db1*
 rm -rf db2*
 rm -rf ixi
-rm out*
+rm streamnet*
  
 java -jar iri-1.5.5.jar --testnet \
                         --mwm 1 \
@@ -24,7 +26,8 @@ java -jar iri-1.5.5.jar --testnet \
                         --entrypoint-selector-algorithm "KATZ" \
                         --tip-sel-algo "CONFLUX" \
                         --ipfs-txns false \
-                        &>  out &
+                        --batch-txns true \
+                        &>  streamnet1.log &
 
 java -jar iri-1.5.5.jar --testnet \
                         --mwm 1 \
@@ -42,4 +45,5 @@ java -jar iri-1.5.5.jar --testnet \
                         --entrypoint-selector-algorithm "KATZ" \
                         --tip-sel-algo "CONFLUX" \
                         --ipfs-txns false \
-                        &>  out1 &
+                        --batch-txns true \
+                        &>  streamnet2.log &

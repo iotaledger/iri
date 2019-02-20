@@ -355,6 +355,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         Hash ret = null;
         if (depth == -1 || depth >= totalDepth) {
             Set<Hash> set = topOrderStreaming.get(1);
+            if(CollectionUtils.isEmpty(set)){
+                return null;
+            }
             ret = set.iterator().next();
             return ret;
         }

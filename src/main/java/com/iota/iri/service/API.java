@@ -113,7 +113,7 @@ public class API {
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
-    
+
     private final String[] features;
 
     public API(Iota instance, IXI ixi) {
@@ -245,9 +245,9 @@ public class API {
                     String tag = "TX"; // by default is TX
                     if(request.containsKey("tag")) {
                         tag = (String) request.get("tag");
-                        String tagTrytes = Converter.asciiToTrytes(tag);
-                        tag = StringUtils.rightPad(tagTrytes, 27, '9');
                     }
+                    String tagTrytes = Converter.asciiToTrytes(tag);
+                    tag = StringUtils.rightPad(tagTrytes, 27, '9');
 
                     String address = (String) request.get("address");
                     String message = (String) request.get("message");
@@ -745,7 +745,7 @@ public class API {
                     String msg = Converter.trytes(branch.getSignature());
                     log.info("execute contract: {}", msg);
                     executeContract(msg, branchTagVal);
-                }    
+                }
 
                 // execute trunk
                 TransactionViewModel trunk = transactionViewModel.getTrunkTransaction(instance.tangle);
@@ -754,7 +754,7 @@ public class API {
                     String msg = Converter.trytes(trunk.getSignature());
                     log.info("execute contract: {}", msg);
                     executeContract(msg, trunkTagVal);
-                }    
+                }
             }
         }
     }
@@ -764,7 +764,7 @@ public class API {
             URL url = new URL("http://localhost:5000/put_contract");
             if(tagVal.equals("KB")) {
                 url = new URL("http://localhost:5000/put_action");
-            }    
+            }
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod("PUT");
@@ -1450,7 +1450,7 @@ public class API {
         int blocksPerPeriod = (int)BaseIotaConfig.getInstance().getNumBlocksPerPeriod();
         int p = (int)period;
         List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p);
-        
+
         List<String> resArray = new ArrayList<String>();
         try {
             for(Hash h : retOrder) {

@@ -1,12 +1,14 @@
-package CLI 
+package CLI
 
 import (
-    "fmt"
-    "net/http"
-    "github.com/GiterLab/urllib"
-    "os"
+    "bytes"
+    "encoding/json"
     "flag"
+    "fmt"
+    "io/ioutil"
     "log"
+    "net/http"
+    "os"
     "strings"
 )
 
@@ -32,39 +34,58 @@ func isValidArgs()  {
 func (cli *CLI) addAttestationInfo(info []string)  {
 //storeMessage
 //http.PostForm
-    req := urllib.Post(url)
-    req.Param("command","storeMessage")
-    req.Param("address",info[0])
-    req.Param("message",info[1])
-    req.Header("content-type","application/json")
-    req.Header("X-IOTA-API-Version","1")
-    str, err := req.String()
-    if err != nil {
-    	// error
-    }
-    fmt.Println(str)
-    //var body string = "Content-Type:application/json,X-IOTA-API-Version:1"
-    //_, err := http.Post(url + "?command=storeMessage&address="+ info[0] + "&message=" + info[1], body, nil)
-    //if err != nil {
-        //request error
-    //    log.Fatal(err)
-    //}
+//    req := urllib.Post(url)
+//    req.Param("command","storeMessage")
+//    req.Param("address",info[0])
+//    req.Param("message",info[1])
+//    req.Header("content-type","application/json")
+//    req.Header("X-IOTA-API-Version","1")
+//    str, err := req.String()
+
+    data := "{\"command\":\"storeMessage\",\"address\":" + info[0] + ",\"message\":" + info[1] + "}"
+    r := doPost([]byte(data))
+    fmt.Println(r)
 }
 
 func (cli *CLI) getRank(num string, period []string)  {
-    _, err := http.Get(url + "?command=getBlocksInPeriod&period=" + period[0])
+    data := "{\"command\":\"getBlocksInPeriod\",\"period\":" + period[0] + "}"
+    r := doPost([]byte(data))
+    var result []string
+    err := json.Unmarshal(r, result)
     if err != nil {
-        //request error
         log.Fatal(err)
+        fmt.Println(r)
     }
+    fmt.Println(result)
 }
 
 func (cli *CLI) printHCGraph(period string){
-    _, err := http.Get(url + "?command=getBlocksInPeriod&period=" + period)
+    data := "{\"command\":\"getBlocksInPeriod\",\"period\":" + period + "}"
+    r := doPost([]byte(data))
+    fmt.Println(r)
+}
+
+func doPost(d []byte) []byte{
+    req,err := http.NewRequest("POST",url, bytes.NewBuffer(d))
     if err != nil {
-        //request error
+        // error
         log.Panic(err)
     }
+    req.Header.Set("Content-Type", "application/json")
+    req.Header.Set("X-IOTA-API-Version", "1")
+
+    client := &http.Client{}
+    res,err := client.Do(req)
+    if err != nil {
+        log.Panic(err)
+    }
+
+    defer res.Body.Close()
+    r,err := ioutil.ReadAll(res.Body)
+    if err != nil {
+        log.Panic(err)
+    }
+    return r
 }
 
 func (cli *CLI) Run()  {

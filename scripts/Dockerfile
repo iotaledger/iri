@@ -1,7 +1,6 @@
 FROM python:2.7
 WORKDIR /code
-RUN apt-get update && apt-get upgrade -y \
-  && apt-get install -y gcc wget vim
+RUN apt-get update
 COPY ./ /code
 ADD https://dist.ipfs.io/go-ipfs/v0.4.10/go-ipfs_v0.4.10_linux-386.tar.gz  .
 RUN tar xvfz go-ipfs_v0.4.10_linux-386.tar.gz

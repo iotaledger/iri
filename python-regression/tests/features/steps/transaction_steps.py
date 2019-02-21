@@ -122,6 +122,9 @@ def reference_stitch_transaction(step):
 
 @step(r'"(\d+)" transactions are issued on "([^"]+)" with:')
 def issue_multiple_transactions(step, num_transactions, node):
+    transactions_to_store = []
+    world.responses['evaluate_and_send'] = {}
+    world.config['nodeId'] = node
     # Placeholder values for seed if present
     seed_value = ""
     seed_type = ""
@@ -139,8 +142,11 @@ def issue_multiple_transactions(step, num_transactions, node):
         api = api_utils.prepare_api_call(node, seed=seed)
 
         logger.info('Sending Transaction {}'.format(iteration + 1))
-        transactions.evaluate_and_send(api, seed, step.hashes)
+        transaction = transactions.evaluate_and_send(api, seed, step.hashes)
+        transaction_hash = Transaction.from_tryte_string(transaction.get('trytes')[0]).hash
+        transactions_to_store.append(transaction_hash)
 
+    world.responses['evaluate_and_send'][node] = transactions_to_store
     logger.info("Transactions generated and stored")
 
 

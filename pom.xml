@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.6.0-RELEASE</version>
+    <version>1.6.1-RELEASE</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -446,6 +446,19 @@
                         <phase>integration-test</phase>
                         <goals>
                             <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.github.zlika</groupId>
+                <artifactId>reproducible-build-maven-plugin</artifactId>
+                <version>0.7</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>strip-jar</goal>
                         </goals>
                     </execution>
                 </executions>

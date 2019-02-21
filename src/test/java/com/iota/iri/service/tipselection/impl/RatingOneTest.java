@@ -15,7 +15,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import static com.iota.iri.controllers.TransactionViewModelTest.*;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
+import static com.iota.iri.TransactionTestUtils.getTransactionWithTrunkAndBranch;
 
 public class RatingOneTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
@@ -50,13 +52,13 @@ public class RatingOneTest {
     public void testCalculate() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
         transaction = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
-        transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction.getHash(),
+        transaction1 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction.getHash(),
                 transaction.getHash()), getRandomTransactionHash());
-        transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction1.getHash(),
+        transaction2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction1.getHash(),
                 transaction1.getHash()), getRandomTransactionHash());
-        transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction2.getHash(),
+        transaction3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction2.getHash(),
                 transaction1.getHash()), getRandomTransactionHash());
-        transaction4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(transaction2.getHash(),
+        transaction4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(transaction2.getHash(),
                 transaction3.getHash()), getRandomTransactionHash());
         transaction.store(tangle, snapshotProvider.getInitialSnapshot());
         transaction1.store(tangle, snapshotProvider.getInitialSnapshot());

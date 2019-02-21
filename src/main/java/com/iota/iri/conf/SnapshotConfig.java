@@ -41,7 +41,7 @@ public interface SnapshotConfig extends Config {
     long getSnapshotTime();
 
     /**
-     * return {@value Descriptions#SNAPSHOT_FILE}
+     * @return {@value Descriptions#SNAPSHOT_FILE}
      */
     String getSnapshotFile();
 
@@ -70,6 +70,16 @@ public interface SnapshotConfig extends Config {
      */
     String getPreviousEpochSpentAddressesFiles();
 
+    /**
+     * @return {@value Descriptions#SPENT_ADDRESSES_DB_PATH}
+     */
+    String getSpentAddressesDbPath();
+
+    /**
+     * @return {@value Descriptions#SPENT_ADDRESSES_DB_LOG_PATH}
+     */
+    String getSpentAddressesDbLogPath();
+
     interface Descriptions {
 
         String LOCAL_SNAPSHOTS_ENABLED = "Flag that determines if local snapshots are enabled.";
@@ -88,5 +98,7 @@ public interface SnapshotConfig extends Config {
                 "leaves (private keys) that the coordinator can use to sign a message.";
         String PREVIOUS_EPOCH_SPENT_ADDRESSES_FILE = "The file that contains the list of all used addresses " +
                 "from previous epochs";
+        String SPENT_ADDRESSES_DB_PATH = "The folder where the spent addresses DB saves its data.";
+        String SPENT_ADDRESSES_DB_LOG_PATH = "The folder where the spent addresses DB saves its logs.";
     }
 }

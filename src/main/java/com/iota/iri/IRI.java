@@ -42,7 +42,7 @@ public class IRI {
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
-    public static final String VERSION = "1.6.0-RELEASE";
+    public static final String VERSION = "1.6.1-RELEASE";
 
     /**
      * The entry point of IRI.
@@ -60,6 +60,12 @@ public class IRI {
         IRILauncher.main(args);
     }
 
+    /**
+     * Reads the logging configuration file and logging level from system properties. You can set this values as
+     * arguments to the Java VM by passing <code>-Dlogback.configurationFile=/path/to/config.xml -Dlogging-level=DEBUG</code>
+     * to the Java VM. If no system properties are specified the logback default values and logging-level INFO will
+     * be used.
+     */
     private static void configureLogging() {
         String config = System.getProperty("logback.configurationFile");
         String level = System.getProperty("logging-level", "").toUpperCase();
@@ -178,6 +184,14 @@ public class IRI {
             return iotaConfig;
         }
 
+        /**
+         * Parses the command line arguments for a config file that can be provided by parameter <code>-c</code>
+         * or parameter <code>--config</code>. If no filename was provided we fall back to <code>iota.ini</code> file.
+         * If no <code>iota.ini</code> file can be found return null.
+         *
+         * @param args command line arguments passed to main method.
+         * @return File the chosen file to use as config, or null.
+         */
         private static File chooseConfigFile(String[] args) {
             int index = Math.max(ArrayUtils.indexOf(args, "-c"), ArrayUtils.indexOf(args, "--config"));
             if (index != -1) {

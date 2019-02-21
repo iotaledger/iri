@@ -36,16 +36,6 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     private SnapshotConfig config;
 
     /**
-     * Creates a new instance of SpentAddressesProvider
-     */
-    public SpentAddressesProviderImpl() {
-        this.rocksDBPersistenceProvider = new RocksDBPersistenceProvider(SPENT_ADDRESSES_DB,
-                SPENT_ADDRESSES_LOG, 1000,
-                new HashMap<String, Class<? extends Persistable>>(1)
-                {{put("spent-addresses", SpentAddress.class);}}, null);
-    }
-
-    /**
      * Starts the SpentAddressesProvider by reading the previous spent addresses from files.
      *
      * @param config The snapshot configuration used for file location
@@ -56,6 +46,12 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
             throws SpentAddressesException {
         this.config = config;
         try {
+            this.rocksDBPersistenceProvider = new RocksDBPersistenceProvider(
+                    config.getSpentAddressesDbPath(),
+                    config.getSpentAddressesDbLogPath(),
+                    1000,
+                    new HashMap<String, Class<? extends Persistable>>(1)
+                    {{put("spent-addresses", SpentAddress.class);}}, null);
             this.rocksDBPersistenceProvider.init();
             readPreviousEpochsSpentAddresses();
         }
@@ -90,7 +86,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public boolean containsAddress(Hash addressHash) throws SpentAddressesException {
         try {
-            return ((SpentAddress) rocksDBPersistenceProvider.get(SpentAddress.class, addressHash)).exists();
+            return rocksDBPersistenceProvider.exists(SpentAddress.class, addressHash);
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }

@@ -11,6 +11,7 @@ public class ValidationException extends Exception {
 
     /**
      * Initializes a new instance of the ValidationException with the specified detail message.
+     * @param msg message shown in exception details.
      */
     public ValidationException(String msg) {
         super(msg);

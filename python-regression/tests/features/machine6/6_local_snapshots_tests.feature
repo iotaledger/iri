@@ -13,37 +13,21 @@ Feature: Test Bootstrapping With LS
     Given "nodeA" and "nodeB" are neighbors
     And "nodeA" and "nodeC" are neighbors
 
-    When "getNodeInfo" is called on "nodeA" with:
-      |keys                       |values                   |type   	      |
-
-    Then the response for "getNodeInfo" should return with:
-      |keys                       |values                   |type             |
-      |latestMilestoneIndex       |10321                    |int              |
-      |latestSolidSubtangleIndex  |10321                    |int              |
+    When we wait "30" second/seconds
+    Then "nodeA" is synced up to milestone 10321
 
 
-  Scenario: DB node is synced
-    Check that the node started with just a DB is synced correctly.
+  Scenario: DB node is synced, and files contain expected values
+    Check that the node started with just a DB is synced correctly, and that the proper addresses and hashes have been
+    stored correctly.
 
     #First make sure nodes are neighbored
     Given "nodeB" and "nodeA" are neighbors
     And "nodeB" and "nodeC" are neighbors
 
-    When "getNodeInfo" is called on "nodeB" with:
-      |keys                       |values                   |type   	      |
-
-    Then the response for "getNodeInfo" should return with:
-      |keys                       |values                   |type             |
-      |latestMilestoneIndex       |10321                    |int              |
-      |latestSolidSubtangleIndex  |10321                    |int              |
-
+    And we wait "30" second/seconds
+    Then "nodeB" is synced up to milestone 10321
     And Local Snapshot files were created in the "nodeB" directory
-
-
-  Scenario: Check LS files for defined values
-    Read the local snapshot files and ensure that the proper addresses and hashes have been stored correctly.
-
-    Given "nodeA" and "nodeB" are neighbors
 
     When reading the local snapshot state file on "nodeB" returns with:
       |keys                       |values                   |type             |
@@ -54,7 +38,6 @@ Feature: Test Bootstrapping With LS
       |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue      |
 
 
-
   Scenario: LS File node is synced
     Check that the node started with just LS Files is synced correctly.
 
@@ -62,21 +45,17 @@ Feature: Test Bootstrapping With LS
     Given "nodeC" and "nodeA" are neighbors
     And "nodeC" and "nodeB" are neighbors
 
-    When "getNodeInfo" is called on "nodeC" with:
-      |keys                       |values                   |type   	      |
-
-    Then the response for "getNodeInfo" should return with:
-      |keys                       |values                   |type             |
-      |latestMilestoneIndex       |10321                    |int              |
-      |latestSolidSubtangleIndex  |10321                    |int              |
+    When we wait "30" second/seconds
+    Then "nodeC" is synced up to milestone 10321
 
 
   Scenario: Check DB for milestone hashes
     Give the db-less node some time to receive the latest milestones from the permanode, then check if the milestones
     are present in the new node.
 
+    #First make sure nodes are neighbored
     Given "nodeC" and "nodeA" are neighbors
-    And we wait "30" second/seconds
+    And we wait "60" second/seconds
 
     When "checkConsistency" is called on "nodeC" with:
       |keys                       |values                   |type             |

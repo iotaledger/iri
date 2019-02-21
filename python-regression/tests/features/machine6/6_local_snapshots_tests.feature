@@ -14,14 +14,13 @@ Feature: Test Bootstrapping With LS
     And "nodeA" and "nodeC" are neighbors
 
     # Wait to ensure node has time to sync
-    When we wait "10" second/seconds
     And "getNodeInfo" is called on "nodeA" with:
-      |keys                       |values			|type   	      |
+      |keys                       |values                   |type   	      |
 
     Then the response for "getNodeInfo" should return with:
-      |keys                       |values           |type             |
-      |latestMilestoneIndex       |10321            |int              |
-      |latestSolidSubtangleIndex  |10321            |int              |
+      |keys                       |values                   |type             |
+      |latestMilestoneIndex       |10321                    |int              |
+      |latestSolidSubtangleIndex  |10321                    |int              |
 
 
   Scenario: DB node is synced
@@ -34,12 +33,12 @@ Feature: Test Bootstrapping With LS
     # Wait to ensure node has time to sync
     When we wait "10" second/seconds
     And "getNodeInfo" is called on "nodeB" with:
-      |keys                       |values			|type   	      |
+      |keys                       |values                   |type   	      |
 
     Then the response for "getNodeInfo" should return with:
-      |keys                       |values           |type             |
-      |latestMilestoneIndex       |10321            |int              |
-      |latestSolidSubtangleIndex  |10321            |int              |
+      |keys                       |values                   |type             |
+      |latestMilestoneIndex       |10321                    |int              |
+      |latestSolidSubtangleIndex  |10321                    |int              |
 
     And Local Snapshot files were created in the "nodeB" directory
 
@@ -50,12 +49,12 @@ Feature: Test Bootstrapping With LS
     Given "nodeA" and "nodeB" are neighbors
 
     When reading the local snapshot state file on "nodeB" returns with:
-      |keys               |values                   |type             |
-      |address            |LS_TEST_STATE_ADDRESSES  |staticValue      |
+      |keys                       |values                   |type             |
+      |address                    |LS_TEST_STATE_ADDRESSES  |staticValue      |
 
     And reading the local snapshot meta file on "nodeB" returns with:
-      |keys               |values                   |type             |
-      |hashes             |LS_TEST_MILESTONE_HASHES |staticValue      |
+      |keys                       |values                   |type             |
+      |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue      |
 
 
 
@@ -69,12 +68,12 @@ Feature: Test Bootstrapping With LS
     # Wait to ensure node has time to sync
     When we wait "10" second/seconds
     And "getNodeInfo" is called on "nodeC" with:
-      |keys                       |values			|type   	      |
+      |keys                       |values                   |type   	      |
 
     Then the response for "getNodeInfo" should return with:
-      |keys                       |values           |type             |
-      |latestMilestoneIndex       |10321            |int              |
-      |latestSolidSubtangleIndex  |10321            |int              |
+      |keys                       |values                   |type             |
+      |latestMilestoneIndex       |10321                    |int              |
+      |latestSolidSubtangleIndex  |10321                    |int              |
 
 
   Scenario: Check DB for milestone hashes
@@ -85,9 +84,9 @@ Feature: Test Bootstrapping With LS
     And we wait "30" second/seconds
 
     When "checkConsistency" is called on "nodeC" with:
-      |keys               |values                   |type             |
-      |tails              |LS_TEST_MILESTONE_HASHES |staticValue      |
+      |keys                       |values                   |type             |
+      |tails                      |LS_TEST_MILESTONE_HASHES |staticValue      |
 
     Then the response for "checkConsistency" should return with:
-      |keys                       |values           |type             |
-      |state		            |True             |bool             |
+      |keys                       |values                   |type             |
+      |state                      |True                     |bool             |

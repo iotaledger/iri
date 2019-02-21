@@ -1,4 +1,4 @@
-from aloe import world, step
+from aloe import step
 from util.test_logic import api_test_logic as api_utils
 
 import logging
@@ -40,6 +40,6 @@ def read_LS_meta_file(step, node):
     command_response = api_utils.send_kube_command(node, "cat /iri/data/testnet.snapshot.meta")
     hashes = options['hashes']
 
-    for hash in hashes:
-        assert hash in command_response, "Provided hash: %s was not found in the .state file".format(hash)
+    for hash_val in hashes:
+        assert hash_val in command_response, "Provided hash: {} was not found in the .state file".format(hash_val)
     logger.info("Meta File contains the provided hashes.")

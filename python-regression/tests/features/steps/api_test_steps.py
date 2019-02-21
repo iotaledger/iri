@@ -170,11 +170,10 @@ def spam_call(step, api_call, num_tests, node):
         response = api_utils.fetch_call(api_call, api, options)
         return response
 
-    args = nodes
-    for current_node in args:
-        args[current_node]['options'] = options
+    for current_node in nodes:
+        nodes[current_node]['options'] = options
 
-    future_results = pool.start_pool(run_call, num_tests, args)
+    future_results = pool.start_pool(run_call, num_tests, nodes)
 
     responses.fetch_future_results(future_results, num_tests, response_val)
 

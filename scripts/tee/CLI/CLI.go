@@ -9,10 +9,43 @@ import (
     "log"
     "net/http"
     "os"
+    "strconv"
     "strings"
 )
 
 type CLI struct {}
+
+type Response struct {
+    Blocks   string   `json:"blocks"`
+    Duration int      `json:"duration"`
+}
+
+type block struct{
+    TxnContent []content  `json:"txn_content"`
+    TxNum      int        `json:"tx_num"`
+}
+
+type content struct{
+    Inputs []ledger   `json:"inputs"`
+    Outputs []ledger  `json:"outputs"`
+}
+
+type ledger struct{
+    UserAccount string  `json:"userAccount"`
+    Amount      int     `json:"amount"`
+}
+
+type message struct {
+    TxNum int64            `json:"tx_num"`
+    TxnContent []rawtxn    `json:"txn_content"`
+}
+
+type rawtxn struct {
+    From string   `json:"from"`
+    To string     `json:"to"`
+    Amount int    `json:"amnt"`
+}
+
 var url = "http://localhost:14700"
 
 func printUsage()  {
@@ -32,31 +65,35 @@ func isValidArgs()  {
 }
 
 func (cli *CLI) addAttestationInfo(info []string)  {
-//storeMessage
-//http.PostForm
-//    req := urllib.Post(url)
-//    req.Param("command","storeMessage")
-//    req.Param("address",info[0])
-//    req.Param("message",info[1])
-//    req.Header("content-type","application/json")
-//    req.Header("X-IOTA-API-Version","1")
-//    str, err := req.String()
 
-    data := "{\"command\":\"storeMessage\",\"address\":" + info[0] + ",\"message\":" + info[1] + "}"
+    raw := new(rawtxn)
+    raw.From = info[1]
+    raw.To = info[2]
+    raw.Amount,_ = strconv.Atoi(info[3])
+    m := new(message)
+    m.TxNum = 1
+    m.TxnContent = []rawtxn{*raw}
+    ms,err := json.Marshal(m)
+    if err != nil {
+        log.Panic(err)
+    }
+
+    data := "{\"command\":\"storeMessage\",\"address\":" + info[0] + ",\"message\":" + string(ms) + "}"
     r := doPost([]byte(data))
     fmt.Println(r)
 }
 
 func (cli *CLI) getRank(num string, period []string)  {
-    data := "{\"command\":\"getBlocksInPeriod\",\"period\":" + period[0] + "}"
+    data := "{\"command\":\"getBlocksInPeriodStatement\",\"period\":" + period[0] + "}"
     r := doPost([]byte(data))
-    var result []string
+    var result Response
     err := json.Unmarshal(r, &result)
     if err != nil {
         log.Fatal(err)
         fmt.Println(r)
     }
-    fmt.Println(result)
+    fmt.Println(result.Duration)
+    fmt.Println(result.Blocks)
 }
 
 func (cli *CLI) printHCGraph(period string){
@@ -137,7 +174,7 @@ func (cli *CLI) Run()  {
             printUsage()
             os.Exit(1)
         }
-        period := strings.Split(*flagPeriod, " ")
+        period := strings.Split(*flagPeriod, ",")
         cli.getRank(*flagNum, period)
     }
 

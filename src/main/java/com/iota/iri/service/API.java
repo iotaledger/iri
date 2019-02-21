@@ -1,5 +1,6 @@
 package com.iota.iri.service;
 
+import com.alibaba.fastjson.JSONObject;
 import com.iota.iri.*;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.BaseIotaConfig;
@@ -250,7 +251,15 @@ public class API {
                     tag = StringUtils.rightPad(tagTrytes, 27, '9');
 
                     String address = (String) request.get("address");
-                    String message = (String) request.get("message");
+                    //FIXME 为了确保测试传入展开数据仍能够正常接收
+                    //String message = (String) request.get("message");
+                    String message;
+                    if (request.get("message") instanceof Map){
+                        message = JSONObject.toJSONString(request.get("message"));
+                    }else{
+                        message = (String) request.get("message");
+                    }
+
                     AbstractResponse rsp = storeMessageStatement(address, message, tag);
                     return rsp;
                 }
@@ -1363,7 +1372,15 @@ public class API {
      * @param tag     The tag to store, by default is TX
      **/
     private synchronized AbstractResponse storeMessageStatement(final String address, final String message, String tag) throws Exception {
-        final List<Hash> txToApprove = getTransactionToApproveTips(3, Optional.empty());
+//        final List<Hash> txToApprove = getTransactionToApproveTips(3, Optional.empty());
+        List<Hash> txToApprove = new ArrayList<Hash>();
+        try {
+            txToApprove = getTransactionToApproveTips(3, Optional.empty());
+        } catch (Exception e) {
+            log.info("Tip selection failed: " + e.getLocalizedMessage());
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
+        }
 
         final int txMessageSize = (int) TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
 
@@ -1374,7 +1391,8 @@ public class API {
             String processed = IotaIOUtils.processBatchTxnMsg(message);
             if (processed == null) {
                 log.error("Special process failed!");
-                return AbstractResponse.createEmptyResponse();
+//                return AbstractResponse.createEmptyResponse();
+                processed = Converter.asciiToTrytes(message);
             }
             msg = processed;
         }
@@ -1446,10 +1464,15 @@ public class API {
     }
 
     private synchronized AbstractResponse getBlocksInPeriodStatement(final long period) {
+        if (period <= 0){
+            throw new RuntimeException("period not valid: " + period);
+        }
         LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
         int blocksPerPeriod = (int)BaseIotaConfig.getInstance().getNumBlocksPerPeriod();
         int p = (int)period;
-        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p);
+//        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p);
+        int totalSize = provider.totalTopOrder().size();
+        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p > totalSize ? totalSize : (blocksPerPeriod*p));
 
         List<String> resArray = new ArrayList<String>();
         try {
@@ -1458,7 +1481,8 @@ public class API {
                 byte[] sigTrits = model.getSignature();
                 String sigTrytes = Converter.trytes(sigTrits);
                 String info = Converter.trytesToAscii(sigTrytes);
-                resArray.add(info);
+                //too many spacing
+                resArray.add(StringUtils.trim(info));
             }
 
             String finalRes = JSON.toJSONString(resArray);

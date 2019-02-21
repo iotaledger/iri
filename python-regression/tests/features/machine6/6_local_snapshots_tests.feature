@@ -13,8 +13,7 @@ Feature: Test Bootstrapping With LS
     Given "nodeA" and "nodeB" are neighbors
     And "nodeA" and "nodeC" are neighbors
 
-    # Wait to ensure node has time to sync
-    And "getNodeInfo" is called on "nodeA" with:
+    When "getNodeInfo" is called on "nodeA" with:
       |keys                       |values                   |type   	      |
 
     Then the response for "getNodeInfo" should return with:
@@ -30,9 +29,7 @@ Feature: Test Bootstrapping With LS
     Given "nodeB" and "nodeA" are neighbors
     And "nodeB" and "nodeC" are neighbors
 
-    # Wait to ensure node has time to sync
-    When we wait "10" second/seconds
-    And "getNodeInfo" is called on "nodeB" with:
+    When "getNodeInfo" is called on "nodeB" with:
       |keys                       |values                   |type   	      |
 
     Then the response for "getNodeInfo" should return with:
@@ -65,9 +62,7 @@ Feature: Test Bootstrapping With LS
     Given "nodeC" and "nodeA" are neighbors
     And "nodeC" and "nodeB" are neighbors
 
-    # Wait to ensure node has time to sync
-    When we wait "10" second/seconds
-    And "getNodeInfo" is called on "nodeC" with:
+    When "getNodeInfo" is called on "nodeC" with:
       |keys                       |values                   |type   	      |
 
     Then the response for "getNodeInfo" should return with:

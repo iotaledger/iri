@@ -21,14 +21,6 @@ public interface SpentAddressesService {
      */
     boolean wasAddressSpentFrom(Hash addressHash) throws SpentAddressesException;
 
-    /**
-     * Calculates and persists all spent addresses in between a range that were validly signed
-     * 
-     * @param fromMilestoneIndex the lower bound milestone index (inclusive)
-     * @param toMilestoneIndex the upper bound milestone index (exclusive)
-     * @throws Exception when anything went wrong whilst calculating.
-     */
-    void persistSpentAddresses(int fromMilestoneIndex, int toMilestoneIndex) throws Exception;
 
     /**
      * Persist all the verifiable spent from a given list of transactions
@@ -36,4 +28,12 @@ public interface SpentAddressesService {
      * @throws SpentAddressesException
      */
     void persistSpentAddresses(Collection<TransactionViewModel> transactions) throws SpentAddressesException;
+
+    /**
+     * Persists the spent addresses of all pre-verified valid transactions in an asynchronous manner
+     *
+     * @param transactions <b>Transactions that have their signatures verified beforehand</b>.
+     *                     Non spent transactions will be filtered out when persisting
+     */
+    void persistValidatedSpentAddressesAsync(Collection<TransactionViewModel> transactions);
 }

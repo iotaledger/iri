@@ -86,7 +86,7 @@ public class SpentAddressesProviderImpl implements SpentAddressesProvider {
     @Override
     public boolean containsAddress(Hash addressHash) throws SpentAddressesException {
         try {
-            return ((SpentAddress) rocksDBPersistenceProvider.get(SpentAddress.class, addressHash)).exists();
+            return rocksDBPersistenceProvider.exists(SpentAddress.class, addressHash);
         } catch (Exception e) {
             throw new SpentAddressesException(e);
         }

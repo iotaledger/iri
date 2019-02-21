@@ -1,8 +1,7 @@
 #!/bin/sh
 
-ipfs init
 ipfs daemon &
+sleep 10
 cd /code/iota_api/
-python app.py & >applog &
-python chronic_txn_sync.py &> sync.log &
-
+nohup  python chronic_txn_sync.py > synclog 2>&1 &
+python app.py

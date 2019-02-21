@@ -41,12 +41,12 @@ public class CumulativeWeightWithEdgeCalculatorTest {
         dbFolder.create();
         logFolder.create();
         tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
-                .getRoot().getAbsolutePath(), 1000));
+                .getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
         cumulativeWeightWithEdgeCalculator = new CumulativeWeightWithEdgeCalculator(tangle);
     }
 
-    
+
     @Test
     public void testCalculateCumulativeAndEdgeWeight() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4, transaction5;
@@ -81,7 +81,7 @@ public class CumulativeWeightWithEdgeCalculatorTest {
         transaction5.store(tangle);
         UnIterableMap<HashId, Integer> txToCw = cumulativeWeightWithEdgeCalculator.calculate(transaction.getHash());
 
-        
+
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 5),
                 1, txToCw.get(transaction5.getHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),

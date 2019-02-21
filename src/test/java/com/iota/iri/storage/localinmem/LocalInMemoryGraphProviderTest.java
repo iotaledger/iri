@@ -42,7 +42,7 @@ public class LocalInMemoryGraphProviderTest {
         dbFolder1.create();
         logFolder1.create();
         tangle1.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
-                .getRoot().getAbsolutePath(), 1000));
+                .getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle1.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle1));
         tangle1.init();
     }

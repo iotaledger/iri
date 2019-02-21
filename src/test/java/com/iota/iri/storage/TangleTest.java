@@ -1,5 +1,6 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.Iota;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
@@ -27,8 +28,9 @@ public class TangleTest {
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
-        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath(),1000);
+        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
     }

@@ -36,7 +36,7 @@ public class TransactionValidatorTest {
     tangle = new Tangle();
     tangle.addPersistenceProvider(
         new RocksDBPersistenceProvider(
-            dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000));
+            dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
     MessageQ messageQ = Mockito.mock(MessageQ.class);

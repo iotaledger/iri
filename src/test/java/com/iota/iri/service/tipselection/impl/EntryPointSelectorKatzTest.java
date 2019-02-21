@@ -60,11 +60,11 @@ public class EntryPointSelectorKatzTest {
         dbFolder1.create();
         logFolder1.create();
         tangle1.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
-                    .getRoot().getAbsolutePath(), 1000));
+                    .getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle1.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle1));
         tangle1.init();
         tangle2.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder1.getRoot().getAbsolutePath(), logFolder1
-                    .getRoot().getAbsolutePath(), 1000));
+                    .getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle2.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle2));
         tangle2.init();
     }
@@ -251,7 +251,7 @@ public class EntryPointSelectorKatzTest {
         // Compute without streaming graph
         BaseIotaConfig.getInstance().setStreamingGraphSupport(false);
         selector2 = new EntryPointSelectorKatz(tangle2, tag);
-        Hash ret = selector2.getEntryPoint(-1);     
+        Hash ret = selector2.getEntryPoint(-1);
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
         ret = selector2.getEntryPoint(3);
         Assert.assertEquals(tag.get(M.getHash()),tag.get(ret));
@@ -261,7 +261,7 @@ public class EntryPointSelectorKatzTest {
         // Compute with streaming graph
         LocalInMemoryGraphProvider.setNameMap(tag);
         BaseIotaConfig.getInstance().setStreamingGraphSupport(true);
-        ret = selector2.getEntryPoint(-1);     
+        ret = selector2.getEntryPoint(-1);
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
         ret = selector2.getEntryPoint(3);
         Assert.assertEquals(tag.get(M.getHash()),tag.get(ret));

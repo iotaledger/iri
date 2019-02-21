@@ -1,5 +1,6 @@
 package com.iota.iri.controllers;
 
+import com.iota.iri.Iota;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
@@ -26,8 +27,9 @@ public class MilestoneViewModelTest {
         dbFolder.create();
         logFolder.create();
         RocksDBPersistenceProvider rocksDBPersistenceProvider;
-        rocksDBPersistenceProvider = new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(),
-                logFolder.getRoot().getAbsolutePath(),1000);
+        rocksDBPersistenceProvider =  new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY);
         tangle.addPersistenceProvider(rocksDBPersistenceProvider);
         tangle.init();
     }

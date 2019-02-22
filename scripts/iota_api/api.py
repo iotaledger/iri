@@ -83,7 +83,7 @@ def storeMessage(url, address, message, tag):
         "command": "storeMessage",
         "address": address,
         "message": message,
-        "tag": tag 
+        "tag": tag
     }
     return API(cmd, url)
 

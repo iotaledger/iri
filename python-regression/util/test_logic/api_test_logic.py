@@ -1,6 +1,10 @@
 from aloe import world
 from iota import Iota, Address, Tag, TryteString
 from util import static_vals
+
+from kubernetes import config, client
+from kubernetes.stream import stream
+
 import subprocess
 
 import logging
@@ -200,8 +204,14 @@ def prepare_transaction_arguments(arg_list):
         elif key == 'message':
             arg_list[key] = TryteString.from_unicode(arg_list[key])
 
+
 def send_kube_command(node, command):
     podname = world.machine['nodes'][node]['podname']
-    kube_command = "kubectl exec " + podname + " -- " + command
-    command_response = subprocess.check_output(kube_command, shell=True)
+
+    config.load_kube_config()
+    api = client.CoreV1Api()
+
+    namespace = config.list_kube_config_contexts()[0][0]['context']['namespace']
+    command_response = stream(api.connect_get_namespaced_pod_exec, podname, namespace,
+                              command=command, stdout=True, stdin=True, stderr=True, tty=False)
     return command_response

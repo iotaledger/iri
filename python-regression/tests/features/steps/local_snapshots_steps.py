@@ -8,8 +8,7 @@ logger = logging.getLogger(__name__)
 
 @step(r'Local Snapshot files were created in the "([^"]+)" directory')
 def check_for_LS_files(step, node):
-    command_response = api_utils.send_kube_command(node, "ls /iri/data/")
-
+    command_response = api_utils.send_kube_command(node, ["ls"])
     assert "testnet.snapshot.meta" in command_response, "No 'testnet.snapshot.meta' file present"
     assert "testnet.snapshot.state" in command_response, "No 'testnet.snapshot.state' file present"
     logger.info("Local Snapshot Files created properly.")
@@ -22,7 +21,7 @@ def read_LS_state_file(step, node):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
-    command_response = api_utils.send_kube_command(node, "cat /iri/data/testnet.snapshot.state")
+    command_response = api_utils.send_kube_command(node, ["cat", "./testnet.snapshot.state"])
     addresses_with_value = options['address']
 
     for address in addresses_with_value:
@@ -37,7 +36,7 @@ def read_LS_meta_file(step, node):
     options = {}
     api_utils.prepare_options(arg_list, options)
 
-    command_response = api_utils.send_kube_command(node, "cat /iri/data/testnet.snapshot.meta")
+    command_response = api_utils.send_kube_command(node, ["cat", "./testnet.snapshot.meta"])
     hashes = options['hashes']
 
     for hash_val in hashes:

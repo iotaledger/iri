@@ -243,7 +243,15 @@ public class API {
 
                     String address = (String) request.get("address");
                     String message = (String) request.get("message");
-                    AbstractResponse rsp = storeMessageStatement(address, message);
+
+                    String tag = "TX"; // by default is TX
+                    if(request.containsKey("tag")) {
+                        tag = (String) request.get("tag");
+                    }
+                    String tagTrytes = Converter.asciiToTrytes(tag);
+                    tag = StringUtils.rightPad(tagTrytes, 27, '9');
+
+                    AbstractResponse rsp = storeMessageStatement(address, message, tag);
                     return rsp;
                 }
 
@@ -704,11 +712,13 @@ public class API {
       **/
     public void storeTransactionsStatement(final List<String> trytes) throws Exception {
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+        List<Hash> hashes = new ArrayList<>();
         for (final String trytesPart : trytes) {
             //validate all trytes
             Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
+            hashes.add(transactionViewModel.getHash());
 
             if(transactionViewModel.store(instance.tangle)) {
                 long count = transactionViewModel.addTxnCount(instance.tangle);
@@ -740,6 +750,7 @@ public class API {
                 }    
             }
         }
+        TransactionData.getInstance().batchPutIndex(hashes);
     }
 
     private void executeContract(String msg, String tagVal) {
@@ -1344,8 +1355,15 @@ public class API {
      * @param address The address to add the message to
      * @param message The message to store
      **/
-    private synchronized AbstractResponse storeMessageStatement(final String address, final String message) throws Exception {
-        final List<Hash> txToApprove = getTransactionToApproveTips(3, Optional.empty());
+    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
+        List<Hash> txToApprove = new ArrayList<Hash>();
+        try {
+            txToApprove = getTransactionToApproveTips(3, Optional.empty());
+        } catch (Exception e) {
+            log.info("Tip selection failed: " + e.getLocalizedMessage());
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
+        }
 
         final int txMessageSize = (int) TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;
 
@@ -1389,7 +1407,7 @@ public class API {
             // value
             tx += StringUtils.repeat('9', 27);
             // obsolete tag
-            tx += StringUtils.repeat('9', 27);
+            tx += tag;
             // timestamp
             tx += timestampTrytes;
             // current index

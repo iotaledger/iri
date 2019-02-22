@@ -206,7 +206,7 @@ def prepare_transaction_arguments(arg_list):
 def send_kube_command(node, command):
     podname = world.machine['nodes'][node]['podname']
 
-    config.load_kube_config()
+    config.load_kube_config(config_file="/conf/kube/kube.config")
     api = client.CoreV1Api()
 
     namespace = config.list_kube_config_contexts()[0][0]['context']['namespace']

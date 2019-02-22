@@ -52,9 +52,9 @@ class IotaCache(object):
         res = self.api.broadcast_and_store(attach_trytes[u'trytes'])
         return res
 
-    def cache_txn_in_tangle_message(self, data):
+    def cache_txn_in_tangle_message(self, data, tag):
         address = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
-        res = storeMessage(self.uri, address, data)
+        res = storeMessage(self.uri, address, data, tag)
         return res
 
     def get_balance(self, coin_type):

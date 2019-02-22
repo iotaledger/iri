@@ -717,11 +717,13 @@ public class API {
       **/
     public void storeTransactionsStatement(final List<String> trytes) throws Exception {
         byte[] txTrits = Converter.allocateTritsForTrytes(TRYTES_SIZE);
+        List<Hash> hashes = new ArrayList<>();
         for (final String trytesPart : trytes) {
             //validate all trytes
             Converter.trits(trytesPart, txTrits, 0);
             final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
                     instance.transactionValidator.getMinWeightMagnitude());
+            hashes.add(transactionViewModel.getHash());
 
             if(transactionViewModel.store(instance.tangle)) {
                 long count = transactionViewModel.addTxnCount(instance.tangle);
@@ -753,6 +755,7 @@ public class API {
                 }
             }
         }
+        TransactionData.getInstance().batchPutIndex(hashes);
     }
 
     private void executeContract(String msg, String tagVal) {
@@ -1358,8 +1361,7 @@ public class API {
      * @param message The message to store
      * @param tag     The tag to store, by default is TX
      **/
-    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, String tag) throws Exception {
-//        final List<Hash> txToApprove = getTransactionToApproveTips(3, Optional.empty());
+    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
             txToApprove = getTransactionToApproveTips(3, Optional.empty());

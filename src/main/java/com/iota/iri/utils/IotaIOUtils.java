@@ -77,7 +77,7 @@ public class IotaIOUtils extends IOUtils {
                 }
 
                 TransactionData.getInstance().readFromStr(txnObj.toString());
-                Transaction tx = TransactionData.getInstance().getLast();
+                Txn tx = TransactionData.getInstance().getLast();
                 tmpBatch.addTxn(tx);
                 String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
                 ret.append(s);
@@ -90,7 +90,7 @@ public class IotaIOUtils extends IOUtils {
 
                 for (Object object : jsonArray) {
                     TransactionData.getInstance().readFromStr(object.toString());
-                    Transaction tx = TransactionData.getInstance().getLast();
+                    Txn tx = TransactionData.getInstance().getLast();
                     if (tmpBatch.getTryteStringLen(tmpBatch) + tx.getTryteStringLen(tx) > size) {
                         String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
                         ret.append(s);

@@ -11,12 +11,15 @@ import com.iota.iri.model.persistables.Bundle;
 import com.iota.iri.model.persistables.ObsoleteTag;
 import com.iota.iri.model.persistables.Tag;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.pluggables.utxo.TransactionData;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.lang3.StringUtils;
+import com.iota.iri.pluggables.utxo.BatchTxns;
+import com.iota.iri.pluggables.utxo.Txn;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -211,6 +214,35 @@ public class TransactionViewModel {
     public boolean store(Tangle tangle) throws Exception {
         if (hash.equals(Hash.NULL_HASH) || exists(tangle, hash)) {
             return false;
+        }
+
+        // check tag, if it's dag UTXO transaction, do accoridng process
+        try {
+            Hash tag = getTagValue();
+            String tagStr = Converter.trytesToAscii(Converter.trytes(tag.trits()));
+            String type = tagStr.substring(8, 10);
+            if(type.equals("TX")) {
+                String sig = Converter.trytes(getSignature());
+                String txnsStr = Converter.trytesToAscii(sig);
+
+                BatchTxns tmpBatch = new BatchTxns();
+                int sigSize = SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET/3;
+                JSONObject jo = new JSONObject(txnsStr);
+                txnsStr = jo.get("txn_content").toString();
+                TransactionData.getInstance().readFromStr(txnsStr);
+                Txn tx = TransactionData.getInstance().getLast();
+                tmpBatch.addTxn(tx);
+                TransactionData.getInstance().putIndex(tx, getHash());
+
+                String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), sigSize, '9');
+                byte[] sigTrits = new byte[SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
+                Converter.trits(s, sigTrits, 0);
+                System.arraycopy(sigTrits, 0, trits, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
+                Converter.bytes(trits(), 0, transaction.bytes, 0, trits().length);
+            }
+        } catch(IllegalArgumentException e) {
+        } catch(Exception e) {
+            e.printStackTrace();
         }
 
         List<Pair<Indexable, Persistable>> batch = getSaveBatch();

@@ -20,6 +20,8 @@ iota_seed = cf.get("iota", "seed")
 enable_ipfs = cf.getboolean("iota", "enableIpfs")
 enable_compression = cf.getboolean("iota", "enableCompression")
 enable_batching = cf.getboolean("iota", "enableBatching")
+listen_port = cf.get("iota", "listenPort")
+listen_address = cf.get("iota", "listenAddress")
 cache = IotaCache(iota_addr, iota_seed)
 
 # txs buffer. dequeue is thread-safe
@@ -46,13 +48,13 @@ def compress_str(data):
     else:
         return data
 
-def send(tx_string, tx_num=1):
+def send(tx_string, tx_num=1, tag='TR'):
     if enable_ipfs == True:
-        send_to_ipfs_iota(tx_string, tx_num)
+        send_to_ipfs_iota(tx_string, tx_num, tag)
     else:
-        send_to_iota(tx_string, tx_num)
+        send_to_iota(tx_string, tx_num, tag)
 
-def send_to_ipfs_iota(tx_string, tx_num):
+def send_to_ipfs_iota(tx_string, tx_num, tag):
     global lock
     with lock:
         filename = 'json'
@@ -69,21 +71,21 @@ def send_to_ipfs_iota(tx_string, tx_num):
         else:
             data = json.dumps({"address": ipfs_hash, "tx_num": tx_num}, sort_keys=True)
 
-        cache.cache_txn_in_tangle_simple(data, TagGenerator.get_current_tag("TR"))
+        cache.cache_txn_in_tangle_simple(data, TagGenerator.get_current_tag(tag))
         print("[INFO]Cache hash %s in tangle, the tangle tag is %s." % (ipfs_hash, TagGenerator.get_current_tag("TR")), file=sys.stderr)
 
-def send_to_iota(tx_string, tx_num):
+def send_to_iota(tx_string, tx_num, tag):
     global lock
     with lock:
         data = json.dumps({"txn_content": tx_string, "tx_num": tx_num}, sort_keys=True)
 
         if enable_batching is False:
-            cache.cache_txn_in_tangle_simple(data, TagGenerator.get_current_tag("TR"))
+            cache.cache_txn_in_tangle_simple(data, TagGenerator.get_current_tag(tag))
         else:
             compressed_data = compress_str(data)
             cache.cache_txn_in_tangle_message(compressed_data)
 
-        print("[INFO]Cache data in tangle, the tangle tag is %s." % (TagGenerator.get_current_tag("TR")), file=sys.stderr)
+        print("[INFO]Cache data in tangle, the tangle tag is %s." % (TagGenerator.get_current_tag(tag)), file=sys.stderr)
 
 def get_cache():
     if enable_batching is False:
@@ -116,6 +118,11 @@ app = Flask(__name__)
 def hello_world():
     return 'Hello World!'
 
+@app.route('/get_balance', methods=['GET'])
+def get_balance():
+    cache.get_balance('StreamNetCoin')
+    return 'ok'
+
 @app.route('/put_file', methods=['POST'])
 def put_file():
     req_json = request.get_json()
@@ -123,7 +130,10 @@ def put_file():
     if req_json is None:
         return 'error'
 
-    send(json.dumps(req_json, sort_keys=True))
+    if not req_json.has_key(u'tag'):
+        send(json.dumps(req_json, sort_keys=True))
+    else:
+        send(json.dumps(req_json, sort_keys=True), tag=req_json[u'tag'])
 
     return 'ok'
 
@@ -195,4 +205,4 @@ def put_action():
 
 if __name__ == '__main__':
     get_cache()
-    app.run()
+    app.run(host=listen_address, port=listen_port)

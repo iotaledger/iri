@@ -1,5 +1,6 @@
 package com.iota.iri.service.tipselection.impl;
 
+import com.iota.iri.Iota;
 import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.controllers.TransactionViewModelTest;
@@ -37,8 +38,9 @@ public class TailFinderImplTest {
         tangle = new Tangle();
         dbFolder.create();
         logFolder.create();
-        tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
-                .getRoot().getAbsolutePath(), 1000));
+        tangle.addPersistenceProvider( new RocksDBPersistenceProvider(
+                dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000,
+                Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
     }
 

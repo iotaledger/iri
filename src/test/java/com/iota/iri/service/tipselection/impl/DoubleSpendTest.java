@@ -50,17 +50,17 @@ public class DoubleSpendTest {
         dbFolder.create();
         logFolder.create();
         tangle.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
-                .getRoot().getAbsolutePath(), 1000));
+                .getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
         tangle.init();
         names = new HashMap<Hash, String>();
         MessageQ messageQ = Mockito.mock(MessageQ.class);
-        walker = new WalkerAlpha((Optional::of), tangle, messageQ, new Random(1), new MainnetConfig()); 
+        walker = new WalkerAlpha((Optional::of), tangle, messageQ, new Random(1), new MainnetConfig());
     }
 
     @Test
     public void testDoubleSpend() throws Exception {
         // ALICE has 5 iota
-        Transaction t = new Transaction(); 
+        Transaction t = new Transaction();
         TransactionViewModel gen = new TransactionViewModel(t, TransactionViewModelTest.getRandomTransactionHash());
 
         gen.store(tangle);
@@ -73,8 +73,8 @@ public class DoubleSpendTest {
         batchApprove(gen.getHash(), bobtail, 60, 5, "BOB_APP", walker, ratingCalculator);
         // ALICE -> JOE
         Hash joetail = createBundleTransaction("ALICE", "JOE", -5, 5, gen.getHash(), gen.getHash(), tangle);
-        batchApprove(gen.getHash(), joetail, 40, 5, "JOE_APP", walker, ratingCalculator);        
-        
+        batchApprove(gen.getHash(), joetail, 40, 5, "JOE_APP", walker, ratingCalculator);
+
         // Now do the experiment
         UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(gen.getHash());
         printGraph(tangle,rating);
@@ -198,13 +198,13 @@ public class DoubleSpendTest {
                 ret.get(model.getHash()).add(branchEdge);
 
                 one = tangle.next(Transaction.class, one.low);
-            } 
+            }
         }
         catch(NullPointerException e)
         {
             ; // Do nothing
         }
-        catch(Exception e) 
+        catch(Exception e)
         {
             e.printStackTrace(new PrintStream(System.out));
         }

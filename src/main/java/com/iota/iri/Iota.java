@@ -6,10 +6,13 @@ import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.model.StateDiff;
+import com.iota.iri.model.persistables.*;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
 import com.iota.iri.network.replicator.Replicator;
+import com.iota.iri.pluggables.utxo.TransactionData;
 import com.iota.iri.service.TipsSolidifier;
 import com.iota.iri.service.tipselection.EntryPointSelector;
 import com.iota.iri.service.tipselection.RatingCalculator;
@@ -34,6 +37,11 @@ import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.storage.neo4j.Neo4jPersistenceProvider;
 
+import java.security.SecureRandom;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+
 import org.apache.commons.lang3.NotImplementedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,8 +49,7 @@ import com.iota.iri.validator.*;
 import com.iota.iri.validator.impl.*;
 
 import java.io.IOException;
-import java.security.SecureRandom;
-import java.util.List;
+
 
 /**
  * Created by paul on 5/19/17.
@@ -81,6 +88,7 @@ public class Iota {
         ledgerValidator = createLedgerValidator();
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel);
         tipsSelector = createTipSelector(configuration);
+        TransactionData.getInstance().setTangle(tangle);
     }
 
     public void init() throws Exception {
@@ -147,7 +155,10 @@ public class Iota {
                 tangle.addPersistenceProvider(new RocksDBPersistenceProvider(
                         configuration.getDbPath(),
                         configuration.getDbLogPath(),
-                        configuration.getDbCacheSize()));
+                        configuration.getDbCacheSize(),
+                        Tangle.COLUMN_FAMILIES,
+                        Tangle.METADATA_COLUMN_FAMILY)
+                );
                 break;
             }
             default: {

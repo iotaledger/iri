@@ -5,8 +5,6 @@ from util import static_vals
 from kubernetes import config, client
 from kubernetes.stream import stream
 
-import subprocess
-
 import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

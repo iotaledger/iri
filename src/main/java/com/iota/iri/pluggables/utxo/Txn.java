@@ -2,15 +2,13 @@ package com.iota.iri.pluggables.utxo;
 
 import java.util.*;
 
-import com.alibaba.fastjson.annotation.JSONField;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.iota.iri.model.*;
 import com.iota.iri.utils.Converter;
 
 public class Txn {
 
-    @JSONField(serialize=false)
-    Hash txnHash;
+    String txnHash;
 
     List<TxnIn> inputs;
 
@@ -22,6 +20,10 @@ public class Txn {
 
     public List<TxnOut> getOutputs() {
         return outputs;
+    }
+
+    public String getTxnHash() {
+        return txnHash;
     }
 
     public int getTryteStringLen(Txn txn) {

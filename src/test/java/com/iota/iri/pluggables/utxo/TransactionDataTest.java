@@ -1,7 +1,7 @@
 package com.iota.iri.pluggables.utxo;
 
 
-import com.alibaba.fastjson.JSON;
+import com.google.gson.Gson;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -23,7 +23,7 @@ public class TransactionDataTest {
     public void testInitTransaction() {
         assert transactionData.transactions.get(0).outputs.size() == 1;
         assert transactionData.transactions.get(0).inputs == null;
-        System.out.println(JSON.toJSONString(transactionData.transactions.get(0)));
+        System.out.println(new Gson().toJson(transactionData.transactions.get(0)));
     }
 
     @Test
@@ -42,7 +42,7 @@ public class TransactionDataTest {
         assert transactionData.transactions.get(1).outputs.get(0).amount == 100;
         assert transactionData.transactions.get(1).outputs.get(1).userAccount.equals("A");
         assert transactionData.transactions.get(1).outputs.get(1).amount == 9900;
-        System.out.println(JSON.toJSONString(transactionData.transactions.get(1)));
+        System.out.println(new Gson().toJson(transactionData.transactions.get(1)));
 
 
         transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":200}");
@@ -58,7 +58,7 @@ public class TransactionDataTest {
         assert transactionData.transactions.get(2).outputs.get(0).amount == 200;
         assert transactionData.transactions.get(2).outputs.get(1).userAccount.equals("A");
         assert transactionData.transactions.get(2).outputs.get(1).amount == 9700;
-        System.out.println(JSON.toJSONString(transactionData.transactions.get(2)));
+        System.out.println(new Gson().toJson(transactionData.transactions.get(2)));
 
 
         transactionData.readFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":300}");
@@ -77,7 +77,7 @@ public class TransactionDataTest {
         assert transactionData.transactions.get(3).outputs.size() == 1;
         assert transactionData.transactions.get(3).outputs.get(0).userAccount.equals("C");
         assert transactionData.transactions.get(3).outputs.get(0).amount == 300;
-        System.out.println(JSON.toJSONString(transactionData.transactions.get(3)));
+        System.out.println(new Gson().toJson(transactionData.transactions.get(3)));
 
         transactionData.readFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":1}");
         assert transactionData.transactions.size() == 4;

@@ -45,6 +45,6 @@ public class IotaIOUtilsTest {
                         "{\"from\" : \"GAT2OZRSPQ\", \"to\":\"K45QDHQYSR\", \"amnt\":15}] }";
 
         String ret = IotaIOUtils.processBatchTxnMsg(mesgs);
-        Assert.assertEquals(ret.length()/txMessageSize, 8);
+        Assert.assertEquals(ret.length()/txMessageSize, 11);
     }
 }

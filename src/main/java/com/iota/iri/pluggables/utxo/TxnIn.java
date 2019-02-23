@@ -3,11 +3,11 @@ package com.iota.iri.pluggables.utxo;
 import com.iota.iri.model.*;
 
 public class TxnIn {
-    Hash txnHash;
+    String txnHash;
     int idx;
     String userAccount;
 
-    public Hash getTxnHash() {
+    public String getTxnHash() {
         return txnHash;
     }
 

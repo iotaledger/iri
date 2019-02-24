@@ -31,7 +31,7 @@ script:
   - git merge $TRAVIS_BRANCH
   - mvn integration-test -Dlogging-level=INFO
   #run jar sanity tests
-  - VERSION=$(mvn help:evaluate -Dexpression=project.version | grep -E '^[0-9.]+')
+  - VERSION=$(mvn git-commit-id:revision help:evaluate -Dexpression=project.version | grep -E '^[0-9.]+')
   - echo $VERSION
   #jacoco prep (appends to mvn run)
   - JACOCO_V=$(mvn help:evaluate -Dexpression=jacoco.version | grep -E '^[0-9.]+')

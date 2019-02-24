@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.6.1-RELEASE</version>
+    <version>1.6.1</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -216,6 +216,18 @@
                     <testSource>${java-version}</testSource>
                     <testTarget>${java-version}</testTarget>
                     <useIncrementalCompilation>false</useIncrementalCompilation>
+                </configuration>
+            </plugin>
+            <!-- Controls how jar is being created -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
             <!-- The javadoc plugin can be called by running "mvn javadoc:javadoc" and will generate the classic javadoc

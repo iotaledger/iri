@@ -5,6 +5,7 @@ import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.service.API;
+import com.iota.iri.utils.IotaUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,7 +43,6 @@ public class IRI {
 
     public static final String MAINNET_NAME = "IRI";
     public static final String TESTNET_NAME = "IRI Testnet";
-    public static final String VERSION = "1.6.1-RELEASE";
 
     /**
      * The entry point of IRI.
@@ -114,7 +114,8 @@ public class IRI {
          */
         public static void main(String [] args) throws Exception {
             IotaConfig config = createConfiguration(args);
-            log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, VERSION);
+            String version = IotaUtils.getIriVersion();
+            log.info("Welcome to {} {}", config.isTestnet() ? TESTNET_NAME : MAINNET_NAME, version);
 
             iota = new Iota(config);
             ixi = new IXI(iota);

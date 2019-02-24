@@ -22,6 +22,7 @@ import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.MapIdentityManager;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
@@ -884,8 +885,8 @@ public class API {
         MilestoneViewModel milestone = MilestoneViewModel.first(instance.tangle);
         
         return GetNodeInfoResponse.create(
-                name, 
-                IRI.VERSION,
+                name,
+                IotaUtils.getIriVersion(),
                 Runtime.getRuntime().availableProcessors(),
                 Runtime.getRuntime().freeMemory(),
                 System.getProperty("java.version"),

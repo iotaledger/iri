@@ -2,6 +2,7 @@ package com.iota.iri.utils;
 
 import org.apache.commons.lang3.StringUtils;
 
+import com.iota.iri.IRI;
 import com.iota.iri.model.Hash;
 
 import java.lang.reflect.Method;
@@ -16,6 +17,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IotaUtils {
+
+    public static String getIriVersion() {
+        return IRI.class.getPackage().getImplementationVersion();
+    }
 
     public static List<String> splitStringToImmutableList(String string, String regexSplit) {
         return Arrays.stream(string.split(regexSplit))

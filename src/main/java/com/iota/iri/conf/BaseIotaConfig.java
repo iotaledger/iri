@@ -117,7 +117,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
                 .acceptUnknownOptions(true)
                 .allowParameterOverwriting(true)
                 //This is the first line of JCommander Usage
-                .programName("java -jar iri-" + IRI.VERSION + ".jar")
+                .programName("java -jar iri-" + IotaUtils.getIriVersion() + ".jar")
                 .build();
         if (ArrayUtils.isNotEmpty(args)) {
             jCommander.parse(args);

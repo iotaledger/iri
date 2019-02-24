@@ -1,10 +1,18 @@
 package com.iota.iri.utils;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.maven.model.Model;
+import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.iota.iri.IRI;
 import com.iota.iri.model.Hash;
 
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.Method;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -18,8 +26,21 @@ import java.util.stream.Stream;
 
 public class IotaUtils {
 
+    private static final Logger log = LoggerFactory.getLogger(IotaUtils.class);
+
     public static String getIriVersion() {
-        return IRI.class.getPackage().getImplementationVersion();
+        String implementationVersion = IRI.class.getPackage().getImplementationVersion();
+        //If not in manifest (can happen when running from IDE)
+        if (implementationVersion == null) {
+            MavenXpp3Reader reader = new MavenXpp3Reader();
+            try {
+                Model model = reader.read(new FileReader("pom.xml"));
+                implementationVersion = model.getVersion();
+            } catch (Exception e) {
+                log.error("Failed to parse version from pom", e);
+            }
+        }
+        return implementationVersion;
     }
 
     public static List<String> splitStringToImmutableList(String string, String regexSplit) {

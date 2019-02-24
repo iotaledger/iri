@@ -206,7 +206,6 @@
     </dependencies>
 
     <build>
-        <!--<finalName>${project.artifactId}-${project.version}-${git.commit.id.abbrev}</finalName>-->
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

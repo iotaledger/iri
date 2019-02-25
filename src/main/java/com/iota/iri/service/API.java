@@ -1,5 +1,7 @@
 package com.iota.iri.service;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
@@ -61,7 +63,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
 import com.google.gson.stream.JsonReader;
 
 import static io.undertow.Handlers.path;
@@ -240,13 +241,9 @@ public class API {
                     tag = StringUtils.rightPad(tagTrytes, 27, '9');
 
                     String address = (String) request.get("address");
-                    //FIXME 为了确保测试传入展开数据仍能够正常接收
-                    //String message = (String) request.get("message");
                     String message;
                     if (request.get("message") instanceof Map){
-                        //message = JSONObject.toJSONString(request.get("message"));
-                        JsonReader jsonReader = new JsonReader(new StringReader(request.get("message").toString()));
-                        message = new Gson().fromJson(jsonReader, String.class);
+                        message = (String) request.get("message").toString();
                     }else{
                         message = (String) request.get("message");
                     }

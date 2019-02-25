@@ -6,6 +6,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/alixaxel/pagerank"
+	"github.com/awalterschulze/gographviz"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -71,14 +72,14 @@ func (cli *CLI) addAttestationInfo(info []string) {
 		log.Panic(err)
 	}
 
-	data := "{\"command\":\"storeMessage\",\"address\":" + addr + ",\"message\":" + url2.QueryEscape(string(ms[:])) + ",\"tag\":\"TEE\"}"
+	data := "{\"command\":\"storeMessage\",\"address\":" + addr + ",\"message\":" + string(ms[:]) + ",\"tag\":\"TEE\"}"
 	fmt.Println("data : " + data)
 	r := doPost([]byte(data))
 	fmt.Println(r)
 }
 
-func (cli *CLI) getRank(num string, period []string) {
-	data := "{\"command\":\"getBlocksInPeriodStatement\",\"period\":" + period[0] + "}"
+func (cli *CLI) getRank(num string, period string, numRank int64) {
+	data := "{\"command\":\"getBlocksInPeriodStatement\",\"period\":" + period + "}"
 	r := doPost([]byte(data))
 	var result Response
 	err := json.Unmarshal(r, &result)
@@ -121,13 +122,56 @@ func (cli *CLI) getRank(num string, period []string) {
 		rst = append(rst, tee)
 	})
 	sort.Sort(rawtxnslice(rst))
-	fmt.Println(rst[0:7])
+	fmt.Println(rst[0:numRank])
 }
 
 func (cli *CLI) printHCGraph(period string) {
-	data := "{\"command\":\"getBlocksInPeriod\",\"period\":" + period + "}"
+	data := "{\"command\":\"getBlocksInPeriodStatement\",\"period\":" + period + "}"
 	r := doPost([]byte(data))
-	fmt.Println(r)
+	var result Response
+	err := json.Unmarshal(r, &result)
+	if err != nil {
+		log.Fatal(err)
+		fmt.Println(r)
+	}
+	fmt.Println(result.Duration)
+	fmt.Println(result.Blocks)
+
+	var msgArr []string
+	err = json.Unmarshal([]byte(result.Blocks), &msgArr)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	graph := gographviz.NewGraph()
+
+	for _, m2 := range msgArr {
+		msgT, err := url2.QueryUnescape(m2)
+		if err != nil {
+			log.Panicln(err)
+		}
+		var msg message
+		err = json.Unmarshal([]byte(msgT), &msg)
+		if err != nil {
+			log.Panic(err)
+		}
+
+		rArr := msg.TxnContent
+		for _, r := range rArr {
+			attester := strconv.FormatUint(uint64(r.Attester), 10)
+			attestee := strconv.FormatUint(uint64(r.Attestee), 10)
+			//score := strconv.FormatUint(uint64(r.Score), 10) // TODO add this score info
+			graph.AddNode("G", attestee, nil)
+			graph.AddNode("G", attester, nil)
+			graph.AddEdge(attester, attestee, true, nil)
+			if err != nil {
+				log.Panic(err)
+			}
+		}
+	}
+
+	output := graph.String()
+	fmt.Println(output)
 }
 
 func doPost(d []byte) []byte {
@@ -214,8 +258,13 @@ func (cli *CLI) Run() {
 			printUsage()
 			os.Exit(1)
 		}
-		period := strings.Split(*flagPeriod, ",")
-		cli.getRank(*flagNum, period)
+		rankNum, err := strconv.ParseInt(*flagNum, 10, 64)
+
+		if err != nil {
+			log.Panic(err)
+		}
+
+		cli.getRank(*flagNum, *flagPeriod, rankNum)
 	}
 
 	if printHCGraphCmd.Parsed() {

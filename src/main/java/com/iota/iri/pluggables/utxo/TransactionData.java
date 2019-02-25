@@ -1,15 +1,25 @@
 package com.iota.iri.pluggables.utxo;
 
 import java.io.IOException;
+import java.io.PrintStream;
+import java.io.StringReader;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
+import com.iota.iri.hash.Curl;
+import com.iota.iri.hash.Sponge;
+import com.iota.iri.hash.SpongeFactory;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.model.HashFactory;
+import com.iota.iri.model.TransactionHash;
+import com.iota.iri.storage.Indexable;
+import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Pair;
 import io.ipfs.api.IPFS;
 import io.ipfs.multihash.Multihash;
-import com.alibaba.fastjson.JSON;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 
@@ -24,7 +34,7 @@ public class TransactionData {
 
     Tangle tangle;
     List<Txn> transactions;
-    HashMap<Hash, Hash> txnToTangleMap;
+    HashMap<String, Hash> txnToTangleMap;
     HashMap<Hash, HashSet<Txn>> tangleToTxnMap;
     List<List<Txn>> tmpStorage;
 
@@ -41,10 +51,49 @@ public class TransactionData {
     }
 
     public TransactionData() {
-        txnToTangleMap = new HashMap<Hash, Hash>();
+        txnToTangleMap = new HashMap<String, Hash>();
         tangleToTxnMap = new HashMap<Hash, HashSet<Txn>>();
         tmpStorage = new ArrayList<>();
         init();
+    }
+
+
+    public void restoreTxs(){
+        try {
+            Pair<Indexable, Persistable> one = tangle.getFirst(Transaction.class, TransactionHash.class);
+            while (one != null && one.low != null) {
+
+                TransactionViewModel model = new TransactionViewModel((Transaction)one.hi, (TransactionHash)one.low);
+
+                Hash tag = model.getTagValue();
+                String tagStr = Converter.trytesToAscii(Converter.trytes(tag.trits()));
+                String type = tagStr.substring(8, 10);
+
+                if(type.equals("TX")) {
+                    byte[] trits = model.getSignature();
+                    String trytes = Converter.trytes(trits);
+
+                    String bytes = Converter.trytesToAscii(trytes);
+                    JsonReader jsonReader = new JsonReader(new StringReader(bytes));
+                    jsonReader.setLenient(true);
+
+                    BatchTxns batchTxns = new Gson().fromJson(jsonReader, BatchTxns.class);
+
+                    for (Txn txn: batchTxns.txn_content) {
+                        transactions.add(txn);
+                        putIndex(txn, (TransactionHash)one.low);
+                    }
+
+                }
+
+                one = tangle.next(Transaction.class, one.low);
+            }
+
+        }catch (NullPointerException e) {
+            throw e;
+        } catch (Exception e) {
+            e.printStackTrace(new PrintStream(System.out));
+        }
     }
 
     static class RawTxn {
@@ -131,9 +180,10 @@ public class TransactionData {
                 for(Txn t : tangleToTxnMap.get(h)) {
                     boolean found = false;
                     for (Object object : jsonArray) {
-                        JSONObject jo1 = new JSONObject(object.toString());
-                        JSONObject jo2 = new JSONObject(JSON.toJSONString(t));
-                        if(jo1.toString().equals(jo2.toString())) {
+                        Txn jo1 = new Gson().fromJson(object.toString(), Txn.class);
+                        String str1 = new Gson().toJson(jo1);
+                        String str2 = new Gson().toJson(t);
+                        if(str1.equals(str2)) {
                             found = true;
                             break;
                         }
@@ -155,7 +205,7 @@ public class TransactionData {
 
         List<RawTxn> transactionList = new ArrayList<>();
 
-        RawTxn tx = JSON.parseObject(txnsStr, RawTxn.class);
+        RawTxn tx = new Gson().fromJson(txnsStr, RawTxn.class);
         transactionList.add(tx);
 
         constructTxnsFromRawTxns(transactionList);
@@ -165,7 +215,7 @@ public class TransactionData {
         List<RawTxn> transactionList = new ArrayList<>();
 
         for (String line:lines) {
-            RawTxn tx = JSON.parseObject(line, RawTxn.class);
+            RawTxn tx = new Gson().fromJson(line, RawTxn.class);
             transactionList.add(tx);
         }
 
@@ -191,7 +241,7 @@ public class TransactionData {
         newTxn.inputs = null;
         newTxn.outputs = txnOutList;
 
-        newTxn.txnHash = HashFactory.TRANSACTION.create(JSON.toJSONBytes(newTxn));
+        newTxn.txnHash = generateHash(new Gson().toJson(newTxn).getBytes());
 
         transactions.add(newTxn);
     }
@@ -239,7 +289,7 @@ public class TransactionData {
         String[] lines = str.split(System.getProperty("line.separator"));
 
         for (String line:lines) {
-            RawTxn tx = JSON.parseObject(line, RawTxn.class);
+            RawTxn tx = new Gson().fromJson(line, RawTxn.class);
             transactionList.add(tx);
         }
 
@@ -263,9 +313,9 @@ public class TransactionData {
                 if (txnOut.userAccount.equals(formAddr)){
 
                     boolean jumpFlag = false;
-                    for (int k = transactions.size() - 1; k > i; k--){
+                    for (int k = transactions.size() - 1; k > 0; k--){
                         for (TxnIn tempTxnIn: transactions.get(k).inputs) {
-                            if (tempTxnIn.txnHash == transactions.get(i).txnHash && tempTxnIn.idx == j){
+                            if (tempTxnIn.txnHash.equals(transactions.get(i).txnHash) && tempTxnIn.idx == j){
                                 jumpFlag = true; // already spend
                                 break;
                             }
@@ -314,9 +364,21 @@ public class TransactionData {
         }
 
         newTxn.outputs = txnOutList;
-        newTxn.txnHash = HashFactory.TRANSACTION.create(JSON.toJSONBytes(newTxn));
+        newTxn.txnHash = generateHash(new Gson().toJson(newTxn).getBytes());
+
 
         transactions.add(newTxn);
         return true;
+    }
+
+    private String generateHash(byte[] bytes){
+        Hash trytes = HashFactory.TRANSACTION.create(bytes);
+        byte[] initialValue = trytes.trits();
+        Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
+        k.absorb(initialValue, 0, initialValue.length);
+        byte[] hashValue = new byte[Curl.HASH_LENGTH];
+        k.squeeze(hashValue, 0, hashValue.length);
+        String hash = Converter.trytes(hashValue);
+        return hash;
     }
 }

@@ -1366,7 +1366,7 @@ public class API {
      * @param message The message to store
      * @param tag     The tag to store, by default is TX
      **/
-    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {   
+    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
             txToApprove = getTransactionToApproveTips(3, Optional.empty());

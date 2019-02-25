@@ -23,21 +23,6 @@ type Response struct {
 	Duration int    `json:"duration"`
 }
 
-type block struct {
-	TxnContent []content `json:"txn_content"`
-	TxNum      int       `json:"tx_num"`
-}
-
-type content struct {
-	Inputs  []ledger `json:"inputs"`
-	Outputs []ledger `json:"outputs"`
-}
-
-type ledger struct {
-	UserAccount string `json:"userAccount"`
-	Amount      int    `json:"amount"`
-}
-
 type message struct {
 	TxNum      int64    `json:"tx_num"`
 	TxnContent []rawtxn `json:"txn_content"`
@@ -52,6 +37,7 @@ type rawtxn struct {
 type rawtxnslice []rawtxn
 
 var url = "http://localhost:14700"
+var addr = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
 
 func printUsage() {
 
@@ -85,7 +71,7 @@ func (cli *CLI) addAttestationInfo(info []string) {
 		log.Panic(err)
 	}
 
-	data := "{\"command\":\"storeMessage\",\"address\":" + info[0] + ",\"message\":" + url2.QueryEscape(string(ms)) + ",\"tag\":\"TEE\"}"
+	data := "{\"command\":\"storeMessage\",\"address\":" + addr + ",\"message\":" + url2.QueryEscape(string(ms[:])) + ",\"tag\":\"TEE\"}"
 	fmt.Println("data : " + data)
 	r := doPost([]byte(data))
 	fmt.Println(r)

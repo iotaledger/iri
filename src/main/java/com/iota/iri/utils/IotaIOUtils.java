@@ -94,6 +94,7 @@ public class IotaIOUtils extends IOUtils {
                     if (tmpBatch.getTryteStringLen(tmpBatch) + tx.getTryteStringLen(tx) > size) {
                         String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
                         ret.append(s);
+                        TransactionData.getInstance().createTmpStorageForBlock(tmpBatch);
                         tmpBatch.clear();
                     }
                     tmpBatch.addTxn(tx);
@@ -101,6 +102,7 @@ public class IotaIOUtils extends IOUtils {
                 if(tmpBatch.tx_num > 0) {
                     String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
                     ret.append(s);
+                    TransactionData.getInstance().createTmpStorageForBlock(tmpBatch);
                     tmpBatch.clear();
                 }
             } else {

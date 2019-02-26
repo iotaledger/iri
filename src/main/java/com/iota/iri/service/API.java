@@ -237,8 +237,6 @@ public class API {
                     if(request.containsKey("tag")) {
                         tag = (String) request.get("tag");
                     }
-                    String tagTrytes = Converter.asciiToTrytes(tag);
-                    tag = StringUtils.rightPad(tagTrytes, 27, '9');
 
                     String address = (String) request.get("address");
                     String message;
@@ -1362,12 +1360,12 @@ public class API {
      * @param message The message to store
      * @param tag     The tag to store, by default is TX
      **/
-    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {   
+    private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
             txToApprove = getTransactionToApproveTips(3, Optional.empty());
         } catch (Exception e) {
-            log.info("Tip selection failed: " + e.getLocalizedMessage());
+            log.error("Tip selection failed: " + e.getLocalizedMessage());
             txToApprove.add(IotaUtils.getRandomTransactionHash());
             txToApprove.add(IotaUtils.getRandomTransactionHash());
         }
@@ -1379,8 +1377,8 @@ public class API {
 
         if (!BaseIotaConfig.getInstance().isEnableIPFSTxns() && BaseIotaConfig.getInstance().isEnableBatchTxns()) {
             String processed;
-            String asciiTag = Converter.trytesToAscii(tag).trim();
-            switch (asciiTag){
+            // skip 'YYYYMMDD' in tag
+            switch (tag.substring(8)){
                 case "TX" :
                     processed = IotaIOUtils.processBatchTxnMsg(message);
                     if (processed == null) {
@@ -1429,7 +1427,7 @@ public class API {
             // value
             tx += StringUtils.repeat('9', 27);
             // obsolete tag
-            tx += tag;
+            tx += StringUtils.rightPad(Converter.asciiToTrytes(tag), 27, '9');
             // timestamp
             tx += timestampTrytes;
             // current index

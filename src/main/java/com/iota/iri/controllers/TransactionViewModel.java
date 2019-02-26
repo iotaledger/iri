@@ -225,7 +225,6 @@ public class TransactionViewModel {
                 String sig = Converter.trytes(getSignature());
                 String txnsStr = Converter.trytesToAscii(sig);
                 if(!txnsStr.contains("inputs") && !txnsStr.contains("outputs")) { // check if already been processed
-                    System.out.println(txnsStr);
                     BatchTxns tmpBatch = new BatchTxns();
                     int sigSize = SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET/3;
                     JSONObject jo = new JSONObject(txnsStr);

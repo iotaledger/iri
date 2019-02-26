@@ -49,7 +49,7 @@ def compress_str(data):
         return data
 
 def send(tx_string, tx_num=1, tag='TR'):
-    if enable_ipfs == True:
+    if enable_ipfs == True and tag != 'TX':
         send_to_ipfs_iota(tx_string, tx_num, tag)
     else:
         send_to_iota(tx_string, tx_num, tag)

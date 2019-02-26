@@ -2,13 +2,13 @@
 
 Run the official iotaledger/iri container, passing the mandatory -p option:
 
-```docker run iotaledger/iri:v1.6.0-RELEASE -p 14265```
+```docker run iotaledger/iri:v1.6.1-RELEASE -p 14265```
 
 This will get your a running IRI with its API listening on port 14265, no neighbours and an empty database. The IRI Docker container by default expects data at /iri/data. Use the `-v` option of the `docker run` command to mount volumes so to have persistent data. You can also pass more command line options to the docker run command and those will be passed to IRI.
 
 If you want to use a iri.ini file with the docker container, supposing it's stored under /path/to/conf/iri.ini on your docker host, then pass `-v /path/to/conf:/iri/conf` and add -c /iri/conf/iri.ini as docker run arguments. So for example the `docker run` command above would become:
 
-```docker run -v /path/to/conf:/iri/conf -v /path/to/data:/iri/data iotaledger/iri:v1.6.0-RELEASE -p 14265 -c /iri/conf/iri.ini```
+```docker run -v /path/to/conf:/iri/conf -v /path/to/data:/iri/data iotaledger/iri:v1.6.1-RELEASE -p 14265 -c /iri/conf/iri.ini```
 
 Please refer to the IRI documentation for further command line options and iri.ini options.
 
@@ -61,7 +61,7 @@ ExecStart=/usr/bin/docker run \
 -p 14265:14265 \
 -p 15600:15600 \
 -p 14600:14600/udp  \
-iotaledger/iri:v1.6.0-RELEASE \
+iotaledger/iri:v1.6.1-RELEASE \
 -p 14265 \
 --zmq-enabled \
 --testnet

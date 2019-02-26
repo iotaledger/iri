@@ -55,7 +55,7 @@ public class BundleValidator {
      * If the bundle is invalid then an empty list will be returned.
      * @throws Exception if a persistence error occured
      */
-    public static List<List<TransactionViewModel>> validate(Tangle tangle, Snapshot initialSnapshot, Hash tailHash) throws Exception {
+    public List<List<TransactionViewModel>> validate(Tangle tangle, Snapshot initialSnapshot, Hash tailHash) throws Exception {
 
         TransactionViewModel tail = TransactionViewModel.fromHash(tangle, tailHash);
         if (tail.getCurrentIndex() != 0 || tail.getValidity() == -1) {
@@ -194,10 +194,10 @@ public class BundleValidator {
     /**
      * Checks that the bundle's inputs and outputs are balanced.
      *
-     * @param transactionViewModels list of transactions that are in a bundle
+     * @param transactionViewModels collection of transactions that are in a bundle
      * @return {@code true} if balanced, {@code false} if unbalanced or {@code transactionViewModels} is empty
      */
-    public static boolean isInconsistent(List<TransactionViewModel> transactionViewModels) {
+    public static boolean isInconsistent(Collection<TransactionViewModel> transactionViewModels) {
         long value = 0;
         for (final TransactionViewModel bundleTransactionViewModel : transactionViewModels) {
             if (bundleTransactionViewModel.value() != 0) {

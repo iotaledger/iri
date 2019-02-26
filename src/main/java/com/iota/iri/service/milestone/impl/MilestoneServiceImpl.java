@@ -20,7 +20,6 @@ import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.dag.DAGHelper;
-import com.iota.iri.zmq.MessageQ;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,14 +59,11 @@ public class MilestoneServiceImpl implements MilestoneService {
     private SnapshotService snapshotService;
 
     /**
-     * Holds the ZeroMQ interface that allows us to emit messages for external recipients.<br />
-     */
-    private MessageQ messageQ;
-
-    /**
      * Holds the config with important milestone specific settings.<br />
      */
     private ConsensusConfig config;
+
+    private BundleValidator bundleValidator;
 
     /**
      * This method initializes the instance and registers its dependencies.<br />
@@ -83,17 +79,16 @@ public class MilestoneServiceImpl implements MilestoneService {
      *
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      * @param config config with important milestone specific settings
      * @return the initialized instance itself to allow chaining
      */
     public MilestoneServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            MessageQ messageQ, ConsensusConfig config) {
+            BundleValidator bundleValidator, ConsensusConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
-        this.messageQ = messageQ;
+        this.bundleValidator = bundleValidator;
         this.config = config;
 
         return this;
@@ -173,7 +168,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                 return VALID;
             }
 
-            final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle,
+            final List<List<TransactionViewModel>> bundleTransactions = bundleValidator.validate(tangle,
                     snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
             if (bundleTransactions.isEmpty()) {
@@ -418,8 +413,8 @@ public class MilestoneServiceImpl implements MilestoneService {
             throw new MilestoneException("error while updating the snapshotIndex of " + transaction, e);
         }
 
-        messageQ.publish("%s %s %d sn", transaction.getAddressHash(), transaction.getHash(), index);
-        messageQ.publish("sn %d %s %s %s %s %s", index, transaction.getHash(), transaction.getAddressHash(),
+        tangle.publish("%s %s %d sn", transaction.getAddressHash(), transaction.getHash(), index);
+        tangle.publish("sn %d %s %s %s %s %s", index, transaction.getHash(), transaction.getAddressHash(),
                 transaction.getTrunkTransactionHash(), transaction.getBranchTransactionHash(),
                 transaction.getBundleHash());
     }

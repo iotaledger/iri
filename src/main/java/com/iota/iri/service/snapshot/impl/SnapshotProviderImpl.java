@@ -231,18 +231,19 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     }
 
     private void assertSpentAddressesDbExist() throws SpentAddressesException {
+        String spentAddressesDbPath = config.getSpentAddressesDbPath();
         try {
-            File spentAddressFolder = new File(SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH);
+            File spentAddressFolder = new File(spentAddressesDbPath);
             //If there is at least one file in the db the check should pass
             if (Files.newDirectoryStream(spentAddressFolder.toPath(), "*.sst").iterator().hasNext()) {
                 return;
             }
         }
         catch (IOException e){
-            throw new SpentAddressesException("Can't load " + SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH + " folder", e);
+            throw new SpentAddressesException("Can't load " + spentAddressesDbPath + " folder", e);
         }
 
-        throw new SpentAddressesException(SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH + " folder has no sst files");
+        throw new SpentAddressesException(spentAddressesDbPath + " folder has no sst files");
     }
 
     /**

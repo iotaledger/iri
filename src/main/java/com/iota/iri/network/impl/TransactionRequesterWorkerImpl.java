@@ -30,7 +30,7 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
     /**
      * The minimum amount of transactions in the request queue that are required for the worker to trigger.<br />
      */
-    private static final int REQUESTER_THREAD_ACTIVATION_THRESHOLD = 50;
+    public static final int REQUESTER_THREAD_ACTIVATION_THRESHOLD = 50;
 
     /**
      * The time (in milliseconds) that the worker waits between its iterations.<br />
@@ -105,25 +105,43 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
      * traffic like transactions that get relayed by our node.<br />
      */
     @Override
-    public void processRequestQueue() {
+    public boolean processRequestQueue() {
         try {
-            if (transactionRequester.numberOfTransactionsToRequest() >= REQUESTER_THREAD_ACTIVATION_THRESHOLD) {
+            if (isActive()) {
                 TransactionViewModel transaction = getTransactionToSendWithRequest();
-                if (transaction != null && transaction.getType() != TransactionViewModel.PREFILLED_SLOT) {
-                    for (Neighbor neighbor : node.getNeighbors()) {
-                        try {
-                            // automatically adds the hash of a requested transaction when sending a packet
-                            node.sendPacket(transaction, neighbor);
-                        } catch (Exception e) {
-                            log.error("unexpected error while sending request to neighbour", e);
-                        }
-                    }
+                if (isValidTransaction(transaction)) {
+                    sendToNodes(transaction);
+                    return true;
                 }
             }
         } catch (Exception e) {
             log.error("unexpected error while processing the request queue", e);
         }
+        return false;
     }
+
+    private void sendToNodes(TransactionViewModel transaction) {
+        for (Neighbor neighbor : node.getNeighbors()) {
+            try {
+                // automatically adds the hash of a requested transaction when sending a packet
+                node.sendPacket(transaction, neighbor);
+            } catch (Exception e) {
+                log.error("unexpected error while sending request to neighbour", e);
+            }
+        }
+    }
+
+    //Package Private For Testing
+    boolean isActive() {
+        return transactionRequester.numberOfTransactionsToRequest() >= REQUESTER_THREAD_ACTIVATION_THRESHOLD;
+    }
+
+    //Package Private For Testing
+    boolean isValidTransaction(TransactionViewModel transaction) {
+        return transaction != null && (
+                transaction.getType() != TransactionViewModel.PREFILLED_SLOT
+             || transaction.getHash().equals(Hash.NULL_HASH));
+    }                                     
 
     @Override
     public void start() {
@@ -145,7 +163,8 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
      * @return a random tip
      * @throws Exception if anything unexpected happens while trying to retrieve the random tip.
      */
-    private TransactionViewModel getTransactionToSendWithRequest() throws Exception {
+    //Package Private For Testing
+    TransactionViewModel getTransactionToSendWithRequest() throws Exception {
         Hash tip = tipsViewModel.getRandomSolidTipHash();
         if (tip == null) {
             tip = tipsViewModel.getRandomNonSolidTipHash();

@@ -321,26 +321,16 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
             throws Exception {
         if (CollectionUtils.isNotEmpty(models)) {
             try (WriteBatch writeBatch = new WriteBatch()) {
-                models.forEach(entry -> {
+                for (Pair<Indexable, ? extends Class<? extends Persistable>> entry : models) {
                     Indexable indexable = entry.low;
                     byte[] keyBytes = indexable.bytes();
                     ColumnFamilyHandle handle = classTreeMap.get(entry.hi);
-                    try {
-                        writeBatch.delete(handle, keyBytes);
-                    } catch (RocksDBException e) {
-                        log.error("Could not delete handle: " + handle.getID());
-                        throw new RuntimeException(e);
-                    }
+                    writeBatch.delete(handle, keyBytes);
                     ColumnFamilyHandle metadataHandle = metadataReference.get(entry.hi);
                     if (metadataHandle != null) {
-                        try {
-                            writeBatch.delete(metadataHandle, keyBytes);
-                        } catch (RocksDBException e) {
-                            log.error("Could not delete metadataHandle: " + metadataHandle.getID());
-                            throw new RuntimeException(e);
-                        }
+                        writeBatch.delete(metadataHandle, keyBytes);
                     }
-                });
+                }
 
                 WriteOptions writeOptions = new WriteOptions()
                         //We are explicit about what happens if the node reboots before a flush to the db

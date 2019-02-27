@@ -84,7 +84,7 @@ func (cli *CLI) addAttestationInfo(info []string) {
 
 	d := time.Now()
 	ds := d.Format("20190227")
-	data := "{\"command\":\"storeMessage\",\"address\":" + addr1 + ",\"message\":" + url2.QueryEscape(string(ms[:])) + ",\"tag\":" + ds + "\"TEE\"}"
+	data := "{\"command\":\"storeMessage\",\"address\":" + addr1 + ",\"message\":" + url2.QueryEscape(string(ms[:])) + ",\"tag\":\"" + ds + "TEE\"}"
 	fmt.Println("data : " + data)
 	r := doPost([]byte(data))
 	fmt.Println(r)

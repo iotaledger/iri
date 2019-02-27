@@ -9,13 +9,13 @@ import java.util.Set;
 /**
  * Abstracts access to the data persisitence layer.
  * Will handle the initialization and connections to the storage.
- * It will enable to create efficient batch writes, deletes, and merges.
+ * It will enable efficient batch writes, deletes, and merges.
  */
 public interface PersistenceProvider {
 
     /**
      * Will setup and configure the DB. Including initializing of heavyweight
-     * connections, rules to how to communicate with the DB schema, how to sync with the DB,
+     * connections, rules on how to communicate with the DB schema, how to sync with the DB,
      * how to backup the data and so on.
      * @throws Exception if there was an error communicating with the DB
      */
@@ -40,7 +40,7 @@ public interface PersistenceProvider {
     boolean save(Persistable model, Indexable index) throws Exception;
 
     /**
-     * Deletes from the DB the value that is stored at a specific {@code index}.
+     * Deletes the value that is stored at a specific {@code index} from the DB.
      * @param model defines the type of object we want to delete
      * @param index the key we delete at
      * @throws Exception if we encounter a problem with the DB
@@ -53,17 +53,17 @@ public interface PersistenceProvider {
      * @param model container of the metadata we need
      * @param index the key where we store the metadata
      * @param item extra piece of metadata
-     * @return true if successful, else false
+     * @return <tt>true</tt> if successful, else <tt>false</tt>
      * @throws Exception if we encounter a problem with the DB
      */
     boolean update(Persistable model, Indexable index, String item) throws Exception;
 
     /**
-     * Ensures that the object of tye {@code model} is stored in the DB at {@code key}.
+     * Ensures that the object of type {@code model} at {@code key} is stored in the DB.
      *
      * @param model specifies in what table/column family to look for the object
      * @param key the key we expect to find in the db
-     * @return true if the object is in the DB, else return false
+     * @return <tt>true</tt> if the object is in the DB, else <tt>false</tt>
      * @throws Exception if we encounter a problem with the DB
      */
     boolean exists(Class<?> model, Indexable key) throws Exception;
@@ -188,7 +188,7 @@ public interface PersistenceProvider {
     void clear(Class<?> column) throws Exception;
 
     /**
-     * Clear all the metadata in  a column family or a table
+     * Clear all the metadata in a column family or a table
      * @param column the table/column family we clear the metadata from
      * @throws Exception if we encounter a problem with the DB
      */

@@ -16,6 +16,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type CLI struct{}
@@ -63,9 +64,9 @@ func isValidArgs() {
 
 func (cli *CLI) addAttestationInfo(info []string) {
 	raw := new(rawtxn)
-	raw.Attester = info[1]
-	raw.Attestee = info[2]
-	num, err := strconv.ParseUint(info[3], 10, 64)
+	raw.Attester = info[0]
+	raw.Attestee = info[1]
+	num, err := strconv.ParseUint(info[2], 10, 64)
 	raw.Score = float64(num)
 	m := new(message)
 	m.TeeNum = 1
@@ -81,7 +82,9 @@ func (cli *CLI) addAttestationInfo(info []string) {
 		addr1 = addr
 	}
 
-	data := "{\"command\":\"storeMessage\",\"address\":" + addr1 + ",\"message\":" + url2.QueryEscape(string(ms[:])) + ",\"tag\":\"TEE\"}"
+	d := time.Now()
+	ds := d.Format("20190227")
+	data := "{\"command\":\"storeMessage\",\"address\":" + addr1 + ",\"message\":" + url2.QueryEscape(string(ms[:])) + ",\"tag\":" + ds + "\"TEE\"}"
 	fmt.Println("data : " + data)
 	r := doPost([]byte(data))
 	fmt.Println(r)

@@ -1387,11 +1387,7 @@ public class API {
                     }
                     break;
                 case "TEE" :
-                    JsonReader jsonReader = new JsonReader(new StringReader(message));
-                    jsonReader.setLenient(true);
-                    Gson gson = new Gson();
-                    BatchTee tee = gson.fromJson(jsonReader, BatchTee.class);
-                    processed = Converter.asciiToTrytes(gson.toJson(tee));
+                    processed = Converter.asciiToTrytes(message);
                     break;
                 default:
                     processed = Converter.asciiToTrytes(message);

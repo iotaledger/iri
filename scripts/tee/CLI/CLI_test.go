@@ -9,15 +9,15 @@ func TestGetRank(t *testing.T) {
 
 	var cli = new(CLI)
 
-	info := []string{"EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9QD", "A", "B", "1"}
+	info := []string{"A", "B", "1"}
 	cli.addAttestationInfo(info)
-	info = []string{"EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9QD", "B", "C", "1"}
+	info = []string{"B", "C", "1"}
 	cli.addAttestationInfo(info)
-	info = []string{"EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9QD", "C", "D", "1"}
+	info = []string{"C", "D", "1"}
 	cli.addAttestationInfo(info)
-	info = []string{"EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9QD", "D", "A", "1"}
+	info = []string{"D", "A", "1"}
 	cli.addAttestationInfo(info)
-	info = []string{"EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9QD", "A", "C", "1"}
+	info = []string{"A", "C", "1"}
 	cli.addAttestationInfo(info)
 
 	actural := cli.getRank("1", 1)

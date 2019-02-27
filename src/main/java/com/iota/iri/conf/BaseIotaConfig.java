@@ -12,17 +12,21 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
-/*
+/**
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
   Meaning that every field must have a getter that is prefixed with `get` unless it is a boolean and then it should be
   prefixed with `is`.
  */
 public abstract class BaseIotaConfig implements IotaConfig {
 
-    protected static final String SPLIT_STRING_TO_LIST_REGEX = ",| ";
+    public static final String SPLIT_STRING_TO_LIST_REGEX = ",| ";
 
     private boolean help;
 
@@ -30,6 +34,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int port = Defaults.API_PORT;
     protected String apiHost = Defaults.API_HOST;
     protected List<String> remoteLimitApi = Defaults.REMOTE_LIMIT_API;
+    protected List<InetAddress> remoteTrustedApiHosts = Defaults.REMOTE_LIMIT_API_HOSTS;
     protected int maxFindTransactions = Defaults.MAX_FIND_TRANSACTIONS;
     protected int maxRequestsList = Defaults.MAX_REQUESTS_LIST;
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
@@ -174,6 +179,30 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = {"--remote-limit-api"}, description = APIConfig.Descriptions.REMOTE_LIMIT_API)
     protected void setRemoteLimitApi(String remoteLimitApi) {
         this.remoteLimitApi = IotaUtils.splitStringToImmutableList(remoteLimitApi, SPLIT_STRING_TO_LIST_REGEX);
+    }
+
+    @Override
+    public List<InetAddress> getRemoteTrustedApiHosts() {
+        return remoteTrustedApiHosts;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--remote-trusted-api-hosts"}, description = APIConfig.Descriptions.REMOTE_TRUSTED_API_HOSTS)
+    public void setRemoteTrustedApiHosts(String remoteTrustedApiHosts) {
+        List<String> addresses = IotaUtils.splitStringToImmutableList(remoteTrustedApiHosts, SPLIT_STRING_TO_LIST_REGEX);
+        List<InetAddress> inetAddresses = addresses.stream().map(host -> {
+            try {
+                return InetAddress.getByName(host.trim());
+            } catch (UnknownHostException e) {
+                throw new ParameterException("Invalid value for --remote-trusted-api-hosts address: ", e);
+            }
+        }).collect(Collectors.toList());
+
+        // always make sure that localhost exists as trusted host
+        if(!inetAddresses.contains(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST)) {
+            inetAddresses.add(Defaults.REMOTE_LIMIT_API_DEFAULT_HOST);
+        }
+        this.remoteTrustedApiHosts = Collections.unmodifiableList(inetAddresses);
     }
 
     @Override
@@ -816,11 +845,16 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.powThreads = powThreads;
     }
 
+    /**
+     * Represents the default values primarily used by the {@link BaseIotaConfig} field initialisation.
+     */
     public interface Defaults {
         //API
         int API_PORT = 14265;
         String API_HOST = "localhost";
         List<String> REMOTE_LIMIT_API = IotaUtils.createImmutableList("addNeighbors", "getNeighbors", "removeNeighbors", "attachToTangle", "interruptAttachingToTangle");
+        InetAddress REMOTE_LIMIT_API_DEFAULT_HOST = InetAddress.getLoopbackAddress();
+        List<InetAddress> REMOTE_LIMIT_API_HOSTS = IotaUtils.createImmutableList(REMOTE_LIMIT_API_DEFAULT_HOST);
         int MAX_FIND_TRANSACTIONS = 100_000;
         int MAX_REQUESTS_LIST = 1_000;
         int MAX_GET_TRYTES = 10_000;

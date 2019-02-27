@@ -6,6 +6,9 @@ import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.iota.iri.IRI;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -66,19 +69,28 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected double pPropagateRequest = Defaults.P_PROPAGATE_REQUEST;
 
     //ZMQ
-    protected boolean zmqEnabled = Defaults.ZMQ_ENABLED;
+    protected boolean zmqEnableTcp = Defaults.ZMQ_ENABLE_TCP;
+    protected boolean zmqEnableIpc = Defaults.ZMQ_ENABLE_IPC;
     protected int zmqPort = Defaults.ZMQ_PORT;
     protected int zmqThreads = Defaults.ZMQ_THREADS;
     protected String zmqIpc = Defaults.ZMQ_IPC;
     protected int qSizeNode = Defaults.QUEUE_SIZE;
     protected int cacheSizeBytes = Defaults.CACHE_SIZE_BYTES;
-
+    /**
+     * @deprecated This field was replaced by {@link #zmqEnableTcp} and {@link #zmqEnableIpc}. It is only needed
+     * for backward compatibility to --zmq-enabled parameter with JCommander.
+     */
+    @Deprecated
+    private boolean zmqEnabled;
 
     //Tip Selection
     protected int maxDepth = Defaults.MAX_DEPTH;
     protected double alpha = Defaults.ALPHA;
     private int maxAnalyzedTransactions = Defaults.MAX_ANALYZED_TXS;
-
+    
+    //Tip Solidification
+    protected boolean tipSolidifierEnabled = Defaults.TIP_SOLIDIFIER_ENABLED;
+    
     //PearlDiver
     protected int powThreads = Defaults.POW_THREADS;
 
@@ -90,6 +102,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int localSnapshotsIntervalUnsynced = Defaults.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED;
     protected int localSnapshotsDepth = Defaults.LOCAL_SNAPSHOTS_DEPTH;
     protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
+    protected String spentAddressesDbPath = Defaults.SPENT_ADDRESSES_DB_PATH;
+    protected String spentAddressesDbLogPath = Defaults.SPENT_ADDRESSES_DB_LOG_PATH;
 
     public BaseIotaConfig() {
         //empty constructor
@@ -458,18 +472,20 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-enabled"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_ENABLED)
+    @Parameter(names = {"--local-snapshots-enabled"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_ENABLED,
+            arity = 1)
     protected void setLocalSnapshotsEnabled(boolean localSnapshotsEnabled) {
         this.localSnapshotsEnabled = localSnapshotsEnabled;
     }
 
     @Override
     public boolean getLocalSnapshotsPruningEnabled() {
-        return this.localSnapshotsPruningEnabled;
+        return this.localSnapshotsEnabled && this.localSnapshotsPruningEnabled;
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-pruning-enabled"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_ENABLED)
+    @Parameter(names = {"--local-snapshots-pruning-enabled"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_ENABLED, arity = 1)
     protected void setLocalSnapshotsPruningEnabled(boolean localSnapshotsPruningEnabled) {
         this.localSnapshotsPruningEnabled = localSnapshotsPruningEnabled;
     }
@@ -480,8 +496,15 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-pruning-delay"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
+    @Parameter(names = {"--local-snapshots-pruning-delay"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_PRUNING_DELAY)
     protected void setLocalSnapshotsPruningDelay(int localSnapshotsPruningDelay) {
+        if (localSnapshotsPruningDelay < Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_PRUNING_DELAY should be at least " 
+                    + Defaults.LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN 
+                    + "(found " + localSnapshotsPruningDelay +")");
+        }
+
         this.localSnapshotsPruningDelay = localSnapshotsPruningDelay;
     }
 
@@ -491,8 +514,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-interval-synced"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_SYNCED)
+    @Parameter(names = {"--local-snapshots-interval-synced"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_SYNCED)
     protected void setLocalSnapshotsIntervalSynced(int localSnapshotsIntervalSynced) {
+        if (localSnapshotsIntervalSynced < 1) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_INTERVAL_SYNCED should be at least 1 (found " +
+                    localSnapshotsIntervalSynced +")");
+        }
+
         this.localSnapshotsIntervalSynced = localSnapshotsIntervalSynced;
     }
 
@@ -502,8 +531,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-interval-unsynced"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED)
+    @Parameter(names = {"--local-snapshots-interval-unsynced"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED)
     protected void setLocalSnapshotsIntervalUnsynced(int localSnapshotsIntervalUnsynced) {
+        if (localSnapshotsIntervalUnsynced < 1) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED should be at least 1 (found " +
+                    localSnapshotsIntervalUnsynced +")");
+        }
+
         this.localSnapshotsIntervalUnsynced = localSnapshotsIntervalUnsynced;
     }
 
@@ -515,6 +550,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @JsonProperty
     @Parameter(names = {"--local-snapshots-depth"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_DEPTH)
     protected void setLocalSnapshotsDepth(int localSnapshotsDepth) {
+        if (localSnapshotsDepth < Defaults.LOCAL_SNAPSHOTS_DEPTH_MIN) {
+            throw new ParameterException("LOCAL_SNAPSHOTS_DEPTH should be at least "
+                    + Defaults.LOCAL_SNAPSHOTS_DEPTH_MIN
+                    + "(found " + localSnapshotsDepth +")");
+        }
+
         this.localSnapshotsDepth = localSnapshotsDepth;
     }
 
@@ -524,7 +565,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--local-snapshots-base-path"}, description = SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_BASE_PATH)
+    @Parameter(names = {"--local-snapshots-base-path"}, description =
+            SnapshotConfig.Descriptions.LOCAL_SNAPSHOTS_BASE_PATH)
     protected void setLocalSnapshotsBasePath(String localSnapshotsBasePath) {
         this.localSnapshotsBasePath = localSnapshotsBasePath;
     }
@@ -555,19 +597,79 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public int getMaxMilestoneIndex() {
+        return Defaults.MAX_MILESTONE_INDEX;
+    }
+
+    @Override
     public int getNumberOfKeysInMilestone() {
         return Defaults.NUM_KEYS_IN_MILESTONE;
     }
 
     @Override
-    public boolean isZmqEnabled() {
-        return zmqEnabled;
+    public String getSpentAddressesDbPath() {
+        return spentAddressesDbPath;
     }
 
     @JsonProperty
+    @Parameter(names = {"--spent-addresses-db-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_PATH)
+    protected void setSpentAddressesDbPath(String spentAddressesDbPath) {
+        this.spentAddressesDbPath = spentAddressesDbPath;
+    }
+
+    @Override
+    public String getSpentAddressesDbLogPath() {
+        return spentAddressesDbLogPath;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--spent-addresses-db-log-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH)
+    protected void setSpentAddressesDbLogPath(String spentAddressesDbLogPath) {
+        this.spentAddressesDbLogPath = spentAddressesDbLogPath;
+    }
+
+    /**
+     * Checks if ZMQ is enabled.
+     * @return true if zmqEnableTcp or zmqEnableIpc is set.
+     */
+    @Override
+    public boolean isZmqEnabled() {
+        return zmqEnableTcp || zmqEnableIpc;
+    }
+
+    /**
+     * Activates ZMQ to listen on TCP and IPC.
+     * @deprecated Use {@link #setZmqEnableTcp(boolean) and/or {@link #setZmqEnableIpc(boolean)}} instead.
+     * @param zmqEnabled true if ZMQ should listen in TCP and IPC.
+     */
+    @Deprecated
+    @JsonProperty
     @Parameter(names = "--zmq-enabled", description = ZMQConfig.Descriptions.ZMQ_ENABLED)
     protected void setZmqEnabled(boolean zmqEnabled) {
-        this.zmqEnabled = zmqEnabled;
+        this.zmqEnableTcp = zmqEnabled;
+        this.zmqEnableIpc = zmqEnabled;
+    }
+
+    @Override
+    public boolean isZmqEnableTcp() {
+        return zmqEnableTcp;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--zmq-enable-tcp", description = ZMQConfig.Descriptions.ZMQ_ENABLE_TCP, arity = 1)
+    public void setZmqEnableTcp(boolean zmqEnableTcp) {
+        this.zmqEnableTcp = zmqEnableTcp;
+    }
+
+    @Override
+    public boolean isZmqEnableIpc() {
+        return zmqEnableIpc;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--zmq-enable-ipc", description = ZMQConfig.Descriptions.ZMQ_ENABLE_IPC, arity = 1)
+    public void setZmqEnableIpc(boolean zmqEnableIpc) {
+        this.zmqEnableIpc = zmqEnableIpc;
     }
 
     @Override
@@ -579,6 +681,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = "--zmq-port", description = ZMQConfig.Descriptions.ZMQ_PORT)
     protected void setZmqPort(int zmqPort) {
         this.zmqPort = zmqPort;
+        this.zmqEnableTcp = true;
     }
 
     @Override
@@ -587,7 +690,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--zmq-threads", description = ZMQConfig.Descriptions.ZMQ_PORT)
+    @Parameter(names = "--zmq-threads", description = ZMQConfig.Descriptions.ZMQ_THREADS)
     protected void setZmqThreads(int zmqThreads) {
         this.zmqThreads = zmqThreads;
     }
@@ -601,6 +704,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = "--zmq-ipc", description = ZMQConfig.Descriptions.ZMQ_IPC)
     protected void setZmqIpc(String zmqIpc) {
         this.zmqIpc = zmqIpc;
+        this.zmqEnableIpc = true;
     }
 
     @Override
@@ -637,8 +741,18 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getCoordinator() {
+    public Hash getCoordinator() {
         return Defaults.COORDINATOR_ADDRESS;
+    }
+
+    @Override
+    public int getCoordinatorSecurityLevel() {
+        return Defaults.COORDINATOR_SECURITY_LEVEL;
+    }
+
+    @Override
+    public SpongeFactory.Mode getCoordinatorSignatureMode() {
+        return Defaults.COORDINATOR_SIGNATURE_MODE;
     }
 
     @Override
@@ -667,7 +781,19 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected void setAlpha(double alpha) {
         this.alpha = alpha;
     }
+    
+    @Override
+    public boolean isTipSolidifierEnabled() {
+        return tipSolidifierEnabled;
+    }
 
+    @JsonProperty
+    @Parameter(names = "--tip-solidifier", description = SolidificationConfig.Descriptions.TIP_SOLIDIFIER, 
+        arity = 1)
+    protected void setTipSolidifierEnabled(boolean tipSolidifierEnabled) {
+        this.tipSolidifierEnabled = tipSolidifierEnabled;
+    }
+    
     @Override
     public int getBelowMaxDepthTransactionLimit() {
         return maxAnalyzedTransactions;
@@ -738,36 +864,51 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Zmq
         int ZMQ_THREADS = 1;
+        boolean ZMQ_ENABLE_IPC = false;
         String ZMQ_IPC = "ipc://iri";
-        boolean ZMQ_ENABLED = false;
+        boolean ZMQ_ENABLE_TCP = false;
         int ZMQ_PORT = 5556;
 
         //TipSel
         int MAX_DEPTH = 15;
         double ALPHA = 0.001d;
+        
+        //Tip solidification
+        boolean TIP_SOLIDIFIER_ENABLED = true;
 
         //PearlDiver
         int POW_THREADS = 0;
 
         //Coo
-        String COORDINATOR_ADDRESS =
-                "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
+        Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
+                        "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
+        int COORDINATOR_SECURITY_LEVEL = 1;
+        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
+        int NUM_KEYS_IN_MILESTONE = 20;
+        int MAX_MILESTONE_INDEX = 1 << NUM_KEYS_IN_MILESTONE;
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
         boolean LOCAL_SNAPSHOTS_PRUNING_ENABLED = true;
-        int LOCAL_SNAPSHOTS_PRUNING_DELAY = 50000;
+        
+        int LOCAL_SNAPSHOTS_PRUNING_DELAY = 40000;
+        int LOCAL_SNAPSHOTS_PRUNING_DELAY_MIN = 10000;
         int LOCAL_SNAPSHOTS_INTERVAL_SYNCED = 10;
         int LOCAL_SNAPSHOTS_INTERVAL_UNSYNCED = 1000;
-        String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         int LOCAL_SNAPSHOTS_DEPTH = 100;
+        int LOCAL_SNAPSHOTS_DEPTH_MIN = 100;
+        String SPENT_ADDRESSES_DB_PATH = "spent-addresses-db";
+        String SPENT_ADDRESSES_DB_LOG_PATH = "spent-addresses-log";
+        
+        String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";
         String SNAPSHOT_SIG_FILE = "/snapshotMainnet.sig";
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
-                "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt";
-        long GLOBAL_SNAPSHOT_TIME = 1537203600;
-        int MILESTONE_START_INDEX = 774_805;
-        int NUM_KEYS_IN_MILESTONE = 20;
+                "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt " +
+                        "/previousEpochsSpentAddresses3.txt";
+        long GLOBAL_SNAPSHOT_TIME = 1545469620;
+        int MILESTONE_START_INDEX = 933_210;
         int MAX_ANALYZED_TXS = 20_000;
+
     }
 }

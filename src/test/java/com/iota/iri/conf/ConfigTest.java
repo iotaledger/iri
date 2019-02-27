@@ -3,6 +3,8 @@ package com.iota.iri.conf;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
+
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -100,12 +102,15 @@ public class ConfigTest {
         Assert.assertEquals("max peers", 10, iotaConfig.getMaxPeers());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
         Assert.assertEquals("dns resolution", false, iotaConfig.isDnsResolutionEnabled());
+        Assert.assertEquals("tip solidification", true, iotaConfig.isTipSolidifierEnabled());
         Assert.assertEquals("ixi-dir", "/ixi", iotaConfig.getIxiDir());
         Assert.assertEquals("db path", "/db", iotaConfig.getDbPath());
         Assert.assertEquals("zmq enabled", true, iotaConfig.isZmqEnabled());
         Assert.assertNotEquals("mwm", 4, iotaConfig.getMwm());
         Assert.assertNotEquals("coo", iotaConfig.getCoordinator(), "TTTTTTTTT");
         Assert.assertEquals("--testnet-no-coo-validation", false, iotaConfig.isDontValidateTestnetMilestoneSig());
+        //Test default value
+        Assert.assertEquals("--local-snapshots-pruning-delay", 40000, iotaConfig.getLocalSnapshotsPruningDelay());
     }
 
     @Test
@@ -135,6 +140,7 @@ public class ConfigTest {
                 "--max-peers", "10",
                 "--dns-refresher", "false",
                 "--dns-resolution", "false",
+                "--tip-solidifier", "false",
                 "--ixi-dir", "/ixi",
                 "--db-path", "/db",
                 "--db-log-path", "/dblog",
@@ -168,11 +174,12 @@ public class ConfigTest {
         Assert.assertEquals("max peers", 10, iotaConfig.getMaxPeers());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
         Assert.assertEquals("dns resolution", false, iotaConfig.isDnsResolutionEnabled());
+        Assert.assertEquals("tip solidification", false, iotaConfig.isTipSolidifierEnabled());
         Assert.assertEquals("ixi-dir", "/ixi", iotaConfig.getIxiDir());
         Assert.assertEquals("db path", "/db", iotaConfig.getDbPath());
         Assert.assertEquals("zmq enabled", true, iotaConfig.isZmqEnabled());
         Assert.assertEquals("mwm", 4, iotaConfig.getMwm());
-        Assert.assertEquals("coo", "TTTTTTTTT", iotaConfig.getCoordinator());
+        Assert.assertEquals("coo", HashFactory.ADDRESS.create("TTTTTTTTT"), iotaConfig.getCoordinator());
         Assert.assertEquals("--testnet-no-coo-validation", true,
                 iotaConfig.isDontValidateTestnetMilestoneSig());
     }
@@ -260,6 +267,32 @@ public class ConfigTest {
             writer.write(iniContent);
         }
         ConfigFactory.createFromFile(configFile, false);
+    }
+
+
+    @Test(expected = IllegalArgumentException.class)
+    public void pruningSnapshotDelayBelowMin() throws IOException {
+        String iniContent = new StringBuilder()
+                .append("[IRI]").append(System.lineSeparator())
+                .append("LOCAL_SNAPSHOTS_PRUNING_DELAY = 9999")
+                .toString();
+        try (Writer writer = new FileWriter(configFile)) {
+            writer.write(iniContent);
+        }
+        ConfigFactory.createFromFile(configFile, false);
+    }
+
+    @Test
+    public void pruningSnapshotDelayIsMin() throws IOException {
+        String iniContent = new StringBuilder()
+                .append("[IRI]").append(System.lineSeparator())
+                .append("LOCAL_SNAPSHOTS_PRUNING_DELAY = 10000")
+                .toString();
+        try (Writer writer = new FileWriter(configFile)) {
+            writer.write(iniContent);
+        }
+        IotaConfig iotaConfig = ConfigFactory.createFromFile(configFile, false);
+        Assert.assertEquals("unexpected pruning delay", 10000, iotaConfig.getLocalSnapshotsPruningDelay());
     }
 
     @Test

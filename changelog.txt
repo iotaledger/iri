@@ -1,3 +1,129 @@
+1.6.1
+    - Fix: Db exists() method optimization (#1338)
+    - Fix: Do not persist pruner state (#1342)
+    - Fix: Reduce db access and cpu usage needed to persist spent addresses (#1332)
+    - Fix: Added a NULL_HASH check for genesis transaction (#1309)
+    - Feature: Fresh transactions to request (#1316)
+    - Fix: missing user-agent header in cors (#1319)
+    - Fix: Batch process spent addresses to avoid out of memory issues (#1314)
+    - Fix: added a buffer to LSManager (#1286)
+    - Fix: test existence of spent addresses db do not point to correct folder (#1305)
+    - Change: Convert from trytes to asciiString (#1302)
+    - Documentation: Fixed and added javadoc comments for existing classes (#1026)
+    - Fix: Creates rest endpoint for iotaconfig related settings as suggested (#1200)
+    - Fix: make storeMessage store transactions (#1186)
+    - Change: add a plugin to create reproducible builds. (#1194)
+    - Feature: Add configurable variables for spent addresses DB (#1274)
+    - Fix: Posting invalid json to IRI will result in detailed error message (#1202)
+    - Fix: dns reverse resolving issue for neighbors that are added with their IP. (#1255)
+
+1.6.0
+   - Feat: added config variables for local snapshots (#981)
+   - Feat: added a generic helper class for dag traversal (#982)
+   - Feat: renamed Milestone to MilestoneTracker (#983)
+   - Feat: Introducing the GarbageCollector of local snapshots (#995)
+   - Feat: Fixes + Improvements for IRI that are required for local snapshots (#1095)
+   - Feat: Introducing several executor services for IRI (#1131)
+   - Feat: Making IRI use the initialSnapshot and the solidEntryPoints (#1135)
+   - MilestoneTracker and LedgerValidator rework (#1151)
+   - Activate Local Snapshots (#1172)
+   - Introducing a repair mechanism for corruptions in the ledger database (#1174)
+   - Introducing a parameter validation for the local snapshot config parameters (#1175)
+   - Introducing a dedicated Transaction Requester Background Worker (#1178)
+   - Fix: Removed intertwined locks to prevent deadlocks (#1195)
+   - Feat: Added an option to fast forward the ledger state (#1196)
+   - Perf: Massively improved the performance of the replayMilestones method (#1197)
+   - Refactor: Removed grace time from solid entry points generation (#1199)
+   - Increase rescan performance of old milestones after IRI restart (#1204)
+   - Refactor: Removed the old unused classes that got replaced by the local snapshots implementation (#1205)
+   - Refactor: made boolean parameters receive a value (#1224)
+   - Feat: Disable snapshot logic completely if disabled in the config (#1228)
+   - Fix: Node requested old transactions forever (#1235)
+   - Feat: Write snapshot files to temp files first (#1256)
+   - Fix first() calls in view models (#1257)
+   - Spentaddresses are persisted upon pruning (#1258)
+   - Spent Addresses should be persisted in a seperate db instance (#1263)
+   - Report local snapshot node transaction history via getNodeInfo (#1264)
+   - Don't start node if local snapshot is loaded but there is no spent ad… (#1266)
+   - Change the minimum value for LOCAL_SNAPSHOTS_PRUNING_DELAY (#1267)
+
+1.5.6
+    - Global Snapshot (#1250)
+    - Refactor: refactored DedicatedScheduledExecutorService
+    - Refactor: refactored AsyncTransactionPruner
+    - Refactor: refactored EntryPointSelectorImpl
+    - Refactor: refactored CumulativeWeightCalculator
+    - Refactor: refactored the SnapshotServiceImpl
+    - Refactor: refactored the SnapshotProviderImpl
+    - Refactor: refactored the LocalSnapshotManagerImpl
+    - Fix remove source port check (#1156)
+    - Documented IRI and Iota (#1150)
+    - Added documentation for networking
+    - Refactor: removed the repair routines for db inconsistencies
+    - Document dto (#1143)
+    - Added javadoc to API (#1140)
+    - Docs: fixed erroneous javadocs
+    - Feat: new MilestoneTracker
+    - Docs: fixed a problem with missing parameters in the docs
+    - split issues template to bug report and feature request (#1149)
+    - Transaction Validator Documentation (#1142)
+    - Document Bundle Validator (#1125)
+    - Document zmq-messageQ (#1141)
+    - Changed generic to always Transaction (#1129)
+    - Document crypto package (#1139)
+    - document converter (#1130)
+    - change `hash` package name to `crypto` (#1136)
+    - Fix: removed spamming logger
+    - Refactor: removed debug messages
+    - Feat: making IRI use the initialSnapshot and the solidEntryPoints
+    - Refactor: refactored changes according to codacy
+    - Feat: introducing several executor services for IRI
+    - add "numberOfStaleTransactions" to getNeighbors API call (#1121)
+    - Documentation explanation in styleguide (#1120)
+    - update regression tests
+    - add 'coordinatorAddress' to 'getNodeInfo' response.
+    - Added PearlDiver config (PoW threads) (#1017)
+    - Obtain features of a node (#1062)
+    - Refactor: changed indentation of IS_SOLID_BITMASK
+    - Refactor: correct name for the isMilestone flag
+    - Refactor: removed the requester thread in favor of a separate PR
+    - Refactor: changed indentation of isTransactionRequested
+    - Refactor: removed wrong * 4
+    - Regression ciglue.sh: avoid git fatal error when cloning TIAB (#1104)
+    - Return early if validating a bundle that has a known invalid status (#1098)
+    - Fixed wrong Hash objects used
+    - Fix: fixed visibility of the Status in the MilestoneTracker
+    - Feat: added hashcode to the Messages in IntervallLogger
+    - Feat: added the isSnapshot accessors
+    - Feat: fixed a few minor issues in IRI + some other improvements
+    - Feat: added the snapshot package
+    - Add Validation Test (#55)
+    - Interrupt wait time fix (#54)
+    - add code coverage to regression tests
+    - use mvn to fetch version
+    - Fix: fixed ThreadUtils to use Map instead of HashMap
+    - Add a Java Styleguide to IRI (#1055)
+    - fix code coverage tool d/l (#1085)
+    - javadocs param fix (#1081)
+    - update undertow to version 1.4.26 (#1083)
+    - Update DB for stitching tests (#60)
+    - Gawk -> Awk
+    - Revert "Kubectl extracted namespace could be empty"
+    - Kubectl extracted namespace could be empty
+    - Force TIAB virtualenv to Python2
+    - add reply to request to "recentSeenBytes" tx cache in order to skip redundant processing.
+    - extract byte digest to a function.
+    - Update DB for stitching tests
+    - Refactor: refactored the transactionpruner
+    - Enable validation of milestones with additional hash modes and security levels  (#1041)
+    - Run regression tests from local (#58)
+    - add formatting files
+    - Fix missing responses placement for interrupt test (#53)
+    - rename addresses to addressList
+    - Move variables to world environment (#50)
+    - fix milestone -> milestoneTracker
+
+
 1.5.5
     - Javadoc on API command methods (#943)
     - Parse case insensitive boolean text (#966)

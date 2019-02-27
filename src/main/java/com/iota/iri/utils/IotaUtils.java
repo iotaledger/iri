@@ -10,6 +10,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -56,4 +58,18 @@ public class IotaUtils {
 	public static <T> List<T> createImmutableList(T... values) {
 		return Collections.unmodifiableList(Arrays.asList(values));
 	}
+
+    /**
+     * Creates a single thread executor service that has an unbounded queue.
+
+     * @param name the name to give to the thread
+     * @return a named single thread executor service
+     *
+     * @see com.iota.iri.utils.thread.BoundedScheduledExecutorService
+     * @see com.iota.iri.utils.thread.DedicatedScheduledExecutorService
+     */
+	public static ExecutorService createNamedSingleThreadExecutor(String name) {
+        return Executors.newSingleThreadExecutor(r -> new Thread(r, name));
+
+    }
 }

@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.6.0-RELEASE</version>
+    <version>1.6.1-RELEASE</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -103,7 +103,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.9.6</version>
+            <version>2.9.8</version>
         </dependency>
 
         <!-- undertow server -->

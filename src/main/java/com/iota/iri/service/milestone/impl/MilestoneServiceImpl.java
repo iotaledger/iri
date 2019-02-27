@@ -64,6 +64,8 @@ public class MilestoneServiceImpl implements MilestoneService {
     private MilestoneConfig config;
 
 
+    private BundleValidator bundleValidator;
+
     /**
      * This method initializes the instance and registers its dependencies.<br />
      * <br />
@@ -83,10 +85,12 @@ public class MilestoneServiceImpl implements MilestoneService {
      */
     public MilestoneServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
             MilestoneConfig config) {
+            BundleValidator bundleValidator, MilestoneConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
+        this.bundleValidator = bundleValidator;
         this.config = config;
 
         return this;
@@ -166,7 +170,7 @@ public class MilestoneServiceImpl implements MilestoneService {
                 return VALID;
             }
 
-            final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(tangle,
+            final List<List<TransactionViewModel>> bundleTransactions = bundleValidator.validate(tangle,
                     snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
             if (bundleTransactions.isEmpty()) {

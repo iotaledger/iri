@@ -288,7 +288,7 @@ PyNISA工程所有的配置文件均存储于PyNIAS/conf/文件夹下，包含�
 
 该部分主要是完成对离线的历史数据的去重和解析，利用数据完成各模型的训练，将并训练得到的模型参数进行存储，供异常检测部分读取使用。训练过程如图3.1所示。
 
-![](media/image1.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image1.png){width="5.772222222222222in"
 height="3.040277777777778in"}
 
 []{#_Toc517471824 .anchor}图3.1 训练过程
@@ -371,14 +371,14 @@ opt.putmodeljson(modeljson)
 
 下面本文以基于系统日志的用户画像，对训练的核心流程及文件进行说明。在3.2.2中的sence.main函数，调用的为PyNISA/train/sysaudit模块中的sence\_main.py内的函数。基于系统日志的用户画像的所有处理逻辑均在PyNISA/train/sysaudit模块中实现，文件结构如图3.1所示。
 
-![](media/image2.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image2.png){width="5.772222222222222in"
 height="3.1868055555555554in"}
 
 []{#_Toc517471825 .anchor}图 3.2 PyNISA/train/sysaudit模块文件结构
 
 训练过程首先加载知识并对其进行处理，然后对训练数据进行预处理，这个过程所需要的辅助功能函数均在lib\_sence.py中实现。最后完成基于服务类型、基于命令类型、核心算法以及深度学习算法的四类模型的训练。模型训练的代码块如图3.2所示，便利配置文件中指定的模型类别，然后使用importlib.import\_module动态加载对应的算法模块，使用module.algorithm初始化算法模块，并使用ComputUserprofile完成训练。
 
-![](media/image3.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image3.png){width="5.772222222222222in"
 height="2.0395833333333333in"}
 
 []{#_Toc517471826 .anchor}图 3.3 三类模型训练
@@ -387,28 +387,28 @@ height="2.0395833333333333in"}
 
 servicemodel.py主要是实现基于用户的服务类型进行特征提取，包括网络监听、网络主动外联、文件写、文件读、注册表写、注册表读等。service模型示例如下图所示。
 
-![](media/image4.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image4.png){width="5.772222222222222in"
 height="3.841666666666667in"}
 
 []{#_Toc517471827 .anchor}图 3.4 service模型示例
 
 vstat\_alg.py主要是基于用户的操作类型进行特征提取，操作命令分类存储于PyNISA/conf/ltype.conf文件中，包含文件管理、文档编辑、文件传输、磁盘管理、磁盘维护、网络通讯、系统管理、系统设置、备份压缩、设备管理等。visual模型如下图所示。
 
-![](media/image5.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image5.png){width="5.772222222222222in"
 height="3.0659722222222223in"}
 
 []{#_Toc517471828 .anchor}图 3.5 visual模型示例
 
 core\_alg.py主要是使用各类算法完成模型训练，包括通用模式聚类学习、基于概率分布的皮尔逊相关系数检测、马尔科夫状态转移矩阵、时间差值、命令频率、ng词袋分布等。core算法每个用户对应的每个模型均为一个字典结构，统一用户的多个模型构成一组模型列表，在对数据进行检测过程中，依次使用模型组中各个模型进行检测，然后每个模型对检测结果进行投票，即群体智慧，投票结果作为检测结果。下图是一个core算法模型示例：
 
-![](media/image6.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image6.png){width="5.772222222222222in"
 height="3.2305555555555556in"}
 
 []{#_Toc517471829 .anchor}图 3.6 core算法模型示例
 
 dl\_alg.py主要完成深度学习模型的训练。
 
-![](media/image7.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image7.png){width="5.772222222222222in"
 height="4.067361111111111in"}
 
 []{#_Toc517471830 .anchor}图 3.7 深度学习算法模型示例
@@ -418,7 +418,7 @@ height="4.067361111111111in"}
 
 训练完成的模型存储于mysql中，表结构如下。
 
-![](media/image8.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image8.png){width="5.772222222222222in"
 height="2.972916666666667in"}
 
 []{#_Toc517471831 .anchor}图 3.8 NISA模型数据库
@@ -466,20 +466,21 @@ PyNISA/JyNISA/src/main/java/com/octa/jynisaSysAuditMain.java中进行定义，To
 DetectionBolt =\>
 AlertBolt各个bolt，最终形成检测结果。其中HeuristicBolt、ServiceModelBolt、DetectionBolt三个bolt分别利用不同的算法完成对数据的检测，如果前面的bolt已检测到异常，数据仍然会流入后续的bolt，但不会再进行检测而是直接向后传递，直到AlertBolt。
 
-![](media/image9.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image9.png){width="5.772222222222222in"
 height="0.9638888888888889in"}
 
 []{#_Toc517471832 .anchor}图 5.1 Topology结构
 
 其中，与Kafka和zookeeper相关的配置如下，这里配置了brokerHost，topic等。
 
-![](media/image10.png){width="5.772222222222222in" height="2.20625in"}
+![](./figures/StreamNet_Engineering/media/image10.png){width="5.772222222222222in"
+height="2.20625in"}
 
 []{#_Toc517471833 .anchor}图 5.2 KafkaSpout配置
 
 其中，各bolt均由python实现，这里使用了storm对多语言的支持。以GetFieldBolt为例，可以看到它继承自ShellBolt，在构造函数（75-77行）中，直接使用python2命令，运行了对应的bolt的pyc文件。其他各bolt与之类似。
 
-![](media/image11.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image11.png){width="5.772222222222222in"
 height="2.0097222222222224in"}
 
 []{#_Toc517471834 .anchor}图 5.3 GetFieldBolt
@@ -490,7 +491,7 @@ height="2.0097222222222224in"}
 
 GetFieldBolt定义在PyNISA/JyNISA/multilang/resources/sysaudit/getfield.py文件内。该bolt负责解析日志文件成dict格式，解析通过lib.tu2dict.syslog2dict实现，格式如图5.5所示，解析后的数据输出到DupfilterBolt这一bolt继续处理。
 
-![](media/image12.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image12.png){width="5.772222222222222in"
 height="1.2333333333333334in"}
 
 []{#_Toc517471835 .anchor}图 5.4 日志解析
@@ -499,14 +500,14 @@ height="1.2333333333333334in"}
 
 DupfilterBolt定义在PyNISA/JyNISA/multilang/resources/sysaudit/dupfilter.py文件内，该bolt会首先依据用户知识对知识进行预处理转化，然后依据time、cmd、src、ppname四个属性进行重复判定，如果数据重复则直接返回，否则则将这条数据缓存，并将依据配置将数据写入到redis、kakfa以及文件中，然后将数据发送给HeuristicBolt。
 
-![](media/image13.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image13.png){width="5.772222222222222in"
 height="2.2215277777777778in"}
 
 []{#_Toc517471836 .anchor}图 5.5 DupfilterBolt的process函数代码
 
 此外，在该bolt中通过RPC接口完成知识和配置的刷新，主要是通过asynmanage函数开启线程，然后由getservercomm周期性调用RPC服务获取控制命令，并通过clientact函数执行刷新操作。具体实现参见图5.6。
 
-![](media/image14.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image14.png){width="5.772222222222222in"
 height="4.754861111111111in"}
 
 []{#_Toc517471837 .anchor}图 5.6 DupfilterBolt中的RPC调用
@@ -522,14 +523,14 @@ HeuristicBolt定义在PyNISA/JyNISA/multilang/resources/sysaudit/heuristic.py文
 
 启发式检测引擎的行为跟踪分析：部分行为检测分析如图5.7所示，通过对目标对象进行针对的启发式行为分析，对其中定义的已知威胁行为进行快速精确告警。
 
-![](media/image15.png){width="4.1387281277340335in"
+![](./figures/StreamNet_Engineering/media/image15.png){width="4.1387281277340335in"
 height="2.9152996500437447in"}
 
 []{#_Toc517471838 .anchor}图 5.7 启发式检测引擎的行为跟踪分析示例
 
 检测时，首先，缓存数据并进行强制排列，当队列中的缓存的数据时间区间超过阈值时，则开始使用启发式引擎进行检测，并根据检测结果进行不同的emit操作，这将影响后续的检测bolt是否还对这里的输出数据进行检测。
 
-![](media/image16.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image16.png){width="5.772222222222222in"
 height="2.6215277777777777in"}
 
 []{#_Toc517471839 .anchor}图 5.8 HeuristicBolt中process函数代码
@@ -542,7 +543,7 @@ height="2.6215277777777777in"}
 
 该bolt主要是通过基于离线数据训练的进程服务用户画像模型，于模型训练部分中阐述的servicemodel.py相对应，主要针对包括网络监听、网络主动外联、文件写、文件读、注册表写、注册表读等行为（nlisten、noutput、fwrite、fread、rwrite、rread）进行检测，同时合并latermodels表中存储的模型到models表中。基于进程画像的异常检测过程如图所示。
 
-![](media/image17.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image17.png){width="5.772222222222222in"
 height="2.1243055555555554in"}
 
 []{#_Toc517471840 .anchor}图5.9 基于进程画像的异常检测过程
@@ -555,7 +556,7 @@ height="2.1243055555555554in"}
 
 此外，和DupfilterBolt一样，DetectionBolt也在内部通过周期性的调用RPC接口，将会读取模型、并更新知识。
 
-![](media/image18.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image18.png){width="5.772222222222222in"
 height="3.1152777777777776in"}
 
 []{#_Toc517471841 .anchor}图5.10 基于行为画像的异常检测过程
@@ -640,7 +641,7 @@ heuristic\_knowledge={\'heuristic\_flag\':heuristic\_flag, \#
 
 模型的训练过程重要使用了专家知识中的数据预解析（parse\_userknowledge），主要是处理随机路径和随机命令，进而将数据结构化。
 
-![](media/image19.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image19.png){width="5.772222222222222in"
 height="1.7930555555555556in"}
 
 []{#_Toc517471842 .anchor}图6.1 模型训练中专家知识的使用
@@ -652,12 +653,12 @@ height="1.7930555555555556in"}
 
 DupfilterBolt中先通过getknowledge函数获取专家知识，这里使用的是数据预解析（parse\_userknowledge），并保存在self.userknowledge中，然后在parseproc函数中使用专家知识进行数据预处理。
 
-![](media/image20.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image20.png){width="5.772222222222222in"
 height="2.2006944444444443in"}
 
 []{#_Toc517471843 .anchor}图6.2 DupfilterBolt中获取知识
 
-![](media/image21.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image21.png){width="5.772222222222222in"
 height="1.1402777777777777in"}
 
 []{#_Toc517471844 .anchor}图6.3 DupfilterBolt中使用知识
@@ -718,7 +719,7 @@ rule=\>
 
 ServiceBolt主要使用detection\_userknowledge，检测进程服务异常。ServiceBolt也是通过getknowledge函数获取专家知识，并在process函数中完成检测。
 
-![](media/image22.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image22.png){width="5.772222222222222in"
 height="2.259027777777778in"}
 
 []{#_Toc517471845 .anchor}图6.4 ServiceBolt中获取知识
@@ -727,13 +728,14 @@ height="2.259027777777778in"}
 
 ServiceBolt使用PyNISA/JyNISA/multilang/resources/sysaudit/lib/knowledge.py中定义的**knowledgeBase**类来实例化知识，并在检测的过程中使用**knowledgeBase**类中的**servicemodeldecide**函数完成进程服务异常检测。**servicemodeldecide**函数首先使用knowbase.py文件中定义的commonknowledge函数进行异常检测，主要是检测交互式进程（如bash\|sh\|dash\|-dash\|-bash\|python(\\S+)?\|perl等）存在的异常，然后依次使用专家知识中的进程服务异常检测知识（detection\_userknowledge），依次进行检测。分别是可信写路径检测（checkwithTrustfwrite）、可信读路径检测（checkwithTrustfread）、可信连接输出检测（checkwithTrustconnect）、可信子进程检测（checkwithTrustsub）、可信父进程检测（checkwithTrustPP）、可信父子关系检测（checkwithTrustPsub）。如图6.5所示。
 
-![](media/image23.png){width="5.772222222222222in" height="3.55in"}
+![](./figures/StreamNet_Engineering/media/image23.png){width="5.772222222222222in"
+height="3.55in"}
 
 []{#_Toc517471846 .anchor}图6.5 knowledgeBase类
 
 可信写路径检测使用的是专家知识中的trustfwrite、可信读路径检测使用的是专家知识中的trustfread、可信连接输出检测使用的是专家知识中的trustconnect、可信子进程检测使用的是专家知识中的trustsub、可信父进程检测使用的是专家知识中的trustPP、可信父子关系检测使用的是专家知识中的trustPsub。
 
-![](media/image24.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image24.png){width="5.772222222222222in"
 height="4.459722222222222in"}
 
 []{#_Toc517471847 .anchor}图6.6
@@ -743,7 +745,7 @@ detection\_userknowledge在knowledgeBase类中的具体使用
 
 DetectionBolt主要使用sensitive\_knowledge，检测异常。ServiceBolt也是通过getknowledge函数获取专家知识。
 
-![](media/image25.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image25.png){width="5.772222222222222in"
 height="2.2152777777777777in"}
 
 []{#_Toc517471848 .anchor}图6.7 DetectionBolt获取知识
@@ -751,7 +753,7 @@ height="2.2152777777777777in"}
 DetectionBolt使用PyNISA/JyNISA/multilang/resources/sysaudit/lib/lib\_alg.py中定义的**malware**类来实例化知识。DetectionBolt在process函数中，调用**malware**类的setflag函数基于
 sensitive\_knowledge中定义的系统敏感路径知识（sys\_sensitivepath）和系统敏感命令知识（sys\_sensitivecmd）来进行异常检测，其中系统敏感路径知识异常检测由checkpathwithknowledge函数完成，系统敏感命令知识异常检测由checkcmdwithknowledge函数完成。
 
-![](media/image26.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image26.png){width="5.772222222222222in"
 height="1.5263888888888888in"}
 
 []{#_Toc517471849 .anchor}图6.8 malware类异常检测函数
@@ -780,7 +782,7 @@ done
 
 在命令行直接输入malware进行运行，可以看到报警
 
-![](media/image27.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image27.png){width="5.772222222222222in"
 height="3.2472222222222222in"}
 
 []{#_Toc517471850 .anchor}图6.9 测试脚本触发报警
@@ -812,7 +814,7 @@ min：定义了路径最小长度
 
 专家知识添加完毕后，重新在命令行运行malware将不再继续报警。
 
-![](media/image28.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image28.png){width="5.772222222222222in"
 height="3.2472222222222222in"}
 
 []{#_Toc517471851 .anchor}图6.10 测试脚本不再触发报警
@@ -847,7 +849,7 @@ done
 
 \"vim\":{\"flag\":5,\'type\':\[\'vim\'\]}
 
-![](media/image29.png){width="4.786326552930884in"
+![](./figures/StreamNet_Engineering/media/image29.png){width="4.786326552930884in"
 height="2.9319444444444445in"}
 
 []{#_Toc517471852 .anchor}图6.11 增加专家知识
@@ -858,14 +860,14 @@ height="2.9319444444444445in"}
 
 会在nisa的docker中的/tmp/sysnisa/detection.log中看到详细的检测内容和报警信息。
 
-![](media/image30.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image30.png){width="5.772222222222222in"
 height="2.3465277777777778in"}
 
 []{#_Toc517471853 .anchor}图6.12 报警日志
 
 同时，在nisa的web页面上也可以看到报警信息。
 
-![](media/image31.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image31.png){width="5.772222222222222in"
 height="3.2472222222222222in"}
 
 []{#_Toc517471854 .anchor}图6.13 测试脚本触发报警
@@ -873,7 +875,7 @@ height="3.2472222222222222in"}
 RPC服务相关 {#rpc服务相关 .8lab-1}
 ===========
 
-![](media/image32.png){width="4.417391732283464in"
+![](./figures/StreamNet_Engineering/media/image32.png){width="4.417391732283464in"
 height="3.4055161854768152in"}
 
 []{#_Toc517471855 .anchor}图7.1 RPC服务
@@ -924,7 +926,7 @@ gkey：适用于type为get时，通过user获取对应用户的所有信息，�
 
 具体示例如下图中的消息部分：
 
-![](media/image33.png){width="5.772222222222222in"
+![](./figures/StreamNet_Engineering/media/image33.png){width="5.772222222222222in"
 height="1.4291666666666667in"}
 
 []{#_Toc517471856 .anchor}图7.2 用户信息示例
@@ -997,7 +999,7 @@ sum：用于获取当前数据库模型知识的个数
 
 该RPC接口主要是获取模型相关数据，包括模型知识个数、指定ID的模型数据以及模型的元数据。操作的数据库中modelsknowledge这个表，表结构如下。
 
-![](media/image34.png){width="4.636363735783027in"
+![](./figures/StreamNet_Engineering/media/image34.png){width="4.636363735783027in"
 height="1.4703379265091863in"}
 
 []{#_Toc517471857 .anchor}图7.3 modelsknowledge表
@@ -1112,7 +1114,7 @@ string savenewknowledge()
 
 原始文本字段字典化后的实例如下图所示：
 
-![](media/image35.png){width="3.2152777777777777in"
+![](./figures/StreamNet_Engineering/media/image35.png){width="3.2152777777777777in"
 height="2.793069772528434in"}
 
 []{#_Toc517471858 .anchor}图8-1 原始文本数据实例

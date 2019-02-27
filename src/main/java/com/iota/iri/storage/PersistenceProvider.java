@@ -174,9 +174,10 @@ public interface PersistenceProvider {
     boolean saveBatch(List<Pair<Indexable, Persistable>> models) throws Exception;
 
     /**
-     * Atomically deletes all {@code models}.
-     * @param models key value pairs that to be expunged from the db
-     * @throws Exception if we encounter a problem with the DB
+
+     * Atomically delete all {@code models}.
+     * @param models key value pairs that to be expunged from the db.
+     * @throws Exception if data could not be expunged from the db.
      */
     void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception;
 
@@ -193,4 +194,6 @@ public interface PersistenceProvider {
      * @throws Exception if we encounter a problem with the DB
      */
     void clearMetadata(Class<?> column) throws Exception;
+
+    List<byte[]> loadAllKeysFromTable(Class<? extends Persistable> model);
 }

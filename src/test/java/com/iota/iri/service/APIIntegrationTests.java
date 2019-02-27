@@ -34,6 +34,13 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasItem;
 import static org.junit.Assert.fail;
 
+/**
+ * Windows developer notes:
+ * For running this tests on windows you need the RocksDB dependencies. You need to install the
+ * Visual C++ Redistributable for Visual Studio 2015 x64 from
+ * https://www.microsoft.com/en-us/download/confirmation.aspx?id=48145
+ * Make sure your Java JDK is a 64x version and your JAVA_HOME is set correctly.
+ */
 public class APIIntegrationTests {
 
     private static final Boolean spawnNode = true; //can be changed to false to use already deployed node
@@ -46,7 +53,8 @@ public class APIIntegrationTests {
     // Expect to connect to any service worldwide in under 100 ms
     // and to any online machine local in 1 ms. The 50 ms default value is a suggested compromise.
     private static final int CONNECTION_TIMEOUT = 50;
-    private static ResponseSpecification responseSpec;
+    private static ResponseSpecification specSuccessResponse;
+    private static ResponseSpecification specErrorResponse;
     // Constants used in tests
     private static final String[] URIS = {"udp://8.8.8.8:14266", "udp://8.8.8.5:14266"};
     private static final String[] ADDRESSES = {"RVORZ9SIIP9RCYMREUIXXVPQIPHVCNPQ9HZWYKFWYWZRE9JQKG9REPKIASHUUECPSQO9JT9XNMVKWYGVA"};
@@ -61,7 +69,7 @@ public class APIIntegrationTests {
     private static API api;
     private static IXI ixi;
     private static IotaConfig configuration;
-    private static Logger log = LoggerFactory.getLogger(APIIntegrationTests.class);
+    private static final Logger log = LoggerFactory.getLogger(APIIntegrationTests.class);
 
 
     @BeforeClass
@@ -87,6 +95,7 @@ public class APIIntegrationTests {
             //init
             try {
                 iota.init();
+                iota.snapshotProvider.getInitialSnapshot().setTimestamp(0);
                 api.init();
                 ixi.init(IXIConfig.IXI_DIR);
             } catch (final Exception e) {
@@ -115,10 +124,17 @@ public class APIIntegrationTests {
         RestAssured.port = Integer.parseInt(portStr);
         RestAssured.baseURI = hostName;
 
-        ResponseSpecBuilder builder = new ResponseSpecBuilder();
-        builder.expectStatusCode(200);
-        builder.expectBody(containsString("duration"));
-        responseSpec = builder.build();
+        // Define response specification for http status code 200
+        specSuccessResponse = new ResponseSpecBuilder().
+                expectStatusCode(200).
+                expectBody(containsString("duration")).
+                build();
+
+        // Define response specification for http status code 500
+        specErrorResponse = new ResponseSpecBuilder().
+                expectStatusCode(400).
+                expectBody(containsString("duration")).
+                build();
     }
 
     /**
@@ -147,6 +163,17 @@ public class APIIntegrationTests {
     }
 
     @Test
+    public void sendNonJsonBody() {
+        given().
+            body("thisIsInvalidJson").
+            when().
+            post("/").
+            then().
+            spec(specErrorResponse).
+            body(containsString("Invalid JSON syntax"));
+    }
+
+    @Test
     public void shouldTestGetNodeInfo() {
 
         final Map<String, Object> request = new HashMap<>();
@@ -157,7 +184,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("appName")).
             body(containsString("appVersion")).
             body(containsString("duration")).
@@ -172,11 +199,32 @@ public class APIIntegrationTests {
             body(containsString("latestSolidSubtangleMilestone")).
             body(containsString("latestSolidSubtangleMilestoneIndex")).
             body(containsString("milestoneStartIndex")).
+            body(containsString("lastSnapshottedMilestoneIndex")).
             body(containsString("neighbors")).
             body(containsString("packetsQueueSize")).
             body(containsString("time")).
             body(containsString("tips")).
             body(containsString("transactionsToRequest"));
+    }
+
+    @Test
+    public void shouldTestGetIotaConfig() {
+
+        final Map<String, Object> request = new HashMap<>();
+        request.put("command", "getNodeAPIConfiguration");
+
+        given().
+            body(gson().toJson(request)).
+            when().
+            post("/").
+            then().
+            spec(specSuccessResponse).
+            body(containsString("maxFindTransactions")).
+            body(containsString("maxRequestsList")).
+            body(containsString("maxGetTrytes")).
+            body(containsString("maxBodyLength")).
+            body(containsString("testNet")).
+            body(containsString("milestoneStartIndex"));
     }
 
     @Test
@@ -190,7 +238,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("neighbors")).
             body(containsString("address")).
             body(containsString("numberOfAllTransactions")).
@@ -210,7 +258,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("addedNeighbors"));
     }
 
@@ -225,7 +273,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("removedNeighbors"));
     }
 
@@ -240,7 +288,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("hashes"));
     }
 
@@ -255,7 +303,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("hashes"));
     }
 
@@ -270,7 +318,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("trytes"));
     }
 
@@ -287,7 +335,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("states"));
     }
 
@@ -305,7 +353,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("milestone"));
     }
 
@@ -322,7 +370,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             body(containsString("trunkTransaction")).
             body(containsString("branchTransaction"));
     }
@@ -339,7 +387,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             log().all().and();
     }
 
@@ -355,7 +403,7 @@ public class APIIntegrationTests {
             when().
             post("/").
             then().
-            spec(responseSpec).
+            spec(specSuccessResponse).
             log().all().and();
     }
 
@@ -374,7 +422,7 @@ public class APIIntegrationTests {
                 when().
                 post("/").
                 then().
-                spec(responseSpec).
+                spec(specSuccessResponse).
                 body(containsString("trytes"));
     }
 
@@ -408,7 +456,7 @@ public class APIIntegrationTests {
                 when().
                 post("/").
                 then().
-                log().all().and().spec(responseSpec);
+                log().all().and().spec(specSuccessResponse);
 
         return trytes;
     }

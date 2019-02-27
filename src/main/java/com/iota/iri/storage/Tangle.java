@@ -1,13 +1,23 @@
 package com.iota.iri.storage;
 
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.StateDiff;
+import com.iota.iri.model.persistables.Address;
+import com.iota.iri.model.persistables.Approvee;
+import com.iota.iri.model.persistables.Bundle;
+import com.iota.iri.model.persistables.Milestone;
+import com.iota.iri.model.persistables.ObsoleteTag;
+import com.iota.iri.model.persistables.Tag;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.utils.Pair;
+
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import com.iota.iri.zmq.MessageQueueProvider;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
 
 /**
  * Delegates methods from {@link PersistenceProvider}
@@ -15,13 +25,30 @@ import java.util.Set;
 public class Tangle {
     private static final Logger log = LoggerFactory.getLogger(Tangle.class);
 
+    public static final Map<String, Class<? extends Persistable>> COLUMN_FAMILIES =
+            new LinkedHashMap<String, Class<? extends Persistable>>() {{
+                put("transaction", Transaction.class);
+                put("milestone", Milestone.class);
+                put("stateDiff", StateDiff.class);
+                put("address", Address.class);
+                put("approvee", Approvee.class);
+                put("bundle", Bundle.class);
+                put("obsoleteTag", ObsoleteTag.class);
+                put("tag", Tag.class);
+            }};
+
+    public static final Map.Entry<String, Class<? extends Persistable>> METADATA_COLUMN_FAMILY =
+            new AbstractMap.SimpleImmutableEntry<>("transaction-metadata", Transaction.class);
+
     private final List<PersistenceProvider> persistenceProviders = new ArrayList<>();
+    private final List<MessageQueueProvider> messageQueueProviders = new ArrayList<>();
 
     public void addPersistenceProvider(PersistenceProvider provider) {
         this.persistenceProviders.add(provider);
     }
 
     /**
+     * 
      * @see PersistenceProvider#init()
      */
     public void init() throws Exception {
@@ -31,12 +58,24 @@ public class Tangle {
     }
 
     /**
+     * Adds {@link com.iota.iri.storage.MessageQueueProvider} that should be notified.
+     * 
+     * @param provider that should be notified.
+     */
+    public void addMessageQueueProvider(MessageQueueProvider provider) {
+        this.messageQueueProviders.add(provider);
+    }
+
+    /**
      * @see PersistenceProvider#shutdown()
      */
     public void shutdown() throws Exception {
         log.info("Shutting down Tangle Persistence Providers... ");
         this.persistenceProviders.forEach(PersistenceProvider::shutdown);
         this.persistenceProviders.clear();
+        log.info("Shutting down Tangle MessageQueue Providers... ");
+        this.messageQueueProviders.forEach(MessageQueueProvider::shutdown);
+        this.messageQueueProviders.clear();
     }
 
     /**
@@ -113,19 +152,45 @@ public class Tangle {
             return latest;
     }
 
+
     /**
-     * @see PersistenceProvider#update(Persistable, Indexable, String)
+     * Updates all {@link PersistenceProvider} and publishes message to all
+     * {@link com.iota.iri.storage.MessageQueueProvider}.
+     *
+     * @param model with transaction data
+     * @param index {@link Hash} identifier of the {@link Transaction} set
+     * @param item identifying the purpose of the update
+     * @throws Exception when updating the {@link PersistenceProvider} fails
      */
-    public Boolean update(Persistable model, Indexable index, String item) throws Exception {
-            boolean success = false;
-            for(PersistenceProvider provider: this.persistenceProviders) {
-                if(success) {
-                    provider.update(model, index, item);
-                } else {
-                    success = provider.update(model, index, item);
-                }
-            }
-            return success;
+    public void update(Persistable model, Indexable index, String item) throws Exception {
+        updatePersistenceProvider(model, index, item);
+        updateMessageQueueProvider(model, index, item);
+    }
+
+    private void updatePersistenceProvider(Persistable model, Indexable index, String item) throws Exception {
+        for(PersistenceProvider provider: this.persistenceProviders) {
+                provider.update(model, index, item);
+        }
+    }
+
+    private void updateMessageQueueProvider(Persistable model, Indexable index, String item) {
+        for(MessageQueueProvider provider: this.messageQueueProviders) {
+            provider.publishTransaction(model, index, item);
+        }
+    }
+
+    /**
+     * Notifies all registered {@link com.iota.iri.storage.MessageQueueProvider} and publishes message to MessageQueue.
+     *
+     * @param message that can be formatted by {@link String#format(String, Object...)}
+     * @param objects that should replace the placeholder in message.
+     * @see com.iota.iri.zmq.ZmqMessageQueueProvider#publish(String, Object...)
+     * @see String#format(String, Object...)
+     */
+    public void publish(String message, Object... objects) {
+        for(MessageQueueProvider provider: this.messageQueueProviders) {
+            provider.publish(message, objects);
+        }
     }
 
     /**
@@ -156,6 +221,22 @@ public class Tangle {
             return output;
     }
 
+    public <T extends Indexable> List<T> loadAllKeysFromTable(Class<? extends Persistable> modelClass,
+                                                                     Function<byte[], T> transformer) {
+        List<byte[]> keys = null;
+        for(PersistenceProvider provider: this.persistenceProviders) {
+            if ((keys = provider.loadAllKeysFromTable(modelClass)) != null) {
+                break;
+            }
+        }
+
+        if (keys != null) {
+            return keys.stream()
+                    .map(transformer)
+                    .collect(Collectors.toList());
+        }
+        return null;
+    }
 
     /**
      * @see PersistenceProvider#exists(Class, Indexable)

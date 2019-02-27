@@ -340,7 +340,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     private SnapshotState readSnapshotStateFromJAR(String snapshotStateFilePath) throws SnapshotException {
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new BufferedInputStream(SnapshotProviderImpl.class.getResourceAsStream(snapshotStateFilePath))))) {
             return readSnapshotState(reader);
-        } catch (IOException e) {
+        } catch (NullPointerException | IOException e) {
             throw new SnapshotException("failed to read the snapshot file from JAR at " + snapshotStateFilePath, e);
         }
     }

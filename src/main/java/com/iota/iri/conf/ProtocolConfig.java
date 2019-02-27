@@ -26,6 +26,9 @@ public interface ProtocolConfig extends Config {
      */
     double getpReplyRandomTip();
 
+    /**
+     * @return Descriptions#P_DROP_TRANSACTION
+     */
     double getpDropTransaction();
 
     /**
@@ -33,8 +36,14 @@ public interface ProtocolConfig extends Config {
      */
     double getpSelectMilestoneChild();
 
+    /**
+     * @return Descriptions#P_SEND_MILESTONE
+     */
     double getpSendMilestone();
 
+    /**
+     * @return Descriptions#P_PROPAGATE_REQUEST
+     */
     double getpPropagateRequest();
 
     interface Descriptions {

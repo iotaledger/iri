@@ -249,11 +249,9 @@ public class API {
                     AbstractResponse rsp = storeMessageStatement(address, message, tag);
                     return rsp;
                 }
-                case "getBlocksInPeriod": {
-                    if(!request.containsKey("period")) {
-                        return ErrorResponse.create("Invalid params");
-                    }
-                    long period = Long.parseLong((String)request.get("period")) ;
+                case "getBlocksInPeriodStatement": {
+                    Integer period = getParameterAsInt(request, "period");
+                    return getBlocksInPeriodStatement(period);
                 }
                 case "addNeighbors": {
                     List<String> uris = getParameterAsList(request,"uris",0);
@@ -362,10 +360,7 @@ public class API {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                     return wereAddressesSpentFromStatement(addresses);
                 }
-                case "getBlocksInPeriodStatement": {
-                    Integer period = getParameterAsInt(request, "period");
-                    return getBlocksInPeriodStatement(period);
-                }
+
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?

@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/alixaxel/pagerank"
 	"github.com/awalterschulze/gographviz"
+	"github.com/kylelemons/go-gypsy/yaml"
 	"io/ioutil"
 	"log"
 	"net/http"
 	url2 "net/url"
 	"os"
+	"pagerank"
 	"sort"
 	"strconv"
 	"strings"
@@ -25,13 +26,13 @@ type Response struct {
 }
 
 type message struct {
-	TxNum      int64    `json:"tx_num"`
-	TxnContent []rawtxn `json:"txn_content"`
+	TeeNum     int64    `json:"tee_num"`
+	TeeContent []rawtxn `json:"tee_content"`
 }
 
 type rawtxn struct {
-	Attester uint32  `json:"attester"`
-	Attestee uint32  `json:"attestee"`
+	Attester string  `json:"attester"`
+	Attestee string  `json:"attestee"`
 	Score    float64 `json:"score"`
 }
 
@@ -39,6 +40,10 @@ type rawtxnslice []rawtxn
 
 var url = "http://localhost:14700"
 var addr = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
+
+var (
+	file = flag.String("file", "config.yaml", "IOTA CONFIGURATION")
+)
 
 func printUsage() {
 
@@ -58,27 +63,31 @@ func isValidArgs() {
 
 func (cli *CLI) addAttestationInfo(info []string) {
 	raw := new(rawtxn)
-	num, err := strconv.ParseUint(info[0], 10, 64)
-	raw.Attester = uint32(num)
-	num, err = strconv.ParseUint(info[1], 10, 64)
-	raw.Attestee = uint32(num)
-	num, err = strconv.ParseUint(info[2], 10, 64)
+	raw.Attester = info[1]
+	raw.Attestee = info[2]
+	num, err := strconv.ParseUint(info[3], 10, 64)
 	raw.Score = float64(num)
 	m := new(message)
-	m.TxNum = 1
-	m.TxnContent = []rawtxn{*raw}
+	m.TeeNum = 1
+	m.TeeContent = []rawtxn{*raw}
 	ms, err := json.Marshal(m)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	data := "{\"command\":\"storeMessage\",\"address\":" + addr + ",\"message\":" + string(ms[:]) + ",\"tag\":\"TEE\"}"
+	addr1 := getConfigParam("addr")
+	if addr1 == "" {
+		log.Fatal(err)
+		addr1 = addr
+	}
+
+	data := "{\"command\":\"storeMessage\",\"address\":" + addr1 + ",\"message\":" + url2.QueryEscape(string(ms[:])) + ",\"tag\":\"TEE\"}"
 	fmt.Println("data : " + data)
 	r := doPost([]byte(data))
 	fmt.Println(r)
 }
 
-func (cli *CLI) getRank(num string, period string, numRank int64) {
+func (cli *CLI) getRank(period string, numRank int64) []rawtxn {
 	data := "{\"command\":\"getBlocksInPeriodStatement\",\"period\":" + period + "}"
 	r := doPost([]byte(data))
 	var result Response
@@ -109,20 +118,21 @@ func (cli *CLI) getRank(num string, period string, numRank int64) {
 			log.Panic(err)
 		}
 
-		rArr := msg.TxnContent
+		rArr := msg.TeeContent
 		for _, r := range rArr {
 			graph.Link(r.Attester, r.Attestee, r.Score)
 		}
 	}
 
 	var rst []rawtxn
-	graph.Rank(0.85, 0.0001, func(attestee uint32, score float64) {
+	graph.Rank(0.85, 0.0001, func(attestee string, score float64) {
 		fmt.Println("attestee ", attestee, " has a score of", score)
-		tee := rawtxn{0, attestee, score}
+		tee := rawtxn{"", attestee, score}
 		rst = append(rst, tee)
 	})
 	sort.Sort(rawtxnslice(rst))
 	fmt.Println(rst[0:numRank])
+	return rst[0:numRank]
 }
 
 func (cli *CLI) printHCGraph(period string) {
@@ -150,20 +160,19 @@ func (cli *CLI) printHCGraph(period string) {
 		if err != nil {
 			log.Panicln(err)
 		}
+		fmt.Println("message : " + msgT)
 		var msg message
 		err = json.Unmarshal([]byte(msgT), &msg)
 		if err != nil {
 			log.Panic(err)
 		}
 
-		rArr := msg.TxnContent
+		rArr := msg.TeeContent
 		for _, r := range rArr {
-			attester := strconv.FormatUint(uint64(r.Attester), 10)
-			attestee := strconv.FormatUint(uint64(r.Attestee), 10)
 			//score := strconv.FormatUint(uint64(r.Score), 10) // TODO add this score info
-			graph.AddNode("G", attestee, nil)
-			graph.AddNode("G", attester, nil)
-			graph.AddEdge(attester, attestee, true, nil)
+			graph.AddNode("G", r.Attestee, nil)
+			graph.AddNode("G", r.Attester, nil)
+			graph.AddEdge(r.Attester, r.Attestee, true, nil)
 			if err != nil {
 				log.Panic(err)
 			}
@@ -175,7 +184,11 @@ func (cli *CLI) printHCGraph(period string) {
 }
 
 func doPost(d []byte) []byte {
-	req, err := http.NewRequest("POST", url, bytes.NewBuffer(d))
+	uri := getConfigParam("url")
+	if uri == "" {
+		uri = url
+	}
+	req, err := http.NewRequest("POST", uri, bytes.NewBuffer(d))
 	if err != nil {
 		// error
 		log.Panic(err)
@@ -195,6 +208,18 @@ func doPost(d []byte) []byte {
 		log.Panic(err)
 	}
 	return r
+}
+
+func getConfigParam(p string) string {
+	config, err := yaml.ReadFile(*file)
+	if err != nil {
+		log.Panicln(err)
+	}
+	result, err := config.Get(p)
+	if err != nil {
+		log.Panicln(err)
+	}
+	return result
 }
 
 func (r rawtxnslice) Len() int {
@@ -264,7 +289,7 @@ func (cli *CLI) Run() {
 			log.Panic(err)
 		}
 
-		cli.getRank(*flagNum, *flagPeriod, rankNum)
+		cli.getRank(*flagPeriod, rankNum)
 	}
 
 	if printHCGraphCmd.Parsed() {

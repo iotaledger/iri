@@ -4,7 +4,6 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
@@ -17,7 +16,6 @@ import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.log.interval.IntervalLogger;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
-import com.iota.iri.zmq.MessageQ;
 
 import java.util.ArrayDeque;
 import java.util.Deque;
@@ -69,11 +67,6 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * Holds a reference to the manager that takes care of solidifying milestones.<br />
      */
     private MilestoneSolidifier milestoneSolidifier;
-
-    /**
-     * Holds a reference to the ZeroMQ interface that allows us to emit messages for external recipients.<br />
-     */
-    private MessageQ messageQ;
 
     /**
      * Holds the coordinator address which is used to filter possible milestone candidates.<br />
@@ -135,21 +128,18 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      * @param snapshotProvider manager for the snapshots that allows us to retrieve the relevant snapshots of this node
      * @param milestoneService contains the important business logic when dealing with milestones
      * @param milestoneSolidifier manager that takes care of solidifying milestones
-     * @param messageQ ZeroMQ interface that allows us to emit messages for external recipients
      * @param config configuration object which allows us to determine the important config parameters of the node
      * @return the initialized instance itself to allow chaining
      */
     public LatestMilestoneTrackerImpl init(Tangle tangle, SnapshotProvider snapshotProvider,
-            MilestoneService milestoneService, MilestoneSolidifier milestoneSolidifier, MessageQ messageQ,
-            IotaConfig config) {
+            MilestoneService milestoneService, MilestoneSolidifier milestoneSolidifier, IotaConfig config) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.milestoneService = milestoneService;
         this.milestoneSolidifier = milestoneSolidifier;
-        this.messageQ = messageQ;
 
-        coordinatorAddress = HashFactory.ADDRESS.create(config.getCoordinator());
+        coordinatorAddress = config.getCoordinator();
 
         bootstrapLatestMilestoneValue();
 
@@ -164,7 +154,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
      */
     @Override
     public void setLatestMilestone(Hash latestMilestoneHash, int latestMilestoneIndex) {
-        messageQ.publish("lmi %d %d", this.latestMilestoneIndex, latestMilestoneIndex);
+        tangle.publish("lmi %d %d", this.latestMilestoneIndex, latestMilestoneIndex);
         log.delegate().info("Latest milestone has changed from #" + this.latestMilestoneIndex + " to #" +
                 latestMilestoneIndex);
 
@@ -210,7 +200,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                     return true;
                 }
 
-                switch (milestoneService.validateMilestone(transaction, milestoneIndex, SpongeFactory.Mode.CURLP27, 1)) {
+                switch (milestoneService.validateMilestone(transaction, milestoneIndex)) {
                     case VALID:
                         if (milestoneIndex > latestMilestoneIndex) {
                             setLatestMilestone(transaction.getHash(), milestoneIndex);

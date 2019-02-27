@@ -75,7 +75,8 @@ public interface LedgerService {
 
     /**
      * Generates the accumulated balance changes of the transactions that are directly or indirectly referenced by the
-     * given transaction relative to the referenced milestone.<br />
+     * given transaction relative to the referenced milestone. Also persists the spent addresses that were found in the
+     * process<br />
      * <br />
      * It simply iterates over all approvees that have not been confirmed yet and that have not been processed already
      * (by being part of the {@code visitedNonMilestoneSubtangleHashes} set) and collects their balance changes.<br />

@@ -2,8 +2,8 @@ package com.iota.iri.network;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotProvider;
-import com.iota.iri.zmq.MessageQ;
 import com.iota.iri.storage.Tangle;
 import org.apache.commons.lang3.ArrayUtils;
 import org.slf4j.Logger;
@@ -18,7 +18,6 @@ import java.util.*;
 public class TransactionRequester {
 
     private static final Logger log = LoggerFactory.getLogger(TransactionRequester.class);
-    private final MessageQ messageQ;
     private final Set<Hash> milestoneTransactionsToRequest = new LinkedHashSet<>();
     private final Set<Hash> transactionsToRequest = new LinkedHashSet<>();
 
@@ -32,10 +31,15 @@ public class TransactionRequester {
     private final Tangle tangle;
     private final SnapshotProvider snapshotProvider;
 
-    public TransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider, MessageQ messageQ) {
+    /**
+     * Create {@link TransactionRequester} for receiving transactions from the tangle.
+     *
+     * @param tangle used to request transaction
+     * @param snapshotProvider that allows to retrieve the {@link Snapshot} instances that are relevant for the node
+     */
+    public TransactionRequester(Tangle tangle, SnapshotProvider snapshotProvider) {
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
-        this.messageQ = messageQ;
     }
 
     public void init(double pRemoveRequest) {
@@ -71,11 +75,28 @@ public class TransactionRequester {
                     transactionsToRequest.remove(hash);
                     milestoneTransactionsToRequest.add(hash);
                 } else {
-                    if(!milestoneTransactionsToRequest.contains(hash) && !transactionsToRequestIsFull()) {
+                    if(!milestoneTransactionsToRequest.contains(hash)) {
+                        if (transactionsToRequestIsFull()) {
+                            popEldestTransactionToRequest();
+                        }
                         transactionsToRequest.add(hash);
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * This method removes the oldest transaction in the transactionsToRequest Set.
+     *
+     * It used when the queue capacity is reached, and new transactions would be dropped as a result.
+     */
+    // @VisibleForTesting
+    void popEldestTransactionToRequest() {
+        Iterator<Hash> iterator = transactionsToRequest.iterator();
+        if (iterator.hasNext()) {
+            iterator.next();
+            iterator.remove();
         }
     }
 
@@ -111,25 +132,21 @@ public class TransactionRequester {
         synchronized (syncObj) {
             // repeat while we have transactions that shall be requested
             while (requestSet.size() != 0) {
-                // remove the first item in our set for further examination
+                // get the first item in our set for further examination
                 Iterator<Hash> iterator = requestSet.iterator();
                 hash = iterator.next();
-                iterator.remove();
 
                 // if we have received the transaction in the mean time ....
                 if (TransactionViewModel.exists(tangle, hash)) {
+                    // we remove the transaction from the queue since we got it
+                    iterator.remove();
                     // ... dump a log message ...
                     log.info("Removed existing tx from request list: " + hash);
-                    messageQ.publish("rtl %s", hash);
+                    tangle.publish("rtl %s", hash);
 
                     // ... and continue to the next element in the set
                     continue;
                 }
-
-                // ... otherwise -> re-add it at the end of the set ...
-                //
-                // Note: we always have enough space since we removed the element before
-                requestSet.add(hash);
 
                 // ... and abort our loop to continue processing with the element we found
                 break;

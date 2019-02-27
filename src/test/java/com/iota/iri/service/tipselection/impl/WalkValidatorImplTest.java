@@ -4,7 +4,6 @@ import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.controllers.TransactionViewModelTest;
 import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.snapshot.SnapshotProvider;
@@ -14,24 +13,31 @@ import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnit;
+import org.mockito.junit.MockitoRule;
+
+import static com.iota.iri.TransactionTestUtils.getTransactionWithTrunkAndBranch;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
 
 import java.util.HashMap;
 import java.util.HashSet;
 
-@RunWith(MockitoJUnitRunner.class)
 public class WalkValidatorImplTest {
+    
+    @Rule 
+    public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
     private static Tangle tangle;
     private static SnapshotProvider snapshotProvider;
     private TipSelConfig config = new MainnetConfig();
+    
     @Mock
     private static LedgerService ledgerService;
 
@@ -140,7 +146,7 @@ public class WalkValidatorImplTest {
         tx.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 92);
         Hash hash = tx.getHash();
         for (int i = 0; i < 4 ; i++) {
-            tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash), TransactionViewModelTest.getRandomTransactionHash());
+            tx = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash, hash), getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             tx.updateSolid(true);
@@ -164,8 +170,8 @@ public class WalkValidatorImplTest {
         tx.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 92);
         Hash hash = tx.getHash();
         for (int i = 0; i < maxAnalyzedTxs ; i++) {
-            tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash),
-                    TransactionViewModelTest.getRandomTransactionHash());
+            tx = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash, hash),
+                    getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             hash = tx.getHash();
@@ -187,7 +193,7 @@ public class WalkValidatorImplTest {
         final int maxAnalyzedTxs = config.getBelowMaxDepthTransactionLimit();
         Hash hash = Hash.NULL_HASH;
         for (int i = 0; i < maxAnalyzedTxs - 2 ; i++) {
-            tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash), TransactionViewModelTest.getRandomTransactionHash());
+            tx = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash, hash), getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             tx.updateSolid(true);
@@ -210,8 +216,8 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = null;
         Hash hash = Hash.NULL_HASH;
         for (int i = 0; i < maxAnalyzedTxs; i++) {
-            tx = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(hash, hash),
-                    TransactionViewModelTest.getRandomTransactionHash());
+            tx = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash, hash),
+                    getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             tx.updateSolid(true);
@@ -255,22 +261,22 @@ public class WalkValidatorImplTest {
         txBad.store(tangle, snapshotProvider.getInitialSnapshot());
         txBad.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 10);
 
-        TransactionViewModel tx2 = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(tx1.getHash(), tx1.getHash()),
-                TransactionViewModelTest.getRandomTransactionHash());
+        TransactionViewModel tx2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), tx1.getHash()),
+                getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx2,0);
         TransactionTestUtils.setCurrentIndex(tx2,0);
         tx2.updateSolid(true);
         tx2.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx3 = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
-                TransactionViewModelTest.getRandomTransactionHash());
+        TransactionViewModel tx3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
+                getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx3,0);
         TransactionTestUtils.setCurrentIndex(tx3,0);
         tx3.updateSolid(true);
         tx3.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx4 = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
-                TransactionViewModelTest.getRandomTransactionHash());
+        TransactionViewModel tx4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
+                getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx4,0);
         TransactionTestUtils.setCurrentIndex(tx4,0);
         tx4.updateSolid(true);
@@ -301,22 +307,22 @@ public class WalkValidatorImplTest {
         txBad.store(tangle, snapshotProvider.getInitialSnapshot());
         txBad.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 10);
 
-        TransactionViewModel tx2 = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(tx1.getHash(), tx1.getHash()),
-                TransactionViewModelTest.getRandomTransactionHash());
+        TransactionViewModel tx2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), tx1.getHash()),
+                getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx2,0);
         TransactionTestUtils.setCurrentIndex(tx2,0);
         tx2.updateSolid(true);
         tx2.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx3 = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
-                TransactionViewModelTest.getRandomTransactionHash());
+        TransactionViewModel tx3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
+                getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx3,0);
         TransactionTestUtils.setCurrentIndex(tx3,0);
         tx3.updateSolid(true);
         tx3.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx4 = new TransactionViewModel(TransactionViewModelTest.getRandomTransactionWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
-                TransactionViewModelTest.getRandomTransactionHash());
+        TransactionViewModel tx4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
+                getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx4,0);
         TransactionTestUtils.setCurrentIndex(tx4,0);
         tx4.updateSolid(true);

@@ -1,14 +1,15 @@
 package com.iota.iri.conf;
 
-import com.iota.iri.IRI;
-import com.iota.iri.utils.IotaUtils;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import com.iota.iri.IRI;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.net.InetAddress;
@@ -73,13 +74,19 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected double pPropagateRequest = Defaults.P_PROPAGATE_REQUEST;
 
     //ZMQ
-    protected boolean zmqEnabled = Defaults.ZMQ_ENABLED;
+    protected boolean zmqEnableTcp = Defaults.ZMQ_ENABLE_TCP;
+    protected boolean zmqEnableIpc = Defaults.ZMQ_ENABLE_IPC;
     protected int zmqPort = Defaults.ZMQ_PORT;
     protected int zmqThreads = Defaults.ZMQ_THREADS;
     protected String zmqIpc = Defaults.ZMQ_IPC;
     protected int qSizeNode = Defaults.QUEUE_SIZE;
     protected int cacheSizeBytes = Defaults.CACHE_SIZE_BYTES;
-
+    /**
+     * @deprecated This field was replaced by {@link #zmqEnableTcp} and {@link #zmqEnableIpc}. It is only needed
+     * for backward compatibility to --zmq-enabled parameter with JCommander.
+     */
+    @Deprecated
+    private boolean zmqEnabled;
 
     //Tip Selection
     protected int maxDepth = Defaults.MAX_DEPTH;
@@ -619,6 +626,11 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public int getMaxMilestoneIndex() {
+        return Defaults.MAX_MILESTONE_INDEX;
+    }
+
+    @Override
     public int getNumberOfKeysInMilestone() {
         return Defaults.NUM_KEYS_IN_MILESTONE;
     }
@@ -645,15 +657,48 @@ public abstract class BaseIotaConfig implements IotaConfig {
         this.spentAddressesDbLogPath = spentAddressesDbLogPath;
     }
 
+    /**
+     * Checks if ZMQ is enabled.
+     * @return true if zmqEnableTcp or zmqEnableIpc is set.
+     */
     @Override
     public boolean isZmqEnabled() {
-        return zmqEnabled;
+        return zmqEnableTcp || zmqEnableIpc;
     }
 
+    /**
+     * Activates ZMQ to listen on TCP and IPC.
+     * @deprecated Use {@link #setZmqEnableTcp(boolean) and/or {@link #setZmqEnableIpc(boolean)}} instead.
+     * @param zmqEnabled true if ZMQ should listen in TCP and IPC.
+     */
+    @Deprecated
     @JsonProperty
     @Parameter(names = "--zmq-enabled", description = ZMQConfig.Descriptions.ZMQ_ENABLED)
     protected void setZmqEnabled(boolean zmqEnabled) {
-        this.zmqEnabled = zmqEnabled;
+        this.zmqEnableTcp = zmqEnabled;
+        this.zmqEnableIpc = zmqEnabled;
+    }
+
+    @Override
+    public boolean isZmqEnableTcp() {
+        return zmqEnableTcp;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--zmq-enable-tcp", description = ZMQConfig.Descriptions.ZMQ_ENABLE_TCP, arity = 1)
+    public void setZmqEnableTcp(boolean zmqEnableTcp) {
+        this.zmqEnableTcp = zmqEnableTcp;
+    }
+
+    @Override
+    public boolean isZmqEnableIpc() {
+        return zmqEnableIpc;
+    }
+
+    @JsonProperty
+    @Parameter(names = "--zmq-enable-ipc", description = ZMQConfig.Descriptions.ZMQ_ENABLE_IPC, arity = 1)
+    public void setZmqEnableIpc(boolean zmqEnableIpc) {
+        this.zmqEnableIpc = zmqEnableIpc;
     }
 
     @Override
@@ -665,6 +710,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = "--zmq-port", description = ZMQConfig.Descriptions.ZMQ_PORT)
     protected void setZmqPort(int zmqPort) {
         this.zmqPort = zmqPort;
+        this.zmqEnableTcp = true;
     }
 
     @Override
@@ -673,7 +719,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--zmq-threads", description = ZMQConfig.Descriptions.ZMQ_PORT)
+    @Parameter(names = "--zmq-threads", description = ZMQConfig.Descriptions.ZMQ_THREADS)
     protected void setZmqThreads(int zmqThreads) {
         this.zmqThreads = zmqThreads;
     }
@@ -687,6 +733,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Parameter(names = "--zmq-ipc", description = ZMQConfig.Descriptions.ZMQ_IPC)
     protected void setZmqIpc(String zmqIpc) {
         this.zmqIpc = zmqIpc;
+        this.zmqEnableIpc = true;
     }
 
     @Override
@@ -723,8 +770,18 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getCoordinator() {
+    public Hash getCoordinator() {
         return Defaults.COORDINATOR_ADDRESS;
+    }
+
+    @Override
+    public int getCoordinatorSecurityLevel() {
+        return Defaults.COORDINATOR_SECURITY_LEVEL;
+    }
+
+    @Override
+    public SpongeFactory.Mode getCoordinatorSignatureMode() {
+        return Defaults.COORDINATOR_SIGNATURE_MODE;
     }
 
     @Override
@@ -841,8 +898,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Zmq
         int ZMQ_THREADS = 1;
+        boolean ZMQ_ENABLE_IPC = false;
         String ZMQ_IPC = "ipc://iri";
-        boolean ZMQ_ENABLED = false;
+        boolean ZMQ_ENABLE_TCP = false;
         int ZMQ_PORT = 5556;
 
         //TipSel
@@ -856,8 +914,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int POW_THREADS = 0;
 
         //Coo
-        String COORDINATOR_ADDRESS =
-                "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
+        Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
+                        "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
+        int COORDINATOR_SECURITY_LEVEL = 1;
+        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
+        int NUM_KEYS_IN_MILESTONE = 20;
+        int MAX_MILESTONE_INDEX = 1 << NUM_KEYS_IN_MILESTONE;
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
@@ -880,7 +942,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
                         "/previousEpochsSpentAddresses3.txt";
         long GLOBAL_SNAPSHOT_TIME = 1545469620;
         int MILESTONE_START_INDEX = 933_210;
-        int NUM_KEYS_IN_MILESTONE = 20;
         int MAX_ANALYZED_TXS = 20_000;
+
     }
 }

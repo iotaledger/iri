@@ -77,14 +77,13 @@ public class MilestoneServiceImpl implements MilestoneService {
      *       allows us to still instantiate, initialize and assign in one line - see Example:<br />
      *       <br />
      *       {@code milestoneService = new MilestoneServiceImpl().init(...);}
-     *
+     *te
      * @param tangle Tangle object which acts as a database interface
      * @param snapshotProvider snapshot provider which gives us access to the relevant snapshots
      * @param config config with important milestone specific settings
      * @return the initialized instance itself to allow chaining
      */
     public MilestoneServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            MilestoneConfig config) {
             BundleValidator bundleValidator, MilestoneConfig config) {
 
         this.tangle = tangle;

@@ -99,7 +99,7 @@ public class SnapshotMetaDataImplTest {
         assertEquals("Existing entrypoints should have a new index", 10, meta.getSolidEntryPointIndex(A));
         assertEquals("Existing entrypoints should have a new index", 11, meta.getSolidEntryPointIndex(B));
         assertEquals("Existing entrypoints should have a new index", 12, meta.getSolidEntryPointIndex(C));
-        assertEquals("New entry point added should exist and equal to the index provided", 12, meta.getSolidEntryPointIndex(D));
+        assertEquals("New entry point added should exist and equal to the index provided", 13, meta.getSolidEntryPointIndex(D));
     }
     
     @Test

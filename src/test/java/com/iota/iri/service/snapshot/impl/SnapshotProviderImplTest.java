@@ -13,16 +13,25 @@ import com.iota.iri.service.spentaddresses.SpentAddressesException;
 
 public class SnapshotProviderImplTest {
 
-    SnapshotProviderImpl provider;
+    private SnapshotProviderImpl provider;
+    
+    private SnapshotImpl cachedBuildinSnapshot;
     
     @Before
     public void setUp() throws Exception {
         provider = new SnapshotProviderImpl();
+        
+        // When running multiple tests, the static cached snapshot breaks this test
+        cachedBuildinSnapshot = SnapshotProviderImpl.builtinSnapshot;
+        SnapshotProviderImpl.builtinSnapshot = null;
     }
 
     @After
     public void tearDown() throws Exception {
         provider.shutdown();
+        
+        // Set back the cached snapshot for tests after us who might use it
+        SnapshotProviderImpl.builtinSnapshot = cachedBuildinSnapshot;
     }
     
     @Test
@@ -30,6 +39,8 @@ public class SnapshotProviderImplTest {
         IotaConfig iotaConfig = ConfigFactory.createIotaConfig(true);
         provider.init(iotaConfig);
 
+        // If we run this on its own, it correctly takes the testnet milestone
+        // However, running it with all tests makes it load the last global snapshot contained in the jar
         assertEquals("Initial snapshot index should be the same as the milestone start index", 
                 iotaConfig.getMilestoneStartIndex(), provider.getInitialSnapshot().getIndex());
         

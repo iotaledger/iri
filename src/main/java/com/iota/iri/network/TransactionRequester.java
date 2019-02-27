@@ -91,7 +91,7 @@ public class TransactionRequester {
      *
      * It used when the queue capacity is reached, and new transactions would be dropped as a result.
      */
-    // @VisibleForTesting
+    //Package Private For Testing
     void popEldestTransactionToRequest() {
         Iterator<Hash> iterator = transactionsToRequest.iterator();
         if (iterator.hasNext()) {

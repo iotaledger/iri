@@ -21,7 +21,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import static com.iota.iri.TransactionTestUtils.getTransactionWithTrunkAndBranch;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionWithTrunkAndBranch;
 import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
 
 import java.util.HashMap;
@@ -146,7 +146,7 @@ public class WalkValidatorImplTest {
         tx.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 92);
         Hash hash = tx.getHash();
         for (int i = 0; i < 4 ; i++) {
-            tx = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash, hash), getRandomTransactionHash());
+            tx = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hash, hash), getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             tx.updateSolid(true);
@@ -170,7 +170,7 @@ public class WalkValidatorImplTest {
         tx.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 92);
         Hash hash = tx.getHash();
         for (int i = 0; i < maxAnalyzedTxs ; i++) {
-            tx = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash, hash),
+            tx = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hash, hash),
                     getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
@@ -193,7 +193,7 @@ public class WalkValidatorImplTest {
         final int maxAnalyzedTxs = config.getBelowMaxDepthTransactionLimit();
         Hash hash = Hash.NULL_HASH;
         for (int i = 0; i < maxAnalyzedTxs - 2 ; i++) {
-            tx = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash, hash), getRandomTransactionHash());
+            tx = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hash, hash), getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
             tx.updateSolid(true);
@@ -216,7 +216,7 @@ public class WalkValidatorImplTest {
         TransactionViewModel tx = null;
         Hash hash = Hash.NULL_HASH;
         for (int i = 0; i < maxAnalyzedTxs; i++) {
-            tx = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash, hash),
+            tx = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hash, hash),
                     getRandomTransactionHash());
             TransactionTestUtils.setLastIndex(tx,0);
             TransactionTestUtils.setCurrentIndex(tx,0);
@@ -261,21 +261,21 @@ public class WalkValidatorImplTest {
         txBad.store(tangle, snapshotProvider.getInitialSnapshot());
         txBad.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 10);
 
-        TransactionViewModel tx2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), tx1.getHash()),
+        TransactionViewModel tx2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(tx1.getHash(), tx1.getHash()),
                 getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx2,0);
         TransactionTestUtils.setCurrentIndex(tx2,0);
         tx2.updateSolid(true);
         tx2.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
+        TransactionViewModel tx3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
                 getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx3,0);
         TransactionTestUtils.setCurrentIndex(tx3,0);
         tx3.updateSolid(true);
         tx3.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
+        TransactionViewModel tx4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
                 getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx4,0);
         TransactionTestUtils.setCurrentIndex(tx4,0);
@@ -307,21 +307,21 @@ public class WalkValidatorImplTest {
         txBad.store(tangle, snapshotProvider.getInitialSnapshot());
         txBad.setSnapshot(tangle, snapshotProvider.getInitialSnapshot(), 10);
 
-        TransactionViewModel tx2 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), tx1.getHash()),
+        TransactionViewModel tx2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(tx1.getHash(), tx1.getHash()),
                 getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx2,0);
         TransactionTestUtils.setCurrentIndex(tx2,0);
         tx2.updateSolid(true);
         tx2.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx3 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
+        TransactionViewModel tx3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(tx1.getHash(), txBad.getHash()),
                 getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx3,0);
         TransactionTestUtils.setCurrentIndex(tx3,0);
         tx3.updateSolid(true);
         tx3.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx4 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
+        TransactionViewModel tx4 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(tx2.getHash(), tx3.getHash()),
                 getRandomTransactionHash());
         TransactionTestUtils.setLastIndex(tx4,0);
         TransactionTestUtils.setCurrentIndex(tx4,0);

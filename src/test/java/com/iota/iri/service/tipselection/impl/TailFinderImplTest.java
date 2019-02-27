@@ -4,7 +4,7 @@ import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
 import static com.iota.iri.TransactionTestUtils.createBundleHead;
 import static com.iota.iri.TransactionTestUtils.createTransactionWithTrunkBundleHash;
 import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
-import static com.iota.iri.TransactionTestUtils.getTransactionWithTrunkAndBranch;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionWithTrunkAndBranch;
 
 import com.iota.iri.conf.MainnetConfig;
 import com.iota.iri.controllers.TransactionViewModel;
@@ -91,7 +91,7 @@ public class TailFinderImplTest {
         TransactionViewModel tx1 = createTransactionWithTrunkBundleHash(tx2, txa.getHash());
         tx1.store(tangle, snapshotProvider.getInitialSnapshot());
 
-        TransactionViewModel tx0 = new TransactionViewModel(getTransactionWithTrunkAndBranch(tx1.getHash(), tx2.getHash()),
+        TransactionViewModel tx0 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(tx1.getHash(), tx2.getHash()),
                 getRandomTransactionHash());
         tx0.store(tangle, snapshotProvider.getInitialSnapshot());
 

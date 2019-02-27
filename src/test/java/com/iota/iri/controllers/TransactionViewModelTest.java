@@ -25,7 +25,7 @@ import java.util.Set;
 
 import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
 import static com.iota.iri.TransactionTestUtils.getRandomTransactionHash;
-import static com.iota.iri.TransactionTestUtils.getTransactionWithTrunkAndBranch;
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionWithTrunkAndBranch;
 
 import static org.junit.Assert.*;
 
@@ -296,11 +296,11 @@ public class TransactionViewModelTest {
         int count = 4;
         TransactionViewModel[] transactionViewModels = new TransactionViewModel[count];
         Hash hash = getRandomTransactionHash();
-        transactionViewModels[0] = new TransactionViewModel(getTransactionWithTrunkAndBranch(Hash.NULL_HASH,
+        transactionViewModels[0] = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH,
                 Hash.NULL_HASH), hash);
         transactionViewModels[0].store(tangle, snapshotProvider.getInitialSnapshot());
         for(int i = 0; ++i < count; ) {
-            transactionViewModels[i] = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash,
+            transactionViewModels[i] = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hash,
                     Hash.NULL_HASH), hash = getRandomTransactionHash());
             transactionViewModels[i].store(tangle, snapshotProvider.getInitialSnapshot());
         }
@@ -318,7 +318,7 @@ public class TransactionViewModelTest {
         TransactionViewModel[] transactionViewModels = new TransactionViewModel[count];
         Hash hash = getRandomTransactionHash();
         for(int i = 0; ++i < count; ) {
-            transactionViewModels[i] = new TransactionViewModel(getTransactionWithTrunkAndBranch(hash,
+            transactionViewModels[i] = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hash,
                     Hash.NULL_HASH), hash = getRandomTransactionHash());
             transactionViewModels[i].store(tangle, snapshotProvider.getInitialSnapshot());
         }
@@ -366,13 +366,13 @@ public class TransactionViewModelTest {
         int interval1 = 50;
         int interval = interval1*10;
         log.info("Starting Test. #TX: {}", TransactionViewModel.getNumberOfStoredTransactions(tangle));
-        new TransactionViewModel(getTransactionWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH), hash).store(tangle, snapshotProvider.getInitialSnapshot());
+        new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH), hash).store(tangle, snapshotProvider.getInitialSnapshot());
         TransactionViewModel transactionViewModel;
         boolean pop = false;
         for (i = 0; i++ < max;) {
             hash = getRandomTransactionHash();
             j = hashes.size();
-            transactionViewModel = new TransactionViewModel(getTransactionWithTrunkAndBranch(hashes.get(seed.nextInt(j)), hashes.get(seed.nextInt(j))), hash);
+            transactionViewModel = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(hashes.get(seed.nextInt(j)), hashes.get(seed.nextInt(j))), hash);
             start = System.nanoTime();
             transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
             diff = System.nanoTime() - start;

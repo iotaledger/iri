@@ -58,7 +58,7 @@ public class Tangle {
     }
 
     /**
-     * Adds {@link com.iota.iri.storage.MessageQueueProvider} that should be notified.
+     * Adds {@link com.iota.iri.zmq.MessageQueueProvider} that should be notified.
      * 
      * @param provider that should be notified.
      */
@@ -155,7 +155,7 @@ public class Tangle {
 
     /**
      * Updates all {@link PersistenceProvider} and publishes message to all
-     * {@link com.iota.iri.storage.MessageQueueProvider}.
+     * {@link com.iota.iri.zmq.MessageQueueProvider}.
      *
      * @param model with transaction data
      * @param index {@link Hash} identifier of the {@link Transaction} set
@@ -180,7 +180,7 @@ public class Tangle {
     }
 
     /**
-     * Notifies all registered {@link com.iota.iri.storage.MessageQueueProvider} and publishes message to MessageQueue.
+     * Notifies all registered {@link com.iota.iri.zmq.MessageQueueProvider} and publishes message to MessageQueue.
      *
      * @param message that can be formatted by {@link String#format(String, Object...)}
      * @param objects that should replace the placeholder in message.

@@ -8,8 +8,8 @@ import java.util.Set;
 
 /**
  * Abstracts access to the data persisitence layer.
- * Will handle the initialization and connections to the storage.
- * It will enable efficient batch writes, deletes, and merges.
+ * Handles the initialization and connections to the storage.
+ * Will enable efficient batch writes, deletes, and merges.
  */
 public interface PersistenceProvider {
 
@@ -79,7 +79,7 @@ public interface PersistenceProvider {
     Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception;
 
     /**
-     * Given 2 types of {@link Persistable} types that should be indexed with the same keys,
+     * Given 2 {@link Persistable} types that should be indexed with the same keys,
      * find all the keys in the database that are in the {@code modelClass} table/column family
      * but are not in the {@code otherClass} table/column family.
      *
@@ -100,7 +100,7 @@ public interface PersistenceProvider {
     Persistable get(Class<?> model, Indexable index) throws Exception;
 
     /**
-     * Checks with a certain degree of certainity whether we have a value indexed at a
+     * Checks with a degree of certainity whether we have a value indexed at a
      * given key. Unlike {@link #exists} it can return false positives, but it should be much more efficient
      *
      * @param model the table/column family to look at

@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
  * Implements the basic contract of the {@link SnapshotState} interface.
  */
 public class SnapshotStateImpl implements SnapshotState {
-
     /**
      * Logger for this class (used to emit debug messages).
      */
@@ -84,7 +83,10 @@ public class SnapshotStateImpl implements SnapshotState {
      */
     @Override
     public boolean hasCorrectSupply() {
-        long supply = balances.values().stream().reduce(Math::addExact).orElse(Long.MAX_VALUE);
+        long supply = balances.values()
+                .stream()
+                .reduce(Math::addExact)
+                .orElse(Long.MAX_VALUE);
 
         return supply == TransactionViewModel.SUPPLY;
     }
@@ -123,11 +125,12 @@ public class SnapshotStateImpl implements SnapshotState {
      */
     @Override
     public SnapshotState patchedState(SnapshotStateDiff snapshotStateDiff) {
-        Map<Hash,
-                Long> patchedBalances = snapshotStateDiff.getBalanceChanges().entrySet().stream()
-                        .map(hashLongEntry -> new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
-                                balances.getOrDefault(hashLongEntry.getKey(), 0L) + hashLongEntry.getValue()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        Map<Hash, Long> patchedBalances = snapshotStateDiff.getBalanceChanges()
+                .entrySet()
+                .stream()
+                .map(hashLongEntry -> new HashMap.SimpleEntry<>(hashLongEntry.getKey(),
+                        balances.getOrDefault(hashLongEntry.getKey(), 0L) + hashLongEntry.getValue()))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
 
         return new SnapshotStateImpl(patchedBalances);
     }

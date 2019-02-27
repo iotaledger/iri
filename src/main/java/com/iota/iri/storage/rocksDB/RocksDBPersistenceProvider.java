@@ -10,13 +10,38 @@ import com.iota.iri.utils.Pair;
 import java.io.File;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.SystemUtils;
-import org.rocksdb.*;
+import org.rocksdb.BackupEngine;
+import org.rocksdb.BackupableDBOptions;
+import org.rocksdb.BlockBasedTableConfig;
+import org.rocksdb.BloomFilter;
+import org.rocksdb.ColumnFamilyDescriptor;
+import org.rocksdb.ColumnFamilyHandle;
+import org.rocksdb.ColumnFamilyOptions;
+import org.rocksdb.DBOptions;
+import org.rocksdb.Env;
+import org.rocksdb.MergeOperator;
+import org.rocksdb.RestoreOptions;
+import org.rocksdb.RocksDB;
+import org.rocksdb.RocksDBException;
+import org.rocksdb.RocksEnv;
+import org.rocksdb.RocksIterator;
+import org.rocksdb.StringAppendOperator;
+import org.rocksdb.WriteBatch;
+import org.rocksdb.WriteOptions;
 import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -304,6 +329,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                         writeBatch.delete(handle, keyBytes);
                     } catch (RocksDBException e) {
                         log.error("Could not delete handle: " + handle.getID());
+                        throw new RuntimeException(e);
                     }
                     ColumnFamilyHandle metadataHandle = metadataReference.get(entry.hi);
                     if (metadataHandle != null) {
@@ -311,6 +337,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                             writeBatch.delete(metadataHandle, keyBytes);
                         } catch (RocksDBException e) {
                             log.error("Could not delete metadataHandle: " + metadataHandle.getID());
+                            throw new RuntimeException(e);
                         }
                     }
                 });
@@ -358,7 +385,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
                 itemsToDelete.add(iterator.key());
             }
         }
-        if (itemsToDelete.size() > 0) {
+        if (!itemsToDelete.isEmpty()) {
             log.info("Amount to delete: " + itemsToDelete.size());
         }
         int counter = 0;
@@ -513,38 +540,4 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         classTreeMap = MapUtils.unmodifiableMap(classMap);
     }
 
-    // 2018 March 28 - Unused Code
-    private void fillMissingColumns(List<ColumnFamilyDescriptor> familyDescriptors, String path) throws Exception {
-
-        List<ColumnFamilyDescriptor> columnFamilies = RocksDB.listColumnFamilies(new Options().setCreateIfMissing(true), path)
-            .stream()
-            .map(b -> new ColumnFamilyDescriptor(b, new ColumnFamilyOptions()))
-            .collect(Collectors.toList());
-
-        columnFamilies.add(0, familyDescriptors.get(0));
-
-        List<ColumnFamilyDescriptor> missingFromDatabase = familyDescriptors.stream().filter(d -> columnFamilies.stream().filter(desc -> new String(desc.getName()).equals(new String(d.getName()))).toArray().length == 0).collect(Collectors.toList());
-        List<ColumnFamilyDescriptor> missingFromDescription = columnFamilies.stream().filter(d -> familyDescriptors.stream().filter(desc -> new String(desc.getName()).equals(new String(d.getName()))).toArray().length == 0).collect(Collectors.toList());
-
-        if (missingFromDatabase.size() != 0) {
-            missingFromDatabase.remove(familyDescriptors.get(0));
-
-            try (RocksDB rocksDB = db = RocksDB.open(options, path, columnFamilies, columnFamilyHandles)) {
-                for (ColumnFamilyDescriptor description : missingFromDatabase) {
-                    addColumnFamily(description.getName(), rocksDB);
-                }
-            }
-        }
-        if (missingFromDescription.size() != 0) {
-            familyDescriptors.addAll(missingFromDescription);
-        }
-    }
-
-    // 2018 March 28 - Unused Code
-    private void addColumnFamily(byte[] familyName, RocksDB db) throws RocksDBException {
-        final ColumnFamilyHandle columnFamilyHandle = db.createColumnFamily(
-            new ColumnFamilyDescriptor(familyName, new ColumnFamilyOptions()));
-
-        assert (columnFamilyHandle != null);
-    }
 }

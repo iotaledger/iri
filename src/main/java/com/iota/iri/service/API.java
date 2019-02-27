@@ -907,7 +907,7 @@ public class API {
                 instance.tipsViewModel.size(),
                 instance.transactionRequester.numberOfTransactionsToRequest(),
                 features,
-                instance.configuration.getCoordinator());
+                instance.configuration.getCoordinator().toString());
     }
 
     /**

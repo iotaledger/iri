@@ -54,6 +54,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     //Node
     protected boolean wasmSupport = Defaults.WASM_SUPPORT;
     protected boolean streamingGraphSupport = Defaults.STREAMING_GRAPH_SUPPORT;
+    protected long numBlocksPerPeriod = Defaults.NUM_BLOCKS_PER_PERIOD;
 
     //DB
     protected String dbPath = Defaults.DB_PATH;
@@ -773,6 +774,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public long getNumBlocksPerPeriod() {
+        return numBlocksPerPeriod;
+    }
+
+    @JsonProperty("PERIOD_SIZE")
+    @Parameter(names = "--num-blocks-per-period", description = NodeConfig.Descriptions.PERIOD_SIZE)
+    public void setNumBlocksPerPeriod(Long numBlocksPerPeriod) {
+        this.numBlocksPerPeriod = numBlocksPerPeriod;
+    }
+
+    @Override
     public double getAlpha() {
         return alpha;
     }
@@ -887,6 +899,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         // Node
         boolean WASM_SUPPORT = false;
         boolean STREAMING_GRAPH_SUPPORT = false;
+        long NUM_BLOCKS_PER_PERIOD = 100;
 
         //DB
         String DB_PATH = "mainnetdb";

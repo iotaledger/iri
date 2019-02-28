@@ -1,6 +1,10 @@
 package com.iota.iri.service;
 
-import com.iota.iri.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.iota.iri.IRI;
+import com.iota.iri.IXI;
+import com.iota.iri.Iota;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.ConsensusConfig;
@@ -21,33 +25,12 @@ import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.MapIdentityManager;
-import com.iota.iri.validator.*;
-
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import org.apache.commons.lang3.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.xnio.channels.StreamSinkChannel;
-import org.xnio.streams.ChannelInputStream;
-
-import java.io.*;
-import java.net.InetSocketAddress;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
-import java.security.InvalidAlgorithmParameterException;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
+import com.iota.iri.validator.BundleValidator;
+import com.iota.iri.validator.Snapshot;
+import com.iota.iri.pluggables.tee.BatchTee;
+import com.iota.iri.pluggables.tee.TEE;
 import io.undertow.Undertow;
 import io.undertow.security.api.AuthenticationMechanism;
 import io.undertow.security.api.AuthenticationMode;
@@ -60,20 +43,29 @@ import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
-
-import com.iota.iri.utils.IotaUtils;
-
-import static io.undertow.Handlers.path;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.xnio.channels.StreamSinkChannel;
+import org.xnio.streams.ChannelInputStream;
 
 import java.io.*;
 import java.net.*;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.util.zip.GZIPInputStream;
+import com.google.gson.Gson;
+import com.google.gson.stream.JsonReader;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.JsonNode;
+import static io.undertow.Handlers.path;
 
 @SuppressWarnings("unchecked")
 public class API {
@@ -112,7 +104,7 @@ public class API {
     private final static char ZERO_LENGTH_ALLOWED = 'Y';
     private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
     private Iota instance;
-    
+
     private final String[] features;
 
     public API(Iota instance, IXI ixi) {
@@ -241,20 +233,26 @@ public class API {
                         return ErrorResponse.create("Invalid params");
                     }
 
-                    String address = (String) request.get("address");
-                    String message = (String) request.get("message");
-
                     String tag = "TX"; // by default is TX
                     if(request.containsKey("tag")) {
                         tag = (String) request.get("tag");
                     }
-                    String tagTrytes = Converter.asciiToTrytes(tag);
-                    tag = StringUtils.rightPad(tagTrytes, 27, '9');
+
+                    String address = (String) request.get("address");
+                    String message;
+                    if (request.get("message") instanceof Map){
+                        message = (String) request.get("message").toString();
+                    }else{
+                        message = (String) request.get("message");
+                    }
 
                     AbstractResponse rsp = storeMessageStatement(address, message, tag);
                     return rsp;
                 }
-
+                case "getBlocksInPeriodStatement": {
+                    Integer period = getParameterAsInt(request, "period");
+                    return getBlocksInPeriodStatement(period);
+                }
                 case "addNeighbors": {
                     List<String> uris = getParameterAsList(request,"uris",0);
                     log.debug("Invoking 'addNeighbors' with {}", uris);
@@ -362,6 +360,7 @@ public class API {
                     final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                     return wereAddressesSpentFromStatement(addresses);
                 }
+
                 default: {
                     AbstractResponse response = ixi.processCommand(command, request);
                     return response == null ?
@@ -738,7 +737,7 @@ public class API {
                     String msg = Converter.trytes(branch.getSignature());
                     log.info("execute contract: {}", msg);
                     executeContract(msg, branchTagVal);
-                }    
+                }
 
                 // execute trunk
                 TransactionViewModel trunk = transactionViewModel.getTrunkTransaction(instance.tangle);
@@ -747,7 +746,7 @@ public class API {
                     String msg = Converter.trytes(trunk.getSignature());
                     log.info("execute contract: {}", msg);
                     executeContract(msg, trunkTagVal);
-                }    
+                }
             }
         }
         TransactionData.getInstance().batchPutIndex(hashes);
@@ -758,7 +757,7 @@ public class API {
             URL url = new URL("http://localhost:5000/put_contract");
             if(tagVal.equals("KB")) {
                 url = new URL("http://localhost:5000/put_action");
-            }    
+            }
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setDoOutput(true);
             conn.setRequestMethod("PUT");
@@ -1354,13 +1353,14 @@ public class API {
      *
      * @param address The address to add the message to
      * @param message The message to store
+     * @param tag     The tag to store, by default is TX
      **/
     private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
             txToApprove = getTransactionToApproveTips(3, Optional.empty());
         } catch (Exception e) {
-            log.info("Tip selection failed: " + e.getLocalizedMessage());
+            log.error("Tip selection failed: " + e.getLocalizedMessage());
             txToApprove.add(IotaUtils.getRandomTransactionHash());
             txToApprove.add(IotaUtils.getRandomTransactionHash());
         }
@@ -1371,10 +1371,21 @@ public class API {
         String msg = message;
 
         if (!BaseIotaConfig.getInstance().isEnableIPFSTxns() && BaseIotaConfig.getInstance().isEnableBatchTxns()) {
-            String processed = IotaIOUtils.processBatchTxnMsg(message);
-            if (processed == null) {
-                log.error("Special process failed!");
-                return AbstractResponse.createEmptyResponse();
+            String processed;
+            // skip 'YYYYMMDD' in tag
+            switch (tag.substring(8)){
+                case "TX" :
+                    processed = IotaIOUtils.processBatchTxnMsg(message);
+                    if (processed == null) {
+                        log.error("Special process failed!");
+                        return AbstractResponse.createEmptyResponse();
+                    }
+                    break;
+                case "TEE" :
+                    processed = Converter.asciiToTrytes(message);
+                    break;
+                default:
+                    processed = Converter.asciiToTrytes(message);
             }
             msg = processed;
         }
@@ -1407,7 +1418,7 @@ public class API {
             // value
             tx += StringUtils.repeat('9', 27);
             // obsolete tag
-            tx += tag;
+            tx += StringUtils.rightPad(Converter.asciiToTrytes(tag), 27, '9');
             // timestamp
             tx += timestampTrytes;
             // current index
@@ -1443,5 +1454,36 @@ public class API {
         }
 
         return AbstractResponse.createEmptyResponse();
+    }
+
+    private synchronized AbstractResponse getBlocksInPeriodStatement(final long period) {
+        if (period <= 0){
+            throw new RuntimeException("period not valid: " + period);
+        }
+        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+        int blocksPerPeriod = (int)BaseIotaConfig.getInstance().getNumBlocksPerPeriod();
+        int p = (int)period;
+//        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p);
+        int totalSize = provider.totalTopOrder().size();
+        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p > totalSize ? totalSize : (blocksPerPeriod*p));
+
+        List<String> resArray = new ArrayList<String>();
+        try {
+            for(Hash h : retOrder) {
+                TransactionViewModel model = TransactionViewModel.find(instance.tangle, h.bytes());
+                byte[] sigTrits = model.getSignature();
+                String sigTrytes = Converter.trytes(sigTrits);
+                String info = Converter.trytesToAscii(sigTrytes);
+                //too many spacing
+                resArray.add(StringUtils.trim(info));
+            }
+
+            String finalRes = new Gson().toJson(resArray);
+
+            return GetBlocksInPeriodResponse.create(finalRes);
+        } catch(Exception e) {
+            e.printStackTrace();
+            return AbstractResponse.createEmptyResponse();
+        }
     }
 }

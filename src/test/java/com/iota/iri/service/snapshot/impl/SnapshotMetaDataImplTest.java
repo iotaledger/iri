@@ -16,10 +16,10 @@ import com.iota.iri.service.snapshot.SnapshotMetaData;
 
 public class SnapshotMetaDataImplTest {
 
-    private static Hash A = TransactionTestUtils.getRandomTransactionHash();
-    private static Hash B = TransactionTestUtils.getRandomTransactionHash();
-    private static Hash C = TransactionTestUtils.getRandomTransactionHash();
-    private static Hash D = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash A = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash B = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash C = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash D = TransactionTestUtils.getRandomTransactionHash();
     
     private static Map<Hash, Integer> solidEntryPoints = new HashMap<Hash, Integer>(){{
         put(A, 1);

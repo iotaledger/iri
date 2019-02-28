@@ -47,9 +47,9 @@ public class SnapshotImplTest {
         snapshot.setHash(TransactionTestUtils.getRandomTransactionHash());
         snapshot.setInitialTimestamp(5l);
         
-        assertFalse("Modified snapshot clone should not be equal to its original", snapshot.equals(newSnapshot));
+        assertNotEquals("Modified snapshot clone should not be equal to its original", snapshot, newSnapshot);
         snapshot.update(newSnapshot);
-        assertTrue("Updating a snapshot with another snapshot should make them equal", snapshot.equals(newSnapshot));
+        assertEquals("Updating a snapshot with another snapshot should make them equal", snapshot, newSnapshot);
     }
     
     @Test
@@ -57,12 +57,12 @@ public class SnapshotImplTest {
         Snapshot oldSnapshot = new SnapshotImpl(state, metaData);
         Snapshot newSnapshot = oldSnapshot.clone();
         
-        assertTrue("A clone of a snapshot is equal to its original", oldSnapshot.equals(newSnapshot));
+        assertEquals("A clone of a snapshot is equal to its original", oldSnapshot, newSnapshot);
         
         oldSnapshot.addSkippedMilestone(1);
         
         // Clone shouldnt have the skipped milestone
         assertFalse("Adding a value to a clone should be reflected on the original", newSnapshot.removeSkippedMilestone(1));
-        assertFalse("A clone should not be equal to its original after modification", oldSnapshot.equals(newSnapshot));
+        assertNotEquals("A clone should not be equal to its original after modification", oldSnapshot, newSnapshot);
     }
 }

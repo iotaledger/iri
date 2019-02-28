@@ -13,9 +13,9 @@ import com.iota.iri.model.Hash;
 
 public class SnapshotStateDiffImplTest {
     
-    private static Hash A = TransactionTestUtils.getRandomTransactionHash();
-    private static Hash B = TransactionTestUtils.getRandomTransactionHash();
-    private static Hash C = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash A = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash B = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash C = TransactionTestUtils.getRandomTransactionHash();
     
     @Test
     public void getBalanceChanges() {

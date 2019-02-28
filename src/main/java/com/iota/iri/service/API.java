@@ -348,7 +348,7 @@ public class API {
             // Is this command allowed to be run from this request address?
             // We check the remote limit API configuration.
             if (instance.configuration.getRemoteLimitApi().contains(command) &&
-                    !sourceAddress.getAddress().isLoopbackAddress()) {
+                    !instance.configuration.getRemoteTrustedApiHosts().contains(sourceAddress.getAddress())) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 
@@ -907,7 +907,7 @@ public class API {
                 instance.tipsViewModel.size(),
                 instance.transactionRequester.numberOfTransactionsToRequest(),
                 features,
-                instance.configuration.getCoordinator());
+                instance.configuration.getCoordinator().toString());
     }
 
     /**

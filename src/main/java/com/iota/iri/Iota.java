@@ -4,6 +4,7 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
+import com.iota.iri.model.persistables.SpentAddress;
 import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.UDPReceiver;
@@ -28,6 +29,7 @@ import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
 
 import java.security.SecureRandom;
+import java.util.HashMap;
 import java.util.List;
 
 import com.iota.iri.zmq.ZmqMessageQueueProvider;
@@ -200,7 +202,7 @@ public class Iota {
         //snapshot provider must be initialized first
         //because we check whether spent addresses data exists
         snapshotProvider.init(configuration);
-        spentAddressesProvider.init(configuration);
+        spentAddressesProvider.init(configuration, getSpentAddressesProvider());
         spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, bundleValidator, configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
@@ -295,6 +297,15 @@ public class Iota {
         if (configuration.isZmqEnabled()) {
             tangle.addMessageQueueProvider(new ZmqMessageQueueProvider(configuration));
         }
+    }
+    
+    private PersistenceProvider getSpentAddressesProvider() {
+        return new RocksDBPersistenceProvider(
+                configuration.getSpentAddressesDbPath(),
+                configuration.getSpentAddressesDbLogPath(),
+                1000,
+                new HashMap<String, Class<? extends Persistable>>(1)
+                {{put("spent-addresses", SpentAddress.class);}}, null);
     }
 
     private TipSelector createTipSelector(TipSelConfig config) {

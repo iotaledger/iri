@@ -28,7 +28,6 @@ public class DAGHelperTest {
     private static final Hash A = TransactionTestUtils.getRandomTransactionHash();
     private static final Hash B = TransactionTestUtils.getRandomTransactionHash();
     private static final Hash C = TransactionTestUtils.getRandomTransactionHash();
-    private static final Hash D = TransactionTestUtils.getRandomTransactionHash();
     
     private static final Transaction TX1 = TransactionTestUtils
             .createRandomTransactionWithTrunkAndBranch(Hash.NULL_HASH, Hash.NULL_HASH); // Hash.NULL_HASH, 
@@ -74,7 +73,7 @@ public class DAGHelperTest {
             processed.add(t);
         }, set);
         
-        assertTrue(processed.size() == 2);
+        assertEquals(2, processed.size());
         
         TransactionViewModel tx = processed.get(1);
         assertEquals(tx.getHash(), C);
@@ -99,7 +98,7 @@ public class DAGHelperTest {
             processed.add(t);
         }, set);
         
-        assertTrue(processed.size() == 2);
+        assertEquals(2, processed.size());
         
         TransactionViewModel tx = processed.get(1);
         assertEquals(tx.getHash(), Hash.NULL_HASH);

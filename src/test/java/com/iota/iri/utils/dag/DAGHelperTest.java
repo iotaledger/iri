@@ -52,7 +52,7 @@ public class DAGHelperTest {
     @Test
     public void testGet() {
         // We reuse the instanced
-        assertEquals(helper, DAGHelper.get(tangle));
+        assertEquals("Helper instance should have been reused", helper, DAGHelper.get(tangle));
     }
 
     @Test
@@ -73,13 +73,13 @@ public class DAGHelperTest {
             processed.add(t);
         }, set);
         
-        assertEquals(2, processed.size());
+        assertEquals("2 transactions should have been traversed", 2, processed.size());
         
         TransactionViewModel tx = processed.get(1);
-        assertEquals(tx.getHash(), C);
-        assertEquals(tx.getAddressHash(), TX3.address);
-        assertEquals(tx.getAttachmentTimestamp(), TX3.attachmentTimestamp);
-        assertEquals(tx.getBytes(), TX3.bytes());
+        assertEquals("Last transaction hash should have been C", tx.getHash(), C);
+        assertEquals("Last transaction should have TX3 its address", tx.getAddressHash(), TX3.address);
+        assertEquals("Last transaction should have TX3 its timestamp", tx.getAttachmentTimestamp(), TX3.attachmentTimestamp);
+        assertEquals("Last transaction should have TX3 its bytes", tx.getBytes(), TX3.bytes());
     }
         
 
@@ -98,13 +98,13 @@ public class DAGHelperTest {
             processed.add(t);
         }, set);
         
-        assertEquals(2, processed.size());
+        assertEquals("", 2, processed.size());
         
         TransactionViewModel tx = processed.get(1);
-        assertEquals(tx.getHash(), Hash.NULL_HASH);
-        assertEquals(tx.getAddressHash(), TX1.address);
-        assertEquals(tx.getAttachmentTimestamp(), TX1.attachmentTimestamp);
-        assertEquals(tx.getBytes(), TX1.bytes());
+        assertEquals("Last transaction hash should have been the genisis hash", tx.getHash(), Hash.NULL_HASH);
+        assertEquals("Last transaction should have TX1 its address", tx.getAddressHash(), TX1.address);
+        assertEquals("Last transaction should have TX1 its timestamp", tx.getAttachmentTimestamp(), TX1.attachmentTimestamp);
+        assertEquals("Last transaction should have TX1 its bytes", tx.getBytes(), TX1.bytes());
     }
 
 }

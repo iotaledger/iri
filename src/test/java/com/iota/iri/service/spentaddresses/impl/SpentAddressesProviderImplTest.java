@@ -17,6 +17,7 @@ import org.mockito.Answers;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.Mockito;
+import org.mockito.exceptions.base.MockitoAssertionError;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
@@ -24,7 +25,6 @@ import com.iota.iri.TransactionTestUtils;
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.persistables.SpentAddress;
-import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
@@ -32,8 +32,8 @@ import com.iota.iri.utils.Pair;
 
 public class SpentAddressesProviderImplTest {
     
-    private static Hash A = TransactionTestUtils.getRandomTransactionHash();
-    private static Hash B = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash A = TransactionTestUtils.getRandomTransactionHash();
+    private static final Hash B = TransactionTestUtils.getRandomTransactionHash();
     
     @Rule 
     public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -64,14 +64,19 @@ public class SpentAddressesProviderImplTest {
         Mockito.when(persistenceProvider.exists(SpentAddress.class, A)).thenReturn(true);
         Mockito.when(persistenceProvider.exists(SpentAddress.class, B)).thenReturn(false);
         
-        assertTrue(provider.containsAddress(A));
-        assertFalse(provider.containsAddress(B));
+        assertTrue("Provider should have A as spent", provider.containsAddress(A));
+        assertFalse("Provider should not have B as spent", provider.containsAddress(B));
     }
 
     @Test
     public void testSaveAddress() throws Exception {
         provider.saveAddress(A);
-        verify(persistenceProvider, times(1)).save(any(SpentAddress.class), Mockito.eq(A));
+        
+        try {
+            verify(persistenceProvider, times(1)).save(any(SpentAddress.class), Mockito.eq(A));
+        } catch (MockitoAssertionError e) {
+            throw new MockitoAssertionError("Save should have been called once in the provider");
+        }
     }
 
     @Test
@@ -89,7 +94,10 @@ public class SpentAddressesProviderImplTest {
             }
         };
         
-        verify(persistenceProvider, times(1)).saveBatch(Mockito.argThat(matcher));
+        try {
+            verify(persistenceProvider, times(1)).saveBatch(Mockito.argThat(matcher));
+        } catch (MockitoAssertionError e) {
+            throw new MockitoAssertionError("Savebatch should have been called once with a map of 2 pairs, in the provider");
+        }
     }
-
 }

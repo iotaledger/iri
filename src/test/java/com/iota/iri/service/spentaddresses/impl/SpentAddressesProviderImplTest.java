@@ -5,7 +5,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.any;
 
-import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
 

@@ -4,7 +4,7 @@
 ![GitHub release](https://img.shields.io/github/release/iotaledger/iri.svg)
 ![license](https://img.shields.io/github/license/iotaledger/iri.svg)
 
-# Trias StreamNet 
+# Trias StreamNet # 
 
 The trias-lab/iri repository is the main StreamNet reference implementation, 
 for the design details, please see yellow paper [[StreamNet]](https://github.com/wunder3605/iri/blob/dev/document/yellow\_paper/StreamNet/StreamNet.pdf). 
@@ -13,44 +13,56 @@ The original iri reference could be found at [[iri]](https://github.com/iotaledg
 -* **License:** GPLv3
 
 
-# Installing
+# Installing #
 
 The preferred option is that you compile yourself.
 The second option is that you utilize the provided jar, 
 which is released whenever there is a new update here: [Github Releases](https://github.com/trias-lab/iri/releases).
 
-## Compiling yourself  
+## Compiling yourself ##
 
 Make sure to have Maven and Java 8 installed on your computer.
 
-### To compile & package
-```
+### To compile & package ###
+```bash
 $ git clone https://github.com/trias-lab/iri
 $ cd iri
 $ mvn clean compile
 $ mvn package
 ```
 
+### To compiple docker ###
+
+```bash
+$ docker build -t <name>:<tag> .
+```
+
 This will create a `target` directory in which you will find the executable jar file that you can use.
 
-## Running yourself
+## Running yourself ##
 
-### How to run one node
+### How to run one node ###
 
+```bash
+$ cd scripts/examples/
+$ ./conflux_dag.sh
+$ ./start_cli.sh
+$ ./parallel_put_txn.sh
+$ ./get_balance.sh
 ```
-cd scripts/examples/
-./conflux_dag.sh
-./start_cli.sh
-./parallel_put_txn.sh
-./get_balance.sh
+
+### How to run two nodes ###
+
+```bash
+$ cd scripts/examples/
+$ ./conflux_dag_two_nodes.sh
+$ ./start_cli_two_nodes.sh
+$ ./parallel_put_txn_two_nodes.sh
+$ ./get_balance_two_nodes.sh
 ```
 
-### How to run two nodes
+### How to run docker ###
 
-```
-cd scripts/examples/
-./conflux_dag_two_nodes.sh
-./start_cli_two_nodes.sh
-./parallel_put_txn_two_nodes.sh
-./get_balance_two_nodes.sh
+```bash
+docker run -d --net=host --name <name> -v <local_data_dir>:/iri/data -v <neighbor_file>:/iri/conf/neighbors <name>:<tag> /entrypoint.sh
 ```

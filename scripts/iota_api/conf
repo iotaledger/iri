@@ -1,7 +1,7 @@
 [iota]
 addr = http://localhost:14700
 seed = EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9Q
-enableIpfs = True 
+enableIpfs = False 
 enableBatching = False 
 enableCompression = False
 listenPort = 5000

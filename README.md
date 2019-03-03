@@ -4,7 +4,7 @@
 ![GitHub release](https://img.shields.io/github/release/iotaledger/iri.svg)
 ![license](https://img.shields.io/github/license/iotaledger/iri.svg)
 
-# Trias StreamNet # 
+# Trias StreamNet #
 
 The trias-lab/iri repository is the main StreamNet reference implementation, 
 for the design details, please see yellow paper [[StreamNet]](https://github.com/wunder3605/iri/blob/dev/document/yellow\_paper/StreamNet/StreamNet.pdf). 

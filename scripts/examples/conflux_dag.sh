@@ -20,4 +20,5 @@ java -jar iri-1.5.5.jar --testnet \
                         --entrypoint-selector-algorithm "KATZ" \
                         --tip-sel-algo "CONFLUX" \
                         --ipfs-txns false \
+                        --batch-txns true \
                         &>  streamnet.log &

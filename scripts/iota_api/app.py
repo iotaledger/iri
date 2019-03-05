@@ -63,7 +63,11 @@ def send_to_ipfs_iota(tx_string, tx_num, tag):
         f.flush()
         f.close()
 
-        ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
+        (status, ipfs_hash) = commands.getstatusoutput(' '.join(['ipfs', 'add', filename, '-q']))
+        if status != 0:
+            print("[ERROR]Sending to ipfs failed -- '%s'" % ipfs_hash, file=sys.stderr)
+            return
+
         print("[INFO]Cache json %s in ipfs, the hash is %s." % (tx_string, ipfs_hash), file=sys.stderr)
 
         if tx_num == 1:

@@ -225,10 +225,10 @@ public class PearlDiver {
                 } else {
                     scratchpadIndex += -365;
                 }
-                final long delta = beta ^ scratchpadLow[scratchpadIndex];
+                final long delta = alpha & (scratchpadLow[scratchpadIndex] ^ beta);
                 
-                stateLow[stateIndex] = ~(delta & alpha);
-                stateHigh[stateIndex] = delta | (alpha ^ scratchpadHigh[scratchpadIndex]);
+                stateLow[stateIndex] = ~delta;
+                stateHigh[stateIndex] = (alpha ^ scratchpadHigh[scratchpadIndex]) | delta;
             }
         }
     }

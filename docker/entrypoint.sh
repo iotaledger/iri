@@ -31,5 +31,6 @@ exec java \
   --tip-sel-algo "CONFLUX" \
   --ipfs-txns false \
   --batch-txns true \
+  --neighbors "$neighbors" \
   --max-peers 21
   "$@"

@@ -12,13 +12,18 @@ package com.iota.iri.model;
 public class TagHash extends AbstractHash {
 
     /**
+     * Empty Constructor for a <tt>Tag</tt> hash identifier object. Creates a placeholder <tt>Tag</tt> hash identifier
+     * object with no properties.
+     */
+    public TagHash() { }
+
+    /**
      * Constructor for a <tt>Tag</tt> hash identifier using a source array and starting point
      *
      * @param tagBytes The trit or byte array source that the object will be generated from
      * @param offset The starting point in the array for the beginning of the Hash object
      * @param tagSizeInBytes The size of the Hash object that is to be created
-     */
-    protected TagHash(byte[] tagBytes, int offset, int tagSizeInBytes) {
+     */    protected TagHash(byte[] tagBytes, int offset, int tagSizeInBytes) {
         super(tagBytes, offset, tagSizeInBytes);
     }
 }

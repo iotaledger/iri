@@ -3,21 +3,28 @@ package com.iota.iri.conf;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 
 import java.util.Objects;
 
 public class TestnetConfig extends BaseIotaConfig {
 
-    protected String coordinator = Defaults.COORDINATOR_ADDRESS;
+    protected Hash coordinator = Defaults.COORDINATOR_ADDRESS;
+    protected int numberOfKeysInMilestone = Defaults.KEYS_IN_MILESTONE;
+    protected int maxMilestoneIndex = Defaults.MAX_MILESTONE_INDEX;
+    protected int coordinatorSecurityLevel = Defaults.COORDINATOR_SECURITY_LEVEL;
+
     protected boolean dontValidateTestnetMilestoneSig = Defaults.DONT_VALIDATE_MILESTONE_SIG;
     protected String snapshotFile = Defaults.SNAPSHOT_FILE;
     protected String snapshotSignatureFile = Defaults.SNAPSHOT_SIG;
     protected long snapshotTime = Defaults.SNAPSHOT_TIME;
     protected int mwm = Defaults.MWM;
     protected int milestoneStartIndex = Defaults.MILESTONE_START_INDEX;
-    protected int numberOfKeysInMilestone = Defaults.KEYS_IN_MILESTONE;
     protected int transactionPacketSize = Defaults.PACKET_SIZE;
     protected int requestHashSize = Defaults.REQUEST_HASH_SIZE;
+    protected SpongeFactory.Mode coordinatorSignatureMode = Defaults.COORDINATOR_SIGNATURE_MODE;
 
     public TestnetConfig() {
         super();
@@ -32,14 +39,14 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @Override
-    public String getCoordinator() {
+    public Hash getCoordinator() {
         return coordinator;
     }
 
     @JsonProperty
     @Parameter(names = "--testnet-coordinator", description = MilestoneConfig.Descriptions.COORDINATOR)
     protected void setCoordinator(String coordinator) {
-        this.coordinator = coordinator;
+        this.coordinator = HashFactory.ADDRESS.create(coordinator);
     }
 
     @Override
@@ -51,6 +58,45 @@ public class TestnetConfig extends BaseIotaConfig {
     @Parameter(names = "--testnet-no-coo-validation", description = MilestoneConfig.Descriptions.DONT_VALIDATE_TESTNET_MILESTONE_SIG)
     protected void setDontValidateTestnetMilestoneSig(boolean dontValidateTestnetMilestoneSig) {
         this.dontValidateTestnetMilestoneSig = dontValidateTestnetMilestoneSig;
+    }
+
+    @Override
+    public int getNumberOfKeysInMilestone() {
+        return numberOfKeysInMilestone;
+    }
+
+    @JsonProperty("NUMBER_OF_KEYS_IN_A_MILESTONE")
+    @Parameter(names = "--milestone-keys", description = MilestoneConfig.Descriptions.NUMBER_OF_KEYS_IN_A_MILESTONE)
+    protected void setNumberOfKeysInMilestone(int numberOfKeysInMilestone) {
+        this.numberOfKeysInMilestone = numberOfKeysInMilestone;
+        this.maxMilestoneIndex = 1 << numberOfKeysInMilestone;
+    }
+
+    @Override
+    public int getMaxMilestoneIndex() {
+        return maxMilestoneIndex;
+    }
+
+    @Override
+    public int getCoordinatorSecurityLevel() {
+        return coordinatorSecurityLevel;
+    }
+
+    @JsonProperty("COORDINATOR_SECURITY_LEVEL")
+    @Parameter(names = "--testnet-coordinator-security-level", description = MilestoneConfig.Descriptions.COORDINATOR_SECURITY_LEVEL)
+    protected void setCoordinatorSecurityLevel(int coordinatorSecurityLevel) {
+        this.coordinatorSecurityLevel = coordinatorSecurityLevel;
+    }
+
+    @Override
+    public SpongeFactory.Mode getCoordinatorSignatureMode() {
+        return coordinatorSignatureMode;
+    }
+
+    @JsonProperty("COORDINATOR_SIGNATURE_MODE")
+    @Parameter(names = "--testnet-coordinator-signature-mode", description = MilestoneConfig.Descriptions.COORDINATOR_SIGNATURE_MODE)
+    protected void setCoordinatorSignatureMode(SpongeFactory.Mode coordinatorSignatureMode) {
+        this.coordinatorSignatureMode = coordinatorSignatureMode;
     }
 
     @Override
@@ -109,17 +155,6 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     @Override
-    public int getNumberOfKeysInMilestone() {
-        return numberOfKeysInMilestone;
-    }
-
-    @JsonProperty("NUMBER_OF_KEYS_IN_A_MILESTONE")
-    @Parameter(names = "--milestone-keys", description = SnapshotConfig.Descriptions.NUMBER_OF_KEYS_IN_A_MILESTONE)
-    protected void setNumberOfKeysInMilestone(int numberOfKeysInMilestone) {
-        this.numberOfKeysInMilestone = numberOfKeysInMilestone;
-    }
-
-    @Override
     public int getTransactionPacketSize() {
         return transactionPacketSize;
     }
@@ -160,8 +195,14 @@ public class TestnetConfig extends BaseIotaConfig {
     }
 
     public interface Defaults {
-        String COORDINATOR_ADDRESS = "EQQFCZBIHRHWPXKMTOLMYUYPCN9XLMJPYZVFJSAY9FQHCCLWTOLLUGKKMXYFDBOOYFBLBI9WUEILGECYM";
+        Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
+                "EQQFCZBIHRHWPXKMTOLMYUYPCN9XLMJPYZVFJSAY9FQHCCLWTOLLUGKKMXYFDBOOYFBLBI9WUEILGECYM");
         boolean DONT_VALIDATE_MILESTONE_SIG = false;
+        int COORDINATOR_SECURITY_LEVEL = 1;
+        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
+        int KEYS_IN_MILESTONE = 22;
+        int MAX_MILESTONE_INDEX = 1 << KEYS_IN_MILESTONE;
+
         String LOCAL_SNAPSHOTS_BASE_PATH = "testnet";
         String SNAPSHOT_FILE = "/snapshotTestnet.txt";
         int REQUEST_HASH_SIZE = 49;
@@ -169,9 +210,9 @@ public class TestnetConfig extends BaseIotaConfig {
         int SNAPSHOT_TIME = 1522306500;
         int MWM = 9;
         int MILESTONE_START_INDEX = 434525;
-        int KEYS_IN_MILESTONE = 22;
         int PACKET_SIZE = 1653;
         String DB_PATH = "testnetdb";
         String DB_LOG_PATH = "testnetdb.log";
+
     }
 }

@@ -13,6 +13,12 @@ package com.iota.iri.model;
 public class AddressHash extends AbstractHash {
 
     /**
+     * Empty Constructor for an <tt>Address</tt> hash identifier object. Creates a placeholder <tt>Address</tt> hash
+     * identifier object with no properties.
+     */
+    public AddressHash() { }
+
+    /**
      * Constructor for an <tt>Address</tt> hash identifier using a source array and starting point
      *
      * @param bytes The trit or byte array source that the object will be generated from

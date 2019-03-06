@@ -1,15 +1,15 @@
 package com.iota.iri.model;
 
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Objects;
-
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.model.safe.ByteSafe;
 import com.iota.iri.model.safe.TritSafe;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.utils.Converter;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * Base implementation of a hash object
@@ -19,6 +19,12 @@ public abstract class AbstractHash implements Hash, Serializable {
 
     private ByteSafe byteSafe;
     private TritSafe tritSafe;
+
+    /**
+     * Empty Constructor for a placeholder hash identifier object. Creates a hash identifier object with no properties.
+     */
+    public AbstractHash() {
+    }
 
     /**
      * Constructor for a hash object using a trit or byte source array. A null safe byte array of the

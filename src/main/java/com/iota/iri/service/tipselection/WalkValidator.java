@@ -15,7 +15,7 @@ public interface WalkValidator {
      * </p>
      *
      * @param transactionHash  Transaction hash to validate consistency of.
-     * @return  True iff tail is valid.
+     * @return  <tt>true</tt> if tail is valid, <tt>false</tt> otherwise.
      * @throws Exception If Validation fails to execute
      */
     boolean isValid(Hash transactionHash) throws Exception;

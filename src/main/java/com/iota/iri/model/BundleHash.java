@@ -14,6 +14,12 @@ package com.iota.iri.model;
 public class BundleHash extends AbstractHash {
 
     /**
+     * Empty Constructor for a <tt>Bundle</tt> hash identifier object. Creates a placeholder <tt>Bundle</tt> hash
+     * identifier object with no properties.
+     */
+    public BundleHash() { }
+
+    /**
      * Constructor for a <tt>Bundle</tt> hash identifier using a source array and starting point
      *
      * @param bytes The trit or byte array source that the object will be generated from

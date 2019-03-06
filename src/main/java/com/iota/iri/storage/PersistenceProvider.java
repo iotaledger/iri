@@ -44,11 +44,13 @@ public interface PersistenceProvider {
 
     /**
      * Atomically delete all {@code models}.
-     * @param models key value pairs that to be expunged from the db
-     * @throws Exception
+     * @param models key value pairs that to be expunged from the db.
+     * @throws Exception if data could not be expunged from the db.
      */
     void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception;
 
     void clear(Class<?> column) throws Exception;
     void clearMetadata(Class<?> column) throws Exception;
+
+    List<byte[]> loadAllKeysFromTable(Class<? extends Persistable> model);
 }

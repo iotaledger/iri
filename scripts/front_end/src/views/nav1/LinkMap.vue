@@ -1,20 +1,19 @@
 <template>
     <el-form ref="form" :model="form" label-width="80px" @submit.prevent="onSubmit"
-             style="margin:20px;width:60%;min-width:600px;">
+             style="margin:20px;width:100%;min-width:600px;">
         <el-form-item>
             <label class="form-lable">DagAddress：</label>
             <el-input v-model="form.dag" class="input-small" placeholder="Dag server default localhost"
                       @change="setDag"/>
             <label class="form-lable">Period：</label>
             <el-input v-model="form.period" class="input-small" placeholder="Please input period" @change="setPeriod"/>
-            <el-input v-model="form.numrank" class="input-small" placeholder="Please input numrank"
-                      @change="setNumrank"/>
+            <label class="form-lable">numRank：</label>
+            <el-input v-model="form.numRank" class="input-small" placeholder="Please input numRank"
+                      @change="setNumRank"/>
             <el-button type="primary" @click="queryData">QueryNodes</el-button>
         </el-form-item>
         <el-form-item>
-            <div style="text-align: center;">
                 <textarea id="dagResult" class="textarea-dag-result"></textarea>
-            </div>
         </el-form-item>
     </el-form>
 </template>
@@ -28,7 +27,7 @@
                 form: {
                     dag: '',
                     period: '',
-                    numrank: ''
+                    numRank: ''
                 }
             }
         },
@@ -42,14 +41,15 @@
             setPeriod(val) {
                 requestData.period = val;
             },
-            setNumrank(val) {
+            setNumRank(val) {
                 requestData.numRank = val;
             },
             queryData() {
                 $("#dagResult").val("");
                 let requestUrl = "http://" + dagUrl || window.location.host + "/api/QueryData";
                 this.axios.post(requestUrl, requestData).then(res => {//success callback
-                    showResultMessage(res);
+                    let data = res.data["data"];
+                    showResultMessage(data);
                 }).then(res => {//error callback
                     console.error(res)
                 })
@@ -80,8 +80,9 @@
 
     .textarea-dag-result {
         resize: none;
-        height: 370px;
-        width: 790px;
-        line-height: 2;
+        height: 400px;
+        width: 810px;
+        line-height: 1.5;
+        margin-left: 50px;
     }
 </style>

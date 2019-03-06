@@ -49,7 +49,9 @@
 					return;
 				}
 				this.axios.post("/api/AddNode",requestData).then(res =>{//success callback
-
+					if(res.data["code"] == 1){
+						alert("addNode success!")
+					}
 				}).then(res =>{//error callback
 					console.error(res)
 				})

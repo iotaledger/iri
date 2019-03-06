@@ -255,8 +255,8 @@ public class Tangle {
     }
 
     public Hash getMaxScoreHashOnLevel(int depth){
-        for(PersistenceProvider provider : persistenceProviders){
-            if (provider instanceof  LocalInMemoryGraphProvider){
+        for(PersistenceProvider provider : persistenceProviders) {
+            if (provider instanceof  LocalInMemoryGraphProvider) {
                 return provider.getPivotalHash(depth);
             }
         }

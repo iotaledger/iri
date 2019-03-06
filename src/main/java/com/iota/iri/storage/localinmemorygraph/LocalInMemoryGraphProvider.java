@@ -1,9 +1,11 @@
 package com.iota.iri.storage.localinmemorygraph;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.service.tipselection.impl.CumWeightScore;
 import com.iota.iri.service.tipselection.impl.KatzCentrality;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -297,10 +299,16 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     private void updateScore(Hash vet) {
         try {
-            score.put(vet, 1.0 / (score.size() + 1));
-            KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
-            centrality.setScore(score);
-            score = centrality.compute();
+            if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
+                if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
+                    score = CumWeightScore.update(graph, score, vet);
+                } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
+                    score.put(vet, 1.0 / (score.size() + 1));
+                    KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
+                    centrality.setScore(score);
+                    score = centrality.compute();
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(System.out));
         }
@@ -344,8 +352,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public void computeScore() {
         try {
-            KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
-            score = centrality.compute();
+            if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
+                if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
+                    score = CumWeightScore.compute(revGraph, graph, getGenesis());
+                } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
+                    KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
+                    score = centrality.compute();
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(System.out));
         }
@@ -527,9 +541,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         do {
             Hash parent = parentGraph.get(block);
             List<Hash> subTopOrder = new ArrayList<>();
-            //List<Hash> diff = new ArrayList<>(past(block));
-            //diff.removeAll(past(parent));
-            List<Hash> diff = getDiffSet(block, parent, covered);
+            List<Hash> diff = new ArrayList<>(past(block));
+            diff.removeAll(past(parent));
+            //List<Hash> diff = getDiffSet(block, parent, covered);
             while (diff.size() != 0) {
                 Map<Hash, Set<Hash>> subGraph = buildSubGraph(diff);
                 List<Hash> noBeforeInTmpGraph = subGraph.entrySet().stream().filter(e -> CollectionUtils.isEmpty(e.getValue())).map(Map.Entry::getKey).collect(Collectors.toList());

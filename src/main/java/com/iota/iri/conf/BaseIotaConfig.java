@@ -91,6 +91,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     private String weightCalAlgo = Defaults.WEIGHT_CAL_ALGO;
     private String entryPointSelAlgo = Defaults.ENTRY_POINT_CAL_ALGO;
     private String tipSelectorAlgo = Defaults.TIP_SELECTOR_ALGO;
+    private String confluxScoreAlgo = Defaults.CONFLUX_SCORE_ALGO;
     private String walkValidator = Defaults.WALK_VALIDATOR;
     private String ledgerValidator = Defaults.LEDGER_VALIDATOR;
 
@@ -834,6 +835,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
+    @Parameter(names = "--conflux-score-algo", description = TipSelConfig.Descriptions.CONFLUX_SCORE_ALGO)
+    public void setConfluxScoreAlgo(String confluxScoreAlgo) {
+        this.confluxScoreAlgo = confluxScoreAlgo;
+    }
+
+    @Override
+    public String getConfluxScoreAlgo() {
+        return confluxScoreAlgo;
+    }
+
+    @JsonProperty
     @Parameter(names = "--tip-sel-algo", description = TipSelConfig.Descriptions.TIP_SEL_ALGO)
     protected void setTipSelector(String tipSelectorAlgo) {
         this.tipSelectorAlgo = tipSelectorAlgo;
@@ -940,6 +952,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String WEIGHT_CAL_ALGO = "CUM_WEIGHT";
         String ENTRY_POINT_CAL_ALGO = "DEFAULT";
         String TIP_SELECTOR_ALGO = "MCMC";
+        String CONFLUX_SCORE_ALGO = "CUM_WEIGHT";
         String WALK_VALIDATOR = "DEFAULT";
         String LEDGER_VALIDATOR = "DEFAULT";
 

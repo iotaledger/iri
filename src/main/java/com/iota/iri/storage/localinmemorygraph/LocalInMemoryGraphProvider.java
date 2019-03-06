@@ -520,14 +520,16 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public List<Hash> confluxOrder(Hash block) {
         LinkedList<Hash> list = new LinkedList<>();
+        Set<Hash> covered = new HashSet<Hash>();
         if (block == null || !graph.keySet().contains(block)) {
             return list;
         }
         do {
             Hash parent = parentGraph.get(block);
             List<Hash> subTopOrder = new ArrayList<>();
-            List<Hash> diff = new ArrayList<>(past(block));
-            diff.removeAll(past(parent));
+            //List<Hash> diff = new ArrayList<>(past(block));
+            //diff.removeAll(past(parent));
+            List<Hash> diff = getDiffSet(block, parent, covered);
             while (diff.size() != 0) {
                 Map<Hash, Set<Hash>> subGraph = buildSubGraph(diff);
                 List<Hash> noBeforeInTmpGraph = subGraph.entrySet().stream().filter(e -> CollectionUtils.isEmpty(e.getValue())).map(Map.Entry::getKey).collect(Collectors.toList());
@@ -537,20 +539,24 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 diff.removeAll(noBeforeInTmpGraph);
             }
             list.addAll(0, subTopOrder);
+            covered.addAll(subTopOrder);
             block = parentGraph.get(block);
         } while (parentGraph.get(block) != null && parentGraph.keySet().contains(block));
         return list;
     }
 
     public Map<Hash, Set<Hash>> buildSubGraph(List<Hash> blocks) {
-        Map<Hash, Set<Hash>> newGraph = new HashMap<>(graph.size());
-        graph.entrySet().forEach(e -> newGraph.put(e.getKey(), new HashSet<>(e.getValue())));
         Map<Hash, Set<Hash>> subMap = new HashMap<>();
-        for (Map.Entry<Hash, Set<Hash>> entry : newGraph.entrySet()) {
-            if (blocks.contains(entry.getKey())) {
-                entry.getValue().removeIf(hash -> !blocks.contains(hash));
-                subMap.put(entry.getKey(), entry.getValue());
+        for(Hash h : blocks) {
+            Set<Hash> s = graph.get(h);
+            Set<Hash> ss = new HashSet<>();
+            
+            for (Hash hh : s) {
+                if(blocks.contains(hh)) {
+                    ss.add(hh);
+                }
             }
+            subMap.put(h, ss);
         }
         return subMap;
     }
@@ -626,6 +632,51 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             past.add(h);
         }
         return past;
+    }
+
+    private List<Hash> getDiffSet(Hash block, Hash parent, Set<Hash> covered) {
+        if (graph.get(block) == null) {
+            return Collections.emptyList();
+        }
+
+        Set<Hash> ret = new HashSet<Hash> ();
+        LinkedList<Hash> queue = new LinkedList<>();
+        queue.add(block);
+        Hash h;
+        while (!queue.isEmpty()) {
+            h = queue.pop();
+            for (Hash e : graph.get(h)) {
+                if (graph.containsKey(e) && !ret.contains(e) && !ifCovered(e, parent, covered)) {
+                    queue.add(e);
+                }
+            }
+            ret.add(h);
+        }
+        return new ArrayList<Hash>(ret);
+    }
+
+    private boolean ifCovered(Hash block, Hash ancestor, Set<Hash> covered) {
+        if (revGraph.get(block) == null) {
+            return false;
+        }
+
+        Set<Hash> visisted = new HashSet<>();
+        LinkedList<Hash> queue = new LinkedList<>();
+        queue.add(block);
+        Hash h;
+        while (!queue.isEmpty()) {
+            h = queue.pop();
+            for (Hash e : revGraph.get(h)) {
+                if (e != ancestor && revGraph.containsKey(e) && !visisted.contains(e) && !covered.contains(e)) {
+                    queue.add(e);
+                } else {
+                    if(e == ancestor) {
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     public int getNumOfTips() {

@@ -46,9 +46,9 @@
             },
             queryData() {
                 $("#dagResult").val("");
-                let requestUrl = "http://" + dagUrl || window.location.host + "/api/QueryData";
+                let requestUrl = "http://" + (dagUrl || window.location.host) + "/api/QueryData";
                 this.axios.post(requestUrl, requestData).then(res => {//success callback
-                    let data = res.data["data"];
+                    let data = res["data"];
                     showResultMessage(data);
                 }).then(res => {//error callback
                     console.error(res)

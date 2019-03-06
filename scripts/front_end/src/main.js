@@ -42,5 +42,10 @@ new Vue({
     store,
     //components: { App }
     render: h => h(App)
-}).$mount('#app')
+}).$mount('#app');
+
+function isValidIP(ip) {
+    var reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/
+    return reg.test(ip);
+}
 

@@ -21,6 +21,7 @@
 
 <script>
 	let requestData = {};
+	requestData.Score = "1";
 	export default {
 		data() {
 			return {
@@ -60,7 +61,16 @@
 	}
 
 	function checkRequestData(){
-		return !!(requestData.Attestee&&requestData.Attester&&requestData.Score)
+		if(!requestData.Attestee||requestData.Attestee==""||!isValidIP(requestData.Attestee)){
+			return false;
+		}
+		if(!requestData.Attester||requestData.Attester==""||!isValidIP(requestData.Attester)){
+			return false;
+		}
+		if(!requestData.Score||requestData.Score==""){
+			return false;
+		}
+		return true;
 	}
 
 </script>

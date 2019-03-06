@@ -1,60 +1,72 @@
 <template>
 	<el-form ref="form" :model="form" label-width="80px" @submit.prevent="onSubmit" style="margin:20px;width:70%;min-width:600px;">
 		<el-form-item>
-			<label class="form-lable">Attestee2：</label>
-			<el-select v-model="form.region" placeholder="请选择IP">
-				<el-option label="192.168.199.106" value="192.168.199.106"></el-option>
-				<el-option label="192.168.199.107" value="192.168.199.107"></el-option>
-				<el-option label="192.168.199.108" value="192.168.199.108"></el-option>
-				<el-option label="192.168.199.109" value="192.168.199.109"></el-option>
-			</el-select>
-			<label class="form-lable">Attestee2：</label>
-			<el-select v-model="form.region" placeholder="请选择IP">
-				<el-option label="192.168.199.106" value="192.168.199.106"></el-option>
-				<el-option label="192.168.199.107" value="192.168.199.107"></el-option>
-				<el-option label="192.168.199.108" value="192.168.199.108"></el-option>
-				<el-option label="192.168.199.109" value="192.168.199.109"></el-option>
-			</el-select>
+			<label class="form-lable">Attester：</label>
+			<el-input v-model="form.attester" class="input-small" placeholder="Please input the attester ip" @change="setAttester"/>
+			<label class="form-lable">Attestee：</label>
+			<el-input v-model="form.attestee" class="input-small" placeholder="Please input the attestee ip" @change="setAttestee"/>
 			<label class="form-lable">Score</label>
-			<el-radio-group v-model="form.resource">
+			<el-radio-group v-model="form.score" @change="setScore">
 				<el-radio label="1"></el-radio>
 				<el-radio label="0"></el-radio>
 			</el-radio-group>
 		</el-form-item>
 		<el-form-item>
 			<div style="text-align: center;">
-				<el-button type="primary">Submit</el-button>
+				<el-button type="primary" @click="addNode">AddNode</el-button>
 			</div>
 		</el-form-item>
 	</el-form>
 </template>
 
 <script>
+	let requestData = {};
 	export default {
 		data() {
 			return {
 				form: {
-					name: '',
-					region: '',
-					date1: '',
-					date2: '',
-					delivery: false,
-					type: [],
-					resource: '',
-					desc: ''
+					attester: '',
+					attestee: '',
+					score: '1'
 				}
 			}
 		},
 		methods: {
 			onSubmit() {
 				console.log('submit!');
+			},
+			setAttester(val){
+				requestData.Attester = val;
+			},
+			setAttestee(val){
+				requestData.Attestee = val;
+			},
+			setScore(val){
+				requestData.Score = val;
+			},
+			addNode(){
+				if(!checkRequestData){
+					return;
+				}
+				this.axios.post("/api/AddNode",requestData).then(res =>{//success callback
+
+				}).then(res =>{//error callback
+					console.error(res)
+				})
 			}
 		}
+	}
+
+	function checkRequestData(){
+		return !!(requestData.Attestee&&requestData.Attester&&requestData.Score)
 	}
 
 </script>
 <style>
 	.form-lable{
 		margin-left: 50px;
+	}
+	.input-small{
+		width: 150px;
 	}
 </style>

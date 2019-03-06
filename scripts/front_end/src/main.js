@@ -10,12 +10,17 @@ import Vuex from 'vuex'
 //import NProgress from 'nprogress'
 //import 'nprogress/nprogress.css'
 import routes from './routes'
+import axios from 'axios'
+import Vueaxios from 'vue-axios'
+
 
 import 'font-awesome/css/font-awesome.min.css'
 
-Vue.use(ElementUI)
-Vue.use(VueRouter)
-Vue.use(Vuex)
+Vue.use(ElementUI);
+Vue.use(VueRouter);
+Vue.use(Vuex);
+Vue.use(Vueaxios,axios);
+
 
 //NProgress.configure({ showSpinner: false });
 

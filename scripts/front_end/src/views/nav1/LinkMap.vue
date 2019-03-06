@@ -1,45 +1,87 @@
 <template>
-	<el-form ref="form" :model="form" label-width="80px" @submit.prevent="onSubmit" style="margin:20px;width:60%;min-width:600px;">
-		<el-form-item>
-			<label class="form-lable">DagAddress：</label>
-			<el-select v-model="form.dag" placeholder="Choose a dag server">
-				<el-option label="192.168.199.106" value="192.168.199.106"></el-option>
-				<el-option label="192.168.199.107" value="192.168.199.107"></el-option>
-				<el-option label="192.168.199.108" value="192.168.199.108"></el-option>
-				<el-option label="192.168.199.109" value="192.168.199.109"></el-option>
-			</el-select>
-			<label class="form-lable">Period：</label>
-			<el-select v-model="form.period" placeholder="Choose a period">
-				<el-option label="period1" value="period1"></el-option>
-				<el-option label="period2" value="period2"></el-option>
-			</el-select>
-			<el-button type="primary">Submit</el-button>
-		</el-form-item>
-		<el-form-item>
-			<div style="text-align: center;">show result list</div>
-		</el-form-item>
-	</el-form>
+    <el-form ref="form" :model="form" label-width="80px" @submit.prevent="onSubmit"
+             style="margin:20px;width:60%;min-width:600px;">
+        <el-form-item>
+            <label class="form-lable">DagAddress：</label>
+            <el-input v-model="form.dag" class="input-small" placeholder="Dag server default localhost"
+                      @change="setDag"/>
+            <label class="form-lable">Period：</label>
+            <el-input v-model="form.period" class="input-small" placeholder="Please input period" @change="setPeriod"/>
+            <el-input v-model="form.numrank" class="input-small" placeholder="Please input numrank"
+                      @change="setNumrank"/>
+            <el-button type="primary" @click="queryData">QueryNodes</el-button>
+        </el-form-item>
+        <el-form-item>
+            <div style="text-align: center;">
+                <textarea id="dagResult" class="textarea-dag-result"></textarea>
+            </div>
+        </el-form-item>
+    </el-form>
 </template>
 
 <script>
-	export default {
-		data() {
-			return {
-				form: {
-					dag: '',
-					period: ''
-				}
-			}
-		},
-		methods: {
-			onSubmit() {
-				console.log('submit!');
-			}
-		}
-	}
+    let requestData = {};
+    let dagUrl;
+    export default {
+        data() {
+            return {
+                form: {
+                    dag: '',
+                    period: '',
+                    numrank: ''
+                }
+            }
+        },
+        methods: {
+            onSubmit() {
+                console.log('submit!');
+            },
+            setDag(val) {
+                dagUrl = val
+            },
+            setPeriod(val) {
+                requestData.period = val;
+            },
+            setNumrank(val) {
+                requestData.numRank = val;
+            },
+            queryData() {
+                $("#dagResult").val("");
+                let requestUrl = "http://" + dagUrl || window.location.host + "/api/QueryData";
+                this.axios.post(requestUrl, requestData).then(res => {//success callback
+                    showResultMessage(res);
+                }).then(res => {//error callback
+                    console.error(res)
+                })
+            }
+        }
+    }
+
+    function showResultMessage(data) {
+        if (data.constructor != Array) {//illegal data
+            return;
+        }
+        let areaVal = "";
+        //requestData.Attestee&&requestData.Attester&&requestData.Score
+        data.forEach(function (item) {
+            areaVal += "Attestee:'" + item["Attestee"] + "',Attester:'" + item["Attester"] + "',Score:'" + item["Score"] + "'\n"
+        })
+        $("#dagResult").val(areaVal)
+    }
 </script>
 <style>
-	.form-lable{
-		margin-left: 50px;
-	}
+    .form-lable {
+        margin-left: 50px;
+    }
+
+    .input-small {
+        width: 150px;
+    }
+
+    .textarea-dag-result {
+        resize: none;
+        height: 370px;
+        width: 790px;
+        line-height: 2;
+    }
 </style>

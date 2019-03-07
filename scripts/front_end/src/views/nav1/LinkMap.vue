@@ -13,7 +13,7 @@
             <el-button type="primary" @click="queryData">QueryNodes</el-button>
         </el-form-item>
         <el-form-item>
-                <textarea id="dagResult" class="textarea-dag-result"></textarea>
+            <textarea id="dagResult" class="textarea-dag-result"></textarea>
         </el-form-item>
     </el-form>
 </template>
@@ -42,16 +42,16 @@
                 requestData.period = val;
             },
             setNumRank(val) {
-                requestData.numRank = val;
+                requestData.numRank = val * 1;
             },
             queryData() {
                 $("#dagResult").val("");
                 let requestUrl = "http://" + (dagUrl || window.location.host) + "/api/QueryData";
                 this.axios.post(requestUrl, requestData).then(res => {//success callback
-                    let data = res["data"];
+                    let data = res.data["Data"];
                     showResultMessage(data);
-                }).then(res => {//error callback
-                    console.error(res)
+                }).catch(error =>{
+                    console.error(error)
                 })
             }
         }
@@ -84,5 +84,6 @@
         width: 810px;
         line-height: 1.5;
         margin-left: 50px;
+        font-family: Helvetica Neue, Helvetica, PingFang SC, Hiragino Sans GB, Microsoft YaHei, SimSun, sans-serif;
     }
 </style>

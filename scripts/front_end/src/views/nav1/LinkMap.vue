@@ -39,7 +39,7 @@
                 dagUrl = val
             },
             setPeriod(val) {
-                requestData.period = val;
+                requestData.period = val * 1;
             },
             setNumRank(val) {
                 requestData.numRank = val * 1;
@@ -50,7 +50,7 @@
                 this.axios.post(requestUrl, requestData).then(res => {//success callback
                     let data = res.data["Data"];
                     showResultMessage(data);
-                }).catch(error =>{
+                }).catch(error => {
                     console.error(error)
                 })
             }
@@ -58,14 +58,14 @@
     }
 
     function showResultMessage(data) {
-        if (data.constructor != Array) {//illegal data
+        if (!data || data.constructor != Array) {//illegal data
             return;
         }
         let areaVal = "";
         //requestData.Attestee&&requestData.Attester&&requestData.Score
         data.forEach(function (item) {
-            areaVal += "Attestee:'" + item["Attestee"] + "',Attester:'" + item["Attester"] + "',Score:'" + item["Score"] + "'\n"
-        })
+            areaVal += "Attestee:'" + item["attestee"] + "',Attester:'" + item["attester"] + "',Score:'" + item["score"].toFixed(2) + "'\n"
+        });
         $("#dagResult").val(areaVal)
     }
 </script>

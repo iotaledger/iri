@@ -78,4 +78,13 @@ public class RocksDBPersistenceProviderTest {
                     rocksDBPersistenceProvider.get(Transaction.class, index).bytes());
         }
     }
+
+    @Test
+    public void testTxnCount() {
+        long oldCount = rocksDBPersistenceProvider.getTotalTxns();
+        long number = 100;
+        rocksDBPersistenceProvider.addTxnCount(number);
+        long newCount = rocksDBPersistenceProvider.getTotalTxns();
+        Assert.assertEquals(oldCount + number, newCount);
+    }
 }

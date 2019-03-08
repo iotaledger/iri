@@ -52,12 +52,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         topOrderStreaming = new HashMap<>();
         score = new HashMap<>();
         totalDepth = 0;
-        try {
-            buildGraph();
-            buildPivotChain();
-        } catch (NullPointerException e) {
-            ; // initialization failed because tangle has nothing
-        }
     }
 
     //FIXME for debug
@@ -79,6 +73,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     public void init() throws Exception {
+        try {
+            buildGraph();
+//            buildPivotChain();
+        } catch (NullPointerException e) {
+            ; // initialization failed because tangle has nothing
+        }
     }
 
     public boolean isAvailable() {
@@ -240,6 +240,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 revGraph.get(trunk).add(model.getHash());
                 revGraph.get(branch).add(model.getHash());
 
+                //parentGraph
+                parentGraph.put(model.getHash(), trunk);
+
+                if (parentRevGraph.get(trunk) == null) {
+                    parentRevGraph.put(trunk, new HashSet<>());
+                }
+                parentRevGraph.get(trunk).add(model.getHash());
+
                 // update degrees
                 if (degs.get(model.getHash()) == null || degs.get(model.getHash()) == 0) {
                     degs.put(model.getHash(), 2);
@@ -251,6 +259,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     degs.put(branch, 0);
                 }
 
+                updateScore(model.getHash());
                 one = tangle.next(Transaction.class, one.low);
             }
             computeToplogicalOrder();
@@ -708,3 +717,4 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ret;
     }
 }
+

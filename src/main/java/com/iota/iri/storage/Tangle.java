@@ -12,7 +12,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.List;
 import java.util.Set;
 
@@ -22,17 +21,6 @@ import java.util.Set;
  */
 public class Tangle {
     private static final Logger log = LoggerFactory.getLogger(Tangle.class);
-
-    // TODO: make 'txnCount' persistable.
-    private static AtomicLong txnCount = new AtomicLong(0);;
-
-    public void addTxnCount(long count) {
-        txnCount.addAndGet(count);
-    }
-
-    public long getTxnCount() {
-        return txnCount.get();
-    }
 
     public static final Map<String, Class<? extends Persistable>> COLUMN_FAMILIES =
             new LinkedHashMap<String, Class<? extends Persistable>>() {{
@@ -310,4 +298,26 @@ public class Tangle {
         return exists;
     }
     */
+
+    public void addTxnCount(long count) {
+        for (PersistenceProvider provider : this.persistenceProviders) {
+            provider.addTxnCount(count);
+        }
+    }
+
+    public long getTxnCount() {
+        long count = -1;
+        for (PersistenceProvider provider : this.persistenceProviders) {
+            try {
+                if ((count = provider.getTotalTxns()) != 0) {
+                    break;
+                }
+            } catch (Exception e) {
+
+                e.printStackTrace();
+                count = 0;
+            }
+        }
+        return count;
+    }
 }

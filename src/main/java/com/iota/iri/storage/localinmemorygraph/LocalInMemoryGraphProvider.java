@@ -269,7 +269,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     private void updateTopologicalOrder(Hash vet, Hash trunk, Hash branch) {
-        if (topOrderStreaming.isEmpty()) { 
+        if (topOrderStreaming.isEmpty()) {
             topOrderStreaming.put(1, new HashSet<>());
             topOrderStreaming.get(1).add(vet);
             lvlMap.put(vet, 1);
@@ -407,10 +407,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
         } catch(Exception e) {
             e.printStackTrace();
-        } 
+        }
     }
 
-    
+
     //FIXME for debug :: for graphviz visualization
     void printRevGraph(HashMap<Hash, Set<Hash>> revGraph) {
         for (Hash key : revGraph.keySet()) {
@@ -509,9 +509,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         // TODO implement this
     }
 
+    public void addTxnCount(long count) {
+        // TODO implement this
+    }
+
     public long getTotalTxns() {
-        long ret = 0;
-        return ret;
+        return 0;
     }
 
     public List<Hash> totalTopOrder() {

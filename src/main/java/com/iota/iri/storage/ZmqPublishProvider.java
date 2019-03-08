@@ -178,6 +178,10 @@ public class ZmqPublishProvider implements PersistenceProvider {
 
     }
 
+    public void addTxnCount(long count) {
+        // TODO implement this
+    }
+
     public long getTotalTxns() throws Exception {
         return 0;
     }

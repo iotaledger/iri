@@ -15,10 +15,12 @@ import org.rocksdb.util.SizeUnit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
+import java.io.*;
+import java.nio.ByteBuffer;
 import java.nio.file.Paths;
 import java.security.SecureRandom;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 
 public class RocksDBPersistenceProvider implements PersistenceProvider {
@@ -46,6 +48,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     private BloomFilter bloomFilter;
     private boolean available;
 
+    private static final String txnCountFileName = "TXN_COUNT";
+    private AtomicLong txnCount = new AtomicLong(0);
+    private File txnCountFile;
+
     public RocksDBPersistenceProvider(String dbPath, String logPath, int cacheSize,
                                       Map<String, Class<? extends Persistable>> columnFamilies,
                                       Map.Entry<String, Class<? extends Persistable>> metadataColumnFamily) {
@@ -61,6 +67,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
     public void init() throws Exception {
         log.info("Initializing Database on " + dbPath);
         initDB(dbPath, logPath, columnFamilies);
+        initTxnsCount(dbPath);
         available = true;
         log.info("RocksDB persistence provider initialized.");
     }
@@ -530,8 +537,50 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         }
     }
 
-    public long getTotalTxns() throws Exception {
-        return 0;
+    private void initTxnsCount(String path) throws IOException {
+        String filePath = path + "/" + txnCountFileName;
+        txnCountFile = new File(filePath);
+
+        if (!txnCountFile.exists()) {
+            boolean b = txnCountFile.createNewFile();
+            if (!b) {
+                log.error("Creating TXN_COUNT file failed.");
+            }
+        }
+
+        FileInputStream fis = new FileInputStream(txnCountFile);
+        long count;
+        if (fis.available() == 0) {
+            count = 0;
+        } else {
+            // TODO: judge the count whether or not right.
+            byte[] bytes = new byte[Long.BYTES];
+            int c = fis.read(bytes);
+
+            ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+            buffer.put(bytes);
+            buffer.flip(); //need flip
+            count =  buffer.getLong();
+        }
+        txnCount.set(count);
+        fis.close();
+    }
+
+    @Override
+    public synchronized void addTxnCount(long count) {
+        try {
+            FileOutputStream fos = new FileOutputStream(txnCountFile);
+            fos.write(ByteBuffer.allocate(Long.BYTES).putLong(txnCount.addAndGet(count)).array());
+            fos.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            log.error("Writing to TX_COUNT filed");
+        }
+    }
+
+    @Override
+    public long getTotalTxns() {
+        return txnCount.get();
     }
 
     @Override

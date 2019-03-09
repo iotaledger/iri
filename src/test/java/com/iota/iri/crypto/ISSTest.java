@@ -78,6 +78,28 @@ public class ISSTest {
         }
     }
 
+    @Test
+    public void sigDigestISSInPlace() throws Exception {
+        int index = 0;
+        int nof = 1;
+        SpongeFactory.Mode[] modes = {SpongeFactory.Mode.KERL};
+        Hash[] hashes = {HashFactory.ADDRESS.create("DQMAVYJTIIQUCDHRIZAPYKFCFBTHNDAMHLYEEIEBSR9REQBBVUQOSDWFSGPTZFNQQTVMQPVUDHDTEZVSW")};
+        for (int i=0; i < modes.length; i++) {
+            SpongeFactory.Mode mode = modes[i];
+            byte[] seedTrits = Converter.allocateTritsForTrytes(seed.length());
+            Converter.trits(seed, seedTrits, 0);
+
+            byte[] subseed = ISS.subseed(mode, seedTrits, index);
+            byte[] key = ISS.key(mode, subseed, nof);
+            byte[] digest = new byte[Curl.HASH_LENGTH];
+            byte[] sig = Arrays.copyOfRange(key, 0, key.length);
+            ISSInPlace.digest(mode, sig, 0, key, 0, digest);
+            byte[] address = ISS.address(mode, digest);
+            Hash addressTrytes = HashFactory.ADDRESS.create(address);
+            assertEquals(hashes[i].toString(), addressTrytes.toString());
+        }
+    }
+
     public static Hash getRandomTransactionHash() {
         return HashFactory.TRANSACTION.create(getRandomTrits(Hash.SIZE_IN_TRITS));
     }

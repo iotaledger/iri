@@ -1464,8 +1464,10 @@ public class API {
         int blocksPerPeriod = (int)BaseIotaConfig.getInstance().getNumBlocksPerPeriod();
         int p = (int)period;
 //        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p);
-        int totalSize = provider.totalTopOrder().size();
-        List<Hash> retOrder = provider.totalTopOrder().subList(blocksPerPeriod*(p-1), blocksPerPeriod*p > totalSize ? totalSize : (blocksPerPeriod*p));
+        List<Hash> totalTopOrders = provider.totalTopOrder();
+        int totalSize = totalTopOrders.size();
+        List<Hash> retOrder = totalTopOrders.subList(blocksPerPeriod*(p-1) > totalSize ? totalSize : blocksPerPeriod*(p-1),
+                blocksPerPeriod*p > totalSize ? totalSize : (blocksPerPeriod*p));
 
         List<String> resArray = new ArrayList<String>();
         try {
@@ -1487,3 +1489,4 @@ public class API {
         }
     }
 }
+

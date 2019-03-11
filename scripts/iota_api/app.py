@@ -137,8 +137,21 @@ def hello_world():
 
 @app.route('/get_balance', methods=['GET'])
 def get_balance():
-    cache.get_balance('StreamNetCoin')
-    return 'ok'
+    req_json = request.get_json()
+
+    if req_json is None:
+        return 'error'
+
+    if not req_json.has_key(u'account'):
+        print("[ERROR]Account is needed.", file=sys.stderr)
+        return 'error'
+
+    account = req_json[u'account']
+    resp = cache.get_balance('StreamNetCoin', account)
+
+    balance = resp[u'balances'][0]
+    print("Balance of '%s' is [%s]" % (account, balance), file=sys.stderr)
+    return balance
 
 @app.route('/put_file', methods=['POST'])
 def put_file():

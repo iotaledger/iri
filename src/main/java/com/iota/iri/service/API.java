@@ -278,7 +278,11 @@ public class API {
                 }
                 case "getBalances": {
                     if(request.containsKey("cointype")) {
-                        return getStreamNetBalanceStatement(new ArrayList<String>()); // TODO fill in here
+                        String account = (String) request.get("account");
+                        log.info("getBalaces: account {}", account);
+                        List list = new ArrayList<String>();
+                        list.add(account);
+                        return getStreamNetBalanceStatement(list);
                     } else {
                         final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
                         final List<String> tips = request.containsKey("tips") ?
@@ -1073,10 +1077,19 @@ public class API {
 
     private AbstractResponse getStreamNetBalanceStatement(final List<String> addresses) {
         log.info("[StreamNet] balance is: \n" + TransactionData.getInstance().getData());
-        log.info("[StreamNet] graph is: \n");
-        LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
-        prov.printGraph(prov.graph, null);
-        return GetBalancesResponse.create(null, null, 0);
+        if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
+            log.info("[StreamNet] graph is: \n");
+            LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider) instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+            prov.printGraph(prov.graph, null);
+        }
+
+        List<String> balances = new LinkedList<>();
+        for (String addr: addresses) {
+            long balance = TransactionData.getInstance().getBalance(addr);
+            balances.add(Long.toString(balance));
+        }
+        final int index = instance.milestoneTracker.latestSnapshot.index();
+        return GetBalancesResponse.create(balances, null, index);
     }
 
     /**

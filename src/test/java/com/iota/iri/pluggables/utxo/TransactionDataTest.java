@@ -84,4 +84,14 @@ public class TransactionDataTest {
 
     }
 
+    @Test
+    public void testGetBalance() {
+        long balanceA = transactionData.getBalance("A");
+        long balanceB = transactionData.getBalance("B");
+        String txnStr = "{\"amnt\": 500, \"from\": \"A\", \"tag\": \"TX\", \"to\": \"B\"}";
+        transactionData.readFromStr(txnStr);
+        assert transactionData.getBalance("A") == balanceA - 500;
+        assert transactionData.getBalance("B") == balanceB + 500;
+    }
+
 }

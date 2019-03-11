@@ -60,13 +60,13 @@ public class GetNeighborsResponse extends AbstractResponse {
     static class Neighbor {
 
         private String address;
-        long numberOfAllTransactions;
-        long numberOfRandomTransactionRequests;
-        long numberOfNewTransactions;
-        long numberOfInvalidTransactions;
-        long numberOfStaleTransactions;
-        long numberOfSentTransactions;
-        String connectionType;
+        private long numberOfAllTransactions;
+        private long numberOfRandomTransactionRequests;
+        private long numberOfNewTransactions;
+        private long numberOfInvalidTransactions;
+        private long numberOfStaleTransactions;
+        private long numberOfSentTransactions;
+        private String connectionType;
 
         /**
          * The address of your neighbor

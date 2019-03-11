@@ -57,7 +57,7 @@ public class GetNeighborsResponse extends AbstractResponse {
      * 
      */
     @SuppressWarnings("unused")
-    static class Neighbor {
+    private static class Neighbor {
 
         private String address;
         private long numberOfAllTransactions;

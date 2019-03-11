@@ -57,7 +57,7 @@ public class GetNeighborsResponse extends AbstractResponse {
      * 
      */
     @SuppressWarnings("unused")
-    private static class Neighbor {
+    public static class Neighbor {
 
         private String address;
         private long numberOfAllTransactions;
@@ -138,7 +138,7 @@ public class GetNeighborsResponse extends AbstractResponse {
          * @param n the neighbor currently connected to this node
          * @return a new instance of {@link GetNeighborsResponse.Neighbor}
          */
-        static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
+        public static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
             Neighbor ne = new Neighbor();
             int port = n.getPort();
             ne.address = n.getAddress().getAddress().getHostAddress() + ":" + port;

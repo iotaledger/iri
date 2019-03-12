@@ -855,7 +855,7 @@ public class API {
         for (final TransactionViewModel transactionViewModel : elements) {
             //store transactions
             if(transactionViewModel.store(instance.tangle, instance.snapshotProvider.getInitialSnapshot())) {
-                transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
+                transactionViewModel.setArrivalTime(System.currentTimeMillis());
                 instance.transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
                 transactionViewModel.update(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), "sender");

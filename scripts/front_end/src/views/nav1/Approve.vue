@@ -25,19 +25,20 @@
 <script>
     let requestData = {};
     requestData.Score = "1";
+
     export default {
         data() {
             return {
                 form: {
-                    attester: '',
-                    attestee: '',
-                    score: '1'
+                    attester: "",
+                    attestee: "",
+                    score: "1"
                 }
             }
         },
         methods: {
             onSubmit() {
-                console.log('submit!');
+                console.log("submit!");
             },
             setAttester(val) {
                 requestData.Attester = val;
@@ -49,31 +50,33 @@
                 requestData.Score = val;
             },
             addNode() {
-                if (!checkRequestData) {
+                if (!checkRequestData()) {
                     return;
                 }
                 this.axios.post("/api/AddNode", requestData).then(res => {//success callback
-                    if (res.data["Code"] == 1) {
-                        alert("addNode success!")
+                    if (res.data["Code"] === 1) {
+                        alert("addNode success!");
                     }
                 }).catch(error => {//error callback
-                    console.error(error)
-                })
+                    console.error(error);
+                });
             }
         }
-    }
+    };
 
     function checkRequestData() {
-        if (!requestData.Attestee || requestData.Attestee == "" || !isValidIP(requestData.Attestee)) {
+        if (!requestData.Attestee || requestData.Attestee === "" || !isValidIP(requestData.Attestee)) {
             return false;
         }
-        if (!requestData.Attester || requestData.Attester == "" || !isValidIP(requestData.Attester)) {
+        if (!requestData.Attester || requestData.Attester === "" || !isValidIP(requestData.Attester)) {
             return false;
         }
-        if (!requestData.Score || requestData.Score == "") {
-            return false;
-        }
-        return true;
+        return !(!requestData.Score || requestData.Score === "");
+    }
+
+    function isValidIP(ip) {
+        let reg = /^(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])\.(\d{1,2}|1\d\d|2[0-4]\d|25[0-5])$/
+        return reg.test(ip);
     }
 
 </script>

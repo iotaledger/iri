@@ -25,15 +25,15 @@
         data() {
             return {
                 form: {
-                    dag: '',
-                    period: '',
-                    numRank: ''
+                    dag: "",
+                    period: "",
+                    numRank: ""
                 }
             }
         },
         methods: {
             onSubmit() {
-                console.log('submit!');
+                console.log("submit!");
             },
             setDag(val) {
                 dagUrl = val
@@ -51,22 +51,21 @@
                     let data = res.data["Data"];
                     showResultMessage(data);
                 }).catch(error => {
-                    console.error(error)
-                })
+                    console.error(error);
+                });
             }
         }
-    }
+    };
 
     function showResultMessage(data) {
-        if (!data || data.constructor != Array) {//illegal data
+        if (!data || data.constructor !== Array) {//illegal data
             return;
         }
         let areaVal = "";
-        //requestData.Attestee&&requestData.Attester&&requestData.Score
         data.forEach(function (item) {
-            areaVal += "Attestee:'" + item["attestee"] + "',Attester:'" + item["attester"] + "',Score:'" + item["score"].toFixed(2) + "'\n"
+            areaVal += "Attestee:'" + item["attestee"] + "',Attester:'" + item["attester"] + "',Score:'" + item["score"].toFixed(2) + "'\n";
         });
-        $("#dagResult").val(areaVal)
+        $("#dagResult").val(areaVal);
     }
 </script>
 <style>

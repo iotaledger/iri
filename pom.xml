@@ -125,6 +125,19 @@
             <artifactId>undertow-websockets-jsr</artifactId>
             <version>${undertow.version}</version>
         </dependency>
+        
+        <!-- RESTEasy Undertow Integration -->
+        <dependency>
+		    <groupId>org.jboss.resteasy</groupId>
+		    <artifactId>resteasy-undertow</artifactId>
+		    <version>3.6.3.Final</version>
+		</dependency>
+		
+		<dependency>
+		    <groupId>org.jboss.resteasy</groupId>
+		    <artifactId>resteasy-jackson-provider</artifactId>
+		    <version>3.6.3.Final</version>
+		</dependency>
 
         <!-- test dependencies -->
 

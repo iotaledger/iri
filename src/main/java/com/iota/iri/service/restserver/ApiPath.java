@@ -1,9 +1,7 @@
 package com.iota.iri.service.restserver;
 
 import java.io.IOException;
-import java.io.InputStream;
 
-import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
@@ -15,14 +13,13 @@ import javax.ws.rs.core.HttpHeaders;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Request;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.Status;
 
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.iota.iri.service.dto.AbstractResponse;
 
 @Path("")
-public class Test extends ApiCall {
+public class ApiPath extends ApiCall {
     
     @Context()
     private ApiProcessor requestMetadata;
@@ -36,7 +33,7 @@ public class Test extends ApiCall {
     @Context
     Request request;
     
-    public Test() {
+    public ApiPath() {
         
     }
     

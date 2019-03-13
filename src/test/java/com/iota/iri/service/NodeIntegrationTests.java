@@ -60,7 +60,7 @@ public class NodeIntegrationTests {
                     iotaNodes[i].tipsSelector, iotaNodes[i].tipsViewModel, iotaNodes[i].transactionValidator,
                     iotaNodes[i].latestMilestoneTracker);
             
-            api[i].init(new RestEasy());
+            api[i].init(new RestEasy(iotaNodes[i].configuration));
         }
         Node.uri("udp://localhost:14701").ifPresent(uri -> iotaNodes[0].node.addNeighbor(iotaNodes[0].node.newNeighbor(uri, true)));
         //Node.uri("udp://localhost:14700").ifPresent(uri -> iotaNodes[1].node.addNeighbor(iotaNodes[1].node.newNeighbor(uri, true)));

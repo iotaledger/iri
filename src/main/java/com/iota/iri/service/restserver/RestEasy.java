@@ -1,7 +1,5 @@
 package com.iota.iri.service.restserver;
 
-import static io.undertow.Handlers.path;
-
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
@@ -103,7 +101,7 @@ public class RestEasy extends Application implements RestConnector {
         
         server = new UndertowJaxrsServer();
         
-        info = server.undertowDeployment(Root.class);
+        info = server.undertowDeployment(RootPath.class);
         info.setDisplayName("Iota Realm");
         info.setDeploymentName("Iota Realm");
         info.setContextPath("/");
@@ -132,7 +130,7 @@ public class RestEasy extends Application implements RestConnector {
             }
         });
         
-        info.addInitialHandlerChainWrapper(handler -> {
+        info.addInnerHandlerChainWrapper(handler -> {
             return Handlers.path().addPrefixPath("/", new HttpHandler() {
                 @Override
                 public void handleRequest(final HttpServerExchange exchange) throws Exception {
@@ -160,14 +158,22 @@ public class RestEasy extends Application implements RestConnector {
         });
     }
 
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void start() {
-        Undertow.Builder builder = Undertow.builder()
-                .addHttpListener(configuration.getPort(), configuration.getApiHost());
-        server.start(builder);
-        server.deploy(info);
+        if (info != null) {
+            Undertow.Builder builder = Undertow.builder()
+                    .addHttpListener(configuration.getPort(), configuration.getApiHost());
+            server.start(builder);
+            server.deploy(info);
+        }
     }
     
+    /**
+     * {@inheritDoc}
+     */
     @Override
     public void stop() {
         server.stop();
@@ -262,6 +268,7 @@ public class RestEasy extends Application implements RestConnector {
         } else {
             response = this.processFunction.processFunction(body, exchange.getSourceAddress().getAddress());
         }
+
         sendResponse(exchange, response, beginningTime);
     }
     

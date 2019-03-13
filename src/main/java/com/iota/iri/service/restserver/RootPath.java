@@ -5,16 +5,12 @@ import java.util.Set;
 
 import javax.ws.rs.core.Application;
 
-public class Root extends Application {
-    
-    public Root(ApiProcessor processFunction) {
-        
-    }
+public class RootPath extends Application {
 
     @Override
     public Set<Class<?>> getClasses(){
        HashSet<Class<?>> classes = new HashSet<Class<?>>();
-       classes.add(Test.class);
+       classes.add(ApiPath.class);
        return classes;
     }
 }

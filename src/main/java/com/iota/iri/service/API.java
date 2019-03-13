@@ -229,7 +229,6 @@ public class API {
                                             Currently caught and turned into a {@link ExceptionResponse}.
      */
     private AbstractResponse process(final String requestString, InetAddress netAddress){
-
         try {
             // Request JSON data into map
             Map<String, Object> request;

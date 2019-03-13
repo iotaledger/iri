@@ -30,8 +30,7 @@ public abstract class ApiCall {
         }
 
         // Did the requester ask for a command?
-        final String command = (String) request.get("command");
-        if (command == null) {
+        if (getCommand() == null) {
             return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
         }
         return null;

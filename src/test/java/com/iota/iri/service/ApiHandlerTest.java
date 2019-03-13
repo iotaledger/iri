@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
 import java.io.IOException;
+import java.net.InetAddress;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -39,10 +40,9 @@ public class ApiHandlerTest {
         Mockito.when(apiconfig.getPort()).thenReturn(TestPortProvider.getPort());
         Mockito.when(apiconfig.getApiHost()).thenReturn(TestPortProvider.getHost());
         //Mockito.when(apiconfig.getRemoteAuth()).thenReturn("user:pass");
-
-                
+        
         this.server = new RestEasy(apiconfig);
-        this.server.init((String param) -> {
+        this.server.init((String param, InetAddress address) -> {
             System.out.println("called!");
             return null;
         });

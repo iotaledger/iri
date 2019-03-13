@@ -6,11 +6,9 @@ import com.google.gson.JsonSyntaxException;
 import com.iota.iri.BundleValidator;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
-import com.iota.iri.Iota;
 import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.conf.NetworkConfig;
 import com.iota.iri.controllers.*;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.PearlDiver;
@@ -32,6 +30,7 @@ import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
+
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.MapIdentityManager;
@@ -47,19 +46,15 @@ import io.undertow.security.impl.BasicAuthenticationMechanism;
 import io.undertow.server.HttpHandler;
 import io.undertow.server.HttpServerExchange;
 import io.undertow.util.*;
+
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.xnio.channels.StreamSinkChannel;
-import org.xnio.streams.ChannelInputStream;
-
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.InetSocketAddress;
+import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.ByteBuffer;
-import java.nio.charset.StandardCharsets;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -67,8 +62,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static io.undertow.Handlers.path;
 
 /**
  * <p>
@@ -135,14 +128,11 @@ public class API {
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
-    private final int maxBodyLength;
     private final boolean testNet;
 
     private final String[] features;
     
     //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
-    
-    private Undertow server;
 
     private final Gson gson = new GsonBuilder().create();
     private volatile PearlDiver pearlDiver = new PearlDiver();
@@ -194,168 +184,18 @@ public class API {
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestsList();
         maxGetTrytes = configuration.getMaxGetTrytes();
-        maxBodyLength = configuration.getMaxBodyLength();
         testNet = configuration.isTestnet();
 
         features = Feature.calculateFeatureNames(configuration);
     }
 
-    /**
-     * Prepares the IOTA API for usage. Until this method is called, no HTTP requests can be made.
-     * The order of loading is as follows
-     * <ol>
-     *    <li>
-     *        Read the spend addresses from the previous epoch. Used in {@link #wasAddressSpentFrom(Hash)}.
-     *        This only happens if {@link APIConfig#isTestnet()} is <tt>false</tt>
-     *        If reading from the previous epoch fails, a log is printed. The API will continue to initialize.
-     *    </li>
-     *    <li>
-     *        Get the {@link APIConfig} from the {@link Iota} instance,
-     *        and read {@link APIConfig#getPort()} and {@link APIConfig#getApiHost()}
-     *    </li>
-     *    <li>
-     *        Builds a secure {@link Undertow} server with the port and host.
-     *        If {@link APIConfig#getRemoteAuth()} is defined, remote authentication is blocked for anyone except
-     *         those defined in {@link APIConfig#getRemoteAuth()} or localhost.
-     *        This is done with {@link BasicAuthenticationMechanism} in a {@link AuthenticationMode#PRO_ACTIVE} mode.
-     *        By default, this authentication is disabled.
-     *    </li>
-     *    <li>
-     *        Starts the server, opening it for HTTP API requests
-     *    </li>
-     * </ol>
-     */
+    
     public void init(RestConnector connector) throws IOException {
-        final int apiPort = configuration.getPort();
-        final String apiHost = configuration.getApiHost();
-
-        log.debug("Binding JSON-REST API Undertow server on {}:{}", apiHost, apiPort);
-
         this.connector = connector;
-        connector.init(apiPort, apiHost, this::process);
-        
-        server = Undertow.builder().addHttpListener(apiPort, apiHost)
-                .setHandler(path().addPrefixPath("/", addSecurity(new HttpHandler() {
-                    @Override
-                    public void handleRequest(final HttpServerExchange exchange) throws Exception {
-                        HttpString requestMethod = exchange.getRequestMethod();
-                        if (Methods.OPTIONS.equals(requestMethod)) {
-                            String allowedMethods = "GET,HEAD,POST,PUT,DELETE,TRACE,OPTIONS,CONNECT,PATCH";
-                            //return list of allowed methods in response headers
-                            exchange.setStatusCode(StatusCodes.OK);
-                            exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, MimeMappings.DEFAULT_MIME_MAPPINGS.get("txt"));
-                            exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, 0);
-                            exchange.getResponseHeaders().put(Headers.ALLOW, allowedMethods);
-                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Origin"), "*");
-                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Headers"), "User-Agent, Origin, X-Requested-With, Content-Type, Accept, X-IOTA-API-Version");
-                            exchange.getResponseSender().close();
-                            return;
-                        }
-
-                        if (exchange.isInIoThread()) {
-                            exchange.dispatch(this);
-                            return;
-                        }
-                        processRequest(exchange);
-                    }
-                }))).build();
-        
+        connector.init(this::process);
         connector.start();
-        server.start();
     }
-
-    /**
-     * Sends the API response back as JSON to the requester.
-     * Status code of the HTTP request is also set according to the type of response.
-     * <ul>
-     *     <li>{@link ErrorResponse}: 400</li>
-     *     <li>{@link AccessLimitedResponse}: 401</li>
-     *     <li>{@link ExceptionResponse}: 500</li>
-     *     <li>Default: 200</li>
-     * </ul>
-     *
-     * @param exchange Contains information about what the client sent to us
-     * @param res The response of the API.
-     *            See {@link #processRequest(HttpServerExchange)}
-     *            and {@link #process(String, InetSocketAddress)} for the different responses in each case.
-     * @param beginningTime The time when we received the request, in milliseconds.
-     *                      This will be used to set the response duration in {@link AbstractResponse#setDuration(Integer)}
-     * @throws IOException When connection to client has been lost - Currently being caught.
-     */
-    private void sendResponse(HttpServerExchange exchange, AbstractResponse res, long beginningTime) throws IOException {
-        res.setDuration((int) (System.currentTimeMillis() - beginningTime));
-        final String response = gson.toJson(res);
-
-        if (res instanceof ErrorResponse) {
-            // bad request or invalid parameters
-            exchange.setStatusCode(400);
-        } else if (res instanceof AccessLimitedResponse) {
-            // API method not allowed
-            exchange.setStatusCode(401);
-        } else if (res instanceof ExceptionResponse) {
-            // internal error
-            exchange.setStatusCode(500);
-        }
-
-        setupResponseHeaders(exchange);
-
-        ByteBuffer responseBuf = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
-        exchange.setResponseContentLength(responseBuf.array().length);
-        StreamSinkChannel sinkChannel = exchange.getResponseChannel();
-        sinkChannel.getWriteSetter().set( channel -> {
-            if (responseBuf.remaining() > 0) {
-                try {
-                    sinkChannel.write(responseBuf);
-                    if (responseBuf.remaining() == 0) {
-                        exchange.endExchange();
-                    }
-                } catch (IOException e) {
-                    log.error("Lost connection to client - cannot send response");
-                    exchange.endExchange();
-                    sinkChannel.getWriteSetter().set(null);
-                }
-            }
-            else {
-                exchange.endExchange();
-            }
-        });
-        sinkChannel.resumeWrites();
-    }
-
-    /**
-     * <p>
-     *     Processes an API HTTP request.
-     *     No checks have been done until now, except that it is not an OPTIONS request.
-     *     We can be sure that we are in a thread that allows blocking.
-     * </p>
-     * <p>
-     *     The request process duration is recorded.
-     *     During this the request gets verified. If it is incorrect, an {@link ErrorResponse} is made.
-     *     Otherwise it is processed in {@link #process(String, InetSocketAddress)}.
-     *     The result is sent back to the requester.
-     * </p>
-     *
-     * @param exchange Contains the data the client sent to us
-     * @throws IOException If the body of this HTTP request cannot be read
-     */
-    private void processRequest(final HttpServerExchange exchange) throws IOException {
-        final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-
-        final long beginningTime = System.currentTimeMillis();
-        final String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
-        AbstractResponse response;
-
-        if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
-            response = ErrorResponse.create("Invalid API Version");
-        } else if (body.length() > maxBodyLength) {
-            response = ErrorResponse.create("Request too long");
-        } else {
-            response = process(body); //, exchange.getSourceAddress()
-        }
-        sendResponse(exchange, response, beginningTime);
-    }
-
+    
     /**
      * Handles an API request body.
      * Its returned {@link AbstractResponse} is created using the following logic
@@ -388,7 +228,7 @@ public class API {
      * @throws UnsupportedEncodingException If the requestString cannot be parsed into a Map.
                                             Currently caught and turned into a {@link ExceptionResponse}.
      */
-    private AbstractResponse process(final String requestString){
+    private AbstractResponse process(final String requestString, InetAddress netAddress){
 
         try {
             // Request JSON data into map
@@ -411,12 +251,10 @@ public class API {
 
             // Is this command allowed to be run from this request address?
             // We check the remote limit API configuration.
-            
-            //TODO , InetSocketAddress sourceAddress process elsewhere
-            /*if (configuration.getRemoteLimitApi().contains(command) &&
-                    !configuration.getRemoteTrustedApiHosts().contains(sourceAddress.getAddress())) {
+            if (configuration.getRemoteLimitApi().contains(command) &&
+                    !configuration.getRemoteTrustedApiHosts().contains(netAddress)) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
-            }*/
+            }
 
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
@@ -1685,52 +1523,12 @@ public class API {
     }
 
     /**
-     * Updates the {@link HttpServerExchange} {@link HeaderMap} with the proper response settings.
-     * @param exchange Contains information about what the client has send to us
-     */
-    private static void setupResponseHeaders(HttpServerExchange exchange) {
-        final HeaderMap headerMap = exchange.getResponseHeaders();
-        headerMap.add(new HttpString("Access-Control-Allow-Origin"),"*");
-        headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
-    }
-
-    /**
-     * Sets up the {@link HttpHandler} to have correct security settings.
-     * Remote authentication is blocked for anyone except
-     * those defined in {@link APIConfig#getRemoteAuth()} or localhost.
-     * This is done with {@link BasicAuthenticationMechanism} in a {@link AuthenticationMode#PRO_ACTIVE} mode.
-     *
-     * @param toWrap the path handler used in creating the server.
-     * @return The updated handler
-     */
-    private HttpHandler addSecurity(HttpHandler toWrap) {
-        String credentials = configuration.getRemoteAuth();
-        if (credentials == null || credentials.isEmpty()) {
-            return toWrap;
-        }
-
-        final Map<String, char[]> users = new HashMap<>(2);
-        users.put(credentials.split(":")[0], credentials.split(":")[1].toCharArray());
-
-        IdentityManager identityManager = new MapIdentityManager(users);
-        HttpHandler handler = toWrap;
-        handler = new AuthenticationCallHandler(handler);
-        handler = new AuthenticationConstraintHandler(handler);
-        final List<AuthenticationMechanism> mechanisms =
-                Collections.singletonList(new BasicAuthenticationMechanism("Iota Realm"));
-
-        handler = new AuthenticationMechanismsHandler(handler, mechanisms);
-        handler = new SecurityInitialHandler(AuthenticationMode.PRO_ACTIVE, identityManager, handler);
-        return handler;
-    }
-
-    /**
      * If a server is running, stops the server from accepting new incoming requests.
      * Does not remove the instance, so the server may be restarted without having to recreate it.
      */
     public void shutDown() {
-        if (server != null) {
-            server.stop();
+        if (connector != null) {
+            connector.stop();
         }
     }
 

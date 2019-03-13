@@ -40,7 +40,6 @@ script:
   - git clone https://github.com/iotaledger/iri-regression-tests.git
   - cd iri-regression-tests
   - git checkout -f master
-  - tar -xzf testnet_files.tgz
   - mkdir iri
   - cp -rf ../target iri/target
   - bash run_all_stable_tests.sh $VERSION

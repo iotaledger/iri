@@ -15,13 +15,13 @@ npm run build
 ```
 
 ## Folder structure
-*  build - webpack config files
+* build - webpack config files
 
-*  config - webpack config files
+* config - webpack config files
 
-*  dist - build
+* dist - build
 
-*  src -your app
+* src -your app  
   * api
   * assets
   * common
@@ -34,7 +34,7 @@ npm run build
   * main.js - main file
   * routes.js
 
-*  static - static assets
+* static - static assets
 
 ## Theme
 You can change theme by 

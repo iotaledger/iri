@@ -58,6 +58,7 @@ import java.net.URISyntaxException;
 import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -141,6 +142,28 @@ public class API {
 
     private Pattern trytesPattern = Pattern.compile("[9A-Z]*");
 
+    private final Map<String, Function<Map<String, Object>, AbstractResponse>> commandRoute 
+    = new HashMap<String, Function<Map<String, Object>, AbstractResponse>>() {{
+        put("addNeighbors", addNeighbors());
+        put("attachToTangle", attachToTangle());
+        put("broadcastTransactions", broadcastTransactions());
+        put("findTransactions", findTransactions());
+        put("getBalances", getBalances());
+        put("getInclusionStates", getInclusionStates());
+        put("getNeighbors", getNeighbors());
+        put("getNodeInfo", getNodeInfo());
+        put("getTips", getTips());
+        put("getTransactionsToApprove", getTransactionsToApprove());
+        put("getTrytes", getTrytes());
+        put("interruptAttachingToTangle", interruptAttachingToTangle());
+        put("removeNeighbors", removeNeighbors());
+        put("storeTransactions", storeTransactions());
+        put("getMissingTransactions", getMissingTransactions());
+        put("checkConsistency", checkConsistency());
+        put("wereAddressesSpentFrom", wereAddressesSpentFrom());
+    }};
+    
+    
     private RestConnector connector;
 
     /**
@@ -257,141 +280,21 @@ public class API {
 
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
-            switch (command) {
-                case "storeMessage": {
-                    if (!testNet) {
-                        return AccessLimitedResponse.create("COMMAND storeMessage is only available on testnet");
-                    }
-
-                    if (!request.containsKey("address") || !request.containsKey("message")) {
-                        return ErrorResponse.create("Invalid params");
-                    }
-
-                    String address = (String) request.get("address");
-                    String message = (String) request.get("message");
-                    return storeMessageStatement(address, message);
-                }
-
-                case "addNeighbors": {
-                    List<String> uris = getParameterAsList(request,"uris",0);
-                    log.debug("Invoking 'addNeighbors' with {}", uris);
-                    return addNeighborsStatement(uris);
-                }
-                case "attachToTangle": {
-                    final Hash trunkTransaction  = HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
-                    final Hash branchTransaction = HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
-                    final int minWeightMagnitude = getParameterAsInt(request,"minWeightMagnitude");
-
-                    final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
-
-                    List<String> elements = attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
-                    return AttachToTangleResponse.create(elements);
-                }
-                case "broadcastTransactions": {
-                    final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
-                    broadcastTransactionsStatement(trytes);
-                    return AbstractResponse.createEmptyResponse();
-                }
-                case "findTransactions": {
-                    return findTransactionsStatement(request);
-                }
-                case "getBalances": {
-                    final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
-                    final List<String> tips = request.containsKey("tips") ?
-                            getParameterAsList(request,"tips", HASH_SIZE):
-                            null;
-                    final int threshold = getParameterAsInt(request, "threshold");
-                    return getBalancesStatement(addresses, tips, threshold);
-                }
-                case "getInclusionStates": {
-                    if (invalidSubtangleStatus()) {
-                        return ErrorResponse.create(INVALID_SUBTANGLE);
-                    }
-                    final List<String> transactions = getParameterAsList(request,"transactions", HASH_SIZE);
-                    final List<String> tips = getParameterAsList(request,"tips", HASH_SIZE);
-
-                    return getInclusionStatesStatement(transactions, tips);
-                }
-                case "getNeighbors": {
-                    return getNeighborsStatement();
-                }
-                case "getNodeInfo": {
-                    return getNodeInfoStatement();
-                }
-                case "getNodeAPIConfiguration": {
-                    return getNodeAPIConfigurationStatement();
-                }
-                case "getTips": {
-                    return getTipsStatement();
-                }
-                case "getTransactionsToApprove": {
-                    Optional<Hash> reference = request.containsKey("reference") ?
-                        Optional.of(HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
-                        : Optional.empty();
-                    int depth = getParameterAsInt(request, "depth");
-
-                    return getTransactionsToApproveStatement(depth, reference);
-                }
-                case "getTrytes": {
-                    final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
-                    return getTrytesStatement(hashes);
-                }
-
-                case "interruptAttachingToTangle": {
-                    return interruptAttachingToTangleStatement();
-                }
-                case "removeNeighbors": {
-                    List<String> uris = getParameterAsList(request,"uris",0);
-                    log.debug("Invoking 'removeNeighbors' with {}", uris);
-                    return removeNeighborsStatement(uris);
-                }
-
-                case "storeTransactions": {
-                    try {
-                        final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
-                        storeTransactionsStatement(trytes);
-                        return AbstractResponse.createEmptyResponse();
-                    } catch (RuntimeException e) {
-                        //transaction not valid
-                        return ErrorResponse.create("Invalid trytes input");
-                    }
-                }
-                case "getMissingTransactions": {
-                    //TransactionRequester.instance().rescanTransactionsToRequest();
-                    synchronized (transactionRequester) {
-                        List<String> missingTx = Arrays.stream(transactionRequester.getRequestedTransactions())
-                                .map(Hash::toString)
-                                .collect(Collectors.toList());
-                        return GetTipsResponse.create(missingTx);
-                    }
-                }
-                case "checkConsistency": {
-                    if (invalidSubtangleStatus()) {
-                        return ErrorResponse.create(INVALID_SUBTANGLE);
-                    }
-                    final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
-                    return checkConsistencyStatement(transactions);
-                }
-                case "wereAddressesSpentFrom": {
-                    final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
-                    return wereAddressesSpentFromStatement(addresses);
-                }
-                default: {
-                    AbstractResponse response = ixi.processCommand(command, request);
-                    return response == null ?
-                            ErrorResponse.create("Command [" + command + "] is unknown") :
-                            response;
+            if (commandRoute.containsKey(command)) {
+                return commandRoute.get(command).apply(request);
+            } else {
+                AbstractResponse response = ixi.processCommand(command, request);
+                if (response == null) {
+                    return ErrorResponse.create("Command [" + command + "] is unknown");
+                } else {
+                    return response;
                 }
             }
-
-        } catch (final ValidationException e) {
-            log.info("API Validation failed: " + e.getLocalizedMessage());
-            return ErrorResponse.create(e.getLocalizedMessage());
-        } catch (final InvalidAlgorithmParameterException e) {
-             log.info("API InvalidAlgorithmParameter passed: " + e.getLocalizedMessage());
-             return ErrorResponse.create(e.getLocalizedMessage());
-        } catch (final Exception e) {
-            log.error("API Exception: {}", e.getLocalizedMessage(), e);
+        } catch (final IllegalArgumentException e) {
+            log.error("API Validation failed: " + e.getLocalizedMessage());
+            return ExceptionResponse.create(e.getLocalizedMessage());
+        } catch (final IllegalStateException e) {
+            log.error("API Exception: " + e.getLocalizedMessage());
             return ExceptionResponse.create(e.getLocalizedMessage());
         }
     }
@@ -1608,5 +1511,150 @@ public class API {
         storeTransactionsStatement(powResult);
         broadcastTransactionsStatement(powResult);
         return AbstractResponse.createEmptyResponse();
+    }
+    
+    //
+    // FUNCTIONAL COMMAND ROUTES
+    //
+    private Function<Map<String, Object>, AbstractResponse> addNeighbors() {
+        return request -> {
+            List<String> uris = getParameterAsList(request,"uris",0);
+            log.debug("Invoking 'addNeighbors' with {}", uris);
+            return addNeighborsStatement(uris);
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> attachToTangle() {
+        return request -> {
+            final Hash trunkTransaction  = HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"trunkTransaction", HASH_SIZE));
+            final Hash branchTransaction = HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"branchTransaction", HASH_SIZE));
+            final int minWeightMagnitude = getParameterAsInt(request,"minWeightMagnitude");
+
+            final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+
+            List<String> elements = attachToTangleStatement(trunkTransaction, branchTransaction, minWeightMagnitude, trytes);
+            return AttachToTangleResponse.create(elements);
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse>  broadcastTransactions() {
+        return request -> {
+            final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+            broadcastTransactionsStatement(trytes);
+            return AbstractResponse.createEmptyResponse();
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> findTransactions() {
+        return this::findTransactionsStatement;
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> getBalances() {
+        return request -> {
+            final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
+            final List<String> tips = request.containsKey("tips") ?
+                getParameterAsList(request,"tips", HASH_SIZE):
+                null;
+            final int threshold = getParameterAsInt(request, "threshold");
+            return getBalancesStatement(addresses, tips, threshold);
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> getInclusionStates() {
+        return request -> {
+            if (invalidSubtangleStatus()) {
+                return ErrorResponse.create(INVALID_SUBTANGLE);
+            }
+            final List<String> transactions = getParameterAsList(request, "transactions", HASH_SIZE);
+            final List<String> tips = getParameterAsList(request, "tips", HASH_SIZE);
+
+            return getInclusionStatesStatement(transactions, tips);
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> getNeighbors() {
+        return request -> getNeighborsStatement();
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> getNodeInfo() {
+        return request -> getNodeInfoStatement();
+    }
+    
+    private Function<Map<String, Object>, AbstractResponse> getNodeAPIConfiguration() {
+        return request -> getNodeAPIConfigurationStatement();
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> getTips() {
+        return request -> getTipsStatement();
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> getTransactionsToApprove() {
+        return request -> {
+            Optional<Hash> reference = request.containsKey("reference") ?
+                Optional.of(HashFactory.TRANSACTION.create(getParameterAsStringAndValidate(request,"reference", HASH_SIZE)))
+                : Optional.empty();
+            int depth = getParameterAsInt(request, "depth");
+
+            return getTransactionsToApproveStatement(depth, reference);
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> getTrytes() {
+        return request -> {
+            final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
+            return getTrytesStatement(hashes);
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> interruptAttachingToTangle() {
+        return request -> interruptAttachingToTangleStatement();
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> removeNeighbors() {
+        return request -> {
+            List<String> uris = getParameterAsList(request,"uris",0);
+            log.debug("Invoking 'removeNeighbors' with {}", uris);
+            return removeNeighborsStatement(uris);
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> storeTransactions() {
+        return request -> {
+            try {
+                final List<String> trytes = getParameterAsList(request,"trytes", TRYTES_SIZE);
+                storeTransactionsStatement(trytes);
+            } catch (Exception e) {
+                //transaction not valid
+                return ErrorResponse.create("Invalid trytes input");
+            }
+            return AbstractResponse.createEmptyResponse();
+        };
+    }
+
+    private Function<Map<String, Object>, AbstractResponse> getMissingTransactions() {
+        return request -> {
+            synchronized (transactionRequester) {
+                List<String> missingTx = Arrays.stream(transactionRequester.getRequestedTransactions())
+                        .map(Hash::toString)
+                        .collect(Collectors.toList());
+                return GetTipsResponse.create(missingTx);
+            }
+        };
+    }
+    
+    private Function<Map<String, Object>, AbstractResponse> checkConsistency() {
+        return request -> {
+            if (invalidSubtangleStatus()) {
+                return ErrorResponse.create(INVALID_SUBTANGLE);
+            }
+            final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
+            return checkConsistencyStatement(transactions);
+        };
+    }                    
+    private Function<Map<String, Object>, AbstractResponse> wereAddressesSpentFrom() {
+        return request -> {
+            final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
+            return wereAddressesSpentFromStatement(addresses);
+        };
     }
 }

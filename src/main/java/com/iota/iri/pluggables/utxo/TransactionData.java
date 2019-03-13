@@ -12,7 +12,6 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.persistables.Transaction;
-import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -244,7 +243,7 @@ public class TransactionData {
         newTxn.inputs = null;
         newTxn.outputs = txnOutList;
 
-        newTxn.txnHash = generateHash(new Gson().toJson(newTxn).getBytes());
+        newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
         transactions.add(newTxn);
     }
@@ -346,6 +345,7 @@ public class TransactionData {
         }
 
         if (txnInList.size() == 0 || total < txn.amnt) {
+            // TODO: it will print out the value of 'from' and the 'transfer value', will it be ok?
             log.error("Error, {} have {} token, but want to spend {}.", txn.from, total, txn.amnt);
             return false;
         }
@@ -368,20 +368,31 @@ public class TransactionData {
         }
 
         newTxn.outputs = txnOutList;
-        newTxn.txnHash = generateHash(new Gson().toJson(newTxn).getBytes());
-
+        newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
         transactions.add(newTxn);
         return true;
     }
 
-    private String generateHash(byte[] bytes) {
-        Hash trytes = HashFactory.TRANSACTION.create(bytes);
-        byte[] initialValue = trytes.trits();
+    private String generateHash(String txnStr) {
+        String trytes = Converter.asciiToTrytes(txnStr);
+
+        byte[] trits = Converter.allocateTritsForTrytes(trytes.length());
+        Converter.trits(trytes, trits, 0);
+
+        // The length of inputs to Sponge needs to be a multiple of 'HASH_LENGTH'
+        if (trits.length % Curl.HASH_LENGTH != 0) {
+            byte[] extend = new byte[(trits.length / Curl.HASH_LENGTH + 1) * Curl.HASH_LENGTH];
+            System.arraycopy(trits, 0, extend, 0, trits.length);
+            trits = extend;
+        }
+
         Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
-        k.absorb(initialValue, 0, initialValue.length);
+        k.absorb(trits, 0, trits.length);
+
         byte[] hashValue = new byte[Curl.HASH_LENGTH];
         k.squeeze(hashValue, 0, hashValue.length);
+
         String hash = Converter.trytes(hashValue);
         return hash;
     }

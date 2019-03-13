@@ -1,5 +1,8 @@
 package com.iota.iri.conf;
 
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -113,7 +116,8 @@ public class ConfigFactoryTest {
     public void createFromFileTestnetWithTrailingSpaces() throws IOException {
         File configFile = createTestnetConfigFile("true");
         IotaConfig iotaConfig = ConfigFactory.createFromFile(configFile, true);
-        String expected = "NPCRMHDOMU9QHFFBKFCWFHFJNNQDRNDOGVPEVDVGWKHFUFEXLWJBHXDJFKQGYFRDZBQIFDSJMUCCQVICI";
+        Hash expected = HashFactory.ADDRESS.create(
+                "NPCRMHDOMU9QHFFBKFCWFHFJNNQDRNDOGVPEVDVGWKHFUFEXLWJBHXDJFKQGYFRDZBQIFDSJMUCCQVICI");
         assertEquals("Expected that leading and trailing spaces were trimmed.", expected, iotaConfig.getCoordinator());
     }
 

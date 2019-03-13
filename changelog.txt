@@ -1,3 +1,22 @@
+1.6.1
+    - Fix: Db exists() method optimization (#1338)
+    - Fix: Do not persist pruner state (#1342)
+    - Fix: Reduce db access and cpu usage needed to persist spent addresses (#1332)
+    - Fix: Added a NULL_HASH check for genesis transaction (#1309)
+    - Feature: Fresh transactions to request (#1316)
+    - Fix: missing user-agent header in cors (#1319)
+    - Fix: Batch process spent addresses to avoid out of memory issues (#1314)
+    - Fix: added a buffer to LSManager (#1286)
+    - Fix: test existence of spent addresses db do not point to correct folder (#1305)
+    - Change: Convert from trytes to asciiString (#1302)
+    - Documentation: Fixed and added javadoc comments for existing classes (#1026)
+    - Fix: Creates rest endpoint for iotaconfig related settings as suggested (#1200)
+    - Fix: make storeMessage store transactions (#1186)
+    - Change: add a plugin to create reproducible builds. (#1194)
+    - Feature: Add configurable variables for spent addresses DB (#1274)
+    - Fix: Posting invalid json to IRI will result in detailed error message (#1202)
+    - Fix: dns reverse resolving issue for neighbors that are added with their IP. (#1255)
+
 1.6.0
    - Feat: added config variables for local snapshots (#981)
    - Feat: added a generic helper class for dag traversal (#982)

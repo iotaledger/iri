@@ -2,7 +2,6 @@ package com.iota.iri.service.milestone;
 
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 
 import java.util.Optional;
@@ -34,13 +33,11 @@ public interface MilestoneService {
      *
      * @param transactionViewModel transaction that shall be analyzed
      * @param milestoneIndex milestone index of the transaction (see {@link #getMilestoneIndex(TransactionViewModel)})
-     * @param mode mode that gets used for the signature verification
-     * @param securityLevel security level that gets used for the signature verification
      * @return validity status of the transaction regarding its role as a milestone
      * @throws MilestoneException if anything unexpected goes wrong while validating the milestone transaction
      */
-    MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, int milestoneIndex,
-            SpongeFactory.Mode mode, int securityLevel) throws MilestoneException;
+    MilestoneValidity validateMilestone(TransactionViewModel transactionViewModel, int milestoneIndex)
+            throws MilestoneException;
 
     /**
      * Updates the milestone index of all transactions that belong to a milestone.<br />

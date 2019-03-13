@@ -15,7 +15,7 @@ import org.apache.commons.lang3.StringUtils;
 
 public class TransactionTestUtils {
 
-    private static Random seed = new Random();
+    private static Random seed = new Random(1);
     
     /**
      * Updates the transaction index in trits.
@@ -24,7 +24,11 @@ public class TransactionTestUtils {
      * @param currentIndex The new index to set the transaction to
      */
     public static void setCurrentIndex(TransactionViewModel tx, long currentIndex) {
-        Converter.copyTrits(currentIndex, tx.trits(), TransactionViewModel.CURRENT_INDEX_TRINARY_OFFSET,
+        setCurrentIndex(tx.trits(), currentIndex);
+    }
+
+    public static void setCurrentIndex(byte[] trits, long currentIndex) {
+        Converter.copyTrits(currentIndex, trits, TransactionViewModel.CURRENT_INDEX_TRINARY_OFFSET,
                 TransactionViewModel.CURRENT_INDEX_TRINARY_SIZE);
     }
 
@@ -35,7 +39,11 @@ public class TransactionTestUtils {
      * @param lastIndex The new last index to set the transaction to
      */
     public static void setLastIndex(TransactionViewModel tx, long lastIndex) {
-        Converter.copyTrits(lastIndex, tx.trits(), TransactionViewModel.LAST_INDEX_TRINARY_OFFSET,
+        setLastIndex(tx.trits(), lastIndex);
+    }
+
+    public static void setLastIndex(byte[] trits, long lastIndex) {
+        Converter.copyTrits(lastIndex, trits, TransactionViewModel.LAST_INDEX_TRINARY_OFFSET,
                 TransactionViewModel.LAST_INDEX_TRINARY_SIZE);
     }
 
@@ -63,13 +71,15 @@ public class TransactionTestUtils {
      * @return A transaction in the same bundle as trunk, with its index 1 below trunk index
      */
     public static TransactionViewModel createTransactionWithTrunkBundleHash(TransactionViewModel trunkTx, Hash branchHash) {
-        TransactionViewModel tx = new TransactionViewModel(
-                getRandomTransactionWithTrunkAndBranch(trunkTx.getHash(), branchHash),
-                getRandomTransactionHash());
-        setCurrentIndex(tx, trunkTx.getCurrentIndex() - 1);
-        setLastIndex(tx, trunkTx.lastIndex());
-        System.arraycopy(trunkTx.trits(), TransactionViewModel.BUNDLE_TRINARY_OFFSET, tx.trits(),
+        byte[] txTrits = getTransactionWithTrunkAndBranch(trunkTx.getHash(), branchHash);
+        setCurrentIndex(txTrits, trunkTx.getCurrentIndex() - 1);
+        setLastIndex(txTrits, trunkTx.lastIndex());
+        System.arraycopy(trunkTx.trits(), TransactionViewModel.BUNDLE_TRINARY_OFFSET, txTrits,
                 TransactionViewModel.BUNDLE_TRINARY_OFFSET, TransactionViewModel.BUNDLE_TRINARY_SIZE);
+        TransactionViewModel tx = new TransactionViewModel(
+                txTrits,
+                getRandomTransactionHash());
+
         return tx;
     }
 
@@ -84,6 +94,10 @@ public class TransactionTestUtils {
     public static TransactionViewModel createTransactionWithTrytes(String trytes) {
         String expandedTrytes  = expandTrytes(trytes);
         byte[] trits = Converter.allocatingTritsFromTrytes(expandedTrytes);
+        return createTransactionFromTrits(trits);
+    }
+
+    public static TransactionViewModel createTransactionFromTrits(byte[] trits) {
         return new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
     }
 
@@ -114,7 +128,7 @@ public class TransactionTestUtils {
     public static byte[] createTransactionWithTrunkAndBranchTrits(String trytes, Hash trunk, Hash branch) {
         String expandedTrytes = expandTrytes(trytes);
         byte[] trits =  Converter.allocatingTritsFromTrytes(expandedTrytes);
-        return getRandomTransactionTritsWithTrunkAndBranch(trits, trunk, branch);
+        return getTransactionTritsWithTrunkAndBranch(trits, trunk, branch);
     }
     
     /**
@@ -124,9 +138,9 @@ public class TransactionTestUtils {
      * @param branch The branch transaction hash
      * @return The transaction trits
      */
-    public static byte[] getRandomTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {
-        byte[] trits = getRandomTransactionTrits();
-        return getRandomTransactionTritsWithTrunkAndBranch(trits, trunk, branch);
+    public static byte[] getTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {
+        byte[] trits = new byte[TransactionViewModel.TRINARY_SIZE];
+        return getTransactionTritsWithTrunkAndBranch(trits, trunk, branch);
     }
     
     /**
@@ -136,7 +150,7 @@ public class TransactionTestUtils {
      * @param branch The branch transaction hash
      * @return trits The transaction trits
      */
-    public static byte[] getRandomTransactionTritsWithTrunkAndBranch(byte[] trits, Hash trunk, Hash branch) {
+    public static byte[] getTransactionTritsWithTrunkAndBranch(byte[] trits, Hash trunk, Hash branch) {
         System.arraycopy(trunk.trits(), 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
                 TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branch.trits(), 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
@@ -146,7 +160,8 @@ public class TransactionTestUtils {
 
     /**
      * Increases a char with the next char in the alphabet, until the char is Z.
-     * When the char is Z, adds a new char starting at A (So no 9 is used).
+     * When the char is Z, adds a new char starting at A.
+     * 9 turns To A.
      * 
      * @param trytes The Trytes to change.
      * @return The changed trytes
@@ -157,7 +172,10 @@ public class TransactionTestUtils {
         }
         char[] chars = trytes.toUpperCase().toCharArray();
         for (int i = chars.length -1; i>=0; --i) {
-            if (chars[i] != 'Z') {
+            if (chars[i] == '9') {
+                chars[i] = 'A';
+            }
+            else if (chars[i] != 'Z') {
                 ++chars[i];
                 return new String(chars);
             }

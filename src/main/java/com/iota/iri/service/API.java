@@ -7,7 +7,10 @@ import com.iota.iri.BundleValidator;
 import com.iota.iri.IRI;
 import com.iota.iri.IXI;
 import com.iota.iri.Iota;
+import com.iota.iri.TransactionValidator;
 import com.iota.iri.conf.APIConfig;
+import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.conf.NetworkConfig;
 import com.iota.iri.controllers.*;
 import com.iota.iri.crypto.Curl;
 import com.iota.iri.crypto.PearlDiver;
@@ -17,9 +20,17 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.Neighbor;
+import com.iota.iri.network.Node;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.dto.*;
+import com.iota.iri.service.ledger.LedgerService;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.restserver.RestConnector;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
+import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.IotaUtils;
@@ -77,15 +88,60 @@ import static io.undertow.Handlers.path;
 @SuppressWarnings("unchecked")
 public class API {
 
+    private static final Logger log = LoggerFactory.getLogger(API.class);
+    
+    //region [CONSTANTS] ///////////////////////////////////////////////////////////////////////////////
+
     public static final String REFERENCE_TRANSACTION_NOT_FOUND = "reference transaction not found";
     public static final String REFERENCE_TRANSACTION_TOO_OLD = "reference transaction is too old";
 
     public static final String INVALID_SUBTANGLE = "This operation cannot be executed: "
                                                  + "The subtangle has not been updated yet.";
+    
+    private static final String overMaxErrorMessage = "Could not complete request";
+    private static final String invalidParams = "Invalid parameters";
 
-    private static final Logger log = LoggerFactory.getLogger(API.class);
+    private static final char ZERO_LENGTH_ALLOWED = 'Y';
+    private static final char ZERO_LENGTH_NOT_ALLOWED = 'N';
+    
+    private static final int HASH_SIZE = 81;
+    private static final int TRYTES_SIZE = 2673;
+
+    private static final long MAX_TIMESTAMP_VALUE = (long) (Math.pow(3, 27) - 1) / 2; // max positive 27-trits value
+
+    //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
+    private static int counterGetTxToApprove = 0;
+    private static long ellapsedTime_getTxToApprove = 0L;
+    private static int counter_PoW = 0;
+    private static long ellapsedTime_PoW = 0L;
+    
+    //region [CONSTRUCTOR_FIELDS] ///////////////////////////////////////////////////////////////////////////////
+
+    private final IotaConfig configuration;
     private final IXI ixi;
+    private final TransactionRequester transactionRequester;
+    private final SpentAddressesService spentAddressesService;
+    private final Tangle tangle;
+    private final BundleValidator bundleValidator;
+    private final SnapshotProvider snapshotProvider;
+    private final LedgerService ledgerService;
+    private final Node node;
+    private final TipSelector tipsSelector;
+    private final TipsViewModel tipsViewModel;
+    private final TransactionValidator transactionValidator;
+    private final LatestMilestoneTracker latestMilestoneTracker;
+    
+    private final int maxFindTxs;
+    private final int maxRequestList;
+    private final int maxGetTrytes;
+    private final int maxBodyLength;
+    private final boolean testNet;
 
+    private final String[] features;
+    
+    //endregion ////////////////////////////////////////////////////////////////////////////////////////////////////////
+    
     private Undertow server;
 
     private final Gson gson = new GsonBuilder().create();
@@ -95,49 +151,53 @@ public class API {
 
     private Pattern trytesPattern = Pattern.compile("[9A-Z]*");
 
-    private final static int HASH_SIZE = 81;
-    private final static int TRYTES_SIZE = 2673;
-
-    private final static long MAX_TIMESTAMP_VALUE = (long) (Math.pow(3, 27) - 1) / 2; // max positive 27-trits value
-
-    private static int counterGetTxToApprove = 0;
-    private static long ellapsedTime_getTxToApprove = 0L;
-    private static int counter_PoW = 0;
-    private static long ellapsedTime_PoW = 0L;
-
-    private final int maxFindTxs;
-    private final int maxRequestList;
-    private final int maxGetTrytes;
-    private final int maxBodyLength;
-    private final boolean testNet;
-
-    private final static String overMaxErrorMessage = "Could not complete request";
-    private final static String invalidParams = "Invalid parameters";
-
-    private final static char ZERO_LENGTH_ALLOWED = 'Y';
-    private final static char ZERO_LENGTH_NOT_ALLOWED = 'N';
-    private Iota instance;
-
-    private final String[] features;
+    private RestConnector connector;
 
     /**
      * Starts loading the IOTA API, parameters do not have to be initialized.
-     *
-     * @param instance The data source we interact with during any API call.
+     * 
+     * @param configuration
      * @param ixi If a command is not in the standard API,
      *        we try to process it as a Nashorn JavaScript module through {@link IXI}
+     * @param transactionRequester
+     * @param spentAddressesService
+     * @param tangle
+     * @param bundleValidator
+     * @param snapshotProvider
+     * @param ledgerService
+     * @param node
+     * @param tipsSelector
+     * @param tipsViewModel
+     * @param transactionValidator
+     * @param latestMilestoneTracker
      */
-    public API(Iota instance, IXI ixi) {
-        this.instance = instance;
+    public API(IotaConfig configuration, IXI ixi, TransactionRequester transactionRequester,
+            SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
+            SnapshotProvider snapshotProvider, LedgerService ledgerService, Node node, TipSelector tipsSelector,
+            TipsViewModel tipsViewModel, TransactionValidator transactionValidator,
+            LatestMilestoneTracker latestMilestoneTracker) {
+        this.configuration = configuration;
         this.ixi = ixi;
-        APIConfig configuration = instance.configuration;
+        
+        this.transactionRequester = transactionRequester;
+        this.spentAddressesService = spentAddressesService;
+        this.tangle = tangle;
+        this.bundleValidator = bundleValidator;
+        this.snapshotProvider = snapshotProvider;
+        this.ledgerService = ledgerService;
+        this.node = node;
+        this.tipsSelector = tipsSelector;
+        this.tipsViewModel = tipsViewModel;
+        this.transactionValidator = transactionValidator;
+        this.latestMilestoneTracker = latestMilestoneTracker;
+        
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestsList();
         maxGetTrytes = configuration.getMaxGetTrytes();
         maxBodyLength = configuration.getMaxBodyLength();
         testNet = configuration.isTestnet();
 
-        features = Feature.calculateFeatureNames(instance.configuration);
+        features = Feature.calculateFeatureNames(configuration);
     }
 
     /**
@@ -165,13 +225,15 @@ public class API {
      *    </li>
      * </ol>
      */
-    public void init() throws IOException {
-        APIConfig configuration = instance.configuration;
+    public void init(RestConnector connector) throws IOException {
         final int apiPort = configuration.getPort();
         final String apiHost = configuration.getApiHost();
 
         log.debug("Binding JSON-REST API Undertow server on {}:{}", apiHost, apiPort);
 
+        this.connector = connector;
+        connector.init(apiPort, apiHost, this::process);
+        
         server = Undertow.builder().addHttpListener(apiPort, apiHost)
                 .setHandler(path().addPrefixPath("/", addSecurity(new HttpHandler() {
                     @Override
@@ -197,6 +259,8 @@ public class API {
                         processRequest(exchange);
                     }
                 }))).build();
+        
+        connector.start();
         server.start();
     }
 
@@ -287,7 +351,7 @@ public class API {
         } else if (body.length() > maxBodyLength) {
             response = ErrorResponse.create("Request too long");
         } else {
-            response = process(body, exchange.getSourceAddress());
+            response = process(body); //, exchange.getSourceAddress()
         }
         sendResponse(exchange, response, beginningTime);
     }
@@ -324,8 +388,7 @@ public class API {
      * @throws UnsupportedEncodingException If the requestString cannot be parsed into a Map.
                                             Currently caught and turned into a {@link ExceptionResponse}.
      */
-    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress)
-            throws UnsupportedEncodingException {
+    private AbstractResponse process(final String requestString){
 
         try {
             // Request JSON data into map
@@ -348,10 +411,12 @@ public class API {
 
             // Is this command allowed to be run from this request address?
             // We check the remote limit API configuration.
-            if (instance.configuration.getRemoteLimitApi().contains(command) &&
-                    !instance.configuration.getRemoteTrustedApiHosts().contains(sourceAddress.getAddress())) {
+            
+            //TODO , InetSocketAddress sourceAddress process elsewhere
+            /*if (configuration.getRemoteLimitApi().contains(command) &&
+                    !configuration.getRemoteTrustedApiHosts().contains(sourceAddress.getAddress())) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
-            }
+            }*/
 
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
@@ -456,8 +521,8 @@ public class API {
                 }
                 case "getMissingTransactions": {
                     //TransactionRequester.instance().rescanTransactionsToRequest();
-                    synchronized (instance.transactionRequester) {
-                        List<String> missingTx = Arrays.stream(instance.transactionRequester.getRequestedTransactions())
+                    synchronized (transactionRequester) {
+                        List<String> missingTx = Arrays.stream(transactionRequester.getRequestedTransactions())
                                 .map(Hash::toString)
                                 .collect(Collectors.toList());
                         return GetTipsResponse.create(missingTx);
@@ -509,7 +574,7 @@ public class API {
         int index = 0;
 
         for (Hash address : addressesHash) {
-            states[index++] = instance.spentAddressesService.wasAddressSpentFrom(address);
+            states[index++] = spentAddressesService.wasAddressSpentFrom(address);
         }
         return WereAddressesSpentFrom.create(states);
     }
@@ -523,7 +588,7 @@ public class API {
      * @throws Exception When a model could not be loaded.
      */
     private Hash findTail(Hash hash) throws Exception {
-        TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, hash);
+        TransactionViewModel tx = TransactionViewModel.fromHash(tangle, hash);
         final Hash bundleHash = tx.getBundleHash();
         long index = tx.getCurrentIndex();
         boolean foundApprovee = false;
@@ -531,9 +596,9 @@ public class API {
         // As long as the index is bigger than 0 and we are still traversing the same bundle
         // If the hash we asked about is already a tail, this loop never starts
         while (index-- > 0 && tx.getBundleHash().equals(bundleHash)) {
-            Set<Hash> approvees = tx.getApprovers(instance.tangle).getHashes();
+            Set<Hash> approvees = tx.getApprovers(tangle).getHashes();
             for (Hash approvee : approvees) {
-                TransactionViewModel nextTx = TransactionViewModel.fromHash(instance.tangle, approvee);
+                TransactionViewModel nextTx = TransactionViewModel.fromHash(tangle, approvee);
                 if (nextTx.getBundleHash().equals(bundleHash)) {
                     tx = nextTx;
                     foundApprovee = true;
@@ -574,7 +639,7 @@ public class API {
 
         // Check if the transactions themselves are valid
         for (Hash transaction : transactions) {
-            TransactionViewModel txVM = TransactionViewModel.fromHash(instance.tangle, transaction);
+            TransactionViewModel txVM = TransactionViewModel.fromHash(tangle, transaction);
             if (txVM.getType() == TransactionViewModel.PREFILLED_SLOT) {
                 return ErrorResponse.create("Invalid transaction, missing: " + transaction);
             }
@@ -587,7 +652,7 @@ public class API {
                 state = false;
                 info = "tails are not solid (missing a referenced tx): " + transaction;
                 break;
-            } else if (instance.bundleValidator.validate(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), txVM.getHash()).size() == 0) {
+            } else if (bundleValidator.validate(tangle, snapshotProvider.getInitialSnapshot(), txVM.getHash()).size() == 0) {
                 state = false;
                 info = "tails are not consistent (bundle is invalid): " + transaction;
                 break;
@@ -596,10 +661,9 @@ public class API {
 
         // Transactions are valid, lets check ledger consistency
         if (state) {
-            instance.snapshotProvider.getLatestSnapshot().lockRead();
+            snapshotProvider.getLatestSnapshot().lockRead();
             try {
-                WalkValidatorImpl walkValidator = new WalkValidatorImpl(instance.tangle, instance.snapshotProvider, instance.ledgerService,
-                        instance.configuration);
+                WalkValidatorImpl walkValidator = new WalkValidatorImpl(tangle, snapshotProvider, ledgerService, configuration);
                 for (Hash transaction : transactions) {
                     if (!walkValidator.isValid(transaction)) {
                         state = false;
@@ -608,7 +672,7 @@ public class API {
                     }
                 }
             } finally {
-                instance.snapshotProvider.getLatestSnapshot().unlockRead();
+                snapshotProvider.getLatestSnapshot().unlockRead();
             }
         }
 
@@ -622,7 +686,7 @@ public class API {
      * @return <tt>false</tt> if we received at least a solid milestone, otherwise <tt>true</tt>
      */
     public boolean invalidSubtangleStatus() {
-        return (instance.snapshotProvider.getLatestSnapshot().getIndex() == instance.snapshotProvider.getInitialSnapshot().getIndex());
+        return (snapshotProvider.getLatestSnapshot().getIndex() == snapshotProvider.getInitialSnapshot().getIndex());
     }
 
     /**
@@ -632,7 +696,7 @@ public class API {
      * @return {@link com.iota.iri.service.dto.GetNeighborsResponse}
      **/
    private AbstractResponse getNeighborsStatement() {
-       return GetNeighborsResponse.create(instance.node.getNeighbors());
+       return GetNeighborsResponse.create(node.getNeighbors());
    }
 
     /**
@@ -652,9 +716,9 @@ public class API {
        try {
            for (final String uriString : uris) {
                log.info("Adding neighbor: " + uriString);
-               final Neighbor neighbor = instance.node.newNeighbor(new URI(uriString), true);
-               if (!instance.node.getNeighbors().contains(neighbor)) {
-                   instance.node.getNeighbors().add(neighbor);
+               final Neighbor neighbor = node.newNeighbor(new URI(uriString), true);
+               if (!node.getNeighbors().contains(neighbor)) {
+                   node.getNeighbors().add(neighbor);
                    numberOfAddedNeighbors++;
                }
            }
@@ -682,7 +746,7 @@ public class API {
         try {
             for (final String uriString : uris) {
                 log.info("Removing neighbor: " + uriString);
-                if (instance.node.removeNeighbor(new URI(uriString),true)) {
+                if (node.removeNeighbor(new URI(uriString),true)) {
                     numberOfRemovedNeighbors++;
                 }
             }
@@ -703,7 +767,7 @@ public class API {
     private synchronized AbstractResponse getTrytesStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
-            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(hash));
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, HashFactory.TRANSACTION.create(hash));
             if (transactionViewModel != null) {
                 elements.add(Converter.trytes(transactionViewModel.trits()));
             }
@@ -763,7 +827,7 @@ public class API {
       * @throws Exception When tip selection has failed. Currently caught and returned as an {@link ErrorResponse}.
       **/
     private synchronized AbstractResponse getTransactionsToApproveStatement(int depth, Optional<Hash> reference) throws Exception {
-        if (depth < 0 || depth > instance.configuration.getMaxDepth()) {
+        if (depth < 0 || depth > configuration.getMaxDepth()) {
             return ErrorResponse.create("Invalid depth input");
         }
 
@@ -792,7 +856,7 @@ public class API {
             throw new IllegalStateException(INVALID_SUBTANGLE);
         }
 
-        List<Hash> tips = instance.tipsSelector.getTransactionsToApprove(depth, reference);
+        List<Hash> tips = tipsSelector.getTransactionsToApprove(depth, reference);
 
         if (log.isDebugEnabled()) {
             gatherStatisticsOnTipSelection();
@@ -828,7 +892,7 @@ public class API {
       * @return {@link com.iota.iri.service.dto.GetTipsResponse}
       **/
     private synchronized AbstractResponse getTipsStatement() throws Exception {
-        return GetTipsResponse.create(instance.tipsViewModel.getTips()
+        return GetTipsResponse.create(tipsViewModel.getTips()
                 .stream()
                 .map(Hash::toString)
                 .collect(Collectors.toList()));
@@ -848,18 +912,18 @@ public class API {
         for (final String trytesPart : trytes) {
             //validate all trytes
             Converter.trits(trytesPart, txTrits, 0);
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(txTrits,
-                    instance.transactionValidator.getMinWeightMagnitude());
+            final TransactionViewModel transactionViewModel = transactionValidator.validateTrits(txTrits,
+                    transactionValidator.getMinWeightMagnitude());
             elements.add(transactionViewModel);
         }
 
         for (final TransactionViewModel transactionViewModel : elements) {
             //store transactions
-            if(transactionViewModel.store(instance.tangle, instance.snapshotProvider.getInitialSnapshot())) {
+            if(transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot())) {
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
-                instance.transactionValidator.updateStatus(transactionViewModel);
+                transactionValidator.updateStatus(transactionViewModel);
                 transactionViewModel.updateSender("local");
-                transactionViewModel.update(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), "sender");
+                transactionViewModel.update(tangle, snapshotProvider.getInitialSnapshot(), "sender");
             }
         }
     }
@@ -881,8 +945,8 @@ public class API {
       * @throws Exception When we cant find the first milestone in the database
       **/
     private AbstractResponse getNodeInfoStatement() throws Exception{
-        String name = instance.configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
-        MilestoneViewModel milestone = MilestoneViewModel.first(instance.tangle);
+        String name = configuration.isTestnet() ? IRI.TESTNET_NAME : IRI.MAINNET_NAME;
+        MilestoneViewModel milestone = MilestoneViewModel.first(tangle);
         
         return GetNodeInfoResponse.create(
                 name,
@@ -893,22 +957,22 @@ public class API {
                 
                 Runtime.getRuntime().maxMemory(),
                 Runtime.getRuntime().totalMemory(),
-                instance.latestMilestoneTracker.getLatestMilestoneHash(),
-                instance.latestMilestoneTracker.getLatestMilestoneIndex(),
+                latestMilestoneTracker.getLatestMilestoneHash(),
+                latestMilestoneTracker.getLatestMilestoneIndex(),
                 
-                instance.snapshotProvider.getLatestSnapshot().getHash(),
-                instance.snapshotProvider.getLatestSnapshot().getIndex(),
+                snapshotProvider.getLatestSnapshot().getHash(),
+                snapshotProvider.getLatestSnapshot().getIndex(),
                 
                 milestone != null ? milestone.index() : -1,
-                instance.snapshotProvider.getLatestSnapshot().getInitialIndex(),
+                snapshotProvider.getLatestSnapshot().getInitialIndex(),
                 
-                instance.node.howManyNeighbors(),
-                instance.node.queuedTransactionsSize(),
+                node.howManyNeighbors(),
+                node.queuedTransactionsSize(),
                 System.currentTimeMillis(),
-                instance.tipsViewModel.size(),
-                instance.transactionRequester.numberOfTransactionsToRequest(),
+                tipsViewModel.size(),
+                transactionRequester.numberOfTransactionsToRequest(),
                 features,
-                instance.configuration.getCoordinator().toString());
+                configuration.getCoordinator().toString());
     }
 
     /**
@@ -917,7 +981,7 @@ public class API {
      * @return {@link GetNodeAPIConfigurationResponse}
      */
     private AbstractResponse getNodeAPIConfigurationStatement() {
-        return GetNodeAPIConfigurationResponse.create(instance.configuration);
+        return GetNodeAPIConfigurationResponse.create(configuration);
     }
 
     /**
@@ -955,7 +1019,7 @@ public class API {
         List<Integer> tipsIndex = new LinkedList<>();
         {
             for(Hash tip: tps) {
-                TransactionViewModel tx = TransactionViewModel.fromHash(instance.tangle, tip);
+                TransactionViewModel tx = TransactionViewModel.fromHash(tangle, tip);
                 if (tx.getType() != TransactionViewModel.PREFILLED_SLOT) {
                     tipsIndex.add(tx.snapshotIndex());
                 }
@@ -979,7 +1043,7 @@ public class API {
 
             // Sets to 1 if the transaction index is below the max index of tips (included).
             for(Hash hash: trans) {
-                TransactionViewModel transaction = TransactionViewModel.fromHash(instance.tangle, hash);
+                TransactionViewModel transaction = TransactionViewModel.fromHash(tangle, hash);
                 if(transaction.getType() == TransactionViewModel.PREFILLED_SLOT || transaction.snapshotIndex() == 0) {
                     inclusionStates[count] = -1;
                 } else if(transaction.snapshotIndex() > maxTipsIndex) {
@@ -997,7 +1061,7 @@ public class API {
 
         // Sorts all tips per snapshot index. Stops if a tip is not in our database, or just as a hash.
         for (final Hash tip : tps) {
-            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, tip);
+            TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, tip);
             if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT){
                 return ErrorResponse.create("One of the tips is absent");
             }
@@ -1009,7 +1073,7 @@ public class API {
         // Loop over all transactions without a state, and counts the amount per snapshot index
         for(int i = 0; i < inclusionStates.length; i++) {
             if(inclusionStates[i] == 0) {
-                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, trans.get(i));
+                TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, trans.get(i));
                 int snapshotIndex = transactionViewModel.snapshotIndex();
                 sameIndexTransactionCount.putIfAbsent(snapshotIndex, 0);
                 sameIndexTransactionCount.put(snapshotIndex, sameIndexTransactionCount.get(snapshotIndex) + 1);
@@ -1073,7 +1137,7 @@ public class API {
 
                 // Check if the transactions have indeed this index. Otherwise ignore.
                 // Starts off with the tips in nonAnalyzedTransactions, but transaction trunk & branch gets added.
-                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, pointer);
+                final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(tangle, pointer);
                 if (transactionViewModel.snapshotIndex() == index) {
                     // Do we have the complete transaction?
                     if (transactionViewModel.getType() == TransactionViewModel.PREFILLED_SLOT) {
@@ -1130,7 +1194,7 @@ public class API {
             final Set<String> bundles = getParameterAsSet(request,"bundles",HASH_SIZE);
             for (final String bundle : bundles) {
                 bundlesTransactions.addAll(
-                        BundleViewModel.load(instance.tangle, HashFactory.BUNDLE.create(bundle))
+                        BundleViewModel.load(tangle, HashFactory.BUNDLE.create(bundle))
                         .getHashes());
             }
             foundTransactions.addAll(bundlesTransactions);
@@ -1142,7 +1206,7 @@ public class API {
             final Set<String> addresses = getParameterAsSet(request,"addresses",HASH_SIZE);
             for (final String address : addresses) {
                 addressesTransactions.addAll(
-                        AddressViewModel.load(instance.tangle, HashFactory.ADDRESS.create(address))
+                        AddressViewModel.load(tangle, HashFactory.ADDRESS.create(address))
                         .getHashes());
             }
             foundTransactions.addAll(addressesTransactions);
@@ -1155,14 +1219,14 @@ public class API {
             for (String tag : tags) {
                 tag = padTag(tag);
                 tagsTransactions.addAll(
-                        TagViewModel.load(instance.tangle, HashFactory.TAG.create(tag))
+                        TagViewModel.load(tangle, HashFactory.TAG.create(tag))
                         .getHashes());
             }
             if (tagsTransactions.isEmpty()) {
                 for (String tag : tags) {
                     tag = padTag(tag);
                     tagsTransactions.addAll(
-                            TagViewModel.loadObsolete(instance.tangle, HashFactory.OBSOLETETAG.create(tag))
+                            TagViewModel.loadObsolete(tangle, HashFactory.OBSOLETETAG.create(tag))
                             .getHashes());
                 }
             }
@@ -1176,8 +1240,8 @@ public class API {
             final Set<String> approvees = getParameterAsSet(request,"approvees",HASH_SIZE);
             for (final String approvee : approvees) {
                 approveeTransactions.addAll(
-                        TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(approvee))
-                        .getApprovers(instance.tangle)
+                        TransactionViewModel.fromHash(tangle, HashFactory.TRANSACTION.create(approvee))
+                        .getApprovers(tangle)
                         .getHashes());
             }
             foundTransactions.addAll(approveeTransactions);
@@ -1267,15 +1331,15 @@ public class API {
         for (final String tryte : trytes) {
             //validate all trytes
             Converter.trits(tryte, txTrits, 0);
-            final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(
-                    txTrits, instance.transactionValidator.getMinWeightMagnitude());
+            final TransactionViewModel transactionViewModel = transactionValidator.validateTrits(
+                    txTrits, transactionValidator.getMinWeightMagnitude());
 
             elements.add(transactionViewModel);
         }
         for (final TransactionViewModel transactionViewModel : elements) {
             //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
-            instance.node.broadcast(transactionViewModel);
+            node.broadcast(transactionViewModel);
         }
     }
 
@@ -1312,11 +1376,11 @@ public class API {
 
         List<Hash> hashes;
         final Map<Hash, Long> balances = new HashMap<>();
-        instance.snapshotProvider.getLatestSnapshot().lockRead();
-        final int index = instance.snapshotProvider.getLatestSnapshot().getIndex();
+        snapshotProvider.getLatestSnapshot().lockRead();
+        final int index = snapshotProvider.getLatestSnapshot().getIndex();
 
         if (tips == null || tips.isEmpty()) {
-            hashes = Collections.singletonList(instance.snapshotProvider.getLatestSnapshot().getHash());
+            hashes = Collections.singletonList(snapshotProvider.getLatestSnapshot().getHash());
         } else {
             hashes = tips.stream()
                     .map(tip -> (HashFactory.TRANSACTION.create(tip)))
@@ -1326,7 +1390,7 @@ public class API {
         try {
             // Get the balance for each address at the last snapshot
             for (final Hash address : addressList) {
-                Long value = instance.snapshotProvider.getLatestSnapshot().getBalance(address);
+                Long value = snapshotProvider.getLatestSnapshot().getBalance(address);
                 if (value == null) {
                     value = 0L;
                 }
@@ -1339,10 +1403,10 @@ public class API {
             // Calculate the difference created by the non-verified transactions which tips approve.
             // This difference is put in a map with address -> value changed
             for (Hash tip : hashes) {
-                if (!TransactionViewModel.exists(instance.tangle, tip)) {
+                if (!TransactionViewModel.exists(tangle, tip)) {
                     return ErrorResponse.create("Tip not found: " + tip.toString());
                 }
-                if (!instance.ledgerService.isBalanceDiffConsistent(visitedHashes, diff, tip)) {
+                if (!ledgerService.isBalanceDiffConsistent(visitedHashes, diff, tip)) {
                     return ErrorResponse.create("Tips are not consistent");
                 }
             }
@@ -1350,7 +1414,7 @@ public class API {
             // Update the found balance according to 'diffs' balance changes
             diff.forEach((key, value) -> balances.computeIfPresent(key, (hash, aLong) -> value + aLong));
         } finally {
-            instance.snapshotProvider.getLatestSnapshot().unlockRead();
+            snapshotProvider.getLatestSnapshot().unlockRead();
         }
 
         final List<String> elements = addressList.stream()
@@ -1475,13 +1539,13 @@ public class API {
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
 
-                if (!pearlDiver.search(transactionTrits, minWeightMagnitude, instance.configuration.getPowThreads())) {
+                if (!pearlDiver.search(transactionTrits, minWeightMagnitude, configuration.getPowThreads())) {
                     transactionViewModels.clear();
                     break;
                 }
                 //validate PoW - throws exception if invalid
-                final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(
-                        transactionTrits, instance.transactionValidator.getMinWeightMagnitude());
+                final TransactionViewModel transactionViewModel = transactionValidator.validateTrits(
+                        transactionTrits, transactionValidator.getMinWeightMagnitude());
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
@@ -1640,7 +1704,7 @@ public class API {
      * @return The updated handler
      */
     private HttpHandler addSecurity(HttpHandler toWrap) {
-        String credentials = instance.configuration.getRemoteAuth();
+        String credentials = configuration.getRemoteAuth();
         if (credentials == null || credentials.isEmpty()) {
             return toWrap;
         }

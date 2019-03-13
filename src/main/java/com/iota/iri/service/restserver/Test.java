@@ -19,9 +19,12 @@ import com.iota.iri.service.dto.AbstractResponse;
 @Path("")
 public class Test extends ApiCall {
     
+    public Test() {
+        System.out.println("Constructor");
+    }
+    
     @GET
-    @Path("/ping")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Path("ping")
     public String ping() {
         return "pong";
     }
@@ -30,6 +33,7 @@ public class Test extends ApiCall {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response apiCall(String request) throws JsonParseException, JsonMappingException, IOException {
+        System.out.println("here1");
         AbstractResponse response = pre(request);
         if (response == null) {
            response = process();

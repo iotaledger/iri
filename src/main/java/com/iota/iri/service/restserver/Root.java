@@ -6,7 +6,6 @@ import java.util.Set;
 import javax.ws.rs.Path;
 import javax.ws.rs.core.Application;
 
-@Path("")
 public class Root extends Application {
     
     @Override
@@ -15,6 +14,4 @@ public class Root extends Application {
        classes.add(Test.class);
        return classes;
     }
-    
-    
 }

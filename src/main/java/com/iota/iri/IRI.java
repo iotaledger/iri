@@ -4,8 +4,18 @@ import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.Config;
 import com.iota.iri.conf.ConfigFactory;
 import com.iota.iri.conf.IotaConfig;
+import com.iota.iri.controllers.TipsViewModel;
+import com.iota.iri.network.Node;
+import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.API;
 import com.iota.iri.utils.IotaUtils;
+import com.iota.iri.service.ledger.LedgerService;
+import com.iota.iri.service.milestone.LatestMilestoneTracker;
+import com.iota.iri.service.restserver.RestEasy;
+import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
+import com.iota.iri.service.tipselection.TipSelector;
+import com.iota.iri.storage.Tangle;
 
 import java.io.File;
 import java.io.IOException;
@@ -119,14 +129,18 @@ public class IRI {
 
             iota = new Iota(config);
             ixi = new IXI(iota);
-            api = new API(iota, ixi);
+            api = new API(iota.configuration, ixi, iota.transactionRequester,
+                    iota.spentAddressesService, iota.tangle, iota.bundleValidator,
+                    iota.snapshotProvider, iota.ledgerService, iota.node, iota.tipsSelector,
+                    iota.tipsViewModel, iota.transactionValidator,
+                    iota.latestMilestoneTracker);
             shutdownHook();
 
             try {
                 iota.init();
-                api.init();
                 //TODO redundant parameter but we will touch this when we refactor IXI
                 ixi.init(config.getIxiDir());
+                api.init(new RestEasy(iota.configuration));
                 log.info("IOTA Node initialised correctly.");
             } catch (Exception e) {
                 log.error("Exception during IOTA node initialisation: ", e);

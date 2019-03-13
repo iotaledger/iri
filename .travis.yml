@@ -41,11 +41,6 @@ install:
       && cd go-ipfs/
       && sudo ./install.sh
       && cd ..
-  # private-iota-testnet milestone
-    - git clone https://github.com/schierlm/private-iota-testnet.git --depth 1
-      && cd private-iota-testnet
-      && mvn package
-      && cd ..
 
 before_script:
   - ipfs init
@@ -54,7 +49,7 @@ before_script:
 script:
   #run tests and integration tests
   # see  https://stackoverflow.com/questions/34405047/how-do-you-merge-into-another-branch-using-travis-with-git-commands?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
-  - build_head=$(git rev-parse HEAD) 
+  - build_head=$(git rev-parse HEAD)
   - git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
   - git fetch origin $TRAVIS_BRANCH
   - git checkout -f $TRAVIS_BRANCH
@@ -68,7 +63,7 @@ script:
   - JACOCO_V=$(mvn help:evaluate -Dexpression=jacoco.version | grep -E '^[0-9.]+')
   - export _JAVA_OPTIONS="$_JAVA_OPTIONS -javaagent:$HOME/.m2/repository/org/jacoco/org.jacoco.agent/$JACOCO_V/org.jacoco.agent-$JACOCO_V-runtime.jar=destfile=$PWD/target/jacoco.exec,output=file,append=true,dumponexit=true"
   - echo $_JAVA_OPTIONS
-  - git clone https://github.com/lhfbc/iri-regression-tests.git
+  - git clone https://github.com/lhfbc/iri-regression-tests.git -b remove_milestone_with_conflux
   - cd iri-regression-tests
   #- git checkout -f master
   - mkdir iri
@@ -78,7 +73,7 @@ script:
   #jacoco append to report
   - mvn jacoco:report
   - cd scripts/iota_cache/
-  - python iota_cache_test.py  
+  - python iota_cache_test.py
 
 after_success:
   #codacy-coverage send report. Uses Travis Env variable (CODACY_PROJECT_TOKEN)

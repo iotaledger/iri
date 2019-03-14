@@ -19,7 +19,7 @@ public class ApiCallTest {
 
     @Test
     public void apiHasAllEnums() {
-        for (ApiCall c : ApiCall.values()) {
+        for (ApiCommand c : ApiCommand.values()) {
             if (!api.commandRoute.containsKey(c.toString())) {
                 Assert.fail("Api should contain all enum values");
             }

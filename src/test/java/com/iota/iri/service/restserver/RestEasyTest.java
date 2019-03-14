@@ -28,7 +28,7 @@ import org.mockito.junit.MockitoRule;
 import com.iota.iri.conf.APIConfig;
 import com.iota.iri.service.dto.ErrorResponse;
 import com.iota.iri.service.dto.GetNodeInfoResponse;
-import com.iota.iri.service.restserver.RestEasy;
+import com.iota.iri.service.restserver.resteasy.RestEasy;
 
 public class RestEasyTest {
     

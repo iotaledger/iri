@@ -1,4 +1,4 @@
-package com.iota.iri.service.restserver;
+package com.iota.iri.service.restserver.resteasy;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
@@ -24,6 +24,8 @@ import com.iota.iri.service.dto.AbstractResponse;
 import com.iota.iri.service.dto.AccessLimitedResponse;
 import com.iota.iri.service.dto.ErrorResponse;
 import com.iota.iri.service.dto.ExceptionResponse;
+import com.iota.iri.service.restserver.ApiProcessor;
+import com.iota.iri.service.restserver.RestConnector;
 import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.utils.MapIdentityManager;
 

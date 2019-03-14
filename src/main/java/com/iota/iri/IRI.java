@@ -11,7 +11,7 @@ import com.iota.iri.service.API;
 import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
-import com.iota.iri.service.restserver.RestEasy;
+import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.service.tipselection.TipSelector;

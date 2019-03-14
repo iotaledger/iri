@@ -10,7 +10,7 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.TransactionHash;
-import com.iota.iri.service.restserver.RestEasy;
+import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.utils.Converter;
 import com.jayway.restassured.RestAssured;
 import com.jayway.restassured.builder.ResponseSpecBuilder;

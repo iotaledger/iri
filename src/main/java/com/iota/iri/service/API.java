@@ -191,24 +191,24 @@ public class API {
         features = Feature.calculateFeatureNames(configuration);
         
         commandRoute = new HashMap<>();
-        commandRoute.put(ApiCall.ADD_NEIGHBORS.toString(), addNeighbors());
-        commandRoute.put(ApiCall.ATTACH_TO_TANGLE.toString(), attachToTangle());
-        commandRoute.put(ApiCall.BROADCAST_TRANSACTIONs.toString(), broadcastTransactions());
-        commandRoute.put(ApiCall.FIND_TRANSACTIONS.toString(), findTransactions());
-        commandRoute.put(ApiCall.GET_BALANCES.toString(), getBalances());
-        commandRoute.put(ApiCall.GET_INCLUSION_STATES.toString(), getInclusionStates());
-        commandRoute.put(ApiCall.GET_NEIGHBORS.toString(), getNeighbors());
-        commandRoute.put(ApiCall.GET_NODE_INFO.toString(), getNodeInfo());
-        commandRoute.put(ApiCall.GET_NODE_API_CONFIG.toString(), getNodeAPIConfiguration());
-        commandRoute.put(ApiCall.GET_TIPS.toString(), getTips());
-        commandRoute.put(ApiCall.GET_TRANSACTIONS_TO_APPROVE.toString(), getTransactionsToApprove());
-        commandRoute.put(ApiCall.GET_TRYTES.toString(), getTrytes());
-        commandRoute.put(ApiCall.INTERRUPT_ATTACHING_TO_TANGLE.toString(), interruptAttachingToTangle());
-        commandRoute.put(ApiCall.REMOVE_NEIGHBORS.toString(), removeNeighbors());
-        commandRoute.put(ApiCall.STORE_TRANSACTIONS.toString(), storeTransactions());
-        commandRoute.put(ApiCall.GET_MISSING_TRANSACTIONS.toString(), getMissingTransactions());
-        commandRoute.put(ApiCall.CHECK_CONSISTENCY.toString(), checkConsistency());
-        commandRoute.put(ApiCall.WERE_ADDRESSES_SPENT_FROM.toString(), wereAddressesSpentFrom());
+        commandRoute.put(ApiCommand.ADD_NEIGHBORS.toString(), addNeighbors());
+        commandRoute.put(ApiCommand.ATTACH_TO_TANGLE.toString(), attachToTangle());
+        commandRoute.put(ApiCommand.BROADCAST_TRANSACTIONs.toString(), broadcastTransactions());
+        commandRoute.put(ApiCommand.FIND_TRANSACTIONS.toString(), findTransactions());
+        commandRoute.put(ApiCommand.GET_BALANCES.toString(), getBalances());
+        commandRoute.put(ApiCommand.GET_INCLUSION_STATES.toString(), getInclusionStates());
+        commandRoute.put(ApiCommand.GET_NEIGHBORS.toString(), getNeighbors());
+        commandRoute.put(ApiCommand.GET_NODE_INFO.toString(), getNodeInfo());
+        commandRoute.put(ApiCommand.GET_NODE_API_CONFIG.toString(), getNodeAPIConfiguration());
+        commandRoute.put(ApiCommand.GET_TIPS.toString(), getTips());
+        commandRoute.put(ApiCommand.GET_TRANSACTIONS_TO_APPROVE.toString(), getTransactionsToApprove());
+        commandRoute.put(ApiCommand.GET_TRYTES.toString(), getTrytes());
+        commandRoute.put(ApiCommand.INTERRUPT_ATTACHING_TO_TANGLE.toString(), interruptAttachingToTangle());
+        commandRoute.put(ApiCommand.REMOVE_NEIGHBORS.toString(), removeNeighbors());
+        commandRoute.put(ApiCommand.STORE_TRANSACTIONS.toString(), storeTransactions());
+        commandRoute.put(ApiCommand.GET_MISSING_TRANSACTIONS.toString(), getMissingTransactions());
+        commandRoute.put(ApiCommand.CHECK_CONSISTENCY.toString(), checkConsistency());
+        commandRoute.put(ApiCommand.WERE_ADDRESSES_SPENT_FROM.toString(), wereAddressesSpentFrom());
     }
 
     

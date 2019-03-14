@@ -1,4 +1,4 @@
-package com.iota.iri.service.restserver;
+package com.iota.iri.service.restserver.resteasy;
 
 import java.io.IOException;
 
@@ -17,6 +17,8 @@ import javax.ws.rs.core.Response;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.iota.iri.service.dto.AbstractResponse;
+import com.iota.iri.service.restserver.ApiCall;
+import com.iota.iri.service.restserver.ApiProcessor;
 
 @Path("")
 public class ApiPath extends ApiCall {

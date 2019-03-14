@@ -1,4 +1,4 @@
-package com.iota.iri.service.restserver;
+package com.iota.iri.service.restserver.resteasy;
 
 import java.util.HashSet;
 import java.util.Set;

@@ -12,7 +12,7 @@ import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.network.Node;
-import com.iota.iri.service.restserver.RestEasy;
+import com.iota.iri.service.restserver.resteasy.RestEasy;
 import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.ArrayUtils;
 import org.junit.After;

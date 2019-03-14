@@ -2,14 +2,21 @@ package com.iota.iri.service.restserver;
 
 import java.util.Map;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonSyntaxException;
 import com.iota.iri.service.dto.AbstractResponse;
 import com.iota.iri.service.dto.ErrorResponse;
 
+/**
+ * 
+ * Base class of every API command which is processed
+ * Currently not used due to direct processing instead of rest path usage
+ *
+ */
 public abstract class ApiCall {
+    
+    private static final String CMD = "command";
     
     private static final Gson gson = new GsonBuilder().create();
     
@@ -17,6 +24,11 @@ public abstract class ApiCall {
 
     protected Map<String, Object> request;
     
+    /**
+     * 
+     * @param requestString
+     * @return
+     */
     public AbstractResponse pre(String requestString) {
         start = System.currentTimeMillis();
         
@@ -36,13 +48,24 @@ public abstract class ApiCall {
         return null;
     }
     
+    /**
+     * Finalizes the response by setting the duration it took to process.
+     * 
+     * @param response The response were sending back
+     * @return The modified response
+     */
     public AbstractResponse post(AbstractResponse response) {
         response.setDuration((int) (System.currentTimeMillis() - start));
         
         return response;
     }
     
+    /**
+     * Returns the command we called this API call.
+     * 
+     * @return the command, or <code>null</code> when no command was sent
+     */
     public String getCommand() {
-        return request.get("command").toString();
+        return request.containsKey(CMD) ? request.get(CMD).toString() : null;
     }
 }

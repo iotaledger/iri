@@ -116,7 +116,9 @@ public enum ApiCall {
      */
     public static ApiCall findByName(String name) {
         for (ApiCall c : values()) {
-            if (c.toString().equals(name)) return c;
+            if (c.toString().equals(name)) {
+                return c;
+            }
         }
         return null;
     }

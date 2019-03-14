@@ -55,7 +55,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.security.InvalidAlgorithmParameterException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -129,7 +128,6 @@ public class API {
     private final int maxFindTxs;
     private final int maxRequestList;
     private final int maxGetTrytes;
-    private final boolean testNet;
 
     private final String[] features;
     
@@ -142,26 +140,8 @@ public class API {
 
     private Pattern trytesPattern = Pattern.compile("[9A-Z]*");
 
-    private final Map<String, Function<Map<String, Object>, AbstractResponse>> commandRoute 
-    = new HashMap<String, Function<Map<String, Object>, AbstractResponse>>() {{
-        put("addNeighbors", addNeighbors());
-        put("attachToTangle", attachToTangle());
-        put("broadcastTransactions", broadcastTransactions());
-        put("findTransactions", findTransactions());
-        put("getBalances", getBalances());
-        put("getInclusionStates", getInclusionStates());
-        put("getNeighbors", getNeighbors());
-        put("getNodeInfo", getNodeInfo());
-        put("getTips", getTips());
-        put("getTransactionsToApprove", getTransactionsToApprove());
-        put("getTrytes", getTrytes());
-        put("interruptAttachingToTangle", interruptAttachingToTangle());
-        put("removeNeighbors", removeNeighbors());
-        put("storeTransactions", storeTransactions());
-        put("getMissingTransactions", getMissingTransactions());
-        put("checkConsistency", checkConsistency());
-        put("wereAddressesSpentFrom", wereAddressesSpentFrom());
-    }};
+    //Package Private For Testing
+    final Map<String, Function<Map<String, Object>, AbstractResponse>> commandRoute;
     
     
     private RestConnector connector;
@@ -207,9 +187,28 @@ public class API {
         maxFindTxs = configuration.getMaxFindTransactions();
         maxRequestList = configuration.getMaxRequestsList();
         maxGetTrytes = configuration.getMaxGetTrytes();
-        testNet = configuration.isTestnet();
 
         features = Feature.calculateFeatureNames(configuration);
+        
+        commandRoute = new HashMap<>();
+        commandRoute.put(ApiCall.ADD_NEIGHBORS.toString(), addNeighbors());
+        commandRoute.put(ApiCall.ATTACH_TO_TANGLE.toString(), attachToTangle());
+        commandRoute.put(ApiCall.BROADCAST_TRANSACTIONs.toString(), broadcastTransactions());
+        commandRoute.put(ApiCall.FIND_TRANSACTIONS.toString(), findTransactions());
+        commandRoute.put(ApiCall.GET_BALANCES.toString(), getBalances());
+        commandRoute.put(ApiCall.GET_INCLUSION_STATES.toString(), getInclusionStates());
+        commandRoute.put(ApiCall.GET_NEIGHBORS.toString(), getNeighbors());
+        commandRoute.put(ApiCall.GET_NODE_INFO.toString(), getNodeInfo());
+        commandRoute.put(ApiCall.GET_NODE_API_CONFIG.toString(), getNodeAPIConfiguration());
+        commandRoute.put(ApiCall.GET_TIPS.toString(), getTips());
+        commandRoute.put(ApiCall.GET_TRANSACTIONS_TO_APPROVE.toString(), getTransactionsToApprove());
+        commandRoute.put(ApiCall.GET_TRYTES.toString(), getTrytes());
+        commandRoute.put(ApiCall.INTERRUPT_ATTACHING_TO_TANGLE.toString(), interruptAttachingToTangle());
+        commandRoute.put(ApiCall.REMOVE_NEIGHBORS.toString(), removeNeighbors());
+        commandRoute.put(ApiCall.STORE_TRANSACTIONS.toString(), storeTransactions());
+        commandRoute.put(ApiCall.GET_MISSING_TRANSACTIONS.toString(), getMissingTransactions());
+        commandRoute.put(ApiCall.CHECK_CONSISTENCY.toString(), checkConsistency());
+        commandRoute.put(ApiCall.WERE_ADDRESSES_SPENT_FROM.toString(), wereAddressesSpentFrom());
     }
 
     
@@ -290,7 +289,7 @@ public class API {
                     return response;
                 }
             }
-        } catch (final IllegalArgumentException e) {
+        } catch (final ValidationException e) {
             log.error("API Validation failed: " + e.getLocalizedMessage());
             return ExceptionResponse.create(e.getLocalizedMessage());
         } catch (final IllegalStateException e) {
@@ -1546,7 +1545,13 @@ public class API {
     }
 
     private Function<Map<String, Object>, AbstractResponse> findTransactions() {
-        return this::findTransactionsStatement;
+        return request -> {
+            try {
+                return findTransactionsStatement(request);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
     }
 
     private Function<Map<String, Object>, AbstractResponse> getBalances() {
@@ -1556,7 +1561,12 @@ public class API {
                 getParameterAsList(request,"tips", HASH_SIZE):
                 null;
             final int threshold = getParameterAsInt(request, "threshold");
-            return getBalancesStatement(addresses, tips, threshold);
+            
+            try {
+                return getBalancesStatement(addresses, tips, threshold);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         };
     }
 
@@ -1568,7 +1578,11 @@ public class API {
             final List<String> transactions = getParameterAsList(request, "transactions", HASH_SIZE);
             final List<String> tips = getParameterAsList(request, "tips", HASH_SIZE);
 
-            return getInclusionStatesStatement(transactions, tips);
+            try {
+                return getInclusionStatesStatement(transactions, tips);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         };
     }
 
@@ -1577,7 +1591,13 @@ public class API {
     }
 
     private Function<Map<String, Object>, AbstractResponse> getNodeInfo() {
-        return request -> getNodeInfoStatement();
+        return request -> {
+            try {
+                return getNodeInfoStatement();
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
     }
     
     private Function<Map<String, Object>, AbstractResponse> getNodeAPIConfiguration() {
@@ -1585,7 +1605,13 @@ public class API {
     }
 
     private Function<Map<String, Object>, AbstractResponse> getTips() {
-        return request -> getTipsStatement();
+        return request -> {
+            try {
+                return getTipsStatement();
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
+        };
     }
 
     private Function<Map<String, Object>, AbstractResponse> getTransactionsToApprove() {
@@ -1595,14 +1621,22 @@ public class API {
                 : Optional.empty();
             int depth = getParameterAsInt(request, "depth");
 
-            return getTransactionsToApproveStatement(depth, reference);
+            try {
+                return getTransactionsToApproveStatement(depth, reference);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         };
     }
 
     private Function<Map<String, Object>, AbstractResponse> getTrytes() {
         return request -> {
             final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
-            return getTrytesStatement(hashes);
+            try {
+                return getTrytesStatement(hashes);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         };
     }
 
@@ -1648,13 +1682,21 @@ public class API {
                 return ErrorResponse.create(INVALID_SUBTANGLE);
             }
             final List<String> transactions = getParameterAsList(request,"tails", HASH_SIZE);
-            return checkConsistencyStatement(transactions);
+            try {
+                return checkConsistencyStatement(transactions);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         };
     }                    
     private Function<Map<String, Object>, AbstractResponse> wereAddressesSpentFrom() {
         return request -> {
             final List<String> addresses = getParameterAsList(request,"addresses", HASH_SIZE);
-            return wereAddressesSpentFromStatement(addresses);
+            try {
+                return wereAddressesSpentFromStatement(addresses);
+            } catch (Exception e) {
+                throw new IllegalStateException(e);
+            }
         };
     }
 }

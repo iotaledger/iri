@@ -23,9 +23,6 @@ import com.iota.iri.service.restserver.ApiProcessor;
 @Path("")
 public class ApiPath extends ApiCall {
     
-    @Context()
-    private ApiProcessor requestMetadata;
-    
     @Context
     HttpHeaders requestHeaders;
     
@@ -49,8 +46,6 @@ public class ApiPath extends ApiCall {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response apiCall(String request) throws JsonParseException, JsonMappingException, IOException {
-        System.out.println("Hello: " + this.httpRequest);
-        
         AbstractResponse response = pre(request);
         if (response == null) {
            response = process();

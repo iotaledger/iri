@@ -57,9 +57,9 @@ class IotaCache(object):
         res = storeMessage(self.uri, address, data, tag)
         return res
 
-    def get_balance(self, coin_type):
+    def get_balance(self, coin_type, account):
         address = "JVSVAFSXWHUIZPFDLORNDMASGNXWFGZFMXGLCJQGFWFEZWWOA9KYSPHCLZHFBCOHMNCCBAGNACPIGHVYX"
-        res = getBalance(self.uri, address, coin_type)
+        res = getBalance(self.uri, address, coin_type, account)
         return res
 
     def get_approved_txns(self, tag):

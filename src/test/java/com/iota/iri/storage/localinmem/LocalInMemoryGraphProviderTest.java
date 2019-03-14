@@ -474,4 +474,95 @@ public class LocalInMemoryGraphProviderTest {
         // reset in memory graph
         localInMemoryGraphProvider.close();
     }
+
+    @Test
+    public void testGetDiffSet() throws Exception {
+        TransactionViewModel a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, end1, end2;
+        a = new TransactionViewModel(getRandomTransactionTrits(), getRandomTransactionHash());
+        b = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
+                a.getHash()), getRandomTransactionHash());
+        c = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
+                a.getHash()), getRandomTransactionHash());
+        d = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
+                a.getHash()), getRandomTransactionHash());
+        e = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(a.getHash(),
+                a.getHash()), getRandomTransactionHash());
+        h = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(e.getHash(),
+                d.getHash()), getRandomTransactionHash());
+        f = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(d.getHash(),
+                e.getHash()), getRandomTransactionHash());
+        g = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(b.getHash(),
+                c.getHash()), getRandomTransactionHash());
+        i = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(g.getHash(),
+                f.getHash()), getRandomTransactionHash());
+        j = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(g.getHash(),
+                f.getHash()), getRandomTransactionHash());
+        m = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(j.getHash(),
+                i.getHash()), getRandomTransactionHash());
+        k = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(h.getHash(),
+                j.getHash()), getRandomTransactionHash());
+        l = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(i.getHash(),
+                h.getHash()), getRandomTransactionHash());
+        q = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(m.getHash(),
+                k.getHash()), getRandomTransactionHash());
+        s = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(k.getHash(),
+                m.getHash()), getRandomTransactionHash());
+        p = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(m.getHash(),
+                k.getHash()), getRandomTransactionHash());
+        n = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(m.getHash(),
+                k.getHash()), getRandomTransactionHash());
+        o = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(k.getHash(),
+                l.getHash()), getRandomTransactionHash());
+        r = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(k.getHash(),
+                l.getHash()), getRandomTransactionHash());
+        u = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(p.getHash(),
+                n.getHash()), getRandomTransactionHash());
+        v = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(n.getHash(),
+                o.getHash()), getRandomTransactionHash());
+        t = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(o.getHash(),
+                n.getHash()), getRandomTransactionHash());
+        w = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(q.getHash(),
+                s.getHash()), getRandomTransactionHash());
+        x = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(s.getHash(),
+                u.getHash()), getRandomTransactionHash());
+        y = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(t.getHash(),
+                r.getHash()), getRandomTransactionHash());
+        z = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(v.getHash(),
+                t.getHash()), getRandomTransactionHash());
+        end1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(x.getHash(),
+                w.getHash()), getRandomTransactionHash());
+        end2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(y.getHash(),
+                z.getHash()), getRandomTransactionHash());
+
+        TransactionViewModel[] models = {a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z, end1, end2};
+        char[] modelChar = {'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r'
+                , 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2'};
+        HashMap<Hash, String> tag = new HashMap<Hash, String>();
+        for (int offset = 0; offset < models.length; offset++) {
+            tag.put(models[offset].getHash(), String.valueOf(modelChar[offset]));
+        }
+        LocalInMemoryGraphProvider.setNameMap(tag);
+
+        Arrays.stream(models).forEach(model -> {
+            try {
+                model.store(tangle1);
+            } catch (Exception e1) {
+                e1.printStackTrace();
+            }
+        });
+
+        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
+        System.out.println("=============getDiffSet=======");
+        List<Hash> assertingList = Arrays.stream(new Hash[]{y.getHash(),r.getHash()}).collect(Collectors.toList());
+
+        //total graph
+//        localInMemoryGraphProvider.printGraph(localInMemoryGraphProvider.graph,null);
+
+        List<Hash> rs = localInMemoryGraphProvider.getDiffSet(y.getHash(), t.getHash(), new HashSet<>());
+        CollectionUtils.emptyIfNull(rs).forEach(ha -> System.out.println(tag.get(ha)));
+        assert CollectionUtils.isEqualCollection(assertingList, rs);
+
+        // reset in memory graph
+        localInMemoryGraphProvider.close();
+    }
 }

@@ -12,7 +12,6 @@ import com.iota.iri.hash.Curl;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 import com.iota.iri.model.persistables.Transaction;
-import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -29,8 +28,11 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 
 import com.iota.iri.utils.IotaUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionData {
+    private static final Logger log = LoggerFactory.getLogger(TransactionData.class);
 
     Tangle tangle;
     List<Txn> transactions;
@@ -198,7 +200,7 @@ public class TransactionData {
         } catch (Exception e) {
             e.printStackTrace();
             return false;
-        }  
+        }
     }
 
     public void readFromStr(String txnsStr){
@@ -241,7 +243,7 @@ public class TransactionData {
         newTxn.inputs = null;
         newTxn.outputs = txnOutList;
 
-        newTxn.txnHash = generateHash(new Gson().toJson(newTxn).getBytes());
+        newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
         transactions.add(newTxn);
     }
@@ -298,51 +300,53 @@ public class TransactionData {
 
 
     private boolean doStoreRawTxn(RawTxn txn) {
-        String formAddr = txn.from;
+        String fromAddr = txn.from;
         String toAddr = txn.to;
-        long left = txn.amnt;
         long total = 0;
 
         List<TxnIn> txnInList = new ArrayList<>();
 
+        // TODO: find unspent utxo more quickly.
         for (int i = transactions.size() - 1; i >= 0; i--){
 
             List<TxnOut> txnOutList = transactions.get(i).outputs;
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);
-                if (txnOut.userAccount.equals(formAddr)){
+                if (txnOut.userAccount.equals(fromAddr)){
 
                     boolean jumpFlag = false;
+
+                    // TODO: check utxo whether or not being spent more quickly.
+                    out:
                     for (int k = transactions.size() - 1; k > 0; k--){
                         for (TxnIn tempTxnIn: transactions.get(k).inputs) {
                             if (tempTxnIn.txnHash.equals(transactions.get(i).txnHash) && tempTxnIn.idx == j){
                                 jumpFlag = true; // already spend
-                                break;
+                                break out;
                             }
                         }
                     }
-                    if (jumpFlag == true){
+                    if (jumpFlag){
                         continue;
                     }
 
                     TxnIn txnIn = new TxnIn();
-                    txnIn.userAccount = formAddr;
+                    txnIn.userAccount = fromAddr;
                     txnIn.txnHash = transactions.get(i).txnHash;
                     txnIn.idx = j;
 
                     txnInList.add(txnIn);
                     total += txnOut.amount;
-                    if (txnOut.amount >= left){
+                    if (total >= txn.amnt) {
                         break;
-                    }
-                    else{
-                        left -= txnOut.amount;
                     }
                 }
             }
         }
 
-        if (txnInList.size() == 0){
+        if (txnInList.size() == 0 || total < txn.amnt) {
+            // TODO: it will print out the value of 'from' and the 'transfer value', will it be ok?
+            log.error("Error, {} have {} token, but want to spend {}.", txn.from, total, txn.amnt);
             return false;
         }
 
@@ -356,29 +360,71 @@ public class TransactionData {
         toTxOut.userAccount = toAddr;
         txnOutList.add(toTxOut);
 
-        if ((total - txn.amnt) > 0) {
+        if (total > txn.amnt) {
             TxnOut fromTxOut = new TxnOut();
             fromTxOut.amount = total - txn.amnt;
-            fromTxOut.userAccount = formAddr;
+            fromTxOut.userAccount = fromAddr;
             txnOutList.add(fromTxOut);
         }
 
         newTxn.outputs = txnOutList;
-        newTxn.txnHash = generateHash(new Gson().toJson(newTxn).getBytes());
-
+        newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
         transactions.add(newTxn);
         return true;
     }
 
-    private String generateHash(byte[] bytes){
-        Hash trytes = HashFactory.TRANSACTION.create(bytes);
-        byte[] initialValue = trytes.trits();
+    private String generateHash(String txnStr) {
+        String trytes = Converter.asciiToTrytes(txnStr);
+
+        byte[] trits = Converter.allocateTritsForTrytes(trytes.length());
+        Converter.trits(trytes, trits, 0);
+
+        // The length of inputs to Sponge needs to be a multiple of 'HASH_LENGTH'
+        if (trits.length % Curl.HASH_LENGTH != 0) {
+            byte[] extend = new byte[(trits.length / Curl.HASH_LENGTH + 1) * Curl.HASH_LENGTH];
+            System.arraycopy(trits, 0, extend, 0, trits.length);
+            trits = extend;
+        }
+
         Sponge k = SpongeFactory.create(SpongeFactory.Mode.KERL);
-        k.absorb(initialValue, 0, initialValue.length);
+        k.absorb(trits, 0, trits.length);
+
         byte[] hashValue = new byte[Curl.HASH_LENGTH];
         k.squeeze(hashValue, 0, hashValue.length);
+
         String hash = Converter.trytes(hashValue);
         return hash;
+    }
+
+    public long getBalance(String account) {
+        long total = 0;
+        // TODO: find unspent utxo more quickly.
+        for (int i = transactions.size() - 1; i >= 0; i--){
+            List<TxnOut> txnOutList = transactions.get(i).outputs;
+            for (int j = 0; j < txnOutList.size(); j++) {
+                TxnOut txnOut = txnOutList.get(j);
+                if (txnOut.userAccount.equals(account)){
+                    boolean jumpFlag = false;
+                    // TODO: check utxo whether or not being spent more quickly.
+                    out:
+                    for (int k = transactions.size() - 1; k > 0; k--){
+                        for (TxnIn tempTxnIn: transactions.get(k).inputs) {
+                            if (tempTxnIn.txnHash.equals(transactions.get(i).txnHash) && tempTxnIn.idx == j){
+                                jumpFlag = true; // already spend
+                                break out;
+                            }
+                        }
+                    }
+                    if (jumpFlag){
+                        continue;
+                    }
+
+                    total += txnOut.amount;
+                }
+            }
+        }
+
+        return total;
     }
 }

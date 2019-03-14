@@ -84,4 +84,39 @@ public class TransactionDataTest {
 
     }
 
+    @Test
+    public void testGetBalance() {
+        long balanceA = transactionData.getBalance("A");
+        String txnStr = "{\"amnt\": 100, \"from\": \"A\", \"tag\": \"TX\", \"to\": \"b\"}";
+        transactionData.readFromStr(txnStr);
+
+        txnStr = "{\"amnt\": 100, \"from\": \"A\", \"tag\": \"TX\", \"to\": \"c\"}";
+        transactionData.readFromStr(txnStr);
+
+        txnStr = "{\"amnt\": 100, \"from\": \"A\", \"tag\": \"TX\", \"to\": \"d\"}";
+        transactionData.readFromStr(txnStr);
+
+        txnStr = "{\"amnt\": 100, \"from\": \"A\", \"tag\": \"TX\", \"to\": \"e\"}";
+        transactionData.readFromStr(txnStr);
+
+        txnStr = "{\"amnt\": 100, \"from\": \"A\", \"tag\": \"TX\", \"to\": \"f\"}";
+        transactionData.readFromStr(txnStr);
+
+        txnStr = "{\"amnt\": 100, \"from\": \"b\", \"tag\": \"TX\", \"to\": \"c\"}";
+        transactionData.readFromStr(txnStr);
+
+        txnStr = "{\"amnt\": 100, \"from\": \"c\", \"tag\": \"TX\", \"to\": \"f\"}";
+        transactionData.readFromStr(txnStr);
+
+        txnStr = "{\"amnt\": 10000, \"from\": \"d\", \"tag\": \"TX\", \"to\": \"e\"}";
+        transactionData.readFromStr(txnStr);
+
+        assert transactionData.getBalance("A") == balanceA - 100 - 100 - 100 - 100 - 100;
+        assert transactionData.getBalance("b") == 0;
+        assert transactionData.getBalance("c") == 100 + 100 - 100;
+        assert transactionData.getBalance("d") == 100;
+        assert transactionData.getBalance("e") == 100;
+        assert transactionData.getBalance("f") == 100 + 100;
+    }
+
 }

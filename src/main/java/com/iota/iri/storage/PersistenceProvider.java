@@ -54,6 +54,8 @@ public interface PersistenceProvider {
     void clear(Class<?> column) throws Exception;
     void clearMetadata(Class<?> column) throws Exception;
 
+    void addTxnCount(long count);
+
     long getTotalTxns() throws Exception;
 
     List<Hash> getSiblings(Hash block);

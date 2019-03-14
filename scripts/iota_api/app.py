@@ -63,7 +63,11 @@ def send_to_ipfs_iota(tx_string, tx_num, tag):
         f.flush()
         f.close()
 
-        ipfs_hash = commands.getoutput(' '.join(['ipfs', 'add', filename, '-q']))
+        (status, ipfs_hash) = commands.getstatusoutput(' '.join(['ipfs', 'add', filename, '-q']))
+        if status != 0:
+            print("[ERROR]Sending to ipfs failed -- '%s'" % ipfs_hash, file=sys.stderr)
+            return
+
         print("[INFO]Cache json %s in ipfs, the hash is %s." % (tx_string, ipfs_hash), file=sys.stderr)
 
         if tx_num == 1:
@@ -133,8 +137,21 @@ def hello_world():
 
 @app.route('/get_balance', methods=['GET'])
 def get_balance():
-    cache.get_balance('StreamNetCoin')
-    return 'ok'
+    req_json = request.get_json()
+
+    if req_json is None:
+        return 'error'
+
+    if not req_json.has_key(u'account'):
+        print("[ERROR]Account is needed.", file=sys.stderr)
+        return 'error'
+
+    account = req_json[u'account']
+    resp = cache.get_balance('StreamNetCoin', account)
+
+    balance = resp[u'balances'][0]
+    print("Balance of '%s' is [%s]" % (account, balance), file=sys.stderr)
+    return balance
 
 @app.route('/put_file', methods=['POST'])
 def put_file():

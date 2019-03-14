@@ -1,9 +1,11 @@
 package com.iota.iri.storage.localinmemorygraph;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
+import com.iota.iri.service.tipselection.impl.CumWeightScore;
 import com.iota.iri.service.tipselection.impl.KatzCentrality;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
@@ -50,12 +52,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         topOrderStreaming = new HashMap<>();
         score = new HashMap<>();
         totalDepth = 0;
-        try {
-            buildGraph();
-            buildPivotChain();
-        } catch (NullPointerException e) {
-            ; // initialization failed because tangle has nothing
-        }
     }
 
     //FIXME for debug
@@ -77,6 +73,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     public void init() throws Exception {
+        try {
+            buildGraph();
+//            buildPivotChain();
+        } catch (NullPointerException e) {
+            ; // initialization failed because tangle has nothing
+        }
     }
 
     public boolean isAvailable() {
@@ -238,6 +240,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 revGraph.get(trunk).add(model.getHash());
                 revGraph.get(branch).add(model.getHash());
 
+                //parentGraph
+                parentGraph.put(model.getHash(), trunk);
+
+                if (parentRevGraph.get(trunk) == null) {
+                    parentRevGraph.put(trunk, new HashSet<>());
+                }
+                parentRevGraph.get(trunk).add(model.getHash());
+
                 // update degrees
                 if (degs.get(model.getHash()) == null || degs.get(model.getHash()) == 0) {
                     degs.put(model.getHash(), 2);
@@ -249,6 +259,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     degs.put(branch, 0);
                 }
 
+                updateScore(model.getHash());
                 one = tangle.next(Transaction.class, one.low);
             }
             computeToplogicalOrder();
@@ -269,7 +280,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     private void updateTopologicalOrder(Hash vet, Hash trunk, Hash branch) {
-        if (topOrderStreaming.isEmpty()) { 
+        if (topOrderStreaming.isEmpty()) {
             topOrderStreaming.put(1, new HashSet<>());
             topOrderStreaming.get(1).add(vet);
             lvlMap.put(vet, 1);
@@ -297,10 +308,16 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     private void updateScore(Hash vet) {
         try {
-            score.put(vet, 1.0 / (score.size() + 1));
-            KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
-            centrality.setScore(score);
-            score = centrality.compute();
+            if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
+                if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
+                    score = CumWeightScore.update(graph, score, vet);
+                } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
+                    score.put(vet, 1.0 / (score.size() + 1));
+                    KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
+                    centrality.setScore(score);
+                    score = centrality.compute();
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(System.out));
         }
@@ -344,8 +361,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public void computeScore() {
         try {
-            KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
-            score = centrality.compute();
+            if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
+                if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
+                    score = CumWeightScore.compute(revGraph, graph, getGenesis());
+                } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
+                    KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
+                    score = centrality.compute();
+                }
+            }
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(System.out));
         }
@@ -407,10 +430,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
         } catch(Exception e) {
             e.printStackTrace();
-        } 
+        }
     }
 
-    
+
     //FIXME for debug :: for graphviz visualization
     void printRevGraph(HashMap<Hash, Set<Hash>> revGraph) {
         for (Hash key : revGraph.keySet()) {
@@ -509,9 +532,12 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         // TODO implement this
     }
 
+    public void addTxnCount(long count) {
+        // TODO implement this
+    }
+
     public long getTotalTxns() {
-        long ret = 0;
-        return ret;
+        return 0;
     }
 
     public List<Hash> totalTopOrder() {
@@ -520,14 +546,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public List<Hash> confluxOrder(Hash block) {
         LinkedList<Hash> list = new LinkedList<>();
+        Set<Hash> covered = new HashSet<Hash>();
         if (block == null || !graph.keySet().contains(block)) {
             return list;
         }
         do {
             Hash parent = parentGraph.get(block);
             List<Hash> subTopOrder = new ArrayList<>();
-            List<Hash> diff = new ArrayList<>(past(block));
-            diff.removeAll(past(parent));
+            List<Hash> diff = getDiffSet(block, parent, covered);
             while (diff.size() != 0) {
                 Map<Hash, Set<Hash>> subGraph = buildSubGraph(diff);
                 List<Hash> noBeforeInTmpGraph = subGraph.entrySet().stream().filter(e -> CollectionUtils.isEmpty(e.getValue())).map(Map.Entry::getKey).collect(Collectors.toList());
@@ -537,20 +563,24 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 diff.removeAll(noBeforeInTmpGraph);
             }
             list.addAll(0, subTopOrder);
+            covered.addAll(subTopOrder);
             block = parentGraph.get(block);
         } while (parentGraph.get(block) != null && parentGraph.keySet().contains(block));
         return list;
     }
 
     public Map<Hash, Set<Hash>> buildSubGraph(List<Hash> blocks) {
-        Map<Hash, Set<Hash>> newGraph = new HashMap<>(graph.size());
-        graph.entrySet().forEach(e -> newGraph.put(e.getKey(), new HashSet<>(e.getValue())));
         Map<Hash, Set<Hash>> subMap = new HashMap<>();
-        for (Map.Entry<Hash, Set<Hash>> entry : newGraph.entrySet()) {
-            if (blocks.contains(entry.getKey())) {
-                entry.getValue().removeIf(hash -> !blocks.contains(hash));
-                subMap.put(entry.getKey(), entry.getValue());
+        for(Hash h : blocks) {
+            Set<Hash> s = graph.get(h);
+            Set<Hash> ss = new HashSet<>();
+            
+            for (Hash hh : s) {
+                if(blocks.contains(hh)) {
+                    ss.add(hh);
+                }
             }
+            subMap.put(h, ss);
         }
         return subMap;
     }
@@ -628,6 +658,58 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return past;
     }
 
+    public List<Hash> getDiffSet(Hash block, Hash parent, Set<Hash> covered) {
+        if (graph.get(block) == null) {
+            return Collections.emptyList();
+        }
+
+        Set<Hash> ret = new HashSet<Hash> ();
+        LinkedList<Hash> queue = new LinkedList<>();
+        queue.add(block);
+        Hash h;
+        while (!queue.isEmpty()) {
+            h = queue.pop();
+            for (Hash e : graph.get(h)) {
+                if (graph.containsKey(e) && !ret.contains(e) && !ifCovered(e, parent, covered)) {
+                    queue.add(e);
+                }
+            }
+            ret.add(h);
+        }
+        return new ArrayList<Hash>(ret);
+    }
+
+    private boolean ifCovered(Hash block, Hash ancestor, Set<Hash> covered) {
+        if (revGraph.get(block) == null) {
+            return false;
+        }
+
+        if(block.equals(ancestor)) {
+            return true;
+        }
+
+        Set<Hash> visisted = new HashSet<>();
+        LinkedList<Hash> queue = new LinkedList<>();
+        queue.add(block);
+        visisted.add(block);
+
+        Hash h;
+        while (!queue.isEmpty()) {
+            h = queue.pop();
+            for (Hash e : revGraph.get(h)) {
+                if(e.equals(ancestor)) {
+                    return true;
+                } else {
+                    if (revGraph.containsKey(e) && !visisted.contains(e) && !covered.contains(e)) {
+                        queue.add(e);
+                        visisted.add(e);
+                    } 
+                }
+            }
+        }
+        return false;
+    }
+
     public int getNumOfTips() {
         int ret = 0;
         for(Hash h : graph.keySet()) {
@@ -638,3 +720,4 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ret;
     }
 }
+

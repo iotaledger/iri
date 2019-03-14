@@ -80,7 +80,7 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
             }
 
             tx.success();
-        } 
+        }
         return true;
     }
 
@@ -104,7 +104,7 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
     public Pair<Indexable, Persistable> latest(Class<?> model, Class<?> indexModel) throws Exception
     {
         // TODO implement this
-        return new Pair<Indexable,Persistable>(new TransactionHash(), new Transaction()); 
+        return new Pair<Indexable,Persistable>(new TransactionHash(), new Transaction());
     }
 
     public Set<Indexable> keysWithMissingReferences(Class<?> modelClass, Class<?> otherClass) throws Exception
@@ -195,7 +195,7 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
             }
             tx.success();
         }
-        
+
         return true;
     }
 
@@ -219,6 +219,10 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
         // TODO implement this
     }
 
+    public void addTxnCount(long count) {
+        // TODO implement this
+    }
+
     public long getTotalTxns() throws Exception
     {
         long ret = 0;
@@ -232,7 +236,7 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
             }
             tx.success();
         }
-        
+
         return ret;
     }
 
@@ -273,4 +277,4 @@ public class Neo4jPersistenceProvider implements AutoCloseable, PersistenceProvi
         // TODO
         return -1;
     }
-} 
+}

@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.6.0-RELEASE</version>
+    <version>1.6.1-DEV-${version.number}</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 
@@ -23,6 +23,7 @@
         <checkstyle-version>3.0.0</checkstyle-version>
         <undertow.version>1.4.26.Final</undertow.version>
         <jacoco.version>0.7.9</jacoco.version>
+        <version.number>${git.commit.id.abbrev}</version.number>
         <!-- Setting the checkstyle.config.location here will make checkstyle use this file in every maven target.
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
              configLocation attribute on every maven goal. -->
@@ -94,7 +95,7 @@
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
-            <version>5.7.3</version>
+            <version>5.17.2</version>
         </dependency>
 
         <!-- json support -->
@@ -108,7 +109,7 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.9.6</version>
+            <version>2.9.8</version>
         </dependency>
 
         <!-- undertow server -->
@@ -227,6 +228,36 @@
                     <testSource>${java-version}</testSource>
                     <testTarget>${java-version}</testTarget>
                     <useIncrementalCompilation>false</useIncrementalCompilation>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>pl.project13.maven</groupId>
+                <artifactId>git-commit-id-plugin</artifactId>
+                <version>2.2.4</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>revision</goal>
+                        </goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <dotGitDirectory>${project.basedir}/.git</dotGitDirectory>
+                    <generateGitPropertiesFile>false</generateGitPropertiesFile><!-- somehow necessary. otherwise the variables are not available in the pom -->
+                </configuration>
+            </plugin>
+            <!-- Controls how jar is being created -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <version>3.1.1</version>
+                <configuration>
+                    <archive>
+                        <manifest>
+                            <addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+                        </manifest>
+                    </archive>
                 </configuration>
             </plugin>
             <!-- The javadoc plugin can be called by running "mvn javadoc:javadoc" and will generate the classic javadoc
@@ -350,7 +381,7 @@
                                             commons-io:commons-io:2.5:jar:null:compile:2852e6e05fbb95076fc091f6d1780f1f8fe35e0f
                                         </urn>
                                         <urn>
-                                            org.rocksdb:rocksdbjni:5.7.3:jar:null:compile:421b44ad957a2b6cce5adedc204db551831b553d
+                                            org.rocksdb:rocksdbjni:5.17.2:jar:null:compile:bca52276cabe91a3b97cc18e50fa2eabc2986f58
                                         </urn>
                                         <urn>
                                             com.google.code.gson:gson:2.8.1:jar:null:compile:02a8e0aa38a2e21cb39e2f5a7d6704cbdc941da0

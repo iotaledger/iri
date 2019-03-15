@@ -13,9 +13,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-/**
- * Created by paul on 5/2/17.
- */
+import static com.iota.iri.TransactionTestUtils.getRandomTransactionTrits;
+
 public class BundleViewModelTest {
     private static final TemporaryFolder dbFolder = new TemporaryFolder();
     private static final TemporaryFolder logFolder = new TemporaryFolder();
@@ -72,7 +71,7 @@ public class BundleViewModelTest {
 
     @Test
     public void firstShouldFindTx() throws Exception {
-        byte[] trits = TransactionViewModelTest.getRandomTransactionTrits();
+        byte[] trits = getRandomTransactionTrits();
         TransactionViewModel transactionViewModel = new TransactionViewModel(trits, TransactionHash.calculate(SpongeFactory.Mode.CURLP81, trits));
         transactionViewModel.store(tangle, snapshotProvider.getInitialSnapshot());
 

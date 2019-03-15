@@ -8,10 +8,12 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.service.ledger.LedgerException;
 import com.iota.iri.service.ledger.LedgerService;
 import com.iota.iri.service.milestone.MilestoneService;
+import com.iota.iri.service.snapshot.Snapshot;
 import com.iota.iri.service.snapshot.SnapshotException;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.service.snapshot.SnapshotService;
 import com.iota.iri.service.snapshot.impl.SnapshotStateDiffImpl;
+import com.iota.iri.service.spentaddresses.SpentAddressesService;
 import com.iota.iri.storage.Tangle;
 
 import java.util.*;
@@ -42,6 +44,10 @@ public class LedgerServiceImpl implements LedgerService {
      */
     private MilestoneService milestoneService;
 
+    private SpentAddressesService spentAddressesService;
+
+    private BundleValidator bundleValidator;
+
     /**
      * Initializes the instance and registers its dependencies.<br />
      * <br />
@@ -61,12 +67,15 @@ public class LedgerServiceImpl implements LedgerService {
      * @return the initialized instance itself to allow chaining
      */
     public LedgerServiceImpl init(Tangle tangle, SnapshotProvider snapshotProvider, SnapshotService snapshotService,
-            MilestoneService milestoneService) {
+            MilestoneService milestoneService, SpentAddressesService spentAddressesService,
+                                  BundleValidator bundleValidator) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.snapshotService = snapshotService;
         this.milestoneService = milestoneService;
+        this.spentAddressesService = spentAddressesService;
+        this.bundleValidator = bundleValidator;
 
         return this;
     }
@@ -153,7 +162,9 @@ public class LedgerServiceImpl implements LedgerService {
         Map<Hash, Long> state = new HashMap<>();
         Set<Hash> countedTx = new HashSet<>();
 
-        snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet().forEach(solidEntryPointHash -> {
+        Snapshot initialSnapshot = snapshotProvider.getInitialSnapshot();
+        Map<Hash, Integer> solidEntryPoints = initialSnapshot.getSolidEntryPoints();
+        solidEntryPoints.keySet().forEach(solidEntryPointHash -> {
             visitedTransactions.add(solidEntryPointHash);
             countedTx.add(solidEntryPointHash);
         });
@@ -173,10 +184,15 @@ public class LedgerServiceImpl implements LedgerService {
                             if (transactionViewModel.getCurrentIndex() == 0) {
                                 boolean validBundle = false;
 
-                                final List<List<TransactionViewModel>> bundleTransactions = BundleValidator.validate(
+                                final List<List<TransactionViewModel>> bundleTransactions = bundleValidator.validate(
                                         tangle, snapshotProvider.getInitialSnapshot(), transactionViewModel.getHash());
 
                                 for (final List<TransactionViewModel> bundleTransactionViewModels : bundleTransactions) {
+
+                                    //ISSUE 1008: generateBalanceDiff should be refactored so we don't have those hidden
+                                    // concerns
+                                    spentAddressesService
+                                            .persistValidatedSpentAddressesAsync(bundleTransactionViewModels);
 
                                     if (BundleValidator.isInconsistent(bundleTransactionViewModels)) {
                                         break;
@@ -216,6 +232,7 @@ public class LedgerServiceImpl implements LedgerService {
 
         return state;
     }
+
 
     /**
      * Generates the {@link com.iota.iri.model.StateDiff} that belongs to the given milestone in the database and marks

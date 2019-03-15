@@ -22,6 +22,7 @@ import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.impl.WalkValidatorImpl;
 import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.IotaIOUtils;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.MapIdentityManager;
 
 import io.undertow.Undertow;
@@ -187,7 +188,7 @@ public class API {
                             exchange.getResponseHeaders().put(Headers.CONTENT_LENGTH, 0);
                             exchange.getResponseHeaders().put(Headers.ALLOW, allowedMethods);
                             exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Origin"), "*");
-                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Headers"), "Origin, X-Requested-With, Content-Type, Accept, X-IOTA-API-Version");
+                            exchange.getResponseHeaders().put(new HttpString("Access-Control-Allow-Headers"), "User-Agent, Origin, X-Requested-With, Content-Type, Accept, X-IOTA-API-Version");
                             exchange.getResponseSender().close();
                             return;
                         }
@@ -351,7 +352,7 @@ public class API {
             // Is this command allowed to be run from this request address?
             // We check the remote limit API configuration.
             if (instance.configuration.getRemoteLimitApi().contains(command) &&
-                    !sourceAddress.getAddress().isLoopbackAddress()) {
+                    !instance.configuration.getRemoteTrustedApiHosts().contains(sourceAddress.getAddress())) {
                 return AccessLimitedResponse.create("COMMAND " + command + " is not available on this node");
             }
 
@@ -590,7 +591,7 @@ public class API {
                 state = false;
                 info = "tails are not solid (missing a referenced tx): " + transaction;
                 break;
-            } else if (BundleValidator.validate(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), txVM.getHash()).size() == 0) {
+            } else if (instance.bundleValidator.validate(instance.tangle, instance.snapshotProvider.getInitialSnapshot(), txVM.getHash()).size() == 0) {
                 state = false;
                 info = "tails are not consistent (bundle is invalid): " + transaction;
                 break;
@@ -900,8 +901,8 @@ public class API {
         MilestoneViewModel milestone = MilestoneViewModel.first(instance.tangle);
         
         return GetNodeInfoResponse.create(
-                name, 
-                IRI.VERSION,
+                name,
+                IotaUtils.getIriVersion(),
                 Runtime.getRuntime().availableProcessors(),
                 Runtime.getRuntime().freeMemory(),
                 System.getProperty("java.version"),
@@ -923,7 +924,7 @@ public class API {
                 instance.tipsViewModel.size(),
                 instance.transactionRequester.numberOfTransactionsToRequest(),
                 features,
-                instance.configuration.getCoordinator());
+                instance.configuration.getCoordinator().toString());
     }
 
     /**

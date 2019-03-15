@@ -11,14 +11,12 @@ import com.iota.iri.service.snapshot.impl.SnapshotProviderImpl;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Converter;
-import com.iota.iri.zmq.MessageQ;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
 
-import static com.iota.iri.controllers.TransactionViewModelTest.*;
+import static com.iota.iri.TransactionTestUtils.*;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -42,8 +40,7 @@ public class TransactionValidatorTest {
             dbFolder.getRoot().getAbsolutePath(), logFolder.getRoot().getAbsolutePath(),1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
     tangle.init();
     TipsViewModel tipsViewModel = new TipsViewModel();
-    MessageQ messageQ = Mockito.mock(MessageQ.class);
-    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider, messageQ);
+    TransactionRequester txRequester = new TransactionRequester(tangle, snapshotProvider);
     txValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, txRequester);
     txValidator.setMwm(false, MAINNET_MWM);
   }
@@ -173,7 +170,7 @@ public class TransactionValidatorTest {
     rightChildLeaf.updateSolid(true);
     rightChildLeaf.store(tangle, snapshotProvider.getInitialSnapshot());
 
-    TransactionViewModel parent = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(leftChildLeaf.getHash(),
+    TransactionViewModel parent = new TransactionViewModel(getTransactionWithTrunkAndBranch(leftChildLeaf.getHash(),
             rightChildLeaf.getHash()), getRandomTransactionHash());
     parent.updateSolid(false);
     parent.store(tangle, snapshotProvider.getInitialSnapshot());
@@ -182,7 +179,7 @@ public class TransactionValidatorTest {
     parentSibling.updateSolid(false);
     parentSibling.store(tangle, snapshotProvider.getInitialSnapshot());
 
-    TransactionViewModel grandParent = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(parent.getHash(),
+    TransactionViewModel grandParent = new TransactionViewModel(getTransactionWithTrunkAndBranch(parent.getHash(),
             parentSibling.getHash()), getRandomTransactionHash());
     grandParent.updateSolid(false);
     grandParent.store(tangle, snapshotProvider.getInitialSnapshot());

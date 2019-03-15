@@ -408,7 +408,7 @@ public class TransactionViewModel {
     public Transaction getTransaction() {
         Transaction t = new Transaction();
         
-        // Read does a copy
+        //if the supplied array to the call != null the transaction bytes are copied over from the buffer.
         t.read(getBytes());
         t.readMetadata(transaction.metadata());
         return t;

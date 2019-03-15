@@ -83,7 +83,7 @@ public class TransactionTestUtils {
      * @return A transaction in the same bundle as trunk, with its index 1 below trunk index
      */
     public static TransactionViewModel createTransactionWithTrunkBundleHash(TransactionViewModel trunkTx, Hash branchHash) {
-        byte[] txTrits = getRandomTransactionWithTrunkAndBranch(trunkTx.getHash(), branchHash);
+        byte[] txTrits = getRandomTransactionTritsWithTrunkAndBranch(trunkTx.getHash(), branchHash);
         setCurrentIndex(txTrits, trunkTx.getCurrentIndex() - 1);
         setLastIndex(txTrits, trunkTx.lastIndex());
         System.arraycopy(trunkTx.trits(), TransactionViewModel.BUNDLE_TRINARY_OFFSET, txTrits,
@@ -147,19 +147,20 @@ public class TransactionTestUtils {
     public static byte[] createTransactionWithTrunkAndBranchTrits(String trytes, Hash trunk, Hash branch) {
         String expandedTrytes = expandTrytes(trytes);
         byte[] trits =  Converter.allocatingTritsFromTrytes(expandedTrytes);
-        return getTransactionWithTrunkAndBranchTrits(trits, trunk, branch);
+        return getTransactionTritsWithTrunkAndBranchTrits(trits, trunk, branch);
     }
     
     /**
      * Generates random transaction trits with the provided trytes, trunk and hash.
+     * No validation is done on the resulting trits, so fields are not valid except trunk and branch. 
      * 
      * @param trunk The trunk transaction hash
      * @param branch The branch transaction hash
      * @return The transaction trits
      */
-    public static byte[] getRandomTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {
+    public static byte[] getRandomTransactionTritsWithTrunkAndBranch(Hash trunk, Hash branch) {
         byte[] trits = getRandomTransactionTrits();
-        return getTransactionWithTrunkAndBranchTrits(trits, trunk, branch);
+        return getTransactionTritsWithTrunkAndBranchTrits(trits, trunk, branch);
     }
     
     /**
@@ -169,7 +170,7 @@ public class TransactionTestUtils {
      * @param branch The branch transaction hash
      * @return trits The transaction trits
      */
-    public static byte[] getTransactionWithTrunkAndBranchTrits(byte[] trits, Hash trunk, Hash branch) {
+    public static byte[] getTransactionTritsWithTrunkAndBranchTrits(byte[] trits, Hash trunk, Hash branch) {
         System.arraycopy(trunk.trits(), 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
                 TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
         System.arraycopy(branch.trits(), 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
@@ -228,7 +229,9 @@ public class TransactionTestUtils {
      */
     public static Transaction get9Transaction() {
         byte[] trits = new byte[TransactionViewModel.TRINARY_SIZE];
-        Arrays.fill(trits, (byte) 0);
+        for (int i = 0; i < trits.length; i++) {
+            trits[i] = 0;
+        }
 
         return buildTransaction(trits);
     }
@@ -243,10 +246,7 @@ public class TransactionTestUtils {
      */
     public static Transaction createRandomTransactionWithTrunkAndBranch(Hash trunk, Hash branch) {
         byte[] trits = getRandomTrits(TransactionViewModel.TRINARY_SIZE);
-        System.arraycopy(trunk.trits(), 0, trits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
-                TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
-        System.arraycopy(branch.trits(), 0, trits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
-                TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
+        getTransactionTritsWithTrunkAndBranchTrits(trits, trunk, branch);
         return buildTransaction(trits);
     }
 
@@ -267,8 +267,10 @@ public class TransactionTestUtils {
      * @param trits The trits to build the transaction
      * @return The created transaction
      */
-    public static Transaction buildTransaction(byte[] trits) {
+    public static Transaction buildTransaction(byte[] trits) {  
         TransactionViewModel TVM = new TransactionViewModel(trits, Hash.NULL_HASH);
+        
+        //Getters obtain and load values from TVM trits ("lazy loading")
         TVM.getAddressHash();
         TVM.getTrunkTransactionHash();
         TVM.getBranchTransactionHash();

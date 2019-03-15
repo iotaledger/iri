@@ -17,9 +17,9 @@
 
     <properties>
         <java-version>1.8</java-version>
-        <md-doclet-version>73ec5e1d8d</md-doclet-version>
+        <md-doclet-version>master-SNAPSHOT</md-doclet-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <javadoc-version>3.0.1</javadoc-version>
+        <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
         <undertow.version>1.4.26.Final</undertow.version>
         <jacoco.version>0.7.9</jacoco.version>
@@ -203,7 +203,7 @@
         
         <dependency>
             <groupId>com.github.iotaledger</groupId>
-            <artifactId>iri-mdx-doclet</artifactId>
+            <artifactId>java-md-doclet</artifactId>
             <version>${md-doclet-version}</version>
         </dependency>
 
@@ -675,14 +675,14 @@
 		                    </additionalOptions>
 		                    <quiet>true</quiet>
 		                    <docletArtifact>
-		                       
+		                       <!-- 
 		                        <groupId>org.iota</groupId>
 							    <artifactId>mddoclet</artifactId>
-							    <version>0.2</version>
-							     <!--  
+							    <version>0.2</version>-->
+							      
 		                        <groupId>com.github.iotaledger</groupId>
-                                <artifactId>iri-mdx-doclet</artifactId>
-                                <version>${md-doclet-version}</version>-->
+                                <artifactId>java-md-doclet</artifactId>
+                                <version>${md-doclet-version}</version>
 		                    </docletArtifact>
 		                </configuration>
                         <reports>

@@ -14,8 +14,6 @@ public class GetNeighborsResponse extends AbstractResponse {
 
     /**
      * The neighbors you are connected with, as well as their activity counters.
-     * 
-     * @see com.iota.iri.service.dto.GetNeighborsResponse.Neighbor
      */
     private Neighbor[] neighbors;
 
@@ -58,39 +56,39 @@ public class GetNeighborsResponse extends AbstractResponse {
         /**
          * Number of all transactions sent (invalid, valid, already-seen)
          */
-        public long numberOfAllTransactions;
+        private long numberOfAllTransactions;
         
         /**
          * Random tip requests which were sent
          */
-        public long numberOfRandomTransactionRequests;
+        private long numberOfRandomTransactionRequests;
         
         /**
          * New transactions which were transmitted.
          */
-        public long numberOfNewTransactions;
+        private long numberOfNewTransactions;
         
         /**
          * Invalid transactions your neighbor has sent you. 
          * These are transactions with invalid signatures or overall schema.
          */
-        public long numberOfInvalidTransactions;
+        private long numberOfInvalidTransactions;
         
         /**
          * Stale transactions your neighbor has sent you.
          * These are transactions with a timestamp older than your latest snapshot.
          */
-        public long numberOfStaleTransactions;
+        private long numberOfStaleTransactions;
         
         /**
          * Amount of transactions send through your neighbor
          */
-        public long numberOfSentTransactions;
+        private long numberOfSentTransactions;
         
         /**
          * The method type your neighbor is using to connect (TCP / UDP)
          */
-        public String connectionType;
+        private String connectionType;
         
         /**
          * Creates a new Neighbor DTO from a Neighbor network instance

@@ -17,7 +17,6 @@
 
     <properties>
         <java-version>1.8</java-version>
-        <md-doclet-version>master-SNAPSHOT</md-doclet-version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <javadoc-version>3.1.0</javadoc-version>
         <checkstyle-version>3.0.0</checkstyle-version>
@@ -28,6 +27,10 @@
              This variable will be load by checkstyle plugin automatically. It is more global than setting the
              configLocation attribute on every maven goal. -->
         <checkstyle.config.location>checkstyle.xml</checkstyle.config.location>
+        
+        <md-doclet-group>com.github.iotaledger</md-doclet-group>
+        <md-doclet-artifact>java-md-doclet</md-doclet-artifact>
+        <md-doclet-version>master-SNAPSHOT</md-doclet-version>
     </properties>
 
     <repositories>
@@ -203,8 +206,8 @@
         </dependency>
         
         <dependency>
-            <groupId>com.github.iotaledger</groupId>
-            <artifactId>java-md-doclet</artifactId>
+            <groupId>${md-doclet-group}</groupId>
+            <artifactId>${md-doclet-artifact}</artifactId>
             <version>${md-doclet-version}</version>
         </dependency>
 
@@ -678,10 +681,7 @@
             </plugin>
 
             <!-- The javadoc for the report can be called by running "mvn site" and will generate the the iota
-                 documentation in Markdown format. To compile this report you need the iri-mdx-doclet files from:
-                 https://github.com/iotaledger/iri-mdx-doclet. Follow the documentation on the github site to compile
-                 and install the iri-mdx-doclet locally in your maven repository.
-
+                 documentation in Markdown format.
                  Note: If you need the classic api documentation run "mvn javadoc:javadoc" instead.
                  -->
             <plugin>
@@ -692,7 +692,7 @@
                     <reportSet>
                         <id>javadoc</id>
                         <configuration>
-                            <!-- This dependency can be found at: https://github.com/iotaledger/iri-mdx-doclet -->
+                            <!-- This dependency can be found at: https://github.com/iotaledger/java-md-doclet -->
 		                    <doclet>org.iota.mddoclet.MDDoclet</doclet>
 		                    <sourcepath>src/main/java</sourcepath>
 		                    <useStandardDocletOptions>false</useStandardDocletOptions>
@@ -706,13 +706,8 @@
 		                    </additionalOptions>
 		                    <quiet>true</quiet>
 		                    <docletArtifact>
-		                       <!-- 
-		                        <groupId>org.iota</groupId>
-							    <artifactId>mddoclet</artifactId>
-							    <version>0.2</version>-->
-							      
-		                        <groupId>com.github.iotaledger</groupId>
-                                <artifactId>java-md-doclet</artifactId>
+		                        <groupId>${md-doclet-group}</groupId>
+                                <artifactId>${md-doclet-artifact}</artifactId>
                                 <version>${md-doclet-version}</version>
 		                    </docletArtifact>
 		                </configuration>

@@ -133,10 +133,6 @@ public class IotaIOUtils extends IOUtils {
             Hash tag = model.getTagValue();
             String tagStr = Converter.trytesToAscii(Converter.trytes(tag.trits()));
             String type = tagStr.substring(8, 10);
-<<<<<<< HEAD
-            System.out.println("[type]" + type);
-=======
->>>>>>> [fix #207] TX transfer bug
             if(type.equals("TX") && !BaseIotaConfig.getInstance().isEnableIPFSTxns()) {
                 String sig = Converter.trytes(model.getSignature());
                 String txnsStr = Converter.trytesToAscii(sig);
@@ -155,19 +151,11 @@ public class IotaIOUtils extends IOUtils {
                     Converter.trits(s, sigTrits, 0);
                     System.arraycopy(sigTrits, 0, ret, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
 
-<<<<<<< HEAD
-                    TransactionData.getInstance().putIndex(tx, calculateHash(ret));
-=======
                     TransactionData.getInstance().putIndex(tx, model.getHash());
->>>>>>> [fix #207] TX transfer bug
                 }
             }
             return ret;
         } catch(IllegalArgumentException e) {
-<<<<<<< HEAD
-            e.printStackTrace();
-=======
->>>>>>> [fix #207] TX transfer bug
             return ret;
         } catch(Exception e) {
             e.printStackTrace();
@@ -175,10 +163,6 @@ public class IotaIOUtils extends IOUtils {
         }
     }
 
-<<<<<<< HEAD
-    public static Hash calculateHash(byte [] trits) {
-        return TransactionHash.calculate(trits, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
-=======
     public static void processReceivedTxn(TransactionViewModel model) {
         try {
             Hash tag = model.getTagValue();
@@ -204,6 +188,5 @@ public class IotaIOUtils extends IOUtils {
         } catch(Exception e) {
             e.printStackTrace();
         }
->>>>>>> [fix #207] TX transfer bug
     }
 }

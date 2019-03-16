@@ -21,6 +21,9 @@ import com.iota.iri.pluggables.utxo.*;
 import com.iota.iri.hash.Sponge;
 import com.iota.iri.hash.SpongeFactory;
 
+import com.iota.iri.model.TransactionHash;
+import com.iota.iri.model.Hash;
+
 public class IotaIOUtils extends IOUtils {
 
     private static final Logger log = LoggerFactory.getLogger(IotaIOUtils.class);
@@ -115,5 +118,50 @@ public class IotaIOUtils extends IOUtils {
             e.printStackTrace();
             return null;
         }
+    }
+
+    public static byte [] processTxnTrytes(byte [] trits) {
+        byte [] ret = trits;
+        TransactionViewModel model = new TransactionViewModel(trits, 
+            TransactionHash.calculate(trits, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81)));
+        // check tag, if it's dag UTXO transaction, do accoridng process
+        try {
+            Hash tag = model.getTagValue();
+            String tagStr = Converter.trytesToAscii(Converter.trytes(tag.trits()));
+            String type = tagStr.substring(8, 10);
+            System.out.println("[type]" + type);
+            if(type.equals("TX") && !BaseIotaConfig.getInstance().isEnableIPFSTxns()) {
+                String sig = Converter.trytes(model.getSignature());
+                String txnsStr = Converter.trytesToAscii(sig);
+                if(!txnsStr.contains("inputs") && !txnsStr.contains("outputs")) { // check if already been processed
+                    BatchTxns tmpBatch = new BatchTxns();
+                    int sigSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET/3;
+                    JSONObject jo = new JSONObject(txnsStr);
+                    txnsStr = jo.get("txn_content").toString();
+                    TransactionData.getInstance().readFromStr(txnsStr);
+                    Txn tx = TransactionData.getInstance().getLast();
+                    tmpBatch.addTxn(tx);
+                    
+
+                    String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), sigSize, '9');
+                    byte[] sigTrits = new byte[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
+                    Converter.trits(s, sigTrits, 0);
+                    System.arraycopy(sigTrits, 0, ret, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
+
+                    TransactionData.getInstance().putIndex(tx, calculateHash(ret));
+                }
+            }
+            return ret;
+        } catch(IllegalArgumentException e) {
+            e.printStackTrace();
+            return ret;
+        } catch(Exception e) {
+            e.printStackTrace();
+            return ret;
+        }
+    }
+
+    public static Hash calculateHash(byte [] trits) {
+        return TransactionHash.calculate(trits, TransactionViewModel.TRINARY_SIZE, SpongeFactory.create(SpongeFactory.Mode.CURLP81));
     }
 }

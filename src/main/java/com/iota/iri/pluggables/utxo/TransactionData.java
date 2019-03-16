@@ -152,6 +152,10 @@ public class TransactionData {
         }
     }
 
+    public void addTxn(Txn txn) {
+        transactions.add(txn);
+    }
+
     public String getData() {
         String ret = "";
         if(checkConsistency()) {

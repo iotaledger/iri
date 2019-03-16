@@ -1,7 +1,6 @@
 package com.iota.iri.service.restserver.resteasy;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
@@ -50,6 +49,12 @@ import io.undertow.util.Methods;
 import io.undertow.util.MimeMappings;
 import io.undertow.util.StatusCodes;
 
+/**
+ * 
+ * Rest connector based on RestEasy, which uses Jaxrs server under the hood.
+ * This will not actually have any REST endpoints, but rather handle all incoming connections from one point.
+ *
+ */
 @ApplicationPath("")
 public class RestEasy extends Application implements RestConnector {
     
@@ -58,17 +63,29 @@ public class RestEasy extends Application implements RestConnector {
     private final Gson gson = new GsonBuilder().create();
     
     private UndertowJaxrsServer server;
-    private APIConfig configuration;
 
     private DeploymentInfo info;
 
     private ApiProcessor processFunction;
     
     private int maxBodyLength;
+
+    private String remoteAuth;
+
+    private String apiHost;
+
+    private int port;
     
+    /**
+     * 
+     * @param configuration
+     */
     public RestEasy(APIConfig configuration) {
-        this.configuration = configuration;
         maxBodyLength = configuration.getMaxBodyLength();
+        port = configuration.getPort();
+        apiHost = configuration.getApiHost();
+        
+        remoteAuth = configuration.getRemoteAuth();
     }
     
     /**
@@ -98,7 +115,7 @@ public class RestEasy extends Application implements RestConnector {
      */
     @Override
     public void init(ApiProcessor processFunction) {
-        log.debug("Binding JSON-REST API Undertow server on {}:{}", configuration.getApiHost(), configuration.getPort());
+        log.debug("Binding JSON-REST API Undertow server on {}:{}", apiHost, port);
         this.processFunction = processFunction;
         
         server = new UndertowJaxrsServer();
@@ -111,7 +128,7 @@ public class RestEasy extends Application implements RestConnector {
         info.addSecurityWrapper(new HandlerWrapper() {
             @Override
             public HttpHandler wrap(HttpHandler toWrap) {
-                String credentials = configuration.getRemoteAuth();
+                String credentials = remoteAuth;
                 if (credentials == null || credentials.isEmpty()) {
                     return toWrap;
                 }
@@ -167,7 +184,7 @@ public class RestEasy extends Application implements RestConnector {
     public void start() {
         if (info != null) {
             Undertow.Builder builder = Undertow.builder()
-                    .addHttpListener(configuration.getPort(), configuration.getApiHost());
+                    .addHttpListener(port, apiHost);
             server.start(builder);
             server.deploy(info);
         }

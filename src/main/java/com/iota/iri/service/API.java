@@ -149,20 +149,20 @@ public class API {
     /**
      * Starts loading the IOTA API, parameters do not have to be initialized.
      * 
-     * @param configuration
-     * @param ixi If a command is not in the standard API,
-     *        we try to process it as a Nashorn JavaScript module through {@link IXI}
-     * @param transactionRequester
-     * @param spentAddressesService
-     * @param tangle
-     * @param bundleValidator
-     * @param snapshotProvider
-     * @param ledgerService
-     * @param node
-     * @param tipsSelector
-     * @param tipsViewModel
-     * @param transactionValidator
-     * @param latestMilestoneTracker
+     * @param configuration 
+     * @param ixi If a command is not in the standard API, 
+     *            we try to process it as a Nashorn JavaScript module through {@link IXI}
+     * @param transactionRequester Service where transactions get requested
+     * @param spentAddressesService Service to check if addresses are spent
+     * @param tangle The transaction storage
+     * @param bundleValidator Validates bundles
+     * @param snapshotProvider Manager of our currently taken snapshots
+     * @param ledgerService contains all the relevant business logic for modifying and calculating the ledger state.
+     * @param node Handles and manages neighbors
+     * @param tipsSelector Handles logic for selecting tips based on other transactions
+     * @param tipsViewModel Contains the current tips of this node
+     * @param transactionValidator Validates transactions
+     * @param latestMilestoneTracker Service that tracks the latest milestone
      */
     public API(IotaConfig configuration, IXI ixi, TransactionRequester transactionRequester,
             SpentAddressesService spentAddressesService, Tangle tangle, BundleValidator bundleValidator,
@@ -211,8 +211,13 @@ public class API {
         commandRoute.put(ApiCommand.WERE_ADDRESSES_SPENT_FROM.toString(), wereAddressesSpentFrom());
     }
 
-    
-    public void init(RestConnector connector) throws IOException {
+    /**
+     * Initializes the API for usage.
+     * Will initialize and start the supplied {@link RestConnector}
+     * 
+     * @param connector THe connector we use to handle API requests
+     */
+    public void init(RestConnector connector){
         this.connector = connector;
         connector.init(this::process);
         connector.start();

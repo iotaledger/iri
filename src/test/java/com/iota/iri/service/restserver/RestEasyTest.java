@@ -2,9 +2,7 @@ package com.iota.iri.service.restserver;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.Base64;
 
@@ -14,7 +12,6 @@ import javax.ws.rs.client.Entity;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
-import org.bouncycastle.util.encoders.Base64Encoder;
 import org.jboss.resteasy.test.TestPortProvider;
 import org.junit.After;
 import org.junit.Before;
@@ -44,7 +41,7 @@ public class RestEasyTest {
     private RestEasy server;
     
     @Before
-    public void setup() {
+    public void setUp() {
         Mockito.when(apiconfig.getPort()).thenReturn(TestPortProvider.getPort());
         Mockito.when(apiconfig.getApiHost()).thenReturn(TestPortProvider.getHost());
         Mockito.when(apiconfig.getMaxBodyLength()).thenReturn(Integer.MAX_VALUE);
@@ -69,7 +66,7 @@ public class RestEasyTest {
                 .request()
                 .post(Entity.entity(jsonString, MediaType.APPLICATION_JSON));
         ErrorResponse response = val.readEntity(ErrorResponse.class);
-        assertEquals("Invalid API Version", response.getError());
+        assertEquals("API version should be required in the header", "Invalid API Version", response.getError());
     }
     
     @Test
@@ -88,7 +85,7 @@ public class RestEasyTest {
                 .post(Entity.entity(jsonString, MediaType.APPLICATION_JSON));
         
         GetNodeInfoResponse response = val.readEntity(GetNodeInfoResponse.class);
-        assertNotNull(response);
+        assertNotNull("Response should not be parseable as a GetNodeInfoResponse", response);
     }
     
     @Test
@@ -108,7 +105,8 @@ public class RestEasyTest {
                 .header("X-IOTA-API-Version", "1")
                 .post(Entity.entity(jsonString, MediaType.APPLICATION_JSON));
         
-        assertEquals(Response.Status.UNAUTHORIZED, val.getStatusInfo());
+        assertEquals("Request should be denied due to lack of authentication", 
+                Response.Status.UNAUTHORIZED, val.getStatusInfo());
     }
     
     @Test
@@ -132,6 +130,6 @@ public class RestEasyTest {
                 .header("Authorization", "Basic " + encoded)
                 .post(Entity.entity(jsonString, MediaType.APPLICATION_JSON));
         
-        assertEquals(Response.Status.OK, val.getStatusInfo());
+        assertEquals("Request should be accepted as we authenticated", Response.Status.OK, val.getStatusInfo());
     }
 }

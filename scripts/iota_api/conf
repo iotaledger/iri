@@ -4,7 +4,7 @@ seed = EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFY
 enableIpfs = False 
 enableBatching = False 
 enableCompression = False
-listenPort = 6000
+listenPort = 5000
 listenAddress = 0.0.0.0
 
 [tendermint]

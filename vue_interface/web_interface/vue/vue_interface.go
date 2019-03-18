@@ -7,11 +7,11 @@ import (
 type Message struct {
 	Code int64
 	Message string
-	Data Data_tee
+	Data DataTee
 }
-type Data_tee struct {
-	Data_Score interface{}
-	Data_Ctx interface{}
+type DataTee struct {
+	DataScore interface{}
+	DataCtx interface{}
 }
 
 type OCli struct {
@@ -64,7 +64,7 @@ func (o *OCli)GetRankFunction(_data []byte)Message{
 		mess=Message{Code:0,Message:"查询失败"}
 		return mess
 	}
-	data:=Data_tee{teescore,teectx}
+	data:=DataTee{teescore,teectx}
 	mess=Message{Code:1,Message:"查询成功",Data:data}
 	return mess
 }

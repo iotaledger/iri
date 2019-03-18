@@ -216,36 +216,6 @@ public class TransactionViewModel {
             return false;
         }
 
-        // check tag, if it's dag UTXO transaction, do accoridng process
-        try {
-            Hash tag = getTagValue();
-            String tagStr = Converter.trytesToAscii(Converter.trytes(tag.trits()));
-            String type = tagStr.substring(8, 10);
-            if(type.equals("TX") && !BaseIotaConfig.getInstance().isEnableIPFSTxns()) {
-                String sig = Converter.trytes(getSignature());
-                String txnsStr = Converter.trytesToAscii(sig);
-                if(!txnsStr.contains("inputs") && !txnsStr.contains("outputs")) { // check if already been processed
-                    BatchTxns tmpBatch = new BatchTxns();
-                    int sigSize = SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET/3;
-                    JSONObject jo = new JSONObject(txnsStr);
-                    txnsStr = jo.get("txn_content").toString();
-                    TransactionData.getInstance().readFromStr(txnsStr);
-                    Txn tx = TransactionData.getInstance().getLast();
-                    tmpBatch.addTxn(tx);
-                    TransactionData.getInstance().putIndex(tx, getHash());
-
-                    String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), sigSize, '9');
-                    byte[] sigTrits = new byte[SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
-                    Converter.trits(s, sigTrits, 0);
-                    System.arraycopy(sigTrits, 0, trits, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
-                    Converter.bytes(trits(), 0, transaction.bytes, 0, trits().length);
-                }
-            }
-        } catch(IllegalArgumentException e) {
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-
         List<Pair<Indexable, Persistable>> batch = getSaveBatch();
         if (exists(tangle, hash)) {
             return false;

@@ -63,7 +63,7 @@ script:
   - JACOCO_V=$(mvn help:evaluate -Dexpression=jacoco.version | grep -E '^[0-9.]+')
   - export _JAVA_OPTIONS="$_JAVA_OPTIONS -javaagent:$HOME/.m2/repository/org/jacoco/org.jacoco.agent/$JACOCO_V/org.jacoco.agent-$JACOCO_V-runtime.jar=destfile=$PWD/target/jacoco.exec,output=file,append=true,dumponexit=true"
   - echo $_JAVA_OPTIONS
-  - git clone https://github.com/lhfbc/iri-regression-tests.git -b remove_milestone_with_conflux
+  - git clone https://github.com/lhfbc/iri-regression-tests.git
   - cd iri-regression-tests
   #- git checkout -f master
   - mkdir iri

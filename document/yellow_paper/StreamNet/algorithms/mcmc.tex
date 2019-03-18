@@ -1,0 +1,25 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ The local state $G$ = $<B,g,P,E>$  and a starting block $b \in B$ }
+\KwOut{ A random tip $t$ }
+
+$t \leftarrow b$
+
+\Do { Score(G,t) != 0} {
+    \For {$b' \in Child(G,t)$} {
+        $P_{bb'} = \frac{e^{\alpha Score(G,b')}}{\Sigma_{z:z \rightarrow b}e^{\alpha Score(G,z)}}$
+    }
+    $t \leftarrow $ choose $b''$ by $P_{bb''}$
+}
+
+\Return{$t$} \;
+
+\caption{{\sc MCMC($G$, $b$).}}
+\label{algo:mcmc}
+\end{algorithm}
+\DecMargin{1em}
+

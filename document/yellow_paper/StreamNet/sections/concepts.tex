@@ -1,13 +1,28 @@
-\section{Basic concepts}
-\subsection{Basic data structure}
-StreamNet is a Directed Acyclic Graph, where each vertex in the $DAG$ represents a block and the directed edge represents a confirmation relationship between blocks.
-For instance, vertex $0$ in Figure~\ref{simple_sn} represents the Genesis block, which is by default a confirmed block.
-Vertex $1$, on the other hand, represents the first block, which is confirmed by the subsequent block $2$, $3$ and $4$. 
-When a new block is not confirmed, it is called a tip. For example, in Figure~\ref{simple_sn}, block $6$ is a tip.
+\section{Basic design}
+
+
+\subsection{Data structure}
+
+The local state of a node in the StreamNet protocol is a direct acyclic graph (DAG) $G = <B,g,P,E>$. 
+$B$ is the set of blocks in $G$. 
+$g \in G$ is the genesis block. 
+For instance, vertex $g$ in Figure~\ref{simple_sn} represents the Genesis block.
+$P$ is a function that maps a block $b$ to its parent block $P(b)$. Specially, $P(g) = \perp$. 
+In Figure~\ref{simple_sn}, parent relationships are denoted by solid edges.
+Note that there is always a parent edge from a block to its parent block (i.e., $\forall b \in B$, $b, P(b)> \in E$). 
+$E$ is the set of directly reference edges and parent edges in this graph. 
+$e = <b,b^'> \in E$ is an edge from the block $b$ to the block $b^'$, 
+which means that $b'$ happens before $b$. 
+For example in Figure~\ref{simple_sn}, vertex $1$ represents the first block, which is referenced by the subsequent block $2$, $3$ and $4$. 
+Vertex $5$ has two edges, one is the parent edge pointing to $3$, another is reference edge pointing to $4$.
+When a new block is not referenced, it is called a tip. For example, in Figure~\ref{simple_sn}, block $6$ is a tip.
+All blocks in the StreamNet protocol share a predefined deterministic 
+hash function Hash that maps each block in $B$ to a unique integer id . 
+It satisfies that $\forall {b} \neq {b'}$, Hash($b$) $\neq$ Hash($b'$).
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=0.45\textwidth]{figures/simple_sn.eps}
+\includegraphics[width=0.35\textwidth]{figures/simple_sn.pdf}
     \caption{
         Example of the StreamNet data structure.
      }
@@ -15,204 +30,170 @@ When a new block is not confirmed, it is called a tip. For example, in Figure~\r
 \end{center}
 \end{figure}
 
+\subsection{StreamNet Architecture}
 
-
-\subsection{Transaction}
-\subsubsection{Genesis transaction}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.15\textwidth]{figures/genesis.eps}
-    \caption{
-        The creation of genesis node.
-     }
-\label{genesis}
-\end{center}
-\end{figure}
-
-There is no concept of mining in StreamNet, and all tokens are included in the Genesis Node.
-In Figure~\ref{genesis}, an initial transaction is created with $5$ tokens.
-
-
-\subsubsection{Transaction Content}
+Figure~\ref{architecture} presents the architecture of StreamNet,
+it's consists of multiple StreamNet machines.
+Each StreamNet machine will grow its DAG locally, and will broadcast the changes using gossip protocol. 
+Eventually, every machine will have a unified view of DAG.
+By calling total ordering algorithm, every machine can sort the DAG into a total order, 
+and the data in each block can have a relative order regardless of their local upload time.
+Figure~\ref{node} shows the local architecture of StreamNet.
+In each StreamNet node, there will be a transaction pool accecpting the transactions from the HTTP API.
+And there will be a block generator to pack a certain amount of transactions into a block, it firstly find a 
+parent and reference block to attach the new block to, based on the hash information of these two blocks and the meta data of the block itself, 
+it will then perform the proof of work (POW) to calculate the nonce for the new block.
+Agorithm~\ref{algo:main_loop} summarize the server logic for a StreamNet node.
+In the algorithm, the way to find parent reference node is by $Pivot(G, g)$.
+And the way to find reference node is by calling $MCMC(G, g)$ which is the Markov Chain Monte Carlo (MCMC) random walk algorithm \cite{popov2016tangle}.
+The two algorithms will be described in the later section.
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=0.35\textwidth]{figures/simple_transfer.eps}
+\includegraphics[width=0.45\textwidth]{figures/architecture.pdf}
     \caption{
-        An example of token transfers.
+        StreamNet architecture.
      }
-\label{simple_transfer}
+\label{architecture}
 \end{center}
 \end{figure}
-
-Assume that in Figure~\ref{genesis}, Genesis wants to transfer $1$ token to Alice, 
-and then hopes to transfer $1$ token to Bob and attach the transaction node to StreamNet, the resulting $DAG$ is shown in Figure~\ref{simple_transfer}.
-Here, each transaction must find two tip transactions to confirm, namely trunk and branch transactions.
-For example, the Genesis $\rightarrow$ Alice transaction confirms the Genesis transaction itself,
-while the Genesis $\rightarrow$ Bob transaction confirms the Genesis transaction and the Genesis $\rightarrow$ Alice transaction.
-When a transaction wants to be attached to StreamNet, it must do enough Proof of Work (POW),
-but this POW differs from Bitcoin in that its difficulty is fixed and therefore does not need the participation of miners.
-
-\subsubsection{Transaction validation (approve)}
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=0.35\textwidth]{figures/txn_success.eps}
+\includegraphics[width=0.45\textwidth]{figures/node.pdf}
     \caption{
-        An example of succesfull token transfer.
+        One node in StreamNet protocol.
      }
-\label{txn_success}
+\label{node}
 \end{center}
 \end{figure}
 
-Because a new transaction needs to find two tip transactions to approve, the validation process is diveded into two steps:
+\input{./algorithms/main_loop.tex}
 
+\input{./algorithms/mcmc.tex}
+
+\subsection{Consensus protocol}
+Based on predefineid data structure, to present the StreamNet consensus algorithm, we firstly define several utility functions and notatons. 
+%GetGenesis() returns the Genesis block. 
+BuildSubGraph() returns the sub graph by removing blocks and edges except the initial set of blocks.
+Score() presents the weight of blocks, each block achieves a score when attaching to the graph. 
+Chain() returns the chain from the genesis block to a given block following only parent edges. 
+Child() returns the set of child blocks of a given block. 
+Sibling() returns the set of siblings of a given block. 
+Subtree() returns the sub-tree of a given block in the parental tree. 
+Before() returns the set of blocks that are immediately generated before a given block. 
+Past() returns the set of blocks that are generated before a given block (but including the block itself).
+Figure~\ref{allMethods} represents the definition of these utility functions. 
+
+\begin{figure}
+\begin{flalign*}
+  &\fbox{G = $<B,g,P,E>$} \\
+  &Chain(G,b) =
+  \begin{cases}
+    g                 & \text{b = g} \\
+    Chain(G,P(b))     & \text{otherwise}
+  \end{cases} \\
+   &Child(G,b) = \{ b'| P(b') = b \} \\
+   &Sibling(G,b) = Child(G,P(b)) \\
+   &SubTree(G,b) = (U_{i\in Child(G,b)}Substree(G,i))U\{b\} \\
+   &Before(G,b) = \{b'|b' \in B, <b,b'> \in E \} \\
+   &Past(G,b) = (U_{i\in Before(G,b)}Past(G,i))U\{b\} \\
+   &SubGraph(G,B') = <B', P', E'> | \\
+   & \forall <b, b'> \in E', b \subset B' \& b' \subset B'\\
+   &Score(G,b) = |SubTree(G,b)| \\
+   &TotalOrder(G) = StreamNetOrder(G,Pivot(G,g)) 
+\end{flalign*}
+
+\caption{The Definitions of Chain(), Child(), Sibling(), Subtree(), Before(), Past() and TotalOrder(). }
+\label{allMethods}
+\end{figure}
+
+
+\subsubsection{Pivot Chain Selection} 
+The algorithm Algorithm~\ref{algo:getPivot} presents our pivot chain selection algorithm(i.e., the definition of $Pivot(G, b)$). 
+Given a StreamNet state $G$, Pivot($G$,$g$) returns the last block in the pivot chain starting from the genesis block $g$. 
+The algorithm recursively advances to the child block whoes corresponding subtree has the largest number of blocks. 
+Which is calculated by $Score(G, b)$  
+When there are multiple child blocks with the same score, the algorithm selects the child block with the largest block hash. 
+The algorithm terminates until it reaches a tip. 
+Each block in the pivot chain defines a epoch in the DAG, the nodes in DAG that satisfy Past($G$,$b$) - Past($G$,$p$) will belong to the epoch of block $b$.
+For example, in Figure~\ref{total_order}, the pivot chain is $<g, 1, 3, 5, 6>$, and the epoch of block $5$ contains two blocks $4$ and $5$.
+
+\input{./algorithms/get_pivot.tex}
+
+\subsubsection{Tip selection by MCMC} 
+
+The tip selection method by using Monte Carlo Random Walk (MCMC) is as Algorithm~\ref{algo:mcmc} shows.
+Starting from the genesis, each random walk step will choose a child to jump to,
+and the probability of jumping from one block to the next block will be calculated using the formula in the algorithm.
+$\alpha$ in the formula is an constant that is used to scale the randomness of the MCMC function, the smaller it is, the more randomness will be in the MCMC function.
+The algorithnm returns until it finds a tip.
+
+\subsubsection{Total Order} 
+The algorithm Algorithm~\ref{algo:conflux_order} defines StreamNetOrder(), 
+which corresponds to our block ordering algorithm. 
+Given the local state $G$ and a block $a$ in the pivot chain, 
+StreamNetOrder($G$,$a$) returns the ordered list of all blocks that appear in or before the epoch of $a$. 
+Using StreamNetOrder(), the total order of a local state $G$ is defined as TotalOrder($G$) in Figure~\ref{total_order}. 
+The algorithm in Figure~\ref{total_order}  first recursively orders all blocks in previous epochs(i.e., the epoch of $P(a)$ and before). 
+It then computes all blocks in the epoch of $a$ as $B_\Delta$. 
+It topologically sorts all blocks in $B_\Delta$ and appends it into the result list. 
+The algorithm uses the unique hash to break ties. 
+
+\input{./algorithms/conflux_order.tex}
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figures/total_order.pdf}
+    \caption{
+        An example of total order calculation.
+     }
+\label{total_order}
+\end{center}
+\end{figure}
+
+\subsection{The UTXO model}
+
+In StreamNet, the transactions utilizes the unspent transaction out (UTXO) model, which is exactly the same as in Bitcoin.
+In the confirmation process, the user will call $TotalOrder$ to get the relative order of different blocks, 
+and the conflict content of the block will be eliminated if the order of the block is later than the one conflicting with it in the total order.
+Figure ~\ref{utxo} shows the example of storage of UTXO in StreamNet and how conifliction is resolved.
+Two blocks both referenced the same block with Alice having 5 tokens, and construct the new transaction out which representing the transfer of token to Bob and Jack respectively.
+However, after calling $totalOrder()$, the Bob transfer block preceeds the Jack transfer block, thus the later block will be discarded.
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figures/utxo.pdf}
+    \caption{
+        An example of UTXO.
+     }
+\label{utxo}
+\end{center}
+\end{figure}
+
+\subsection{Differences with other DAG protocols}
+Here, we mainly compare the difference of our protocol with two mainstream DAG based protocols, one is IOTA, another is Conflux.
+
+\subsubsection{IOTA}
+The major difference with IOTA are in three points, firstly, the IOTA tip selection algorithm's two tips are all randomly choosen, 
+and ours is one by random one deterministic, 
+secondly, the IOTA consensus algorithm is not purely decentralized, 
+it relies on a central coordinator to issue milestones for the entry point selection, and our algorithm does not dependent on such facility. 
+Lastly, in IOTA, there is no concept of total order,
+and there are 3 ways to judge if a transaction is confirmed: 
 \begin{itemize}
-\item Start from Genesis, verify all transactions that are directly or indirectly referenced, 
-mainly to see if this will result in a negative balance or loss of the token \cite{gal_2018}.
-For example, in Figure~\ref{txn_success}, the Alice $\rightarrow$ Sam transfer needs to validate transactions it indirectly or directly approves.
-It constructs a topological transfer sequence, 
-namely (Genesis) $\rightarrow$ (Genesis $\rightarrow$ Alice) $\rightarrow$ (Genesis $\rightarrow$ Bob) $\rightarrow$ (Alice $\rightarrow$ Sam),
-and find that each step does not violate the principle of transfer, which means the verification is successful.
-In Figure~\ref{txn_fail}, the same topology sequence, when verifying (Genesis $\rightarrow$ Bob), 
-because the Genesis balance will be reduced to -1, the verification fails.
-As an honest node, Alice $\rightarrow$ Sam transaction Will find a new tip to verify,
-but it can also choose to cheat, attach this transaction to the selected tip.
-However, it is likely to result in subsequent rejection of this transaction.
-\item At the mean time, the signature of the transaction needs to be checked to ensure that the link relationship has not been tampered with.
-\end{itemize}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/txn_fail.eps}
-    \caption{
-        An example of errornous token transfer.
-     }
-\label{txn_fail}
-\end{center}
-\end{figure}
-
-\subsubsection{Tip Selection}
-There are two basic concepts in StreamNet, one is the transaction rate $\lambda$, which indicates the number of transactions per time unit.
-For convenience, we set the time unit to seconds.
-The other is invisible period $h$, indicating how many time units a transaction has not been seen by other incoming blocks after attachment.
-Because of $h$, the transaction rate $\lambda$ has an important influence on the shape of StreamNet.
-For example, in Figure~\ref{slow_txn}, when the transaction rate is slow, StreamNet is more like a chain.
-In the case of high throughput transaction in Figure~\ref{fast_txn}, the shape of StreamNet is a star.
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/slow_txn.eps}
-    \caption{
-        The shape of StreamNet when the txn rate is low. 
-     }
-\label{slow_txn}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/fast_txn.eps}
-    \caption{
-        The shape of StreamNet when the txn rate is high. 
-     }
-\label{fast_txn}
-\end{center}
-\end{figure}
-
-One of simplest tip selection algorithms is the random walk with equal probability starting from Genesis, as shown in Figure~\ref{random_equal}.
-Suppose Alice $\rightarrow$ Sam transaction wants to select tip, which starts from Genesis transaction.
-There are two options, one is Genesis $\rightarrow$ Alice, the other is Genesis $\rightarrow$ Bob,
-the probability of selecting Genesis $\rightarrow$ Alice is $\frac{1}{2}$, while Genesis $\rightarrow$ Bob is $\frac{1}{2}$. 
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/random_equal.eps}
-    \caption{
-        Random walk with equal probability.
-     }
-\label{random_equal}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/lazy_txn.eps}
-    \caption{
-        An example of lazy transaction.
-     }
-\label{lazy_txn}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/random_unequal.eps}
-    \caption{
-        Random walk with equal probability.
-     }
-\label{random_unequal}
-\end{center}
-\end{figure}
-
-\begin{figure}[!ht]
-\begin{center}
-\includegraphics[width=0.35\textwidth]{figures/super_weight.png}
-    \caption{
-        Example of the result using super-weight algorithm.
-     }
-\label{super_weight}
-\end{center}
-\end{figure}
-
-The problem with the simple random walk algorithm is that it produces lazy transactions.
-For example, in Figure~\ref{lazy_txn}, transaction $14$ is a lazy transaction that causes new transactions to approve older transactions without being penalized.
-This problem can be solved by using Monte Carlo Random Walk (MCMC).
-In Figure~\ref{random_unequal}, there is a weight on both transactions, for example, Genesis $\rightarrow$ Alice is $8$, and Genesis $\rightarrow$ Bob is $2$,
-then the probability of selecting Genesis $\rightarrow$ Alice is $\frac{8}{10}$,
-and Genesis $\rightarrow$ Bob is $\frac{2}{10}$. 
-The weight is determined by how many transactions have directly or indirectly approved the transaction.
-The more approved transactions, the greater the weight.
-If only weights are used then it is a super-weight algorithm, meaning that large-weight transactions are always preferred.
-The problem with this algorithm is that there are many transactions that can never be confirmed.
-Figure~\ref{super_weight} shows the results of a super-weighted algorithm. 
-If purely using probability weighting, then it is a
-super-probability algorithm. The trade-off between the two is represented by a $\alpha$, and it can be considered that the
-larger the $\alpha$ is, the smaller the randomness is.
-The method of specifically using $\alpha$ to calculate the jump probability is expressed in the formula (1).
-Which represents the weight of the trading node.Where $P_{xy}$ represents the probability of jumping from $x$ to $y$. $H_{y}$ represents the weight of the trading node $y$.
-
-\begin{equation}
-\label{simple_equation}
-P_{xy} = \frac{e^{\alpha H_{y}}}{\Sigma_{z:z \rightarrow x}e^{\alpha H_{z}}}
-\end{equation}
-
-\subsubsection{Transaction Consensus in the Gossip network}
-
-\begin{figure*}[ht]
-\begin{center}
-\includegraphics[width=0.65\textwidth]{figures/full_confirmation.png}
-    \caption{
-        Example of fully confirmed transactions.
-     }
-\label{full_confirmation}
-\end{center}
-\end{figure*}
-
-There are currently three ways to confirm a transaction in StreamNet:
-\begin{itemize}
-\item The first way is that the common nodes covered by all the previous tips are considered to be fully confirmed; for example, in Figure~\ref{full_confirmation}, 
-    the nodes referenced or indirectly referenced by tip1 are blue and yellow line covered transactions, 
-    while the tip2 reference Or the indirectly referenced node is a yellow line covered transaction.
-    If there are only 1, 2 tips in StreamNet, then the green node is a fully confirmed transaction, while the green node is an unconfirmed transaction.
-\item The second way is that the system sends a Coordinator tip every 1 minute.
-    This tip is called milestone and is attached to StreamNet.
-    All transactions referenced by this Coordinator tip are confirmed.
-\item The third way is to use Monte Carlo Random Walk (MCMC). 
-    Call N times to select a tip using the tip selection algorithm.
+\item The first way is that the common nodes covered by all the tips are considered to be fully confirmed; 
+\item All transactions referenced by the milestone tip are confirmed.
+\item The third way is to use MCMC.
+    Call $N$ times to select a tip using the tip selection algorithm.
     If a block is referenced by this tip, its credibility is increased by 1.
-    After M selections have been cited M times, then the credibility is M / N.
+    After $N$ selections have been cited $M$ times, then the credibility is $M / N$.
 \end{itemize}
 
-
+\subsubsection{Conflux}
+The major difference with Conflux are in two points, firstly, 
+Conflux will approve all tips in the DAG along with parent, 
+which is much more complicated than our MCMC based two tip method. 
+Secondly, Conflux total ordering algorithm advances from genesis block to the end while StreamNet advances in the reverse direction. 
+This method is one of the major contribution to our streaming graph based optimizations, 
+which will be discussed in the next chapter. 

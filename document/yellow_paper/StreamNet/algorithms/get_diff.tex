@@ -1,0 +1,31 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ Graph $G$, Block $b$, covered block set $C$}
+\KwOut{ diff set $D \gets Past(G,b) - Past(G,p)$ }
+
+    $D = {\O}$ \;
+    $Q \gets [b]$ \;
+    $visited = \{b\}$ \;
+    $p$ = $Parent(G, b)$ \;
+    \While{ $Q != \O$} {
+        $b'$ = $Q.pop()$ \;
+        \For { $b'' \in Before(G, b')$ } {
+            \uIf{$IsCovered(G, p ,b'',C) \land b'' != \perp$} {
+                $Q.append(b'')$ \;
+                $visited.add(b'')$ \;
+            }
+        }
+        $D.add(b')$ \;
+        $C.add(b')$ \;
+    }
+
+\Return{$D$} \;
+
+\caption{{\sc GetDiffSet($G$, $b$, $C$).}}
+\label{algo:get_diff_set}
+\end{algorithm}
+\DecMargin{1em}

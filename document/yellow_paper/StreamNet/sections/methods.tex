@@ -1,122 +1,99 @@
-\section{StreamNet main algorithm}
+\section{Optimization Methods}
+One of the biggest challenges to maintain the stability of DAG system is that, 
+as the local data structure growing, the graph algorithms ($Pivot()$, $MCMC()$, $StreamNetOrder()$), 
+relies on some of the graph properties that needs to be recalculated everytime these functions are called,
+which are very expensive. 
+Table~\ref{tab:properties} list all the expensive graph properties that are called. 
+Suppose the set of blocks in the DAG is represented by $B$, and the depth of the pivot chain is $d$.
+Then we give the analysis of complexity in the following way. 
+$Score()$ relies on the calculation of $SubTree()$ which is dependent on the breath first search ($BFS$), and the average $BFS$
+complexity would be $O(|B|)$, consider the scenario of MCMC() and Pivot() which are advanced through the main chain,
+the complexity would be in total $O(|B|*d)$ in both of these two cases.
+The calculation of $Past()$ also relies on the $BFS$ operator, in the StreamNetOrder() algorithm, the complexity would be 
+accrued to $O(|B| * d)$.
+TopOrder() is used in sub-order ranking the blocks in the same epoch.
+It's the classical topological sorting problem, and the complexity in the StreamNetOrder() would be $O(|B|)$.
 
-%\subsection{Storage}
-
-%\subsection{UTXO and Hash Functions}
-
-\subsection{DAG total ordering algorithm}
-
-\subsubsection{Metrics for Pivotal Chain Selection}
-In Phantom \cite{sompolinskyphantom} and Conflux \cite{li2018scaling}, the $GHOST$ rule \cite{sompolinsky2015secure} is applied for selecting the pivotal chain.
-Here we introduce a new metric with Katz centrality \cite{katz1953new} as the weighting criteria. 
-In StreamNet, we use an Adjacency Matrix to represent the direct link relationship between blocks, which is represented by $A$,
-and a second-order link matrix $A^2_{ij}$ (representing the number of nodes that jump from node $i$ to node $j$ by two steps).
-Similarly, we represent $k$-order adjacency matrix $A^k$.
-Then the importance vector of each node can be calculated by formula (2). 
-Where $\alpha$ is vector which measures the vertex importance, which $I$ is an identity matrix of all ones.
-Because the transactions in StreamNet are constantly entering the network, 
-if recalculate the Katz centrality every time a pivotal chain computed, 
-then the complexity will be intolerable. 
-So a streaming computing framework is needed. 
-To dynamically update the Katz centrality based on the newly added nodes, 
-we use an incremental algorithm to deal with the streaming graph calculation \cite{nathan2018incrementally}.
-
-\begin{equation}
-\label{simple_equation}
-\sum_{k=1}^{max} \alpha^{k-1}A^{k}=A(I-\alpha A)^{-1}
-\end{equation}
-
-\subsubsection{Algorithm framework}
-At any time, the local state of a user in the Conflux protocal is a graph $G = <B,g,P,E>$. $B$ is the set of blocks in $G$. $g \in G$ is the genesis block. $P$ is a function that maps a block $b$ to its parent block $P(b)$. Specially, $P(g) = \perp$. $E$ is the set of directly reference edges and parent edges in this graph. $e = <b,b^'> \in E$ is an edge from the block $b$ to the block $b^'$, which denotes that $b'$ happens before $b$. Note that there is always a parent edge from a block to its parent block (i.e., $\forall b \in B$, $b, P(b)> \in E$). All nodes in the Conflux protocal share a predefined deterministic hash function Hash that maps each block in $B$ to a unique integer id . It satisfies that $\forall {b} \neq {b'}$, Hash($b$) $\neq$ Hash($b'$).
-
-We next define several utility functions and notatons. GetGenesis() returns the Genesis block. Past() returns the set of blocks that are generated before a given block(but include the block itself). BuildSubGraph() returns the sub graph by removing blocks and edges except the certain blocks.  In addition, a map called parentGragh is defined, key presents a block and value is the set of blocks that the block approves. Conversely, parentRevGraph construts a relationship between the block and its approvee block. Score presents the weight of blocks, each block achieves a score when attaching to the graph. Figure~\ref{allMethods} represents the definition of these utility functions. 
-
-\begin{figure}
-\begin{flalign*}
-  &\fbox{G = $<B,g,P,E>$} \\
-  &Chain(G,b) =
-  \begin{cases}
-    g                 & \text{b = g} \\
-    Chain(G,P(b))     & \text{otherwise}
-  \end{cases} \\
-   &Child(G,b) = \{ b'| P(b') = b \} \\
-   &Sibling(G,b) = Child(G,P(b)) \\
-   &Substree(G,b) = (U_{i\in Child(G,b)}Substree(G,i))U\{b\} \\
-   &Before(G,b) = \{b'|b' \in B, <b,b'> \in E \} \\
-   &Past(G,b) = (U_{i\in Before(G,b)}Past(G,i))U\{b\} \\
-   &TotalOrder(G) = ConfluxOrder(G,Pivot(G,g)) 
-\end{flalign*}
-
-\caption{The Definitions of Chain(), Child(), Sibling(), Subtree(), Before(), Past() and TotalOrder(). }
-\label{allMethods}
-\end{figure}
-
-$Pivot Chain Selection$: The algorithm Algorithm~\ref{algo:getPivot} presents our pivot chain selection algorithm(i.e., the definition of Pivot()). Given a DAG state $G$, Pivot($G$,$g$) returns the last block in the pivot chain starting from the genesis block $g$. The algorithm recursively advances to the child block whoes corresponding subtree has the largest number of blocks. When there are multiple child blocks with the same number, the algorithm selects the child block with the largest score. The algorithm terminates until it reaches a tip. block whoes corresponding subtree has the largest number of blocks. When there are multiple child blocks with the same number, the algorithm selects the child block with the largest score. The algorithm terminates until it reaches a tip. block whoes corresponding subtree has the largest number of blocks. When there are multiple child blocks with the same number, the algorithm selects the child block with the largest score. The algorithm terminates until it reaches a tip. 
-
-\input{./algorithms/get_pivot.tex}
-
-$Total Order$: The algorithm Algorithm~\ref{algo:conflux_order} defines ConfluxOrder(), which corresponds to our block ordering algorithm. Given the local state $G$ and a block $a$ in the pivot chain, ConfluxOrder($G$,$a$) returns the ordered list of all blocks that appear in or before the epoch of $a$. Using ConfluxOrder(), the total order of a local state $G$ is defined as TotalOrder($G$) in Figure x. The algorithm in Figure x first recursively orders all blocks in previous epochs(i.e., the epoch of $P(a)$ and before). It then computes all blocks in the epoch of $a$ as $B_\Delta$. It topologically sorts all blocks in $B_\Delta$ and appends it into the result list. The algorithm uses the unique hash to break ties. 
-
-\input{./algorithms/conflux_order.tex}
+\begin{table}[]
+\caption {Analysis of Graph properties calculation} \label{tab:properties}
+\begin{center}
+\begin{tabular}{|l|l|l|l|}
+\hline
+Graph Property        & Algorithm used   & Complexity & Tot \\ \hline
+Score(G, b)           & MCMC()           & $O(|B|)$              & $O(|B|*d)$  \\ \hline
+Score(G, b)           & Pivot()          & $O(|B|)$              & $O(|B|*d)$  \\ \hline
+Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$          & $O(|B|*d)$  \\ \hline
+TopOrder(G, b)        & StreamNetOrder() & $O(|B|)$              & $O(|B|)$    \\ \hline
+\end{tabular}
+\end{center}
+\end{table}
 
 
-\subsection{Tip Selection Algorithm with Configurable Local Modifiers}
 
-In $StreamNet$, when one new block wants to be attached to the main network, it should find a parent block and a reference block. We call this procedure the tip selection method. 
-The parent block is found by calling the total ordering algorithm and the reference block is found by calling the $MCMC$ from the entry point. The algorithm is as Algorithm~\ref{algo:tip_sel} shows.
+Considering new blocks are genereted and merged into the local data structure in a streaming way.
+The expensive graph properties could be maintained dynamically as the DAG grows.
+Such that the complexity of calculating these properties would be armortized to each time a new block is generated or merged.
+In the following sections, we will discuss how to design streaming algorithms to achieve this goal.
 
-\input{./algorithms/tip_sel.tex}
+\subsection{Optimization of Score()}
+In the optimized version, the DAG will have a map that keeps the score of each block. once there is a new generated/merged block,
+it will trigger the BFS based UpdateScore() algorithm to update the scores of the block in the map that are referenced by the new block.
+The skeleton of the UpdateScore() algorithm is as Algorithm~\ref{algo:update_score} shows.
 
-\subsubsection{Entrypoint selection}
-When performing tip selection, an entry point is neccessary, and in $IOTA$ mainet, it will not start from the genesis transaction,
-but will simply start from a coordinator ($COO$) as the entry point.
-This will leads to a centralization problem. 
-So one of the most important question we considered when designing StreamNet was how to remove $COO$ and achieve a truly decentralized $DAG$. 
-So we need a consensus authoritative transaction as a entrypoint rather than a coordinator mandated by a centralized node.
-It should be noted that we do not need to find the transaction with the largest Katz centrality score in the whole network,
-because this transaction is always the Genesis transaction.
-So we specify a depth and find the block with this depth on pivotal chain.
+\input{./algorithms/update_score.tex}
 
-\subsubsection{Local Modifier Considering Edge Information}
+\subsection{Optimization of Past(G,b) - Past(G,p)}
+
+We abbreviate the Past(G,b) - Past(G,p) as GetDiffSet(G,b,C) which is shown in the Algorithm~\ref{algo:get_diff_set}.
+This algorithm is in essence a dual direction $BFS$ algorithm. Starting from the block $b$, it will traverse its referenced blocks.
+Every time a new reference block $b'$ is discovered, it will perform a backward $BFS$ to `look back' to see if itself is already covered by the $b$'s parent block of $p$. 
+If yes, $b'$ would not be added to the forward $BFS$ queue.  
+To avoid the complexity of the backward $BFS$, the previous calculated diff set will be added to the covered set $C$, which will be passed to GetDiffSet() as a parameter.
+To be more specific, when a backward BFS is performed, the blocks in $C$ will not be added to the search queue.
+This backward search algorihtm is denoted as IsCovered() and described in detail in Algorithm~\ref{algo:is_covered}.
+
+Figure~\ref{get_diff} shows the example of the GetDiffSet() method for block $5$.
+it first perform forward BFS to find block $4$ which does not have children, then it will be added to the diff set.
+$4$ then move forward to $1$, which have three childrens, if it detect $3$ which is the parent of $5$, it will stop searching prompty.
+If it continue searching on $2$ or $4$, these two blocks would not be added to the search queue, because they are already in the covered set.
+
+\input{./algorithms/get_diff.tex}
+
+\input{./algorithms/is_covered.tex}
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=0.45\textwidth]{figures/spc.png}
+\includegraphics[width=0.35\textwidth]{figures/get_diff.pdf}
     \caption{
-        An example of simple parasite chain attack, a series of cheat transaction will refer one specific double spent transaction, 
-        when the $SPC$ grows to a certain amount, the double spent will be successful, the two red node in the figure respents the 
-        conflict transactions.
+        Example of the streaming get diff set method.
      }
-\label{spc}
+\label{get_diff}
 \end{center}
 \end{figure}
 
+\subsection{Optimization of TopOrder()}
+The topological order is used in sorting the blocks in the same epoch.
+To get the toppological order, every time, there needs a top sort of the whole DAG from the scratch.
+However we can easily update the topological order when a new block is added or merged.
+ The update rule is, when a new block is added, it's topological position will be $TopScore(G, b) \gets min(TopScore(G, Parent(b)), TopScore(G, Reference(b)))$. This step can be done in $O(1)$ 
 
-Because the attacker can attack the main network (Main StreamNet) in different forms,
-a typical scenario in which we consider the double-spending problem is the Simple Parasite Chain attack.
-A simple side chain is shown in Figure~\ref{spc}. 
-In \cite{iota_proof}, the author proposed to use local modifier to solve the attack. And in our tip selection algorithm, 
-the local modifier is used for filtering malformed tips and the strategy is configurrable. 
-Here we discuss one of the local modifier with edge information.
-The framework of this algorithm is consistent with the framework of the weight update algorithm in the existing DAG.
-The difference is that when making a set join between two approve transactions, a weighted set join is performed, and the weight is determined by edges. 
-And the information of the edge is mainly determined by time information. 
-For example, in Figure~\ref{edge_info}, assume that each edge is assigned a weight $w1$ to $w12$, 
-because transaction $5$ is approved by transactions $6$, $7$, $8$, as a result its weight is $(w1+w2+w3+w6+w1 \cdot w6)$.
 
-The reason for the adding of edge information is that the attacker often sends out a large number of transactions 
-within a short period of time to achieve the purpose of rapidly growing the side chain. 
-If edge information is used to rescale the weight, the effects of these attacks are attenuated. 
-On the contrary, becasue the issuing rate of non-attack type transaction is similar to the speed of the whole network,
-and its weight update is similar to the result of the original algorithm.
+To summarize, the optimized streaming operators can achieve the performance improvement as Table~\ref{tab:improvement} shows. 
 
-\begin{figure}[!ht]
+\begin{table}[]
+\caption {Analysis of Graph properties calculation} \label{tab:improvement}
 \begin{center}
-\includegraphics[width=0.40\textwidth]{figures/edge_info.pdf}
-    \caption{
-        Weight calculation based on edge information.
-     }
-\label{edge_info}
+\begin{tabular}{|l|l|l|l|}
+\hline
+Graph Property        & Algorithm used   & Complexity & Tot \\ \hline
+Score(G, b)           & MCMC()           & $O(|B|)$              & $O(d)$  \\ \hline
+Score(G, b)           & Pivot()          & $O(|B|)$              & $O(d)$  \\ \hline
+Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$          & $O(|B|)$  \\ \hline
+TopOrder(G, b)        & StreamNetOrder() & $O(|1|)$              & $O(|1|)$    \\ \hline
+\end{tabular}
 \end{center}
-\end{figure}
+\end{table}
 
+
+
+%\subsection{Genesis Snapshot}

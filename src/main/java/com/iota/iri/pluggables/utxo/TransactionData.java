@@ -346,6 +346,9 @@ public class TransactionData {
                     }
                 }
             }
+            if (total >= txn.amnt) {
+                break;
+            }
         }
 
         if (txnInList.size() == 0 || total < txn.amnt) {

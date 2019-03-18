@@ -41,11 +41,6 @@ install:
       && cd go-ipfs/
       && sudo ./install.sh
       && cd ..
-  # private-iota-testnet milestone
-    - git clone https://github.com/schierlm/private-iota-testnet.git --depth 1
-      && cd private-iota-testnet
-      && mvn package
-      && cd ..
 
 before_script:
   - ipfs init
@@ -54,7 +49,7 @@ before_script:
 script:
   #run tests and integration tests
   # see  https://stackoverflow.com/questions/34405047/how-do-you-merge-into-another-branch-using-travis-with-git-commands?utm_medium=organic&utm_source=google_rich_qa&utm_campaign=google_rich_qa
-  - build_head=$(git rev-parse HEAD) 
+  - build_head=$(git rev-parse HEAD)
   - git config --replace-all remote.origin.fetch +refs/heads/*:refs/remotes/origin/*
   - git fetch origin $TRAVIS_BRANCH
   - git checkout -f $TRAVIS_BRANCH
@@ -78,7 +73,7 @@ script:
   #jacoco append to report
   - mvn jacoco:report
   - cd scripts/iota_cache/
-  - python iota_cache_test.py  
+  - python iota_cache_test.py
 
 after_success:
   #codacy-coverage send report. Uses Travis Env variable (CODACY_PROJECT_TOKEN)

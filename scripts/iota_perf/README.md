@@ -13,29 +13,31 @@ We need to configure two IRI machines, two APP servers, one Nginx server to cond
 ### Deploy locally
 
 ```bash
-$ cd scripts/examples/
-$ ./conflux_dag_two_nodes.sh
-$ ./start_cli_two_nodes.sh
+cd scripts/examples/
+./conflux_dag_two_nodes.sh
+./start_cli_two_nodes.sh
 ```
 
 ### Deploy multiple machines
 
 ### Deploy Nginx for distributing requests
 
-Build the nginx docker
+Build the nginx docker, you need to configure the nginx.conf first. 
 
 ```bash
+ifconfig |grep inet # (get the ip address), the change the nginx.conf.
 docker build -t <name>:<tag> .
 ```
 
 Start the docker
 ```bash
-docker run -d -p 8080:80 --name <name> <name>:<tag>
+docker run -d -p 8080:8080 --name <name> <name>:<tag>
 ```
 
 ## Performance test by Jmeter  
-Run jmeter to collect the performance stats
+Run jmeter to collect the performance stats(you need to have the jmeter installation)
 ```bash
+jmeter -n -t PerformanceTestDAG2TM_TPS.jmx
 ```
 
 make sure the result is correct

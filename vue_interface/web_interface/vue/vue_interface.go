@@ -45,7 +45,7 @@ func (o *OCli)AddAttestationInfoFunction(_data []byte )Message{
 
 type parameter struct {
 	Period int64 `json:"period"`
-	NumRank int64 `json:"numRank"`  
+	NumRank int64 `json:"numRank"`
 }
 
 func (o *OCli)GetRankFunction(_data []byte)Message{

@@ -21,6 +21,7 @@ func AddNode(writer http.ResponseWriter, request *http.Request){
 	var o v.OCli
 	body, _ := ioutil.ReadAll(request.Body)
 	response:=o.AddAttestationInfoFunction(body)
+
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		fmt.Println(err)
 	}

@@ -41,8 +41,7 @@ public class TransactionDataTest {
         assert transactionData.transactions.get(1).outputs.get(0).userAccount.equals("B");
         assert transactionData.transactions.get(1).outputs.get(0).amount == 100;
         assert transactionData.transactions.get(1).outputs.get(1).userAccount.equals("A");
-        assert transactionData.transactions.get(1).outputs.get(1).amount == 9900;
-        System.out.println(new Gson().toJson(transactionData.transactions.get(1)));
+        assert transactionData.transactions.get(1).outputs.get(1).amount == 999999900;
 
 
         transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":200}");
@@ -57,7 +56,7 @@ public class TransactionDataTest {
         assert transactionData.transactions.get(2).outputs.get(0).userAccount.equals("B");
         assert transactionData.transactions.get(2).outputs.get(0).amount == 200;
         assert transactionData.transactions.get(2).outputs.get(1).userAccount.equals("A");
-        assert transactionData.transactions.get(2).outputs.get(1).amount == 9700;
+        assert transactionData.transactions.get(2).outputs.get(1).amount == 999999700;
         System.out.println(new Gson().toJson(transactionData.transactions.get(2)));
 
 

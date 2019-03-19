@@ -15,7 +15,6 @@ type DataTee struct {
 }
 
 type OCli struct {
-
 }
 
 type AddAtInfo interface {
@@ -25,7 +24,6 @@ type AddAtInfo interface {
 
 func (o *OCli)AddAttestationInfoFunction(_data []byte )Message{
 	mess:=Message{}
-
 	m:=make(map[string]string)
 	err := json.Unmarshal(_data, &m)
 	if err!=nil{
@@ -47,7 +45,7 @@ func (o *OCli)AddAttestationInfoFunction(_data []byte )Message{
 
 type parameter struct {
 	Period int64 `json:"period"`
-	NumRank int64 `json:"numRank"`
+	NumRank int64 `json:"numRank"`  
 }
 
 func (o *OCli)GetRankFunction(_data []byte)Message{

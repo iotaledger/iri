@@ -241,7 +241,7 @@ public class TransactionData {
 
         List<TxnOut> txnOutList = new ArrayList<>();
         TxnOut txOut = new TxnOut();
-        txOut.amount = 10000;  //just for testing
+        txOut.amount = 1000000000;  //just for testing
         txOut.userAccount = "A";  //just for testing
         txnOutList.add(txOut);
 

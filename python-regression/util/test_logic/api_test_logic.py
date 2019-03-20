@@ -1,9 +1,8 @@
 from aloe import world
 from iota import Iota, Address, Tag, TryteString
 from util import static_vals
-
-from kubernetes import config, client
-from kubernetes.stream import stream
+import json
+import urllib3
 
 import logging
 logging.basicConfig(level=logging.INFO)
@@ -203,13 +202,25 @@ def prepare_transaction_arguments(arg_list):
             arg_list[key] = TryteString.from_unicode(arg_list[key])
 
 
-def send_kube_command(node, command):
-    podname = world.machine['nodes'][node]['podname']
+def fetch_node_api_address(node):
+    host = world.machine['nodes'][node]['host']
+    port = world.machine['nodes'][node]['ports']['api']
+    address = "http://" + str(host) + ":" + str(port)
+    logger.info("Sending command to address: " + address)
+    return address
 
-    config.load_kube_config(config_file="/conf/kube/kube.config")
-    api = client.CoreV1Api()
 
-    namespace = config.list_kube_config_contexts()[0][0]['context']['namespace']
-    command_response = stream(api.connect_get_namespaced_pod_exec, podname, namespace,
-                              command=command, stdout=True, stdin=True, stderr=True, tty=False)
-    return command_response
+def send_ixi_request(node, command):
+    address = fetch_node_api_address(node)
+    headers = {
+        'content-type': 'application/json',
+        'X-IOTA-API-Version': '1'
+    }
+
+    command_string = json.dumps(command)
+
+    logger.info("Sending command")
+    http = urllib3.PoolManager()
+    request = http.request("POST", address, body=command_string, headers=headers)
+    logger.info("request sent")
+    return json.loads(request.data.decode('utf-8'))

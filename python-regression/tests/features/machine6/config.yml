@@ -11,21 +11,26 @@ default_args: &args
    './snapshot.txt'
   ]
 
+default_ixi: &ixi
+  ['https://github.com/DyrellC/LocalSnapshots.ixi/archive/v0.1.tar.gz']
 
 defaults: &db_full
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_All_Files.tar
   db_checksum: 4628789811b4ccbcc3cd898debff0e1b256a1cfdd636c7b5e1beb43fed461091
   iri_args: *args
+  ixis: *ixi
 
 db_with_snapshot: &db_with_snapshot
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_DB_and_Snapshot.tar
   db_checksum: eabb81b0570a20e8d1c65c3d29e4b4e723de537ebca0eada536e3155d5a96972
   iri_args: *args
+  ixis: *ixi
 
 db_with_ls_files: &db_with_LS_files
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/LS_Test_LS_Files_and_Snapshot.tar
   db_checksum: 87fdc9c37a6b98ec8623a5b07c49737681b7b7ac36252ab2e18cc75999f766b6
   iri_args: *args
+  ixis: *ixi
 
 nodes:
   nodeA: #name

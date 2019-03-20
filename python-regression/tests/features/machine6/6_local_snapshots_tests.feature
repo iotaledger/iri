@@ -27,13 +27,13 @@ Feature: Test Bootstrapping With LS
 
     And we wait "30" second/seconds
     Then "nodeB" is synced up to milestone 10321
-    And Local Snapshot files were created in the "nodeB" directory
+    And A local snapshot was taken on "nodeB" at index 10220
 
-    When reading the local snapshot state file on "nodeB" returns with:
+    When reading the local snapshot state on "nodeB" returns with:
       |keys                       |values                   |type             |
       |address                    |LS_TEST_STATE_ADDRESSES  |staticValue      |
 
-    And reading the local snapshot meta file on "nodeB" returns with:
+    And reading the local snapshot metadata on "nodeB" returns with:
       |keys                       |values                   |type             |
       |hashes                     |LS_TEST_MILESTONE_HASHES |staticValue      |
 

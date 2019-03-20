@@ -40,6 +40,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.xnio.channels.StreamSinkChannel;
+import org.xnio.channels.StreamSourceChannel;
 import org.xnio.streams.ChannelInputStream;
 
 import java.io.IOException;
@@ -88,7 +89,7 @@ public class API {
 
     private Undertow server;
 
-    private final Gson gson = new GsonBuilder().create();
+    private final Gson gson = new GsonBuilder().disableHtmlEscaping().create();    
     private volatile PearlDiver pearlDiver = new PearlDiver();
 
     private final AtomicInteger counter = new AtomicInteger(0);
@@ -220,7 +221,6 @@ public class API {
      */
     private void sendResponse(HttpServerExchange exchange, AbstractResponse res, long beginningTime) throws IOException {
         res.setDuration((int) (System.currentTimeMillis() - beginningTime));
-        final String response = gson.toJson(res);
 
         if (res instanceof ErrorResponse) {
             // bad request or invalid parameters
@@ -233,7 +233,10 @@ public class API {
             exchange.setStatusCode(500);
         }
 
-        setupResponseHeaders(exchange);
+
+        setupResponseHeaders(exchange, res);
+
+        final String response = convertResponseToClientFormat(res);
 
         ByteBuffer responseBuf = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
         exchange.setResponseContentLength(responseBuf.array().length);
@@ -258,6 +261,21 @@ public class API {
         sinkChannel.resumeWrites();
     }
 
+    private String convertResponseToClientFormat(AbstractResponse res) {
+        String response = null;
+        if(res instanceof IXIResponse){
+            final String content = ((IXIResponse)res).getContent();
+            if(content != null && StringUtils.isNotBlank(content)){
+                response = content;
+            }
+        }
+        if(response == null){
+            response = gson.toJson(res);
+        }
+
+         return response;
+    }
+    
     /**
      * <p>
      *     Processes an API HTTP request.
@@ -275,22 +293,47 @@ public class API {
      * @throws IOException If the body of this HTTP request cannot be read
      */
     private void processRequest(final HttpServerExchange exchange) throws IOException {
-        final ChannelInputStream cis = new ChannelInputStream(exchange.getRequestChannel());
-        exchange.getResponseHeaders().put(Headers.CONTENT_TYPE, "application/json");
-
         final long beginningTime = System.currentTimeMillis();
-        final String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
-        AbstractResponse response;
 
-        if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
-            response = ErrorResponse.create("Invalid API Version");
-        } else if (body.length() > maxBodyLength) {
-            response = ErrorResponse.create("Request too long");
-        } else {
-            response = process(body, exchange.getSourceAddress());
+        AbstractResponse response;
+        try {
+            final String body = getRequestBody(exchange);
+            if (body.length() > maxBodyLength) {
+                response = ErrorResponse.create("Request too long");
+            } else {
+                response = process(body, exchange);
+            }
+        } catch (IOException e) {
+            log.error("API Exception: {}", e.getLocalizedMessage(), e);
+            response =  ErrorResponse.create(e.getLocalizedMessage());
         }
         sendResponse(exchange, response, beginningTime);
     }
+
+    private String getRequestBody(final HttpServerExchange exchange) throws IOException {
+        StreamSourceChannel requestChannel = exchange.getRequestChannel();
+        final ChannelInputStream cis = new ChannelInputStream(requestChannel);
+        String body = IotaIOUtils.toString(cis, StandardCharsets.UTF_8);
+        
+        if(body.length() == 0){
+            body = getQueryParamsBody(exchange.getQueryParameters());
+        } else if (!exchange.getRequestHeaders().contains("X-IOTA-API-Version")) {
+            throw new IOException ("Invalid API Version");
+        }
+        return body;
+    }
+
+     private String getQueryParamsBody(Map<String, Deque<String>> queryParameters) {
+        Map<String, String> parametersMapper = new HashMap<String, String>();
+
+         for (String key : queryParameters.keySet()) {
+            Deque<String> dequeuedParameter = queryParameters.get(key);
+            String parameterValue = dequeuedParameter.getFirst();
+            parametersMapper.put(key, parameterValue);
+        }
+
+         return gson.toJson(parametersMapper);
+	}
 
     /**
      * Handles an API request body.
@@ -324,8 +367,7 @@ public class API {
      * @throws UnsupportedEncodingException If the requestString cannot be parsed into a Map.
                                             Currently caught and turned into a {@link ExceptionResponse}.
      */
-    private AbstractResponse process(final String requestString, InetSocketAddress sourceAddress)
-            throws UnsupportedEncodingException {
+    private AbstractResponse process(final String requestString, final HttpServerExchange exchange) throws UnsupportedEncodingException {
 
         try {
             // Request JSON data into map
@@ -346,6 +388,7 @@ public class API {
                 return ErrorResponse.create("COMMAND parameter has not been specified in the request.");
             }
 
+            InetSocketAddress sourceAddress = exchange.getSourceAddress();
             // Is this command allowed to be run from this request address?
             // We check the remote limit API configuration.
             if (instance.configuration.getRemoteLimitApi().contains(command) &&
@@ -1624,11 +1667,22 @@ public class API {
      * Updates the {@link HttpServerExchange} {@link HeaderMap} with the proper response settings.
      * @param exchange Contains information about what the client has send to us
      */
-    private static void setupResponseHeaders(HttpServerExchange exchange) {
+    private static void setupResponseHeaders(final HttpServerExchange exchange, final AbstractResponse res) {        
         final HeaderMap headerMap = exchange.getResponseHeaders();
         headerMap.add(new HttpString("Access-Control-Allow-Origin"),"*");
         headerMap.add(new HttpString("Keep-Alive"), "timeout=500, max=100");
+        headerMap.put(Headers.CONTENT_TYPE, getResponseContentType(res));
+
     }
+
+    private static String getResponseContentType(AbstractResponse response) {
+        if(response instanceof IXIResponse){
+            return ((IXIResponse)response).getResponseContentType();
+        }
+        else {
+            return "application/json";
+        }
+	}
 
     /**
      * Sets up the {@link HttpHandler} to have correct security settings.

@@ -40,4 +40,18 @@ public class Txn {
 
         return 0;
     }
+
+    public String toString() {
+        StringBuilder s = new StringBuilder();
+        s.append("Hash: " + txnHash + "\n");
+        s.append("In: \n");
+        for (TxnIn in: inputs) {
+            s.append("    " + in.toString() + "\n");
+        }
+        s.append("Out: \n");
+        for (TxnOut out: outputs) {
+            s.append("    " + out.toString() + "\n");
+        }
+        return s.toString();
+    }
 }

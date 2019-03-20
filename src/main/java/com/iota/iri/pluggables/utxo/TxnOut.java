@@ -11,4 +11,8 @@ public class TxnOut {
     public String getUserAccount() {
         return userAccount;
     }
+
+    public String toString() {
+        return "account: " + userAccount + ", amount: " + amount;
+    }
 }

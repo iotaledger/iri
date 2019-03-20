@@ -9,6 +9,6 @@ setup(name='IRI_PyRegression',
         'pyota',
         'aloe',
         'pyyaml',
-        'kubernetes'    
-    ])
+        ]
+      )
 

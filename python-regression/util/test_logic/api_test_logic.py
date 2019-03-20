@@ -18,9 +18,7 @@ def prepare_api_call(node_name):
     """
 
     logger.info('Preparing api call')
-    host = world.machine['nodes'][node_name]['host']
-    port = world.machine['nodes'][node_name]['ports']['api']
-    address = "http://" + host + ":" + str(port)
+    address = fetch_node_api_address(node_name)
     api = Iota(address)
     logger.info('API call prepared for %s', address)
     return api
@@ -206,7 +204,6 @@ def fetch_node_api_address(node):
     host = world.machine['nodes'][node]['host']
     port = world.machine['nodes'][node]['ports']['api']
     address = "http://" + str(host) + ":" + str(port)
-    logger.info("Sending command to address: " + address)
     return address
 
 

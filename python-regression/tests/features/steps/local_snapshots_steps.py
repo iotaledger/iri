@@ -10,7 +10,6 @@ logger = logging.getLogger(__name__)
 def check_ls_indexes(step, node, index):
     command ={"command": "LocalSnapshots.getIndexes"}
     request_return = api_utils.send_ixi_request(node, command)
-    logger.info(request_return)
     assert 'ixi' in request_return, "Error: {}".format(request_return['error'])
     snapshot_index = request_return['ixi']['initialIndex']
 

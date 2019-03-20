@@ -261,6 +261,17 @@ public class API {
         sinkChannel.resumeWrites();
     }
 
+    /**
+     * <p>
+     *     Converts the abstract response to String based on type of response.
+     *     Extracts the content the res if it is an instance of IXIResponse in order
+     *     to serve it otherwise returnes the response as JSON string. 
+     * </p>
+     *
+     * @param res The response of the API.
+     *            See {@link #processRequest(HttpServerExchange)}
+     *            and {@link #process(String, InetSocketAddress)} for the different responses in each case.
+     */
     private String convertResponseToClientFormat(AbstractResponse res) {
         String response = null;
         if(res instanceof IXIResponse){
@@ -289,8 +300,8 @@ public class API {
      *     The result is sent back to the requester.
      * </p>
      *
-     * @param exchange Contains the data the client sent to us
-     * @throws IOException If the body of this HTTP request cannot be read
+     * @param exchange Contains the data the client sent to us.
+     * @throws IOException If the body of this HTTP request cannot be read.
      */
     private void processRequest(final HttpServerExchange exchange) throws IOException {
         final long beginningTime = System.currentTimeMillis();
@@ -310,6 +321,18 @@ public class API {
         sendResponse(exchange, response, beginningTime);
     }
 
+    /**
+     * <p>
+     *     Extracts a json body based on type of HTTP request.
+     *     In case of POST request the body is taken from the request body and the request
+     *     should contain of X-IOTA-API-Version header, otherwise, an exception is raised.
+     *     In another case, the body is extracted with getQueryParamsBody to build up a json
+     *     based on query parameters.
+     * </p>
+     *
+     * @param exchange Contains the data the client sent to us.
+     * @throws IOException If the body of this HTTP request cannot be read.
+     */
     private String getRequestBody(final HttpServerExchange exchange) throws IOException {
         StreamSourceChannel requestChannel = exchange.getRequestChannel();
         final ChannelInputStream cis = new ChannelInputStream(requestChannel);
@@ -323,16 +346,24 @@ public class API {
         return body;
     }
 
-     private String getQueryParamsBody(Map<String, Deque<String>> queryParameters) {
+    /**
+     * <p>
+     *     Extracts query parameters and builds up a json object using them
+     *     as key value.
+     * </p>
+     *
+     * @param queryParameters Contains a mutable map of query parameters.
+     */
+    private String getQueryParamsBody(Map<String, Deque<String>> queryParameters) {
         Map<String, String> parametersMapper = new HashMap<String, String>();
 
-         for (String key : queryParameters.keySet()) {
+        for (String key : queryParameters.keySet()) {
             Deque<String> dequeuedParameter = queryParameters.get(key);
             String parameterValue = dequeuedParameter.getFirst();
             parametersMapper.put(key, parameterValue);
         }
 
-         return gson.toJson(parametersMapper);
+        return gson.toJson(parametersMapper);
 	}
 
     /**
@@ -362,7 +393,7 @@ public class API {
      *
      * @param requestString The JSON encoded data of the request.
      *                      This String is attempted to be converted into a {@code Map<String, Object>}.
-     * @param sourceAddress The address from the sender of this API request.
+     * @param exchange Contains the data the client sent to us.
      * @return The result of this request.
      * @throws UnsupportedEncodingException If the requestString cannot be parsed into a Map.
                                             Currently caught and turned into a {@link ExceptionResponse}.
@@ -1666,7 +1697,9 @@ public class API {
     /**
      * Updates the {@link HttpServerExchange} {@link HeaderMap} with the proper response settings.
      * @param exchange Contains information about what the client has send to us
-     */
+     * @param res The response of the API.
+     *            See {@link #processRequest(HttpServerExchange)}
+     *            and {@link #process(String, InetSocketAddress)} for the different responses in each case.     */
     private static void setupResponseHeaders(final HttpServerExchange exchange, final AbstractResponse res) {        
         final HeaderMap headerMap = exchange.getResponseHeaders();
         headerMap.add(new HttpString("Access-Control-Allow-Origin"),"*");

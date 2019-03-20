@@ -34,18 +34,18 @@ public class IXIResponse extends AbstractResponse {
         return "application/json";
     }
 
-     public String getResponseContentType() {
+    public String getResponseContentType() {
         Map<String, Object> responseMapper = getResponseMapper();
         String fieldObj = (String)responseMapper.get("contentType");
         String fieldValue = StringUtils.isBlank(fieldObj) ? getdefaultContentType() : fieldObj;
         return fieldValue;
     }
 
-     private Map<String, Object> getResponseMapper(){
+    private Map<String, Object> getResponseMapper(){
         return (Map<String, Object>)ixi;
     }
 
-     public String getContent() {
+    public String getContent() {
         Map<String, Object> responseMapper = getResponseMapper();
         String fieldObj = (String)responseMapper.get("content");
         String fieldValue = StringUtils.isBlank(fieldObj) ? null : fieldObj;

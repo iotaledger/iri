@@ -201,6 +201,11 @@ def prepare_transaction_arguments(arg_list):
 
 
 def fetch_node_api_address(node):
+    """
+    Fetches an api address from the machine configurations for the provided node.
+    :param node: The node that the address will be fetched for
+    :return: The api endpoint for the node
+    """
     host = world.machine['nodes'][node]['host']
     port = world.machine['nodes'][node]['ports']['api']
     address = "http://" + str(host) + ":" + str(port)
@@ -208,6 +213,13 @@ def fetch_node_api_address(node):
 
 
 def send_ixi_request(node, command):
+    """
+    Sends an IXI command to the provided node.
+
+    :param node: The node that the IXI request will be made on
+    :param command: The IXI command that will be placed in the request
+    :return: The response value from the node
+    """
     address = fetch_node_api_address(node)
     headers = {
         'content-type': 'application/json',

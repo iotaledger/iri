@@ -8,6 +8,14 @@ logger = logging.getLogger(__name__)
 
 @step(r'A local snapshot was taken on "([^"]+)" at index (\d+)')
 def check_ls_indexes(step, node, index):
+    '''
+    Uses an ixi module to check the index of the latest snapshot file. It checks to make sure that the initialIndex is
+    not equal to 0. If it is, that means that a local snapshot has not been taken. If it passes this check it then
+    ensures that the index registered in the node's snapshot provider is equal to the index provided.
+
+    :param node: The node that the IXI request will be made on
+    :param index: The expected index of the Local Snapshot
+    '''
     command ={"command": "LocalSnapshots.getIndexes"}
     request_return = api_utils.send_ixi_request(node, command)
     assert 'ixi' in request_return, "Error: {}".format(request_return['error'])
@@ -21,6 +29,13 @@ def check_ls_indexes(step, node, index):
 
 @step(r'reading the local snapshot state on "([^"]+)" returns with:')
 def read_ls_state(step, node):
+    """
+    Uses an ixi module to check the current snapshot state of the node. It cycles through a provided list of addresses
+    to make sure the snapshot state contains them.
+
+    :param step.hashes: A pointer to the list of addresses that should be present in the snapshot state
+    :param node: The node that the IXI request will be made on
+    """
     arg_list = step.hashes
 
     options = {}
@@ -39,6 +54,13 @@ def read_ls_state(step, node):
 
 @step(r'reading the local snapshot metadata on "([^"]+)" returns with:')
 def read_ls_metadata(step, node):
+    """
+    Uses an ixi module to check the current snapshot state of the node. It cycles through a provided list of addresses
+    to make sure the snapshot state contains them.
+
+    :param step.hashes: A pointer to the list of milestone hashes that should be present in the snapshot metadata
+    :param node: The node that the IXI request will be made on
+    """
     arg_list = step.hashes
 
     options = {}

@@ -2,7 +2,8 @@ package vue
 
 import (
 	"encoding/json"
-	nr "github.com/wunder3605/noderank"
+	//nr "github.com/wunder3605/noderank"
+	nr "../../noderank"
 )
 type Message struct {
 	Code int64

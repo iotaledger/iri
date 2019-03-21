@@ -56,24 +56,49 @@ public class TipSelectorConflux implements TipSelector {
 
     @Override
     public List<Hash> getTransactionsToApprove(int depth, Optional<Hash> reference) throws Exception {
+
+        long start = System.currentTimeMillis();
+
         List<Hash> tips = new LinkedList<>(); 
 
         // Parental tip
         Hash parentTip = tangle.getLastPivot();
         tips.add(parentTip);
 
+        long end = System.currentTimeMillis();
+
+        long time1 = end - start; start = end;
+
+
         // Reference tip
         Hash entryPoint = entryPointSelector.getEntryPoint(depth);
+
+        end = System.currentTimeMillis();
+        long time2 = end - start; start = end;
+
         UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(entryPoint);
+
+        end = System.currentTimeMillis();
+        long time3 = end - start; start = end;
+
         WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, milestoneTracker, config);
         if(BaseIotaConfig.getInstance().getWalkValidator().equals("NULL")) {
             walkValidator = new WalkValidatorNull();
         }
+
+        end = System.currentTimeMillis();
+        long time4 = end - start; start = end;
+
         Hash refTip;
-        do {
+        //do {
             refTip = walker.walk(entryPoint, rating, walkValidator);
-        } while(tangle.getNumOfTips()>1 && refTip.equals(parentTip));
+        //} while(tangle.getNumOfTips()>1 && refTip.equals(parentTip));
         tips.add(refTip);
+
+        end = System.currentTimeMillis();
+        long time5 = end - start; start = end;
+
+        System.out.println("[zhaoming] time: " + time1 + " " + time2 + " " + time3 + " " + time4 + " " + time5);
 
         // TODO validate UTXO etc.
 

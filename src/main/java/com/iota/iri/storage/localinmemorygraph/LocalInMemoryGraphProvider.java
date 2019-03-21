@@ -16,6 +16,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.PrintStream;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.io.*;
 
@@ -24,7 +25,7 @@ import com.iota.iri.utils.*;
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
     public HashMap<Hash, Double> score;
     public HashMap<Hash, Set<Hash>> graph;
-    public HashMap<Hash, Hash> parentGraph;
+    public Map<Hash, Hash> parentGraph;
     static HashMap<Hash, Set<Hash>> revGraph;
     public HashMap<Hash, Set<Hash>> parentRevGraph;
     static HashMap<Hash, Integer> degs;
@@ -44,7 +45,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         this.tangle = tangle;
         graph = new HashMap<>();
         revGraph = new HashMap<>();
-        parentGraph = new HashMap<>();
+        parentGraph = new ConcurrentHashMap<>();
         parentRevGraph = new HashMap<>();
         degs = new HashMap<>();
         topOrder = new HashMap<>();
@@ -386,14 +387,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
 
         // TODO if the same score, choose randomly
-        Set<Hash> hashsOnLevel = topOrderStreaming.get(totalDepth - depth);
-        double maxScore = 0;
-        for (Hash h : hashsOnLevel) {
-            if (score.get(h) >= maxScore) {
-                ret = h;
-                maxScore = score.get(h);
-            }
-        }
+        buildPivotChain();
+        ret = this.pivotChain.get(this.pivotChain.size()-depth-1);
         return ret;
     }
 

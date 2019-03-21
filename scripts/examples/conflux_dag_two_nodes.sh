@@ -2,7 +2,7 @@
 
 rm -rf iri-1.5.5.jar  
 cd ../../ 
-mvn clean ; mvn package
+mvn clean ; mvn package -DskipTests=true
 cp target/iri-1.5.5.jar scripts/examples/
 cd scripts/examples/
 rm -rf db1*
@@ -27,6 +27,7 @@ java -jar iri-1.5.5.jar --testnet \
                         --tip-sel-algo "CONFLUX" \
                         --ipfs-txns false \
                         --batch-txns false \
+                        --weight-calculation-algorithm "IN_MEM" \
                         &>  streamnet1.log &
 
 java -jar iri-1.5.5.jar --testnet \
@@ -46,4 +47,5 @@ java -jar iri-1.5.5.jar --testnet \
                         --tip-sel-algo "CONFLUX" \
                         --ipfs-txns false \
                         --batch-txns false \
+                        --weight-calculation-algorithm "IN_MEM" \
                         &>  streamnet2.log &

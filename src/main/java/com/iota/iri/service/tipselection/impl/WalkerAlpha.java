@@ -1,5 +1,6 @@
 package com.iota.iri.service.tipselection.impl;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.TipSelConfig;
 import com.iota.iri.controllers.ApproveeViewModel;
 import com.iota.iri.model.Hash;
@@ -71,7 +72,12 @@ public class WalkerAlpha implements Walker {
     }
 
     private Optional<Hash> selectApprover(Hash tailHash, UnIterableMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception {
-        Set<Hash> approvers = getApprovers(tailHash);
+        Set<Hash> approvers = null;
+        if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("IN_MEM")) {
+            approvers = tangle.getChild(tailHash);
+        } else {
+            approvers = getApprovers(tailHash);
+        }
         return findNextValidTail(ratings, approvers, walkValidator);
     }
 

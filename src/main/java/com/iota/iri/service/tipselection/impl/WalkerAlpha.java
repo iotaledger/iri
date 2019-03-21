@@ -72,9 +72,10 @@ public class WalkerAlpha implements Walker {
     }
 
     private Optional<Hash> selectApprover(Hash tailHash, UnIterableMap<HashId, Integer> ratings, WalkValidator walkValidator) throws Exception {
-        Set<Hash> approvers = null;
+        Set<Hash> approvers = new HashSet<Hash>();
         if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("IN_MEM")) {
-            approvers = tangle.getChild(tailHash);
+            Set<Hash> approvers1 = tangle.getChild(tailHash);
+            approvers.addAll(approvers1);
         } else {
             approvers = getApprovers(tailHash);
         }

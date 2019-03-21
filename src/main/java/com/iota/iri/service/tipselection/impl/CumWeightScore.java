@@ -32,6 +32,20 @@ public class CumWeightScore
         return ret;
     }
 
+    public static HashMap<Hash, Double> updateParentScore(Map<Hash, Hash> parentGraph, HashMap<Hash, Double> parentScore, Hash newVet) {
+        HashMap<Hash, Double> ret = parentScore;
+        Hash start = newVet;
+        while(parentGraph.get(start) != null) {
+            if(parentScore.get(start) == null) {
+                parentScore.put(start, 0.0);
+            }
+            parentScore.put(start, parentScore.get(start)+1.0);
+            start = parentGraph.get(start);
+        }
+  
+        return ret;
+    }
+
     public static HashMap<Hash, Double> compute(HashMap<Hash, Set<Hash>> revGraph, HashMap<Hash, Set<Hash>> graph, Hash genesis) {
         HashMap<Hash, Double> ret = new HashMap<>();
         LinkedList<Hash> queue = new LinkedList<>();

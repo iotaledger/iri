@@ -2,7 +2,7 @@
 
 rm -rf iri-1.5.5.jar  
 cd ../../ 
-mvn clean ; mvn package -DskipTests=true
+mvn clean ; mvn package
 cp target/iri-1.5.5.jar scripts/examples/
 cd scripts/examples/
 rm -rf db1*

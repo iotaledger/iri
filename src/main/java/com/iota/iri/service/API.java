@@ -1076,7 +1076,7 @@ public class API {
     }
 
     private AbstractResponse getStreamNetBalanceStatement(final List<String> addresses) {
-        log.info("[StreamNet] balance is: \n" + TransactionData.getInstance().getData());
+        //log.info("[StreamNet] balance is: \n" + TransactionData.getInstance().getData());
         if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
             log.info("[StreamNet] graph is: \n");
             LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider) instance.tangle.getPersistenceProvider("LOCAL_GRAPH");

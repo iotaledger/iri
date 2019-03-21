@@ -16,6 +16,7 @@ import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 import com.iota.iri.utils.Pair;
 import io.ipfs.api.IPFS;
 import io.ipfs.multihash.Multihash;
@@ -24,6 +25,7 @@ import com.iota.iri.model.Hash;
 
 import  com.iota.iri.utils.Converter;
 
+import org.apache.commons.lang3.StringUtils;
 import org.json.JSONObject;
 import org.json.JSONArray;
 
@@ -244,7 +246,7 @@ public class TransactionData {
         txnOutList.add(txOut);
 
         Txn newTxn = new Txn();
-        newTxn.inputs = null;
+        newTxn.inputs = new ArrayList<TxnIn>();
         newTxn.outputs = txnOutList;
 
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
@@ -312,6 +314,10 @@ public class TransactionData {
 
         // TODO: find unspent utxo more quickly.
         for (int i = transactions.size() - 1; i >= 0; i--){
+
+            //if(checkDoubleSpent(transactions.get(i))) {
+            //    continue; // this piece of code is critical
+            //}
 
             List<TxnOut> txnOutList = transactions.get(i).outputs;
             for (int j = 0; j < txnOutList.size(); j++) {
@@ -405,33 +411,55 @@ public class TransactionData {
     }
 
     public long getBalance(String account) {
+        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
+        List<Hash> totalTopOrders = provider.totalTopOrder();
+        
+        log.info("all txs = {}", transactions.toString());
+        UTXOGraph graph = new UTXOGraph(transactions);
+        graph.markDoubleSpend(totalTopOrders, txnToTangleMap);
+        //
+        Set<String> visisted = new HashSet<>();
+
         long total = 0;
-        // TODO: find unspent utxo more quickly.
-        for (int i = transactions.size() - 1; i >= 0; i--){
-            List<TxnOut> txnOutList = transactions.get(i).outputs;
+
+        for (int i = 0; i < transactions.size(); i++) {       
+            Txn transaction = transactions.get(i);
+            if(visisted.contains(transaction.txnHash)) {
+                continue; //FIXME this is a problem
+            }
+            List<TxnOut> txnOutList = transaction.outputs;
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);
-                if (txnOut.userAccount.equals(account)){
-                    boolean jumpFlag = false;
-                    // TODO: check utxo whether or not being spent more quickly.
-                    out:
-                    for (int k = transactions.size() - 1; k > 0; k--){
-                        for (TxnIn tempTxnIn: transactions.get(k).inputs) {
-                            if (tempTxnIn.txnHash.equals(transactions.get(i).txnHash) && tempTxnIn.idx == j){
-                                jumpFlag = true; // already spend
-                                break out;
-                            }
-                        }
-                    }
-                    if (jumpFlag){
-                        continue;
-                    }
-
+                String key = transaction.txnHash + ":" + String.valueOf(j) + "," + txnOut.userAccount;
+                if (txnOut.userAccount.equals(account) && !graph.isSpent(key) && !graph.isDoubleSpend(key)) {
                     total += txnOut.amount;
                 }
             }
+            visisted.add(transaction.txnHash);
         }
 
+        checkAllBalance(graph);
         return total;
+    }
+
+    private void checkAllBalance(UTXOGraph graph) {
+        long tot = 0;
+        Set<String> spend = new HashSet<>();
+        for (int i = 0; i < transactions.size(); i++) {
+            Txn transaction = transactions.get(i);
+            List<TxnOut> txnOutList = transaction.outputs;
+            for (int j = 0; j < txnOutList.size(); j++) {
+                TxnOut txnOut = txnOutList.get(j);
+                String key = transaction.txnHash + ":" + String.valueOf(j) + "," + txnOut.userAccount;
+                if (!graph.isSpent(key) && !graph.isDoubleSpend(key)) {
+                    tot += txnOut.amount;
+                    spend.add(key);
+                }
+            }
+        }
+        if(tot != 1000000000) {
+            System.out.println("[total] " + tot);
+            graph.printGraph(graph.outGraph, "graph.dot", spend);
+        }
     }
 }

@@ -3,7 +3,7 @@ sys.path.append("..")
 import time
 from iota import Iota, Address, ProposedTransaction, Tag, Transaction, TryteString, TransactionTrytes, ProposedBundle, Nonce, BundleHash,TransactionHash, Fragment
 from six import binary_type, moves as compat, text_type
-from iota_api.api import attachToTangle, storeMessage, getBalance
+from iota_api.api import attachToTangle, storeMessage, getBalance, addNeighbors
 
 class IotaCache(object):
 
@@ -104,3 +104,6 @@ class IotaCache(object):
         result = self.cache_txn_in_tangle_sdk(ipfs_addr, tag+b"CONSUMED")
         return result
 
+    def add_neighbors(self, uris):
+        res = addNeighbors(self.uri,uris)
+        return res

@@ -95,3 +95,10 @@ def getBalance(url, address, coin_type, account):
         "account": account
     }
     return API(cmd, url)
+
+def addNeighbors(url,uris):
+    cmd = {
+        "command": "addNeighbors",
+        "uris":uris
+    }
+    return API(cmd,url)

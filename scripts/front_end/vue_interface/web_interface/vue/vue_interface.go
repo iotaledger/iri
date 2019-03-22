@@ -2,8 +2,7 @@ package vue
 
 import (
 	"encoding/json"
-	//nr "github.com/wunder3605/noderank"
-	nr "../../noderank"
+	nr "github.com/wunder3605/noderank"
 )
 type Message struct {
 	Code int64
@@ -35,7 +34,7 @@ func (o *OCli)AddAttestationInfoFunction(_data []byte )Message{
 	info[0]=m["Attester"]
 	info[1]=m["Attestee"]
 	info[2]=m["Score"]
-	err1:=nr.AddAttestationInfo(info)
+	err1:=nr.AddAttestationInfo("","",info)
 	if err1!=nil{
 		mess=Message{Code:0,Message:"节点添加失败"}
 		return mess
@@ -58,7 +57,7 @@ func (o *OCli)GetRankFunction(_data []byte)Message{
 		return mess
 	}
 
-	teescore,teectx,err1:=nr.GetRank(para.Period,para.NumRank)  //返回值[]teectx
+	teescore,teectx,err1:=nr.GetRank("",para.Period,para.NumRank)
 	if teectx==nil||err1!=nil||teescore==nil{
 		mess=Message{Code:0,Message:"查询失败"}
 		return mess

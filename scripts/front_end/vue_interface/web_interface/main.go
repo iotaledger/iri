@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	//v"github.com/wunder3605/lhf_interface/vue"
 	v "./vue"
 )
 

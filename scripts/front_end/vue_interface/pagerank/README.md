@@ -1,2 +1,0 @@
-# pageraph
-weighted page rank

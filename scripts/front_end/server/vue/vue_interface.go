@@ -26,6 +26,7 @@ func (o *OCli)AddAttestationInfoFunction(_data []byte )Message{
 	mess:=Message{}
 	m:=make(map[string]string)
 	err := json.Unmarshal(_data, &m)
+
 	if err!=nil{
 		mess=Message{Code:0,Message:"类型转换异常"}
 		return mess

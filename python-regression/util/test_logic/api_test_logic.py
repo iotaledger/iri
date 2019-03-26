@@ -1,6 +1,5 @@
 from aloe import world
 from iota import Iota, Address, Tag, TryteString
-from util import static_vals
 import json
 import urllib3
 from . import value_fetch_logic as value_fetch

@@ -16,7 +16,6 @@ def check_if_neighbors(api, neighbors, expected_neighbor):
     methods in the step.
     """
     is_neighbor = False
-
     for neighbor in neighbors:
         logger.info(neighbor)
         if expected_neighbor == neighbor['address']:

@@ -2,12 +2,10 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
-import com.iota.iri.service.API;
-
 /**
  * 
  * Contains information about the result of a successful {@code getNeighbors} API call.
- * See {@link API#getNeighborsStatement} for how this response is created.
+ * See {@link GetNeighborsResponse#create(List)} for how this response is created.
  *
  */
 public class GetNeighborsResponse extends AbstractResponse {
@@ -25,7 +23,7 @@ public class GetNeighborsResponse extends AbstractResponse {
      *     <li>numberOfSentTransactions</li>
      *     <li>numberOfStaleTransactions</li>
      * </ol>
-     * @see {@link com.iota.iri.service.dto.GetNeighborsResponse.Neighbor}
+     * @see com.iota.iri.service.dto.GetNeighborsResponse.Neighbor
      */
     private Neighbor[] neighbors;
 
@@ -58,16 +56,17 @@ public class GetNeighborsResponse extends AbstractResponse {
      * A plain DTO of an iota neighbor.
      * 
      */
-    static class Neighbor {
+    @SuppressWarnings("unused")
+    public static class Neighbor {
 
         private String address;
-        public long numberOfAllTransactions,
-                numberOfRandomTransactionRequests,
-                numberOfNewTransactions,
-                numberOfInvalidTransactions,
-                numberOfStaleTransactions,
-                numberOfSentTransactions;
-        public String connectionType;
+        private long numberOfAllTransactions;
+        private long numberOfRandomTransactionRequests;
+        private long numberOfNewTransactions;
+        private long numberOfInvalidTransactions;
+        private long numberOfStaleTransactions;
+        private long numberOfSentTransactions;
+        private String connectionType;
 
         /**
          * The address of your neighbor
@@ -142,7 +141,7 @@ public class GetNeighborsResponse extends AbstractResponse {
         public static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
             Neighbor ne = new Neighbor();
             int port = n.getPort();
-            ne.address = n.getAddress().getHostString() + ":" + port;
+            ne.address = n.getAddress().getAddress().getHostAddress() + ":" + port;
             ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
             ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();
             ne.numberOfStaleTransactions = n.getNumberOfStaleTransactions();

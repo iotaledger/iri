@@ -1,4 +1,4 @@
-defaults: &db_1
+defaults: &no_validation_tests_config_files
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/Validation_tests_db.tar
   db_checksum: 40874a129db910be2466244b3cdeea2dde9f9601221cb94b837f55ac2be384f5
   iri_args: ['--testnet-coordinator',
@@ -11,7 +11,7 @@ defaults: &db_1
   '--testnet'
   ]
 
-db_with_validation: &db_2
+db_with_validation: &validation_tests_config_files
   db: https://s3.amazonaws.com/iota-db-files/dbs/machine4/validation_test_db.tar
   db_checksum: 40874a129db910be2466244b3cdeea2dde9f9601221cb94b837f55ac2be384f5
   iri_args: ['--testnet-coordinator',
@@ -31,7 +31,7 @@ seeds: # For internal use by the regression system.
 
 nodes:
   nodeA: #name
-    <<: *db_1
+    <<: *no_validation_tests_config_files
   
   nodeB:
-    <<: *db_2
+    <<: *validation_tests_config_files

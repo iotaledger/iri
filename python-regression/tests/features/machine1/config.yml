@@ -3,7 +3,8 @@ defaults: &db_1
   db_checksum: 6eaa06d5442416b7b8139e337a1598d2bae6a7f55c2d9d01f8c5dac69c004f75
   iri_args: ['--testnet-coordinator',
   'BTCAAFIH9CJIVIMWFMIHKFNWRTLJRKSTMRCVRE9CIP9AEDTOULVFRHQZT9QAQBZXXAZGBNMVOOKTKAXTB',
-  '--milestone-start', '0',
+  '--milestone-start', 
+  '0',
   '--snapshot', 
   './snapshot',
   '--testnet',

@@ -6,16 +6,16 @@ We have implemented the StreamNet based on the IOTA JAVA reference code (IRI) v1
 \begin{itemize}
     \item The features we have adopted from the IRI are: 
     \begin{itemize}
-        \item the block header format;
-        \item gossip network;
-        \item trasnaction bundle, because of the existence of the bundle hash feature, StreamNet can support both the single transaction for a block and batched transactions as a bundle. 
+        \item The block header format;
+        \item Gossip network;
+        \item Trasnaction bundle, because of the existence of the bundle hash feature, StreamNet can support both the single transaction for a block and batched transactions as a bundle. 
         \item Sponge hash functions which is claimed to be quantum immune, in our experiment, the POW hardness is set to 8 which is the same as the testnet for IOTA.
     \end{itemize}
 
     \item The features we have abandoned from the IRI are:
     \begin{itemize}
-        \item the iota's transaction logic inlcuding the ledger part;
-        \item the milestone issued by coordinators. 
+        \item The iota's transaction logic inlcuding the ledger part;
+        \item The milestone issued by coordinators. 
     \end{itemize}
 
     \item The features we have modified based on the IRI is: 
@@ -26,8 +26,9 @@ We have implemented the StreamNet based on the IOTA JAVA reference code (IRI) v1
 
     \item The features we have added into the StreamNet are: 
     \begin{itemize}
-        \item the consensus algorithms; 
-        \item the UTXO logic which is stored in the signature part of the block header. 
+        \item The consensus algorithms; 
+        \item The UTXO logic which is stored in the signature part of the block header. 
+        \item In IOTA's implementation, the blocks are stored in the RocksDB \cite{RocksDB} as the persistence layer, which makes it inefficient to infer the relationships between blocks and calculate graph features. In our implementation, we introduced an in-memory layer to store the relationships between blocks, such that the tip selection and total ordering algorithm will be accelerated. 
     \end{itemize}
 \end{itemize}
 
@@ -43,6 +44,32 @@ Jmeter is utilized as the driver to issue the transactions and nginx is used to 
 \subsection {Results and Discussions}
 
 \subsubsection {Single transaction test}
+By default, each block in StreamNet will only support one transaction. And the performance on this configuration is as Figure~\ref{single_txn} shows.
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figures/single_txn.pdf}
+    \caption{
+        Experimental results for single transaction.
+     }
+\label{single_txn}
+\end{center}
+\end{figure}
+
+
 
 \subsubsection {Bundle transaction test}
+
+By default, each block in StreamNet will only support one transaction. And the performance on this configuration is as Figure~\ref{single_txn} shows.
+
+\begin{figure}[!ht]
+\begin{center}
+\includegraphics[width=0.45\textwidth]{figures/single_txn.pdf}
+    \caption{
+        Experimental results for single transaction.
+     }
+\label{single_txn}
+\end{center}
+\end{figure}
+
 

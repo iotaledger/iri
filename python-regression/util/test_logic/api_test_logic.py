@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-def prepare_api_call(node_name, **seed):
+def prepare_api_call(node_name, **kwargs):
     """
     Prepares an api target as an entry point for API calls on a specified node.
 
@@ -19,7 +19,7 @@ def prepare_api_call(node_name, **seed):
 
     logger.info('Preparing api call')
     address = fetch_node_api_address(node_name)
-    api = Iota(address)
+    api = Iota(address, seed=kwargs.get('seed'))
     logger.info('API call prepared for %s', address)
     return api
 

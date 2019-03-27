@@ -6,7 +6,9 @@ default_args: &args
    '--milestone-start',
    '0',
    '--testnet-no-coo-validation',
+   'true',
    '--testnet',
+   'true',
    '--snapshot',
    './snapshot.txt'
   ]

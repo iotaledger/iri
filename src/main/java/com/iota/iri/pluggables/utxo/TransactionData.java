@@ -314,11 +314,6 @@ public class TransactionData {
 
         // TODO: find unspent utxo more quickly.
         for (int i = transactions.size() - 1; i >= 0; i--){
-
-            //if(checkDoubleSpent(transactions.get(i))) {
-            //    continue; // this piece of code is critical
-            //}
-
             List<TxnOut> txnOutList = transactions.get(i).outputs;
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);
@@ -414,7 +409,7 @@ public class TransactionData {
         LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
         List<Hash> totalTopOrders = provider.totalTopOrder();
         
-        log.info("all txs = {}", transactions.toString());
+        log.debug("all txs = {}", transactions.toString());
         UTXOGraph graph = new UTXOGraph(transactions);
         graph.markDoubleSpend(totalTopOrders, txnToTangleMap);
         //
@@ -437,8 +432,6 @@ public class TransactionData {
             }
             visisted.add(transaction.txnHash);
         }
-
-        checkAllBalance(graph);
         return total;
     }
 

@@ -13,7 +13,7 @@ import static java.util.Map.Entry.*;
 public class UTXOGraph {
 
     public Map<String, Set<String>> outGraph;
-    public Map<String, String> inGraph;
+    public Map<String, String> inGraph; //FIXME, UTXO graph should be a graph instead of a tree
     public Set<String> doubleSpendSet;
 
     public UTXOGraph(List<Txn> txns) {
@@ -36,9 +36,6 @@ public class UTXOGraph {
                 for(int i=0; i<txn.outputs.size(); i++) {
                     String val = txn.txnHash + ":" + String.valueOf(i) + "," + txn.outputs.get(i).userAccount;
                     Set<String> outs = outGraph.get(key);
-                    if(outs.contains(val)) {
-                        System.out.println("[zhaoming] error goes here!");
-                    }
                     outs.add(val);
                     outGraph.put(key, outs);
 
@@ -52,11 +49,9 @@ public class UTXOGraph {
         for(String key : outGraph.keySet()) {
             Set<String> valSet = new HashSet<>();
             for(String val : outGraph.get(key)) {
-                //System.out.println(key + ":" + val);
                 valSet.add(val.split(":")[0]);
             }
             if(valSet.size() > 1) {
-                //System.out.println("[zhaoming] there are double spends!!! " + key);
                 markTheLaterAsDoubleSpend(order, txnToTangleMap, valSet);
             }
         }
@@ -85,7 +80,6 @@ public class UTXOGraph {
         int i = 0;
         for(String key : sorted.keySet()) {    
             if(i>0) {
-                //System.out.println("[zhaoming] " + key + " is double spend");
                 doubleSpendSet.add(key);
             }
             i++;
@@ -101,7 +95,6 @@ public class UTXOGraph {
         while(inGraph.containsKey(key)) {
             String[] k = key.split(":");
             if(doubleSpendSet.contains(k[0])) {
-                //System.out.println("[zhaoming] found " + k[0]);
                 return true;
             }
             key = inGraph.get(key);

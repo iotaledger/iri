@@ -6,7 +6,7 @@ defaults: &db_1
   '--milestone-start', 
   '0',
   '--snapshot', 
-  './snapshot',
+  './snapshot.txt',
   '--testnet-no-coo-validation',
   'true',
   '--testnet',

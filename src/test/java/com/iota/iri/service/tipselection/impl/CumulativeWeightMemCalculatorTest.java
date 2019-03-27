@@ -19,7 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.iota.iri.conf.BaseIotaConfig;
-import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;;
+import com.iota.iri.storage.localinmemorygraph.LocalInMemoryGraphProvider;
 
 import java.util.*;
 
@@ -72,7 +72,6 @@ public class CumulativeWeightMemCalculatorTest {
         transaction3.store(tangle);
         transaction4.store(tangle);
 
-        try {
         UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
 
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 4),
@@ -85,11 +84,6 @@ public class CumulativeWeightMemCalculatorTest {
                 4, txToCw.get(transaction1.getHash()).intValue());
         Assert.assertEquals(String.format(TX_CUMULATIVE_WEIGHT_IS_NOT_AS_EXPECTED_FORMAT, 0),
                 5, txToCw.get(transaction.getHash()).intValue());
-        } catch(Exception e) {
-                e.printStackTrace();
-        }
-
-        
     }
 
     @Test

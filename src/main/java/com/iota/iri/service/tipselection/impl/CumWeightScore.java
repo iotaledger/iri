@@ -11,15 +11,15 @@ public class CumWeightScore
         LinkedList<Hash> queue = new LinkedList<>();
 
         queue.add(newVet);
-        Set<Hash> visisted = new HashSet<>();
-        visisted.add(newVet);
+        Set<Hash> visited = new HashSet<>();
+        visited.add(newVet);
 
         while (!queue.isEmpty()) {
             Hash h = queue.pop();
             for(Hash e : graph.get(h)) {
-                if(graph.containsKey(e) && !visisted.contains(e)) {
+                if(graph.containsKey(e) && !visited.contains(e)) {
                     queue.add(e);
-                    visisted.add(e);
+                    visited.add(e);
                 }
             }
             if(ret.get(h)==null) {
@@ -27,7 +27,7 @@ public class CumWeightScore
             } else if(ret.get(h) != null) {
                 ret.put(h, ret.get(h)+1.0);
             }
-            
+
         }
         return ret;
     }
@@ -35,14 +35,23 @@ public class CumWeightScore
     public static HashMap<Hash, Double> updateParentScore(Map<Hash, Hash> parentGraph, HashMap<Hash, Double> parentScore, Hash newVet) {
         HashMap<Hash, Double> ret = parentScore;
         Hash start = newVet;
+        Set<Hash> visited = new HashSet<>();
+
         while(parentGraph.get(start) != null) {
+            if (visited.contains(start)) {
+                System.out.println("Circle exist: " + start);
+                break;
+            } else {
+                visited.add(start);
+            }
+
             if(parentScore.get(start) == null) {
                 parentScore.put(start, 0.0);
             }
             parentScore.put(start, parentScore.get(start)+1.0);
             start = parentGraph.get(start);
         }
-  
+
         return ret;
     }
 
@@ -51,19 +60,19 @@ public class CumWeightScore
         LinkedList<Hash> queue = new LinkedList<>();
 
         queue.add(genesis);
-        Set<Hash> visisted = new HashSet<>();
-        visisted.add(genesis);
+        Set<Hash> visited = new HashSet<>();
+        visited.add(genesis);
 
         while (!queue.isEmpty()) {
             Hash h = queue.pop();
             for(Hash e : revGraph.get(h)) {
-                if(revGraph.containsKey(e) && !visisted.contains(e)) {
+                if(revGraph.containsKey(e) && !visited.contains(e)) {
                     queue.add(e);
-                    visisted.add(e);
+                    visited.add(e);
                 }
             }
-            ret = update(graph, ret, h);            
+            ret = update(graph, ret, h);
         }
         return ret;
-    }    
+    }
 }

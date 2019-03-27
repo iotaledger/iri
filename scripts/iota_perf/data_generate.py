@@ -2,11 +2,11 @@ import string
 from random import SystemRandom
 import random
 
-num_name     = 500 
-num_name2    = 500 
-num_txn      = 1000 
+num_name     = 500
+num_name2    = 500
+num_txn      = 1000
 txn_range    = 10
-num_bs_steps = 500 
+num_bs_steps = 500
 tx_type      = "TX"
 
 f1 = open("data", "w")
@@ -41,7 +41,7 @@ for i in range(0, num_name2):
 # Bootstrapping
 account = {}
 for i in range(0, num_bs_steps):
-    to_idx = i 
+    to_idx = i
     to_name = name_list[to_idx]
     value = 10000
     from_name = "A"
@@ -53,10 +53,10 @@ for i in range(0, num_bs_steps):
 
 # Rest of the transactions
 for i in range(0, num_txn):
-    from_idx = i%num_name 
+    from_idx = i%num_name
     from_name = name_list[from_idx]
 
-    to_idx = i%num_name2 
+    to_idx = i%num_name2
     to_name = name_list1[to_idx]
 
     value = cryptogen.randrange(txn_range)

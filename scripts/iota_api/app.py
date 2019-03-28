@@ -233,6 +233,18 @@ def put_action():
     wasm.exec_action(ipfs_addr)
     return 'ok'
 
+@app.route('/add_neighbors', methods=['POST'])
+def add_neighbors():
+    req_json = request.get_json()
+    if req_json is None:
+        return 'error'
+    if not req_json.has_key(u'uris'):
+        print("[ERROR]Uris is needed.", file=sys.stderr)
+        return 'error'
+    uris = req_json[u'uris']
+    resp = cache.add_neighbors(uris)
+    return resp
+
 if __name__ == '__main__':
     get_cache()
     app.run(host=listen_address, port=listen_port)

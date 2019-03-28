@@ -19,14 +19,15 @@ java -jar iri-1.5.5.jar --testnet \
                         --tcp-receiver-port 14600 \
                         --db-path "./db1" \
                         --db-log-path "./db1.log" \
-                        --neighbors "udp://localhost:13600" \
+                        --neighbors "tcp://localhost:13600" \
                         --max-peers 40 \
                         --remote \
                         --enable-streaming-graph \
                         --entrypoint-selector-algorithm "KATZ" \
                         --tip-sel-algo "CONFLUX" \
                         --ipfs-txns false \
-                        --batch-txns true \
+                        --batch-txns false \
+                        --weight-calculation-algorithm "IN_MEM" \
                         &>  streamnet1.log &
 
 java -jar iri-1.5.5.jar --testnet \
@@ -38,12 +39,13 @@ java -jar iri-1.5.5.jar --testnet \
                         --tcp-receiver-port 13600 \
                         --db-path "./db2" \
                         --db-log-path "./db2.log" \
-                        --neighbors "udp://localhost:14600" \
+                        --neighbors "tcp://localhost:14600" \
                         --max-peers 40 \
                         --remote \
                         --enable-streaming-graph \
                         --entrypoint-selector-algorithm "KATZ" \
                         --tip-sel-algo "CONFLUX" \
                         --ipfs-txns false \
-                        --batch-txns true \
+                        --batch-txns false \
+                        --weight-calculation-algorithm "IN_MEM" \
                         &>  streamnet2.log &

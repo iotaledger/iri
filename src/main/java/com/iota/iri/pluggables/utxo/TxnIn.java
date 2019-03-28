@@ -18,4 +18,8 @@ public class TxnIn {
     public String getUserAccount() {
         return userAccount;
     }
+
+    public String toString() {
+        return "txnHash: " + txnHash + ", idx: " + idx + ", account: " + userAccount;
+    }
 }

@@ -1076,13 +1076,6 @@ public class API {
     }
 
     private AbstractResponse getStreamNetBalanceStatement(final List<String> addresses) {
-        log.info("[StreamNet] balance is: \n" + TransactionData.getInstance().getData());
-        if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
-            log.info("[StreamNet] graph is: \n");
-            LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider) instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
-            prov.printGraph(prov.graph, null);
-        }
-
         List<String> balances = new LinkedList<>();
         for (String addr: addresses) {
             long balance = TransactionData.getInstance().getBalance(addr);
@@ -1199,35 +1192,36 @@ public class API {
             long timestamp = System.currentTimeMillis();
             try {
                 Converter.trits(tryte, transactionTrits, 0);
+                byte[] tTrits = IotaIOUtils.processTxnTrytes(transactionTrits);
                 //branch and trunk
                 System.arraycopy((prevTransaction == null ? trunkTransaction : prevTransaction).trits(), 0,
-                        transactionTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
+                        tTrits, TransactionViewModel.TRUNK_TRANSACTION_TRINARY_OFFSET,
                         TransactionViewModel.TRUNK_TRANSACTION_TRINARY_SIZE);
                 System.arraycopy((prevTransaction == null ? branchTransaction : trunkTransaction).trits(), 0,
-                        transactionTrits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
+                        tTrits, TransactionViewModel.BRANCH_TRANSACTION_TRINARY_OFFSET,
                         TransactionViewModel.BRANCH_TRANSACTION_TRINARY_SIZE);
 
                 //attachment fields: tag and timestamps
                 //tag - copy the obsolete tag to the attachment tag field only if tag isn't set.
-                if(IntStream.range(TransactionViewModel.TAG_TRINARY_OFFSET, TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE).allMatch(idx -> transactionTrits[idx]  == ((byte) 0))) {
-                    System.arraycopy(transactionTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
-                    transactionTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
+                if(IntStream.range(TransactionViewModel.TAG_TRINARY_OFFSET, TransactionViewModel.TAG_TRINARY_OFFSET + TransactionViewModel.TAG_TRINARY_SIZE).allMatch(idx -> tTrits[idx]  == ((byte) 0))) {
+                    System.arraycopy(tTrits, TransactionViewModel.OBSOLETE_TAG_TRINARY_OFFSET,
+                    tTrits, TransactionViewModel.TAG_TRINARY_OFFSET,
                     TransactionViewModel.TAG_TRINARY_SIZE);
                 }
 
-                Converter.copyTrits(timestamp,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
+                Converter.copyTrits(timestamp,tTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_TRINARY_SIZE);
-                Converter.copyTrits(0,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
+                Converter.copyTrits(0,tTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_LOWER_BOUND_TRINARY_SIZE);
-                Converter.copyTrits(MAX_TIMESTAMP_VALUE,transactionTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
+                Converter.copyTrits(MAX_TIMESTAMP_VALUE,tTrits,TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_OFFSET,
                         TransactionViewModel.ATTACHMENT_TIMESTAMP_UPPER_BOUND_TRINARY_SIZE);
 
-                if (!pearlDiver.search(transactionTrits, minWeightMagnitude, instance.configuration.getPowThreads())) {
+                if (!pearlDiver.search(tTrits, minWeightMagnitude, instance.configuration.getPowThreads())) {
                     transactionViewModels.clear();
                     break;
                 }
                 //validate PoW - throws exception if invalid
-                final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(transactionTrits, instance.transactionValidator.getMinWeightMagnitude());
+                final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(tTrits, instance.transactionValidator.getMinWeightMagnitude());
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
@@ -1372,8 +1366,12 @@ public class API {
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
             txToApprove = getTransactionToApproveTips(3, Optional.empty());
-        } catch (Exception e) {
+        } catch (NullPointerException e) {
+            log.warn("Tip selection failed: {}. Is this the first transaction???", e.getLocalizedMessage());
+        }
+        catch (Exception e) {
             log.error("Tip selection failed: " + e.getLocalizedMessage());
+        } finally {
             txToApprove.add(IotaUtils.getRandomTransactionHash());
             txToApprove.add(IotaUtils.getRandomTransactionHash());
         }
@@ -1462,9 +1460,7 @@ public class API {
         List<String> powResult = attachToTangleStatement(txToApprove.get(0), txToApprove.get(1), 9, transactions);
         broadcastTransactionsStatement(powResult);
 
-        if (!BaseIotaConfig.getInstance().isEnableIPFSTxns() && BaseIotaConfig.getInstance().isEnableBatchTxns()) {
-            storeTransactionsStatement(powResult);
-        }
+        storeTransactionsStatement(powResult);
 
         return AbstractResponse.createEmptyResponse();
     }

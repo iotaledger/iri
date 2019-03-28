@@ -21,6 +21,7 @@ import com.iota.iri.service.tipselection.TipSelector;
 import com.iota.iri.service.tipselection.Walker;
 import com.iota.iri.service.tipselection.impl.CumulativeWeightCalculator;
 import com.iota.iri.service.tipselection.impl.CumulativeWeightWithEdgeCalculator;
+import com.iota.iri.service.tipselection.impl.CumulativeWeightMemCalculator;
 import com.iota.iri.service.tipselection.impl.EntryPointSelectorImpl;
 import com.iota.iri.service.tipselection.impl.EntryPointSelectorKatz;
 import com.iota.iri.service.tipselection.impl.TailFinderImpl;
@@ -189,6 +190,8 @@ public class Iota {
         RatingCalculator ratingCalculator = new CumulativeWeightCalculator(tangle);
         if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("CUM_EDGE_WEIGHT")){
             ratingCalculator = new CumulativeWeightWithEdgeCalculator(tangle);
+        } else if(BaseIotaConfig.getInstance().getWeightCalAlgo().equals("IN_MEM")) {
+            ratingCalculator = new CumulativeWeightMemCalculator(tangle);
         }
 
         TailFinder tailFinder = new TailFinderImpl(tangle);

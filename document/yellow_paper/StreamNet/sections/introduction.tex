@@ -3,40 +3,40 @@ Ever since bitcoin \cite{nakamoto2008bitcoin} has been proposed, blockchain tech
 Extensive adoptions of blockchain technologies was seen in real world applications such as 
 financial services with potential regulation challenges \cite{michael2018blockchain, tapscott2017blockchain}, 
 supply chains \cite{korpela2017digital,tian2016agri, abeyratne2016blockchain}, 
-health cares \cite{azaria2016medrec,yue2016healthcare} and $IOT$ devices \cite{christidis2016blockchains}.
+health cares \cite{azaria2016medrec,yue2016healthcare} and IOT devices \cite{christidis2016blockchains}.
 The core of blockchain technology resides in the consensus algorihtms applying to the real distrubuted computing world.
 Where computers can join and leave the network and these copmuters can cheat.
 
 As the first protocol that can solve the so called Byzantine general's problem, 
-bitcoin system suffers from the problem of low throughput with a transaction per second ($TPS$) of approximately $7$, and long confirmation time (about an hour).
+bitcoin system suffers from the problem of low throughput with a transaction per second (TPS) of approximately $7$, and long confirmation time (about an hour).
 As more and more machines joined the network, they are competing for the privileges to attach the block (miners) which result in huge waste of electric power.
 While sky rocketing fees are payed to make sure the transfers of money will be placed in the chain.
 On par, there are multiple proposals to solve the low transaction speed issue. 
 
 One method intends to solve the speed problem without changing the chain data structure, for instance, 
-the bitcoin cash (BCH) fork of bitcoin (BTC) system tries to improve the throughput of the system by enlarging the data size of each block from $1$ $Mb$ to $4$ $Mb$. 
-To minimize the cost of $POW$, a proof of stake method $POS$ \cite{wood2014ethereum} is proposed to make sure that only those who in the network can have the privilege to attach the block only if they have a large amount of token shares.
-Anohter idea targeting at utilizing the power in $POW$ to do useful and meaningful tasks such as training machine learning models are also proposed \cite{matthew2017aion}.
-In addition, inspired by the $PBFT$ algorithm \cite{castro1999practical} and a set of its relateted variations, so called hybrid chain was proposed. 
-The general idea is to use two step algorithm, the first step is to elect a commiette, the second step is collecting committee power to employ $PBFT$ for consensus.
+the bitcoin cash (BCH) fork of bitcoin (BTC) system tries to improve the throughput of the system by enlarging the data size of each block from $1$ Mb to $4$ Mb. 
+To minimize the cost of POW, a proof of stake method POS \cite{wood2014ethereum} is proposed to make sure that only those who in the network can have the privilege to attach the block only if they have a large amount of token shares.
+Anohter idea targeting at utilizing the power in POW to do useful and meaningful tasks such as training machine learning models are also proposed \cite{matthew2017aion}.
+In addition, inspired by the PBFT algorithm \cite{castro1999practical} and a set of its relateted variations, so called hybrid chain was proposed. 
+The general idea is to use two step algorithm, the first step is to elect a commiette, the second step is collecting committee power to employ PBFT for consensus.
 Bitcoin-NG \cite{eyal2016bitcoin} is the early adoptor of this idea, which splits the blocks of bitcoin into two groups, one is for master election and another for regular transaction blocks. 
-Honey-badger \cite{miller2016honey} is the system that firstly introducted the consensus commitee, it uses a predefined memebers to perform $PBFT$ algorithm to reach consensus.  
-The Byzcoin system \cite{kogias2016enhancing} brought forth the idea of $POW$ for the commitee election, and uses a variation of $PBFT$ called collective signing for speed purposes.
+Honey-badger \cite{miller2016honey} is the system that firstly introducted the consensus commitee, it uses a predefined memebers to perform PBFT algorithm to reach consensus.  
+The Byzcoin system \cite{kogias2016enhancing} brought forth the idea of POW for the commitee election, and uses a variation of PBFT called collective signing for speed purposes.
 The Algorand \cite{gilad2017algorand} utilizes a random function to anonymously elect commetee and use this commitee to commit blocks, and the member of the commitee only have one chance to commit block.
 All these systems have one common feature, the split of layers of players in the network, which results in the complexity of the implementation of the system.
 
-While aforemetioned methods are trying to avoid side chains, another thread of effort is put on using direct acyclic graph $DAG$ to merge side chains.
-The first ever idea comes with growing the blockchain with trees instead of chains \cite{sompolinsky2013accelerating}, which results in the well known $GHOST$ protocol \cite{sompolinsky2015secure}.
-If one block links to $\geq 2$ previous blocks, then the data structure grows like a $DAG$ instead of tree \cite{sompolinsky2016spectre, sompolinskyphantom, lewenberg2015inclusive}.
-There is a improvement of the $GHOST$ based $DAG$ algorithm which can achieve $6000$ of $TPS$ in reality \cite{li2018scaling}.
+While aforemetioned methods are trying to avoid side chains, another thread of effort is put on using direct acyclic graph DAG to merge side chains.
+The first ever idea comes with growing the blockchain with trees instead of chains \cite{sompolinsky2013accelerating}, which results in the well known GHOST protocol \cite{sompolinsky2015secure}.
+If one block links to $\geq 2$ previous blocks, then the data structure grows like a DAG instead of tree \cite{sompolinsky2016spectre, sompolinskyphantom, lewenberg2015inclusive}.
+There is a improvement of the GHOST based DAG algorithm which can achieve $6000$ of TPS in reality \cite{li2018scaling}.
 Another set of methods tried to avoid finality of constructing a linear total order by introducing the probability of confirmation in the network \cite{popov2016tangle, churyumov2016byteball}. 
 However, suffering from engineering issues, mainly due to the lack of transaction frquency and the growing complexity due to the network expansion.
 These system in reality are rely on centralized mehods to maintain their stability.
-Some of the side chain methods also borrows the idea of $DAG$, such as nano \cite{lemahieu2018nano} and vite \cite{liuvite}
+Some of the side chain methods also borrows the idea of DAG, such as nano \cite{lemahieu2018nano} and vite \cite{liuvite}
 
-All of the current $DAG$ systems used the idea of head counting method to infer main chains which does not consider the network structure.
-Dating back to the time $Google$ uses $PageRank$ \cite{page1999pagerank} to sort importance of web page instead of number of references, and this method has achieved a huge susccess.
-And this method can also be utilized to help growing the $DAG$, in this paper, we use the Katz centrality metric \cite{katz1953new}.
+All of the current DAG systems used the idea of head counting method to infer main chains which does not consider the network structure.
+Dating back to the time Google uses PageRank \cite{page1999pagerank} to sort importance of web page instead of number of references, and this method has achieved a huge susccess.
+And this method can also be utilized to help growing the DAG, in this paper, we use the Katz centrality metric \cite{katz1953new}.
 Emerging social network research has introduced the method of streaming graph analysis \cite{ediger2011tracking, green2012fast, ediger2012stinger} which deals
 with how to quickly maintain information on a temporally or spatially changing graph without traversing the whole graph. 
-The main contribution of this paper is how to utilize the streaming graph analysis methods to bring the $DAG$ systems into real decentralized, and stabilized growing system.
+The main contribution of this paper is how to utilize the streaming graph analysis methods to bring the DAG systems into real decentralized, and stabilized growing system.

@@ -11,6 +11,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.IotaIOUtils;
 import com.iota.iri.zmq.MessageQ;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -365,6 +366,9 @@ public class Node {
         //store new transaction
         try {
             stored = receivedTransactionViewModel.store(tangle);
+            if(stored) {
+                IotaIOUtils.processReceivedTxn(receivedTransactionViewModel);
+            }
         } catch (Exception e) {
             log.error("Error accessing persistence store.", e);
             neighbor.incInvalidTransactions();

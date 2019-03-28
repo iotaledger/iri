@@ -1,0 +1,29 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ Graph $G$, Block $b'$, parent $p$, covered block set $C$}
+\KwOut{true if covered by parent, else false }
+    $Q \gets [b']$ \;
+    $visited = \{b\}$ \;
+    \While{ $Q != \O$} {
+        $b''$ = $Q.pop()$ \;
+        \For { $ t \in Child(G, b'')$ } {
+            \uIf{$t=p$}{
+                return true \;
+            }
+            \uElseIf{$t \notin visited \land t \notin C$} {
+                $Q.add(t)$ \;
+                $visited.add(t)$ \;
+            }
+        }
+    }
+
+\Return{false} \;
+
+\caption{{\sc IsCovered($G$, $p$, $b'$, $C$).}}
+\label{algo:is_covered}
+\end{algorithm}
+\DecMargin{1em}

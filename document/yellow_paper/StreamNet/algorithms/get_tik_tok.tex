@@ -1,0 +1,21 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ StreamNet $SN$, TikTok period $P$, time $T$ }
+\KwOut{ All attestation blocks in last TikTok period }
+
+
+$T_{time} = round(P, T)$ \;
+$T_{poll} = SN.getTikTok(T_{current})$ \;
+$B_{period} = SN.getBlocks(T_{current}, T_{last})$ \;
+$SN.sendTikTok(System.currentTime())$ \;
+$T$ = $T_{current}$ \;
+
+
+\caption{{\sc TikTok algorithm.}}
+\label{algo:get_tik_tok}
+\end{algorithm}
+\DecMargin{1em}

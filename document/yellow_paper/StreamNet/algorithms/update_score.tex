@@ -1,0 +1,28 @@
+\IncMargin{1em}
+\begin{algorithm}
+\SetKwData{Left}{left}\SetKwData{This}{this}\SetKwData{Up}{up}
+\SetKwFunction{Union}{Union}\SetKwFunction{FindCompress}{FindCompress}
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+
+\KwIn{ Graph $G$, Block $b$, Score map $S$}
+\KwOut{ Updated score map $S$ }
+
+    $Q = [b]$ \;
+    $visited = \{\}$ \;
+    \While{ $Q != \O$} {
+        $b'$ = $Q.pop()$ \;
+        \For { $b'' \in Before(G, b')$ } {
+            \uIf{$b'' \notin visited \land b'' != \perp$} {
+                $Q.append(b'')$ \;
+                $visited.add(b'')$ \;
+            }
+        }
+        $S[b'] ++$ \;
+    }
+
+\Return{$S$} \;
+
+\caption{{\sc UpdateScore($G$, $b$).}}
+\label{algo:update_score}
+\end{algorithm}
+\DecMargin{1em}

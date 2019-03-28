@@ -246,7 +246,7 @@ public class TransactionData {
         txnOutList.add(txOut);
 
         Txn newTxn = new Txn();
-        newTxn.inputs = null;
+        newTxn.inputs = new ArrayList<TxnIn>();
         newTxn.outputs = txnOutList;
 
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
@@ -314,7 +314,6 @@ public class TransactionData {
 
         // TODO: find unspent utxo more quickly.
         for (int i = transactions.size() - 1; i >= 0; i--){
-
             List<TxnOut> txnOutList = transactions.get(i).outputs;
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);
@@ -409,94 +408,51 @@ public class TransactionData {
     public long getBalance(String account) {
         LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
         List<Hash> totalTopOrders = provider.totalTopOrder();
-        List<Txn> orderedTransactions = new ArrayList<>();
-        try {
-            for(Hash hash : totalTopOrders) {
-                TransactionViewModel model = TransactionViewModel.find(tangle, hash.bytes());
-                byte[] sigTrits = model.getSignature();
-                String sigTrytes = Converter.trytes(sigTrits);
-                String info = Converter.trytesToAscii(sigTrytes);
-                //too many spacing
-                BatchTxns batch = new Gson().fromJson(StringUtils.trim(info), BatchTxns.class);
-                orderedTransactions.addAll(batch.txn_content);
-            }
-        } catch(Exception e) {
-            e.printStackTrace();
-        }
-        //log.info("all txs = {}", orderedTransactions.toString());
+        
+        log.debug("all txs = {}", transactions.toString());
+        UTXOGraph graph = new UTXOGraph(transactions);
+        graph.markDoubleSpend(totalTopOrders, txnToTangleMap);
+        //
+        Set<String> visisted = new HashSet<>();
 
         long total = 0;
-        HashSet passedTxnIns = new HashSet<String>();
-        HashSet passedTxns = new HashSet<Hash>();
-        HashSet invalidTxns = new HashSet<Hash>();
-        HashSet invalidTxnIns = new HashSet<String>();
 
-        EACH_TRANSACTION:
-        for (int i = 0; i < orderedTransactions.size(); i++) {
-            Txn transaction = orderedTransactions.get(i);
-
-            // checking double spend
-            List<TxnIn> txnInList = transaction.inputs;
-            for (int j = 0; j < txnInList.size(); j++) {
-                TxnIn txnIn = txnInList.get(j);
-
-                // * The first two judgement: found duplicated txnIn -> this is double spend -> tx is invalid -> all txnOuts of this tx are invalid -> all txs using these
-                // invalid txnOuts are invalid -> go on
-                // * The third judgement: order is mistake, the txnIn's hash never seen before, so it is an invalid tx too.
-                if (passedTxnIns.contains(txnIn.toString()) || invalidTxnIns.contains(txnIn.toString()) || (i != 0 && !passedTxns.contains(txnIn.txnHash))) {
-                    //log.warn("found double spend and go on, or misorder {}", transaction.toString());
-
-                    // this transaction is invalid, roll back
-                    for (int k = 0; k < j; k++) {
-                        passedTxnIns.remove(txnInList.get(k).toString());
-                    }
-
-                    // this transaction as invalid
-                    invalidTxns.add(transaction.txnHash);
-                    // all txnOut of this transaction are invalid, and change it to TxnIn.
-                    for (int k = 0; k < transaction.outputs.size(); k++) {
-                        TxnOut o = transaction.outputs.get(k);
-                        TxnIn in = new TxnIn();
-                        in.userAccount = o.userAccount;
-                        in.txnHash = transaction.txnHash;
-                        in.idx = k;
-                        invalidTxnIns.add(in.toString());
-                    }
-
-                    continue EACH_TRANSACTION;
-                }
-
-                passedTxnIns.add(txnIn.toString());
+        for (int i = 0; i < transactions.size(); i++) {       
+            Txn transaction = transactions.get(i);
+            if(visisted.contains(transaction.txnHash)) {
+                continue; //FIXME this is a problem
             }
-            passedTxns.add(transaction.txnHash);
-
             List<TxnOut> txnOutList = transaction.outputs;
-            EACH_TXNOUT:
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);
-                if (txnOut.userAccount.equals(account)) {
-                    // check this txnOunt whether or not has been spent
-                    for (int k = 1; k < orderedTransactions.size(); k++) {
-                        Txn checksTxn = orderedTransactions.get(k);
-
-                        // skip invalid txn
-                        if (invalidTxns.contains(checksTxn)) {
-                            //log.warn("checks invalid {}", checksTxn.toString());
-                            continue;
-                        }
-
-                        for (TxnIn tempTxnIn: checksTxn.inputs) {
-                            if (tempTxnIn.txnHash.equals(transaction.txnHash) && tempTxnIn.idx == j){
-                                continue EACH_TXNOUT; // already spend
-                            }
-                        }
-                    }
-                    //log.info("total = {}, amount = {}", total, txnOut.amount);
+                String key = transaction.txnHash + ":" + String.valueOf(j) + "," + txnOut.userAccount;
+                if (txnOut.userAccount.equals(account) && !graph.isSpent(key) && !graph.isDoubleSpend(key)) {
                     total += txnOut.amount;
                 }
             }
+            visisted.add(transaction.txnHash);
         }
-
         return total;
+    }
+
+    private void checkAllBalance(UTXOGraph graph) {
+        long tot = 0;
+        Set<String> spend = new HashSet<>();
+        for (int i = 0; i < transactions.size(); i++) {
+            Txn transaction = transactions.get(i);
+            List<TxnOut> txnOutList = transaction.outputs;
+            for (int j = 0; j < txnOutList.size(); j++) {
+                TxnOut txnOut = txnOutList.get(j);
+                String key = transaction.txnHash + ":" + String.valueOf(j) + "," + txnOut.userAccount;
+                if (!graph.isSpent(key) && !graph.isDoubleSpend(key)) {
+                    tot += txnOut.amount;
+                    spend.add(key);
+                }
+            }
+        }
+        if(tot != 1000000000) {
+            System.out.println("[total] " + tot);
+            graph.printGraph(graph.outGraph, "graph.dot", spend);
+        }
     }
 }

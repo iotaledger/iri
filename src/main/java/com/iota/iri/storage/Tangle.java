@@ -285,6 +285,33 @@ public class Tangle {
         }
         return -1;
     }
+
+    public Set<Hash> getChild(Hash block) {
+        for(PersistenceProvider provider : persistenceProviders){
+            if (provider instanceof  LocalInMemoryGraphProvider){
+                return provider.getChild(block);
+            }
+        }
+        return null;
+    }
+
+    public Boolean contains(Hash block) {
+        for(PersistenceProvider provider : persistenceProviders){
+            if (provider instanceof  LocalInMemoryGraphProvider){
+                return ((LocalInMemoryGraphProvider)provider).graph.containsKey(block);
+            }
+        }
+        return false;
+    }
+
+    public Double getScore(Hash block) {
+        for(PersistenceProvider provider : persistenceProviders){
+            if (provider instanceof  LocalInMemoryGraphProvider){
+                return ((LocalInMemoryGraphProvider)provider).score.get(block);
+            }
+        }
+        return 0.0;
+    }
     /*
     public boolean merge(Persistable model, Indexable index) throws Exception {
         boolean exists = false;

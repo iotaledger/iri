@@ -172,7 +172,7 @@ public class LocalInMemoryGraphProviderTest {
         LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
 
         System.out.println("=========pivot=======");
-        assert localInMemoryGraphProvider.getPivot(a.getHash()).equals(end2.getHash()) || localInMemoryGraphProvider.getPivot(a.getHash()).equals(f.getHash()) ;
+        assert localInMemoryGraphProvider.getPivot(a.getHash()).equals(w.getHash()) || localInMemoryGraphProvider.getPivot(a.getHash()).equals(u.getHash()) ;
         // reset in memory graph
         localInMemoryGraphProvider.close();
     }
@@ -266,9 +266,10 @@ public class LocalInMemoryGraphProviderTest {
 
         LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
         System.out.println("=========testGetPivotChain=======");
-        List<Hash> assertingList = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), d.getHash()}).collect(Collectors.toList());
+        List<Hash> assertingList1 = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), e.getHash(), h.getHash()}).collect(Collectors.toList());
+        List<Hash> assertingList2 = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), c.getHash(), g.getHash()}).collect(Collectors.toList());
         List<Hash> rs = localInMemoryGraphProvider.pivotChain(a.getHash());
-        assert assertingList.equals(rs);
+        assert assertingList1.equals(rs) || assertingList2.equals(rs);
         // reset in memory graph
         localInMemoryGraphProvider.close();
     }
@@ -463,8 +464,9 @@ public class LocalInMemoryGraphProviderTest {
 
         LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
         System.out.println("=============total order=======");
-        List<Hash> assertingList1 = Arrays.stream(new Hash[]{a.getHash(),e.getHash(),d.getHash(),h.getHash(),b.getHash(),c.getHash(),f.getHash(),g.getHash(),j.getHash(),k.getHash(),i.getHash(),l.getHash(),o.getHash(),m.getHash(),n.getHash(),
-                t.getHash(),r.getHash(),y.getHash(),v.getHash(),z.getHash(),end2.getHash()}).collect(Collectors.toList());
+        List<Hash> assertingList1 = Arrays.stream(new Hash[]{a.getHash(),b.getHash(),c.getHash(),g.getHash(),e.getHash(),d.getHash(),f.getHash(),
+                j.getHash(),i.getHash(),m.getHash(),h.getHash(),k.getHash(),n.getHash(),l.getHash(),o.getHash(),
+                v.getHash(),t.getHash(),z.getHash()}).collect(Collectors.toList());
         List<Hash> assertingList2 = Arrays.stream(new Hash[]{a.getHash(),d.getHash(),e.getHash(),f.getHash()}).collect(Collectors.toList());
 
         List<Hash> rs = localInMemoryGraphProvider.totalTopOrder();

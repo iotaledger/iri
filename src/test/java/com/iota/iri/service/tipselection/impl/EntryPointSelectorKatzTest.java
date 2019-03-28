@@ -115,18 +115,18 @@ public class EntryPointSelectorKatzTest {
         Hash ret = selector1.getEntryPoint(-1);
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
         ret = selector1.getEntryPoint(2);
-        Assert.assertEquals(tag.get(D.getHash()),tag.get(ret));
-        ret = selector1.getEntryPoint(3);
         Assert.assertEquals(tag.get(B.getHash()),tag.get(ret));
+        ret = selector1.getEntryPoint(3);
+        Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
 
         // Compute with streaming graph
         BaseIotaConfig.getInstance().setStreamingGraphSupport(true);
         ret = selector1.getEntryPoint(-1);
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
         ret = selector1.getEntryPoint(2);
-        Assert.assertEquals(tag.get(D.getHash()),tag.get(ret));
-        ret = selector1.getEntryPoint(3);
         Assert.assertEquals(tag.get(B.getHash()),tag.get(ret));
+        ret = selector1.getEntryPoint(3);
+        Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
 
         // reset in memory graph
         LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle1);
@@ -255,9 +255,9 @@ public class EntryPointSelectorKatzTest {
         Hash ret = selector2.getEntryPoint(-1);
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
         ret = selector2.getEntryPoint(3);
-        Assert.assertEquals(tag.get(M.getHash()),tag.get(ret));
+        Assert.assertEquals(tag.get(I.getHash()),tag.get(ret));
         ret = selector2.getEntryPoint(4);
-        Assert.assertEquals(tag.get(J.getHash()),tag.get(ret));
+        Assert.assertEquals(tag.get(G.getHash()),tag.get(ret));
 
         // Compute with streaming graph
         LocalInMemoryGraphProvider.setNameMap(tag);
@@ -265,9 +265,9 @@ public class EntryPointSelectorKatzTest {
         ret = selector2.getEntryPoint(-1);
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
         ret = selector2.getEntryPoint(3);
-        Assert.assertEquals(tag.get(M.getHash()),tag.get(ret));
+        Assert.assertEquals(tag.get(I.getHash()),tag.get(ret));
         ret = selector2.getEntryPoint(4);
-        Assert.assertEquals(tag.get(J.getHash()),tag.get(ret));
+        Assert.assertEquals(tag.get(G.getHash()),tag.get(ret));
 
         // reset in memory graph
         LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle2);

@@ -77,4 +77,9 @@ public class IotaUtils {
         return full.substring(0, len);
     }
 
+    public static String abbrieviateHash(String h, int len) {
+        String idx = h.split(":")[1];
+        return h.substring(0, len) + ":" + idx;
+    }
+
 }

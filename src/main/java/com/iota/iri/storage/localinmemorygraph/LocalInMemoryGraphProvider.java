@@ -16,6 +16,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import java.io.PrintStream;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.io.*;
 
@@ -23,15 +24,16 @@ import com.iota.iri.utils.*;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
     public HashMap<Hash, Double> score;
+    public HashMap<Hash, Double> parentScore;
     public HashMap<Hash, Set<Hash>> graph;
-    public HashMap<Hash, Hash> parentGraph;
+    public Map<Hash, Hash> parentGraph;
     static HashMap<Hash, Set<Hash>> revGraph;
     public HashMap<Hash, Set<Hash>> parentRevGraph;
     static HashMap<Hash, Integer> degs;
     public HashMap<Integer, Set<Hash>> topOrder;
     public HashMap<Integer, Set<Hash>> topOrderStreaming;
 
-    static HashMap<Hash, Integer> lvlMap;
+    public static HashMap<Hash, Integer> lvlMap;
     public static HashMap<Hash, String> nameMap;
     public int totalDepth;
     private Tangle tangle;
@@ -44,13 +46,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         this.tangle = tangle;
         graph = new HashMap<>();
         revGraph = new HashMap<>();
-        parentGraph = new HashMap<>();
+        parentGraph = new ConcurrentHashMap<>();
         parentRevGraph = new HashMap<>();
         degs = new HashMap<>();
         topOrder = new HashMap<>();
         lvlMap = new HashMap<>();
         topOrderStreaming = new HashMap<>();
         score = new HashMap<>();
+        parentScore = new HashMap<>();
         totalDepth = 0;
     }
 
@@ -311,11 +314,13 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.update(graph, score, vet);
+                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     score.put(vet, 1.0 / (score.size() + 1));
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
                     centrality.setScore(score);
                     score = centrality.compute();
+                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
                 }
             }
         } catch (Exception e) {
@@ -364,9 +369,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.compute(revGraph, graph, getGenesis());
+                    // FIXME add parent score here
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
                     score = centrality.compute();
+                    // FIXME add parent score here
                 }
             }
         } catch (Exception e) {
@@ -376,7 +383,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public Hash getPivotalHash(int depth) {
         Hash ret = null;
-        if (depth == -1 || depth >= totalDepth) {
+        buildPivotChain();
+        if (depth == -1 || depth >= this.pivotChain.size()) {
             Set<Hash> set = topOrderStreaming.get(1);
             if(CollectionUtils.isEmpty(set)){
                 return null;
@@ -386,14 +394,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
 
         // TODO if the same score, choose randomly
-        Set<Hash> hashsOnLevel = topOrderStreaming.get(totalDepth - depth);
-        double maxScore = 0;
-        for (Hash h : hashsOnLevel) {
-            if (score.get(h) >= maxScore) {
-                ret = h;
-                maxScore = score.get(h);
-            }
-        }
+        ret = this.pivotChain.get(this.pivotChain.size()-depth-1);
         return ret;
     }
 
@@ -416,11 +417,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                         }
                     } else {
                         if(k != null) {
-                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 4) + "\"->" +
-                                    "\"" + IotaUtils.abbrieviateHash(val, 4) + "\"\n");
+                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n");
                         } else {
-                            System.out.println("\"" + IotaUtils.abbrieviateHash(key, 4) + "\"->" +
-                                    "\"" + IotaUtils.abbrieviateHash(val, 4) + "\"");
+                            System.out.println("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"");
                         }
                     }
                 }
@@ -491,8 +492,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
             double maxScore = 0;
             for (Hash h : children) {
-                if (score.get(h) > maxScore) {
-                    maxScore = score.get(h);
+                if (parentScore.get(h) > maxScore) {
+                    maxScore = parentScore.get(h);
                     b = h;
                 }
             }
@@ -595,8 +596,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             double tmpMaxScore = -1;
             Hash s = null;
             for (Hash block : parentRevGraph.get(start)) {
-                if (score.get(block) > tmpMaxScore || (score.get(block) == tmpMaxScore && block.compareTo(Objects.requireNonNull(s)) < 0)) {
-                    tmpMaxScore = score.get(block);
+                //if (score.get(block) > tmpMaxScore || (score.get(block) == tmpMaxScore && block.compareTo(Objects.requireNonNull(s)) < 0)) {
+                if (parentScore.get(block) > tmpMaxScore) {
+                    tmpMaxScore = parentScore.get(block);
                     s = block;
                 }
             }
@@ -615,11 +617,13 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             double tmpMaxScore = -1;
             Hash s = null;
             for (Hash block : children) {
-                if (score.get(block) > tmpMaxScore || (score.get(block) == tmpMaxScore && block.compareTo(Objects.requireNonNull(s)) < 0)) {
-                    tmpMaxScore = score.get(block);
+                //if (score.get(block) > tmpMaxScore || (score.get(block) == tmpMaxScore && block.compareTo(Objects.requireNonNull(s)) < 0)) {
+                if (parentScore.get(block) > tmpMaxScore) {
+                    tmpMaxScore = parentScore.get(block);
                     s = block;
                 }
             }
+            
             start = s;
         }
         return start;

@@ -21,4 +21,5 @@ java -jar iri-1.5.5.jar --testnet \
                         --tip-sel-algo "CONFLUX" \
                         --ipfs-txns false \
                         --batch-txns true \
+                        --weight-calculation-algorithm "IN_MEM" \
                         &>  streamnet.log &

@@ -64,15 +64,16 @@ public class TipSelectorConflux implements TipSelector {
 
         // Reference tip
         Hash entryPoint = entryPointSelector.getEntryPoint(depth);
+
         UnIterableMap<HashId, Integer> rating = ratingCalculator.calculate(entryPoint);
+
         WalkValidator walkValidator = new WalkValidatorImpl(tangle, ledgerValidator, milestoneTracker, config);
         if(BaseIotaConfig.getInstance().getWalkValidator().equals("NULL")) {
             walkValidator = new WalkValidatorNull();
         }
+
         Hash refTip;
-        do {
-            refTip = walker.walk(entryPoint, rating, walkValidator);
-        } while(tangle.getNumOfTips()>1 && refTip.equals(parentTip));
+        refTip = walker.walk(entryPoint, rating, walkValidator);
         tips.add(refTip);
 
         // TODO validate UTXO etc.

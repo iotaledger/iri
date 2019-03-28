@@ -15,7 +15,6 @@ curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" 
 curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"f\",\"amnt\":1000,\"tag\":\"TX\"}" &
 curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"g\",\"amnt\":1000,\"tag\":\"TX\"}" &
 curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"h\",\"amnt\":1000,\"tag\":\"TX\"}" &
-curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"i\",\"amnt\":1000,\"tag\":\"TX\"}" &
 curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"b\",\"to\":\"e\",\"amnt\":1000,\"tag\":\"TX\"}" &
 curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"b\",\"to\":\"f\",\"amnt\":1000,\"tag\":\"TX\"}" &
 curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"b\",\"to\":\"g\",\"amnt\":1000,\"tag\":\"TX\"}" &
@@ -31,6 +30,12 @@ curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" 
 curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"d\",\"to\":\"v\",\"amnt\":10,\"tag\":\"TX\"}" &
 curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"d\",\"to\":\"w\",\"amnt\":10,\"tag\":\"TX\"}" &
 curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"d\",\"to\":\"x\",\"amnt\":10,\"tag\":\"TX\"}" &
+curl http://localhost:5000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"i\",\"amnt\":1000,\"tag\":\"TX\"}" &
+curl http://localhost:6000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"e\",\"amnt\":1000,\"tag\":\"TX\"}" &
+curl http://localhost:6000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"f\",\"amnt\":1000,\"tag\":\"TX\"}" &
+curl http://localhost:6000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"g\",\"amnt\":1000,\"tag\":\"TX\"}" &
+curl http://localhost:6000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"h\",\"amnt\":1000,\"tag\":\"TX\"}" &
+curl http://localhost:6000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"a\",\"to\":\"i\",\"amnt\":1000,\"tag\":\"TX\"}" &
 curl http://localhost:6000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"d\",\"to\":\"y\",\"amnt\":10,\"tag\":\"TX\"}" &
 curl http://localhost:6000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"m\",\"to\":\"x\",\"amnt\":10,\"tag\":\"TX\"}" &
 curl http://localhost:6000/put_file -X POST -H "Content-Type: application/json" -d "{\"from\":\"m\",\"to\":\"y\",\"amnt\":10,\"tag\":\"TX\"}" &

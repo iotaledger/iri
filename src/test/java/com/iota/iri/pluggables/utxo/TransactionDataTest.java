@@ -42,8 +42,8 @@ public class TransactionDataTest {
 
     @Test
     public void testInitTransaction() {
-        assert transactionData.transactions.get(0).outputs.size() == 1;
-        assert transactionData.transactions.get(0).inputs == null;
+        Assert.assertEquals(transactionData.transactions.get(0).outputs.size(), 1);
+        Assert.assertEquals(transactionData.transactions.get(0).inputs.size(), 0);
         System.out.println(new Gson().toJson(transactionData.transactions.get(0)));
     }
 
@@ -51,56 +51,52 @@ public class TransactionDataTest {
     public void testReadFromStr(){
 
         transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":100}");
-        assert transactionData.transactions.size() == 2;
-        assert transactionData.transactions.get(1).inputs.size() == 1;
-        assert transactionData.transactions.get(1).inputs.get(0).txnHash.equals(
-                transactionData.transactions.get(0).txnHash
-        );
-        assert transactionData.transactions.get(1).inputs.get(0).idx == 0;
-        assert transactionData.transactions.get(1).inputs.get(0).userAccount.equals("A");
-        assert transactionData.transactions.get(1).outputs.size() == 2;
-        assert transactionData.transactions.get(1).outputs.get(0).userAccount.equals("B");
-        assert transactionData.transactions.get(1).outputs.get(0).amount == 100;
-        assert transactionData.transactions.get(1).outputs.get(1).userAccount.equals("A");
-        assert transactionData.transactions.get(1).outputs.get(1).amount == 999999900;
+        Assert.assertEquals(transactionData.transactions.size(), 2);
+        Assert.assertEquals(transactionData.transactions.get(1).inputs.size(), 1);
+        Assert.assertEquals(transactionData.transactions.get(1).inputs.get(0).txnHash,
+                transactionData.transactions.get(0).txnHash);
+        Assert.assertEquals(transactionData.transactions.get(1).inputs.get(0).idx, 0);
+        Assert.assertEquals(transactionData.transactions.get(1).inputs.get(0).userAccount, "A");
+        Assert.assertEquals(transactionData.transactions.get(1).outputs.size(), 2);
+        Assert.assertEquals(transactionData.transactions.get(1).outputs.get(0).userAccount, "B");
+        Assert.assertEquals(transactionData.transactions.get(1).outputs.get(0).amount, 100);
+        Assert.assertEquals(transactionData.transactions.get(1).outputs.get(1).userAccount, "A");
+        Assert.assertEquals(transactionData.transactions.get(1).outputs.get(1).amount, 999999900);
 
 
         transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":200}");
-        assert transactionData.transactions.size() == 3;
-        assert transactionData.transactions.get(2).inputs.size() == 1;
-        assert transactionData.transactions.get(2).inputs.get(0).txnHash.equals(
-                transactionData.transactions.get(1).txnHash
-        );
-        assert transactionData.transactions.get(2).inputs.get(0).idx == 1;
-        assert transactionData.transactions.get(2).inputs.get(0).userAccount.equals("A");
-        assert transactionData.transactions.get(2).outputs.size() == 2;
-        assert transactionData.transactions.get(2).outputs.get(0).userAccount.equals("B");
-        assert transactionData.transactions.get(2).outputs.get(0).amount == 200;
-        assert transactionData.transactions.get(2).outputs.get(1).userAccount.equals("A");
-        assert transactionData.transactions.get(2).outputs.get(1).amount == 999999700;
+        Assert.assertEquals(transactionData.transactions.size(), 3);
+        Assert.assertEquals(transactionData.transactions.get(2).inputs.size(), 1);
+        Assert.assertEquals(transactionData.transactions.get(2).inputs.get(0).txnHash,
+                transactionData.transactions.get(1).txnHash);
+        Assert.assertEquals(transactionData.transactions.get(2).inputs.get(0).idx, 1);
+        Assert.assertEquals(transactionData.transactions.get(2).inputs.get(0).userAccount, "A");
+        Assert.assertEquals(transactionData.transactions.get(2).outputs.size(), 2);
+        Assert.assertEquals(transactionData.transactions.get(2).outputs.get(0).userAccount, "B");
+        Assert.assertEquals(transactionData.transactions.get(2).outputs.get(0).amount, 200);
+        Assert.assertEquals(transactionData.transactions.get(2).outputs.get(1).userAccount, "A");
+        Assert.assertEquals(transactionData.transactions.get(2).outputs.get(1).amount, 999999700);
         System.out.println(new Gson().toJson(transactionData.transactions.get(2)));
 
 
         transactionData.readFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":300}");
-        assert transactionData.transactions.size() == 4;
-        assert transactionData.transactions.get(3).inputs.size() == 2;
-        assert transactionData.transactions.get(3).inputs.get(0).txnHash.equals(
-                transactionData.transactions.get(2).txnHash
-        );
-        assert transactionData.transactions.get(3).inputs.get(0).idx == 0;
-        assert transactionData.transactions.get(3).inputs.get(0).userAccount.equals("B");
-        assert transactionData.transactions.get(3).inputs.get(1).txnHash.equals(
-                transactionData.transactions.get(1).txnHash
-        );
-        assert transactionData.transactions.get(3).inputs.get(1).idx == 0;
-        assert transactionData.transactions.get(3).inputs.get(1).userAccount.equals("B");
-        assert transactionData.transactions.get(3).outputs.size() == 1;
-        assert transactionData.transactions.get(3).outputs.get(0).userAccount.equals("C");
-        assert transactionData.transactions.get(3).outputs.get(0).amount == 300;
+        Assert.assertEquals(transactionData.transactions.size(), 4);
+        Assert.assertEquals(transactionData.transactions.get(3).inputs.size(), 2);
+        Assert.assertEquals(transactionData.transactions.get(3).inputs.get(0).txnHash, 
+                transactionData.transactions.get(2).txnHash);
+        Assert.assertEquals(transactionData.transactions.get(3).inputs.get(0).idx, 0);
+        Assert.assertEquals(transactionData.transactions.get(3).inputs.get(0).userAccount, "B");
+        Assert.assertEquals(transactionData.transactions.get(3).inputs.get(1).txnHash, 
+                transactionData.transactions.get(1).txnHash);
+        Assert.assertEquals(transactionData.transactions.get(3).inputs.get(1).idx, 0);
+        Assert.assertEquals(transactionData.transactions.get(3).inputs.get(1).userAccount, "B");
+        Assert.assertEquals(transactionData.transactions.get(3).outputs.size(), 1);
+        Assert.assertEquals(transactionData.transactions.get(3).outputs.get(0).userAccount, "C");
+        Assert.assertEquals(transactionData.transactions.get(3).outputs.get(0).amount, 300);
         System.out.println(new Gson().toJson(transactionData.transactions.get(3)));
 
         transactionData.readFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":1}");
-        assert transactionData.transactions.size() == 4;
+        Assert.assertEquals(transactionData.transactions.size(), 4);
 
     }
 
@@ -132,7 +128,6 @@ public class TransactionDataTest {
         String txnStr = "{\"amnt\": 100, \"from\": \"A\", \"tag\": \"TX\", \"to\": \"b\"}";
         store(txnStr);
 
-        assert (transactionData.getBalance("b") == 100);
+        Assert.assertEquals(transactionData.getBalance("b"), 100);
     }
-
 }

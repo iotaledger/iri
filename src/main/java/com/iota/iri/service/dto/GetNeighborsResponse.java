@@ -1,14 +1,13 @@
 package com.iota.iri.service.dto;
 
-import java.util.List;
-
+import com.iota.iri.network.neighbor.NeighborMetrics;
 import com.iota.iri.service.API;
 
+import java.util.Collection;
+
 /**
- * 
  * Contains information about the result of a successful {@code getNeighbors} API call.
  * See {@link API#getNeighborsStatement} for how this response is created.
- *
  */
 public class GetNeighborsResponse extends AbstractResponse {
 
@@ -16,47 +15,48 @@ public class GetNeighborsResponse extends AbstractResponse {
      * The neighbors you are connected with, as well as their activity counters.
      * This includes the following statistics:
      * <ol>
-     *     <li>address</li>
-     *     <li>connectionType</li>
-     *     <li>numberOfAllTransactions</li>
-     *     <li>numberOfRandomTransactionRequests</li>
-     *     <li>numberOfNewTransactions</li>
-     *     <li>numberOfInvalidTransactions</li>
-     *     <li>numberOfSentTransactions</li>
-     *     <li>numberOfStaleTransactions</li>
+     * <li>address</li>
+     * <li>connectionType</li>
+     * <li>numberOfAllTransactions</li>
+     * <li>numberOfRandomTransactionRequests</li>
+     * <li>numberOfNewTransactions</li>
+     * <li>numberOfInvalidTransactions</li>
+     * <li>numberOfSentTransactions</li>
+     * <li>numberOfStaleTransactions</li>
      * </ol>
-     * @see {@link com.iota.iri.service.dto.GetNeighborsResponse.Neighbor}
+     *
+     * @see {@link Neighbor}
      */
     private Neighbor[] neighbors;
 
     /**
-     * @see com.iota.iri.service.dto.GetNeighborsResponse.Neighbor
      * @return {@link #neighbors}
+     * @see Neighbor
      */
     public Neighbor[] getNeighbors() {
         return neighbors;
     }
-    
+
     /**
      * Creates a new {@link GetNeighborsResponse}
-     * 
+     *
      * @param elements {@link com.iota.iri.network.Neighbor}
      * @return an {@link GetNeighborsResponse} filled all neighbors and their activity.
      */
-    public static AbstractResponse create(final List<com.iota.iri.network.Neighbor> elements) {
+    public static AbstractResponse create(final Collection<com.iota.iri.network.neighbor.Neighbor> elements) {
         GetNeighborsResponse res = new GetNeighborsResponse();
+
         res.neighbors = new Neighbor[elements.size()];
         int i = 0;
-        for (com.iota.iri.network.Neighbor n : elements) {
-            res.neighbors[i++] = Neighbor.createFrom(n);
+        for (com.iota.iri.network.neighbor.Neighbor neighbor : elements) {
+            res.neighbors[i++] = GetNeighborsResponse.Neighbor.createFrom(neighbor);
         }
+
         return res;
     }
-    
+
     /**
-     * 
      * A plain DTO of an iota neighbor.
-     * 
      */
     static class Neighbor {
 
@@ -71,7 +71,7 @@ public class GetNeighborsResponse extends AbstractResponse {
 
         /**
          * The address of your neighbor
-         * 
+         *
          * @return the address
          */
         public String getAddress() {
@@ -80,7 +80,7 @@ public class GetNeighborsResponse extends AbstractResponse {
 
         /**
          * Number of all transactions sent (invalid, valid, already-seen)
-         * 
+         *
          * @return the number
          */
         public long getNumberOfAllTransactions() {
@@ -89,7 +89,7 @@ public class GetNeighborsResponse extends AbstractResponse {
 
         /**
          * New transactions which were transmitted.
-         * 
+         *
          * @return the number
          */
         public long getNumberOfNewTransactions() {
@@ -97,9 +97,9 @@ public class GetNeighborsResponse extends AbstractResponse {
         }
 
         /**
-         * Invalid transactions your neighbor has sent you. 
+         * Invalid transactions your neighbor has sent you.
          * These are transactions with invalid signatures or overall schema.
-         * 
+         *
          * @return the number
          */
         public long getNumberOfInvalidTransactions() {
@@ -118,7 +118,7 @@ public class GetNeighborsResponse extends AbstractResponse {
 
         /**
          * Amount of transactions send through your neighbor
-         * 
+         *
          * @return the number
          */
         public long getNumberOfSentTransactions() {
@@ -127,7 +127,7 @@ public class GetNeighborsResponse extends AbstractResponse {
 
         /**
          * The method type your neighbor is using to connect (TCP / UDP)
-         * 
+         *
          * @return the connection type
          */
         public String getConnectionType() {
@@ -136,20 +136,22 @@ public class GetNeighborsResponse extends AbstractResponse {
 
         /**
          * Creates a new Neighbor DTO from a Neighbor network instance
-         * @param n the neighbor currently connected to this node
-         * @return a new instance of {@link GetNeighborsResponse.Neighbor}
+         *
+         * @param neighbor the neighbor currently connected to this node
+         * @return a new instance of {@link Neighbor}
          */
-        public static Neighbor createFrom(com.iota.iri.network.Neighbor n) {
+        public static Neighbor createFrom(com.iota.iri.network.neighbor.Neighbor neighbor) {
             Neighbor ne = new Neighbor();
-            int port = n.getPort();
-            ne.address = n.getAddress().getHostString() + ":" + port;
-            ne.numberOfAllTransactions = n.getNumberOfAllTransactions();
-            ne.numberOfInvalidTransactions = n.getNumberOfInvalidTransactions();
-            ne.numberOfStaleTransactions = n.getNumberOfStaleTransactions();
-            ne.numberOfNewTransactions = n.getNumberOfNewTransactions();
-            ne.numberOfRandomTransactionRequests = n.getNumberOfRandomTransactionRequests();
-            ne.numberOfSentTransactions = n.getNumberOfSentTransactions();
-            ne.connectionType = n.connectionType();
+            int port = neighbor.getRemoteServerSocketPort();
+            ne.address = neighbor.getHostAddressAndPort();
+            NeighborMetrics metrics = neighbor.getMetrics();
+            ne.numberOfAllTransactions = metrics.getAllTransactionsCount();
+            ne.numberOfInvalidTransactions = metrics.getInvalidTransactionsCount();
+            ne.numberOfStaleTransactions = metrics.getStaleTransactionsCount();
+            ne.numberOfNewTransactions = metrics.getNewTransactionsCount();
+            ne.numberOfRandomTransactionRequests = metrics.getRandomTransactionRequestsCount();
+            ne.numberOfSentTransactions = metrics.getSentTransactionsCount();
+            ne.connectionType = "tcp";
             return ne;
         }
     }

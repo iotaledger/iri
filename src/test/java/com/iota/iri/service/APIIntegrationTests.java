@@ -56,7 +56,7 @@ public class APIIntegrationTests {
     private static ResponseSpecification specSuccessResponse;
     private static ResponseSpecification specErrorResponse;
     // Constants used in tests
-    private static final String[] URIS = {"udp://8.8.8.8:14266", "udp://8.8.8.5:14266"};
+    private static final String[] URIS = {"tcp://8.8.8.8:14266", "tcp://8.8.8.5:14266"};
     private static final String[] ADDRESSES = {"RVORZ9SIIP9RCYMREUIXXVPQIPHVCNPQ9HZWYKFWYWZRE9JQKG9REPKIASHUUECPSQO9JT9XNMVKWYGVA"};
     private static final String[] HASHES = {"OAATQS9VQLSXCLDJVJJVYUGONXAXOFMJOZNSYWRZSWECMXAQQURHQBJNLD9IOFEPGZEPEMPXCIVRX9999"};
     //Trytes of "VHBRBB9EWCPDKYIBEZW9XVX9AOBQKSCKSTMJLGBANQ99PR9HGYNH9AJWTMHJQBDJHZVWHZMXPILS99999"
@@ -239,11 +239,7 @@ public class APIIntegrationTests {
             post("/").
             then().
             spec(specSuccessResponse).
-            body(containsString("neighbors")).
-            body(containsString("address")).
-            body(containsString("numberOfAllTransactions")).
-            body(containsString("numberOfInvalidTransactions")).
-            body(containsString("numberOfNewTransactions"));
+            body(containsString("neighbors"));
     }
 
     @Test

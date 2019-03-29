@@ -3,10 +3,10 @@ package com.iota.iri.network.impl;
 import com.iota.iri.controllers.TipsViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
-import com.iota.iri.network.Neighbor;
-import com.iota.iri.network.Node;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.TransactionRequesterWorker;
+import com.iota.iri.network.NeighborRouter;
+import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.thread.DedicatedScheduledExecutorService;
 import com.iota.iri.utils.thread.SilentScheduledExecutorService;
@@ -60,7 +60,7 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
     /**
      * The network manager of the node.<br />
      */
-    private Node node;
+    private NeighborRouter neighborRouter;
 
     /**
      * The manager of the background task.<br />
@@ -83,16 +83,16 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
      * @param tangle Tangle object which acts as a database interface
      * @param transactionRequester manager for the requested transactions
      * @param tipsViewModel the manager for the tips
-     * @param node the network manager of the node
+     * @param neighborRouter the network manager of the node
      * @return the initialized instance itself to allow chaining
      */
     public TransactionRequesterWorkerImpl init(Tangle tangle, TransactionRequester transactionRequester,
-            TipsViewModel tipsViewModel, Node node) {
+            TipsViewModel tipsViewModel, NeighborRouter neighborRouter) {
 
         this.tangle = tangle;
         this.transactionRequester = transactionRequester;
         this.tipsViewModel = tipsViewModel;
-        this.node = node;
+        this.neighborRouter = neighborRouter;
 
         return this;
     }
@@ -121,10 +121,10 @@ public class TransactionRequesterWorkerImpl implements TransactionRequesterWorke
     }
 
     private void sendToNodes(TransactionViewModel transaction) {
-        for (Neighbor neighbor : node.getNeighbors()) {
+        for (Neighbor neighbor : neighborRouter.getConnectedNeighbors().values()) {
             try {
                 // automatically adds the hash of a requested transaction when sending a packet
-                node.sendPacket(transaction, neighbor);
+                neighborRouter.gossipTransactionTo(neighbor, transaction);
             } catch (Exception e) {
                 log.error("unexpected error while sending request to neighbour", e);
             }

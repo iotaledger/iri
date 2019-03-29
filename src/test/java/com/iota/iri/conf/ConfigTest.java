@@ -52,8 +52,7 @@ public class ConfigTest {
     public void testArgsParsingMainnet() {
         String[] args = {
                 "-p", "14000",
-                "-u", "13000",
-                "-t", "27000",
+                "-nsp", "13000",
                 "-n", "udp://neighbor1 neighbor, tcp://neighbor2",
                 "--api-host", "1.1.1.1",
                 "--remote-limit-api", "call1 call2, call3",
@@ -64,7 +63,7 @@ public class ConfigTest {
                 "--remote-auth", "2.2.2.2",
                 "--p-remove-request", "0.23",
                 "--send-limit", "1000",
-                "--max-peers", "10",
+                "--max-neighbors", "10",
                 "--dns-refresher", "false",
                 "--dns-resolution", "false",
                 "--ixi-dir", "/ixi",
@@ -83,8 +82,7 @@ public class ConfigTest {
 
         iotaConfig.parseConfigFromArgs(args);
         Assert.assertEquals("port value", 14000, iotaConfig.getPort());
-        Assert.assertEquals("udp port", 13000, iotaConfig.getUdpReceiverPort());
-        Assert.assertEquals("tcp port", 27000, iotaConfig.getTcpReceiverPort());
+        Assert.assertEquals("neighboring port", 13000, iotaConfig.getNeighboringSocketPort());
         Assert.assertEquals("neighbors", Arrays.asList("udp://neighbor1", "neighbor", "tcp://neighbor2"),
                 iotaConfig.getNeighbors());
         Assert.assertEquals("api host", "1.1.1.1", iotaConfig.getApiHost());
@@ -97,7 +95,7 @@ public class ConfigTest {
         Assert.assertEquals("remote-auth", "2.2.2.2", iotaConfig.getRemoteAuth());
         Assert.assertEquals("p remove request", 0.23d, iotaConfig.getpRemoveRequest(), 0d);
         Assert.assertEquals("send limit", 1000, iotaConfig.getSendLimit());
-        Assert.assertEquals("max peers", 10, iotaConfig.getMaxPeers());
+        Assert.assertEquals("max neighbors", 10, iotaConfig.getMaxNeighbors());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
         Assert.assertEquals("dns resolution", false, iotaConfig.isDnsResolutionEnabled());
         Assert.assertEquals("tip solidification", true, iotaConfig.isTipSolidifierEnabled());
@@ -123,8 +121,7 @@ public class ConfigTest {
     public void testArgsParsingTestnet() {
         String[] args = {
                 "-p", "14000",
-                "-u", "13000",
-                "-t", "27000",
+                "-nsp", "13000",
                 "-n", "udp://neighbor1 neighbor, tcp://neighbor2",
                 "--api-host", "1.1.1.1",
                 "--remote-limit-api", "call1 call2, call3",
@@ -135,7 +132,7 @@ public class ConfigTest {
                 "--remote-auth", "2.2.2.2",
                 "--p-remove-request", "0.23",
                 "--send-limit", "1000",
-                "--max-peers", "10",
+                "--max-neighbors", "10",
                 "--dns-refresher", "false",
                 "--dns-resolution", "false",
                 "--tip-solidifier", "false",
@@ -155,8 +152,7 @@ public class ConfigTest {
 
         iotaConfig.parseConfigFromArgs(args);
         Assert.assertEquals("port value", 14000, iotaConfig.getPort());
-        Assert.assertEquals("udp port", 13000, iotaConfig.getUdpReceiverPort());
-        Assert.assertEquals("tcp port", 27000, iotaConfig.getTcpReceiverPort());
+        Assert.assertEquals("neighboring port", 13000, iotaConfig.getNeighboringSocketPort());
         Assert.assertEquals("neighbors", Arrays.asList("udp://neighbor1", "neighbor", "tcp://neighbor2"),
                 iotaConfig.getNeighbors());
         Assert.assertEquals("api host", "1.1.1.1", iotaConfig.getApiHost());
@@ -169,7 +165,7 @@ public class ConfigTest {
         Assert.assertEquals("remote-auth", "2.2.2.2", iotaConfig.getRemoteAuth());
         Assert.assertEquals("p remove request", 0.23d, iotaConfig.getpRemoveRequest(), 0d);
         Assert.assertEquals("send limit", 1000, iotaConfig.getSendLimit());
-        Assert.assertEquals("max peers", 10, iotaConfig.getMaxPeers());
+        Assert.assertEquals("max neighbors", 10, iotaConfig.getMaxNeighbors());
         Assert.assertEquals("dns refresher", false, iotaConfig.isDnsRefresherEnabled());
         Assert.assertEquals("dns resolution", false, iotaConfig.isDnsResolutionEnabled());
         Assert.assertEquals("tip solidification", false, iotaConfig.isTipSolidifierEnabled());
@@ -303,7 +299,7 @@ public class ConfigTest {
                 .map(Enum::name)
                 // make it explicit that we have removed some configs
                 .filter(config -> !ArrayUtils.contains(new String[]{"CONFIG", "TESTNET", "DEBUG",
-                        "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS"}, config))
+                        "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS", "MAX_PEERS"}, config))
                 .forEach(config ->
                         Assert.assertThat(configNames, IsCollectionContaining.hasItem(config)));
     }
@@ -337,8 +333,7 @@ public class ConfigTest {
         CONFIG,
         PORT,
         API_HOST,
-        UDP_RECEIVER_PORT,
-        TCP_RECEIVER_PORT,
+        NEIGHBORING_SOCKET_PORT,
         TESTNET,
         DEBUG,
         REMOTE_LIMIT_API,

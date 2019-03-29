@@ -158,6 +158,7 @@ public class TransactionData {
 
     public void addTxn(Txn txn) {
         transactions.add(txn);
+        utxoGraph.addTxn(txn, transactions.size()-1);
     }
 
     public String getData() {
@@ -255,8 +256,7 @@ public class TransactionData {
 
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
-        transactions.add(newTxn);
-        utxoGraph.addTxn(newTxn, transactions.size()-1);
+        addTxn(newTxn);
     }
 
     public Txn getLast() {
@@ -367,8 +367,7 @@ public class TransactionData {
         newTxn.outputs = txnOutList;
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
-        transactions.add(newTxn);
-        utxoGraph.addTxn(newTxn, transactions.size()-1);
+        addTxn(newTxn);
         return true;
     }
 

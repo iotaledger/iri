@@ -13,56 +13,92 @@ The original iri reference could be found at [[iri]](https://github.com/iotaledg
 -* **License:** GPLv3
 
 
-# Installing
+# 1. Installing
 
 The preferred option is that you compile yourself.
 The second option is that you utilize the provided jar, 
 which is released whenever there is a new update here: [Github Releases](https://github.com/trias-lab/iri/releases).
 
-## Compiling yourself
+## 1.1 Compiling yourself
 
 Make sure to have Maven and Java 8 installed on your computer.
 
-### To compile & package
-```
-$ git clone https://github.com/trias-lab/iri
-$ cd iri
-$ mvn clean compile
-$ mvn package
-```
-
-### To compiple docker
-
-```
-$ docker build -t <name>:<tag> .
+### 1.1.1 To compile & package
+```bash
+git clone https://github.com/trias-lab/iri
+cd iri
+mvn clean compile
+mvn package
 ```
 
 This will create a `target` directory in which you will find the executable jar file that you can use.
 
-## Running yourself
+### 1.1.2 To compiple docker
 
-### How to run one node
-
-```
-$ cd scripts/examples/one_node
-$ ./conflux_dag.sh
-$ ./start_cli.sh
-$ ./parallel_put_txn.sh
-$ ./get_balance.sh
+```bash
+docker build -t <name>:<tag> .
 ```
 
-### How to run two nodes
+This will create a docker image for you to deploy
 
-```
-$ cd scripts/examples/two_nodes
-$ ./conflux_dag_two_nodes.sh
-$ ./start_cli_two_nodes.sh
-$ ./parallel_put_txn_two_nodes.sh
-$ ./get_balance_two_nodes.sh
+## 1.2 Running yourself
+
+### 1.2.1 How to run one node
+
+#### Run one node in single transaction mode
+
+```bash
+cd scripts/examples/one_node/
+./conflux_dag.sh
+./start_cli.sh
+./parallel_put_txn.sh
+./get_balance.sh
 ```
 
-### How to run docker
+#### Run one node in batch transaction mode
+
+```bash
+cd scripts/examples/one_node_batch
+./conflux_dag.sh
+./start_cli.sh
+./parallel_put_txn.sh
+./get_balance.sh
+```
+
+### 1.2.2 How to run two nodes
+
+#### Run two nodes in single transaction mode
+
+```bash
+cd scripts/examples/two_nodes
+./conflux_dag_two_nodes.sh
+./start_cli_two_nodes.sh
+./parallel_put_txn_two_nodes.sh
+./get_balance_two_nodes.sh
+```
+
+#### Run two nodes in multiple transaction mode
+
+```bash
+cd scripts/examples/two_nodes_batch
+./conflux_dag_two_nodes.sh
+./start_cli_two_nodes.sh
+./parallel_put_txn_two_nodes.sh
+./get_balance_two_nodes.sh
+```
+
+### 1.2.3 How to run docker
 
 ```
 $ docker run -d --net=host --name <name> -v <local_data_dir>:/iri/data -v <neighbor_file>:/iri/conf/neighbors <name>:<tag> /entrypoint.sh
 ```
+
+# 2. MISC
+
+## 2.1 Performance Tunning 
+
+Please refere [[Performance tunning]](https://github.com/wunder3605/iri/blob/dev/scripts/iota\_perf/README.md) for details of how to measure performance using Nginx + Jmeter. 
+
+## 2.2 Cluster deployment 
+
+Please refere [[Cluster deployment]](https://github.com/wunder3605/iri/tree/dev/scripts/iota_deploy) for details of how to deploy multiple nodes. 

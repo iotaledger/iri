@@ -1,15 +1,15 @@
 #!/bin/bash
 
-rm -rf iri-1.5.5.jar  
-cd ../../ 
+rm -rf iri-1.5.5.jar
+cd ../../..
 mvn clean ; mvn package
-cp target/iri-1.5.5.jar scripts/examples/
-cd scripts/examples/
+cp target/iri-1.5.5.jar scripts/examples/two_nodes
+cd scripts/examples/two_nodes
 rm -rf db1*
 rm -rf db2*
 rm -rf ixi
-rm streamnet*
- 
+rm -rf streamnet*
+
 java -jar iri-1.5.5.jar --testnet \
                         --mwm 1 \
                         --walk-validator "NULL" \

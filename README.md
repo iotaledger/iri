@@ -77,14 +77,14 @@ cd scripts/examples/two_nodes
 ./get_balance_two_nodes.sh
 ```
 
-#### Run two nodes in single transaction mode
+#### Run two nodes in multiple transaction mode
 
 ```bash
-$ cd scripts/examples/two_nodes_batch
-$ ./conflux_dag_two_nodes.sh
-$ ./start_cli_two_nodes.sh
-$ ./parallel_put_txn_two_nodes.sh
-$ ./get_balance_two_nodes.sh
+cd scripts/examples/two_nodes_batch
+./conflux_dag_two_nodes.sh
+./start_cli_two_nodes.sh
+./parallel_put_txn_two_nodes.sh
+./get_balance_two_nodes.sh
 ```
 
 ### 1.2.3 How to run docker
@@ -93,7 +93,7 @@ $ ./get_balance_two_nodes.sh
 $ docker run -d --net=host --name <name> -v <local_data_dir>:/iri/data -v <neighbor_file>:/iri/conf/neighbors <name>:<tag> /entrypoint.sh
 ```
 
-# 2 MISC
+# 2. MISC
 
 ## 2.1 Performance Tunning 
 

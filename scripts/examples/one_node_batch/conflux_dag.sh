@@ -3,8 +3,8 @@
 rm -rf iri-1.5.5.jar
 cd ../../..
 mvn clean ; mvn package
-cp target/iri-1.5.5.jar scripts/examples/one_node
-cd scripts/examples/one_node
+cp target/iri-1.5.5.jar scripts/examples/one_node_batch/
+cd scripts/examples/one_node_batch/
 rm -rf testnetdb*
 rm -rf ixi
 rm -rf streamnet*
@@ -20,6 +20,6 @@ java -jar iri-1.5.5.jar --testnet \
                         --entrypoint-selector-algorithm "KATZ" \
                         --tip-sel-algo "CONFLUX" \
                         --ipfs-txns false \
-                        --batch-txns false \
+                        --batch-txns true \
                         --weight-calculation-algorithm "IN_MEM" \
                         &>  streamnet.log &

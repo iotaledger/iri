@@ -1,0 +1,11 @@
+[iota]
+addr = http://localhost:13700
+seed = EBZYNR9YVFIOAZUPQOLRZXPPPIKRCJ9EJKVCXMYVLMNOCCOPYPJKCWUZNLJZZZZWTMVQUXZFYLVLZXJ9Q
+enableIpfs = False 
+enableBatching = True 
+enableCompression = False
+listenPort = 5000
+listenAddress = 0.0.0.0
+
+[tendermint]
+addr = http://localhost:26657

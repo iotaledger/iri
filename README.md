@@ -44,7 +44,7 @@ This will create a `target` directory in which you will find the executable jar 
 ### How to run one node
 
 ```
-$ cd scripts/examples/
+$ cd scripts/examples/one_node
 $ ./conflux_dag.sh
 $ ./start_cli.sh
 $ ./parallel_put_txn.sh
@@ -54,7 +54,7 @@ $ ./get_balance.sh
 ### How to run two nodes
 
 ```
-$ cd scripts/examples/
+$ cd scripts/examples/two_nodes
 $ ./conflux_dag_two_nodes.sh
 $ ./start_cli_two_nodes.sh
 $ ./parallel_put_txn_two_nodes.sh

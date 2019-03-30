@@ -23,19 +23,19 @@ import java.io.*;
 import com.iota.iri.utils.*;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
-    public HashMap<Hash, Double> score;
-    public HashMap<Hash, Double> parentScore;
-    public HashMap<Hash, Set<Hash>> graph;
-    public Map<Hash, Hash> parentGraph;
-    static HashMap<Hash, Set<Hash>> revGraph;
-    public HashMap<Hash, Set<Hash>> parentRevGraph;
-    static HashMap<Hash, Integer> degs;
-    public HashMap<Integer, Set<Hash>> topOrder;
-    public HashMap<Integer, Set<Hash>> topOrderStreaming;
+    private HashMap<Hash, Double> score;
+    private HashMap<Hash, Double> parentScore;
+    private HashMap<Hash, Set<Hash>> graph;
+    private Map<Hash, Hash> parentGraph;
+    private HashMap<Hash, Set<Hash>> revGraph;
+    private HashMap<Hash, Set<Hash>> parentRevGraph;
+    private HashMap<Hash, Integer> degs;
+    private HashMap<Integer, Set<Hash>> topOrder;
+    private HashMap<Integer, Set<Hash>> topOrderStreaming;
 
-    public static HashMap<Hash, Integer> lvlMap;
-    public static HashMap<Hash, String> nameMap;
-    public int totalDepth;
+    private HashMap<Hash, Integer> lvlMap;
+    private HashMap<Hash, String> nameMap;
+    private int totalDepth;
     private Tangle tangle;
     // to use
     private List<Hash> pivotChain;
@@ -58,8 +58,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     //FIXME for debug
-    public static void setNameMap(HashMap<Hash, String> nameMap) {
-        LocalInMemoryGraphProvider.nameMap = nameMap;
+    public void setNameMap(HashMap<Hash, String> nameMap) {
+        this.nameMap = nameMap;
     }
 
     @Override
@@ -575,7 +575,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         for(Hash h : blocks) {
             Set<Hash> s = graph.get(h);
             Set<Hash> ss = new HashSet<>();
-            
+
             for (Hash hh : s) {
                 if(blocks.contains(hh)) {
                     ss.add(hh);
@@ -623,7 +623,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     s = block;
                 }
             }
-            
+
             start = s;
         }
         return start;
@@ -707,7 +707,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     if (revGraph.containsKey(e) && !visisted.contains(e) && !covered.contains(e)) {
                         queue.add(e);
                         visisted.add(e);
-                    } 
+                    }
                 }
             }
         }
@@ -722,6 +722,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
         }
         return ret;
+    }
+
+    public double getScore(Hash hash) {
+        return score.get(hash);
+    }
+
+    public boolean containsKeyInGraph(Hash hash) {
+        return graph.containsKey(hash);
     }
 }
 

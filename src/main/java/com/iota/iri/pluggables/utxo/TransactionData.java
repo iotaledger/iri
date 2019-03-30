@@ -317,12 +317,9 @@ public class TransactionData {
 
         List<TxnIn> txnInList = new ArrayList<>();
 
-        List<Integer> unspendForAccount = utxoGraph.findUnspentTxnsForAccount(fromAddr);
-
-        System.out.println("[zhaoming]" + txn.toString() + " " + unspendForAccount.size());
+        Set<Integer> unspendForAccount = utxoGraph.findUnspentTxnsForAccount(fromAddr);
 
         for (Integer idx : unspendForAccount){
-            System.out.println(transactions.get(idx).toString());
             List<TxnOut> txnOutList = transactions.get(idx).outputs;
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);

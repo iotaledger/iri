@@ -298,7 +298,7 @@ public class Tangle {
     public Boolean contains(Hash block) {
         for(PersistenceProvider provider : persistenceProviders){
             if (provider instanceof  LocalInMemoryGraphProvider){
-                return ((LocalInMemoryGraphProvider)provider).graph.containsKey(block);
+                return ((LocalInMemoryGraphProvider)provider).containsKeyInGraph(block);
             }
         }
         return false;
@@ -307,7 +307,7 @@ public class Tangle {
     public Double getScore(Hash block) {
         for(PersistenceProvider provider : persistenceProviders){
             if (provider instanceof  LocalInMemoryGraphProvider){
-                return ((LocalInMemoryGraphProvider)provider).score.get(block);
+                return ((LocalInMemoryGraphProvider)provider).getScore(block);
             }
         }
         return 0.0;

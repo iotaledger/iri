@@ -25,6 +25,7 @@ public class LocalInMemoryGraphProviderTest {
     private static final TemporaryFolder dbFolder1 = new TemporaryFolder();
     private static final TemporaryFolder logFolder1 = new TemporaryFolder();
     private static Tangle tangle1;
+    private static LocalInMemoryGraphProvider provider1;
 
     @AfterClass
     public static void tearDown() throws Exception {
@@ -43,7 +44,8 @@ public class LocalInMemoryGraphProviderTest {
         logFolder1.create();
         tangle1.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
                 .getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
-        tangle1.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle1));
+        provider1 = new LocalInMemoryGraphProvider("", tangle1);
+        tangle1.addPersistenceProvider(provider1);
         tangle1.init();
     }
 
@@ -75,7 +77,7 @@ public class LocalInMemoryGraphProviderTest {
         tag.put(f.getHash(), "F");
         tag.put(g.getHash(), "G");
         tag.put(h.getHash(), "H");
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider1.setNameMap(tag);
 
         a.store(tangle1);
         b.store(tangle1);
@@ -86,11 +88,10 @@ public class LocalInMemoryGraphProviderTest {
         g.store(tangle1);
         h.store(tangle1);
 
-        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
         Hash[] hashes = {c.getHash(), d.getHash(), f.getHash()};
-        Assert.assertTrue(CollectionUtils.containsAll(localInMemoryGraphProvider.getSiblings(e.getHash()).stream().collect(Collectors.toList()), Arrays.asList(hashes)));
+        Assert.assertTrue(CollectionUtils.containsAll(provider1.getSiblings(e.getHash()).stream().collect(Collectors.toList()), Arrays.asList(hashes)));
         // reset in memory graph
-        localInMemoryGraphProvider.close();
+        provider1.close();
     }
 
     @Test
@@ -159,7 +160,7 @@ public class LocalInMemoryGraphProviderTest {
         for (int offset = 0; offset < models.length; offset++) {
             tag.put(models[offset].getHash(), String.valueOf(modelChar[offset]));
         }
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider1.setNameMap(tag);
 
         Arrays.stream(models).forEach(model -> {
             try {
@@ -169,12 +170,10 @@ public class LocalInMemoryGraphProviderTest {
             }
         });
 
-        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
-
         System.out.println("=========pivot=======");
-        assert localInMemoryGraphProvider.getPivot(a.getHash()).equals(w.getHash()) || localInMemoryGraphProvider.getPivot(a.getHash()).equals(u.getHash()) ;
+        assert provider1.getPivot(a.getHash()).equals(w.getHash()) || provider1.getPivot(a.getHash()).equals(u.getHash()) ;
         // reset in memory graph
-        localInMemoryGraphProvider.close();
+        provider1.close();
     }
 
     @Test
@@ -205,7 +204,7 @@ public class LocalInMemoryGraphProviderTest {
         tag.put(f.getHash(), "F");
         tag.put(g.getHash(), "G");
         tag.put(h.getHash(), "H");
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider1.setNameMap(tag);
 
         a.store(tangle1);
         b.store(tangle1);
@@ -216,13 +215,12 @@ public class LocalInMemoryGraphProviderTest {
         g.store(tangle1);
         h.store(tangle1);
 
-        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
         System.out.println("============past============");
         Set<Hash> assertingSet = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), c.getHash(), e.getHash(), g.getHash()}).collect(Collectors.toSet());
-        assert assertingSet.removeAll(localInMemoryGraphProvider.past(g.getHash())) && assertingSet.isEmpty();
+        assert assertingSet.removeAll(provider1.past(g.getHash())) && assertingSet.isEmpty();
 
         // reset in memory graph
-        localInMemoryGraphProvider.close();
+        provider1.close();
     }
 
     @Test
@@ -253,7 +251,7 @@ public class LocalInMemoryGraphProviderTest {
         tag.put(f.getHash(), "F");
         tag.put(g.getHash(), "G");
         tag.put(h.getHash(), "H");
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider1.setNameMap(tag);
 
         a.store(tangle1);
         b.store(tangle1);
@@ -264,14 +262,13 @@ public class LocalInMemoryGraphProviderTest {
         g.store(tangle1);
         h.store(tangle1);
 
-        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
         System.out.println("=========testGetPivotChain=======");
         List<Hash> assertingList1 = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), e.getHash(), h.getHash()}).collect(Collectors.toList());
         List<Hash> assertingList2 = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), c.getHash(), g.getHash()}).collect(Collectors.toList());
-        List<Hash> rs = localInMemoryGraphProvider.pivotChain(a.getHash());
+        List<Hash> rs = provider1.pivotChain(a.getHash());
         assert assertingList1.equals(rs) || assertingList2.equals(rs);
         // reset in memory graph
-        localInMemoryGraphProvider.close();
+        provider1.close();
     }
 
     @Test
@@ -305,7 +302,7 @@ public class LocalInMemoryGraphProviderTest {
         tag.put(g.getHash(), "G");
         tag.put(h.getHash(), "H");
         tag.put(i.getHash(), "M");
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider1.setNameMap(tag);
 
         a.store(tangle1);
         i.store(tangle1);
@@ -317,11 +314,9 @@ public class LocalInMemoryGraphProviderTest {
         g.store(tangle1);
         h.store(tangle1);
 
-        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
-
         System.out.println("============buildSubGraph============");
         List<Hash> blocks = Arrays.stream(new Hash[]{b.getHash(), c.getHash(), d.getHash()}).collect(Collectors.toList());
-        Map<Hash, Set<Hash>> subGraph = localInMemoryGraphProvider.buildSubGraph(blocks);
+        Map<Hash, Set<Hash>> subGraph = provider1.buildSubGraph(blocks);
         Map<Hash,Set<Hash>> assertingMap = new HashMap(){{
             put(b.getHash(), Collections.emptySet());
             put(d.getHash(), Arrays.stream(new Hash[]{b.getHash()}).collect(Collectors.toSet()));
@@ -330,7 +325,7 @@ public class LocalInMemoryGraphProviderTest {
         assert  assertingMap.equals(subGraph);
 
         // reset in memory graph
-        localInMemoryGraphProvider.close();
+        provider1.close();
     }
 
     @Test
@@ -364,7 +359,7 @@ public class LocalInMemoryGraphProviderTest {
         tag.put(g.getHash(), "G");
         tag.put(h.getHash(), "H");
         tag.put(i.getHash(), "M");
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider1.setNameMap(tag);
 
         a.store(tangle1);
         i.store(tangle1);
@@ -376,14 +371,12 @@ public class LocalInMemoryGraphProviderTest {
         g.store(tangle1);
         h.store(tangle1);
 
-        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
-
         System.out.println("============confluxOrder============");
         List<Hash> assertingList = Arrays.stream(new Hash[]{a.getHash(), b.getHash(), i.getHash(), d.getHash()}).collect(Collectors.toList());
-        assert  assertingList.equals(localInMemoryGraphProvider.confluxOrder(d.getHash()));
+        assert  assertingList.equals(provider1.confluxOrder(d.getHash()));
 
         // reset in memory graph
-        localInMemoryGraphProvider.close();
+        provider1.close();
     }
 
     @Test
@@ -452,7 +445,7 @@ public class LocalInMemoryGraphProviderTest {
         for (int offset = 0; offset < models.length; offset++) {
             tag.put(models[offset].getHash(), String.valueOf(modelChar[offset]));
         }
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider1.setNameMap(tag);
 
         Arrays.stream(models).forEach(model -> {
             try {
@@ -462,19 +455,18 @@ public class LocalInMemoryGraphProviderTest {
             }
         });
 
-        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
         System.out.println("=============total order=======");
         List<Hash> assertingList1 = Arrays.stream(new Hash[]{a.getHash(),b.getHash(),c.getHash(),g.getHash(),e.getHash(),d.getHash(),f.getHash(),
                 j.getHash(),i.getHash(),m.getHash(),h.getHash(),k.getHash(),n.getHash(),l.getHash(),o.getHash(),
                 v.getHash(),t.getHash(),z.getHash()}).collect(Collectors.toList());
         List<Hash> assertingList2 = Arrays.stream(new Hash[]{a.getHash(),d.getHash(),e.getHash(),f.getHash()}).collect(Collectors.toList());
 
-        List<Hash> rs = localInMemoryGraphProvider.totalTopOrder();
+        List<Hash> rs = provider1.totalTopOrder();
         // because the score is unfixed
         assert assertingList1.removeAll(rs) && assertingList1.isEmpty() || assertingList2.equals(rs);
 
         // reset in memory graph
-        localInMemoryGraphProvider.close();
+        provider1.close();
     }
 
     @Test
@@ -543,7 +535,7 @@ public class LocalInMemoryGraphProviderTest {
         for (int offset = 0; offset < models.length; offset++) {
             tag.put(models[offset].getHash(), String.valueOf(modelChar[offset]));
         }
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider1.setNameMap(tag);
 
         Arrays.stream(models).forEach(model -> {
             try {
@@ -553,18 +545,17 @@ public class LocalInMemoryGraphProviderTest {
             }
         });
 
-        LocalInMemoryGraphProvider localInMemoryGraphProvider = (LocalInMemoryGraphProvider) tangle1.getPersistenceProvider("LOCAL_GRAPH");
         System.out.println("=============getDiffSet=======");
         List<Hash> assertingList = Arrays.stream(new Hash[]{y.getHash(),r.getHash()}).collect(Collectors.toList());
 
         //total graph
 //        localInMemoryGraphProvider.printGraph(localInMemoryGraphProvider.graph,null);
 
-        List<Hash> rs = localInMemoryGraphProvider.getDiffSet(y.getHash(), t.getHash(), new HashSet<>());
+        List<Hash> rs = provider1.getDiffSet(y.getHash(), t.getHash(), new HashSet<>());
         CollectionUtils.emptyIfNull(rs).forEach(ha -> System.out.println(tag.get(ha)));
         assert CollectionUtils.isEqualCollection(assertingList, rs);
 
         // reset in memory graph
-        localInMemoryGraphProvider.close();
+        provider1.close();
     }
 }

@@ -5,7 +5,6 @@ import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.iota.iri.IRI;
 import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
@@ -109,7 +108,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String localSnapshotsBasePath = Defaults.LOCAL_SNAPSHOTS_BASE_PATH;
     protected String spentAddressesDbPath = Defaults.SPENT_ADDRESSES_DB_PATH;
     protected String spentAddressesDbLogPath = Defaults.SPENT_ADDRESSES_DB_LOG_PATH;
-
+    protected String prunedTransactionsDbPath = Defaults.PRUNED_TRANSACTIONS_DB_PATH;
+    protected String prunedTransactionsDbLogPath = Defaults.PRUNED_TRANSACTIONS_DB_LOG_PATH;
+    
     public BaseIotaConfig() {
         //empty constructor
     }
@@ -650,13 +651,35 @@ public abstract class BaseIotaConfig implements IotaConfig {
     public String getSpentAddressesDbLogPath() {
         return spentAddressesDbLogPath;
     }
-
+    
     @JsonProperty
     @Parameter(names = {"--spent-addresses-db-log-path"}, description = SnapshotConfig.Descriptions.SPENT_ADDRESSES_DB_LOG_PATH)
-    protected void setSpentAddressesDbLogPath(String spentAddressesDbLogPath) {
+    protected void setPrunedTransactionDbLogPath(String spentAddressesDbLogPath) {
         this.spentAddressesDbLogPath = spentAddressesDbLogPath;
     }
-
+    
+    @Override
+    public String getPrunedTransactionsDbLogPath() {
+        return prunedTransactionsDbLogPath;
+    }
+    
+    @JsonProperty
+    @Parameter(names = {"--pruned-transactions-db-log-path"}, description = SnapshotConfig.Descriptions.PRUNED_TRANSACTIONS_DB_LOG_PATH)
+    protected void setSpentAddressesDbLogPath(String prunedTransactionsDbLogPath) {
+        this.prunedTransactionsDbLogPath = prunedTransactionsDbLogPath;
+    }
+    
+    @Override
+    public String getPrunedTransactionsDbPath() {
+        return prunedTransactionsDbPath;
+    }
+    
+    @JsonProperty
+    @Parameter(names = {"--pruned-transactions-db-path"}, description = SnapshotConfig.Descriptions.PRUNED_TRANSACTIONS_DB_PATH)
+    protected void setPrunedTransactionsDbPath(String prunedTransactionsDbPath) {
+        this.prunedTransactionsDbPath = prunedTransactionsDbPath;
+    }
+    
     /**
      * Checks if ZMQ is enabled.
      * @return true if zmqEnableTcp or zmqEnableIpc is set.
@@ -933,6 +956,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int LOCAL_SNAPSHOTS_DEPTH_MIN = 100;
         String SPENT_ADDRESSES_DB_PATH = "spent-addresses-db";
         String SPENT_ADDRESSES_DB_LOG_PATH = "spent-addresses-log";
+
+        String PRUNED_TRANSACTIONS_DB_LOG_PATH = "spent-addresses-db";
+        String PRUNED_TRANSACTIONS_DB_PATH = "spent-addresses-log";
         
         String LOCAL_SNAPSHOTS_BASE_PATH = "mainnet";
         String SNAPSHOT_FILE = "/snapshotMainnet.txt";

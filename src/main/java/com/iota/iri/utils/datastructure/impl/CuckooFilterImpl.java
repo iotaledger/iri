@@ -1,5 +1,6 @@
 package com.iota.iri.utils.datastructure.impl;
 
+import com.iota.iri.model.persistables.CuckooBucket;
 import com.iota.iri.utils.BitSetUtils;
 import com.iota.iri.utils.datastructure.CuckooFilter;
 
@@ -136,6 +137,25 @@ public class CuckooFilterImpl implements CuckooFilter {
     @Override
     public boolean add(byte[] item) throws IndexOutOfBoundsException {
         return add(new CuckooFilterItem(hashFunction.digest(item)));
+    }
+    /**
+     * {@inheritDoc}
+     *
+     */
+    @Override
+    public void update(CuckooBucket bucket) throws IllegalArgumentException {
+        int amountInBucket = bucketSize;
+        if (bucket.bucketBits.length()  / amountInBucket > 0) {
+            
+        }
+        
+        for (int i=0; i < amountInBucket; i++) {
+            cuckooFilterTable.set(bucket.bucketIndex.getValue(), i, bucket.bucketBits.get(
+                    fingerPrintSize * i, 
+                    fingerPrintSize * (i + 1)
+                ));
+            
+        }
     }
 
     /**

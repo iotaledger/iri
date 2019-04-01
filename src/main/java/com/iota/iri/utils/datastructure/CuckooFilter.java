@@ -1,5 +1,7 @@
 package com.iota.iri.utils.datastructure;
 
+import com.iota.iri.model.persistables.CuckooBucket;
+
 /**
  * The Cuckoo Filter is a probabilistic data structure that supports fast set membership testing.
  *
@@ -83,4 +85,13 @@ public interface CuckooFilter {
      * @return the amount of stored items
      */
     int size();
+
+    /**
+     * Update a part of this filter with the bucket information supplied.
+     * Discards any previous data inside this bucket.
+     * 
+     * @param bucket the bucket data we use to update the filter
+     * @throws IllegalArgumentException when the bucket does not contain data which is valid for this filter
+     */
+    void update(CuckooBucket bucket) throws IllegalArgumentException ;
 }

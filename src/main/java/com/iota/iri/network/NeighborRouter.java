@@ -285,6 +285,13 @@ public class NeighborRouter {
                 return false;
         }
 
+        // drop the connection if in the meantime the available neighbor slots were filled
+        if(availableNeighborSlotsFilled()){
+            log.error("dropping handshaked connection to neighbor {} as all neighbor slots are filled", identity);
+            closeNeighborConnection(channel, identity, selector);
+            return false;
+        }
+
         // after a successful handshake, the neighbor's server socket port is initialized
         // and thereby the identity of the neighbor is now fully distinguishable
 
@@ -293,7 +300,7 @@ public class NeighborRouter {
         int originPort = neighbor.getRemoteServerSocketPort();
         if (originPort != Neighbor.UNKNOWN_REMOTE_SERVER_SOCKET_PORT &&
                 originPort != handshake.getServerSocketPort()) {
-            log.info("dropping fully handshaked connection from {} as neighbor advertised wrong server socket port (wanted {}, got {})", identity, originPort, handshake.getServerSocketPort());
+            log.info("dropping handshaked connection from {} as neighbor advertised wrong server socket port (wanted {}, got {})", identity, originPort, handshake.getServerSocketPort());
             closeNeighborConnection(channel, identity, selector);
             return false;
         }
@@ -302,7 +309,7 @@ public class NeighborRouter {
         // check if neighbor is already connected
         String newIdentity = neighbor.getHostAddressAndPort();
         if (connectedNeighbors.containsKey(newIdentity)) {
-            log.info("dropping fully handshaked connection from {} as neighbor is already connected", newIdentity);
+            log.info("dropping handshaked connection from {} as neighbor is already connected", newIdentity);
             // pass just host address to not actually delete the already existing connection/neighbor
             closeNeighborConnection(channel, identity, selector);
             return false;
@@ -310,12 +317,12 @@ public class NeighborRouter {
 
         // check if the given host + server socket port combination is actually defined in the config/wanted
         if (!config.isTestnet() && !allowedNeighbors.contains(newIdentity)) {
-            log.info("dropping fully handshaked connection as neighbor from {} is not allowed to connect", newIdentity);
+            log.info("dropping handshaked connection as neighbor from {} is not allowed to connect", newIdentity);
             closeNeighborConnection(channel, identity, selector);
             return false;
         }
 
-        log.info("neighbor connection to {} is fully handshaked and ready for messages [latency {} ms]", newIdentity, System.currentTimeMillis() - handshake.getSentTimestamp());
+        log.info("neighbor connection to {} is handshaked and ready for messages [latency {} ms]", newIdentity, System.currentTimeMillis() - handshake.getSentTimestamp());
 
         // the neighbor is now ready to process actual protocol messages
         neighbor.setState(NeighborState.READY_FOR_MESSAGES);
@@ -392,8 +399,8 @@ public class NeighborRouter {
             newNeighborConn.close();
             return false;
         }
-        if (connectedNeighbors.size() >= config.getMaxNeighbors()) {
-            log.info("dropping new connection from {} as max neighbor config option has been reached ({})", ipAddress, config.getMaxNeighbors());
+        if (availableNeighborSlotsFilled()) {
+            log.info("dropping new connection from {} as all neighbor slots are filled", ipAddress);
             newNeighborConn.close();
             return false;
         }
@@ -431,11 +438,13 @@ public class NeighborRouter {
     }
 
     private boolean availableNeighborSlotsFilled() {
-        return config.isTestnet() ? connectedNeighbors.size() == config.getMaxNeighbors() : connectedNeighbors.size() == config.getNeighbors().size();
+        // while this check if not thread-safe, initiated connections will be dropped
+        // when their handshaking was done but already all neighbor slots are filled
+        return config.isTestnet() ? connectedNeighbors.size() >= config.getMaxNeighbors() : connectedNeighbors.size() >= config.getNeighbors().size();
     }
 
     public boolean addNeighbor(String rawURI) throws IOException {
-        if (connectedNeighbors.size() >= config.getMaxNeighbors()) {
+        if (availableNeighborSlotsFilled()) {
             return false;
         }
         Optional<URI> optUri = parseURI(rawURI);

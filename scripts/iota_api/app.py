@@ -84,7 +84,7 @@ def send_to_iota(tx_string, tx_num, tag):
         data = json.dumps({"txn_content": tx_string, "tx_num": tx_num}, sort_keys=True)
 
         if enable_batching is False:
-            cache.cache_txn_in_tangle_message(data, TagGenerator.get_current_tag(tag))
+            cache.cache_txn_in_tangle_simple(data, TagGenerator.get_current_tag(tag))
         else:
             compressed_data = compress_str(data)
             cache.cache_txn_in_tangle_message(compressed_data, TagGenerator.get_current_tag(tag))

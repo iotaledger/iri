@@ -1367,10 +1367,10 @@ public class API {
         try {
             txToApprove = getTransactionToApproveTips(15, Optional.empty());
         } catch (NullPointerException e) {
-            e.printStackTrace();
-            log.warn("Tip selection failed: {}. Is this the first transaction???", e.getLocalizedMessage()); // TODO, if this happens for multiple times, find the reason and solve it
+            log.warn("Tip selection failed: {}. Is this the first transaction???", e.getLocalizedMessage());
             if(instance.tangle.getTxnCount() > 2) {
                 return AbstractResponse.createEmptyResponse();
+                // TODO, if this happens for multiple times, find the reason and solve it
             }
             txToApprove.add(IotaUtils.getRandomTransactionHash());
             txToApprove.add(IotaUtils.getRandomTransactionHash());
@@ -1378,7 +1378,7 @@ public class API {
         catch (Exception e) {
             log.error("Tip selection failed: " + e.getLocalizedMessage());
         } finally {
-            if(txToApprove.get(0).equals(null) || txToApprove.get(1).equals(null)) {
+            if(txToApprove.get(0).equals(null) || (txToApprove.size()>1 && txToApprove.get(1).equals(null))) {
                 log.warn("Tip selection failed, why?");
                 return AbstractResponse.createEmptyResponse(); // FIXME why come here?
             }

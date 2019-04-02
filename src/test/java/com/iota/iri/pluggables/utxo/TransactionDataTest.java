@@ -43,7 +43,7 @@ public class TransactionDataTest {
     @Test
     public void testInitTransaction() {
         Assert.assertEquals(transactionData.transactions.get(0).outputs.size(), 1);
-        Assert.assertEquals(transactionData.transactions.get(0).inputs.size(), 0);
+        Assert.assertEquals(transactionData.transactions.get(0).inputs.size(), 1);
         System.out.println(new Gson().toJson(transactionData.transactions.get(0)));
     }
 
@@ -83,11 +83,11 @@ public class TransactionDataTest {
         Assert.assertEquals(transactionData.transactions.size(), 4);
         Assert.assertEquals(transactionData.transactions.get(3).inputs.size(), 2);
         Assert.assertEquals(transactionData.transactions.get(3).inputs.get(0).txnHash, 
-                transactionData.transactions.get(2).txnHash);
+                transactionData.transactions.get(1).txnHash);
         Assert.assertEquals(transactionData.transactions.get(3).inputs.get(0).idx, 0);
         Assert.assertEquals(transactionData.transactions.get(3).inputs.get(0).userAccount, "B");
         Assert.assertEquals(transactionData.transactions.get(3).inputs.get(1).txnHash, 
-                transactionData.transactions.get(1).txnHash);
+                transactionData.transactions.get(2).txnHash);
         Assert.assertEquals(transactionData.transactions.get(3).inputs.get(1).idx, 0);
         Assert.assertEquals(transactionData.transactions.get(3).inputs.get(1).userAccount, "B");
         Assert.assertEquals(transactionData.transactions.get(3).outputs.size(), 1);

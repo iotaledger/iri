@@ -41,6 +41,7 @@ public class TransactionData {
     HashMap<String, Hash> txnToTangleMap;
     HashMap<Hash, HashSet<Txn>> tangleToTxnMap;
     List<List<Txn>> tmpStorage;
+    UTXOGraph utxoGraph;
 
     private static TransactionData txnData = new TransactionData();
 
@@ -58,6 +59,7 @@ public class TransactionData {
         txnToTangleMap = new HashMap<String, Hash>();
         tangleToTxnMap = new HashMap<Hash, HashSet<Txn>>();
         tmpStorage = new ArrayList<>();
+        utxoGraph = new UTXOGraph();
         init();
     }
 
@@ -156,6 +158,7 @@ public class TransactionData {
 
     public void addTxn(Txn txn) {
         transactions.add(txn);
+        utxoGraph.addTxn(txn, transactions.size()-1);
     }
 
     public String getData() {
@@ -247,11 +250,13 @@ public class TransactionData {
 
         Txn newTxn = new Txn();
         newTxn.inputs = new ArrayList<TxnIn>();
+        TxnIn in = new TxnIn();
+        newTxn.inputs.add(in);
         newTxn.outputs = txnOutList;
 
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
-        transactions.add(newTxn);
+        addTxn(newTxn);
     }
 
     public Txn getLast() {
@@ -312,32 +317,16 @@ public class TransactionData {
 
         List<TxnIn> txnInList = new ArrayList<>();
 
-        // TODO: find unspent utxo more quickly.
-        for (int i = transactions.size() - 1; i >= 0; i--){
-            List<TxnOut> txnOutList = transactions.get(i).outputs;
+        Set<Integer> unspendForAccount = utxoGraph.findUnspentTxnsForAccount(fromAddr);
+
+        for (Integer idx : unspendForAccount){
+            List<TxnOut> txnOutList = transactions.get(idx).outputs;
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);
                 if (txnOut.userAccount.equals(fromAddr)){
-
-                    boolean jumpFlag = false;
-
-                    // TODO: check utxo whether or not being spent more quickly.
-                    out:
-                    for (int k = transactions.size() - 1; k > 0; k--){
-                        for (TxnIn tempTxnIn: transactions.get(k).inputs) {
-                            if (tempTxnIn.txnHash.equals(transactions.get(i).txnHash) && tempTxnIn.idx == j){
-                                jumpFlag = true; // already spend
-                                break out;
-                            }
-                        }
-                    }
-                    if (jumpFlag){
-                        continue;
-                    }
-
                     TxnIn txnIn = new TxnIn();
                     txnIn.userAccount = fromAddr;
-                    txnIn.txnHash = transactions.get(i).txnHash;
+                    txnIn.txnHash = transactions.get(idx).txnHash;
                     txnIn.idx = j;
 
                     txnInList.add(txnIn);
@@ -378,7 +367,7 @@ public class TransactionData {
         newTxn.outputs = txnOutList;
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
-        transactions.add(newTxn);
+        addTxn(newTxn);
         return true;
     }
 

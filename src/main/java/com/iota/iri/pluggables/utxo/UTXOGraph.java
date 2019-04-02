@@ -12,38 +12,93 @@ import static java.util.Map.Entry.*;
 
 public class UTXOGraph {
 
+    class TxnBlock {
+        public int pos;
+        public int idx;
+        public String hash;
+
+        TxnBlock(int pos, int idx, String hash) {
+            this.pos = pos;
+            this.idx = idx;
+            this.hash = hash;
+        }
+
+        public String toString() {
+            return "[" + pos + "," + idx + "," + hash + "]";
+        }
+    }
+
     public Map<String, Set<String>> outGraph;
-    public Map<String, String> inGraph; //FIXME, UTXO graph should be a graph instead of a tree
+    public Map<String, Set<String>> inGraph;
     public Set<String> doubleSpendSet;
+    public Map<String, Set<TxnBlock>> accountMap;
 
-    public UTXOGraph(List<Txn> txns) {
-
-        outGraph = new HashMap<String, Set<String>>();
-        inGraph = new HashMap<String, String>();
-        doubleSpendSet = new HashSet<>();
-
-        for(Txn txn : txns) {
-            if(txn.inputs == null) {
-                continue;
-            }
-
-            for(TxnIn in : txn.inputs) {
-                String key = in.txnHash + ":" + String.valueOf(in.idx) +","+ in.userAccount;
-                if(outGraph.get(key) == null) {
-                    outGraph.put(key, new HashSet<String>());
-                }
-                
-                for(int i=0; i<txn.outputs.size(); i++) {
-                    String val = txn.txnHash + ":" + String.valueOf(i) + "," + txn.outputs.get(i).userAccount;
-                    Set<String> outs = outGraph.get(key);
-                    outs.add(val);
-                    outGraph.put(key, outs);
-
-                    inGraph.put(val, key);
+    public Set<Integer> findUnspentTxnsForAccount(String account) {
+        Set<Integer> ret = new HashSet<>();
+        Set<TxnBlock> all = accountMap.get(account);
+        if(all != null) {
+            for(TxnBlock block : all) {
+                String key = block.hash + ":" + String.valueOf(block.idx) + "," + account;
+                if(!isSpent(key)) {
+                    ret.add(block.pos);
                 }
             }
         }
+        return ret;
     }
+
+    public void addTxn(Txn newTx, int idx) {
+        if(newTx.inputs == null) {
+            return;
+        }
+
+        for(TxnIn in : newTx.inputs) {
+            String key = in.txnHash + ":" + String.valueOf(in.idx) +","+ in.userAccount;
+            if(outGraph.get(key) == null) {
+                outGraph.put(key, new HashSet<String>());
+            }
+            
+            for(int i=0; i<newTx.outputs.size(); i++) {
+                String val = newTx.txnHash + ":" + String.valueOf(i) + "," + newTx.outputs.get(i).userAccount;
+                Set<String> outs = outGraph.get(key);
+                outs.add(val);
+                outGraph.put(key, outs);
+
+                if(!inGraph.containsKey(val)) {
+                    inGraph.put(val, new HashSet<>());
+                }
+                Set<String> ins = inGraph.get(val);
+                ins.add(key);
+                inGraph.put(val, ins);
+
+                if(accountMap.get(newTx.outputs.get(i).userAccount)==null) {
+                    accountMap.put(newTx.outputs.get(i).userAccount, new HashSet<>());
+                }
+                Set<TxnBlock> st = accountMap.get(newTx.outputs.get(i).userAccount);
+                st.add(new TxnBlock(idx, i, newTx.txnHash));
+                accountMap.put(newTx.outputs.get(i).userAccount, st);
+            }
+        }
+    }
+
+    public UTXOGraph(List<Txn> txns) {
+        outGraph = new HashMap<String, Set<String>>();
+        inGraph = new HashMap<String, Set<String>>();
+        doubleSpendSet = new HashSet<>();
+        accountMap = new HashMap<>();
+
+        for(int i=0; i<txns.size(); i++) {
+            addTxn(txns.get(i), i);
+        }
+    }
+
+    public UTXOGraph() {
+        outGraph = new HashMap<String, Set<String>>();
+        inGraph = new HashMap<String, Set<String>>();
+        doubleSpendSet = new HashSet<>();
+        accountMap = new HashMap<>();
+    }
+
 
     public void markDoubleSpend(List<Hash> order, HashMap<String, Hash> txnToTangleMap) {
         for(String key : outGraph.keySet()) {
@@ -91,13 +146,27 @@ public class UTXOGraph {
     }
 
     public Boolean isDoubleSpend(String key) {
+        LinkedList<String> queue = new LinkedList<>();
+        queue.add(key);
 
-        while(inGraph.containsKey(key)) {
+        Set<String> visited = new HashSet<>();
+
+        while(!queue.isEmpty()) {
+            String h = queue.pop();
             String[] k = key.split(":");
             if(doubleSpendSet.contains(k[0])) {
                 return true;
             }
-            key = inGraph.get(key);
+
+            Set<String> ups = inGraph.get(h);
+            if(ups != null) {
+                for(String up : ups) {
+                    if(!visited.contains(up)) {
+                        queue.add(up);
+                        visited.add(up);
+                    }
+                }
+            }
         }
         return false;
     }

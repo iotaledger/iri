@@ -260,7 +260,7 @@ public class TransactionViewModel {
      * @param item The string identifying the purpose of the update
      * @throws Exception Thrown if any of the metadata fails to fetch, or if the database update fails
      */
-    public boolean update(Tangle tangle, Snapshot initialSnapshot, String item) throws Exception {
+    public void update(Tangle tangle, Snapshot initialSnapshot, String item) throws Exception {
         getAddressHash();
         getTrunkTransactionHash();
         getBranchTransactionHash();
@@ -270,9 +270,9 @@ public class TransactionViewModel {
         setAttachmentData();
         setMetadata();
         if (initialSnapshot.hasSolidEntryPoint(hash)) {
-            return false;
+            return;
         }
-        return tangle.update(transaction, hash, item);
+        tangle.update(transaction, hash, item);
     }
 
     /**
@@ -323,6 +323,26 @@ public class TransactionViewModel {
      */
     public void delete(Tangle tangle) throws Exception {
         tangle.delete(Transaction.class, hash);
+    }
+
+    /**
+     * Stores the {@link Transaction} object to the tangle, including the metadata and indexing based on {@link Bundle},
+     * {@link Address}, {@link Tag}, {@link #trunk} and {@link #branch}.
+     *
+     * @return The list of {@link Hash} objects indexed by the {@link TransactionHash} identifier. Returns False if
+     * there is a problem populating the list.
+     */
+    public List<Pair<Indexable, Persistable>> getMetadataSaveBatch() {
+        List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
+        hashesList.add(new Pair<>(getAddressHash(), new Address(hash)));
+        hashesList.add(new Pair<>(getBundleHash(), new Bundle(hash)));
+        hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(hash)));
+        hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(hash)));
+        hashesList.add(new Pair<>(getObsoleteTagValue(), new ObsoleteTag(hash)));
+        hashesList.add(new Pair<>(getTagValue(), new Tag(hash)));
+        setAttachmentData();
+        setMetadata();
+        return hashesList;
     }
 
     /**

@@ -35,33 +35,35 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+ *
  * The main class of IRI. This will propagate transactions into and throughout the network.
  * This data is stored as a {@link Tangle}, a form of a Directed acyclic graph.
  * All incoming data will be stored in one or more implementations of {@link PersistenceProvider}.
  *
  * <p>
- * During initialization, all the Providers can be set to rescan or revalidate their transactions.
- * After initialization, an asynchronous process has started which will process inbound and outbound transactions.
- * Each full node should be peered with 7-9 other full nodes (neighbors) to function optimally.
+ *     During initialization, all the Providers can be set to rescan or revalidate their transactions.
+ *     After initialization, an asynchronous process has started which will process inbound and outbound transactions.
+ *     Each full node should be peered with 7-9 other full nodes (neighbors) to function optimally.
  * </p>
  * <p>
- * If this node has no Neighbors defined, no data is transferred.
- * However, if the node has Neighbors, but no Internet connection,
- * synchronization will continue after Internet connection is established.
- * Any transactions sent to this node in its local network will then be processed.
- * This makes IRI able to run partially offline if an already existing database exists on this node.
+ *     If this node has no Neighbors defined, no data is transferred.
+ *     However, if the node has Neighbors, but no Internet connection,
+ *     synchronization will continue after Internet connection is established.
+ *     Any transactions sent to this node in its local network will then be processed.
+ *     This makes IRI able to run partially offline if an already existing database exists on this node.
  * </p>
  * <p>
- * Validation of a transaction is the process by which other devices choose the transaction.
- * This is done via a {@link TipSelector} algorithm, after which the transaction performs
- * the necessary proof-of-work in order to cast their vote of confirmation/approval upon those tips. <br/>
- * <p>
- * As many other transactions repeat this process on top of each other,
- * validation of the transaction in question slowly builds up enough verifications.
- * Eventually this will reach a minimum acceptable verification threshold.
- * This threshold is determined by the recipient of the transaction.
- * When this minimum threshold is reached, the transaction is "confirmed".
+ *     Validation of a transaction is the process by which other devices choose the transaction.
+ *     This is done via a {@link TipSelector} algorithm, after which the transaction performs
+ *     the necessary proof-of-work in order to cast their vote of confirmation/approval upon those tips. <br/>
+ *
+ *     As many other transactions repeat this process on top of each other,
+ *     validation of the transaction in question slowly builds up enough verifications.
+ *     Eventually this will reach a minimum acceptable verification threshold.
+ *     This threshold is determined by the recipient of the transaction.
+ *     When this minimum threshold is reached, the transaction is "confirmed".
  * </p>
+ *
  */
 public class Iota {
     private static final Logger log = LoggerFactory.getLogger(Iota.class);
@@ -110,8 +112,8 @@ public class Iota {
      *
      * @param configuration Information about how this node will be configured.
      * @throws TransactionPruningException If the TransactionPruner could not restore its state.
-     * @throws SnapshotException           If the Snapshot fails to initialize.
-     *                                     This can happen if the snapshot signature is invalid or the file cannot be read.
+     * @throws SnapshotException If the Snapshot fails to initialize.
+     *                           This can happen if the snapshot signature is invalid or the file cannot be read.
      */
     public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException, SpentAddressesException {
         this.configuration = configuration;
@@ -122,16 +124,16 @@ public class Iota {
         snapshotProvider = new SnapshotProviderImpl();
         snapshotService = new SnapshotServiceImpl();
         localSnapshotManager = configuration.getLocalSnapshotsEnabled()
-                ? new LocalSnapshotManagerImpl()
-                : null;
+                             ? new LocalSnapshotManagerImpl()
+                             : null;
         milestoneService = new MilestoneServiceImpl();
         latestMilestoneTracker = new LatestMilestoneTrackerImpl();
         latestSolidMilestoneTracker = new LatestSolidMilestoneTrackerImpl();
         seenMilestonesRetriever = new SeenMilestonesRetrieverImpl();
         milestoneSolidifier = new MilestoneSolidifierImpl();
         transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
-                ? new AsyncTransactionPruner()
-                : null;
+                          ? new AsyncTransactionPruner()
+                          : null;
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
         neighborRouter = new NeighborRouter();
         txPipeline = new TxPipeline();

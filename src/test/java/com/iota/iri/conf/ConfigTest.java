@@ -52,7 +52,7 @@ public class ConfigTest {
     public void testArgsParsingMainnet() {
         String[] args = {
                 "-p", "14000",
-                "-nsp", "13000",
+                "--neighboring-socket-port", "13000",
                 "-n", "udp://neighbor1 neighbor, tcp://neighbor2",
                 "--api-host", "1.1.1.1",
                 "--remote-limit-api", "call1 call2, call3",
@@ -121,7 +121,7 @@ public class ConfigTest {
     public void testArgsParsingTestnet() {
         String[] args = {
                 "-p", "14000",
-                "-nsp", "13000",
+                "--neighboring-socket-port", "13000",
                 "-n", "udp://neighbor1 neighbor, tcp://neighbor2",
                 "--api-host", "1.1.1.1",
                 "--remote-limit-api", "call1 call2, call3",
@@ -299,7 +299,7 @@ public class ConfigTest {
                 .map(Enum::name)
                 // make it explicit that we have removed some configs
                 .filter(config -> !ArrayUtils.contains(new String[]{"CONFIG", "TESTNET", "DEBUG",
-                        "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS", "MAX_PEERS"}, config))
+                        "MIN_RANDOM_WALKS", "MAX_RANDOM_WALKS", "MAX_PEERS", "UDP_RECEIVER_PORT", "TCP_RECEIVER_PORT"}, config))
                 .forEach(config ->
                         Assert.assertThat(configNames, IsCollectionContaining.hasItem(config)));
     }

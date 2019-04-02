@@ -191,7 +191,7 @@ public class TxPipeline {
     }
 
     private void hashAndValidate(ProcessingContext<HashingPayload> ctx) {
-        // the hashing already runs in it's own thread,
+        // the hashing already runs in its own thread,
         // the callback will submit the data to the validation stage
         HashingPayload hashingStagePayload = ctx.getPayload();
         hashingStagePayload.setHashRequest(new HashRequest(hashingStagePayload.getTxTrits(), hashTrits -> {

@@ -102,7 +102,7 @@ public class NeighborImpl implements Neighbor {
                     faultyPackets++;
                     return bytesRead;
                 } catch (IncompatibleProtocolVersionException e) {
-                    log.error("{} is incompatible though to protocol version mismatch", getHostAddressAndPort());
+                    log.error("{} is incompatible due to protocol version mismatch", getHostAddressAndPort());
                     e.printStackTrace();
                     faultyPackets++;
                     return bytesRead;

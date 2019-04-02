@@ -59,7 +59,7 @@ public class NeighborRouter {
     // a mapping of host address + port (identity) to fully handshaked/connected neighbor
     private ConcurrentHashMap<String, Neighbor> connectedNeighbors = new ConcurrentHashMap<>();
 
-    // neighbors which we want to connect to. entries are added up on initialization
+    // neighbors which we want to connect to. entries are added upon initialization
     // of the NeighborRouter, when a neighbor is added through addNeighbors and
     // when a connection attempt failed.
     private Set<URI> neighborsToConnectTo = new CopyOnWriteArraySet<>();

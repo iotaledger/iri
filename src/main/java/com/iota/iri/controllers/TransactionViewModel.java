@@ -19,20 +19,14 @@ public class TransactionViewModel {
 
     private final Transaction transaction;
 
-    /**
-     * Length of a transaction object in trytes
-     */
+    /** Length of a transaction object in trytes */
     public static final int SIZE = 1604;
     private static final int TAG_SIZE_IN_BYTES = 17; // = ceil(81 TRITS / 5 TRITS_PER_BYTE)
 
-    /**
-     * Total supply of IOTA available in the network. Used for ensuring a balanced ledger state and bundle balances
-     */
+    /** Total supply of IOTA available in the network. Used for ensuring a balanced ledger state and bundle balances */
     public static final long SUPPLY = 2779530283277761L; // = (3^33 - 1) / 2
 
-    /**
-     * The predefined offset position and size (in trits) for the varying components of a transaction object
-     */
+    /** The predefined offset position and size (in trits) for the varying components of a transaction object */
     public static final int SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET = 0,
             SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE = 6561;
     public static final int ADDRESS_TRINARY_OFFSET = SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET
@@ -72,22 +66,18 @@ public class TransactionViewModel {
             ESSENCE_TRINARY_SIZE = ADDRESS_TRINARY_SIZE + VALUE_TRINARY_SIZE + OBSOLETE_TAG_TRINARY_SIZE
                     + TIMESTAMP_TRINARY_SIZE + CURRENT_INDEX_TRINARY_SIZE + LAST_INDEX_TRINARY_SIZE;
 
-    /**
-     * Stores the {@link HashesViewModel} for the {@link Transaction} components here
-     */
+    /** Stores the {@link HashesViewModel} for the {@link Transaction} components here */
     private AddressViewModel address;
     private ApproveeViewModel approovers;
     private TransactionViewModel trunk;
     private TransactionViewModel branch;
     private final Hash hash;
 
-    /**
-     * Transaction Types
-     */
+    /** Transaction Types */
     public final static int GROUP = 0; // transactions GROUP means that's it's a non-leaf node (leafs store transaction
-    // value)
+                                       // value)
     public final static int PREFILLED_SLOT = 1; // means that we know only hash of the tx, the rest is unknown yet: only
-    // another tx references that hash
+                                                // another tx references that hash
     public final static int FILLED_SLOT = -1; // knows the hash only coz another tx references that hash
 
     private byte[] trits;
@@ -99,7 +89,7 @@ public class TransactionViewModel {
      * {@link TransactionViewModel} type is <tt>FILLED_SLOT</tt>, the saved metadata batch will be saved to the
      * database.
      *
-     * @param tangle               The tangle reference for the database.
+     * @param tangle The tangle reference for the database.
      * @param transactionViewModel The {@link TransactionViewModel} whose Metadata is to be filled.
      * @throws Exception Thrown if the database fails to save the batch of data.
      */
@@ -115,8 +105,8 @@ public class TransactionViewModel {
      * identifier, provided the {@link Transaction} exists in the database.
      *
      * @param tangle The tangle reference for the database
-     * @param hash   The source that the {@link Hash} identifier will be created from, and the {@link Transaction} object
-     *               will be fetched from the database from
+     * @param hash The source that the {@link Hash} identifier will be created from, and the {@link Transaction} object
+     * will be fetched from the database from
      * @return The {@link TransactionViewModel} with its Metadata filled in.
      * @throws Exception Thrown if the database fails to find the {@link Transaction} object
      */
@@ -133,7 +123,7 @@ public class TransactionViewModel {
      * database.
      *
      * @param tangle The tangle reference for the database
-     * @param hash   The {@link Hash} identifier to search with
+     * @param hash The {@link Hash} identifier to search with
      * @return The {@link TransactionViewModel} with its Metadata filled in.
      * @throws Exception Thrown if there is an error loading the {@link Transaction} object from the database
      */
@@ -149,7 +139,7 @@ public class TransactionViewModel {
      * manipulate a provided {@link Transaction} set.
      *
      * @param transaction {@link Transaction} set that the {@link TransactionViewModel} will be created for
-     * @param hash        The {@link Hash} identifier of the {@link Transaction} set
+     * @param hash The {@link Hash} identifier of the {@link Transaction} set
      */
     public TransactionViewModel(final Transaction transaction, Hash hash) {
         this.transaction = transaction == null || transaction.bytes == null ? new Transaction() : transaction;
@@ -164,7 +154,7 @@ public class TransactionViewModel {
      * {@link Transaction} set. This {@link Transaction} set is then indexed by the provided {@link Hash} identifier.
      *
      * @param trits The input trits that the {@link Transaction} and {@link TransactionViewModel} will be created from.
-     * @param hash  The {@link TransactionHash} identifier of the {@link Transaction} set
+     * @param hash The {@link TransactionHash} identifier of the {@link Transaction} set
      */
     public TransactionViewModel(final byte[] trits, Hash hash) {
         transaction = new Transaction();
@@ -192,7 +182,7 @@ public class TransactionViewModel {
      * {@link Transaction} object might exist in the database. If it definitively does not exist, it will return False.
      *
      * @param tangle The tangle reference for the database
-     * @param hash   The {@link Hash} identifier of the object you are looking for
+     * @param hash The {@link Hash} identifier of the object you are looking for
      * @return True if the key might exist in the database, False if it definitively does not
      * @throws Exception Thrown if there is an error checking the database
      */
@@ -204,7 +194,7 @@ public class TransactionViewModel {
      * Determines whether the {@link Transaction} object exists in the database or not.
      *
      * @param tangle The tangle reference for the database.
-     * @param hash   The {@link Hash} identifier for the {@link Transaction} object
+     * @param hash The {@link Hash} identifier for the {@link Transaction} object
      * @return True if the transaction exists in the database, False if not
      * @throws Exception Thrown if there is an error determining if the transaction exists or not
      */
@@ -265,10 +255,9 @@ public class TransactionViewModel {
      * returns false, and if not, it attempts to update the {@link Transaction} object and the referencing {@link Hash}
      * identifier in the database.
      *
-     * @param tangle          The tangle reference for the database
+     * @param tangle The tangle reference for the database
      * @param initialSnapshot snapshot that acts as genesis
-     * @param item            The string identifying the purpose of the update
-     * @return True if the update was successful, False if it failed
+     * @param item The string identifying the purpose of the update
      * @throws Exception Thrown if any of the metadata fails to fetch, or if the database update fails
      */
     public boolean update(Tangle tangle, Snapshot initialSnapshot, String item) throws Exception {
@@ -337,26 +326,6 @@ public class TransactionViewModel {
     }
 
     /**
-     * Stores the {@link Transaction} object to the tangle, including the metadata and indexing based on {@link Bundle},
-     * {@link Address}, {@link Tag}, {@link #trunk} and {@link #branch}.
-     *
-     * @return The list of {@link Hash} objects indexed by the {@link TransactionHash} identifier. Returns False if
-     * there is a problem populating the list.
-     */
-    public List<Pair<Indexable, Persistable>> getMetadataSaveBatch() {
-        List<Pair<Indexable, Persistable>> hashesList = new ArrayList<>();
-        hashesList.add(new Pair<>(getAddressHash(), new Address(hash)));
-        hashesList.add(new Pair<>(getBundleHash(), new Bundle(hash)));
-        hashesList.add(new Pair<>(getBranchTransactionHash(), new Approvee(hash)));
-        hashesList.add(new Pair<>(getTrunkTransactionHash(), new Approvee(hash)));
-        hashesList.add(new Pair<>(getObsoleteTagValue(), new ObsoleteTag(hash)));
-        hashesList.add(new Pair<>(getTagValue(), new Tag(hash)));
-        setAttachmentData();
-        setMetadata();
-        return hashesList;
-    }
-
-    /**
      * Fetches a list of all {@link Transaction} component and {@link Hash} identifier pairs from the stored metadata.
      * The method then ensures that the {@link Transaction#bytes} are present before adding the {@link Transaction} and
      * {@link Hash} identifier to the already compiled list of {@link Transaction} components.
@@ -394,7 +363,7 @@ public class TransactionViewModel {
      * already contains the {@link Transaction}, then the method returns False. Otherwise, the method tries to store the
      * {@link Transaction} batch into the database.
      *
-     * @param tangle          The tangle reference for the database.
+     * @param tangle The tangle reference for the database.
      * @param initialSnapshot snapshot that acts as genesis
      * @return True if the {@link Transaction} is stored, False if not.
      * @throws Exception Thrown if there is an error fetching the batch or storing in the database.
@@ -414,7 +383,7 @@ public class TransactionViewModel {
     /**
      * Gets the {@link ApproveeViewModel} of a {@link Transaction}. If the current {@link ApproveeViewModel} is null, a
      * new one is created using the transaction {@link Hash} identifier.
-     * <p>
+     *
      * An {@link Approvee} is a transaction in the tangle that references, and therefore approves, this transaction
      * directly.
      *
@@ -452,9 +421,7 @@ public class TransactionViewModel {
         transaction.arrivalTime = time;
     }
 
-    /**
-     * @return The {@link Transaction#arrivalTime}
-     */
+    /** @return The {@link Transaction#arrivalTime} */
     public long getArrivalTime() {
         return transaction.arrivalTime;
     }
@@ -475,9 +442,7 @@ public class TransactionViewModel {
         return transaction.bytes;
     }
 
-    /**
-     * @return The transaction {@link Hash} identifier
-     */
+    /** @return The transaction {@link Hash} identifier */
     public Hash getHash() {
         return hash;
     }
@@ -614,21 +579,19 @@ public class TransactionViewModel {
         return transaction.attachmentTimestampUpperBound;
     }
 
-    /**
-     * @return The {@link Transaction#value}
-     */
+    /** @return The {@link Transaction#value} */
     public long value() {
         return transaction.value;
     }
 
     /**
      * Updates the {@link Transaction#validity} in the database.
-     * <p>
+     *
      * The validity can be one of three states: <tt>1: Valid; -1: Invalid; 0: Unknown</tt>
      *
-     * @param tangle          The tangle reference for the database
+     * @param tangle The tangle reference for the database
      * @param initialSnapshot snapshot that acts as genesis
-     * @param validity        The state of validity that the {@link Transaction} will be updated to
+     * @param validity The state of validity that the {@link Transaction} will be updated to
      * @throws Exception Thrown if there is an error with the update
      */
     public void setValidity(Tangle tangle, Snapshot initialSnapshot, int validity) throws Exception {
@@ -638,16 +601,12 @@ public class TransactionViewModel {
         }
     }
 
-    /**
-     * @return The current stored {@link Transaction#validity}
-     */
+    /** @return The current stored {@link Transaction#validity} */
     public int getValidity() {
         return transaction.validity;
     }
 
-    /**
-     * @return The {@link Transaction#currentIndex} in its bundle
-     */
+    /** @return The {@link Transaction#currentIndex} in its bundle */
     public long getCurrentIndex() {
         return transaction.currentIndex;
     }
@@ -662,9 +621,7 @@ public class TransactionViewModel {
                 SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
     }
 
-    /**
-     * @return The stored {@link Transaction#timestamp}
-     */
+    /** @return The stored {@link Transaction#timestamp} */
     public long getTimestamp() {
         return transaction.timestamp;
     }
@@ -681,9 +638,7 @@ public class TransactionViewModel {
         return nonce;
     }
 
-    /**
-     * @return The {@link Transaction#lastIndex} of the transaction bundle
-     */
+    /** @return The {@link Transaction#lastIndex} of the transaction bundle */
     public long lastIndex() {
         return transaction.lastIndex;
     }
@@ -741,7 +696,7 @@ public class TransactionViewModel {
 
     /**
      * Updates the {@link Transaction#solid} value of the referenced {@link Transaction} object.
-     * <p>
+     *
      * Used by the {@link com.iota.iri.TransactionValidator} to quickly set the solidity of a {@link Transaction} set.
      *
      * @param solid The solidity of the transaction in the database
@@ -755,28 +710,24 @@ public class TransactionViewModel {
         return false;
     }
 
-    /**
-     * @return True if {@link Transaction#solid} is True (exists in the database), False if not
-     */
+    /** @return True if {@link Transaction#solid} is True (exists in the database), False if not */
     public boolean isSolid() {
         return transaction.solid;
     }
 
-    /**
-     * @return The {@link Transaction#snapshot} index
-     */
+    /** @return The {@link Transaction#snapshot} index */
     public int snapshotIndex() {
         return transaction.snapshot;
     }
 
     /**
      * Sets the current {@link Transaction#snapshot} index.
-     * <p>
+     *
      * This is used to set a milestone transactions index.
      *
-     * @param tangle          The tangle reference for the database.
+     * @param tangle The tangle reference for the database.
      * @param initialSnapshot snapshot that acts as genesis
-     * @param index           The new index to be attached to the {@link Transaction} object
+     * @param index The new index to be attached to the {@link Transaction} object
      * @throws Exception Thrown if the database update does not return correctly
      */
     public void setSnapshot(Tangle tangle, Snapshot initialSnapshot, final int index) throws Exception {
@@ -788,16 +739,16 @@ public class TransactionViewModel {
 
     /**
      * This method sets the {@link Transaction#milestone} flag.
-     * <p>
+     *
      * It gets automatically called by the {@link com.iota.iri.service.milestone.LatestMilestoneTracker} and marks transactions that represent a
      * milestone accordingly. It first checks if the {@link Transaction#milestone} flag has changed and if so, it issues
      * a database update.
      *
-     * @param tangle          Tangle instance which acts as a database interface <<<<<<< HEAD
-     * @param isMilestone     True if the {@link Transaction} is a milestone and False if not
-     * @param initialSnapshot the snapshot representing the starting point of our ledger
-     * @param isMilestone     true if the transaction is a milestone and false otherwise
+     * @param tangle Tangle instance which acts as a database interface <<<<<<< HEAD
+     * @param isMilestone True if the {@link Transaction} is a milestone and False if not
      * @throws Exception Thrown if there is an error while saving the changes to the database =======
+     * @param initialSnapshot the snapshot representing the starting point of our ledger
+     * @param isMilestone true if the transaction is a milestone and false otherwise
      * @throws Exception if something goes wrong while saving the changes to the database >>>>>>> release-v1.5.6
      */
     public void isMilestone(Tangle tangle, Snapshot initialSnapshot, final boolean isMilestone) throws Exception {
@@ -809,7 +760,7 @@ public class TransactionViewModel {
 
     /**
      * This method gets the {@link Transaction#milestone}.
-     * <p>
+     *
      * The {@link Transaction#milestone} flag indicates if the {@link Transaction} is a coordinator issued milestone. It
      * allows us to differentiate the two types of transactions (normal transactions / milestones) very fast and
      * efficiently without issuing further database queries or even full verifications of the signature. If it is set to
@@ -822,9 +773,7 @@ public class TransactionViewModel {
         return transaction.milestone;
     }
 
-    /**
-     * @return The current {@link Transaction#height}
-     */
+    /** @return The current {@link Transaction#height} */
     public long getHeight() {
         return transaction.height;
     }
@@ -842,23 +791,23 @@ public class TransactionViewModel {
         TransactionViewModel transactionVM = this, trunk = this.getTrunkTransaction(tangle);
         Stack<Hash> transactionViewModels = new Stack<>();
         transactionViewModels.push(transactionVM.getHash());
-        while (trunk.getHeight() == 0 && trunk.getType() != PREFILLED_SLOT && !initialSnapshot.hasSolidEntryPoint(trunk.getHash())) {
+        while(trunk.getHeight() == 0 && trunk.getType() != PREFILLED_SLOT && !initialSnapshot.hasSolidEntryPoint(trunk.getHash())) {
             transactionVM = trunk;
             trunk = transactionVM.getTrunkTransaction(tangle);
             transactionViewModels.push(transactionVM.getHash());
         }
-        while (transactionViewModels.size() != 0) {
+        while(transactionViewModels.size() != 0) {
             transactionVM = TransactionViewModel.fromHash(tangle, transactionViewModels.pop());
             long currentHeight = transactionVM.getHeight();
-            if (initialSnapshot.hasSolidEntryPoint(trunk.getHash()) && trunk.getHeight() == 0
+            if(initialSnapshot.hasSolidEntryPoint(trunk.getHash()) && trunk.getHeight() == 0
                     && !initialSnapshot.hasSolidEntryPoint(transactionVM.getHash())) {
-                if (currentHeight != 1L) {
+                if(currentHeight != 1L ){
                     transactionVM.updateHeight(1L);
                     transactionVM.update(tangle, initialSnapshot, "height");
                 }
-            } else if (trunk.getType() != PREFILLED_SLOT && transactionVM.getHeight() == 0) {
+            } else if ( trunk.getType() != PREFILLED_SLOT && transactionVM.getHeight() == 0){
                 long newHeight = 1L + trunk.getHeight();
-                if (currentHeight != newHeight) {
+                if(currentHeight != newHeight) {
                     transactionVM.updateHeight(newHeight);
                     transactionVM.update(tangle, initialSnapshot, "height");
                 }
@@ -878,9 +827,7 @@ public class TransactionViewModel {
         transaction.sender = sender;
     }
 
-    /**
-     * @return The {@link Transaction#sender}
-     */
+    /** @return The {@link Transaction#sender} */
     public String getSender() {
         return transaction.sender;
     }
@@ -904,7 +851,7 @@ public class TransactionViewModel {
 
     /**
      * This method creates a human readable string representation of the transaction.
-     * <p>
+     *
      * It can be used to directly append the transaction in error and debug messages.
      *
      * @return human readable string representation of the transaction

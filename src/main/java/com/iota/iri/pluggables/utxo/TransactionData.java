@@ -398,7 +398,7 @@ public class TransactionData {
         LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
         List<Hash> totalTopOrders = provider.totalTopOrder();
         
-        log.debug("all txs = {}", transactions.toString());
+        //log.debug("all txs = {}", transactions.toString());
         UTXOGraph graph = new UTXOGraph(transactions);
         graph.markDoubleSpend(totalTopOrders, txnToTangleMap);
         //

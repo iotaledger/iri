@@ -559,6 +559,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 Map<Hash, Set<Hash>> subGraph = buildSubGraph(diff);
                 List<Hash> noBeforeInTmpGraph = subGraph.entrySet().stream().filter(e -> CollectionUtils.isEmpty(e.getValue())).map(Map.Entry::getKey).collect(Collectors.toList());
                 //TODO consider using SPECTR for sorting
+                for(Hash s : noBeforeInTmpGraph) {
+                    if(!lvlMap.containsKey(s)) {
+                        lvlMap.put(s, Integer.MAX_VALUE); //FIXME this is a bug
+                    }
+                }
                 noBeforeInTmpGraph.sort(Comparator.comparingInt((Hash o) -> lvlMap.get(o)).thenComparing(o -> o));
                 subTopOrder.addAll(noBeforeInTmpGraph);
                 diff.removeAll(noBeforeInTmpGraph);
@@ -597,10 +602,13 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             Hash s = null;
             for (Hash block : parentRevGraph.get(start)) {
                 //if (score.get(block) > tmpMaxScore || (score.get(block) == tmpMaxScore && block.compareTo(Objects.requireNonNull(s)) < 0)) {
-                if (parentScore.get(block) > tmpMaxScore) {
+                if (parentScore.containsKey(block) && parentScore.get(block) > tmpMaxScore) {
                     tmpMaxScore = parentScore.get(block);
                     s = block;
                 }
+            }
+            if(s == null) {
+                return list;
             }
             start = s;
             list.add(s);
@@ -618,12 +626,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             Hash s = null;
             for (Hash block : children) {
                 //if (score.get(block) > tmpMaxScore || (score.get(block) == tmpMaxScore && block.compareTo(Objects.requireNonNull(s)) < 0)) {
-                if (parentScore.get(block) > tmpMaxScore) {
+                if (parentScore.containsKey(block) && parentScore.get(block) > tmpMaxScore) {
                     tmpMaxScore = parentScore.get(block);
                     s = block;
                 }
             }
-
+            if(s == null) {
+                return start;
+            }
             start = s;
         }
         return start;

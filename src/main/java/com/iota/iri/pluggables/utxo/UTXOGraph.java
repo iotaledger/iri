@@ -5,6 +5,9 @@ import java.io.*;
 
 import com.iota.iri.utils.IotaUtils;
 
+import io.netty.util.internal.ConcurrentSet;
+import java.util.concurrent.ConcurrentHashMap;
+
 import com.iota.iri.model.Hash;
 
 import static java.util.stream.Collectors.*;
@@ -72,7 +75,7 @@ public class UTXOGraph {
                 inGraph.put(val, ins);
 
                 if(accountMap.get(newTx.outputs.get(i).userAccount)==null) {
-                    accountMap.put(newTx.outputs.get(i).userAccount, new HashSet<>());
+                    accountMap.put(newTx.outputs.get(i).userAccount, new ConcurrentSet<>());
                 }
                 Set<TxnBlock> st = accountMap.get(newTx.outputs.get(i).userAccount);
                 st.add(new TxnBlock(idx, i, newTx.txnHash));
@@ -82,10 +85,10 @@ public class UTXOGraph {
     }
 
     public UTXOGraph(List<Txn> txns) {
-        outGraph = new HashMap<String, Set<String>>();
-        inGraph = new HashMap<String, Set<String>>();
-        doubleSpendSet = new HashSet<>();
-        accountMap = new HashMap<>();
+        outGraph = new ConcurrentHashMap<String, Set<String>>();
+        inGraph = new ConcurrentHashMap<String, Set<String>>();
+        doubleSpendSet = new ConcurrentSet<>();
+        accountMap = new ConcurrentHashMap<>();
 
         for(int i=0; i<txns.size(); i++) {
             addTxn(txns.get(i), i);
@@ -93,16 +96,16 @@ public class UTXOGraph {
     }
 
     public UTXOGraph() {
-        outGraph = new HashMap<String, Set<String>>();
-        inGraph = new HashMap<String, Set<String>>();
-        doubleSpendSet = new HashSet<>();
-        accountMap = new HashMap<>();
+        outGraph = new ConcurrentHashMap<String, Set<String>>();
+        inGraph = new ConcurrentHashMap<String, Set<String>>();
+        doubleSpendSet = new ConcurrentSet<>();
+        accountMap = new ConcurrentHashMap<>();
     }
 
 
     public void markDoubleSpend(List<Hash> order, HashMap<String, Hash> txnToTangleMap) {
         for(String key : outGraph.keySet()) {
-            Set<String> valSet = new HashSet<>();
+            Set<String> valSet = new ConcurrentSet<>();
             for(String val : outGraph.get(key)) {
                 valSet.add(val.split(":")[0]);
             }
@@ -113,7 +116,7 @@ public class UTXOGraph {
     }
 
     public void markTheLaterAsDoubleSpend(List<Hash> order, HashMap<String, Hash> txnToTangleMap, Set<String> valSet) {
-        Map<String, Integer> toSort = new HashMap<>(); 
+        Map<String, Integer> toSort = new ConcurrentHashMap<>(); 
         for(String out : valSet) {
             Hash h = txnToTangleMap.get(out);
             int pos = order.indexOf(h);
@@ -150,10 +153,11 @@ public class UTXOGraph {
         queue.add(key);
 
         Set<String> visited = new HashSet<>();
+        visited.add(key);
 
         while(!queue.isEmpty()) {
             String h = queue.pop();
-            String[] k = key.split(":");
+            String[] k = h.split(":");
             if(doubleSpendSet.contains(k[0])) {
                 return true;
             }

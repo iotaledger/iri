@@ -1365,15 +1365,23 @@ public class API {
     private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
-            txToApprove = getTransactionToApproveTips(3, Optional.empty());
+            txToApprove = getTransactionToApproveTips(15, Optional.empty());
         } catch (NullPointerException e) {
             log.warn("Tip selection failed: {}. Is this the first transaction???", e.getLocalizedMessage());
+            if(instance.tangle.getTxnCount() > 2) {
+                return AbstractResponse.createEmptyResponse();
+                // TODO, if this happens for multiple times, find the reason and solve it
+            }
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
         }
         catch (Exception e) {
             log.error("Tip selection failed: " + e.getLocalizedMessage());
         } finally {
-            txToApprove.add(IotaUtils.getRandomTransactionHash());
-            txToApprove.add(IotaUtils.getRandomTransactionHash());
+            if(txToApprove.get(0).equals(null) || (txToApprove.size()>1 && txToApprove.get(1).equals(null))) {
+                log.warn("Tip selection failed, why?");
+                return AbstractResponse.createEmptyResponse(); // FIXME why come here?
+            }
         }
 
         final int txMessageSize = (int) TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;

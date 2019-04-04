@@ -24,7 +24,7 @@ public class ReceivedStage {
         this.snapshotProvider = snapshotProvider;
     }
 
-    public void process(ProcessingContext ctx) {
+    public ProcessingContext process(ProcessingContext ctx) {
         ReceivedPayload payload = (ReceivedPayload) ctx.getPayload();
         Optional<Neighbor> optNeighbor = payload.getNeighbor();
         TransactionViewModel tvm = payload.getTransactionViewModel();
@@ -36,7 +36,7 @@ public class ReceivedStage {
             log.error("error persisting newly received tx", e);
             optNeighbor.ifPresent(neighbor -> neighbor.getMetrics().incrInvalidTransactionsCount());
             ctx.setNextStage(TxPipeline.Stage.ABORT);
-            return;
+            return ctx;
         }
 
         if (stored) {
@@ -57,5 +57,6 @@ public class ReceivedStage {
         // broadcast the newly saved tx to the other neighbors
         ctx.setNextStage(TxPipeline.Stage.BROADCAST);
         ctx.setPayload(new BroadcastPayload(optNeighbor.orElse(null), tvm));
+        return ctx;
     }
 }

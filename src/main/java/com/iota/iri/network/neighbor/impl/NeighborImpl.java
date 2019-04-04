@@ -16,19 +16,16 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.SelectionKey;
-import java.nio.channels.Selector;
-import java.nio.channels.SocketChannel;
+import java.nio.channels.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-public class NeighborImpl implements Neighbor {
+public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements Neighbor {
 
     private static final Logger log = LoggerFactory.getLogger(NeighborImpl.class);
 
     private enum ReadState {
-        PARSE_HEADER,
-        READ_MESSAGE
+        PARSE_HEADER, READ_MESSAGE
     }
 
     // next stage in the processing of incoming data
@@ -52,26 +49,22 @@ public class NeighborImpl implements Neighbor {
 
     // we need the reference to the channel in order to register it for
     // write interests once messages to send are available.
-    private SocketChannel channel;
+    private T channel;
     private Selector selector;
 
     private NeighborMetrics metrics = new NeighborMetricsImpl();
     private MessageReader msgReader;
     private Handshake handshake = new Handshake();
 
-    public NeighborImpl(
-            Selector selector, SocketChannel channel, String hostAddress, int remoteServerSocketPort,
-            TxPipeline txPipeline
-    ) {
+    public NeighborImpl(Selector selector, T channel, String hostAddress, int remoteServerSocketPort,
+            TxPipeline txPipeline) {
         this.hostAddress = hostAddress;
         this.remoteServerSocketPort = remoteServerSocketPort;
         this.selector = selector;
         this.channel = channel;
         this.txPipeline = txPipeline;
-        try {
-            this.msgReader = MessageReaderFactory.create(Protocol.MessageType.HEADER);
-        } catch (UnknownMessageTypeException e) {
-        }
+        this.msgReader = MessageReaderFactory.create(Protocol.MessageType.HEADER,
+                Protocol.MessageSize.HEADER.getSize());
     }
 
     @Override
@@ -98,34 +91,31 @@ public class NeighborImpl implements Neighbor {
                     protocolHeader = Protocol.parseHeader(msg);
                 } catch (UnknownMessageTypeException e) {
                     log.error("unknown message type received from {}", getHostAddressAndPort());
-                    e.printStackTrace();
-                    faultyPackets++;
+                    metrics.incrUnknownMessageTypePacketsCount();
                     return bytesRead;
                 } catch (IncompatibleProtocolVersionException e) {
                     log.error("{} is incompatible due to protocol version mismatch", getHostAddressAndPort());
-                    e.printStackTrace();
-                    faultyPackets++;
+                    metrics.incrIncompatiblePacketsCount();
                     return bytesRead;
                 } catch (AdvertisedMessageSizeTooBigException e) {
-                    log.error("{} is trying to send a message which exceeds the max size of the given message type", getHostAddressAndPort());
-                    e.printStackTrace();
-                    faultyPackets++;
+                    log.error("{} is trying to send a message which exceeds the max size of the given message type",
+                            getHostAddressAndPort());
+                    metrics.incrMessageTooBigPacketsCount();
                     return bytesRead;
                 }
 
                 // if we are handshaking, then we must have a handshaking packet
-                if (state == NeighborState.HANDSHAKING && protocolHeader.getMessageType() != Protocol.MessageType.HANDSHAKE) {
-                    log.error("neighbor {}'s initial packet is not a handshaking packet, closing connection", getHostAddressAndPort());
+                if (state == NeighborState.HANDSHAKING
+                        && protocolHeader.getMessageType() != Protocol.MessageType.HANDSHAKE) {
+                    log.error("neighbor {}'s initial packet is not a handshaking packet, closing connection",
+                            getHostAddressAndPort());
                     return -1;
                 }
 
                 // we got the header, now we want to read the message
                 readState = ReadState.READ_MESSAGE;
-                try {
-                    msgReader = MessageReaderFactory.create(protocolHeader.getMessageType(), protocolHeader.getMessageSize());
-                } catch (UnknownMessageTypeException e) {
-                    // can't happen here as we already verified that the message type is known
-                }
+                msgReader = MessageReaderFactory.create(protocolHeader.getMessageType(),
+                        protocolHeader.getMessageSize());
 
                 // execute another read as we likely already have the message in the network buffer
                 return read();

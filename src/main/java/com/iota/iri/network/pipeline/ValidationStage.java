@@ -27,30 +27,33 @@ public class ValidationStage {
         this.recentlySeenBytesCache = recentlySeenBytesCache;
     }
 
-    public void process(ProcessingContext ctx) {
+    public ProcessingContext process(ProcessingContext ctx) {
         ValidationPayload payload = (ValidationPayload) ctx.getPayload();
         byte[] hashTrits = payload.getHashTrits();
         byte[] txTrits = payload.getTxTrits();
         Optional<Neighbor> optNeighbor = payload.getNeighbor();
         Optional<Long> optTxDigest = payload.getTxBytesDigest();
         Optional<Hash> optHashOfRequestedTx = payload.getHashOfRequestedTx();
+
+        // construct transaction hash and model
         TransactionHash txHash = (TransactionHash) HashFactory.TRANSACTION.create(hashTrits, 0, SIZE_IN_TRITS);
         TransactionViewModel tvm = new TransactionViewModel(txTrits, txHash);
+
         try {
             txValidator.runValidation(tvm, txValidator.getMinWeightMagnitude());
         } catch (TransactionValidator.StaleTimestampException ex) {
             optNeighbor.ifPresent(neighbor -> neighbor.getMetrics().incrStaleTransactionsCount());
             ctx.setNextStage(TxPipeline.Stage.ABORT);
-            return;
-        } catch (IllegalStateException ex) {
+            return ctx;
+        } catch (Exception ex) {
             optNeighbor.ifPresent(neighbor -> neighbor.getMetrics().incrInvalidTransactionsCount());
             ctx.setNextStage(TxPipeline.Stage.ABORT);
-            return;
+            return ctx;
         }
 
         // cache the tx hash under the tx payload digest
         optTxDigest.ifPresent(txDigest -> {
-            if (txDigest != 0) {
+            if (txDigest == 0) {
                 return;
             }
             recentlySeenBytesCache.put(txDigest, txHash);
@@ -62,7 +65,7 @@ public class ValidationStage {
         if (!optHashOfRequestedTx.isPresent() || !optNeighbor.isPresent()) {
             ctx.setNextStage(TxPipeline.Stage.RECEIVED);
             ctx.setPayload(receivedStagePayload);
-            return;
+            return ctx;
         }
 
         // diverge flow to received and reply stage
@@ -74,5 +77,6 @@ public class ValidationStage {
         ProcessingContext replyCtx = new ProcessingContext(TxPipeline.Stage.REPLY, replyStagePayload);
         ProcessingContext receivedCtx = new ProcessingContext(TxPipeline.Stage.RECEIVED, receivedStagePayload);
         ctx.setPayload(new ImmutablePair<>(replyCtx, receivedCtx));
+        return ctx;
     }
 }

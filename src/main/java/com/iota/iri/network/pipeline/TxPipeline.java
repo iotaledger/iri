@@ -37,28 +37,23 @@ public class TxPipeline {
 
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
     private BlockingQueue<ProcessingContext<PreProcessPayload>> preProcessStageQueue = new ArrayBlockingQueue<>(100);
-    private BlockingQueue<ProcessingContext<? extends ValidationPayload>> validationStageQueue = new ArrayBlockingQueue<>(100);
+    private BlockingQueue<
+            ProcessingContext<? extends ValidationPayload>> validationStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext<ReceivedPayload>> receivedStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext<BroadcastPayload>> broadcastStageQueue = new ArrayBlockingQueue<>(100);
     private BlockingQueue<ProcessingContext<ReplyPayload>> replyStageQueue = new ArrayBlockingQueue<>(100);
 
     public enum Stage {
-        PRE_PROCESS,
-        HASHING,
-        VALIDATION,
-        REPLY,
-        RECEIVED,
-        BROADCAST,
-        MULTIPLE,
-        ABORT
+        PRE_PROCESS, HASHING, VALIDATION, REPLY, RECEIVED, BROADCAST, MULTIPLE, ABORT
     }
 
     public void init(NeighborRouter neighborRouter, NodeConfig config, TransactionValidator txValidator, Tangle tangle,
-                     SnapshotProvider snapshotProvider, TransactionRequester txRequester,
-                     TipsViewModel tipsViewModel, LatestMilestoneTracker latestMilestoneTracker) {
+            SnapshotProvider snapshotProvider, TransactionRequester txRequester, TipsViewModel tipsViewModel,
+            LatestMilestoneTracker latestMilestoneTracker) {
         this.recentlySeenBytesCache = new FIFOCache<>(config.getCacheSizeBytes(), config.getpDropCacheEntry());
         this.preProcessStage = new PreProcessStage(recentlySeenBytesCache);
-        this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker, recentlySeenBytesCache, txRequester);
+        this.replyStage = new ReplyStage(neighborRouter, config, tangle, tipsViewModel, latestMilestoneTracker,
+                recentlySeenBytesCache, txRequester);
         this.broadcastStage = new BroadcastStage(neighborRouter);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
         this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider);
@@ -68,30 +63,18 @@ public class TxPipeline {
 
     public void start() {
         /*
-            Assembly:
-            pre process stage:
-                -> reply stage if tx already seen
-                -> hashing stage if tx not already seen
-            hashing stage:
-                -> validation stage
-            validation stage:
-                -> received stage if not tx not gotten from a neighbor
-                -> received/reply stage otherwise
-            received stage:
-                -> broadcast stage
-
-            external actors:
-                neighbors:
-                    -> pre process stage
-                broadcastTransactions:
-                    -> hashing stage
+         * Assembly: pre process stage: -> reply stage if tx already seen -> hashing stage if tx not already seen
+         * hashing stage: -> validation stage validation stage: -> received stage if not tx not gotten from a neighbor
+         * -> received/reply stage otherwise received stage: -> broadcast stage
+         * 
+         * external actors: neighbors: -> pre process stage broadcastTransactions: -> hashing stage
          */
         stagesThreadPool.submit(batchedHasher);
         stagesThreadPool.submit(new Thread(() -> {
             try {
                 while (!NeighborRouter.SHUTDOWN.get()) {
                     ProcessingContext ctx = preProcessStageQueue.take();
-                    preProcessStage.process(ctx);
+                    ctx = preProcessStage.process(ctx);
                     switch (ctx.getNextStage()) {
                         case REPLY:
                             replyStageQueue.put(ctx);
@@ -109,13 +92,16 @@ public class TxPipeline {
             try {
                 while (!NeighborRouter.SHUTDOWN.get()) {
                     ProcessingContext ctx = validationStageQueue.take();
-                    validationStage.process(ctx);
+                    ctx = validationStage.process(ctx);
                     switch (ctx.getNextStage()) {
                         case RECEIVED:
                             receivedStageQueue.put(ctx);
                             break;
                         case MULTIPLE:
-                            ImmutablePair<ProcessingContext<ReplyPayload>, ProcessingContext<ReceivedPayload>> payload = (ImmutablePair<ProcessingContext<ReplyPayload>, ProcessingContext<ReceivedPayload>>) ctx.getPayload();
+                            ImmutablePair<ProcessingContext<ReplyPayload>,
+                                    ProcessingContext<
+                                            ReceivedPayload>> payload = (ImmutablePair<ProcessingContext<ReplyPayload>,
+                                                    ProcessingContext<ReceivedPayload>>) ctx.getPayload();
                             replyStageQueue.put(payload.getLeft());
                             receivedStageQueue.put(payload.getRight());
                             break;
@@ -141,7 +127,7 @@ public class TxPipeline {
             try {
                 while (!NeighborRouter.SHUTDOWN.get()) {
                     ProcessingContext ctx = receivedStageQueue.take();
-                    receivedStage.process(ctx);
+                    ctx = receivedStage.process(ctx);
                     switch (ctx.getNextStage()) {
                         case BROADCAST:
                             broadcastStageQueue.put(ctx);
@@ -176,6 +162,10 @@ public class TxPipeline {
         return replyStageQueue;
     }
 
+    public BlockingQueue<ProcessingContext<? extends ValidationPayload>> getValidationStageQueue() {
+        return validationStageQueue;
+    }
+
     public void process(Neighbor neighbor, ByteBuffer data) {
         ProcessingContext<PreProcessPayload> ctx = new ProcessingContext(new PreProcessPayload(neighbor, data));
         try {
@@ -205,5 +195,29 @@ public class TxPipeline {
             }
         }));
         hashingStage.process(ctx);
+    }
+
+    public void setPreProcessStage(PreProcessStage preProcessStage) {
+        this.preProcessStage = preProcessStage;
+    }
+
+    public void setReceivedStage(ReceivedStage receivedStage) {
+        this.receivedStage = receivedStage;
+    }
+
+    public void setValidationStage(ValidationStage validationStage) {
+        this.validationStage = validationStage;
+    }
+
+    public void setReplyStage(ReplyStage replyStage) {
+        this.replyStage = replyStage;
+    }
+
+    public void setBroadcastStage(BroadcastStage broadcastStage) {
+        this.broadcastStage = broadcastStage;
+    }
+
+    public void setHashingStage(HashingStage hashingStage) {
+        this.hashingStage = hashingStage;
     }
 }

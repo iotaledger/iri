@@ -25,4 +25,16 @@ public interface NeighborMetrics {
     long getSentTransactionsCount();
 
     long incrSentTransactionsCount();
+
+    long getUnknownMessageTypePacketsCount();
+
+    long incrUnknownMessageTypePacketsCount();
+
+    long getIncompatiblePacketsCount();
+
+    long incrIncompatiblePacketsCount();
+
+    long getMessageTooBigPacketsCount();
+
+    long incrMessageTooBigPacketsCount();
 }

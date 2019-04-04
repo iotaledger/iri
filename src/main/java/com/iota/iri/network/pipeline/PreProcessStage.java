@@ -23,7 +23,7 @@ public class PreProcessStage {
         this.recentlySeenBytesCache = recentlySeenBytesCache;
     }
 
-    public void process(ProcessingContext ctx) {
+    public ProcessingContext process(ProcessingContext ctx) {
         PreProcessPayload payload = (PreProcessPayload) ctx.getPayload();
         ByteBuffer packetData = payload.getData();
         byte[] data = packetData.array();
@@ -36,7 +36,8 @@ public class PreProcessStage {
         Protocol.expandTx(data, txDataBytes);
 
         // copy requested hash
-        System.arraycopy(data, data.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES, reqHashBytes, 0, Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES);
+        System.arraycopy(data, data.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES, reqHashBytes, 0,
+                Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES);
 
         // compute digest of tx bytes data
         long txDigest = NeighborRouter.getTxCacheDigest(txDataBytes);
@@ -50,7 +51,7 @@ public class PreProcessStage {
             requestedHash = requestedHash.equals(receivedTxHash) ? Hash.NULL_HASH : requestedHash;
             ctx.setNextStage(TxPipeline.Stage.REPLY);
             ctx.setPayload(new ReplyPayload(payload.getNeighbor(), requestedHash));
-            return;
+            return ctx;
         }
 
         // convert tx byte data into trits representation once
@@ -59,7 +60,9 @@ public class PreProcessStage {
 
         // submit to hashing stage.
         ctx.setNextStage(TxPipeline.Stage.HASHING);
-        HashingPayload hashingStagePayload = new HashingPayload(payload.getNeighbor(), txTrits, txDigest, requestedHash);
+        HashingPayload hashingStagePayload = new HashingPayload(payload.getNeighbor(), txTrits, txDigest,
+                requestedHash);
         ctx.setPayload(hashingStagePayload);
+        return ctx;
     }
 }

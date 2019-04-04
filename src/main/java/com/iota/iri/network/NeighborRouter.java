@@ -330,6 +330,7 @@ public class NeighborRouter {
         // we finally add the neighbor to the connected neighbors map
         // if the handshake was successful and we got the remote port
         connectedNeighbors.put(neighbor.getHostAddressAndPort(), neighbor);
+
         return true;
     }
 
@@ -521,7 +522,7 @@ public class NeighborRouter {
         return txPipeline;
     }
 
-    public ConcurrentHashMap<String, Neighbor> getConnectedNeighbors() {
+    public Map<String, Neighbor> getConnectedNeighbors() {
         return connectedNeighbors;
     }
 

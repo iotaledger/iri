@@ -19,7 +19,7 @@ public class MessageReaderFactory {
         }
     }
 
-    public static MessageReader create(Protocol.MessageType msgType, short packetSize) throws UnknownMessageTypeException {
+    public static MessageReader create(Protocol.MessageType msgType, short packetSize) {
         return new MessageReaderImpl(msgType, packetSize);
     }
 

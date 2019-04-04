@@ -20,8 +20,8 @@ public class Protocol {
     // actual transaction hash would be 49 bytes, but assuming that the last N
     // chars are 9s, it probably has been reduced to 46 bytes.
     public final static int GOSSIP_REQUESTED_TX_HASH_BYTES = 49;
-    private final static int NON_SIG_TX_PART_SIZE_BYTES = 292;
-    private final static int SIG_DATA_MAX_SIZE_BYTES = 1312;
+    public final static int NON_SIG_TX_PART_SIZE_BYTES = 292;
+    public final static int SIG_DATA_MAX_SIZE_BYTES = 1312;
 
     public enum MessageType {
         HEADER((byte) 0),
@@ -148,7 +148,7 @@ public class Protocol {
         System.arraycopy(data, sigMsgFragBytesToCopy, txDataBytes, Protocol.SIG_DATA_MAX_SIZE_BYTES, Protocol.NON_SIG_TX_PART_SIZE_BYTES);
     }
 
-    private static byte[] truncateTx(byte[] txBytes) {
+    public static byte[] truncateTx(byte[] txBytes) {
         // check how many bytes from the signature can be truncated
         int bytesToTruncate = 0;
         for (int i = SIG_DATA_MAX_SIZE_BYTES - 1; i >= 0; i--) {

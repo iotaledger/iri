@@ -19,7 +19,7 @@ public class BroadcastStage {
         this.neighborRouter = neighborRouter;
     }
 
-    public void process(ProcessingContext ctx) {
+    public ProcessingContext process(ProcessingContext ctx) {
         BroadcastPayload payload = (BroadcastPayload) ctx.getPayload();
         Optional<Neighbor> optOriginNeighbor = payload.getOriginNeighbor();
         TransactionViewModel tvm = payload.getTransactionViewModel();
@@ -37,5 +37,7 @@ public class BroadcastStage {
                 log.error(e.getMessage());
             }
         }
+
+        return ctx;
     }
 }

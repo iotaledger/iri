@@ -13,6 +13,7 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import java.util.*;
 
 import static com.iota.iri.controllers.TransactionViewModel.TRYTES_SIZE;
 import static com.iota.iri.controllers.TransactionViewModelTest.getRandomTransactionHash;
@@ -50,7 +51,8 @@ public class TransactionDataTest {
     @Test
     public void testReadFromStr(){
 
-        transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":100}");
+        List<Txn> list = transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":100}");
+        transactionData.addTxn(list.get(0));
         Assert.assertEquals(transactionData.transactions.size(), 2);
         Assert.assertEquals(transactionData.transactions.get(1).inputs.size(), 1);
         Assert.assertEquals(transactionData.transactions.get(1).inputs.get(0).txnHash,
@@ -64,7 +66,8 @@ public class TransactionDataTest {
         Assert.assertEquals(transactionData.transactions.get(1).outputs.get(1).amount, 999999900);
 
 
-        transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":200}");
+        list = transactionData.readFromStr("{\"from\":\"A\",\"to\":\"B\",\"amnt\":200}");
+        transactionData.addTxn(list.get(0));
         Assert.assertEquals(transactionData.transactions.size(), 3);
         Assert.assertEquals(transactionData.transactions.get(2).inputs.size(), 1);
         Assert.assertEquals(transactionData.transactions.get(2).inputs.get(0).txnHash,
@@ -79,7 +82,8 @@ public class TransactionDataTest {
         System.out.println(new Gson().toJson(transactionData.transactions.get(2)));
 
 
-        transactionData.readFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":300}");
+        list = transactionData.readFromStr("{\"from\":\"B\",\"to\":\"C\",\"amnt\":300}");
+        transactionData.addTxn(list.get(0));
         Assert.assertEquals(transactionData.transactions.size(), 4);
         Assert.assertEquals(transactionData.transactions.get(3).inputs.size(), 2);
         Assert.assertEquals(transactionData.transactions.get(3).inputs.get(0).txnHash, 
@@ -102,7 +106,8 @@ public class TransactionDataTest {
 
     private static void store(String txnStr) {
         try {
-            transactionData.readFromStr(txnStr);
+            List<Txn> list = transactionData.readFromStr(txnStr);
+            transactionData.addTxn(list.get(0));
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -212,14 +212,14 @@ public class TransactionData {
         }
     }
 
-    public void readFromStr(String txnsStr){
+    public List<Txn> readFromStr(String txnsStr){
 
         List<RawTxn> transactionList = new ArrayList<>();
 
         RawTxn tx = new Gson().fromJson(txnsStr, RawTxn.class);
         transactionList.add(tx);
 
-        constructTxnsFromRawTxns(transactionList);
+        return constructTxnsFromRawTxns(transactionList);
     }
 
     public void readFromLines(String[] lines){
@@ -269,29 +269,18 @@ public class TransactionData {
         return ret;
     }
 
-    private boolean constructTxnsFromRawTxns(List<RawTxn> rawTxns) {
+    private List<Txn> constructTxnsFromRawTxns(List<RawTxn> rawTxns) {
         int size = transactions.size();
-        boolean undoFlag = false;
+        List<Txn> ret = new ArrayList<>();
 
         for (RawTxn txn: rawTxns) {
-            boolean flag = doStoreRawTxn(txn);
-            if (flag == false){
-                undoFlag = true;
+            Txn tx = doCreateRawTxn(txn);
+            if (tx == null){
                 break;
             }
+            ret.add(tx);
         }
-
-        if (undoFlag == true){
-            int undoSize = transactions.size();
-            if (undoSize > size) {
-                for (int i = size; i < undoSize; i++) {
-                    transactions.remove(i);
-                }
-            }
-            return false;
-        }
-
-        return true;
+        return ret;
     }
 
     private List<RawTxn> readRawTxnInfoFromIPFS (String ipfsAddr) throws IOException {
@@ -316,7 +305,7 @@ public class TransactionData {
     }
 
 
-    private boolean doStoreRawTxn(RawTxn txn) {
+    private Txn doCreateRawTxn(RawTxn txn) {
         String fromAddr = txn.from;
         String toAddr = txn.to;
         long total = 0;
@@ -350,7 +339,7 @@ public class TransactionData {
         if (txnInList.size() == 0 || total < txn.amnt) {
             // TODO: it will print out the value of 'from' and the 'transfer value', will it be ok?
             log.error("Error, {} have {} token, but want to spend {}.", txn.from, total, txn.amnt);
-            return false;
+            return null;
         }
 
         Txn newTxn = new Txn();
@@ -373,8 +362,7 @@ public class TransactionData {
         newTxn.outputs = txnOutList;
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
-        addTxn(newTxn);
-        return true;
+        return newTxn;
     }
 
     private String generateHash(String txnStr) {

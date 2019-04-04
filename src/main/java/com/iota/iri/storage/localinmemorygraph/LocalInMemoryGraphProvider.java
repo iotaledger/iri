@@ -602,7 +602,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 } else if(parentScore.get(block) == tmpMaxScore) {
                     String sStr = Converter.trytes(s.trits());
                     String blockStr = Converter.trytes(block.trits());
-                    System.out.println(sStr);
                     if(sStr.compareTo(blockStr) < 0) {
                         s = block;
                     }

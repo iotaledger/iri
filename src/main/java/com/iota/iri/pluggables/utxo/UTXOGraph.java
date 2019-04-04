@@ -185,27 +185,31 @@ public class UTXOGraph {
             }
             for (String key : graph.keySet()) {
                 for (String val : graph.get(key)) {
-                    if(k != null) {
-                        writer.write("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
-                                "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n");
-                        if(doubleSpendSet.contains((val.split(":")[0]))) {
-                            writer.write("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=red]\n");
-                        } else if (!isSpent(val)) {
-                            writer.write("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=green]\n");
-                            if(spend.contains(val)) {
-                                writer.write("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "shape=square]\n");
-                            }
-                        } 
-                    } else {
-                        System.out.println("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
-                                "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"");
-                        }
-                        //System.out.println("come here to check double spend");
-                        if(doubleSpendSet.contains((val.split(":")[0]))) {
-                            System.out.println("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=red]");
-                        } else if (!isSpent(val)) {
-                            System.out.println("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=green]");
-                        } 
+                    try {
+                        if(k != null) {
+                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n");
+                            if(doubleSpendSet.contains((val.split(":")[0]))) {
+                                writer.write("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=red]\n");
+                            } else if (!isSpent(val)) {
+                                writer.write("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=green]\n");
+                                if(spend.contains(val)) {
+                                    writer.write("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "shape=square]\n");
+                                }
+                            } 
+                        } else {
+                            System.out.println("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"");
+                            //System.out.println("come here to check double spend");
+                            if(doubleSpendSet.contains((val.split(":")[0]))) {
+                                System.out.println("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=red]");
+                            } else if (!isSpent(val)) {
+                                System.out.println("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=green]");
+                            } 
+                        }   
+                    } catch(Exception e) {
+                        ;
+                    }
                 }
             }
             if(k != null) {

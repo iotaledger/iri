@@ -1222,6 +1222,7 @@ public class API {
                 }
                 //validate PoW - throws exception if invalid
                 final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(tTrits, instance.transactionValidator.getMinWeightMagnitude());
+                IotaIOUtils.processReceivedTxn(transactionViewModel);
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();

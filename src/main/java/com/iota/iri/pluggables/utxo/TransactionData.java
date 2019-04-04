@@ -263,6 +263,12 @@ public class TransactionData {
         return transactions.get(transactions.size()-1);
     }
 
+    public Txn popLast() {
+        Txn ret = transactions.get(transactions.size()-1);
+        transactions.remove(transactions.size()-1);
+        return ret;
+    }
+
     private boolean constructTxnsFromRawTxns(List<RawTxn> rawTxns) {
         int size = transactions.size();
         boolean undoFlag = false;
@@ -397,12 +403,11 @@ public class TransactionData {
     public long getBalance(String account) {
         LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
         List<Hash> totalTopOrders = provider.totalTopOrder();
-        
         //log.debug("all txs = {}", transactions.toString());
-        UTXOGraph graph = new UTXOGraph(transactions);
-        graph.markDoubleSpend(totalTopOrders, txnToTangleMap);
+        utxoGraph.markDoubleSpend(totalTopOrders, txnToTangleMap);
         //
         Set<String> visisted = new HashSet<>();
+        
 
         long total = 0;
 
@@ -415,7 +420,7 @@ public class TransactionData {
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);
                 String key = transaction.txnHash + ":" + String.valueOf(j) + "," + txnOut.userAccount;
-                if (txnOut.userAccount.equals(account) && !graph.isSpent(key) && !graph.isDoubleSpend(key)) {
+                if (txnOut.userAccount.equals(account) && !utxoGraph.isSpent(key) && !utxoGraph.isDoubleSpend(key)) {
                     total += txnOut.amount;
                 }
             }

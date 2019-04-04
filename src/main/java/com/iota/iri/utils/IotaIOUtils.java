@@ -142,7 +142,7 @@ public class IotaIOUtils extends IOUtils {
                     JSONObject jo = new JSONObject(txnsStr);
                     txnsStr = jo.get("txn_content").toString();
                     TransactionData.getInstance().readFromStr(txnsStr);
-                    Txn tx = TransactionData.getInstance().getLast();
+                    Txn tx = TransactionData.getInstance().popLast(); // FIXME this is actually a bug
                     tmpBatch.addTxn(tx);
                     
 
@@ -150,8 +150,6 @@ public class IotaIOUtils extends IOUtils {
                     byte[] sigTrits = new byte[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
                     Converter.trits(s, sigTrits, 0);
                     System.arraycopy(sigTrits, 0, ret, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
-
-                    TransactionData.getInstance().putIndex(tx, model.getHash());
                 }
             }
             return ret;

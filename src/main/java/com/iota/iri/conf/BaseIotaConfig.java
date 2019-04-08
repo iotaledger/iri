@@ -839,10 +839,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Coo
         Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
-                        "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
-        int COORDINATOR_SECURITY_LEVEL = 1;
-        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
-        int NUM_KEYS_IN_MILESTONE = 20;
+                        "EQSAUZXULTTYZCLNJNTXQTQHOMOFZERHTCGTXOLTVAHKSA9OGAZDEKECURBRIXIJWNPFCQIOVFVVXJVD9");
+        int COORDINATOR_SECURITY_LEVEL = 2;
+        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.KERL;
+        int NUM_KEYS_IN_MILESTONE = 23;
         int MAX_MILESTONE_INDEX = 1 << NUM_KEYS_IN_MILESTONE;
 
         //Snapshot

@@ -10,7 +10,7 @@ import (
 
 func main() {
 	http.HandleFunc("/AddNode", AddNode)
-	http.HandleFunc("/QueryData", QueryData)
+	http.HandleFunc("/QueryNodes", QueryNodes)
 	err := http.ListenAndServe("0.0.0.0:8000", nil)
 
 	if err != nil {
@@ -22,16 +22,17 @@ func AddNode(writer http.ResponseWriter, request *http.Request){
 	var o v.OCli
 	body, _ := ioutil.ReadAll(request.Body)
 	response:=o.AddAttestationInfoFunction(body)
+
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		fmt.Println(err)
 	}
 }
 
-func QueryData(writer http.ResponseWriter, request *http.Request){
+func QueryNodes(writer http.ResponseWriter, request *http.Request){
 	var o v.OCli
 	body, _ := ioutil.ReadAll(request.Body)
-
 	response:=o.GetRankFunction(body)
+
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		fmt.Println(err)
 	}

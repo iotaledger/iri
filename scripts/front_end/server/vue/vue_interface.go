@@ -28,7 +28,7 @@ func (o *OCli)AddAttestationInfoFunction(_data []byte )Message{
 	err := json.Unmarshal(_data, &m)
 
 	if err!=nil{
-		mess=Message{Code:0,Message:"类型转换异常"}
+		mess=Message{Code:0,Message:"Type conversion exception"}
 		return mess
 	}
 	info:=make([]string,3)
@@ -37,10 +37,10 @@ func (o *OCli)AddAttestationInfoFunction(_data []byte )Message{
 	info[2]=m["Score"]
 	err1:=nr.AddAttestationInfo("","",info)
 	if err1!=nil{
-		mess=Message{Code:0,Message:"节点添加失败"}
+		mess=Message{Code:0,Message:"Failed to add node"}
 		return mess
 	}
-	mess=Message{Code:1,Message:"节点添加成功"}
+	mess=Message{Code:1,Message:"Node added successfully"}
 	return mess
 }
 
@@ -54,16 +54,16 @@ func (o *OCli)GetRankFunction(_data []byte)Message{
 	var para parameter
 	err:=json.Unmarshal(_data,&para)
 	if err!=nil{
-		mess=Message{Code:0,Message:"类型转换异常"}
+		mess=Message{Code:0,Message:"Type conversion exception"}
 		return mess
 	}
 
 	teescore,teectx,err1:=nr.GetRank("",para.Period,para.NumRank)
 	if teectx==nil||err1!=nil||teescore==nil{
-		mess=Message{Code:0,Message:"查询失败"}
+		mess=Message{Code:0,Message:"Failed to query node data"}
 		return mess
 	}
 	data:=DataTee{teescore,teectx}
-	mess=Message{Code:1,Message:"查询成功",Data:data}
+	mess=Message{Code:1,Message:"Query node data successfully",Data:data}
 	return mess
 }

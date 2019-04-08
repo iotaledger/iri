@@ -47,7 +47,7 @@
             },
             queryData() {
                 $("#dagResult").val("");
-                let requestUrl = "http://" + (dagUrl || window.location.host) + "/api/QueryData";
+                let requestUrl = "http://" + (dagUrl || window.location.host) + "/api/QueryNodes";
                 this.axios.post(requestUrl, requestData).then((res) => {//success callback
                     if (res.data["Code"] === 0) {
                         alert(data["Message"]);

@@ -83,11 +83,11 @@ public class IotaIOUtils extends IOUtils {
                     return null;
                 }
 
-                TransactionData.getInstance().readFromStr(txnObj.toString());
-                Txn tx = TransactionData.getInstance().getLast();
-                tmpBatch.addTxn(tx);
+                List<Txn> list = TransactionData.getInstance().readFromStr(txnObj.toString());
+                tmpBatch.addTxn(list.get(0));
                 String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
                 ret.append(s);
+                TransactionData.getInstance().addTxn(list.get(0));
             }else if (json instanceof JSONArray) {
                 JSONArray jsonArray = (JSONArray) json;
                 if (jsonArray.length() != txnCount) {
@@ -96,8 +96,8 @@ public class IotaIOUtils extends IOUtils {
                 }
 
                 for (Object object : jsonArray) {
-                    TransactionData.getInstance().readFromStr(object.toString());
-                    Txn tx = TransactionData.getInstance().getLast();
+                    List<Txn> list =  TransactionData.getInstance().readFromStr(object.toString());
+                    Txn tx = list.get(0);
                     if (tmpBatch.getTryteStringLen(tmpBatch) + tx.getTryteStringLen(tx) > size) {
                         String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
                         ret.append(s);
@@ -105,6 +105,7 @@ public class IotaIOUtils extends IOUtils {
                         tmpBatch.clear();
                     }
                     tmpBatch.addTxn(tx);
+                    TransactionData.getInstance().addTxn(tx);
                 }
                 if(tmpBatch.tx_num > 0) {
                     String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), size, '9');
@@ -141,17 +142,13 @@ public class IotaIOUtils extends IOUtils {
                     int sigSize = TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET/3;
                     JSONObject jo = new JSONObject(txnsStr);
                     txnsStr = jo.get("txn_content").toString();
-                    TransactionData.getInstance().readFromStr(txnsStr);
-                    Txn tx = TransactionData.getInstance().getLast();
-                    tmpBatch.addTxn(tx);
-                    
+                    List<Txn> tx = TransactionData.getInstance().readFromStr(txnsStr);
+                    tmpBatch.addTxn(tx.get(0));
 
                     String s = StringUtils.rightPad(tmpBatch.getTryteString(tmpBatch), sigSize, '9');
                     byte[] sigTrits = new byte[TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE];
                     Converter.trits(s, sigTrits, 0);
                     System.arraycopy(sigTrits, 0, ret, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_OFFSET, TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE);
-
-                    TransactionData.getInstance().putIndex(tx, model.getHash());
                 }
             }
             return ret;

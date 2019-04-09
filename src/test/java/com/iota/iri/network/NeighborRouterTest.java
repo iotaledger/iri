@@ -171,7 +171,7 @@ public class NeighborRouterTest {
 
         neighborRouterA.addNeighbor(neighborBURI.toString());
 
-        Thread.sleep(200);
+        Thread.sleep(1000);
 
         // should now be connected with each other
         assertEquals(1, neighborRouterA.getConnectedNeighbors().size());
@@ -184,7 +184,7 @@ public class NeighborRouterTest {
         Neighbor neighborA = neighborRouterB.getConnectedNeighbors().get(neighborAIdentity);
         neighborA.send(Protocol.createHandshakePacket((char) 16000));
 
-        Thread.sleep(200);
+        Thread.sleep(1000);
 
         assertEquals(0, neighborRouterA.getConnectedNeighbors().size());
         assertEquals(0, neighborRouterB.getConnectedNeighbors().size());

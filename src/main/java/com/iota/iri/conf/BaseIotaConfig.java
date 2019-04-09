@@ -865,7 +865,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
                 "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt " +
                         "/previousEpochsSpentAddresses3.txt";
         long GLOBAL_SNAPSHOT_TIME = 1545469620;
-        int MILESTONE_START_INDEX = 0;
+        int MILESTONE_START_INDEX = 1050000;
         int MAX_ANALYZED_TXS = 20_000;
 
     }

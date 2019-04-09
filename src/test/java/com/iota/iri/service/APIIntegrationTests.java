@@ -83,7 +83,7 @@ public class APIIntegrationTests {
             logFolder.create();
 
             configuration = ConfigFactory.createIotaConfig(true);
-            String[] args = {"-p", portStr, "--testnet", "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
+            String[] args = {"-p", portStr, "--testnet", "--max-neighbors", String.valueOf(5), "--db-path", dbFolder.getRoot().getAbsolutePath(), "--db-log-path",
             logFolder.getRoot().getAbsolutePath(), "--mwm", "1"};
             configuration.parseConfigFromArgs(args);
 
@@ -239,7 +239,11 @@ public class APIIntegrationTests {
             post("/").
             then().
             spec(specSuccessResponse).
-            body(containsString("neighbors"));
+            body(containsString("neighbors")).
+            body(containsString("address")).
+            body(containsString("numberOfAllTransactions")).
+            body(containsString("numberOfInvalidTransactions")).
+            body(containsString("numberOfNewTransactions"));
     }
 
     @Test

@@ -20,11 +20,14 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class TxPipeline {
 
     private static final Logger log = LoggerFactory.getLogger(TxPipeline.class);
     private ExecutorService stagesThreadPool = Executors.newFixedThreadPool(6);
+
+    private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
     // stages of the protocol protocol
     private PreProcessStage preProcessStage;
@@ -72,7 +75,7 @@ public class TxPipeline {
         stagesThreadPool.submit(batchedHasher);
         stagesThreadPool.submit(new Thread(() -> {
             try {
-                while (!NeighborRouter.SHUTDOWN.get()) {
+                while (!shutdown.get()) {
                     ProcessingContext ctx = preProcessStageQueue.take();
                     ctx = preProcessStage.process(ctx);
                     switch (ctx.getNextStage()) {
@@ -85,12 +88,13 @@ public class TxPipeline {
                     }
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+            } finally {
+                log.info("pre process stage shutdown");
             }
         }, "pre-process-stage"));
         stagesThreadPool.submit(new Thread(() -> {
             try {
-                while (!NeighborRouter.SHUTDOWN.get()) {
+                while (!shutdown.get()) {
                     ProcessingContext ctx = validationStageQueue.take();
                     ctx = validationStage.process(ctx);
                     switch (ctx.getNextStage()) {
@@ -110,22 +114,24 @@ public class TxPipeline {
                     }
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+            } finally {
+                log.info("validation stage shutdown");
             }
         }, "tx-validation-stage"));
         stagesThreadPool.submit(new Thread(() -> {
             try {
-                while (!NeighborRouter.SHUTDOWN.get()) {
+                while (!shutdown.get()) {
                     ProcessingContext ctx = replyStageQueue.take();
                     replyStage.process(ctx);
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+            } finally {
+                log.info("reply stage shutdown");
             }
         }, "reply-stage"));
         stagesThreadPool.submit(new Thread(() -> {
             try {
-                while (!NeighborRouter.SHUTDOWN.get()) {
+                while (!shutdown.get()) {
                     ProcessingContext ctx = receivedStageQueue.take();
                     ctx = receivedStage.process(ctx);
                     switch (ctx.getNextStage()) {
@@ -135,17 +141,19 @@ public class TxPipeline {
                     }
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+            } finally {
+                log.info("received stage shutdown");
             }
         }, "received-stage"));
         stagesThreadPool.submit(new Thread(() -> {
             try {
-                while (!NeighborRouter.SHUTDOWN.get()) {
+                while (!shutdown.get()) {
                     ProcessingContext ctx = broadcastStageQueue.take();
                     broadcastStage.process(ctx);
                 }
             } catch (InterruptedException e) {
-                e.printStackTrace();
+            } finally {
+                log.info("broadcast stage shutdown");
             }
         }, "broadcast-stage"));
     }
@@ -195,6 +203,11 @@ public class TxPipeline {
             }
         }));
         hashingStage.process(ctx);
+    }
+
+    public void shutdown(){
+        shutdown.set(true);
+        stagesThreadPool.shutdownNow();
     }
 
     public void setPreProcessStage(PreProcessStage preProcessStage) {

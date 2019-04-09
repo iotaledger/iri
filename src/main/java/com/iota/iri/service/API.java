@@ -623,7 +623,7 @@ public class API {
      * @return {@link com.iota.iri.service.dto.GetNeighborsResponse}
      **/
     private AbstractResponse getNeighborsStatement() {
-        return GetNeighborsResponse.create(instance.neighborRouter.getConnectedNeighbors().values());
+        return GetNeighborsResponse.create(instance.neighborRouter.getNeighbors());
     }
 
     /**

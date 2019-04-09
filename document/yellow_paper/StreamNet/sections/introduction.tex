@@ -4,20 +4,20 @@ Extensive adoptions of blockchain technologies was seen in real world applicatio
 financial services with potential regulation challenges \cite{michael2018blockchain, tapscott2017blockchain}, 
 supply chains \cite{korpela2017digital,tian2016agri, abeyratne2016blockchain}, 
 health cares \cite{azaria2016medrec,yue2016healthcare} and IOT devices \cite{christidis2016blockchains}.
-The core of blockchain technology resides in the consensus algorihtms applying to the real distrubuted computing world.
+The core of blockchain technology depends on the consensus algorihtms applying to the open distrubuted computing world.
 Where computers can join and leave the network and these copmuters can cheat.
 
 As the first protocol that can solve the so called Byzantine general's problem, 
-bitcoin system suffers from the problem of low throughput with a transaction per second (TPS) of approximately $7$, and long confirmation time (about an hour).
+bitcoin system suffers from the problem of low transaction rate with a transaction per second (TPS) of approximately $7$, and long confirmation time (about an hour).
 As more and more machines joined the network, they are competing for the privileges to attach the block (miners) which result in huge waste of electric power.
 While sky rocketing fees are payed to make sure the transfers of money will be placed in the chain.
 On par, there are multiple proposals to solve the low transaction speed issue. 
 
 One method intends to solve the speed problem without changing the chain data structure, for instance, 
 the bitcoin cash (BCH) fork of bitcoin (BTC) system tries to improve the throughput of the system by enlarging the data size of each block from $1$ Mb to $4$ Mb. 
-To minimize the cost of POW, a proof of stake method POS \cite{wood2014ethereum} is proposed to make sure that only those who in the network can have the privilege to attach the block only if they have a large amount of token shares.
+To minimize the cost of POW, a proof of stake method POS \cite{wood2014ethereum} is proposed to make sure that only those who in the network have the privilege to attach the block only if they have a large amount of token shares.
 Anohter idea targeting at utilizing the power in POW to do useful and meaningful tasks such as training machine learning models are also proposed \cite{matthew2017aion}.
-In addition, inspired by the PBFT algorithm \cite{castro1999practical} and a set of its relateted variations, so called hybrid chain was proposed. 
+In addition, inspired by the PBFT algorithm \cite{castro1999practical} and a set of its relateted variations, so called hybrid (or consortium) chain was proposed. 
 The general idea is to use two step algorithm, the first step is to elect a commiette, the second step is collecting committee power to employ PBFT for consensus.
 Bitcoin-NG \cite{eyal2016bitcoin} is the early adoptor of this idea, which splits the blocks of bitcoin into two groups, one is for master election and another for regular transaction blocks. 
 Honey-badger \cite{miller2016honey} is the system that firstly introducted the consensus commitee, it uses a predefined memebers to perform PBFT algorithm to reach consensus.  
@@ -32,11 +32,12 @@ There is a improvement of the GHOST based DAG algorithm which can achieve $6000$
 Another set of methods tried to avoid finality of constructing a linear total order by introducing the probability of confirmation in the network \cite{popov2016tangle, churyumov2016byteball}. 
 However, suffering from engineering issues, mainly due to the lack of transaction frquency and the growing complexity due to the network expansion.
 These system in reality are rely on centralized mehods to maintain their stability.
-Some of the side chain methods also borrows the idea of DAG, such as nano \cite{lemahieu2018nano} and vite \cite{liuvite}
+Some of the side chain methods also borrows the idea of DAG, such as nano \cite{lemahieu2018nano} and vite \cite{liuvite}.
 
 %All of the current DAG systems used the idea of head counting method to infer main chains which does not consider the network structure.
 %Dating back to the time Google uses PageRank \cite{page1999pagerank} to sort importance of web page instead of number of references, and this method has achieved a huge susccess.
 %And this method can also be utilized to help growing the DAG, in this paper, we use the Katz centrality metric \cite{katz1953new}.
 Emerging social network research has introduced the method of streaming graph analysis \cite{ediger2011tracking, green2012fast, ediger2012stinger} which deals
 with how to quickly maintain information on a temporally or spatially changing graph without traversing the whole graph. 
+We view the DAG based method as a streaming graph problem which is about how to compute the total order and achieve consensus without consuming more computing power.
 The main contribution of this paper is how to utilize the streaming graph analysis methods to bring the DAG systems into real decentralized, and stabilized growing system.

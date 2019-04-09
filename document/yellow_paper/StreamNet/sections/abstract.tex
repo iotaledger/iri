@@ -1,17 +1,16 @@
+\begin{abstract}
 To achieve high throughtput in the POW based blockchain systems, a series of methods has been proposed, 
 and DAG is one of the most active and promising field.
-%Considering major issues in the existing DAG systems such as centralization,
-%double-spending, sybil attacks, and slow transaction validation speed etc. 
-We designed and implemented the StreamNet aiming to engineering 
+We designed and implemented the StreamNet aiming to engineer 
 a scalable and endurable DAG system. 
 When attaching a new block in the DAG, only two tips are selected. 
 One is the `parent' tip whose definition is the same as in Conflux \cite{li2018scaling},
 another is using Markov Chain Monte Carlo (MCMC) technique by which the definition is the same as IOTA \cite{popov2016tangle}.
+We infer a pivotal chain along the path of each epoch in the graph,
+and a total order of the graph could be calculated without a centralized authority.
 By leveraging the graph streaming property,
-we infer a pivotal chain along the path of each epoch in the graph,
-and a total order of the graph could be calculated without a centralized authority and high transaction validation speed will be achieved even if the DAG is growing.
-%and each block in the pivotal chain will have the highest Katz centrality score (as oppsed to the $GHOST$ rule).
-%with Katz centrality as the weight determinator. 
-%In addtion, with comprehensive integration of information such as transaction (vertices), 
-%transaction approval information (edges), and network structure (such as community structure) 
-%a tip filtering algorithm can be optionally configured to detect and avoid double spend / sybil attacks.
+high transaction validation speed will be achieved even if the DAG is growing.
+We implemented our system based on IOTA's reference code (IRI), 
+and ran comprehensive experiments over different size of clusters of multiple network topologies. 
+Despite the shortcoming of the IRI's network part, our implementation scales with the growth of data size.
+\end{abstract}

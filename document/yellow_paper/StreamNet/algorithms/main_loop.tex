@@ -18,7 +18,8 @@
         \uIf{Generate block $b$}{
             $a \gets Pivot(G, g) $ \;
             $r \gets MCMC(G, g) $ \;
-            $G \gets <B \cup b, g, P \cup <b, a>, E \cup <b, a> \cup <b, r> >$
+            $G \gets <B \cup b, g, P \cup <b, a>, E \cup <b, a> \cup <b, r> >$ \;
+            Broadcase updated G to neighbors \;
         } 
     }
 

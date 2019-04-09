@@ -17,6 +17,7 @@ It's the classical topological sorting problem, and the complexity in the Stream
 \begin{table}[]
 \caption {Analysis of Graph properties calculation} \label{tab:properties}
 \begin{center}
+    \resizebox{\linewidth}{!}{
 \begin{tabular}{|l|l|l|l|}
 \hline
 Graph Property        & Algorithm used   & Complexity & Tot \\ \hline
@@ -24,7 +25,7 @@ Score(G, b)           & MCMC()           & $O(|B|)$              & $O(|B|*d)$  \
 Score(G, b)           & Pivot()          & $O(|B|)$              & $O(|B|*d)$  \\ \hline
 Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$          & $O(|B|*d)$  \\ \hline
 TopOrder(G, b)        & StreamNetOrder() & $O(|B|)$              & $O(|B|)$    \\ \hline
-\end{tabular}
+\end{tabular}}
 \end{center}
 \end{table}
 
@@ -83,6 +84,7 @@ To summarize, the optimized streaming operators can achieve the performance impr
 \begin{table}[]
 \caption {Analysis of Graph properties calculation} \label{tab:improvement}
 \begin{center}
+    \resizebox{\linewidth}{!}{
 \begin{tabular}{|l|l|l|l|}
 \hline
 Graph Property        & Algorithm used   & Complexity & Tot \\ \hline
@@ -90,7 +92,7 @@ Score(G, b)           & MCMC()           & $O(|B|)$              & $O(d)$  \\ \h
 Score(G, b)           & Pivot()          & $O(|B|)$              & $O(d)$  \\ \hline
 Past(G,b) - Past(G,p) & StreamNetOrder() & $O(|B|)$          & $O(|B|)$  \\ \hline
 TopOrder(G, b)        & StreamNetOrder() & $O(|1|)$              & $O(|1|)$    \\ \hline
-\end{tabular}
+\end{tabular}}
 \end{center}
 \end{table}
 

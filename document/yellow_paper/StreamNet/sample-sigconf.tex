@@ -1,0 +1,38 @@
+%
+% The first command in your LaTeX source must be the \documentclass command.
+\documentclass[sigconf, review]{acmart}
+
+\usepackage{balance}
+\usepackage[norelsize,ruled,linesnumbered,lined,commentsnumbered]{algorithm2e}
+
+%
+% \BibTeX command to typeset BibTeX logo in the docs
+\AtBeginDocument{%
+  \providecommand\BibTeX{{%
+    \normalfont B\kern-0.5em{\scshape i\kern-0.25em b}\kern-0.8em\TeX}}}
+
+\SetKwRepeat{Do}{do}{while}
+
+\begin{document}
+
+\title{StreamNet: Enabling Large Scale DAG based Nakamoto Consensus through Streaming Graph Computing}
+
+\input{./sections/abstract.tex}
+\maketitle
+
+%
+% The abstract is a short summary of the work to be presented in the article.
+
+\keywords{Block chain, DAG }
+
+\input{./sections/introduction.tex}
+\input{./sections/concepts.tex}
+\input{./sections/methods.tex}
+\input{./sections/experiments}
+\input{./sections/conclusion.tex}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{StreamNet}
+
+
+\end{document}

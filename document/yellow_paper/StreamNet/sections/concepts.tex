@@ -11,7 +11,7 @@ $P$ is a function that maps a block $b$ to its parent block $P(b)$. Specially, $
 In Figure~\ref{simple_sn}, parent relationships are denoted by solid edges.
 Note that there is always a parent edge from a block to its parent block (i.e., $\forall b \in B$, $b, P(b)> \in E$). 
 $E$ is the set of directly reference edges and parent edges in this graph. 
-$e = <b,b^'> \in E$ is an edge from the block $b$ to the block $b^'$, 
+$e = <b,b'> \in E$ is an edge from the block $b$ to the block $b'$, 
 which means that $b'$ happens before $b$. 
 For example in Figure~\ref{simple_sn}, vertex $1$ represents the first block, which is referenced by the subsequent block $2$, $3$ and $4$. 
 Vertex $5$ has two edges, one is the parent edge pointing to $3$, another is reference edge pointing to $4$.
@@ -22,7 +22,7 @@ It satisfies that $\forall {b} \neq {b'}$, Hash($b$) $\neq$ Hash($b'$).
 
 \begin{figure}[!ht]
 \begin{center}
-\includegraphics[width=0.35\textwidth]{figures/simple_sn.pdf}
+\includegraphics[width=0.45\textwidth]{figures/simple_sn.pdf}
     \caption{
         Example of the StreamNet data structure.
      }
@@ -42,7 +42,7 @@ Figure~\ref{node} shows the local architecture of StreamNet.
 In each StreamNet node, there will be a transaction pool accecpting the transactions from the HTTP API.
 And there will be a block generator to pack a certain amount of transactions into a block, it firstly find a 
 parent and reference block to attach the new block to, based on the hash information of these two blocks and the meta data of the block itself, 
-it will then perform the proof of work (POW) to calculate the nonce for the new block.
+it will then perform the proof of work (POW) to calculate the nonce for the received block.
 Agorithm~\ref{algo:main_loop} summarize the server logic for a StreamNet node.
 In the algorithm, the way to find parent reference node is by $Pivot(G, g)$.
 And the way to find reference node is by calling $MCMC(G, g)$ which is the Markov Chain Monte Carlo (MCMC) random walk algorithm \cite{popov2016tangle}.
@@ -73,16 +73,20 @@ The two algorithms will be described in the later section.
 \input{./algorithms/mcmc.tex}
 
 \subsection{Consensus protocol}
-Based on predefineid data structure, to present the StreamNet consensus algorithm, we firstly define several utility functions and notatons. 
-%GetGenesis() returns the Genesis block. 
-BuildSubGraph() returns the sub graph by removing blocks and edges except the initial set of blocks.
-Score() presents the weight of blocks, each block achieves a score when attaching to the graph. 
+Based on predefineid data structure, to present the StreamNet consensus algorithm, 
+we firstly define several utility functions and notatons, which is a variation from the definition in the Conflux paper \cite{li2018scaling}. 
 Chain() returns the chain from the genesis block to a given block following only parent edges. 
 Child() returns the set of child blocks of a given block. 
 Sibling() returns the set of siblings of a given block. 
 Subtree() returns the sub-tree of a given block in the parental tree. 
 Before() returns the set of blocks that are immediately generated before a given block. 
 Past() returns the set of blocks that are generated before a given block (but including the block itself).
+After() returns the set of blocks that are immediately generated after a given block. 
+Later() returns the set of blocks that are generated after a given block (but including the block itself).
+SubGraph() returns the sub graph by removing blocks and edges except the initial set of blocks.
+ParentScore() presents the weight of blocks, each block have a score when referenced as parent. 
+Score() presents the weight of blocks, each block achieves a score when attaching to the graph. 
+TotalOrder() returns the `flattend' order infered from the consensus algorithm.
 Figure~\ref{allMethods} represents the definition of these utility functions. 
 
 \begin{figure}
@@ -98,18 +102,21 @@ Figure~\ref{allMethods} represents the definition of these utility functions.
    &SubTree(G,b) = (U_{i\in Child(G,b)}Substree(G,i))U\{b\} \\
    &Before(G,b) = \{b'|b' \in B, <b,b'> \in E \} \\
    &Past(G,b) = (U_{i\in Before(G,b)}Past(G,i))U\{b\} \\
+   &After(G,b) = \{b'|b' \in B, <b',b> \in E \} \\
+   &Later(G,b) = (U_{i\in After(G,b)}Later(G,i))U\{b\} \\
    &SubGraph(G,B') = <B', P', E'> | \\
    & \forall <b, b'> \in E', b \subset B' \& b' \subset B'\\
-   &Score(G,b) = |SubTree(G,b)| \\
+   &ParentScore(G,b) = |SubTree(G,b)| \\
+   &Score(G,b) = |Later(G,b)| \\
    &TotalOrder(G) = StreamNetOrder(G,Pivot(G,g)) 
 \end{flalign*}
 
-\caption{The Definitions of Chain(), Child(), Sibling(), Subtree(), Before(), Past() and TotalOrder(). }
+    \caption{The Definitions of Chain(), Child(), Sibling(), Subtree(), Before(), Past(), After(), Later(), SubGraph(), ParentScore(), Score(), and TotalOrder(). }
 \label{allMethods}
 \end{figure}
 
 
-\subsubsection{Pivot Chain Selection} 
+\subsubsection{Parent tip Selection by pivotal chain} 
 The algorithm Algorithm~\ref{algo:getPivot} presents our pivot chain selection algorithm(i.e., the definition of $Pivot(G, b)$). 
 Given a StreamNet state $G$, Pivot($G$,$g$) returns the last block in the pivot chain starting from the genesis block $g$. 
 The algorithm recursively advances to the child block whoes corresponding subtree has the largest number of blocks. 
@@ -121,7 +128,7 @@ For example, in Figure~\ref{total_order}, the pivot chain is $<g, 1, 3, 5, 6>$, 
 
 \input{./algorithms/get_pivot.tex}
 
-\subsubsection{Tip selection by MCMC} 
+\subsubsection{Reference tip selection by MCMC} 
 
 The tip selection method by using Monte Carlo Random Walk (MCMC) is as Algorithm~\ref{algo:mcmc} shows.
 Starting from the genesis, each random walk step will choose a child to jump to,
@@ -175,25 +182,31 @@ However, after calling $totalOrder()$, the Bob transfer block preceeds the Jack 
 Here, we mainly compare the difference of our protocol with two mainstream DAG based protocols, one is IOTA, another is Conflux.
 
 \subsubsection{IOTA}
-The major difference with IOTA are in three points, firstly, the IOTA tip selection algorithm's two tips are all randomly choosen, 
-and ours is one by random one deterministic, 
-secondly, the IOTA consensus algorithm is not purely decentralized, 
-it relies on a central coordinator to issue milestones for the entry point selection, and our algorithm does not dependent on such facility. 
-Lastly, in IOTA, there is no concept of total order,
-and there are 3 ways to judge if a transaction is confirmed: 
+The major difference with IOTA are in three points:
 \begin{itemize}
-\item The first way is that the common nodes covered by all the tips are considered to be fully confirmed; 
-\item All transactions referenced by the milestone tip are confirmed.
-\item The third way is to use MCMC.
-    Call $N$ times to select a tip using the tip selection algorithm.
-    If a block is referenced by this tip, its credibility is increased by 1.
-    After $N$ selections have been cited $M$ times, then the credibility is $M / N$.
+    \item Firstly, the IOTA tip selection algorithm's two tips are all randomly choosen, 
+        and ours is one deterministic which is for the total ordering purposes and one by random which is for maintaining the DAG property; 
+    \item Secondly, the IOTA consensus algorithm is not purely decentralized, 
+        it relies on a central coordinator to issue milestones for multiple purposes, and our algorithm does not dependent on such facility. 
+    \item Lastly, in IOTA, there is no concept of total order,
+        and there are 3 ways to judge if a transaction is confirmed: 
+    \begin{itemize}
+        \item The first way is that the common nodes covered by all the tips are considered to be fully confirmed; 
+        \item All transactions referenced by the milestone tip are confirmed.
+        \item The third way is to use MCMC.
+            Call $N$ times to select a tip using the tip selection algorithm.
+            If a block is referenced by this tip, its credibility is increased by 1.
+            After $N$ selections have been cited $M$ times, then the credibility is $M / N$.
+    \end{itemize}
 \end{itemize}
 
 \subsubsection{Conflux}
-The major difference with Conflux are in two points, firstly, 
-Conflux will approve all tips in the DAG along with parent, 
-which is much more complicated than our MCMC based two tip method. 
-Secondly, Conflux total ordering algorithm advances from genesis block to the end while StreamNet advances in the reverse direction. 
-This method is one of the major contribution to our streaming graph based optimizations, 
-which will be discussed in the next chapter. 
+The major difference with Conflux are in two points:
+\begin{itemize}
+    \item Firstly, Conflux will approve all tips in the DAG along with parent, which is much more complicated than our MCMC based two tip method. 
+        And when the width of DAG is high, there will be much more space needed to maintain such data structure. 
+    \item Secondly, Conflux total ordering algorithm advances from genesis block to the end while StreamNet advances in the reverse direction. 
+        This method is one of the major contribution to our streaming graph based optimizations,
+        which will be discussed in the next chapter. 
+        In Conflux paper, there is no description of how to deal with the complexity paired with the growing graph.
+\end{itemize}

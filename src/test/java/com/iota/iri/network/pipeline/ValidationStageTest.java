@@ -50,11 +50,11 @@ public class ValidationStageTest {
         Mockito.verify(recentlySeenBytesCache).put(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
                 SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
 
-        assertEquals(TxPipeline.Stage.MULTIPLE, ctx.getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.MULTIPLE, ctx.getNextStage());
         ImmutablePair<ProcessingContext,
                 ProcessingContext> ctxs = (ImmutablePair<ProcessingContext, ProcessingContext>) ctx.getPayload();
-        assertEquals(TxPipeline.Stage.REPLY, ctxs.getLeft().getNextStage());
-        assertEquals(TxPipeline.Stage.RECEIVED, ctxs.getRight().getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.REPLY, ctxs.getLeft().getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.RECEIVED, ctxs.getRight().getNextStage());
     }
 
     @Test
@@ -72,7 +72,7 @@ public class ValidationStageTest {
         Mockito.verify(recentlySeenBytesCache).put(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX,
                 SampleTransaction.CURL_HASH_OF_SAMPLE_TX);
 
-        assertEquals(TxPipeline.Stage.RECEIVED, ctx.getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.RECEIVED, ctx.getNextStage());
         ReceivedPayload receivedPayload = (ReceivedPayload) ctx.getPayload();
         assertFalse(receivedPayload.getNeighbor().isPresent());
         assertNotNull(receivedPayload.getTransactionViewModel());
@@ -95,6 +95,6 @@ public class ValidationStageTest {
 
         Mockito.verify(transactionValidator).runValidation(Mockito.any(TransactionViewModel.class), Mockito.anyInt());
         Mockito.verify(neighborMetrics).incrInvalidTransactionsCount();
-        assertEquals(TxPipeline.Stage.ABORT, ctx.getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.ABORT, ctx.getNextStage());
     }
 }

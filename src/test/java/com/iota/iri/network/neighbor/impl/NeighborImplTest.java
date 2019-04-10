@@ -4,7 +4,7 @@ import com.iota.iri.network.FakeChannel;
 import com.iota.iri.network.FakeSelectionKey;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.NeighborState;
-import com.iota.iri.network.pipeline.TxPipeline;
+import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.protocol.Handshake;
 import com.iota.iri.network.protocol.Protocol;
 
@@ -32,7 +32,7 @@ public class NeighborImplTest {
     private Selector selector;
 
     @Mock
-    private TxPipeline pipeline;
+    private TransactionProcessingPipeline pipeline;
 
     private final static String localAddr = "127.0.0.1";
     private final static char serverSocketPort = 15600;

@@ -1,12 +1,13 @@
 package com.iota.iri.network;
 
+import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.NeighborState;
 import com.iota.iri.network.neighbor.impl.NeighborImpl;
-import com.iota.iri.network.pipeline.TxPipeline;
+import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.protocol.Handshake;
 import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.utils.thread.ThreadIdentifier;
@@ -31,6 +32,14 @@ import net.openhft.hashing.LongHashFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * A NeighborRouter takes care of managing connections to {@link Neighbor} instances, executing reads and writes from/to
+ * neighbors and ensuring that wanted neighbors are connected. <br/>
+ * A neighbor is identified by its identity which is made up of the IP address and the neighbor's own server socket port
+ * for new incoming connections; for example: 153.59.34.101:15600. <br/>
+ * The NeighborRouter and foreign neighbor will first exchange their server socket port via a handshaking packet, in
+ * order to fully build up the identity between each other. If handshaking fails, the connection is dropped.
+ */
 public class NeighborRouter {
 
     private static final Logger log = LoggerFactory.getLogger(NeighborRouter.class);
@@ -43,17 +52,11 @@ public class NeighborRouter {
     // external
     private NodeConfig config;
     private TransactionRequester txRequester;
-    private TxPipeline txPipeline;
+    private TransactionProcessingPipeline txPipeline;
 
     // internal
     private Selector selector;
     private ServerSocketChannel serverSocketChannel;
-
-    public void init(NodeConfig config, TransactionRequester txRequester, TxPipeline txPipeline) {
-        this.config = config;
-        this.txRequester = txRequester;
-        this.txPipeline = txPipeline;
-    }
 
     // a mapping of host address + port (identity) to fully handshaked/connected neighbor
     private ConcurrentHashMap<String, Neighbor> connectedNeighbors = new ConcurrentHashMap<>();
@@ -75,7 +78,21 @@ public class NeighborRouter {
     // used to silently drop connections. contains plain IP addresses
     private Set<String> hostsBlacklist = new CopyOnWriteArraySet<>();
 
+    // used to force the selection loop to reconnect to wanted neighbors
     private AtomicBoolean forceReconnectAttempt = new AtomicBoolean(false);
+
+    /**
+     * Initializes the dependencies of the {@link NeighborRouter}.
+     * 
+     * @param config      Network related configuration parameters
+     * @param txRequester {@link TransactionRequester} instance to load hashes of requested transactions when gossiping
+     * @param txPipeline  {@link TransactionProcessingPipeline} passed to newly created {@link Neighbor} instances
+     */
+    public void init(NodeConfig config, TransactionRequester txRequester, TransactionProcessingPipeline txPipeline) {
+        this.config = config;
+        this.txRequester = txRequester;
+        this.txPipeline = txPipeline;
+    }
 
     private void initNeighbors() {
         // parse URIs
@@ -83,10 +100,19 @@ public class NeighborRouter {
                 .map(Optional::get).forEach(uri -> neighborsToConnectTo.add(uri));
     }
 
+    /**
+     * Starts a dedicated thread for the {@link NeighborRouter} and then starts the routing mechanism.
+     */
     public void start() {
         ThreadUtils.spawnThread(this::route, neighborRouterThreadIdentifier);
     }
 
+    /**
+     * Starts the routing mechanism which first initialises connections to neighbors from the configuration and then
+     * continuously reads and writes messages from/to neighbors. <br/>
+     * This method will also try to reconnect to wanted neighbors by the given
+     * {@link BaseIotaConfig#getReconnectAttemptIntervalSeconds()} value.
+     */
     public void route() {
         log.info("starting neighbor router");
 
@@ -283,10 +309,34 @@ public class NeighborRouter {
 
     private static LongHashFunction txCacheDigestHashFunc = LongHashFunction.xx();
 
+    /**
+     * Computes the digest of the given transaction data.
+     * 
+     * @param receivedData The raw byte encoded transaction data
+     * @return The the digest of the transaction data
+     */
     public static long getTxCacheDigest(byte[] receivedData) {
         return txCacheDigestHashFunc.hashBytes(receivedData);
     }
 
+    /**
+     * Finalizes the handshaking to a {@link Neighbor} by reading the handshaking packet. <br/>
+     * A faulty handshaking will drop the neighbor connection. <br/>
+     * The connection will be dropped when:
+     * <ul>
+     * <li>the handshaking is faulty, meaning that a non handshaking packet was sent</li>
+     * <li>{@link BaseIotaConfig#getMaxNeighbors()} has been reached</li>
+     * <li>a non matching server socket port was communicated in the handshaking packet</li>
+     * <li>the neighbor is already connected (checked by the identity)</li>
+     * <li>the identity is not known (missing in {@link NeighborRouter#allowedNeighbors})</li>
+     * </ul>
+     * 
+     * @param identity The identity of the neighbor
+     * @param neighbor The {@link Neighbor} to finalize the handshaking with
+     * @param channel  The associated {@link SocketChannel} of the {@link Neighbor}
+     * @return whether the handshaking was successful
+     * @throws IOException
+     */
     private boolean finalizeHandshake(String identity, Neighbor neighbor, SocketChannel channel) throws IOException {
         Handshake handshake = neighbor.handshake();
         switch (handshake.getState()) {
@@ -351,6 +401,14 @@ public class NeighborRouter {
         return true;
     }
 
+    /**
+     * Initializes connections to wanted neighbors which are neighbors added by
+     * {@link NeighborRouter#addNeighbor(String)} or defined in the configuration.<br/>
+     *
+     * A connection attempt is only made if the domain name of the neighbor could be resolved to its IP address.
+     * Reconnect attempts will continuously try to resolve the domain name until the neighbor is explicitly removed via
+     * {@link NeighborRouter#removeNeighbor(String)}.
+     */
     private void connectToWantedNeighbors() {
         if (neighborsToConnectTo.isEmpty()) {
             return;
@@ -378,10 +436,19 @@ public class NeighborRouter {
         });
     }
 
-    private boolean initNeighborConnection(URI neighborURI, InetSocketAddress addr) throws IOException {
+    /**
+     * Initializes a new {@link SocketChannel} to the given neighbor. <br/>
+     * The IP address of the neighbor is removed from the blacklist, added to the whitelist and registered as an allowed
+     * neighbor by its identity.
+     * 
+     * @param neighborURI The {@link URI} of the neighbor to connect to
+     * @param addr        The {@link InetSocketAddress} extracted from the {@link URI}
+     * @throws IOException if initializing the {@link SocketChannel} fails
+     */
+    private void initNeighborConnection(URI neighborURI, InetSocketAddress addr) throws IOException {
         if (addr.isUnresolved()) {
             log.warn("unable to resolve neighbor {} to IP address, will attempt to reconnect later", neighborURI);
-            return false;
+            return;
         }
 
         String ipAddress = addr.getAddress().getHostAddress();
@@ -407,9 +474,24 @@ public class NeighborRouter {
         Neighbor neighbor = new NeighborImpl(selector, tcpChannel, addr.getAddress().getHostAddress(), addr.getPort(),
                 txPipeline);
         tcpChannel.register(selector, SelectionKey.OP_CONNECT, neighbor);
-        return true;
     }
 
+    /**
+     * Checks whether the given host is allowed to connect given its IP address. <br/>
+     * The connection is allowed when:
+     * <ul>
+     * <li>the IP address is not in the {@link NeighborRouter#hostsBlacklist}</li>
+     * <li>{@link BaseIotaConfig#getMaxNeighbors()} has not been reached</li>
+     * <li>is whitelisted in {@link NeighborRouter#hostsWhitelist} (if {@link BaseIotaConfig#isTestnet()} is false)</li>
+     * </ul>
+     * The IP address is blacklisted to mute it from subsequent connection attempts. The blacklisting is removed if the
+     * IP address is added through {@link NeighborRouter#addNeighbor(String)}.
+     * 
+     * @param ipAddress       The IP address
+     * @param newNeighborConn The {@link SocketChannel} to close if the connection is not allowed
+     * @return true if allowed, false if not
+     * @throws IOException if anything goes wrong closing the {@link SocketChannel}
+     */
     private boolean okToConnect(String ipAddress, SocketChannel newNeighborConn) throws IOException {
         if (hostsBlacklist.contains(ipAddress)) {
             // silently drop connection
@@ -435,6 +517,16 @@ public class NeighborRouter {
         return true;
     }
 
+    /**
+     * Closes the connection to the neighbor, re-registers the {@link ServerSocketChannel} for
+     * {@link SelectionKey#OP_CONNECT} in case neighbor slots will be available again and finally removes the neighbor
+     * from the connected neighbors map.
+     * 
+     * @param channel  {@link SocketChannel} to close
+     * @param identity The identity of the neighbor, null must be passed if the neighbor should not be marked as not
+     *                 connected.
+     * @param selector The used {@link Selector}
+     */
     private void closeNeighborConnection(SelectableChannel channel, String identity, Selector selector) {
         try {
             channel.close();
@@ -458,11 +550,17 @@ public class NeighborRouter {
     private boolean availableNeighborSlotsFilled() {
         // while this check if not thread-safe, initiated connections will be dropped
         // when their handshaking was done but already all neighbor slots are filled
-        return config.isTestnet() ? connectedNeighbors.size() >= config.getMaxNeighbors()
-                : connectedNeighbors.size() >= config.getNeighbors().size();
+        return connectedNeighbors.size() >= config.getMaxNeighbors();
     }
 
-    public boolean addNeighbor(String rawURI) throws IOException {
+    /**
+     * Adds the given neighbor to the {@link NeighborRouter}. The {@link} Selector is woken up and an attempt to connect
+     * to wanted neighbors is initiated.
+     * 
+     * @param rawURI The URI of the neighbor
+     * @return whether the neighbor was added or not
+     */
+    public boolean addNeighbor(String rawURI) {
         if (availableNeighborSlotsFilled()) {
             return false;
         }
@@ -479,6 +577,13 @@ public class NeighborRouter {
         return true;
     }
 
+    /**
+     * Removes the given neighbor from the {@link NeighborRouter} by marking it for "disconnect". The neighbor is
+     * disconnected as soon as the next selector loop is executed.
+     * 
+     * @param rawURI The URI of the neighbor
+     * @return whether the neighbor was removed or not
+     */
     public boolean removeNeighbor(String rawURI) {
         Optional<URI> optUri = parseURI(rawURI);
         if (!optUri.isPresent()) {
@@ -504,6 +609,12 @@ public class NeighborRouter {
         return true;
     }
 
+    /**
+     * Parses the given string to an URI. The URI must use "tcp://" as the protocol.
+     *
+     * @param uri The URI string to parse
+     * @return the parsed URI, if parsed correctly
+     */
     public static Optional<URI> parseURI(final String uri) {
         if (uri.isEmpty()) {
             return Optional.empty();
@@ -522,6 +633,12 @@ public class NeighborRouter {
         return Optional.of(neighborURI);
     }
 
+    /**
+     * Checks whether the given URI is valid. The URI is valid if it is not null and it uses TCP as the protocol.
+     * 
+     * @param uri The URI to check
+     * @return true if the URI is valid, false if not
+     */
     public static boolean isURIValid(final URI uri) {
         if (uri == null) {
             log.error("Cannot read URI schema, please check neighbor config!");
@@ -535,10 +652,21 @@ public class NeighborRouter {
         return true;
     }
 
-    public TxPipeline getTxPipeline() {
+    /**
+     * Returns the {@link TransactionProcessingPipeline}.
+     * 
+     * @return the {@link TransactionProcessingPipeline} used by the {@link NeighborRouter}
+     */
+    public TransactionProcessingPipeline getTransactionProcessingPipeline() {
         return txPipeline;
     }
 
+    /**
+     * Gets all neighbors the {@link NeighborRouter} currently sees as either connected or attempts to build connections
+     * to.
+     * 
+     * @return The neighbors
+     */
     public List<Neighbor> getNeighbors() {
         List<Neighbor> neighbors = new ArrayList<>(connectedNeighbors.values());
         neighborsToConnectTo.forEach(uri -> {
@@ -547,14 +675,34 @@ public class NeighborRouter {
         return neighbors;
     }
 
+    /**
+     * Gets the currently connected neighbors.
+     * 
+     * @return The connected neighbors.
+     */
     public Map<String, Neighbor> getConnectedNeighbors() {
         return connectedNeighbors;
     }
 
+    /**
+     * Gossips the given transaction to the given neighbor.
+     *
+     * @param neighbor The {@link Neighbor} to gossip the transaction to
+     * @param tvm      The transaction to gossip
+     * @throws Exception thrown when loading a hash of transaction to request fails
+     */
     public void gossipTransactionTo(Neighbor neighbor, TransactionViewModel tvm) throws Exception {
         gossipTransactionTo(neighbor, tvm, false);
     }
 
+    /**
+     * Gossips the given transaction to the given neighbor.
+     *
+     * @param neighbor     The {@link Neighbor} to gossip the transaction to
+     * @param tvm          The transaction to gossip
+     * @param useHashOfTVM Whether to use the hash of the given transaction as the requested transaction hash or not
+     * @throws Exception thrown when loading a hash of transaction to request fails
+     */
     public void gossipTransactionTo(Neighbor neighbor, TransactionViewModel tvm, boolean useHashOfTVM)
             throws Exception {
         byte[] requestedHash = null;
@@ -576,6 +724,9 @@ public class NeighborRouter {
         neighbor.getMetrics().incrSentTransactionsCount();
     }
 
+    /**
+     * Shut downs the {@link NeighborRouter} and all currently open connections.
+     */
     public void shutdown() {
         shutdown.set(true);
         ThreadUtils.stopThread(neighborRouterThreadIdentifier);

@@ -20,10 +20,10 @@ public class HashingStageTest {
                 SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX, Hash.NULL_HASH);
         ProcessingContext ctx = new ProcessingContext(null, hashingPayload);
         hashingPayload.setHashRequest(new HashRequest(SampleTransaction.TRITS_OF_SAMPLE_TX, trits -> {
-            ctx.setNextStage(TxPipeline.Stage.VALIDATION);
+            ctx.setNextStage(TransactionProcessingPipeline.Stage.VALIDATION);
         }));
         stage.process(ctx);
 
-        assertEquals(TxPipeline.Stage.VALIDATION, ctx.getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.VALIDATION, ctx.getNextStage());
     }
 }

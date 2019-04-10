@@ -18,7 +18,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-public class TxPipelineTest {
+public class TransactionProcessingPipelineTest {
 
     @Rule
     public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -92,7 +92,7 @@ public class TxPipelineTest {
     @Mock
     private ProcessingContext abortCtx;
 
-    private void mockHashingStage(TxPipeline pipeline) {
+    private void mockHashingStage(TransactionProcessingPipeline pipeline) {
         Mockito.when(hashingPayload.getTxTrits()).thenReturn(null);
         Mockito.doAnswer(invocation -> {
             pipeline.getValidationStageQueue().put(validationCtx);
@@ -100,7 +100,7 @@ public class TxPipelineTest {
         }).when(hashingStage).process(Mockito.any());
     }
 
-    private void injectMockedStagesIntoPipeline(TxPipeline pipeline) {
+    private void injectMockedStagesIntoPipeline(TransactionProcessingPipeline pipeline) {
         pipeline.setPreProcessStage(preProcessStage);
         pipeline.setReceivedStage(receivedStage);
         pipeline.setBroadcastStage(broadcastStage);
@@ -111,7 +111,7 @@ public class TxPipelineTest {
 
     @Test
     public void processingAValidNewTransactionFlowsThroughTheEntirePipeline() throws InterruptedException {
-        TxPipeline pipeline = new TxPipeline();
+        TransactionProcessingPipeline pipeline = new TransactionProcessingPipeline();
         pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, transactionRequester,
                 tipsViewModel, latestMilestoneTracker);
 
@@ -120,7 +120,7 @@ public class TxPipelineTest {
 
         // mock after pre process context/stage
         Mockito.when(preProcessStage.process(Mockito.any())).thenReturn(hashingCtx);
-        Mockito.when(hashingCtx.getNextStage()).thenReturn(TxPipeline.Stage.HASHING);
+        Mockito.when(hashingCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.HASHING);
         Mockito.when(hashingCtx.getPayload()).thenReturn(hashingPayload);
 
         // mock hashing context/stage
@@ -130,11 +130,11 @@ public class TxPipelineTest {
         ImmutablePair<ProcessingContext<ReplyPayload>,
                 ProcessingContext<ReceivedPayload>> divergePaypload = new ImmutablePair<>(replyCtx, receivedCtx);
         Mockito.when(validationStage.process(validationCtx)).thenReturn(divergeToReplyAndReceivedCtx);
-        Mockito.when(divergeToReplyAndReceivedCtx.getNextStage()).thenReturn(TxPipeline.Stage.MULTIPLE);
+        Mockito.when(divergeToReplyAndReceivedCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.MULTIPLE);
         Mockito.when(divergeToReplyAndReceivedCtx.getPayload()).thenReturn(divergePaypload);
 
         // mock received
-        Mockito.when(broadcastCtx.getNextStage()).thenReturn(TxPipeline.Stage.BROADCAST);
+        Mockito.when(broadcastCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.BROADCAST);
         Mockito.when(receivedStage.process(receivedCtx)).thenReturn(broadcastCtx);
 
         pipeline.start();
@@ -156,7 +156,7 @@ public class TxPipelineTest {
 
     @Test
     public void processingAKnownTransactionOnlyFlowsToTheReplyStage() throws InterruptedException {
-        TxPipeline pipeline = new TxPipeline();
+        TransactionProcessingPipeline pipeline = new TransactionProcessingPipeline();
         pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, transactionRequester,
                 tipsViewModel, latestMilestoneTracker);
 
@@ -166,7 +166,7 @@ public class TxPipelineTest {
 
         // mock after pre process context/stage
         Mockito.when(preProcessStage.process(Mockito.any())).thenReturn(replyCtx);
-        Mockito.when(replyCtx.getNextStage()).thenReturn(TxPipeline.Stage.REPLY);
+        Mockito.when(replyCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.REPLY);
 
         pipeline.start();
 
@@ -190,7 +190,7 @@ public class TxPipelineTest {
     @Test
     public void processingAValidNewTransactionNotOriginatingFromANeighborFlowsThroughTheCorrectStages()
             throws InterruptedException {
-        TxPipeline pipeline = new TxPipeline();
+        TransactionProcessingPipeline pipeline = new TransactionProcessingPipeline();
         pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, transactionRequester,
                 tipsViewModel, latestMilestoneTracker);
 
@@ -199,7 +199,7 @@ public class TxPipelineTest {
 
         // mock after pre process context/stage
         Mockito.when(preProcessStage.process(Mockito.any())).thenReturn(hashingCtx);
-        Mockito.when(hashingCtx.getNextStage()).thenReturn(TxPipeline.Stage.HASHING);
+        Mockito.when(hashingCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.HASHING);
         Mockito.when(hashingCtx.getPayload()).thenReturn(hashingPayload);
 
         // mock hashing context/stage
@@ -208,10 +208,10 @@ public class TxPipelineTest {
 
         // mock validation context/stage
         Mockito.when(validationStage.process(validationCtx)).thenReturn(receivedCtx);
-        Mockito.when(receivedCtx.getNextStage()).thenReturn(TxPipeline.Stage.RECEIVED);
+        Mockito.when(receivedCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.RECEIVED);
 
         // mock received
-        Mockito.when(broadcastCtx.getNextStage()).thenReturn(TxPipeline.Stage.BROADCAST);
+        Mockito.when(broadcastCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.BROADCAST);
         Mockito.when(receivedStage.process(receivedCtx)).thenReturn(broadcastCtx);
 
         pipeline.start();
@@ -236,7 +236,7 @@ public class TxPipelineTest {
 
     @Test
     public void anInvalidNewTransactionStopsBeingProcessedAfterTheValidationStage() throws InterruptedException {
-        TxPipeline pipeline = new TxPipeline();
+        TransactionProcessingPipeline pipeline = new TransactionProcessingPipeline();
         pipeline.init(neighborRouter, nodeConfig, transactionValidator, tangle, snapshotProvider, transactionRequester,
                 tipsViewModel, latestMilestoneTracker);
 
@@ -245,7 +245,7 @@ public class TxPipelineTest {
 
         // mock after pre process context/stage
         Mockito.when(preProcessStage.process(Mockito.any())).thenReturn(hashingCtx);
-        Mockito.when(hashingCtx.getNextStage()).thenReturn(TxPipeline.Stage.HASHING);
+        Mockito.when(hashingCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.HASHING);
         Mockito.when(hashingCtx.getPayload()).thenReturn(hashingPayload);
 
         // mock hashing context/stage
@@ -253,7 +253,7 @@ public class TxPipelineTest {
 
         // mock validation context/stage
         Mockito.when(validationStage.process(validationCtx)).thenReturn(abortCtx);
-        Mockito.when(abortCtx.getNextStage()).thenReturn(TxPipeline.Stage.ABORT);
+        Mockito.when(abortCtx.getNextStage()).thenReturn(TransactionProcessingPipeline.Stage.ABORT);
 
         pipeline.start();
 

@@ -13,16 +13,34 @@ import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
 
+/**
+ * The {@link PreProcessStage} expands truncated transaction gossip payloads, computes the digest of the payload and
+ * converts the transaction to its trits representation.
+ */
 public class PreProcessStage {
 
     private static final Logger log = LoggerFactory.getLogger(PreProcessStage.class);
 
     private FIFOCache<Long, Hash> recentlySeenBytesCache;
 
+    /**
+     * Creates a new {@link PreProcessStage}.
+     *
+     * @param recentlySeenBytesCache The cache to use for checking whether a transaction is known
+     */
     public PreProcessStage(FIFOCache<Long, Hash> recentlySeenBytesCache) {
         this.recentlySeenBytesCache = recentlySeenBytesCache;
     }
 
+    /**
+     * Extracts the transaction gossip payload, expands it, computes the digest and then creates a new
+     * {@link ProcessingContext} to the appropriate stage. If the transaction is not known, the transaction payload is
+     * also converted to its trits representation.
+     * 
+     * @param ctx the pre process stage {@link ProcessingContext}
+     * @return a {@link ProcessingContext} which either redirects to the {@link ReplyStage} or {@link HashingStage}
+     *         depending on whether the transaction is known
+     */
     public ProcessingContext process(ProcessingContext ctx) {
         PreProcessPayload payload = (PreProcessPayload) ctx.getPayload();
         ByteBuffer packetData = payload.getData();
@@ -49,7 +67,7 @@ public class PreProcessStage {
         if (receivedTxHash != null) {
             // reply with a random tip by setting the request hash to the null hash
             requestedHash = requestedHash.equals(receivedTxHash) ? Hash.NULL_HASH : requestedHash;
-            ctx.setNextStage(TxPipeline.Stage.REPLY);
+            ctx.setNextStage(TransactionProcessingPipeline.Stage.REPLY);
             ctx.setPayload(new ReplyPayload(payload.getNeighbor(), requestedHash));
             return ctx;
         }
@@ -59,7 +77,7 @@ public class PreProcessStage {
         Converter.getTrits(txDataBytes, txTrits);
 
         // submit to hashing stage.
-        ctx.setNextStage(TxPipeline.Stage.HASHING);
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.HASHING);
         HashingPayload hashingStagePayload = new HashingPayload(payload.getNeighbor(), txTrits, txDigest,
                 requestedHash);
         ctx.setPayload(hashingStagePayload);

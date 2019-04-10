@@ -888,7 +888,7 @@ public class API {
                 instance.snapshotProvider.getLatestSnapshot().getInitialIndex(),
 
                 instance.neighborRouter.getConnectedNeighbors().size(),
-                instance.neighborRouter.getTxPipeline().getBroadcastStageQueue().size(),
+                instance.neighborRouter.getTransactionProcessingPipeline().getBroadcastStageQueue().size(),
                 System.currentTimeMillis(),
                 instance.tipsViewModel.size(),
                 instance.transactionRequester.numberOfTransactionsToRequest(),

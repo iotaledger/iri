@@ -10,6 +10,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Optional;
 
+/**
+ * The {@link ReceivedStage} stores the given transaction in the database, updates the arrival time and sender and then
+ * submits to the {@link BroadcastStage}.
+ */
 public class ReceivedStage {
 
     private static final Logger log = LoggerFactory.getLogger(ReceivedStage.class);
@@ -18,12 +22,26 @@ public class ReceivedStage {
     private TransactionValidator txValidator;
     private SnapshotProvider snapshotProvider;
 
+    /**
+     * Creates a new {@link ReceivedStage}.
+     * 
+     * @param tangle           The {@link Tangle} database used to store/update the transaction
+     * @param txValidator      The {@link TransactionValidator} used to store/update the transaction
+     * @param snapshotProvider The {@link SnapshotProvider} used to store/update the transaction
+     */
     public ReceivedStage(Tangle tangle, TransactionValidator txValidator, SnapshotProvider snapshotProvider) {
         this.txValidator = txValidator;
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
     }
 
+    /**
+     * Stores the given transaction in the database, updates it status
+     * ({@link TransactionValidator#updateStatus(TransactionViewModel)}) and updates the sender.
+     * 
+     * @param ctx the received stage {@link ProcessingContext}
+     * @return a {@link ProcessingContext} which redirects to the {@link BroadcastStage}
+     */
     public ProcessingContext process(ProcessingContext ctx) {
         ReceivedPayload payload = (ReceivedPayload) ctx.getPayload();
         Optional<Neighbor> optNeighbor = payload.getNeighbor();
@@ -35,7 +53,7 @@ public class ReceivedStage {
         } catch (Exception e) {
             log.error("error persisting newly received tx", e);
             optNeighbor.ifPresent(neighbor -> neighbor.getMetrics().incrInvalidTransactionsCount());
-            ctx.setNextStage(TxPipeline.Stage.ABORT);
+            ctx.setNextStage(TransactionProcessingPipeline.Stage.ABORT);
             return ctx;
         }
 
@@ -55,7 +73,7 @@ public class ReceivedStage {
         }
 
         // broadcast the newly saved tx to the other neighbors
-        ctx.setNextStage(TxPipeline.Stage.BROADCAST);
+        ctx.setNextStage(TransactionProcessingPipeline.Stage.BROADCAST);
         ctx.setPayload(new BroadcastPayload(optNeighbor.orElse(null), tvm));
         return ctx;
     }

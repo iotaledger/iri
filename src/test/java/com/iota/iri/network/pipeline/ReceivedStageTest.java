@@ -51,7 +51,7 @@ public class ReceivedStageTest {
 
         Mockito.verify(tvm).setArrivalTime(Mockito.anyByte());
         Mockito.verify(tvm).update(Mockito.any(), Mockito.any(), Mockito.any());
-        assertEquals(TxPipeline.Stage.BROADCAST, ctx.getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.BROADCAST, ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
         assertEquals(neighbor, broadcastPayload.getOriginNeighbor().get());
         assertEquals(tvm, broadcastPayload.getTransactionViewModel());
@@ -69,7 +69,7 @@ public class ReceivedStageTest {
 
         Mockito.verify(tvm, Mockito.never()).setArrivalTime(Mockito.anyByte());
         Mockito.verify(tvm, Mockito.never()).update(Mockito.any(), Mockito.any(), Mockito.any());
-        assertEquals(TxPipeline.Stage.BROADCAST, ctx.getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.BROADCAST, ctx.getNextStage());
         BroadcastPayload broadcastPayload = (BroadcastPayload) ctx.getPayload();
         assertEquals(neighbor, broadcastPayload.getOriginNeighbor().get());
         assertEquals(tvm, broadcastPayload.getTransactionViewModel());

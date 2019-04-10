@@ -4,8 +4,18 @@ import com.iota.iri.network.protocol.Protocol;
 import com.iota.iri.network.protocol.UnknownMessageTypeException;
 import com.iota.iri.network.protocol.message.impl.MessageReaderImpl;
 
+/**
+ * {@link MessageReaderFactory} provides methods to easily construct a {@link MessageReader}.
+ */
 public class MessageReaderFactory {
 
+    /**
+     * Creates a new {@link MessageReader} for the given message type.
+     * 
+     * @param msgType the message type
+     * @return a {@link MessageReader} for the given message type
+     * @throws UnknownMessageTypeException when the message type is nto known
+     */
     public static MessageReader create(Protocol.MessageType msgType) throws UnknownMessageTypeException {
         switch (msgType) {
             case HEADER:
@@ -19,6 +29,13 @@ public class MessageReaderFactory {
         }
     }
 
+    /**
+     * Creates a new {@link MessageReader} with an explicit size to read.
+     *
+     * @param msgType    the message type
+     * @param packetSize the max bytes to read
+     * @return a {@link MessageReader} for the given message type
+     */
     public static MessageReader create(Protocol.MessageType msgType, short packetSize) {
         return new MessageReaderImpl(msgType, packetSize);
     }

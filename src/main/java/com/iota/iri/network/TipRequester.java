@@ -2,7 +2,7 @@ package com.iota.iri.network;
 
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.network.neighbor.Neighbor;
-import com.iota.iri.network.pipeline.TxPipeline;
+import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.utils.thread.ThreadIdentifier;
@@ -13,6 +13,9 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/**
+ * The {@link TipRequester} requests tips from all neighbors in a given interval.
+ */
 public class TipRequester {
 
     private static final Logger log = LoggerFactory.getLogger(TipRequester.class);
@@ -26,6 +29,15 @@ public class TipRequester {
     private TransactionRequester txRequester;
     private LatestMilestoneTracker latestMilestoneTracker;
 
+    /**
+     * Initializes the dependencies.
+     * 
+     * @param neighborRouter         the {@link NeighborRouter} to use
+     * @param tangle                 the {@link Tangle} database to load the latest milestone from
+     * @param latestMilestoneTracker the {@link LatestMilestoneTracker} to gets the latest milestone hash from
+     * @param txRequester            the {@link TransactionRequester} to get the currently number of requested
+     *                               transactions from
+     */
     public void init(NeighborRouter neighborRouter, Tangle tangle, LatestMilestoneTracker latestMilestoneTracker,
             TransactionRequester txRequester) {
         this.neighborRouter = neighborRouter;
@@ -34,11 +46,17 @@ public class TipRequester {
         this.txRequester = txRequester;
     }
 
+    /**
+     * Starts a dedicated thread for the {@link TipRequester} and then starts requesting of tips.
+     */
     public void start() {
-        ThreadUtils.spawnThread(this::run, tipRequesterThreadIdentifier);
+        ThreadUtils.spawnThread(this::requestTips, tipRequesterThreadIdentifier);
     }
 
-    public void run() {
+    /**
+     * Starts the loop to indefinitely request tips from neighbors.
+     */
+    public void requestTips() {
         log.info("tips requester ready");
 
         long lastTime = 0;
@@ -60,7 +78,7 @@ public class TipRequester {
                 long now = System.currentTimeMillis();
                 if ((now - lastTime) > 10000L) {
                     lastTime = now;
-                    TxPipeline txPipeline = neighborRouter.getTxPipeline();
+                    TransactionProcessingPipeline txPipeline = neighborRouter.getTransactionProcessingPipeline();
                     log.info(
                             "toProcess = {} , toBroadcast = {} , toRequest = {} , toReply = {} / totalTransactions = {}",
                             txPipeline.getReceivedStageQueue().size(), txPipeline.getBroadcastStageQueue().size(),
@@ -69,6 +87,8 @@ public class TipRequester {
                 }
 
                 Thread.sleep(TimeUnit.SECONDS.toMillis(5));
+            } catch (InterruptedException e) {
+                break;
             } catch (final Exception e) {
                 log.error("Tips Requester Thread Exception:", e);
             }
@@ -76,7 +96,10 @@ public class TipRequester {
         log.info("tips requester stopped");
     }
 
-    public void shutdown(){
+    /**
+     * Shut downs the {@link TipRequester}.
+     */
+    public void shutdown() {
         shutdown.set(true);
         ThreadUtils.stopThread(tipRequesterThreadIdentifier);
     }

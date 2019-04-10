@@ -3,14 +3,10 @@ package com.iota.iri.network.neighbor.impl;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.neighbor.NeighborMetrics;
 import com.iota.iri.network.neighbor.NeighborState;
-import com.iota.iri.network.pipeline.PreProcessPayload;
-import com.iota.iri.network.pipeline.ProcessingContext;
-import com.iota.iri.network.pipeline.TxPipeline;
+import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.protocol.*;
 import com.iota.iri.network.protocol.message.MessageReader;
 import com.iota.iri.network.protocol.message.MessageReaderFactory;
-import org.apache.commons.lang3.tuple.ImmutablePair;
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,6 +16,12 @@ import java.nio.channels.*;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * {@link NeighborImpl} is an implementation of {@link Neighbor} using a {@link ByteChannel} as the source and
+ * destination of data.
+ * 
+ * @param <T>
+ */
 public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements Neighbor {
 
     private static final Logger log = LoggerFactory.getLogger(NeighborImpl.class);
@@ -29,7 +31,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     }
 
     // next stage in the processing of incoming data
-    private TxPipeline txPipeline;
+    private TransactionProcessingPipeline txPipeline;
 
     // data to be written out to the neighbor
     private BlockingQueue<ByteBuffer> sendQueue = new LinkedBlockingQueue<>();
@@ -56,8 +58,17 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     private MessageReader msgReader;
     private Handshake handshake = new Handshake();
 
+    /**
+     * Creates a new {@link NeighborImpl} using the given channel.
+     * 
+     * @param selector               the {@link Selector} which is associated with passed in channel
+     * @param channel                the channel to use to read and write bytes from/to.
+     * @param hostAddress            the host address (IP address) of the neighbor
+     * @param remoteServerSocketPort the server socket port of the neighbor
+     * @param txPipeline             the transaction processing pipeline to submit newly received transactions to
+     */
     public NeighborImpl(Selector selector, T channel, String hostAddress, int remoteServerSocketPort,
-            TxPipeline txPipeline) {
+            TransactionProcessingPipeline txPipeline) {
         this.hostAddress = hostAddress;
         this.remoteServerSocketPort = remoteServerSocketPort;
         this.selector = selector;
@@ -224,11 +235,21 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
         return metrics;
     }
 
-    public long getMsgsWritten() {
+    /**
+     * Gets the number of messages written.
+     * 
+     * @return the number of messages written
+     */
+    public long getMessagesWrittenCount() {
         return msgsWritten;
     }
 
-    public long getMsgsRead() {
+    /**
+     * Gets the number of messages read.
+     * 
+     * @return the number of messages read
+     */
+    public long getMessagesReadCount() {
         return msgsRead;
     }
 }

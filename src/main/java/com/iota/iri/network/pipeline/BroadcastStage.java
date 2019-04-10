@@ -9,16 +9,32 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.Optional;
 
+/**
+ * The {@link BroadcastStage} takes care of broadcasting newly received transactions to all neighbors except the
+ * neighbor from which the transaction originated from.
+ */
 public class BroadcastStage {
 
     private static final Logger log = LoggerFactory.getLogger(BroadcastStage.class);
 
     private NeighborRouter neighborRouter;
 
+    /**
+     * Creates a new {@link BroadcastStage}.
+     * 
+     * @param neighborRouter The {@link NeighborRouter} instance to use to broadcast
+     */
     public BroadcastStage(NeighborRouter neighborRouter) {
         this.neighborRouter = neighborRouter;
     }
 
+    /**
+     * Extracts the transaction and then broadcasts it to all neighbors. If the transaction originated from a neighbor,
+     * it is not sent to that given neighbor.
+     * 
+     * @param ctx the broadcast stage {@link ProcessingContext}
+     * @return the same ctx as passed in
+     */
     public ProcessingContext process(ProcessingContext ctx) {
         BroadcastPayload payload = (BroadcastPayload) ctx.getPayload();
         Optional<Neighbor> optOriginNeighbor = payload.getOriginNeighbor();

@@ -1,11 +1,8 @@
 package com.iota.iri.network;
 
 import com.iota.iri.conf.NodeConfig;
-import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.neighbor.Neighbor;
-import com.iota.iri.network.neighbor.impl.NeighborImpl;
-import com.iota.iri.network.pipeline.TxPipeline;
+import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.protocol.Protocol;
 import org.junit.Rule;
 import org.junit.Test;
@@ -36,7 +33,7 @@ public class NeighborRouterTest {
     private TransactionRequester transactionRequester;
 
     @Mock
-    private TxPipeline txPipeline;
+    private TransactionProcessingPipeline txPipeline;
 
     @Test
     public void initsWithConfigDefinedNeighbors() throws InterruptedException {

@@ -7,11 +7,19 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.ReadableByteChannel;
 
+/**
+ * A {@link MessageReaderImpl} is a {@link MessageReader}.
+ */
 public class MessageReaderImpl implements MessageReader {
 
     private ByteBuffer msgBuf;
     private Protocol.MessageType messageType;
 
+    /**
+     * Creates a new {@link MessageReaderImpl}.
+     * @param messageType the message type
+     * @param msgSize the message size
+     */
     public MessageReaderImpl(Protocol.MessageType messageType, short msgSize) {
         this.messageType = messageType;
         this.msgBuf = ByteBuffer.allocate(msgSize);

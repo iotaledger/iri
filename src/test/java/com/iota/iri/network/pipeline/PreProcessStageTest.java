@@ -42,7 +42,7 @@ public class PreProcessStageTest {
         // the cache should be checked for the digest of the transaction
         Mockito.verify(recentlySeenBytesCache).get(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX);
 
-        assertEquals(TxPipeline.Stage.HASHING, ctx.getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.HASHING, ctx.getNextStage());
         HashingPayload hashingPayload = (HashingPayload) ctx.getPayload();
 
         assertEquals(neighbor, hashingPayload.getNeighbor().get());
@@ -62,7 +62,7 @@ public class PreProcessStageTest {
         Mockito.when(recentlySeenBytesCache.get(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX)).thenReturn(Hash.NULL_HASH);
 
         stage.process(ctx);
-        assertEquals(TxPipeline.Stage.REPLY, ctx.getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.REPLY, ctx.getNextStage());
         ReplyPayload replyPayload = (ReplyPayload) ctx.getPayload();
         assertEquals(neighbor, replyPayload.getNeighbor());
         assertEquals(Hash.NULL_HASH, replyPayload.getHashOfRequestedTx());
@@ -82,7 +82,7 @@ public class PreProcessStageTest {
         ProcessingContext ctx = new ProcessingContext(null, payload);
         stage.process(ctx);
 
-        assertEquals(TxPipeline.Stage.HASHING, ctx.getNextStage());
+        assertEquals(TransactionProcessingPipeline.Stage.HASHING, ctx.getNextStage());
         HashingPayload hashingPayload = (HashingPayload) ctx.getPayload();
         assertEquals(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX, hashingPayload.getTxBytesDigest().get().longValue());
         assertArrayEquals(SampleTransaction.TRITS_OF_SAMPLE_TX, hashingPayload.getTxTrits());

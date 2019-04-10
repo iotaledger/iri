@@ -5,7 +5,7 @@
 
     <groupId>com.iota</groupId>
     <artifactId>iri</artifactId>
-    <version>1.6.1-RELEASE</version>
+    <version>1.7.0-RELEASE</version>
     <name>IRI</name>
     <description>IOTA Reference Implementation</description>
 

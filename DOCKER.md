@@ -8,7 +8,7 @@ This will get your a running IRI with its API listening on port 14265, no neighb
 
 If you want to use a iri.ini file with the docker container, supposing it's stored under /path/to/conf/iri.ini on your docker host, then pass `-v /path/to/conf:/iri/conf` and add -c /iri/conf/iri.ini as docker run arguments. So for example the `docker run` command above would become:
 
-```docker run -v /path/to/conf:/iri/conf -v /path/to/data:/iri/data iotaledger/iri:v1.6.1-RELEASE -p 14265 -c /iri/conf/iri.ini```
+```docker run -v /path/to/conf:/iri/conf -v /path/to/data:/iri/data iotaledger/iri:v1.7.0-RELEASE -p 14265 -c /iri/conf/iri.ini```
 
 Please refer to the IRI documentation for further command line options and iri.ini options.
 

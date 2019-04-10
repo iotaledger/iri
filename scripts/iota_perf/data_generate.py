@@ -1,10 +1,11 @@
 import string
 from random import SystemRandom
 import random
+import sys
 
 num_name     = 500
 num_name2    = 500
-num_txn      = 1000
+num_txn      = int(sys.argv[1])
 txn_range    = 10
 num_bs_steps = 500
 tx_type      = "TX"

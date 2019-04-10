@@ -22,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  *
  */
 public class TCPNeighbor extends Neighbor {
-    private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
+    private static final Logger log = LoggerFactory.getLogger(TCPNeighbor.class);
     private int tcpPort;
 
     private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(10);

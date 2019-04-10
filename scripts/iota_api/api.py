@@ -102,3 +102,23 @@ def addNeighbors(url,uris):
         "uris":uris
     }
     return API(cmd,url)
+
+def getBlockContent(url,hashes):
+    cmd = {
+        "command": "getBlockContent",
+        "hashes":hashes
+    }
+    return API(cmd,url)
+
+def getDAG(url,dag_type):
+    cmd = {
+        "command": "getDAG",
+        "type":dag_type
+    }
+    return API(cmd,url)
+
+def getTotalOrder(url):
+    cmd = {
+        "command": "getTotalOrder"
+    }
+    return API(cmd,url)

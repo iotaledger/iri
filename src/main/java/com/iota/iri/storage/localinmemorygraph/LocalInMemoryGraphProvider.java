@@ -19,6 +19,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.io.*;
+import com.google.gson.Gson;
 
 import com.iota.iri.utils.*;
 
@@ -399,39 +400,44 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     //FIXME for debug :: for graphviz visualization
-    public void printGraph(HashMap<Hash, Set<Hash>> graph, String k) {
+    public String printGraph(HashMap<Hash, Set<Hash>> graph, String type) {
+        String ret = "";
         try {
-            BufferedWriter writer = null;
-            if(k != null) {
-                writer = new BufferedWriter(new FileWriter(IotaUtils.abbrieviateHash(k,4)));
-            }
-            for (Hash key : graph.keySet()) {
-                for (Hash val : graph.get(key)) {
-                    if (nameMap != null) {
-                        if(k != null) {
-                            writer.write("\"" + nameMap.get(key) + "\"->" +
-                                    "\"" + nameMap.get(val) + "\"\n");
+            if(type.equals("DOT")) {
+                ret += "digraph G{\n";
+                for (Hash key : graph.keySet()) {
+                    for (Hash val : graph.get(key)) {
+                        if (nameMap != null) {
+                            ret += "\"" + nameMap.get(key) + "\"->" +
+                            "\"" + nameMap.get(val) + "\"\n";
                         } else {
-                            System.out.println("\"" + nameMap.get(key) + "\"->" +
-                                    "\"" + nameMap.get(val) + "\"");
-                        }
-                    } else {
-                        if(k != null) {
-                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
-                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n");
-                        } else {
-                            System.out.println("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
-                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"");
+                            ret += "\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
+                            "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n";
                         }
                     }
                 }
-            }
-            if(k != null) {
-                writer.close();
+                ret += "}\n";
+            } else if (type.equals("JSON")) {
+                Gson gson = new Gson();
+                HashMap<String, Set<String>> toPrint = new HashMap<String, Set<String>>();
+                for(Hash h : graph.keySet()) {
+                    for(Hash s : graph.get(h)) {
+                        String from = Converter.trytes(h.trits());
+                        String to = Converter.trytes(s.trits());
+                        if(!toPrint.containsKey(from)) {
+                            toPrint.put(from, new HashSet<>());
+                        }
+                        Set<String> st = toPrint.get(from);
+                        st.add(to);
+                        toPrint.put(from, st);
+                    }
+                }
+                ret = gson.toJson(toPrint);
             }
         } catch(Exception e) {
             e.printStackTrace();
         }
+        return ret;
     }
 
 

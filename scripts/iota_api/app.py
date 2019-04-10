@@ -239,11 +239,47 @@ def add_neighbors():
     if req_json is None:
         return 'error'
     if not req_json.has_key(u'uris'):
-        print("[ERROR]Uris is needed.", file=sys.stderr)
+        print("[ERROR] Uris are needed.", file=sys.stderr)
         return 'error'
     uris = req_json[u'uris']
     resp = cache.add_neighbors(uris)
     return resp
+
+@app.route('/get_block_content', methods=['GET'])
+def get_block_content():
+    req_json = request.get_json()
+    if req_json is None:
+        return 'error'
+    if not req_json.has_key(u'hashes'):
+        print("[ERROR] Hashes are needed.", file=sys.stderr)
+        return 'error'
+    hashes = req_json[u'hashes']
+    resp = cache.get_block_content(hashes)
+    print(resp, file=sys.stderr)
+    ret_list = [x.encode('ascii') for x in resp[u'trytes']]
+    return str(ret_list) 
+
+@app.route('/get_dag', methods=['GET'])
+def get_dag():
+    req_json = request.get_json()
+    if req_json is None:
+        return 'error'
+    if not req_json.has_key(u'type'):
+        print("[ERROR] Hashes are needed.", file=sys.stderr)
+        return 'error'
+    dag_type = req_json[u'type']
+    resp = cache.get_dag(dag_type)
+    if req_json.has_key(u'file_save'):
+        file_save = req_json[u'file_save'].encode("ascii")
+        f = open(file_save, 'w')
+        f.write(resp[u'dag'])
+        f.close()
+    return resp[u'dag'] 
+
+@app.route('/get_total_order', methods=['GET'])
+def get_total_order():
+    resp = cache.get_total_order()
+    return resp[u'totalOrder']
 
 if __name__ == '__main__':
     get_cache()

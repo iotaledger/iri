@@ -323,7 +323,17 @@ public class API {
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
                     return getTrytesStatement(hashes);
                 }
-
+                case "getBlockContent": {
+                    final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
+                    return getBlockContentStatement(hashes);
+                }
+                case "getDAG": {
+                    String type = getParameterAsString(request, "type");
+                    return getDAGStatement(type);
+                }
+                case "getTotalOrder": {
+                    return getTotalOrderStatement();
+                }
                 case "interruptAttachingToTangle": {
                     return interruptAttachingToTangleStatement();
                 }
@@ -541,6 +551,12 @@ public class API {
         return result;
     }
 
+    private String getParameterAsString(Map<String, Object> request, String paramName) throws ValidationException {
+        validateParamExists(request, paramName);
+        String result = (String) request.get(paramName);
+        return result;
+    }
+
     private void validateTrytes(String paramName, int size, String result) throws ValidationException {
         if (!validTrytes(result,size,ZERO_LENGTH_NOT_ALLOWED)) {
             throw new ValidationException("Invalid " + paramName + " input");
@@ -627,6 +643,64 @@ public class API {
             return ErrorResponse.create(overMaxErrorMessage);
         }
         return GetTrytesResponse.create(elements);
+    }
+
+    /**
+      * Returns the raw transaction data (trytes) of a specific transaction.
+      * These trytes can then be easily converted into the actual transaction object.
+      * See utility functions for more details.
+      *
+      * @param hashes List of transaction hashes you want to get trytes from.
+      * @return {@link com.iota.iri.service.dto.GetTrytesResponse}
+      **/
+      private synchronized AbstractResponse getBlockContentStatement(List<String> hashes) throws Exception {
+        final List<String> elements = new LinkedList<>();
+        for (final String hash : hashes) {
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(hash));
+            if (transactionViewModel != null) {
+                byte[] sigTrits = transactionViewModel.getSignature();
+                String sigTrytes = Converter.trytes(sigTrits);
+                String txnInfo = Converter.trytesToAscii(sigTrytes);
+                Pattern pattern = Pattern.compile("\\{.*\\}");
+                Matcher matcher = pattern.matcher(txnInfo);
+                if (matcher.find()) {
+                    String info = matcher.group(0);
+                    elements.add(info);
+                }
+            }
+        }
+        if (elements.size() > maxGetTrytes){
+            return ErrorResponse.create(overMaxErrorMessage);
+        }
+        return GetTrytesResponse.create(elements);
+    }
+
+    /**
+      * Returns the raw transaction data (trytes) of a specific transaction.
+      * These trytes can then be easily converted into the actual transaction object.
+      * See utility functions for more details.
+      *
+      * @param hashes List of transaction hashes you want to get trytes from.
+      * @return {@link com.iota.iri.service.dto.GetTrytesResponse}
+      **/
+      private synchronized AbstractResponse getDAGStatement(String type) throws Exception {
+        LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+        String graph = prov.printGraph(prov.getGraph(), type);
+        return GetDAGResponse.create(graph);
+    }
+
+    /**
+      * Returns the raw transaction data (trytes) of a specific transaction.
+      * These trytes can then be easily converted into the actual transaction object.
+      * See utility functions for more details.
+      *
+      * @param hashes List of transaction hashes you want to get trytes from.
+      * @return {@link com.iota.iri.service.dto.GetTrytesResponse}
+      **/
+      private synchronized AbstractResponse getTotalOrderStatement() throws Exception {
+        LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+        List<Hash> order = prov.totalTopOrder();
+        return GetTotalOrderResponse.create(order);
     }
 
     private static int counterGetTxToApprove = 0;

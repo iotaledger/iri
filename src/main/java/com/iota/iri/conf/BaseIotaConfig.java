@@ -1,18 +1,19 @@
 package com.iota.iri.conf;
 
-import com.iota.iri.IRI;
-import com.iota.iri.utils.IotaUtils;
-
-import java.util.ArrayList;
-import java.util.List;
-
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-
+import com.iota.iri.IRI;
+import com.iota.iri.crypto.SpongeFactory;
+import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
+import com.iota.iri.utils.IotaUtils;
 import org.apache.commons.lang3.ArrayUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /*
   Note: the fields in this class are being deserialized from Jackson so they must follow Java Bean convention.
@@ -590,6 +591,11 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public int getMaxMilestoneIndex() {
+        return Defaults.MAX_MILESTONE_INDEX;
+    }
+
+    @Override
     public int getNumberOfKeysInMilestone() {
         return Defaults.NUM_KEYS_IN_MILESTONE;
     }
@@ -694,8 +700,18 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public String getCoordinator() {
+    public Hash getCoordinator() {
         return Defaults.COORDINATOR_ADDRESS;
+    }
+
+    @Override
+    public int getCoordinatorSecurityLevel() {
+        return Defaults.COORDINATOR_SECURITY_LEVEL;
+    }
+
+    @Override
+    public SpongeFactory.Mode getCoordinatorSignatureMode() {
+        return Defaults.COORDINATOR_SIGNATURE_MODE;
     }
 
     @Override
@@ -822,8 +838,12 @@ public abstract class BaseIotaConfig implements IotaConfig {
         int POW_THREADS = 0;
 
         //Coo
-        String COORDINATOR_ADDRESS =
-                "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU";
+        Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
+                        "EQSAUZXULTTYZCLNJNTXQTQHOMOFZERHTCGTXOLTVAHKSA9OGAZDEKECURBRIXIJWNPFCQIOVFVVXJVD9");
+        int COORDINATOR_SECURITY_LEVEL = 2;
+        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.KERL;
+        int NUM_KEYS_IN_MILESTONE = 23;
+        int MAX_MILESTONE_INDEX = 1 << NUM_KEYS_IN_MILESTONE;
 
         //Snapshot
         boolean LOCAL_SNAPSHOTS_ENABLED = true;
@@ -844,9 +864,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
                 "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt " +
                         "/previousEpochsSpentAddresses3.txt";
-        long GLOBAL_SNAPSHOT_TIME = 1545469620;
-        int MILESTONE_START_INDEX = 933_210;
-        int NUM_KEYS_IN_MILESTONE = 20;
+        long GLOBAL_SNAPSHOT_TIME = 1554904800;
+        int MILESTONE_START_INDEX = 1050000;
         int MAX_ANALYZED_TXS = 20_000;
+
     }
 }

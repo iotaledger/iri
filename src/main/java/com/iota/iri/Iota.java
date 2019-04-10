@@ -95,6 +95,8 @@ public class Iota {
 
     public final TransactionRequesterWorkerImpl transactionRequesterWorker;
 
+    public final BundleValidator bundleValidator;
+
     public final Tangle tangle;
     public final TransactionValidator transactionValidator;
     public final TipsSolidifier tipsSolidifier;
@@ -136,6 +138,7 @@ public class Iota {
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code
+        bundleValidator = new BundleValidator();
         tangle = new Tangle();
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, snapshotProvider);
@@ -198,22 +201,22 @@ public class Iota {
         //because we check whether spent addresses data exists
         snapshotProvider.init(configuration);
         spentAddressesProvider.init(configuration);
-        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, configuration);
+        spentAddressesService.init(tangle, snapshotProvider, spentAddressesProvider, bundleValidator, configuration);
         snapshotService.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, configuration);
         if (localSnapshotManager != null) {
             localSnapshotManager.init(snapshotProvider, snapshotService, transactionPruner, configuration);
         }
-        milestoneService.init(tangle, snapshotProvider, snapshotService, configuration);
+        milestoneService.init(tangle, snapshotProvider, snapshotService, bundleValidator, configuration);
         latestMilestoneTracker.init(tangle, snapshotProvider, milestoneService, milestoneSolidifier,
                 configuration);
         latestSolidMilestoneTracker.init(tangle, snapshotProvider, milestoneService, ledgerService,
                 latestMilestoneTracker);
         seenMilestonesRetriever.init(tangle, snapshotProvider, transactionRequester);
         milestoneSolidifier.init(snapshotProvider, transactionValidator);
-        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService);
+        ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
+                bundleValidator);
         if (transactionPruner != null) {
-            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, tipsViewModel, configuration)
-                    .restoreState();
+            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, tipsViewModel, configuration);
         }
         transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }

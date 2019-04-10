@@ -196,7 +196,7 @@ public class IXI {
 
         if (matcher.find()) {
             Map<String, CallableRequest<AbstractResponse>> ixiMap = ixiAPI.get(matcher.group(1));
-            if (ixiMap != null) {
+            if (ixiMap != null && ixiMap.containsKey(matcher.group(2))) {
                 return ixiMap.get(matcher.group(2)).call(request);
             }
         }

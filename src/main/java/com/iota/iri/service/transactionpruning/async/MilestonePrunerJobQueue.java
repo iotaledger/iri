@@ -111,21 +111,17 @@ public class MilestonePrunerJobQueue implements JobQueue<MilestonePrunerJob> {
     public void processJobs() throws TransactionPruningException {
         MilestonePrunerJob currentJob;
         while (!Thread.currentThread().isInterrupted() && (currentJob = jobs.peek()) != null) {
-            try {
-                currentJob.process();
+            currentJob.process();
 
-                youngestFullyCleanedMilestoneIndex = currentJob.getTargetIndex();
+            youngestFullyCleanedMilestoneIndex = currentJob.getTargetIndex();
 
-                // we always leave the last job in the queue to be able to "serialize" the queue status and allow
-                // to skip already processed milestones even when IRI restarts
-                if (jobs.size() == 1) {
-                    break;
-                }
-
-                jobs.poll();
-            } finally {
-                transactionPruner.saveState();
+            // we always leave the last job in the queue to be able to "serialize" the queue status and allow
+            // to skip already processed milestones even when IRI restarts
+            if (jobs.size() == 1) {
+                break;
             }
+
+            jobs.poll();
         }
     }
 

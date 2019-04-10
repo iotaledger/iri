@@ -4,7 +4,6 @@ import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.controllers.AddressViewModel;
 import com.iota.iri.controllers.MilestoneViewModel;
 import com.iota.iri.controllers.TransactionViewModel;
-import com.iota.iri.crypto.SpongeFactory;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
@@ -140,7 +139,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
         this.milestoneService = milestoneService;
         this.milestoneSolidifier = milestoneSolidifier;
 
-        coordinatorAddress = HashFactory.ADDRESS.create(config.getCoordinator());
+        coordinatorAddress = config.getCoordinator();
 
         bootstrapLatestMilestoneValue();
 
@@ -201,7 +200,7 @@ public class LatestMilestoneTrackerImpl implements LatestMilestoneTracker {
                     return true;
                 }
 
-                switch (milestoneService.validateMilestone(transaction, milestoneIndex, SpongeFactory.Mode.CURLP27, 1)) {
+                switch (milestoneService.validateMilestone(transaction, milestoneIndex)) {
                     case VALID:
                         if (milestoneIndex > latestMilestoneIndex) {
                             setLatestMilestone(transaction.getHash(), milestoneIndex);

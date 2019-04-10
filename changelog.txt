@@ -1,3 +1,7 @@
+1.7.0
+    - refactor milestone signature parameters to be configurable (#1322)
+    - migration from legacy coordinator to compass
+
 1.6.1
     - Fix: Db exists() method optimization (#1338)
     - Fix: Do not persist pruner state (#1342)

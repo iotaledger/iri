@@ -933,10 +933,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Coo
         Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
-                        "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
-        int COORDINATOR_SECURITY_LEVEL = 1;
-        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
-        int NUM_KEYS_IN_MILESTONE = 20;
+                        "EQSAUZXULTTYZCLNJNTXQTQHOMOFZERHTCGTXOLTVAHKSA9OGAZDEKECURBRIXIJWNPFCQIOVFVVXJVD9");
+        int COORDINATOR_SECURITY_LEVEL = 2;
+        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.KERL;
+        int NUM_KEYS_IN_MILESTONE = 23;
         int MAX_MILESTONE_INDEX = 1 << NUM_KEYS_IN_MILESTONE;
 
         //Snapshot
@@ -958,8 +958,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
                 "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt " +
                         "/previousEpochsSpentAddresses3.txt";
-        long GLOBAL_SNAPSHOT_TIME = 1545469620;
-        int MILESTONE_START_INDEX = 933_210;
+        long GLOBAL_SNAPSHOT_TIME = 1554901200;
+        int MILESTONE_START_INDEX = 1050000;
         int MAX_ANALYZED_TXS = 20_000;
 
     }

@@ -48,7 +48,7 @@ public class SnapshotProviderImpl implements SnapshotProvider {
     /**
      * Snapshot index that is used to verify the builtin snapshot signature.
      */
-    private static final int SNAPSHOT_INDEX = 10;
+    private static final int SNAPSHOT_INDEX = 12;
 
     /**
      * Logger for this class allowing us to dump debug and status messages.

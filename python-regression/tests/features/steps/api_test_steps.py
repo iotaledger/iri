@@ -50,7 +50,6 @@ def api_method_is_called(step, api_call, node_name):
     api = api_utils.prepare_api_call(node_name)
     response = api_utils.fetch_call(api_call, api, options)
 
-    assert type(response) is dict, 'There may be something wrong with the response format: {}'.format(response)
     world.responses[api_call] = {}
     world.responses[api_call][node_name] = response
     return response
@@ -227,3 +226,5 @@ def check_node_sync(step, node, milestone):
         "Latest Milestone {} on {} is not the expected {}".format(latestMilestone, node, milestone)
     assert latestSolidMilestone == int(milestone), \
         "Latest Solid Milestone {} on {} is not the expected {}".format(latestSolidMilestone, node, milestone)
+
+

@@ -131,7 +131,10 @@ def fetch_call(api_call, api, options):
         'interruptAttachingToTangle': api.interrupt_attaching_to_tangle,
     }
 
-    response = call_list[api_call](**options)
+    try:
+        response = call_list[api_call](**options)
+    except ValueError:
+        response = None
 
     return response
 

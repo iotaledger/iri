@@ -64,3 +64,14 @@ Feature: Test Bootstrapping With LS
     Then the response for "checkConsistency" should return with:
       |keys                       |values                   |type             |
       |state                      |True                     |bool             |
+
+
+  Scenario: Old transactions are pruned
+    Takes a node with a large db and transaction pruning enabled, and checks to make sure that the transactions below
+    the pruning depth are no longer present.
+
+    Given "checkConsistency" is called on "nodeD" with:
+      |keys                       |values                   |type             |
+      |tails                      |LS_PRUNED_TRANSACTIONS   |staticValue      |
+
+    Then the response for "checkConsistency" should return null

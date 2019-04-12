@@ -617,4 +617,15 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         // TODO
         return -1;
     }
+
+    @Override
+    public Stack<Hash> getAncestors() {
+        //TODO
+        return null;
+    }
+
+    @Override
+    public void storeAncestors(Stack<Hash> ancestors) {
+        //TODO
+    }
 }

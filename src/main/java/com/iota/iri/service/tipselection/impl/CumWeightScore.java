@@ -5,7 +5,7 @@ import java.util.*;
 
 public class CumWeightScore
 {
-    public static HashMap<Hash, Double> update(HashMap<Hash, Set<Hash>> graph, HashMap<Hash, Double> score, Hash newVet) {
+    public static HashMap<Hash, Double> update(Map<Hash, Set<Hash>> graph, HashMap<Hash, Double> score, Hash newVet) {
 
         HashMap<Hash, Double> ret = score;
         LinkedList<Hash> queue = new LinkedList<>();
@@ -55,7 +55,7 @@ public class CumWeightScore
         return ret;
     }
 
-    public static HashMap<Hash, Double> compute(HashMap<Hash, Set<Hash>> revGraph, HashMap<Hash, Set<Hash>> graph, Hash genesis) {
+    public static HashMap<Hash, Double> compute(Map<Hash, Set<Hash>> revGraph, Map<Hash, Set<Hash>> graph, Hash genesis) {
         HashMap<Hash, Double> ret = new HashMap<>();
         LinkedList<Hash> queue = new LinkedList<>();
 

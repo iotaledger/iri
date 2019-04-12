@@ -17,6 +17,9 @@ import org.apache.commons.collections4.CollectionUtils;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.io.*;
 
@@ -25,15 +28,15 @@ import com.iota.iri.utils.*;
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
     private HashMap<Hash, Double> score;
     private HashMap<Hash, Double> parentScore;
-    private HashMap<Hash, Set<Hash>> graph;
+    private Map<Hash, Set<Hash>> graph;
     private Map<Hash, Hash> parentGraph;
-    private HashMap<Hash, Set<Hash>> revGraph;
-    private HashMap<Hash, Set<Hash>> parentRevGraph;
-    private HashMap<Hash, Integer> degs;
+    private Map<Hash, Set<Hash>> revGraph;
+    private Map<Hash, Set<Hash>> parentRevGraph;
+    private Map<Hash, Integer> degs;
     private HashMap<Integer, Set<Hash>> topOrder;
     private HashMap<Integer, Set<Hash>> topOrderStreaming;
 
-    private HashMap<Hash, Integer> lvlMap;
+    private Map<Hash, Integer> lvlMap;
     private HashMap<Hash, String> nameMap;
     private int totalDepth;
     private Tangle tangle;
@@ -41,6 +44,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     private List<Hash> pivotChain;
 
     private boolean available;
+
+    private Stack<Hash> ancestors;
+    private Integer ancestorGeneration = 10;//72000;
+    private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
     public LocalInMemoryGraphProvider(String dbDir, Tangle tangle) {
         this.tangle = tangle;
@@ -78,7 +85,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     public void init() throws Exception {
         try {
             buildGraph();
-//            buildPivotChain();
+            service.scheduleAtFixedRate(new AncestorEngine(), 10, 30, TimeUnit.SECONDS);
         } catch (NullPointerException e) {
             ; // initialization failed because tangle has nothing
         }
@@ -220,11 +227,29 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     // TODO for public  :: Get the graph using the BFS method
     public void buildGraph() {
         try {
+            Stack<Hash> ancestors = tangle.getAncestors();
+            Hash ancestor = null;
+            if (null != ancestors) {
+                ancestor = ancestors.peek();
+            }
+            Boolean start = false;
+
             Pair<Indexable, Persistable> one = tangle.getFirst(Transaction.class, TransactionHash.class);
             while (one != null && one.low != null) {
                 TransactionViewModel model = new TransactionViewModel((Transaction) one.hi, (TransactionHash) one.low);
                 Hash trunk = model.getTrunkTransactionHash();
                 Hash branch = model.getBranchTransactionHash();
+
+                //from last ancestor
+                if (ancestor != null ) {
+                    if (ancestor.equals(model.getHash()) && !start){
+                        start = true;
+                    }
+                    if (!start) {
+                        one = tangle.next(Transaction.class, one.low);
+                        continue;
+                    }
+                }
 
                 // approve direction
                 if (graph.get(model.getHash()) == null) {
@@ -266,6 +291,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 one = tangle.next(Transaction.class, one.low);
             }
             computeToplogicalOrder();
+            buildPivotChain();
         } catch (NullPointerException e) {
             throw e;
         } catch (Exception e) {
@@ -399,7 +425,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     //FIXME for debug :: for graphviz visualization
-    public void printGraph(HashMap<Hash, Set<Hash>> graph, String k) {
+    public void printGraph(Map<Hash, Set<Hash>> graph, String k) {
         try {
             BufferedWriter writer = null;
             if(k != null) {
@@ -644,6 +670,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public Hash getGenesis() {
         try {
+            if (ancestors != null && !ancestors.empty()) {
+                return ancestors.peek();
+            }
             for (Hash key : parentGraph.keySet()) {
                 if (!parentGraph.keySet().contains(parentGraph.get(key))) {
                     return key;
@@ -737,6 +766,16 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return ret;
     }
 
+    @Override
+    public Stack<Hash> getAncestors() {
+        return ancestors;
+    }
+
+    @Override
+    public void storeAncestors(Stack<Hash> ancestors) {
+        this.ancestors = ancestors;
+    }
+
     public double getScore(Hash hash) {
         return score.get(hash);
     }
@@ -745,7 +784,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return graph.containsKey(hash);
     }
 
-    public HashMap<Hash, Set<Hash>> getGraph() {
+    public Map<Hash, Set<Hash>> getGraph() {
         return this.graph;
     }
 
@@ -753,8 +792,227 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return this.parentGraph;
     }
 
-    public HashMap<Hash, Set<Hash>> getRevParentGraph() {
+    public Map<Hash, Set<Hash>> getRevParentGraph() {
         return this.parentRevGraph;
+    }
+
+    class AncestorEngine implements Runnable {
+        @Override
+        public void run() {
+            try {
+                refreshGraph();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        //入参，全图 + 上一个ancestor
+        public Hash getAncestor() {
+            if (null == parentGraph) {
+                return null;
+            }
+            Iterator<Hash> iterator = parentGraph.keySet().iterator();
+            Double maxScore = -1d;
+            Hash maxScoreNode = null;
+            while (iterator.hasNext()) {
+                Hash node = iterator.next();
+                if (pivotChain.contains(node)) {
+                    continue;
+                }
+                Double score = parentScore.get(node);
+                if (score > maxScore) {
+                    maxScore = score;
+                    maxScoreNode = node;
+                }
+            }
+            if (maxScoreNode == null) {
+                return null;
+            }
+
+            Double minScore = 1000000000000000d;
+            Hash minScoreNode = null;
+
+            for (Hash mainChainNode : pivotChain) {
+                double mainChainNodeScore = parentScore.get(mainChainNode);
+                if (mainChainNodeScore < (maxScore + new Double(ancestorGeneration))) {
+                    continue;
+                }
+                if (minScore > mainChainNodeScore) {
+                    minScore = mainChainNodeScore;
+                    minScoreNode = mainChainNode;
+                }
+            }
+            return minScoreNode;
+        }
+
+        void refreshGraph() {
+            System.out.println("=========begin to reload ancestor node==========");
+            long begin = System.currentTimeMillis();
+            Stack<Hash> ancestors = tangle.getAncestors();
+            Hash curAncestor = getAncestor();
+            if (curAncestor == null) {
+                curAncestor = getGenesis();
+            }
+            printAllGraph("before", curAncestor);
+            if (curAncestor == null) {
+                System.out.println("=========no ancestor node,cost:" + (System.currentTimeMillis() - begin) + "ms ==========");
+                return;
+            }
+            if (CollectionUtils.isNotEmpty(ancestors) && ancestors.peek().equals(curAncestor)) {
+                System.out.println("=========no ancestor node to reload,cost:" + (System.currentTimeMillis() - begin) + "ms ==========");
+                return;
+            }
+
+            ancestors = reloadAncestor(ancestors, curAncestor);
+            tangle.storeAncestors(ancestors);
+//
+            subGraph(curAncestor);
+
+//            printAllGraph("after", curAncestor);
+        }
+
+        private void subGraph(Hash curAncestor) {
+            graph = getSubConfirmGraph(graph, curAncestor);
+            revGraph = getSubGraph(revGraph, curAncestor);
+
+            parentGraph = getSubConfirmChain(parentGraph, curAncestor);
+            parentRevGraph = getSubGraph(parentRevGraph, curAncestor);
+
+            degs = subMap(degs, graph);
+            degs = resetAncestor(degs,curAncestor);
+            topOrder = new HashMap<>();
+            computeToplogicalOrder();
+
+            lvlMap = subMap(lvlMap, graph);
+
+            score = getSubScore(score, revGraph) ;
+            parentScore = getSubScore(parentScore, parentRevGraph);
+
+            buildPivotChain();
+        }
+
+        /**
+         * reset ancestor's parent level to 0
+         * @param degs
+         * @param curAncestor
+         * @return
+         */
+        private Map<Hash, Integer> resetAncestor(Map<Hash, Integer> degs, Hash curAncestor) {
+            totalDepth = 0;
+            graph.get(curAncestor).forEach(e -> degs.put(e,0));
+            return degs;
+        }
+
+        private HashMap<Hash, Double> getSubScore(HashMap<Hash, Double> score, Map<Hash, Set<Hash>> graph) {
+            if (graph == null){
+                return score;
+            }
+            HashMap<Hash, Double> subScore = new HashMap<>();
+            graph.values().stream().flatMap(Collection::stream).forEach(
+                    v -> subScore.put(v, score.get(v))
+            );
+            return subScore;
+        }
+
+        private Map<Hash, Integer> subMap(Map<Hash, Integer> degs, Map<Hash, Set<Hash>> graph) {
+            if (null == graph) {
+                return degs;
+            }
+            Map<Hash, Integer> subDegs = new HashMap<>();
+            graph.values().stream().flatMap(Collection::stream).forEach(v -> subDegs.put(v, degs.get(v)));
+            return subDegs;
+        }
+
+        private void printAllGraph(String tag, Hash ancestor) {
+            System.out.println("======" + tag + "=======");
+            printGraph(graph, null);
+            System.out.println("-----------");
+//            printRevGraph(revGraph);
+//            System.out.println("-----------");
+//            if (parentGraph != null) {
+//                parentGraph.entrySet().forEach(e -> System.out.println(String.format("\"%s\"->\"%s\"", IotaUtils.abbrieviateHash(e.getKey(), 4), IotaUtils.abbrieviateHash(e.getValue(), 4))));
+//            }
+//            System.out.println("-----------");
+//            printRevGraph(parentRevGraph);
+//            System.out.println("-----------");
+            CollectionUtils.emptyIfNull(ancestors).stream().forEach(a -> System.out.println(IotaUtils.abbrieviateHash(a, 4)));
+//            System.out.println("-----------");
+//            System.out.println(ancestor);
+            System.out.println("======" + tag + "=======");
+        }
+
+        private Stack<Hash> reloadAncestor(Stack<Hash> ancestors, Hash curAncestor) {
+            if (ancestors == null) {
+                ancestors = new Stack<>();
+            }
+            ancestors.push(curAncestor);
+            return ancestors;
+        }
+
+        private Map<Hash, Set<Hash>> getSubGraph(Map<Hash, Set<Hash>> g, Hash b) {
+            Map<Hash, Set<Hash>> subGraph = new ConcurrentHashMap<>();
+            Stack<Hash> stack = new Stack<>();
+            stack.push(b);
+            while (!stack.isEmpty()) {
+                Hash h = stack.pop();
+                Set<Hash> subNode = g.get(h);
+                if (null != subNode) {
+                    subGraph.put(h, g.get(h));
+                    subNode.forEach(e -> stack.push(e));
+                }
+            }
+            //放入触角
+            g.entrySet().stream().filter(entry -> entry.getValue().contains(b)).forEach(entry -> {
+                subGraph.put(entry.getKey(), new HashSet() {{
+                    add(b);
+                }});
+            });
+            return subGraph;
+        }
+
+        private Map<Hash, Set<Hash>> getSubConfirmGraph(Map<Hash, Set<Hash>> graph, Hash b) {
+            Map<Hash, Set<Hash>> subGraph = new ConcurrentHashMap<>();
+            Stack<Hash> stack = new Stack<>();
+            stack.push(b);
+            while (!stack.isEmpty()) {
+                Hash h = stack.pop();
+                graph.entrySet().stream().filter(entry -> entry.getValue().contains(h)).forEach(entry -> {
+                    if (subGraph.get(entry.getKey()) == null) {
+                        subGraph.put(entry.getKey(), new HashSet<>());
+                    }
+                    subGraph.get(entry.getKey()).add(h);
+                    stack.push(entry.getKey());
+                });
+            }
+
+            //放入触角
+            graph.entrySet().stream().filter(entry -> entry.getKey().equals(b)).forEach(entry -> {
+                subGraph.put(b, entry.getValue());
+            });
+            return subGraph;
+        }
+
+        private Map<Hash, Hash> getSubConfirmChain(Map<Hash, Hash> graph, Hash curAncestor) {
+            //reverse map
+            if (graph == null || graph.isEmpty()) {
+                return null;
+            }
+            Map<Hash, Hash> subGraph = new ConcurrentHashMap<>();
+            Stack<Hash> stack = new Stack<>();
+            stack.push(curAncestor);
+            while (!stack.empty()) {
+                Hash h = stack.pop();
+                graph.entrySet().stream().filter(e -> e.getValue().equals(h)).forEach(e -> {
+                    subGraph.put(e.getKey(), h);
+                    stack.push(e.getKey());
+                });
+            }
+            //补充触角
+            if (graph.get(curAncestor) != null) {
+                subGraph.put(curAncestor, graph.get(curAncestor));
+            }
+            return subGraph;
+        }
     }
 }
 

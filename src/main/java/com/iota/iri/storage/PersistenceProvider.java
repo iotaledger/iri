@@ -3,10 +3,7 @@ package com.iota.iri.storage;
 import com.iota.iri.model.Hash;
 import com.iota.iri.utils.Pair;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Created by paul on 3/2/17 for iri.
@@ -71,4 +68,8 @@ public interface PersistenceProvider {
     Set<Hash> getChild(Hash block);
 
     int getNumOfTips();
+
+    Stack<Hash> getAncestors();
+
+    void storeAncestors(Stack<Hash> ancestors);
 }

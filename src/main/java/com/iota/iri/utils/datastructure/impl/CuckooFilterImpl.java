@@ -12,6 +12,11 @@ import java.util.BitSet;
  * This class implements the basic contract of the {@link CuckooFilter}.
  */
 public class CuckooFilterImpl implements CuckooFilter {
+    
+    private static int CUR_INDEX = 0;
+
+    int index = CUR_INDEX ++;
+    
     /**
      * The amount of times we try to kick elements when inserting before we consider the index to be too full.
      */
@@ -143,14 +148,20 @@ public class CuckooFilterImpl implements CuckooFilter {
      *
      */
     @Override
-    public void update(CuckooBucket bucket) throws IllegalArgumentException {
+    public void update(int index, BitSet bits) throws IllegalArgumentException {
         int amountInBucket = bucketSize;
-        if (bucket.bucketBits.length()  / amountInBucket > 0) {
-            
+        if (bits.length() % fingerPrintSize != 0) {
+            throw new IllegalArgumentException("Provided bits do not match fingerprint scheme");
+        } else if (bits.length() % fingerPrintSize > amountInBucket) {
+            throw new IllegalArgumentException("Provided fingerprint data will overflow the bucket");
+        } else if (index > tableSize * 0.955) {
+            throw new IllegalArgumentException("Provided bucket exceeds filter size");
+        } else if (false) {
+            // Can we recover input in any case when expected input does not match given?
         }
         
         for (int i=0; i < amountInBucket; i++) {
-            cuckooFilterTable.set(bucket.bucketIndex.getValue(), i, bucket.bucketBits.get(
+            cuckooFilterTable.set(index, i, bits.get(
                     fingerPrintSize * i, 
                     fingerPrintSize * (i + 1)
                 ));
@@ -605,5 +616,10 @@ public class CuckooFilterImpl implements CuckooFilter {
         public CuckooFilterTable delete(int bucketIndex, int slotIndex) {
             return set(bucketIndex, slotIndex, null);
         }
+    }
+    
+    @Override
+    public String toString() {
+        return index +" ";
     }
 }

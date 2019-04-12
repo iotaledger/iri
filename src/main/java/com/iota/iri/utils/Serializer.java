@@ -41,10 +41,13 @@ public class Serializer {
         return getInteger(bytes, 0);
     }
     public static int getInteger(byte[] bytes, int start) {
+        return getInteger(bytes, start, Integer.BYTES);
+    }
+    
+    public static int getInteger(byte[] bytes, int start, int length) {
         if(bytes == null) {
             return 0;
         }
-        int length = Integer.BYTES;
         int res = 0;
         for (int i=0; i< length;i++) {
             res |= (bytes[start + i] & 0xFFL) << ((length-i-1) * 8);

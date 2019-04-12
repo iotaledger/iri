@@ -32,5 +32,5 @@ public interface PrunedTransactionProvider {
      * @param transactionHashes The transactions we want to mark
      * @throws PrunedTransactionException If the provider fails to add a transaction
      */
-    void AddTransactionBatch(Collection<Hash> transactionHashes) throws PrunedTransactionException;
+    void addTransactionBatch(Collection<Hash> transactionHashes) throws PrunedTransactionException;
 }

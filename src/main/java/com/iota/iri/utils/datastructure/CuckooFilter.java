@@ -1,5 +1,7 @@
 package com.iota.iri.utils.datastructure;
 
+import java.util.BitSet;
+
 import com.iota.iri.model.persistables.CuckooBucket;
 
 /**
@@ -90,8 +92,9 @@ public interface CuckooFilter {
      * Update a part of this filter with the bucket information supplied.
      * Discards any previous data inside this bucket.
      * 
-     * @param bucket the bucket data we use to update the filter
+     * @param index The index of the bucket we are updating
+     * @param bits the bucket data we use to update the filter
      * @throws IllegalArgumentException when the bucket does not contain data which is valid for this filter
      */
-    void update(CuckooBucket bucket) throws IllegalArgumentException ;
+    void update(int index, BitSet bits) throws IllegalArgumentException ;
 }

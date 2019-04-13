@@ -2,6 +2,7 @@ import NotFound from './views/404.vue'
 import Home from './views/Home.vue'
 import Approve from './views/nav1/Approve.vue'
 import Form from './views/nav1/LinkMap.vue'
+import DagDB from './views/nav1/DagDB'
 let routes = [
     {
         path: '/404',
@@ -17,6 +18,7 @@ let routes = [
         children: [
             { path: '/approve', component: Approve, name: 'Approve' },
             { path: '/linkMap', component: Form, name: 'Link-Map' },
+            { path: '/dagDB', component: DagDB, name: 'Dag-DB' },
         ]
     },
     {

@@ -58,7 +58,6 @@
                         this.showResultMessage(scoreList);
                         this.drawRelationMap(relationMap);
                     }
-
                 }).catch((error) => {
                     console.error(error);
                 });
@@ -143,7 +142,6 @@
             }
         }
     };
-
 </script>
 <style>
     .form-lable {

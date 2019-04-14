@@ -38,8 +38,7 @@ public class PrunedTransactionProviderImplTest {
         Mockito.when(config.getPrunedTransactionsDbPath()).thenReturn(dbFolder.getRoot().getAbsolutePath());
         Mockito.when(config.getPrunedTransactionsDbLogPath()).thenReturn(logFolder.getRoot().getAbsolutePath());
         
-        // Filter size of 10, for easier testing
-        provider = new PrunedTransactionProviderImpl(10);
+        provider = new PrunedTransactionProviderImpl(10000);
         provider.init(config);
     }
     
@@ -49,21 +48,52 @@ public class PrunedTransactionProviderImplTest {
     }
     
     @Test
-    public void test() throws PrunedTransactionException {
-        Hash randomHash = TransactionTestUtils.getRandomTransactionHash();
-        provider.addTransaction(randomHash);
-        for (int i=0; i<100; i++) {
-            provider.addTransaction(TransactionTestUtils.getRandomTransactionHash());
-        }
-        
+    public void containsMarginalOkayTest() throws PrunedTransactionException {
+        int size = 10000;
         int contains = 0;
-        for (int i=0; i<100; i++) {
-            if (provider.containsTransaction(randomHash)){
+        
+        Hash[] hashes = new Hash[size];
+        for (int i=0; i<size; i++) {
+            hashes[i] = TransactionTestUtils.getRandomTransactionHash();
+            provider.addTransaction(hashes[i]);
+            
+            if (provider.containsTransaction(hashes[i])){
                 contains++;
             }
         }
         
-        System.out.println(contains);
-        assertTrue("Provider should contain the hash", contains > 90);
+        hashes = new Hash[size];
+        for (int i=0; i<size; i++) {
+            hashes[i] = TransactionTestUtils.getRandomTransactionHash();
+            if (provider.containsTransaction(hashes[i])){
+                contains++;
+            }
+        }
+        
+        // 0.05% margin of spents for unknowns
+        assertTrue("Provider should only contain the added hash", contains < size*1.0005);
+    }
+    
+    @Test
+    public void deletedFiltersTest() throws PrunedTransactionException {
+        int size = 100;
+        Hash[] hashes = new Hash[size];
+        for (int i=0; i<size; i++) {
+            hashes[i] = TransactionTestUtils.getRandomTransactionHash();
+            provider.addTransaction(hashes[i]);
+        }
+        
+        for (int i=0; i<10000*10; i++) {
+            provider.addTransaction(TransactionTestUtils.getRandomTransactionHash());
+        }
+        
+
+        int notContains = 0;
+        for (int i=0; i<size; i++) {
+            if (!provider.containsTransaction(hashes[i])) {
+                notContains++;
+            }
+        }
+        assertTrue("Provider should not contain the deleted hashes", notContains > size*0.995);
     }
 }

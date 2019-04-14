@@ -2,11 +2,8 @@ package com.iota.iri.service.transactionpruning.impl;
 
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.TreeMap;
 
 import org.apache.commons.collections4.queue.CircularFifoQueue;
@@ -20,7 +17,6 @@ import com.iota.iri.model.persistables.Cuckoo;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.transactionpruning.PrunedTransactionException;
 import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
-import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.datastructure.CuckooFilter;
@@ -33,6 +29,10 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
     
     private static final Logger log = LoggerFactory.getLogger(PrunedTransactionProviderImpl.class);
     
+    private static final int BUCKET_SIZE = 4;
+    
+    private static final int FINGER_PRINT_SIZE = 16;
+    
     private static final int FILTER_SIZE = 200000;
     
     private static final int MAX_FILTERS = 10;
@@ -44,21 +44,23 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
     private CircularFifoQueue<CuckooFilter> filters;
     private CuckooFilter lastAddedFilter;
 
-    // Once this exceeds integer max range, this will give problems.
+    // Once this exceeds integer max range, this will give problems. 
+    // Requires max int * FILTER_SIZE * BUCKET_SIZE * ~1.005 transactions (138 billion)
+    // or max int * 5 min (milestone avg. time) minutes (20428 years)
     private Integer highestIndex = -1;
 
     private int filterSize;
     
     /**
-     * 
+     * Creates a transaction provider with the default filter size {@value #FILTER_SIZE}
      */
     public PrunedTransactionProviderImpl() {
         this(FILTER_SIZE);
     }
     
     /**
-     * 
-     * @param filterSize
+     * Creates a transaction provider with a custom filter size
+     * @param filterSize the size each cuckoo filter will have (before resizing)
      */
     public PrunedTransactionProviderImpl(int filterSize) {
         this.filterSize = filterSize;
@@ -116,7 +118,7 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
                     throw new PrunedTransactionException("Database contains more filters then we can store");
                 }
                 
-                CuckooFilter filter = new CuckooFilterImpl(filterSize, 4, 16, bucket.filterBits);
+                CuckooFilter filter = new CuckooFilterImpl(filterSize, BUCKET_SIZE, FINGER_PRINT_SIZE, bucket.filterBits);
                 filters.put(bucket.filterId.getValue(), filter);
             }
             
@@ -149,16 +151,22 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
     }
 
     /**
+     * Checks if our filters contain this transaction hash, starting with the most recent filter
      * 
      * {@inheritDoc}
      */
     @Override
     public boolean containsTransaction(Hash transactionHash) throws PrunedTransactionException {
         byte[] hashBytes = transactionHash.bytes();
-        
+
         // last filter added is most recent, thus most likely to be requested
+        if (lastAddedFilter.contains(hashBytes)) {
+            return true;
+        }
+        
+        // Loop over other filters in order of recently added, skip first
         CuckooFilter[] filterArray = filters.toArray(new CuckooFilter[filters.size()]);
-        for (int i = filterArray.length - 1; i >=0; i--) {
+        for (int i = filterArray.length - 2; i >=0; i--) {
             if (filterArray[i].contains(hashBytes)) {
                 return true;
             }
@@ -179,7 +187,7 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
                 newFilter();
             }
             
-            if (!lastAddedFilter.add(transactionHash.bytes())){
+            if (!lastAddedFilter.add(transactionHash.bytes()) || shouldSwitchFilter()){
                 try {
                     persistFilter(lastAddedFilter, highestIndex);
                 } catch (Exception e) {
@@ -200,6 +208,7 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
     public void addTransactionBatch(Collection<Hash> transactionHashes) throws PrunedTransactionException {
         // Should we create a new filter when we get this method call? 
         // It probably implies a new pruned job completed, and these TX would be checked more often then the older ones.
+        // However, we have less filters to use/faster filter deletion
         for (Hash transactionHash : transactionHashes) {
             addTransaction(transactionHash);
         }
@@ -219,10 +228,15 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
         highestIndex++;
         
         // We keep a reference to the last filter to prevent looking it up every time
-        filters.offer(lastAddedFilter = new CuckooFilterImpl(filterSize, 4, 16));
+        filters.offer(lastAddedFilter = new CuckooFilterImpl(filterSize, BUCKET_SIZE, FINGER_PRINT_SIZE));
         return lastAddedFilter;
     }
 
+    private boolean shouldSwitchFilter() {
+        // Cuckoo filter speed/accuracy is best when filters stay partially empty
+        return lastAddedFilter != null && lastAddedFilter.size() > filterSize;
+    }
+    
     private int getLowestIndex() {
         if (highestIndex < MAX_FILTERS) {
             return 0;

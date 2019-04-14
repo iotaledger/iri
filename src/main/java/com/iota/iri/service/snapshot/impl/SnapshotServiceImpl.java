@@ -538,7 +538,7 @@ public class SnapshotServiceImpl implements SnapshotService {
                     transaction.getHash(),
                     currentTransaction -> !nonOrphanedTransactionFound.get(),
                     currentTransaction -> {
-                        if (arrivalTime > referenceTransaction.getTimestamp()) {
+                        if (currentTransaction.getArrivalTime() / 1000L > referenceTransaction.getTimestamp()) {
                             nonOrphanedTransactionFound.set(true);
                         }
                     },

@@ -11,18 +11,17 @@ import com.iota.iri.utils.Serializer;
 /**
  * Persistable to manage the data we get as a result of pruning a milestone and its transactions
  */
-public class CuckooBucket implements Persistable {
+public class Cuckoo implements Persistable {
 
     /**
      * The filter number it belonged to in previous cycles
      */
-    public IntegerIndex bucketId;
+    public IntegerIndex filterId;
     
     /**
      * 
      */
-    public BitSet bucketBits;
-    public IntegerIndex bucketIndex;
+    public BitSet filterBits;
     
     /**
      * 
@@ -30,9 +29,8 @@ public class CuckooBucket implements Persistable {
      */
     @Override
     public byte[] bytes() {
-        byte[] index = bucketIndex.bytes();
-        byte[] num = bucketId.bytes();
-        return ArrayUtils.addAll(ArrayUtils.addAll(num, index), bucketBits.toByteArray());
+        byte[] num = filterId.bytes();
+        return ArrayUtils.addAll(num, filterBits.toByteArray());
     }
 
     /**
@@ -45,13 +43,12 @@ public class CuckooBucket implements Persistable {
     @Override
     public void read(byte[] bytes) {
         if(bytes != null) {
-            bucketId = new IntegerIndex(Serializer.getInteger(bytes, 0));
-            bucketIndex = new IntegerIndex(Serializer.getInteger(bytes, 4));
+            filterId = new IntegerIndex(Serializer.getInteger(bytes, 0));
             
-            short start = 8;
-            bucketBits = new BitSet(bytes.length - start);
+            short start = 4;
+            filterBits = new BitSet(bytes.length - start);
             for (int i = start; i < bytes.length; i++) {
-                bucketBits.set(i-start, bytes[i]);
+                filterBits.set(i-start, bytes[i]);
             }
         }
     }

@@ -15,10 +15,12 @@ import org.slf4j.LoggerFactory;
 
 import com.iota.iri.conf.SnapshotConfig;
 import com.iota.iri.model.Hash;
-import com.iota.iri.model.persistables.CuckooBucket;
+import com.iota.iri.model.IntegerIndex;
+import com.iota.iri.model.persistables.Cuckoo;
 import com.iota.iri.service.spentaddresses.SpentAddressesException;
 import com.iota.iri.service.transactionpruning.PrunedTransactionException;
 import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
+import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.datastructure.CuckooFilter;
@@ -77,11 +79,9 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
                     config.getPrunedTransactionsDbLogPath(),
                     1000,
                     new HashMap<String, Class<? extends Persistable>>(1)
-                    {{put("pruned-transactions", CuckooBucket.class);}}, null);
+                    {{put("pruned-transactions", Cuckoo.class);}}, null);
             this.persistenceProvider.init();
             
-            // 10 * 1.000.000 * 4 hashes we can hold, with a total of 80mb size when max filled.
-            // The database has overhead for the bucket index, and allows a maximum of 2^7 - 1 filters
             filters = new CircularFifoQueue<CuckooFilter>(MAX_FILTERS);
             
             readPreviousPrunedTransactions();
@@ -94,33 +94,30 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
 
     private void readPreviousPrunedTransactions() throws PrunedTransactionException {
         if (config.isTestnet()) {
-            newFilter();
+            try {
+                newFilter();
+            } catch (Exception e) {
+                // Ignorable, testnet starts empty, log for debugging
+                log.warn(e.getMessage());
+            }
             return;
         }
 
         try {
-            
             TreeMap<Integer, CuckooFilter> filters = new TreeMap<>();
             
             // Load all data from all filters
-            List<byte[]> bytes = persistenceProvider.loadAllKeysFromTable(CuckooBucket.class);
-            for (byte[] bucketData : bytes) {
-                CuckooBucket bucket = new CuckooBucket();
-                bucket.read(bucketData);
+            List<byte[]> bytes = persistenceProvider.loadAllKeysFromTable(Cuckoo.class);
+            for (byte[] filterData : bytes) {
+                Cuckoo bucket = new Cuckoo();
+                bucket.read(filterData);
                 
-                if (MAX_FILTERS < bucket.bucketId.getValue()) {
+                if (MAX_FILTERS < bucket.filterId.getValue()) {
                     throw new PrunedTransactionException("Database contains more filters then we can store");
                 }
                 
-                // Find its bucket, or create it if wasnt there
-                CuckooFilter filter = filters.get(bucket.bucketId.getValue());
-                if (null == filter) {
-                    filter = new CuckooFilterImpl(filterSize, 4, 16);
-                    filters.put(bucket.bucketId.getValue(), filter);
-                }
-                
-                // Don't update using the entire CuckooBucket so that packages are separate-able
-                filter.update(bucket.bucketIndex.getValue(), bucket.bucketBits);
+                CuckooFilter filter = new CuckooFilterImpl(filterSize, 4, 16, bucket.filterBits);
+                filters.put(bucket.filterId.getValue(), filter);
             }
             
             //Then add all in order, treemap maintains order from lowest to highest key
@@ -138,15 +135,23 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
                 newFilter();
             }
             
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             throw new PrunedTransactionException(e);
         }
     }
     
-    private void persistFilter(CuckooFilter filter, Integer index) {
-        
+    private void persistFilter(CuckooFilter filter, Integer index) throws Exception {
+        IntegerIndex intIndex = new IntegerIndex(index);
+        Cuckoo bucket = new Cuckoo();
+        bucket.filterId = intIndex;
+        bucket.filterBits = filter.getFilterData();
+        persistenceProvider.save(bucket, intIndex);
     }
 
+    /**
+     * 
+     * {@inheritDoc}
+     */
     @Override
     public boolean containsTransaction(Hash transactionHash) throws PrunedTransactionException {
         byte[] hashBytes = transactionHash.bytes();
@@ -162,17 +167,28 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
     }
     
     /**
+     * Adds a transaction to the latest filter. When this filter is full, saves and creates a new filter.
      * 
      * {@inheritDoc}
+     * @throws PrunedTransactionException when saving the old (full) filter or deleting the oldest fails 
      */
     @Override
     public void addTransaction(Hash transactionHash) throws PrunedTransactionException {
-        if (null == lastAddedFilter) {
-            newFilter();
-        }
-        
-        if (!lastAddedFilter.add(transactionHash.bytes())){
-            newFilter().add(transactionHash.bytes());
+        try {
+            if (null == lastAddedFilter) {
+                newFilter();
+            }
+            
+            if (!lastAddedFilter.add(transactionHash.bytes())){
+                try {
+                    persistFilter(lastAddedFilter, highestIndex);
+                } catch (Exception e) {
+                    throw new PrunedTransactionException(e);
+                }
+                newFilter().add(transactionHash.bytes());
+            }
+        } catch (Exception e) {
+            throw new PrunedTransactionException(e);
         }
     }
 
@@ -187,12 +203,17 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
         for (Hash transactionHash : transactionHashes) {
             addTransaction(transactionHash);
         }
-        persistFilter(lastAddedFilter, highestIndex);
+        try {
+            persistFilter(lastAddedFilter, highestIndex);
+        } catch (Exception e) {
+           throw new PrunedTransactionException(e);
+        }
     }
 
-    private CuckooFilter newFilter() {
+    private CuckooFilter newFilter() throws Exception {
         if (filters.isAtFullCapacity()) {
             log.debug("Removing " + filters.peek());
+            persistenceProvider.delete(Cuckoo.class, new IntegerIndex(getLowestIndex()));
         }
         
         highestIndex++;
@@ -200,5 +221,13 @@ public class PrunedTransactionProviderImpl implements PrunedTransactionProvider 
         // We keep a reference to the last filter to prevent looking it up every time
         filters.offer(lastAddedFilter = new CuckooFilterImpl(filterSize, 4, 16));
         return lastAddedFilter;
+    }
+
+    private int getLowestIndex() {
+        if (highestIndex < MAX_FILTERS) {
+            return 0;
+        }
+        
+        return highestIndex - MAX_FILTERS;
     }
 }

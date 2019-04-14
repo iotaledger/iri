@@ -2,7 +2,7 @@ package com.iota.iri.utils.datastructure;
 
 import java.util.BitSet;
 
-import com.iota.iri.model.persistables.CuckooBucket;
+import com.iota.iri.model.persistables.Cuckoo;
 
 /**
  * The Cuckoo Filter is a probabilistic data structure that supports fast set membership testing.
@@ -89,12 +89,8 @@ public interface CuckooFilter {
     int size();
 
     /**
-     * Update a part of this filter with the bucket information supplied.
-     * Discards any previous data inside this bucket.
-     * 
-     * @param index The index of the bucket we are updating
-     * @param bits the bucket data we use to update the filter
-     * @throws IllegalArgumentException when the bucket does not contain data which is valid for this filter
+     * This method returns a copy of all the bits that make up this filter
+     * @return The ilter bits
      */
-    void update(int index, BitSet bits) throws IllegalArgumentException ;
+    BitSet getFilterData();
 }

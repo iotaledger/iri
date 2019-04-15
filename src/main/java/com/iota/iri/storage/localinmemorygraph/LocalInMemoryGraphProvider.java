@@ -21,9 +21,13 @@ import java.util.stream.Collectors;
 import java.io.*;
 import com.google.gson.Gson;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.iota.iri.utils.*;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
+    private static final Logger log = LoggerFactory.getLogger(LocalInMemoryGraphProvider.class);
     private HashMap<Hash, Double> score;
     private HashMap<Hash, Double> parentScore;
     private HashMap<Hash, Set<Hash>> graph;
@@ -516,16 +520,17 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     //TODO for debug
-//    public static void printScore() {
-//        for(Hash key : score.keySet()) {
-//            if(nameMap != null) {
-//                System.out.print(nameMap.get(key)+":"+score.get(key));
-//            } else {
-//                System.out.print(key+":"+score.get(key));
-//            }
-//            System.out.println();
-//        }
-//    }
+    public void printParentScore() {
+        for(Hash key : parentScore.keySet()) {
+            log.info(key+":"+parentScore.get(key));
+        }
+    }
+
+    public void printScore() {
+        for(Hash key : score.keySet()) {
+            log.info(key+":"+score.get(key));
+        }
+    }
 
     public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
         // TODO implement this

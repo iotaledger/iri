@@ -12,6 +12,7 @@ COPY examples/cluster/conf_info/ipinfo.txt /code/iota_api/ipinfo.txt
 RUN chmod +x requirements.txt
 RUN pip install -r requirements.txt
 VOLUME ["/code"]
+ENV ENABLE_BATCHING false
 COPY docker-entrypoint.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
 WORKDIR /

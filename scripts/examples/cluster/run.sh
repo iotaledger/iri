@@ -1,6 +1,6 @@
 #!/bin/bash
 
-JM_HOME= /opt/jmeter/bin/
+JM_HOME=/opt/jmeter/bin/
 
 sudo cp ../../iota_deploy/*.py .
 sudo cp ../../iota_perf/*.py .
@@ -43,7 +43,7 @@ do
         sleep 2
 
         # configure cli
-        python server_deploy_batch.py cli
+        python server_deploy_batch.py cli true
         sleep 2
 
         # configure topology

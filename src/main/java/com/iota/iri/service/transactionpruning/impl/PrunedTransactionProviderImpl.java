@@ -23,18 +23,31 @@ import com.iota.iri.utils.datastructure.CuckooFilter;
 import com.iota.iri.utils.datastructure.impl.CuckooFilterImpl;
 
 /**
- * 
+ * Implementation of a pruned transaction provider which uses a cuckoo filter to store pruned hashes
  */
 public class PrunedTransactionProviderImpl implements PrunedTransactionProvider {
     
     private static final Logger log = LoggerFactory.getLogger(PrunedTransactionProviderImpl.class);
     
+    /**
+     * The amount of fingerprints each bucket keeps. 
+     * More than 4 
+     */
     private static final int BUCKET_SIZE = 4;
     
+    /**
+     * The amount of bits a hash gets transformed to (Higher is better, but uses more storage)
+     */
     private static final int FINGER_PRINT_SIZE = 16;
     
+    /**
+     * The estimated amount of fingerprints each filter should hold (Will be scaled by cuckoo impl.)
+     */
     private static final int FILTER_SIZE = 200000;
     
+    /**
+     * The maximum amount of filters we have in use at any given time
+     */
     private static final int MAX_FILTERS = 10;
     
     private RocksDBPersistenceProvider persistenceProvider;

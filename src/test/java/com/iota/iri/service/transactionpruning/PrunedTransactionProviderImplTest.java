@@ -86,8 +86,8 @@ public class PrunedTransactionProviderImplTest {
         for (int i=0; i<10000*10; i++) {
             provider.addTransaction(TransactionTestUtils.getRandomTransactionHash());
         }
-        
 
+        // by now, we have added 10 full filters, so the first 100 should not exist anymore (deleted)
         int notContains = 0;
         for (int i=0; i<size; i++) {
             if (!provider.containsTransaction(hashes[i])) {

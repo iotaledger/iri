@@ -21,8 +21,11 @@ import com.iota.iri.service.spentaddresses.impl.SpentAddressesProviderImpl;
 import com.iota.iri.service.spentaddresses.impl.SpentAddressesServiceImpl;
 import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
+import com.iota.iri.service.transactionpruning.PrunedTransactionException;
+import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
+import com.iota.iri.service.transactionpruning.impl.PrunedTransactionProviderImpl;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
@@ -95,6 +98,8 @@ public class Iota {
 
     public final TransactionRequesterWorkerImpl transactionRequesterWorker;
 
+    public final PrunedTransactionProviderImpl prunedTransactionProvider;
+    
     public final BundleValidator bundleValidator;
 
     public final Tangle tangle;
@@ -108,6 +113,7 @@ public class Iota {
     public final TipsViewModel tipsViewModel;
     public final TipSelector tipsSelector;
 
+
     /**
      * Initializes the latest snapshot and then creates all services needed to run an IOTA node.
      *
@@ -115,8 +121,9 @@ public class Iota {
      * @throws TransactionPruningException If the TransactionPruner could not restore its state.
      * @throws SnapshotException If the Snapshot fails to initialize.
      *                           This can happen if the snapshot signature is invalid or the file cannot be read.
+     * @throws PrunedTransactionException If we could not load previously pruned transactions (whilst they exist)
      */
-    public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException, SpentAddressesException {
+    public Iota(IotaConfig configuration) throws TransactionPruningException, SnapshotException, SpentAddressesException, PrunedTransactionException {
         this.configuration = configuration;
 
         // new refactored instances
@@ -135,6 +142,9 @@ public class Iota {
         transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
                           ? new AsyncTransactionPruner()
                           : null;
+                          
+        prunedTransactionProvider = transactionPruner != null ? new PrunedTransactionProviderImpl() : null;
+                          
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code
@@ -196,7 +206,9 @@ public class Iota {
         }
     }
 
-    private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException {
+    private void injectDependencies() throws SnapshotException, TransactionPruningException, SpentAddressesException, 
+    PrunedTransactionException {
+        
         //snapshot provider must be initialized first
         //because we check whether spent addresses data exists
         snapshotProvider.init(configuration);
@@ -216,8 +228,14 @@ public class Iota {
         ledgerService.init(tangle, snapshotProvider, snapshotService, milestoneService, spentAddressesService,
                 bundleValidator);
         if (transactionPruner != null) {
-            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, tipsViewModel, configuration);
+            if (prunedTransactionProvider != null) {
+                prunedTransactionProvider.init(configuration);
+            }
+            transactionPruner.init(tangle, snapshotProvider, spentAddressesService, spentAddressesProvider, 
+                    tipsViewModel, configuration, prunedTransactionProvider);
         }
+        
+        
         transactionRequesterWorker.init(tangle, transactionRequester, tipsViewModel, node);
     }
 

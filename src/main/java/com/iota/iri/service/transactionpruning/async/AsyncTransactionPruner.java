@@ -9,6 +9,7 @@ import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
 import com.iota.iri.service.transactionpruning.TransactionPruner;
 import com.iota.iri.service.transactionpruning.TransactionPrunerJob;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
+import com.iota.iri.service.transactionpruning.impl.PrunedTransactionProviderImpl;
 import com.iota.iri.service.transactionpruning.jobs.MilestonePrunerJob;
 import com.iota.iri.service.transactionpruning.jobs.UnconfirmedSubtanglePrunerJob;
 import com.iota.iri.storage.Tangle;
@@ -132,18 +133,21 @@ public class AsyncTransactionPruner implements TransactionPruner {
      * @param snapshotProvider data provider for the snapshots that are relevant for the node
      * @param tipsViewModel manager for the tips (required for removing pruned transactions from this manager)
      * @param config Configuration with important snapshot related configuration parameters
+     * @param prunedTransactionProvider manager which has logic about how to handle pruned transactions 
      * @return the initialized instance itself to allow chaining
      */
     public AsyncTransactionPruner init(Tangle tangle, SnapshotProvider snapshotProvider,
                                        SpentAddressesService spentAddressesService,
                                        SpentAddressesProvider spentAddressesProvider,
                                        TipsViewModel tipsViewModel,
-                                       SnapshotConfig config) {
+                                       SnapshotConfig config,
+                                       PrunedTransactionProviderImpl prunedTransactionProvider) {
 
         this.tangle = tangle;
         this.snapshotProvider = snapshotProvider;
         this.spentAddressesService = spentAddressesService;
         this.spentAddressesProvider = spentAddressesProvider;
+        this.prunedTransactionProvider = prunedTransactionProvider;
         this.tipsViewModel = tipsViewModel;
         this.config = config;
 

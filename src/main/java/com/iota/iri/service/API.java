@@ -331,6 +331,10 @@ public class API {
                     String type = getParameterAsString(request, "type");
                     return getDAGStatement(type);
                 }
+                case "getUTXO": {
+                    String type = getParameterAsString(request, "type");
+                    return getUTXOStatement(type);
+                }
                 case "getTotalOrder": {
                     return getTotalOrderStatement();
                 }
@@ -645,15 +649,9 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    /**
-      * Returns the raw transaction data (trytes) of a specific transaction.
-      * These trytes can then be easily converted into the actual transaction object.
-      * See utility functions for more details.
-      *
-      * @param hashes List of transaction hashes you want to get trytes from.
-      * @return {@link com.iota.iri.service.dto.GetTrytesResponse}
-      **/
-      private synchronized AbstractResponse getBlockContentStatement(List<String> hashes) throws Exception {
+
+    // FIXME add comments
+    private synchronized AbstractResponse getBlockContentStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
             final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(hash));
@@ -675,29 +673,21 @@ public class API {
         return GetTrytesResponse.create(elements);
     }
 
-    /**
-      * Returns the raw transaction data (trytes) of a specific transaction.
-      * These trytes can then be easily converted into the actual transaction object.
-      * See utility functions for more details.
-      *
-      * @param hashes List of transaction hashes you want to get trytes from.
-      * @return {@link com.iota.iri.service.dto.GetTrytesResponse}
-      **/
-      private synchronized AbstractResponse getDAGStatement(String type) throws Exception {
+    // FIXME add comments
+    private synchronized AbstractResponse getDAGStatement(String type) throws Exception {
         LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
         String graph = prov.printGraph(prov.getGraph(), type);
         return GetDAGResponse.create(graph);
     }
 
-    /**
-      * Returns the raw transaction data (trytes) of a specific transaction.
-      * These trytes can then be easily converted into the actual transaction object.
-      * See utility functions for more details.
-      *
-      * @param hashes List of transaction hashes you want to get trytes from.
-      * @return {@link com.iota.iri.service.dto.GetTrytesResponse}
-      **/
-      private synchronized AbstractResponse getTotalOrderStatement() throws Exception {
+    // FIXME add comments
+    private synchronized AbstractResponse getUTXOStatement(String type) throws Exception {
+        String graph = TransactionData.getInstance().getUTXOGraph(type);
+        return GetDAGResponse.create(graph);
+    }
+    
+    // FIXME add comments
+    private synchronized AbstractResponse getTotalOrderStatement() throws Exception {
         LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
         List<Hash> order = prov.totalTopOrder();
         return GetTotalOrderResponse.create(order);

@@ -117,6 +117,15 @@ def getDAG(url,dag_type):
     }
     return API(cmd,url)
 
+def getUTXO(url,dag_type):
+    cmd = {
+        "command": "getUTXO",
+        "type":dag_type
+    }
+    return API(cmd,url)
+
+
+
 def getTotalOrder(url):
     cmd = {
         "command": "getTotalOrder"

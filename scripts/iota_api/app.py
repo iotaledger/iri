@@ -276,6 +276,23 @@ def get_dag():
         f.close()
     return resp[u'dag'] 
 
+@app.route('/get_utxo', methods=['GET'])
+def get_utxo():
+    req_json = request.get_json()
+    if req_json is None:
+        return 'error'
+    if not req_json.has_key(u'type'):
+        print("[ERROR] Hashes are needed.", file=sys.stderr)
+        return 'error'
+    dag_type = req_json[u'type']
+    resp = cache.get_utxo(dag_type)
+    if req_json.has_key(u'file_save'):
+        file_save = req_json[u'file_save'].encode("ascii")
+        f = open(file_save, 'w')
+        f.write(resp[u'dag'])
+        f.close()
+    return resp[u'dag'] 
+
 @app.route('/get_total_order', methods=['GET'])
 def get_total_order():
     resp = cache.get_total_order()

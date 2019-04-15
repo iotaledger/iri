@@ -1,11 +1,25 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-import sys
+import sys,os
 import re
 import sh
 cmd =  sh.Command("/usr/local/bin/pssh")
 pycmd = sh.Command("/usr/bin/python")
+pwd = os.getcwd()
+user = str(sh.Command('whoami')().split()[0])
 
+if 'examples' in pwd:
+    father_path = os.path.abspath(os.path.dirname(pwd) + os.path.sep + ".")
+    rmdblog = father_path + '/data/testnetdb.log'
+    rmdb = father_path + '/data/testnetdb'
+    data_volume = father_path + '/data'
+    conf_volume = father_path = '/conf/neighbors'
+else:
+    father_path = os.path.abspath(os.path.dirname(pwd) + os.path.sep + ".")
+    rmdblog = father_path + '/examples/data/testnetdb.log'
+    rmdb = father_path + '/examples/data/testnetdb'
+    data_volume = father_path + '/examples/data'
+    conf_volume = father_path + '/examples/conf/neighbors'
 
 
 def get_ip_list():
@@ -22,22 +36,22 @@ def deploy_iri_server():
     ip_total = get_ip_list()
     ip_pub = list(ip_total.values())
     for ip_address in ip_pub:
-        oret = cmd("-i", "-H", "trust@"+ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps |grep iota-node |wc -l")
+        oret = cmd("-i", "-H", "%s@"%user+ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps |grep iota-node |wc -l")
         num_exist = oret.split()[-1]
         if int(num_exist):
-            cmd("-i", "-H", "trust@"+ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker stop iota-node")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-node")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf ~/iri/scripts/examples/data/testnetdb")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf ~/iri/scripts/examples/data/testnetdb.log")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker run  -d -p 14700:14700 -p 13700:13700 --name iota-node -v /home/trust/iri/scripts/examples/data:/iri/data -v /home/trust/iri/scripts/examples/conf/neighbors:/iri/conf/neighbors  iota-node:v0.1-streamnet  /entrypoint.sh")
+            cmd("-i", "-H", "%s@"%user+ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker stop iota-node")
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-node")
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf %s"%rmdb)
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf %s"%rmdblog)
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker run  -d -p 14700:14700 -p 13700:13700 --name iota-node -v %s:/iri/data -v %s:/iri/conf/neighbors  iota-node:v0.1-streamnet  /entrypoint.sh"%(data_volume,conf_volume))
         else:
-            exitflag = cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps -a |grep iota-node |wc -l")
+            exitflag = cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps -a |grep iota-node |wc -l")
             exitflag = exitflag.split()[-1]
             if int(exitflag):
-                cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-node")
-                cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf ~/iri/scripts/examples/data/testnetdb")
-                cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf ~/iri/scripts/examples/data/testnetdb.log")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker run  -d -p 14700:14700 -p 13700:13700 --name iota-node -v /home/trust/iri/scripts/examples/data:/iri/data -v /home/trust/iri/scripts/examples/conf/neighbors:/iri/conf/neighbors  iota-node:v0.1-streamnet  /entrypoint.sh")
+                cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-node")
+                cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo rm -rf %s" % rmdb)
+                cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo rm -rf %s" % rmdblog)
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker run  -d -p 14700:14700 -p 13700:13700 --name iota-node -v %s:/iri/data -v %s:/iri/conf/neighbors  iota-node:v0.1-streamnet  /entrypoint.sh" % (data_volume, conf_volume))
     return 'success'
 
 #iri clear
@@ -45,40 +59,40 @@ def clear_iri_server():
     ip_total = get_ip_list()
     ip_pub = list(ip_total.values())
     for ip_address in ip_pub:
-        oret = cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps |grep iota-node |wc -l")
+        oret = cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps |grep iota-node |wc -l")
         num_exist = oret.split()[-1]
         if int(num_exist):
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf ~/iri/scripts/examples/data/testnetdb")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf ~/iri/scripts/examples/data/testnetdb.log")
-            cmd("-i", "-H", "trust@"+ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker stop iota-node")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-node")
+            cmd("-i", "-H", "%s@"%user+ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker stop iota-node")
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-node")
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf %s"%rmdb)
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf %s"%rmdblog)
         else:
-            exitflag = cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps -a |grep iota-node |wc -l")
+            exitflag = cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps -a |grep iota-node |wc -l")
             exitflag = exitflag.split()[-1]
             if int(exitflag):
-                cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-node")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf ~/iri/scripts/examples/data/testnetdb")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf ~/iri/scripts/examples/data/testnetdb.log")
+                cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-node")
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf %s"%rmdb)
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo rm -rf %s"%rmdblog)
 
     return 'success'
 
 #cli deploy
-def deploy_cli_server():
+def deploy_cli_server(batchflag):
     ip_total = get_ip_list()
     ip_pub = list(ip_total.values())
     for ip_address in ip_pub:
-        oret = cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps |grep iota-cli |wc -l")
+        oret = cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps |grep iota-cli |wc -l")
         num_exist =  oret.split()[-1]
         if int(num_exist):
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker stop iota-cli")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker rm iota-cli")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker run -d -p 5000:5000 --name iota-cli iota-cli:v0.1-streamnet /docker-entrypoint.sh")
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker stop iota-cli")
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker rm iota-cli")
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", '''sudo docker run -d -p 5000:5000 -e "ENABLE_BATCHING=%s" --name iota-cli iota-cli:v0.1-streamnet /docker-entrypoint.sh'''%batchflag)
         else:
-            exitflag = cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps -a |grep iota-cli |wc -l")
+            exitflag = cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker ps -a |grep iota-cli |wc -l")
             exitflag = exitflag.split()[-1]
             if int(exitflag):
-                cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-cli")
-            cmd("-i", "-H", "trust@" + ip_address, "-x", "-oStrictHostKeyChecking=no","sudo docker run -d -p 5000:5000 --name iota-cli iota-cli:v0.1-streamnet /docker-entrypoint.sh")
+                cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no", "sudo docker rm iota-cli")
+            cmd("-i", "-H", "%s@"%user + ip_address, "-x", "-oStrictHostKeyChecking=no",'''sudo docker run -d -p 5000:5000 -e "ENABLE_BATCHING=%s" --name iota-cli iota-cli:v0.1-streamnet /docker-entrypoint.sh'''%batchflag)
     return 'success'
 
 # add and remove neighbors
@@ -103,7 +117,8 @@ if __name__ == '__main__':
     if input_p[1] == 'iri':
         deploy_iri_server()
     elif input_p[1] == 'cli':
-        deploy_cli_server()
+        batchflag = input_p[2]
+        deploy_cli_server(batchflag)
     elif input_p[1] == 'clear':
         clear_iri_server()
     elif input_p[1] in ['add','remove']:

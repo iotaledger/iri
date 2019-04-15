@@ -13,7 +13,9 @@ import (
 )
 
 var o OCli
+
 const MyURL = "127.0.0.1:14700"
+
 var nodesCache = make([]string, 3)
 
 func TestAddAttestationInfoFunction(t *testing.T) {
@@ -66,8 +68,8 @@ func TestGetRankFunction(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 		w.Header().Set("Content-Type", "application/json")
 		// TODO: replace these hard coded data with data in 'nodes_cache'
-		str := `{"blocks":"[\"%7B%22tee_num%22%3A1%2C%22tee_content%22%3A%5B%7B%22attester%22%3A%22192.168.130.102%22`+
-			   `%2C%22attestee%22%3A%22192.168.130.129%22%2C%22score%22%3A1%7D%5D%7D\"]","duration":5}`
+		str := `{"blocks":"[\"%7B%22tee_num%22%3A1%2C%22tee_content%22%3A%5B%7B%22attester%22%3A%22192.168.130.102%22` +
+			`%2C%22attestee%22%3A%22192.168.130.129%22%2C%22score%22%3A1%7D%5D%7D\"]","duration":5}`
 		_, _ = io.WriteString(w, str)
 	}))
 

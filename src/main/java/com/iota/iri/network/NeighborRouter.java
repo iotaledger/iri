@@ -82,6 +82,13 @@ public class NeighborRouter {
     private AtomicBoolean forceReconnectAttempt = new AtomicBoolean(false);
 
     /**
+     * Defines whether a neighbor got added/removed or not and the corresponding reason.
+     */
+    public enum NeighborMutOp {
+        OK, SLOTS_FILLED, URI_INVALID, UNRESOLVED_DOMAIN, UNKNOWN_NEIGHBOR
+    }
+
+    /**
      * Initializes the dependencies of the {@link NeighborRouter}.
      * 
      * @param config      Network related configuration parameters
@@ -560,13 +567,13 @@ public class NeighborRouter {
      * @param rawURI The URI of the neighbor
      * @return whether the neighbor was added or not
      */
-    public boolean addNeighbor(String rawURI) {
+    public NeighborMutOp addNeighbor(String rawURI) {
         if (availableNeighborSlotsFilled()) {
-            return false;
+            return NeighborMutOp.SLOTS_FILLED;
         }
         Optional<URI> optUri = parseURI(rawURI);
         if (!optUri.isPresent()) {
-            return false;
+            return NeighborMutOp.URI_INVALID;
         }
         URI neighborURI = optUri.get();
         // add to wanted neighbors
@@ -574,7 +581,7 @@ public class NeighborRouter {
         // wake up the selector and let it build connections to wanted neighbors
         forceReconnectAttempt.set(true);
         selector.wakeup();
-        return true;
+        return NeighborMutOp.OK;
     }
 
     /**
@@ -584,10 +591,10 @@ public class NeighborRouter {
      * @param rawURI The URI of the neighbor
      * @return whether the neighbor was removed or not
      */
-    public boolean removeNeighbor(String rawURI) {
+    public NeighborMutOp removeNeighbor(String rawURI) {
         Optional<URI> optUri = parseURI(rawURI);
         if (!optUri.isPresent()) {
-            return false;
+            return NeighborMutOp.URI_INVALID;
         }
         // remove the neighbor from connection attempts
         neighborsToConnectTo.remove(optUri.get());
@@ -596,17 +603,17 @@ public class NeighborRouter {
         InetSocketAddress inetAddr = new InetSocketAddress(neighborURI.getHost(), neighborURI.getPort());
         if (inetAddr.isUnresolved()) {
             log.warn("unable to remove neighbor {} as IP address couldn't be resolved", rawURI);
-            return false;
+            return NeighborMutOp.UNRESOLVED_DOMAIN;
         }
 
         String identity = String.format("%s:%d", inetAddr.getAddress().getHostAddress(), inetAddr.getPort());
         Neighbor neighbor = connectedNeighbors.get(identity);
         if (neighbor == null) {
-            return false;
+            return NeighborMutOp.UNKNOWN_NEIGHBOR;
         }
         // the neighbor will be disconnected inside the selector loop
         neighbor.setState(NeighborState.MARKED_FOR_DISCONNECT);
-        return true;
+        return NeighborMutOp.OK;
     }
 
     /**

@@ -7,10 +7,14 @@ import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.HashId;
+import com.iota.iri.service.tipselection.impl.CumulativeWeightMemCalculator;
 import com.iota.iri.storage.Tangle;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.collections.interfaces.UnIterableMap;
-import org.junit.*;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,12 +54,6 @@ public class CumulativeWeightMemCalculatorTest {
         cumulativeWeightCalculator = new CumulativeWeightMemCalculator(tangle);
         BaseIotaConfig.getInstance().setStreamingGraphSupport(true);
         BaseIotaConfig.getInstance().setConfluxScoreAlgo("CUM_WEIGHT");
-    }
-
-    @After
-    public void afterMethod() throws Exception {
-        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-        provider.close();
     }
 
     @Test
@@ -226,9 +224,7 @@ public class CumulativeWeightMemCalculatorTest {
         }
         Map<HashId, Set<HashId>> ratings = new HashMap<>();
         updateApproversRecursively(hashes[0], ratings, new HashSet<>());
-
-        try {
-            UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(hashes[0]);
+        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(hashes[0]);
 
         Assert.assertEquals("missing txs from new calculation", ratings.size(), txToCw.size());
         ratings.forEach((hash, weight) -> {
@@ -238,15 +234,6 @@ public class CumulativeWeightMemCalculatorTest {
                     weight.size(), txToCw.get(hash)
                             .intValue());
         });
-            System.out.println("=======================");
-            LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
-            System.out.println("=======================");
-        }catch (Exception e){
-            LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
-            throw e;
-        }
     }
 
     @Test
@@ -256,46 +243,32 @@ public class CumulativeWeightMemCalculatorTest {
         transaction = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(randomTransactionHash, randomTransactionHash), randomTransactionHash);
 
         transaction.store(tangle);
-        try {
-            //FIXME exist circle, can't calculate score, comment by yk
-//            UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
-//            Assert.assertEquals("There should be only one tx in the map", 1, txToCw.size());
-//            Assert.assertEquals("The circle raised the weight", 1, txToCw.get(randomTransactionHash).intValue());
-        }catch (Exception e){
-            LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
-            throw e;
-        }
+
+        UnIterableMap<HashId, Integer> txToCw = cumulativeWeightCalculator.calculate(transaction.getHash());
+        Assert.assertEquals("There should be only one tx in the map", 1, txToCw.size());
+        Assert.assertEquals("The circle raised the weight", 1, txToCw.get(randomTransactionHash).intValue());
     }
 
     @Test
     public void testTangleWithCircle2() throws Exception {
         TransactionViewModel transaction, transaction1, transaction2, transaction3, transaction4;
-        Hash randomTransactionHash3 = getRandomTransactionHash();
+        Hash randomTransactionHash2 = getRandomTransactionHash();
         transaction = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(
-                getRandomTransactionHash(), getRandomTransactionHash()), getRandomTransactionHash());
+                randomTransactionHash2, randomTransactionHash2), getRandomTransactionHash());
         transaction1 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(
-                transaction.getHash(), randomTransactionHash3), getRandomTransactionHash());
+                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
         transaction2 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(
-                transaction1.getHash(), transaction1.getHash()), getRandomTransactionHash());
+                transaction1.getHash(), transaction1.getHash()), randomTransactionHash2);
         transaction3 = new TransactionViewModel(getRandomTransactionWithTrunkAndBranch(
-                transaction1.getHash(), transaction1.getHash()), randomTransactionHash3);
+                transaction.getHash(), transaction.getHash()), getRandomTransactionHash());
 
         transaction.store(tangle);
         transaction1.store(tangle);
         transaction2.store(tangle);
         transaction3.store(tangle);
-        try {
-            //FIXME exist circle, can't calculate score, comment by yk
-//            cumulativeWeightCalculator.calculate(transaction.getHash());
-            LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
-            //No infinite loop (which will probably result in an overflow exception) means test has passed
-        }catch (Exception e){
-            LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider) tangle.getPersistenceProvider("LOCAL_GRAPH");
-            provider.printGraph(provider.getGraph(),null);
-            throw e;
-        }
+
+        cumulativeWeightCalculator.calculate(transaction.getHash());
+        //No infinite loop (which will probably result in an overflow exception) means test has passed
     }
 
     @Test
@@ -371,7 +344,7 @@ public class CumulativeWeightMemCalculatorTest {
 
     //Simple recursive algorithm that maps each tx hash to its approvers' hashes
     private static Set<HashId> updateApproversRecursively(Hash txHash, Map<HashId, Set<HashId>> txToApprovers,
-                                                        Set<HashId> analyzedTips) throws Exception {
+                                                          Set<HashId> analyzedTips) throws Exception {
         Set<HashId> approvers;
         if (analyzedTips.add(txHash)) {
             approvers = new HashSet<>(Collections.singleton(txHash));

@@ -351,9 +351,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         try {
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
-//                    score = CumWeightScore.update(graph, score, vet);
-//                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
-                    doUpdateScore(vet);
+                    score = CumWeightScore.update(graph, score, vet);
+                    //parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
+                    //doUpdateScore(vet);
                     rebuildParentScore(vet);
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     score.put(vet, 1.0 / (score.size() + 1));
@@ -363,21 +363,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
                 }
             }
-            //FIXME print
-//            System.out.println("tracedNodes:"+tracedNodes);
-//            System.out.println("unTracedNodes:"+unTracedNodes);
-//            System.out.println("----score-----");
-//            printGraph(graph,null);
-//            System.out.println("--------------");
-//            if (nameMap == null){
-//                parentGraph.entrySet().forEach(e -> System.out.println(String.format("\"%s\"->\"%s\"", e.getKey()+":"+score.get(e.getKey()),
-//                        e.getValue()+":"+score.get(e.getValue()))));
-//            }else{
-//                parentGraph.entrySet().forEach(e -> System.out.println(String.format("\"%s\"->\"%s\"", nameMap.get(e.getKey())+":"+score.get(e.getKey()),
-//                        nameMap.get(e.getValue())+":"+score.get(e.getValue()))));
-//            }
-//
-//            System.out.println("----score-----");
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(System.out));
         }
@@ -416,18 +401,20 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         if (!parentTraceToGenesis(h)){
             parentUnTracedNodes.offer(h);
             return;
-        }
+        } 
 
+        parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, h);
+        parentTracedNodes.add(h);
+        checkUntracedParentNodes();
+    }
+
+    private void checkUntracedParentNodes() {
         Queue<Hash> tmpUnTracedQueue = new ArrayDeque<>();
-        Set<Hash> visited = new HashSet<>();
-        while (!parentUnTracedNodes.isEmpty()) {
-            Hash hash = parentUnTracedNodes.poll();
-            if (parentTraceToGenesis(hash)) {
+        for(Hash h : parentUnTracedNodes) {
+            if (parentTraceToGenesis(h)) {
                 parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, h);
-            }else{
-                if (!visited.contains(hash)) {
-                    tmpUnTracedQueue.add(hash);
-                }
+            } else {
+                tmpUnTracedQueue.add(h);
             }
             visited.add(hash);
         }
@@ -439,7 +426,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         Queue<Hash> confirmNodes = new ArrayDeque<>();
         Set<Hash> visited = new HashSet<>();
         confirmNodes.add(h);
-        while (!confirmNodes.isEmpty()){
+        while (!confirmNodes.isEmpty()) {
             Hash cur = confirmNodes.poll();
             Hash confirmed = parentGraph.get(cur);
             if (null == confirmed){

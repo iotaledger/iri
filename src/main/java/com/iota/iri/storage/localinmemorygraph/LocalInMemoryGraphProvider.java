@@ -344,14 +344,20 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 }
             }
             //FIXME print
-            System.out.println("tracedNodes:"+tracedNodes);
-            System.out.println("unTracedNodes:"+unTracedNodes);
-            System.out.println("----score-----");
-            printGraph(graph,null);
-            System.out.println("--------------");
-            parentGraph.entrySet().forEach(e -> System.out.println(String.format("\"%s\"->\"%s\"", nameMap.get(e.getKey())+":"+score.get(e.getKey()),
-                    nameMap.get(e.getValue())+":"+score.get(e.getValue()))));
-            System.out.println("----score-----");
+//            System.out.println("tracedNodes:"+tracedNodes);
+//            System.out.println("unTracedNodes:"+unTracedNodes);
+//            System.out.println("----score-----");
+//            printGraph(graph,null);
+//            System.out.println("--------------");
+//            if (nameMap == null){
+//                parentGraph.entrySet().forEach(e -> System.out.println(String.format("\"%s\"->\"%s\"", e.getKey()+":"+score.get(e.getKey()),
+//                        e.getValue()+":"+score.get(e.getValue()))));
+//            }else{
+//                parentGraph.entrySet().forEach(e -> System.out.println(String.format("\"%s\"->\"%s\"", nameMap.get(e.getKey())+":"+score.get(e.getKey()),
+//                        nameMap.get(e.getValue())+":"+score.get(e.getValue()))));
+//            }
+//
+//            System.out.println("----score-----");
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(System.out));
         }
@@ -359,6 +365,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     private void doUpdateScore(Hash h){
         Hash genesis = getGenesis();
+        if (null == genesis){
+            return;
+        }
         if (!tracedNodes.contains(genesis)){
             tracedNodes.add(genesis);
             tracedNodes.addAll(graph.get(genesis));
@@ -376,6 +385,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     private void rebuildParentScore(Hash h){
         Hash genesis = getGenesis();
+        if (null == genesis){
+            return;
+        }
         if (!parentTracedNodes.contains(genesis)){
             parentTracedNodes.add(genesis);
             parentTracedNodes.add(parentGraph.get(genesis));
@@ -385,22 +397,27 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             parentUnTracedNodes.offer(h);
             return;
         }
-        Hash hash = parentUnTracedNodes.peek();
-        int size = parentUnTracedNodes.size();
-        for (int i=0; i<size; i++) {
-            while (hash != null) {
-                if (parentTraceToGenesis(hash)) {
-                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, h);
-                    parentUnTracedNodes.remove();
+
+        Queue<Hash> tmpUnTracedQueue = new ArrayDeque<>();
+        Set<Hash> visited = new HashSet<>();
+        while (!parentUnTracedNodes.isEmpty()) {
+            Hash hash = parentUnTracedNodes.poll();
+            if (parentTraceToGenesis(hash)) {
+                parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, h);
+            }else{
+                if (!visited.contains(hash)) {
+                    tmpUnTracedQueue.add(hash);
                 }
-                hash = parentUnTracedNodes.peek();
             }
+            visited.add(hash);
         }
+        parentUnTracedNodes = tmpUnTracedQueue;
     }
 
     private boolean parentTraceToGenesis(Hash h) {
         //遍历，前驱节点是已遍历节点或genesis，返回true
         Queue<Hash> confirmNodes = new ArrayDeque<>();
+        Set<Hash> visited = new HashSet<>();
         confirmNodes.add(h);
         while (!confirmNodes.isEmpty()){
             Hash cur = confirmNodes.poll();
@@ -408,14 +425,16 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if (null == confirmed){
                 continue;
             }
-            if (parentTracedNodes.contains(h)){
-                parentTracedNodes.add(h);
-                return true;
+            if (!parentTracedNodes.contains(confirmed)){
+                return false;
             }
-            //父节点都是可回溯节点
-            confirmNodes.add(confirmed);
+            if (!visited.contains(confirmed)) {
+                confirmNodes.add(confirmed);
+            }
+            visited.add(confirmed);
         }
-        return false;
+        parentTracedNodes.add(h);
+        return true;
     }
 
 
@@ -424,31 +443,36 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             return;
         }
         // 假设unTracedNodes也是乱序的，确保节点能够在其依赖节点计算完毕后得到计算机会
-        int unTracedSize = unTracedNodes.size();
-        for (int i=0; i<unTracedSize; i++) {
-            if (unTracedNodes.isEmpty()){
-                break;
-            }
-            Queue<Hash> tmpQueue = new ArrayDeque<>();
-            while (!unTracedNodes.isEmpty()) {
-                Hash h = unTracedNodes.poll();
-                if (!traceToGenesis(h)) {
+       Queue<Hash> tmpQueue = new ArrayDeque<>();
+        Set<Hash> visited = new HashSet<>();
+        while (!unTracedNodes.isEmpty()) {
+            Hash h = unTracedNodes.poll();
+            if (!traceToGenesis(h)) {
+                if (!visited.contains(h)) {
                     tmpQueue.offer(h);
-                }else {
-                    score = CumWeightScore.update(graph, score, h);
                 }
+            }else {
+                score = CumWeightScore.update(graph, score, h);
             }
-            unTracedNodes = tmpQueue;
+            visited.add(h);
         }
+        unTracedNodes = tmpQueue;
     }
 
     // 回溯方法，能够回溯到genesis或者已回溯节点都算作回溯成功
     private boolean traceToGenesis(Hash h){
         //遍历，前驱节点是已遍历节点或genesis，返回true
         Queue<Hash> confirmNodes = new ArrayDeque<>();
+        Set<Hash> visited = new HashSet<>();
         confirmNodes.add(h);
         while (!confirmNodes.isEmpty()){
             Hash cur = confirmNodes.poll();
+            if (visited.contains(cur)){
+                continue;
+            }else{
+                visited.add(cur);
+            }
+
             Set<Hash> confirmed = graph.get(cur);
             if (null == confirmed){
                 continue;
@@ -459,7 +483,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     checkParentEqual.add(hash);
                 }
             }
-            //父节点都是可回溯节点
+            //父节点不都是可回溯节点
             if (checkParentEqual.size() != confirmed.size()){
                 return false;
             }

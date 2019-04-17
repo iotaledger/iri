@@ -631,6 +631,10 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         } catch (RocksDBException e) {
             e.printStackTrace();
         }
+        if (null == ancestors){
+            return null;
+        }
+
         Queue<Hash> hashes = new ArrayDeque<>();
 
         for(int i=0; i<ancestors.length; i+= Hash.SIZE_IN_BYTES){
@@ -643,6 +647,7 @@ public class RocksDBPersistenceProvider implements PersistenceProvider {
         while(!hashes.isEmpty()){
             stack.push(((ArrayDeque<Hash>) hashes).pollLast());
         }
+        log.info("=== ancestors : " + stack);
         return stack;
     }
 

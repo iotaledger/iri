@@ -85,9 +85,21 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     public void init() throws Exception {
         try {
             buildGraph();
+            loadAncestorGraph();
             service.scheduleAtFixedRate(new AncestorEngine(), 10, 30, TimeUnit.SECONDS);
         } catch (NullPointerException e) {
-            ; // initialization failed because tangle has nothing
+            e.printStackTrace();
+        }
+    }
+
+    private void loadAncestorGraph() {
+        Stack<Hash> ancestors = tangle.getAncestors();
+        Hash ancestor = null;
+        if (null != ancestors) {
+            ancestor = ancestors.peek();
+        }
+        if (graph != null && !graph.isEmpty()) {
+            subGraph(ancestor);
         }
     }
 
@@ -227,29 +239,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     // TODO for public  :: Get the graph using the BFS method
     public void buildGraph() {
         try {
-            Stack<Hash> ancestors = tangle.getAncestors();
-            Hash ancestor = null;
-            if (null != ancestors) {
-                ancestor = ancestors.peek();
-            }
-            Boolean start = false;
-
             Pair<Indexable, Persistable> one = tangle.getFirst(Transaction.class, TransactionHash.class);
             while (one != null && one.low != null) {
                 TransactionViewModel model = new TransactionViewModel((Transaction) one.hi, (TransactionHash) one.low);
                 Hash trunk = model.getTrunkTransactionHash();
                 Hash branch = model.getBranchTransactionHash();
-
-                //from last ancestor
-                if (ancestor != null ) {
-                    if (ancestor.equals(model.getHash()) && !start){
-                        start = true;
-                    }
-                    if (!start) {
-                        one = tangle.next(Transaction.class, one.low);
-                        continue;
-                    }
-                }
 
                 // approve direction
                 if (graph.get(model.getHash()) == null) {
@@ -796,6 +790,124 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return this.parentRevGraph;
     }
 
+
+    private void subGraph(Hash curAncestor) {
+        graph = getSubConfirmGraph(graph, curAncestor);
+        revGraph = getSubGraph(revGraph, curAncestor);
+
+        parentGraph = getSubConfirmChain(parentGraph, curAncestor);
+        parentRevGraph = getSubGraph(parentRevGraph, curAncestor);
+
+        degs = subMap(degs, graph);
+        degs = resetAncestor(degs,curAncestor);
+        topOrder = new HashMap<>();
+        computeToplogicalOrder();
+
+        lvlMap = subMap(lvlMap, graph);
+
+        score = getSubScore(score, revGraph) ;
+        parentScore = getSubScore(parentScore, parentRevGraph);
+
+        buildPivotChain();
+    }
+
+    /**
+     * reset ancestor's parent level to 0
+     * @param degs
+     * @param curAncestor
+     * @return
+     */
+    private Map<Hash, Integer> resetAncestor(Map<Hash, Integer> degs, Hash curAncestor) {
+        totalDepth = 0;
+        graph.get(curAncestor).forEach(e -> degs.put(e,0));
+        return degs;
+    }
+
+    private HashMap<Hash, Double> getSubScore(HashMap<Hash, Double> score, Map<Hash, Set<Hash>> graph) {
+        if (graph == null){
+            return score;
+        }
+        HashMap<Hash, Double> subScore = new HashMap<>();
+        graph.values().stream().flatMap(Collection::stream).forEach(
+                v -> subScore.put(v, score.get(v))
+        );
+        return subScore;
+    }
+
+    private Map<Hash, Integer> subMap(Map<Hash, Integer> degs, Map<Hash, Set<Hash>> graph) {
+        if (null == graph) {
+            return degs;
+        }
+        Map<Hash, Integer> subDegs = new HashMap<>();
+        graph.values().stream().flatMap(Collection::stream).forEach(v -> subDegs.put(v, degs.get(v)));
+        return subDegs;
+    }
+
+    private Map<Hash, Set<Hash>> getSubGraph(Map<Hash, Set<Hash>> g, Hash b) {
+        Map<Hash, Set<Hash>> subGraph = new ConcurrentHashMap<>();
+        Stack<Hash> stack = new Stack<>();
+        stack.push(b);
+        while (!stack.isEmpty()) {
+            Hash h = stack.pop();
+            Set<Hash> subNode = g.get(h);
+            if (null != subNode) {
+                subGraph.put(h, g.get(h));
+                subNode.forEach(e -> stack.push(e));
+            }
+        }
+        //放入触角
+        g.entrySet().stream().filter(entry -> entry.getValue().contains(b)).forEach(entry -> {
+            subGraph.put(entry.getKey(), new HashSet() {{
+                add(b);
+            }});
+        });
+        return subGraph;
+    }
+
+    private Map<Hash, Set<Hash>> getSubConfirmGraph(Map<Hash, Set<Hash>> graph, Hash b) {
+        Map<Hash, Set<Hash>> subGraph = new ConcurrentHashMap<>();
+        Stack<Hash> stack = new Stack<>();
+        stack.push(b);
+        while (!stack.isEmpty()) {
+            Hash h = stack.pop();
+            graph.entrySet().stream().filter(entry -> entry.getValue().contains(h)).forEach(entry -> {
+                if (subGraph.get(entry.getKey()) == null) {
+                    subGraph.put(entry.getKey(), new HashSet<>());
+                }
+                subGraph.get(entry.getKey()).add(h);
+                stack.push(entry.getKey());
+            });
+        }
+
+        //放入触角
+        graph.entrySet().stream().filter(entry -> entry.getKey().equals(b)).forEach(entry -> {
+            subGraph.put(b, entry.getValue());
+        });
+        return subGraph;
+    }
+
+    private Map<Hash, Hash> getSubConfirmChain(Map<Hash, Hash> graph, Hash curAncestor) {
+        //reverse map
+        if (graph == null || graph.isEmpty()) {
+            return null;
+        }
+        Map<Hash, Hash> subGraph = new ConcurrentHashMap<>();
+        Stack<Hash> stack = new Stack<>();
+        stack.push(curAncestor);
+        while (!stack.empty()) {
+            Hash h = stack.pop();
+            graph.entrySet().stream().filter(e -> e.getValue().equals(h)).forEach(e -> {
+                subGraph.put(e.getKey(), h);
+                stack.push(e.getKey());
+            });
+        }
+        //补充触角
+        if (graph.get(curAncestor) != null) {
+            subGraph.put(curAncestor, graph.get(curAncestor));
+        }
+        return subGraph;
+    }
+
     class AncestorEngine implements Runnable {
         @Override
         public void run() {
@@ -871,58 +983,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 //            printAllGraph("after", curAncestor);
         }
 
-        private void subGraph(Hash curAncestor) {
-            graph = getSubConfirmGraph(graph, curAncestor);
-            revGraph = getSubGraph(revGraph, curAncestor);
-
-            parentGraph = getSubConfirmChain(parentGraph, curAncestor);
-            parentRevGraph = getSubGraph(parentRevGraph, curAncestor);
-
-            degs = subMap(degs, graph);
-            degs = resetAncestor(degs,curAncestor);
-            topOrder = new HashMap<>();
-            computeToplogicalOrder();
-
-            lvlMap = subMap(lvlMap, graph);
-
-            score = getSubScore(score, revGraph) ;
-            parentScore = getSubScore(parentScore, parentRevGraph);
-
-            buildPivotChain();
-        }
-
-        /**
-         * reset ancestor's parent level to 0
-         * @param degs
-         * @param curAncestor
-         * @return
-         */
-        private Map<Hash, Integer> resetAncestor(Map<Hash, Integer> degs, Hash curAncestor) {
-            totalDepth = 0;
-            graph.get(curAncestor).forEach(e -> degs.put(e,0));
-            return degs;
-        }
-
-        private HashMap<Hash, Double> getSubScore(HashMap<Hash, Double> score, Map<Hash, Set<Hash>> graph) {
-            if (graph == null){
-                return score;
-            }
-            HashMap<Hash, Double> subScore = new HashMap<>();
-            graph.values().stream().flatMap(Collection::stream).forEach(
-                    v -> subScore.put(v, score.get(v))
-            );
-            return subScore;
-        }
-
-        private Map<Hash, Integer> subMap(Map<Hash, Integer> degs, Map<Hash, Set<Hash>> graph) {
-            if (null == graph) {
-                return degs;
-            }
-            Map<Hash, Integer> subDegs = new HashMap<>();
-            graph.values().stream().flatMap(Collection::stream).forEach(v -> subDegs.put(v, degs.get(v)));
-            return subDegs;
-        }
-
         private void printAllGraph(String tag, Hash ancestor) {
             System.out.println("======" + tag + "=======");
             printGraph(graph, null);
@@ -947,71 +1007,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             }
             ancestors.push(curAncestor);
             return ancestors;
-        }
-
-        private Map<Hash, Set<Hash>> getSubGraph(Map<Hash, Set<Hash>> g, Hash b) {
-            Map<Hash, Set<Hash>> subGraph = new ConcurrentHashMap<>();
-            Stack<Hash> stack = new Stack<>();
-            stack.push(b);
-            while (!stack.isEmpty()) {
-                Hash h = stack.pop();
-                Set<Hash> subNode = g.get(h);
-                if (null != subNode) {
-                    subGraph.put(h, g.get(h));
-                    subNode.forEach(e -> stack.push(e));
-                }
-            }
-            //放入触角
-            g.entrySet().stream().filter(entry -> entry.getValue().contains(b)).forEach(entry -> {
-                subGraph.put(entry.getKey(), new HashSet() {{
-                    add(b);
-                }});
-            });
-            return subGraph;
-        }
-
-        private Map<Hash, Set<Hash>> getSubConfirmGraph(Map<Hash, Set<Hash>> graph, Hash b) {
-            Map<Hash, Set<Hash>> subGraph = new ConcurrentHashMap<>();
-            Stack<Hash> stack = new Stack<>();
-            stack.push(b);
-            while (!stack.isEmpty()) {
-                Hash h = stack.pop();
-                graph.entrySet().stream().filter(entry -> entry.getValue().contains(h)).forEach(entry -> {
-                    if (subGraph.get(entry.getKey()) == null) {
-                        subGraph.put(entry.getKey(), new HashSet<>());
-                    }
-                    subGraph.get(entry.getKey()).add(h);
-                    stack.push(entry.getKey());
-                });
-            }
-
-            //放入触角
-            graph.entrySet().stream().filter(entry -> entry.getKey().equals(b)).forEach(entry -> {
-                subGraph.put(b, entry.getValue());
-            });
-            return subGraph;
-        }
-
-        private Map<Hash, Hash> getSubConfirmChain(Map<Hash, Hash> graph, Hash curAncestor) {
-            //reverse map
-            if (graph == null || graph.isEmpty()) {
-                return null;
-            }
-            Map<Hash, Hash> subGraph = new ConcurrentHashMap<>();
-            Stack<Hash> stack = new Stack<>();
-            stack.push(curAncestor);
-            while (!stack.empty()) {
-                Hash h = stack.pop();
-                graph.entrySet().stream().filter(e -> e.getValue().equals(h)).forEach(e -> {
-                    subGraph.put(e.getKey(), h);
-                    stack.push(e.getKey());
-                });
-            }
-            //补充触角
-            if (graph.get(curAncestor) != null) {
-                subGraph.put(curAncestor, graph.get(curAncestor));
-            }
-            return subGraph;
         }
     }
 }

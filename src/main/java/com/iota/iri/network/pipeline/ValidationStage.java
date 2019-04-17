@@ -75,6 +75,7 @@ public class ValidationStage {
             if (txDigest == 0) {
                 return;
             }
+            log.info("caching {} -> {}", txDigest, txHash);
             recentlySeenBytesCache.put(txDigest, txHash);
         });
 

@@ -8,6 +8,7 @@ import com.iota.iri.crypto.batched.BatchedHasher;
 import com.iota.iri.crypto.batched.BatchedHasherFactory;
 import com.iota.iri.crypto.batched.HashRequest;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.network.NeighborRouter;
@@ -15,6 +16,7 @@ import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Converter;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -258,7 +260,10 @@ public class TransactionProcessingPipeline {
      * @param txTrits the transaction trits
      */
     public void process(byte[] txTrits) {
-        HashingPayload payload = new HashingPayload(null, txTrits, null, null);
+        byte[] txBytes = new byte[Transaction.SIZE];
+        Converter.bytes(txTrits, txBytes);
+        long txDigest = NeighborRouter.getTxCacheDigest(txBytes);
+        HashingPayload payload = new HashingPayload(null, txTrits, txDigest, null);
         hashAndValidate(new ProcessingContext<HashingPayload>(payload));
     }
 

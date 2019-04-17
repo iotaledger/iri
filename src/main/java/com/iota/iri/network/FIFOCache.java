@@ -20,7 +20,7 @@ public class FIFOCache<K, V> {
 
     private static final Logger log = LoggerFactory.getLogger(FIFOCache.class);
 
-    private ReadWriteLock cacheLock = new ReentrantReadWriteLock();
+    private ReadWriteLock cacheLock = new ReentrantReadWriteLock(true);
     private final int capacity;
     private final double dropRate;
     private LinkedHashMap<K, V> map;
@@ -45,15 +45,12 @@ public class FIFOCache<K, V> {
      * @return the entry
      */
     public V get(K key) {
-        cacheLock.readLock().lock();
-        V value = this.map.get(key);
-        if (value != null && (rnd.nextDouble() < this.dropRate)) {
-            this.map.remove(key);
+        try{
+            cacheLock.readLock().lock();
+            return this.map.get(key);
+        }finally{
             cacheLock.readLock().unlock();
-            return null;
         }
-        cacheLock.readLock().unlock();
-        return value;
     }
 
     /**
@@ -64,17 +61,19 @@ public class FIFOCache<K, V> {
      * @return the added entry
      */
     public V put(K key, V value) {
-        cacheLock.writeLock().lock();
-        if (this.map.containsKey(key)) {
+        try{
+            cacheLock.writeLock().lock();
+            if (this.map.containsKey(key)) {
+                return value;
+            }
+            if (this.map.size() >= this.capacity) {
+                Iterator<K> it = this.map.keySet().iterator();
+                it.next();
+                it.remove();
+            }
+            return this.map.put(key, value);
+        }finally{
             cacheLock.writeLock().unlock();
-            return value;
         }
-        if (this.map.size() >= this.capacity) {
-            Iterator<K> it = this.map.keySet().iterator();
-            it.next();
-            it.remove();
-        }
-        cacheLock.writeLock().unlock();
-        return this.map.put(key, value);
     }
 }

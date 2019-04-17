@@ -319,11 +319,11 @@ public class NeighborRouter {
     /**
      * Computes the digest of the given transaction data.
      * 
-     * @param receivedData The raw byte encoded transaction data
+     * @param txBytes The raw byte encoded transaction data
      * @return The the digest of the transaction data
      */
-    public static long getTxCacheDigest(byte[] receivedData) {
-        return txCacheDigestHashFunc.hashBytes(receivedData);
+    public static long getTxCacheDigest(byte[] txBytes) {
+        return txCacheDigestHashFunc.hashBytes(txBytes);
     }
 
     /**

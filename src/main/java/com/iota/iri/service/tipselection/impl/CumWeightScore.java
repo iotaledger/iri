@@ -57,18 +57,18 @@ public class CumWeightScore
 
     public static HashMap<Hash, Double> computeParentScore(Map<Hash, Hash> parentGraph, Map<Hash, Set<Hash>> revParentGraph) {
         HashMap<Hash, Double> ret = new HashMap<>();
-
+        
         for(Hash key : parentGraph.keySet()) {
-            if(!revParentGraph.containsKey(key)) {
-                Hash start = key;
-                while(start != null) {
-                    if(ret.containsKey(start)) {
-                        ret.put(start, ret.get(start) + 1);
-                    } else {
-                        ret.put(start, 1.0);
-                    }
-                    start = parentGraph.get(start);
+            Hash start = key;
+            Set<Hash> visited = new HashSet<>();
+            while(start != null && !visited.contains(start)) {
+                if(ret.containsKey(start)) {
+                    ret.put(start, ret.get(start) + 1);
+                } else {
+                    ret.put(start, 1.0);
                 }
+                visited.add(start);
+                start = parentGraph.get(start);
             }
         }
 

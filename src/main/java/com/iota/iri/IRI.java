@@ -15,6 +15,7 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.ParameterException;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -159,7 +160,7 @@ public class IRI {
             IotaConfig iotaConfig = null;
             String message = "Configuration is created using ";
             try {
-                boolean testnet = ArrayUtils.contains(args, Config.TESTNET_FLAG);
+                boolean testnet = isTestnet(args);
                 File configFile = chooseConfigFile(args);
                 if (configFile != null) {
                     iotaConfig = ConfigFactory.createFromFile(configFile, testnet);
@@ -187,6 +188,23 @@ public class IRI {
             log.info(message);
             log.info("parsed the following cmd args: {}", Arrays.toString(args));
             return iotaConfig;
+        }
+
+        /**
+         * We are connected to testnet when {@link Config#TESTNET_FLAG} is passed in program startup,
+         * following with <code>true</code>
+         * 
+         * @param args the list of program startup arguments
+         * @return <code>true</code> if this is testnet, otherwise <code>false</code>
+         */
+        private static boolean isTestnet(String[] args) {
+            int index = ArrayUtils.indexOf(args, Config.TESTNET_FLAG);
+            if (index != -1 && args.length > index+1) {
+                Boolean bool = BooleanUtils.toBooleanObject(args[index+1]);
+                return bool == null ? false : bool;
+            }
+            
+            return false;
         }
 
         /**

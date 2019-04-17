@@ -46,7 +46,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     private boolean available;
 
     private Stack<Hash> ancestors;
-    private Integer ancestorGeneration = 10;//72000;
+    private Double ancestorCreateFrequency = BaseIotaConfig.getInstance().getAncestorCreateFrequency();
     private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
     public LocalInMemoryGraphProvider(String dbDir, Tangle tangle) {
@@ -946,7 +946,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
             for (Hash mainChainNode : pivotChain) {
                 double mainChainNodeScore = parentScore.get(mainChainNode);
-                if (mainChainNodeScore < (maxScore + new Double(ancestorGeneration))) {
+                if (mainChainNodeScore < (maxScore + new Double(ancestorCreateFrequency))) {
                     continue;
                 }
                 if (minScore > mainChainNodeScore) {

@@ -332,9 +332,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.update(graph, score, vet);
+		    parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
                     //parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
                     //doUpdateScore(vet);
-                    rebuildParentScore(vet);
+                    //rebuildParentScore(vet);
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     score.put(vet, 1.0 / (score.size() + 1));
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
@@ -659,18 +660,6 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         }
         return new HashSet<>();
     }
-
-    //TODO for debug
-//    public static void printScore() {
-//        for(Hash key : score.keySet()) {
-//            if(nameMap != null) {
-//                System.out.print(nameMap.get(key)+":"+score.get(key));
-//            } else {
-//                System.out.print(key+":"+score.get(key));
-//            }
-//            System.out.println();
-//        }
-//    }
 
     public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
         // TODO implement this

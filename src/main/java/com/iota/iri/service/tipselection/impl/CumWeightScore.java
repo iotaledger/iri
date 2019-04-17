@@ -55,6 +55,26 @@ public class CumWeightScore
         return ret;
     }
 
+    public static HashMap<Hash, Double> computeParentScore(Map<Hash, Hash> parentGraph, Map<Hash, Set<Hash>> revParentGraph) {
+        HashMap<Hash, Double> ret = new HashMap<>();
+        
+        for(Hash key : parentGraph.keySet()) {
+            Hash start = key;
+            Set<Hash> visited = new HashSet<>();
+            while(start != null && !visited.contains(start)) {
+                if(ret.containsKey(start)) {
+                    ret.put(start, ret.get(start) + 1);
+                } else {
+                    ret.put(start, 1.0);
+                }
+                visited.add(start);
+                start = parentGraph.get(start);
+            }
+        }
+
+        return ret;
+    }
+
     public static HashMap<Hash, Double> compute(HashMap<Hash, Set<Hash>> revGraph, HashMap<Hash, Set<Hash>> graph, Hash genesis) {
         HashMap<Hash, Double> ret = new HashMap<>();
         LinkedList<Hash> queue = new LinkedList<>();

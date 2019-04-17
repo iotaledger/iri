@@ -139,6 +139,8 @@ public class UTXOGraph {
         for(String key : sorted.keySet()) {
             if(i>0) {
                 doubleSpendSet.add(key);
+            } else if(sorted.get(key).equals(100000)) {
+                doubleSpendSet.add(key);
             }
             i++;
         }

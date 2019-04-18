@@ -11,13 +11,19 @@ import com.iota.iri.storage.Indexable;
 import com.iota.iri.storage.Persistable;
 import com.iota.iri.storage.PersistenceProvider;
 import com.iota.iri.storage.Tangle;
+import com.iota.iri.utils.Converter;
+import com.iota.iri.utils.IotaUtils;
 import com.iota.iri.utils.Pair;
 import org.apache.commons.collections4.CollectionUtils;
 
+import java.io.BufferedWriter;
+import java.io.FileWriter;
 import java.io.PrintStream;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.stream.Collectors;
+
 import java.io.*;
 import com.google.gson.Gson;
 
@@ -45,6 +51,14 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     // to use
     private List<Hash> pivotChain;
 
+    // 鏈兘鍥炴函鍒癵enesis鐨勮妭鐐�
+    Queue<Hash> unTracedNodes;
+    // 淇濆瓨鍙洖婧殑鑺傜偣锛屾渶鍧忕殑鎯呭喌鏄繚瀛樹簡鏁翠釜graph锛岀┖闂存崲鏃堕棿銆�
+    Set<Hash> tracedNodes;
+
+    Queue<Hash> parentUnTracedNodes;
+    Set<Hash> parentTracedNodes;
+
     private boolean available;
 
     public LocalInMemoryGraphProvider(String dbDir, Tangle tangle) {
@@ -60,6 +74,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         score = new HashMap<>();
         parentScore = new HashMap<>();
         totalDepth = 0;
+        unTracedNodes = new ConcurrentLinkedDeque<>();
+        tracedNodes = ConcurrentHashMap.newKeySet();
+        parentUnTracedNodes = new ConcurrentLinkedDeque<>();
+        parentTracedNodes = ConcurrentHashMap.newKeySet();
     }
 
     //FIXME for debug
@@ -69,15 +87,19 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     @Override
     public void close() throws Exception {
-        graph = new HashMap<>();
-        revGraph = new HashMap<>();
-        parentGraph = new HashMap<>();
-        parentRevGraph = new HashMap<>();
-        degs = new HashMap<>();
-        topOrder = new HashMap<>();
+        graph.clear();
+        revGraph.clear();
+        parentGraph.clear();
+        parentRevGraph.clear();
+        degs.clear();
+        topOrder.clear();
         totalDepth = 0;
-        topOrderStreaming = new HashMap<>();
-        lvlMap = new HashMap<>();
+        topOrderStreaming.clear();
+        lvlMap.clear();
+        unTracedNodes.clear();
+        tracedNodes.clear();
+        parentUnTracedNodes.clear();
+        parentTracedNodes.clear();
     }
 
     public void init() throws Exception {
@@ -319,7 +341,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.update(graph, score, vet);
-                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
+		    parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
+                    //parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
+                    //doUpdateScore(vet);
+                    //rebuildParentScore(vet);
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     score.put(vet, 1.0 / (score.size() + 1));
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
@@ -331,6 +356,137 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         } catch (Exception e) {
             e.printStackTrace(new PrintStream(System.out));
         }
+    }
+
+    private void doUpdateScore(Hash h){
+        Hash genesis = getGenesis();
+        if (null == genesis){
+            return;
+        }
+        if (!tracedNodes.contains(genesis)){
+            tracedNodes.add(genesis);
+            tracedNodes.addAll(graph.get(genesis));
+        }
+        //鍒ゆ柇鏄惁鍙洖婧�
+        if (!traceToGenesis(h)){
+            unTracedNodes.offer(h);
+            return;
+        }
+
+        tracedNodes.add(h);
+        score = CumWeightScore.update(graph, score, h);
+        checkUntracedNodes();
+    }
+
+    private void rebuildParentScore(Hash h){
+        Hash genesis = getGenesis();
+        if (null == genesis){
+            return;
+        }
+        if (!parentTracedNodes.contains(genesis)){
+            parentTracedNodes.add(genesis);
+            parentTracedNodes.add(parentGraph.get(genesis));
+        }
+
+        if (!parentTraceToGenesis(h)){
+            parentUnTracedNodes.offer(h);
+            return;
+        } 
+
+        parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, h);
+        parentTracedNodes.add(h);
+        checkUntracedParentNodes();
+    }
+
+    private void checkUntracedParentNodes() {
+        Queue<Hash> tmpUnTracedQueue = new ArrayDeque<>();
+        for(Hash h : parentUnTracedNodes) {
+            if (parentTraceToGenesis(h)) {
+                parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, h);
+            } else {
+                tmpUnTracedQueue.add(h);
+            }
+        }
+        parentUnTracedNodes = tmpUnTracedQueue;
+    }
+
+    private boolean parentTraceToGenesis(Hash h) {
+        //閬嶅巻锛屽墠椹辫妭鐐规槸宸查亶鍘嗚妭鐐规垨genesis锛岃繑鍥瀟rue
+        Queue<Hash> confirmNodes = new ArrayDeque<>();
+        Set<Hash> visited = new HashSet<>();
+        confirmNodes.add(h);
+        while (!confirmNodes.isEmpty()) {
+            Hash cur = confirmNodes.poll();
+            Hash confirmed = parentGraph.get(cur);
+            if (null == confirmed){
+                continue;
+            }
+            if (!parentTracedNodes.contains(confirmed)){
+                return false;
+            }
+            if (!visited.contains(confirmed)) {
+                confirmNodes.add(confirmed);
+            }
+            visited.add(confirmed);
+        }
+        parentTracedNodes.add(h);
+        return true;
+    }
+
+
+    private void checkUntracedNodes() {
+        if (unTracedNodes.isEmpty()){
+            return;
+        }
+        // 鍋囪unTracedNodes涔熸槸涔卞簭鐨勶紝纭繚鑺傜偣鑳藉鍦ㄥ叾渚濊禆鑺傜偣璁＄畻瀹屾瘯鍚庡緱鍒拌绠楁満浼�
+       Queue<Hash> tmpQueue = new ArrayDeque<>();
+        Set<Hash> visited = new HashSet<>();
+        while (!unTracedNodes.isEmpty()) {
+            Hash h = unTracedNodes.poll();
+            if (!traceToGenesis(h)) {
+                if (!visited.contains(h)) {
+                    tmpQueue.offer(h);
+                }
+            }else {
+                score = CumWeightScore.update(graph, score, h);
+            }
+            visited.add(h);
+        }
+        unTracedNodes = tmpQueue;
+    }
+
+    // 鍥炴函鏂规硶锛岃兘澶熷洖婧埌genesis鎴栬�呭凡鍥炴函鑺傜偣閮界畻浣滃洖婧垚鍔�
+    private boolean traceToGenesis(Hash h){
+        //閬嶅巻锛屽墠椹辫妭鐐规槸宸查亶鍘嗚妭鐐规垨genesis锛岃繑鍥瀟rue
+        Queue<Hash> confirmNodes = new ArrayDeque<>();
+        Set<Hash> visited = new HashSet<>();
+        confirmNodes.add(h);
+        while (!confirmNodes.isEmpty()){
+            Hash cur = confirmNodes.poll();
+            if (visited.contains(cur)){
+                continue;
+            }else{
+                visited.add(cur);
+            }
+
+            Set<Hash> confirmed = graph.get(cur);
+            if (null == confirmed){
+                continue;
+            }
+            Set<Hash> checkParentEqual = new HashSet<>();
+            for (Hash hash : confirmed){
+                if (tracedNodes.contains(hash)){
+                    checkParentEqual.add(hash);
+                }
+            }
+            //鐖惰妭鐐逛笉閮芥槸鍙洖婧妭鐐�
+            if (checkParentEqual.size() != confirmed.size()){
+                return false;
+            }
+            confirmed.forEach(e -> confirmNodes.add(e));
+        }
+        tracedNodes.add(h);
+        return true;
     }
 
     private void computeToplogicalOrder() {

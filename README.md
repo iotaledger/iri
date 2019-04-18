@@ -101,4 +101,4 @@ Please refere [[Performance tunning]](https://github.com/wunder3605/iri/blob/dev
 
 ## 2.2 Cluster deployment 
 
-Please refere [[Cluster deployment]](https://github.com/wunder3605/iri/tree/dev/scripts/iota_deploy) for details of how to deploy multiple nodes. 
+Please refere [[Cluster deployment]](https://github.com/wunder3605/iri/blob/dev/scripts/examples/cluster/README.md) for details of how to deploy multiple nodes. 

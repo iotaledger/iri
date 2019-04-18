@@ -10,6 +10,8 @@ We infer a pivotal chain along the path of each epoch in the graph,
 and a total order of the graph could be calculated without a centralized authority.
 By leveraging the graph streaming property,
 high transaction validation speed will be achieved even if the DAG is growing.
+We designed the `direct signal' gossip algorithm to help diseminate block updates in the network,
+such that message can be passed in the network in a more efficient way, henthforth improve the network scalability.
 We implemented our system based on IOTA's reference code (IRI), 
 and ran comprehensive experiments over different size of clusters of multiple network topologies. 
 Despite the shortcoming of the IRI's network part, our implementation scales with the growth of data size.

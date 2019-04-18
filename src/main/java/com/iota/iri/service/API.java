@@ -789,7 +789,7 @@ public class API {
 
             if(transactionViewModel.store(instance.tangle)) {
                 long count = transactionViewModel.addTxnCount(instance.tangle);
-                log.info("received {} transactions.", count);
+                log.info("received {} {} from api.", count, count == 1?"transaction":"transactions");
 
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
@@ -1135,7 +1135,7 @@ public class API {
         for (final TransactionViewModel transactionViewModel : elements) {
             //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
-            instance.node.broadcast(transactionViewModel);
+            instance.node.broadcast(transactionViewModel, null);
         }
     }
 

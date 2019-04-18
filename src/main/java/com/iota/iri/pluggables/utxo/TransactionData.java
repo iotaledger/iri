@@ -133,12 +133,12 @@ public class TransactionData {
         if(hashList.size() != tmpStorage.size() || hashList.size() <= 1) {
             return;
         }
-        int i=hashList.size()-1;
+        int i=0;
         for(Hash h : hashList) {
             for (Txn t : tmpStorage.get(i)) {
                 putIndex(t, h);
             }
-            i--;
+            i++;
         }
         tmpStorage.clear();
     }
@@ -238,10 +238,7 @@ public class TransactionData {
         constructTxnsFromRawTxns(rawTxnsList);
     }
 
-
-    public void init() {
-        transactions = new ArrayList<>();
-
+    public static Txn genesis() {
         List<TxnOut> txnOutList = new ArrayList<>();
         TxnOut txOut = new TxnOut();
         txOut.amount = 1000000000;  //just for testing
@@ -256,7 +253,13 @@ public class TransactionData {
 
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
-        addTxn(newTxn);
+        return newTxn;
+    }
+
+    public void init() {
+        transactions = new ArrayList<>();
+
+        addTxn(genesis());
     }
 
     public Txn getLast() {
@@ -365,7 +368,7 @@ public class TransactionData {
         return newTxn;
     }
 
-    private String generateHash(String txnStr) {
+    public static String generateHash(String txnStr) {
         String trytes = Converter.asciiToTrytes(txnStr);
 
         byte[] trits = Converter.allocateTritsForTrytes(trytes.length());
@@ -395,11 +398,11 @@ public class TransactionData {
         utxoGraph.markDoubleSpend(totalTopOrders, txnToTangleMap);
         //
         Set<String> visisted = new HashSet<>();
-        
+
 
         long total = 0;
 
-        for (int i = 0; i < transactions.size(); i++) {       
+        for (int i = 0; i < transactions.size(); i++) {
             Txn transaction = transactions.get(i);
             if(visisted.contains(transaction.txnHash)) {
                 continue; //FIXME this is a problem

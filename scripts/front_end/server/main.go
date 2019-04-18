@@ -1,12 +1,12 @@
 package main
 
 import (
-	v "./vue"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"log"
+	"net/http"
+	v "./vue"
 )
 
 func main() {
@@ -20,20 +20,20 @@ func main() {
 	}
 }
 
-func AddNode(writer http.ResponseWriter, request *http.Request) {
+func AddNode(writer http.ResponseWriter, request *http.Request){
 	var o v.OCli
 	body, _ := ioutil.ReadAll(request.Body)
-	response := o.AddAttestationInfoFunction(body)
+	response:=o.AddAttestationInfoFunction(body)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		fmt.Println(err)
 	}
 }
 
-func QueryNodes(writer http.ResponseWriter, request *http.Request) {
+func QueryNodes(writer http.ResponseWriter, request *http.Request){
 	var o v.OCli
 	body, _ := ioutil.ReadAll(request.Body)
-	response := o.GetRankFunction(body)
+	response:=o.GetRankFunction(body)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		fmt.Println(err)

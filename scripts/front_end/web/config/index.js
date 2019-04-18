@@ -1,6 +1,6 @@
 // see http://vuejs-templates.github.io/webpack for documentation.
 var path = require('path');
-var proxyConfig = require('./proxyConfig');
+var proxyConfig = require("./proxyConfig");
 module.exports = {
   build: {
     env: require('./prod.env'),

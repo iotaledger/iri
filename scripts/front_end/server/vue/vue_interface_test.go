@@ -14,10 +14,8 @@ import (
 )
 
 var o OCli
-
 const MyURL = "127.0.0.1:14700"
-
-var nodesCache = make([]string, 3)
+var nodesCache = make([]string,3)
 var index = 0
 var number = 1
 
@@ -78,14 +76,14 @@ func TestGetRankFunction(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 
 		var str string
-		data := make([]string, 1)
-		for i := 0; i < len(nodesCache); i += 3 {
-			data = append(data, `%7B%22attester%22%3A%22`+nodesCache[i+0]+
-				`%22%2C%22attestee%22%3A%22`+nodesCache[i+1]+`%22%2C%22score%22%3A`+nodesCache[i+2]+`%7D`)
+		data := make([]string,1)
+		for i := 0;i < len(nodesCache);i += 3 {
+			data = append(data,`%7B%22attester%22%3A%22` + nodesCache[i+0] +
+				`%22%2C%22attestee%22%3A%22` + nodesCache[i+1] + `%22%2C%22score%22%3A` + nodesCache[i+2] +`%7D`)
 		}
 
-		str = strings.Trim(strings.Join(data, ","), ",")
-		str = `{"blocks":"[\"%7B%22tee_num%22%3A1%2C%22tee_content%22%3A%5B` + str + `%5D%7D\"]","duration":5}`
+		str = strings.Trim(strings.Join(data,","),",")
+		str = `{"blocks":"[\"%7B%22tee_num%22%3A1%2C%22tee_content%22%3A%5B`+str+`%5D%7D\"]","duration":5}`
 		_, _ = io.WriteString(w, str)
 	}))
 
@@ -99,22 +97,22 @@ func TestGetRankFunction(t *testing.T) {
 		t.Errorf("failed to call GetRankFunction: %s\n", resp.Message)
 	}
 
-	result := checkData(resp.Data.DataCtx)
-	if result == 1 {
+	result:=checkData(resp.Data)
+	if result == 1{
 		fmt.Println("Data detection correct")
-	} else {
+	}else {
 		t.Error("Data detection failure")
 	}
 
 }
 
-func handleData(bodyBytes []byte) {
-	nodes := make([]string, 15)
-	data1 := strings.Split(string(bodyBytes), ",")
-	nodes = strings.Split(data1[2], "%22")
+func handleData(bodyBytes []byte){
+	nodes := make([]string,15)
+	data1 := strings.Split(string(bodyBytes),",")
+	nodes = strings.Split(data1[2],"%22")
 	reg := regexp.MustCompile(`[%ACD]`)
 	data2 := reg.ReplaceAllString(nodes[14], "0")
-	nodes[14] = strings.Split(data2, "0")[2]
+	nodes[14] = strings.Split(data2,"0")[2]
 
 	if number == 1 {
 		for k := range nodes {
@@ -124,54 +122,54 @@ func handleData(bodyBytes []byte) {
 			}
 		}
 		number ++
-	} else {
+	}else{
 		for k := range nodes {
 			if k == 7 || k == 11 || k == 14 {
-				nodesCache = append(nodesCache, nodes[k])
+				nodesCache=append(nodesCache,nodes[k])
 			}
 		}
 	}
 
 }
 
-func checkData(a interface{}) int {
+func checkData(a interface{}) int{
 	str := fmt.Sprintf("%v", a)
 	reg := regexp.MustCompile(`[{\[\]}]`)
 	ss := reg.ReplaceAllString(str, " ")
 	var tee teectx
 	var tees []teectx
 	s1 := strings.Fields(ss)
-	for k := range s1 {
+	for k := range s1{
 		if s1[k] == "0" {
 			continue
-		} else {
-			if k%3 == 0 {
+		}else {
+			if k % 3 == 0 {
 				tee.Attester = s1[k]
-			} else if k%3 == 1 {
+			} else if k % 3 == 1 {
 				tee.Attestee = s1[k]
-			} else if k%3 == 2 {
+			} else if k % 3 == 2{
 				tee.Score = s1[k]
-				tees = append(tees, tee)
+				tees = append(tees,tee)
 			}
 		}
 	}
 	var s []string
-	for k := range tees {
-		s = append(s, tees[k].Attester)
-		s = append(s, tees[k].Attestee)
-		s = append(s, tees[k].Score)
+	for k := range tees{
+		s = append(s,tees[k].Attester)
+		s = append(s,tees[k].Attestee)
+		s = append(s,tees[k].Score)
 	}
-	if len(s) != len(nodesCache) {
+	if len(s) != len(nodesCache){
 		return 0
 	}
 	var j int
-	for i := 0; i < len(s); i ++ {
-		for j = 0; j < len(nodesCache); j ++ {
-			if s[i] == nodesCache[j] {
+	for i:= 0;i < len(s);i ++{
+		for j = 0;j<len(nodesCache);j ++{
+			if s[i] == nodesCache[j]{
 				break
 			}
 		}
-		if j == len(nodesCache) {
+		if j == len(nodesCache){
 			return 0
 		}
 	}
@@ -184,3 +182,5 @@ type teectx struct {
 	Attestee string
 	Score    string
 }
+
+

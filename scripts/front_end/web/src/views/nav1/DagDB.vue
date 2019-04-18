@@ -23,7 +23,7 @@
 </template>
 
 <script>
-    let iplist = require('./ipConfig');
+    let iplist = require("./ipConfig");
     let requestHost = "";
     let nameMap = {};
     let servers = [];
@@ -145,7 +145,7 @@
                 seriesData = {
                     type: "graph",
                     layout: "none",
-                    edgeSymbol: ['arrow'],
+                    edgeSymbol: ["arrow"],
                     data: datas,
                     edges: relations.map(function (edge) {
                         return {
@@ -256,7 +256,7 @@
                     }
                 }).catch((err) => {
                     console.error(err);
-                })
+                });
             },
             prepareTreeData(data) {
                 let result = [];
@@ -270,7 +270,7 @@
                 return result;
             },
         }
-    }
+    };
 </script>
 <style>
     .operation-div {

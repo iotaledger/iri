@@ -358,10 +358,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.update(graph, score, vet);
-		    parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
-                    //parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
-                    //doUpdateScore(vet);
-                    //rebuildParentScore(vet);
+                    parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     score.put(vet, 1.0 / (score.size() + 1));
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
@@ -588,8 +585,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                             ret += "\"" + nameMap.get(key) + "\"->" +
                             "\"" + nameMap.get(val) + "\"\n";
                         } else {
-                            ret += "\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
-                            "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n";
+                            ret += "\"" + IotaUtils.abbrieviateHash(key, 6) + ":" + parentScore.get(key) + "\"->" +
+                            "\"" + IotaUtils.abbrieviateHash(val, 6) + ":" + parentScore.get(val) + "\"\n";
                         }
                     }
                 }
@@ -969,6 +966,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public HashMap<Hash, Set<Hash>> getRevParentGraph() {
         return this.parentRevGraph;
+    }
+
+    public boolean hasBlock(Hash h) {
+        return graph.containsKey(h);
     }
 }
 

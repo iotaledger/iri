@@ -893,9 +893,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @JsonProperty
     @Parameter(names = "--ancestor-create-frequency", description = DbConfig.Descriptions.ANCESTOR_CREATE_FREQUENCY)
     protected void setAncestorCreateFrequency(double ancestorCreateFrequency) {
-        if (ancestorCreateFrequency < Defaults.ANCESTOR_CREATE_FREQUENCY){
-            return;
-        }
+        //FIXME 测试通过后加上此限制
+//        if (ancestorCreateFrequency < Defaults.ANCESTOR_CREATE_FREQUENCY){
+//            return;
+//        }
         this.ancestorCreateFrequency = ancestorCreateFrequency;
     }
 

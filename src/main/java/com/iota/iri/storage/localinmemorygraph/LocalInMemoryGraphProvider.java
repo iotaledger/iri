@@ -52,7 +52,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     private boolean available;
 
     private Stack<Hash> ancestors;
-    private Double ancestorCreateFrequency = 100d;//BaseIotaConfig.getInstance().getAncestorCreateFrequency();
+    private Double ancestorCreateFrequency = BaseIotaConfig.getInstance().getAncestorCreateFrequency();
     private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
     public LocalInMemoryGraphProvider(String dbDir, Tangle tangle) {

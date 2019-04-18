@@ -1,6 +1,7 @@
 package com.iota.iri.service.tipselection.impl;
 
 import com.iota.iri.model.Hash;
+
 import java.util.*;
 
 public class CumWeightScore
@@ -85,10 +86,13 @@ public class CumWeightScore
 
         while (!queue.isEmpty()) {
             Hash h = queue.pop();
-            for(Hash e : revGraph.get(h)) {
-                if(revGraph.containsKey(e) && !visited.contains(e)) {
-                    queue.add(e);
-                    visited.add(e);
+            Set<Hash> set = revGraph.get(h);
+            if (set != null) {
+                for (Hash e : set) {
+                    if (graph.containsKey(e) && !visited.contains(e)) {
+                        queue.add(e);
+                        visited.add(e);
+                    }
                 }
             }
             ret = update(graph, ret, h);

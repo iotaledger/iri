@@ -20,11 +20,7 @@ import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.PrintStream;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.ConcurrentLinkedDeque;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 
 public class LocalInMemoryGraphProvider implements AutoCloseable, PersistenceProvider {
@@ -56,7 +52,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     private boolean available;
 
     private Stack<Hash> ancestors;
-    private Double ancestorCreateFrequency = BaseIotaConfig.getInstance().getAncestorCreateFrequency();
+    private Double ancestorCreateFrequency = 100d;//BaseIotaConfig.getInstance().getAncestorCreateFrequency();
     private ScheduledExecutorService service = Executors.newSingleThreadScheduledExecutor();
 
     public LocalInMemoryGraphProvider(String dbDir, Tangle tangle) {
@@ -107,15 +103,17 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             service.scheduleAtFixedRate(new AncestorEngine(), 10, 30, TimeUnit.SECONDS);
         } catch (NullPointerException e) {
             e.printStackTrace();
+        } catch (Throwable e){
+            e.printStackTrace();
         }
     }
 
     private void loadAncestorGraph() {
         Stack<Hash> ancestors = tangle.getAncestors();
-        Hash ancestor = null;
-        if (null != ancestors) {
-            ancestor = ancestors.peek();
+        if (null == ancestors || CollectionUtils.isEmpty(ancestors)) {
+            return;
         }
+        Hash ancestor = ancestors.peek();
         if (graph != null && !graph.isEmpty()) {
             subGraph(ancestor);
         }
@@ -352,7 +350,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()){
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.update(graph, score, vet);
-		    parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
+		            parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
                     //parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, vet);
                     //doUpdateScore(vet);
                     //rebuildParentScore(vet);
@@ -541,6 +539,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             if(BaseIotaConfig.getInstance().getStreamingGraphSupport()) {
                 if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("CUM_WEIGHT")) {
                     score = CumWeightScore.compute(revGraph, graph, getGenesis());
+                    parentScore = CumWeightScore.computeParentScore(parentGraph, parentRevGraph);
                     // FIXME add parent score here
                 } else if (BaseIotaConfig.getInstance().getConfluxScoreAlgo().equals("KATZ")) {
                     KatzCentrality centrality = new KatzCentrality(graph, revGraph, 0.5);
@@ -581,16 +580,16 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 for (Hash val : graph.get(key)) {
                     if (nameMap != null) {
                         if(k != null) {
-                            writer.write("\"" + nameMap.get(key) + "\"->" +
-                                    "\"" + nameMap.get(val) + "\"\n");
+                            writer.write("\"" + nameMap.get(key)+ ":" + score.get(key)  + "\"->" +
+                                    "\"" + nameMap.get(val)+ ":" + score.get(val)  + "\"\n");
                         } else {
                             System.out.println("\"" + nameMap.get(key) + ":" + score.get(key) + "\"->" +
                                     "\"" + nameMap.get(val) + ":" + score.get(val) + "\"");
                         }
                     } else {
                         if(k != null) {
-                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
-                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n");
+                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 6)+ ":" + score.get(key)  + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + ":" + score.get(val) + "\"\n");
                         } else {
                             System.out.println("\"" + IotaUtils.abbrieviateHash(key, 6) + ":" + score.get(key) + "\"->" +
                                     "\"" + IotaUtils.abbrieviateHash(val, 6) + ":" + score.get(val) + "\"");
@@ -608,7 +607,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
 
     //FIXME for debug :: for graphviz visualization
-    void printRevGraph(HashMap<Hash, Set<Hash>> revGraph) {
+    void printRevGraph(Map<Hash, Set<Hash>> revGraph) {
         for (Hash key : revGraph.keySet()) {
             for (Hash val : revGraph.get(key)) {
                 if (nameMap != null) {
@@ -931,121 +930,75 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
 
-    private void subGraph(Hash curAncestor) {
-        graph = getSubConfirmGraph(graph, curAncestor);
-        revGraph = getSubGraph(revGraph, curAncestor);
+    public void subGraph(Hash curAncestor) {
+        Map<Hash, Set<Hash>> subGraph = new HashMap<>();
+        Map<Hash, Set<Hash>> subRevGraph = new HashMap<>();
+        Map<Hash, Hash> subParentGraph = new HashMap<>();
+        Map<Hash, Set<Hash>> subParentRevGraph = new HashMap<>();
+        degs.clear();
 
-        parentGraph = getSubConfirmChain(parentGraph, curAncestor);
-        parentRevGraph = getSubGraph(parentRevGraph, curAncestor);
+        LinkedList<Hash> queue = new LinkedList<>();
+        queue.add(curAncestor);
+        while (!queue.isEmpty()) {
+            Hash h = queue.poll();
+            Set<Hash> children = revGraph.get(h);
+            if (null != children) {
+                subRevGraph.putIfAbsent(h, children);
+                for (Hash keyOfGraph : children){
+                    Set<Hash> valueOfGraph = subGraph.get(keyOfGraph);
+                    if(null == valueOfGraph){
+                        valueOfGraph = new HashSet<>();
+                        subGraph.putIfAbsent(keyOfGraph, valueOfGraph);
+                    }
+                    valueOfGraph.add(h);
 
-        degs = subMap(degs, graph);
-        degs = resetAncestor(degs,curAncestor);
-        topOrder = new HashMap<>();
-        computeToplogicalOrder();
+                    Hash parentNode = parentGraph.get(keyOfGraph);
+                    if (null != parentNode) {
+                        subParentGraph.putIfAbsent(keyOfGraph, h);
+                    }
+                }
 
-        lvlMap = subMap(lvlMap, graph);
+                for (Hash child : children){
+                    if (!queue.contains(child)){
+                        queue.add(child);
+                    }
+                }
+            }
 
-        score = getSubScore(score, revGraph) ;
-        parentScore = getSubScore(parentScore, parentRevGraph);
+            Set<Hash> subSet = parentRevGraph.get(h);
+            if (null != subSet) {
+                subParentRevGraph.putIfAbsent(h, subSet);
+            }
 
-        buildPivotChain();
-    }
-
-    /**
-     * reset ancestor's parent level to 0
-     * @param degs
-     * @param curAncestor
-     * @return
-     */
-    private Map<Hash, Integer> resetAncestor(Map<Hash, Integer> degs, Hash curAncestor) {
-        totalDepth = 0;
-        graph.get(curAncestor).forEach(e -> degs.put(e,0));
-        return degs;
-    }
-
-    private HashMap<Hash, Double> getSubScore(HashMap<Hash, Double> score, Map<Hash, Set<Hash>> graph) {
-        if (graph == null){
-            return score;
-        }
-        HashMap<Hash, Double> subScore = new HashMap<>();
-        graph.values().stream().flatMap(Collection::stream).forEach(
-                v -> subScore.put(v, score.get(v))
-        );
-        return subScore;
-    }
-
-    private Map<Hash, Integer> subMap(Map<Hash, Integer> degs, Map<Hash, Set<Hash>> graph) {
-        if (null == graph) {
-            return degs;
-        }
-        Map<Hash, Integer> subDegs = new HashMap<>();
-        graph.values().stream().flatMap(Collection::stream).forEach(v -> subDegs.put(v, degs.get(v)));
-        return subDegs;
-    }
-
-    private Map<Hash, Set<Hash>> getSubGraph(Map<Hash, Set<Hash>> g, Hash b) {
-        Map<Hash, Set<Hash>> subGraph = new ConcurrentHashMap<>();
-        Stack<Hash> stack = new Stack<>();
-        stack.push(b);
-        while (!stack.isEmpty()) {
-            Hash h = stack.pop();
-            Set<Hash> subNode = g.get(h);
-            if (null != subNode) {
-                subGraph.put(h, g.get(h));
-                subNode.forEach(e -> stack.push(e));
+            if (degs.get(h) == null){
+                degs.putIfAbsent(h, 2);
             }
         }
-        //放入触角
-        g.entrySet().stream().filter(entry -> entry.getValue().contains(b)).forEach(entry -> {
-            subGraph.put(entry.getKey(), new HashSet() {{
-                add(b);
-            }});
-        });
-        return subGraph;
-    }
 
-    private Map<Hash, Set<Hash>> getSubConfirmGraph(Map<Hash, Set<Hash>> graph, Hash b) {
-        Map<Hash, Set<Hash>> subGraph = new ConcurrentHashMap<>();
-        Stack<Hash> stack = new Stack<>();
-        stack.push(b);
-        while (!stack.isEmpty()) {
-            Hash h = stack.pop();
-            graph.entrySet().stream().filter(entry -> entry.getValue().contains(h)).forEach(entry -> {
-                if (subGraph.get(entry.getKey()) == null) {
-                    subGraph.put(entry.getKey(), new HashSet<>());
-                }
-                subGraph.get(entry.getKey()).add(h);
-                stack.push(entry.getKey());
-            });
+        subGraph.putIfAbsent(curAncestor, graph.get(curAncestor));
+        for (Hash h : graph.get(curAncestor)){
+            Set<Hash> set = new HashSet<>();
+            set.add(curAncestor);
+            subRevGraph.putIfAbsent(h, set);
+            degs.putIfAbsent(h, 0);
         }
+        subParentGraph.putIfAbsent(curAncestor, parentGraph.get(curAncestor));
+        subParentRevGraph.putIfAbsent(subParentGraph.get(curAncestor),new HashSet(){{add(curAncestor);}});
 
-        //放入触角
-        graph.entrySet().stream().filter(entry -> entry.getKey().equals(b)).forEach(entry -> {
-            subGraph.put(b, entry.getValue());
-        });
-        return subGraph;
-    }
+        graph.clear();
+        revGraph.clear();
+        parentGraph.clear();
+        parentRevGraph.clear();
 
-    private Map<Hash, Hash> getSubConfirmChain(Map<Hash, Hash> graph, Hash curAncestor) {
-        //reverse map
-        if (graph == null || graph.isEmpty()) {
-            return null;
-        }
-        Map<Hash, Hash> subGraph = new ConcurrentHashMap<>();
-        Stack<Hash> stack = new Stack<>();
-        stack.push(curAncestor);
-        while (!stack.empty()) {
-            Hash h = stack.pop();
-            graph.entrySet().stream().filter(e -> e.getValue().equals(h)).forEach(e -> {
-                subGraph.put(e.getKey(), h);
-                stack.push(e.getKey());
-            });
-        }
-        //补充触角
-        if (graph.get(curAncestor) != null) {
-            subGraph.put(curAncestor, graph.get(curAncestor));
-        }
-        return subGraph;
+        graph = new ConcurrentHashMap<>(subGraph);
+        revGraph = new ConcurrentHashMap<>(subRevGraph);
+        parentGraph = new ConcurrentHashMap<>(subParentGraph);
+        parentRevGraph = new ConcurrentHashMap<>(subParentRevGraph);
+
+        topOrder.clear();
+        computeToplogicalOrder();
+        computeScore();
+        buildPivotChain();
     }
 
     class AncestorEngine implements Runnable {
@@ -1053,7 +1006,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         public void run() {
             try {
                 refreshGraph();
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 e.printStackTrace();
             }
         }
@@ -1072,6 +1025,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     continue;
                 }
                 Double score = parentScore.get(node);
+                if (null == score){
+                    throw new NullPointerException("key："+ node);
+                }
                 if (score > maxScore) {
                     maxScore = score;
                     maxScoreNode = node;
@@ -1117,16 +1073,13 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
             ancestors = reloadAncestor(ancestors, curAncestor);
             tangle.storeAncestors(ancestors);
-//
             subGraph(curAncestor);
-
-//            printAllGraph("after", curAncestor);
         }
 
         private void printAllGraph(String tag, Hash ancestor) {
-            System.out.println("======" + tag + "=======");
-            printGraph(graph, null);
-            System.out.println("-----------");
+//            System.out.println("======" + tag + " begin =======");
+            printGraph(graph, "graph:dot");
+//            System.out.println("-----------");
 //            printRevGraph(revGraph);
 //            System.out.println("-----------");
 //            if (parentGraph != null) {
@@ -1135,10 +1088,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 //            System.out.println("-----------");
 //            printRevGraph(parentRevGraph);
 //            System.out.println("-----------");
-            CollectionUtils.emptyIfNull(ancestors).stream().forEach(a -> System.out.println(IotaUtils.abbrieviateHash(a, 4)));
+//            CollectionUtils.emptyIfNull(ancestors).stream().forEach(a -> System.out.println(IotaUtils.abbrieviateHash(a, 4)));
 //            System.out.println("-----------");
 //            System.out.println(ancestor);
-            System.out.println("======" + tag + "=======");
+//            System.out.println("======" + tag + " end =======");
         }
 
         private Stack<Hash> reloadAncestor(Stack<Hash> ancestors, Hash curAncestor) {

@@ -16,21 +16,65 @@
             </div>
         </el-form-item>
         <div id="dagChart" class="dag-chart"></div>
+        <div class="detail-show">
+            <pre></pre>
+        </div>
     </el-form>
 </template>
 
 <script>
+    let iplist = require('./ipConfig');
     let requestHost = "";
     let nameMap = {};
+    let servers = [];
+    for (let i in iplist.ips) {
+        servers.push({
+            name: iplist.ips[i],
+            value: iplist.ips[i]
+        })
+    }
+
+    function queryNodeDetail(name) {
+        if (requestHost === "") {
+            return;
+        }
+        let requestUrl = requestHost + "/get_block_content";
+        let request = {};
+        let requestData = {};
+        requestData.hashes = [];
+        requestData.hashes.push(nameMap[name]);
+        request.requestUrl = requestUrl;
+        request.requestData = JSON.stringify(requestData);
+        let settings = {
+            "async": true,
+            "crossDomain": true,
+            "url": "/api/QueryNodeDetail",
+            "method": "POST",
+            "headers": {
+                "Content-Type": "application/json"
+            },
+            "processData": false,
+            "data": JSON.stringify(request)
+        };
+        $.ajax(settings).done(function (response) {
+            response = JSON.parse(response);
+            if (response["Code"] === 0) {
+                alert(response["Message"]);
+            } else {
+                let detail = response["Data"];
+                detail = JSON.parse(detail.replace("']", "]").replace("['", "["));
+                $(".detail-show pre").html(JSON.stringify(detail, null, 2));
+            }
+        });
+    }
+
     export default {
         data() {
             return {
                 form: {
                     server: ""
                 },
-                serverList: [
-                    {"name": "http://192.168.199.112:5000", "value": "http://192.168.199.112:5000"}
-                ]
+                serverList: servers
             };
         },
         methods: {
@@ -55,26 +99,37 @@
                         alert(data["Message"]);
                     } else {
                         let data = JSON.parse(res.data["Data"]);
-                        this.drawDagMap(data);
+                        let nodes = this.prepareMapData(data);
+                        let relations = [];
+                        for (let i in data) {
+                            let b = data[i];
+                            for (let j in b) {
+                                let unit = {};
+                                unit.target = i.substr(0, 6);
+                                unit.source = b[j].substr(0, 6);
+                                relations.push(unit);
+                            }
+                        }
+                        this.drawDagMap(nodes, relations);
                     }
                 }).catch((err) => {
                     console.error(err);
                 })
             },
-            drawDagMap(data) {
+            drawDagMap(nodes, relations) {
+                nameMap = {};
                 let myChart = this.$echarts.init(document.getElementById("dagChart"));
                 myChart.showLoading();
                 // prepare nodes
-                let nodes = this.prepareMapData(data);
                 let datas = [];
                 nodes.forEach(function (item) {
-                    let shortName = item.id.substr(0,6);
+                    let shortName = item.id.substr(0, 6);
                     let unit = {
                         x: item.x,
                         y: item.y,
                         id: shortName,
                         name: shortName,
-                        symbolSize: 15,
+                        symbolSize: 20,
                         itemStyle: {
                             normal: {
                                 color: "rgb(63, 167, 220)"
@@ -82,20 +137,8 @@
                         }
                     };
                     datas.push(unit);
-                    nameMap[nameMap] = item.id;
+                    nameMap[shortName] = item.id;
                 });
-                console.log(JSON.stringify(datas));
-                let relations = [];
-                for (let i in data) {
-                    let b = data[i];
-                    for (let j in b) {
-                        let unit = {};
-                        unit.target = i.substr(0,6);
-                        unit.source = b[j].substr(0,6);
-                        relations.push(unit);
-                    }
-                }
-                console.log(relations);
                 //prepare charts datas
                 let series = [];
                 let seriesData;
@@ -111,9 +154,9 @@
                         };
                     }),
                     label: {
-                        emphasis: {
-                            position: "right",
-                            show: true
+                        normal: {
+                            show: true,
+                            fontSize: 9
                         }
                     },
                     roam: true,
@@ -124,10 +167,6 @@
                             curveness: 0,
                             opacity: 0.7
                         }
-                    },
-                    force: {
-                        repulsion: 150,
-                        edgeLength: [50, 250]
                     }
                 };
                 series[0] = seriesData;
@@ -139,23 +178,8 @@
                 mapOption.series = series;
                 myChart.setOption(mapOption, true);
                 myChart.on("click", function (param) {
-                    if (requestHost === "") {
-                        return;
-                    }
-                    let action = "get_block_content";
-                    requestHost += "/" + action;
-                    let request = {};
-                    let requestData = {"hashes": name};
-                    request.requestUrl = requestHost;
-                    request.requestData = JSON.stringify(requestData);
-                    // $.ajax(
-                    //
-                    // );
-                    this.axios.post("/api/QueryNodeDetail", request).then((res) => {
-                        console.log(res);
-                    }).catch((err) => {
-                        console.error(err);
-                    })
+                    let name = param.name;
+                    queryNodeDetail(name);
                 });
                 myChart.hideLoading();
             },
@@ -181,7 +205,7 @@
                 let existNode = {};
                 let startx = 0;
                 let starty = 500;
-                let unit = {0: 80, 1: -80};
+                let unit = {0: 100, 1: -100};
                 if (root !== "") {
                     let createMap = function (nodeName, data, x, y) {
                         if (!data[nodeName] || existNode[nodeName]) {
@@ -195,9 +219,9 @@
                             existNode[nodeName] = 1;
                             for (var i = 0, j = data[nodeName].length; i < j; i++) {
                                 if (j > 1) {
-                                    createMap(data[nodeName][i], data, x + 100, y + unit[i]);
+                                    createMap(data[nodeName][i], data, x + 200, y + unit[i]);
                                 } else {
-                                    createMap(data[nodeName][i], data, x + 100, y);
+                                    createMap(data[nodeName][i], data, x + 200, y);
                                 }
                             }
                         }
@@ -220,116 +244,30 @@
                         alert(data["Message"]);
                     } else {
                         let data = JSON.parse(res.data["Data"]);
-                        this.drawOrderMap(data);
+                        let nodes = this.prepareTreeData(data);
+                        let relations = [];
+                        for (let i = 0, j = data.length; i < j - 1; i++) {
+                            let unit = {};
+                            unit.target = data[i].substr(0, 6);
+                            unit.source = data[i + 1].substr(0, 6);
+                            relations.push(unit)
+                        }
+                        this.drawDagMap(nodes, relations);
                     }
                 }).catch((err) => {
                     console.error(err);
                 })
             },
-            drawOrderMap(data) {
-                let myChart = this.$echarts.init(document.getElementById("dagChart"));
-                myChart.showLoading();
-                let treeData = this.prepareTreeData(data);
-                let series = [];
-                let seriesData;
-                seriesData = {
-                    type: 'tree',
-                    data: [treeData],
-                    top: '1%',
-                    left: '2%',
-                    bottom: '1%',
-                    right: '2%',
-                    symbolSize: 10,
-                    label: {
-                        normal: {
-                            position: 'left',
-                            verticalAlign: 'middle',
-                            align: 'right',
-                            fontSize: 9
-                        }
-                    },
-                    leaves: {
-                        label: {
-                            normal: {
-                                position: 'right',
-                                verticalAlign: 'middle',
-                                align: 'left'
-                            }
-                        }
-                    },
-                    expandAndCollapse: false,
-                    animationDuration: 550,
-                    animationDurationUpdate: 750
-                };
-                series[0] = seriesData;
-                let mapOption = {};
-                mapOption.title = {};
-                mapOption.title.text = "Dag Map";
-                mapOption.series = series;
-                mapOption.tooltip = {trigger: 'item', triggerOn: 'mousemove'};
-                myChart.setOption(mapOption, true);
-                myChart.on("click", function (param) {
-                    if (requestHost === "") {
-                        return;
-                    }
-                    let action = "get_block_content";
-                    requestHost += "/" + action;
-                    let request = {};
-                    let requestData = {"hashes": param.name};
-                    request.requestUrl = requestHost;
-                    request.requestData = JSON.stringify(requestData);
-                    // $.ajax(
-                    //
-                    // );
-                    this.axios.post("/api/QueryNodeDetail", request).then((res) => {
-                        console.log(res);
-                    }).catch((err) => {
-                        console.error(err);
-                    })
-                });
-                myChart.hideLoading();
-            },
             prepareTreeData(data) {
-                //get root node
-                let root = "";
-                let keys = [];
-                let values = {};
+                let result = [];
                 for (let i in data) {
-                    keys.push(i);
-                    let b = data[i];
-                    for (let j in b) {
-                        values[b[j]] = 1;
-                    }
+                    let item = {};
+                    item.id = data[i];
+                    item.x = i * 100;
+                    item.y = 300;
+                    result.push(item);
                 }
-                for (let i in keys) {
-                    if (values[keys[i]] == null) {
-                        root = keys[i];
-                        break;
-                    }
-                }
-                // create tree
-                let treeData = {};
-                let existNode = {};
-                if (root !== "") {
-                    let createTree = function (nodeName, data, treeData) {
-                        treeData.name = nodeName.substr(0, 6);
-                        if (!data[nodeName] || existNode[nodeName]) {
-                            return treeData;
-                        } else {
-                            existNode[nodeName] = 1;
-                            if (!treeData.children) {
-                                treeData.children = [];
-                            }
-                            for (var i in data[nodeName]) {
-                                let item = {};
-                                treeData.children.push(createTree(data[nodeName][i], data, item));
-                            }
-                        }
-                        return treeData;
-                    };
-                    createTree(root, data, treeData);
-                }
-                return treeData;
+                return result;
             },
         }
     }
@@ -349,5 +287,16 @@
         width: 98%;
         height: 500px;
         background: #f3f3f3 !important;
+    }
+
+    .detail-show {
+        width: 98%;
+        height: auto;
+        text-align: left;
+    }
+
+    .detail-show pre {
+        font-family: Arial, serif;
+        color: forestgreen;
     }
 </style>

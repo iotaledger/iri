@@ -580,19 +580,19 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 for (Hash val : graph.get(key)) {
                     if (nameMap != null) {
                         if(k != null) {
-                            writer.write("\"" + nameMap.get(key)+ ":" + score.get(key)  + "\"->" +
-                                    "\"" + nameMap.get(val)+ ":" + score.get(val)  + "\"\n");
+                            writer.write("\"" + nameMap.get(key)+ "\"->" +
+                                    "\"" + nameMap.get(val) + "\"\n");
                         } else {
-                            System.out.println("\"" + nameMap.get(key) + ":" + score.get(key) + "\"->" +
-                                    "\"" + nameMap.get(val) + ":" + score.get(val) + "\"");
+                            System.out.println("\"" + nameMap.get(key) + "\"->" +
+                                    "\"" + nameMap.get(val) + "\"");
                         }
                     } else {
                         if(k != null) {
-                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 6)+ ":" + score.get(key)  + "\"->" +
-                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + ":" + score.get(val) + "\"\n");
+                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n");
                         } else {
-                            System.out.println("\"" + IotaUtils.abbrieviateHash(key, 6) + ":" + score.get(key) + "\"->" +
-                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + ":" + score.get(val) + "\"");
+                            System.out.println("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"");
                         }
                     }
                 }

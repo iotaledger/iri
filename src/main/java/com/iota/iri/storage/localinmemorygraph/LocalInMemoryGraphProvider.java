@@ -417,7 +417,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             } else {
                 tmpUnTracedQueue.add(h);
             }
+<<<<<<< HEAD
             visited.add(hash);
+=======
+>>>>>>> dev
         }
         parentUnTracedNodes = tmpUnTracedQueue;
     }

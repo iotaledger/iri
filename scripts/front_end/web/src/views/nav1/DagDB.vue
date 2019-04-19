@@ -248,8 +248,8 @@
                         let relations = [];
                         for (let i = 0, j = data.length; i < j - 1; i++) {
                             let unit = {};
-                            unit.target = data[i].substr(0, 6);
-                            unit.source = data[i + 1].substr(0, 6);
+                            unit.source = data[i].substr(0, 6);
+                            unit.target = data[i + 1].substr(0, 6);
                             relations.push(unit)
                         }
                         this.drawDagMap(nodes, relations);

@@ -654,7 +654,8 @@ public class API {
     private synchronized AbstractResponse getBlockContentStatement(List<String> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
         for (final String hash : hashes) {
-            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, HashFactory.TRANSACTION.create(hash));
+            Hash h = HashFactory.TRANSACTION.create(hash);
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, h);
             if (transactionViewModel != null) {
                 byte[] sigTrits = transactionViewModel.getSignature();
                 String sigTrytes = Converter.trytes(sigTrits);
@@ -662,7 +663,11 @@ public class API {
                 Pattern pattern = Pattern.compile("\\{.*\\}");
                 Matcher matcher = pattern.matcher(txnInfo);
                 if (matcher.find()) {
-                    String info = matcher.group(0);
+                    LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+                    double score = prov.getScore(h);
+                    double pScore = prov.getParentScore(h);
+                    String info = "{ " + "\"score\" : " + score + ",\"parentScore\" : " + pScore + "},";
+                    info += matcher.group(0); 
                     elements.add(info);
                 }
             }

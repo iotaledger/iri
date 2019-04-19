@@ -675,18 +675,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         return new HashSet<>();
     }
 
-    //TODO for debug
-    public void printParentScore() {
-        for(Hash key : parentScore.keySet()) {
-            log.info(key+":"+parentScore.get(key));
-        }
-    }
-
-    public void printScore() {
-        for(Hash key : score.keySet()) {
-            log.info(key+":"+score.get(key));
-        }
-    }
+    
 
     public void deleteBatch(Collection<Pair<Indexable, ? extends Class<? extends Persistable>>> models) throws Exception {
         // TODO implement this
@@ -906,6 +895,10 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public double getScore(Hash hash) {
         return score.get(hash);
+    }
+
+    public double getParentScore(Hash h) {
+        return parentScore.get(h);
     }
 
     public boolean containsKeyInGraph(Hash hash) {

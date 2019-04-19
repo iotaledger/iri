@@ -46,6 +46,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     private ReadState readState = ReadState.PARSE_HEADER;
 
     // ident
+    private String domain;
     private String hostAddress;
     private int remoteServerSocketPort;
 
@@ -205,6 +206,16 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
     @Override
     public String getHostAddress() {
         return hostAddress;
+    }
+
+    @Override
+    public void setDomain(String domain) {
+        this.domain = domain;
+    }
+
+    @Override
+    public String getDomain() {
+        return domain;
     }
 
     @Override

@@ -173,9 +173,10 @@ public class NeighborRouter {
                             newConn.socket().setTcpNoDelay(true);
                             newConn.socket().setSoLinger(true, 0);
                             newConn.configureBlocking(false);
-                            Neighbor newNeighbor = new NeighborImpl(selector, newConn,
+                            Neighbor newNeighbor = new NeighborImpl<>(selector, newConn,
                                     remoteAddr.getAddress().getHostAddress(),
                                     Neighbor.UNKNOWN_REMOTE_SERVER_SOCKET_PORT, txPipeline);
+                            newNeighbor.setDomain(remoteAddr.getHostName());
                             newNeighbor.send(Protocol.createHandshakePacket((char) config.getNeighboringSocketPort()));
                             log.info("initialized connection from neighbor {}", newNeighbor.getHostAddress());
                             newConn.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, newNeighbor);
@@ -405,6 +406,14 @@ public class NeighborRouter {
         // if the handshake was successful and we got the remote port
         connectedNeighbors.put(neighbor.getHostAddressAndPort(), neighbor);
 
+        // prevent a reconnect attempt from the 'wanted neighbors pool'
+        // by constructing the source URI which was used for this neighbor
+        String domainIdentity = String.format("tcp://%s:%d", neighbor.getDomain(),
+                neighbor.getRemoteServerSocketPort());
+        String rawIdentity = String.format("tcp://%s", neighbor.getHostAddressAndPort());
+        neighborsToConnectTo.remove(URI.create(domainIdentity));
+        neighborsToConnectTo.remove(URI.create(rawIdentity));
+
         return true;
     }
 
@@ -478,8 +487,9 @@ public class NeighborRouter {
         tcpChannel.socket().setSoLinger(true, 0);
         tcpChannel.configureBlocking(false);
         tcpChannel.connect(addr);
-        Neighbor neighbor = new NeighborImpl(selector, tcpChannel, addr.getAddress().getHostAddress(), addr.getPort(),
+        Neighbor neighbor = new NeighborImpl<>(selector, tcpChannel, addr.getAddress().getHostAddress(), addr.getPort(),
                 txPipeline);
+        neighbor.setDomain(addr.getHostName());
         tcpChannel.register(selector, SelectionKey.OP_CONNECT, neighbor);
     }
 
@@ -550,8 +560,9 @@ public class NeighborRouter {
         if (identity == null) {
             return;
         }
-        connectedNeighbors.remove(identity);
-        log.info("removing neighbor {} from connected neighbors", identity);
+        if (connectedNeighbors.remove(identity) != null) {
+            log.info("removed neighbor {} from connected neighbors", identity);
+        }
     }
 
     private boolean availableNeighborSlotsFilled() {

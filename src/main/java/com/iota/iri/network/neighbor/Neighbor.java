@@ -54,6 +54,20 @@ public interface Neighbor {
     String getHostAddress();
 
     /**
+     * Sets the domain name.
+     * 
+     * @param domain the domain to set
+     */
+    void setDomain(String domain);
+
+    /**
+     * Gets the domain name.
+     * 
+     * @return the domain name
+     */
+    String getDomain();
+
+    /**
      * Gets the server socket port.
      * 
      * @return the server socket port

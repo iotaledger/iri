@@ -1,6 +1,7 @@
 package com.iota.iri.service.dto;
 
 import com.iota.iri.network.neighbor.NeighborMetrics;
+import com.iota.iri.network.neighbor.NeighborState;
 import com.iota.iri.service.API;
 
 import java.util.Collection;
@@ -61,6 +62,7 @@ public class GetNeighborsResponse extends AbstractResponse {
     static class Neighbor {
 
         private String address;
+        private String domain;
         public long numberOfAllTransactions,
                 numberOfRandomTransactionRequests,
                 numberOfNewTransactions,
@@ -68,6 +70,7 @@ public class GetNeighborsResponse extends AbstractResponse {
                 numberOfStaleTransactions,
                 numberOfSentTransactions;
         public String connectionType;
+        public boolean connected;
 
         /**
          * The address of your neighbor
@@ -76,6 +79,15 @@ public class GetNeighborsResponse extends AbstractResponse {
          */
         public String getAddress() {
             return address;
+        }
+
+        /**
+         * The domain of your neighbor
+         *
+         * @return the domain
+         */
+        public String getDomain() {
+            return domain;
         }
 
         /**
@@ -135,6 +147,15 @@ public class GetNeighborsResponse extends AbstractResponse {
         }
 
         /**
+         * Whether the neighbor is connected or not
+         *
+         * @return whether the neighbor is connected or not
+         */
+        public String isConnected() {
+            return connectionType;
+        }
+
+        /**
          * Creates a new Neighbor DTO from a Neighbor network instance
          *
          * @param neighbor the neighbor currently connected to this node
@@ -144,6 +165,7 @@ public class GetNeighborsResponse extends AbstractResponse {
             Neighbor ne = new Neighbor();
             int port = neighbor.getRemoteServerSocketPort();
             ne.address = neighbor.getHostAddressAndPort();
+            ne.domain = neighbor.getDomain();
             NeighborMetrics metrics = neighbor.getMetrics();
             ne.numberOfAllTransactions = metrics.getAllTransactionsCount();
             ne.numberOfInvalidTransactions = metrics.getInvalidTransactionsCount();
@@ -152,6 +174,7 @@ public class GetNeighborsResponse extends AbstractResponse {
             ne.numberOfRandomTransactionRequests = metrics.getRandomTransactionRequestsCount();
             ne.numberOfSentTransactions = metrics.getSentTransactionsCount();
             ne.connectionType = "tcp";
+            ne.connected = neighbor.getState() == NeighborState.READY_FOR_MESSAGES;
             return ne;
         }
     }

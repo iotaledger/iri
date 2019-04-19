@@ -257,7 +257,7 @@ def get_block_content():
     resp = cache.get_block_content(hashes)
     print(resp, file=sys.stderr)
     ret_list = [x.encode('ascii') for x in resp[u'trytes']]
-    return str(ret_list) 
+    return str(ret_list)
 
 @app.route('/get_dag', methods=['GET'])
 def get_dag():
@@ -291,7 +291,7 @@ def get_utxo():
         f = open(file_save, 'w')
         f.write(resp[u'dag'])
         f.close()
-    return resp[u'dag'] 
+    return resp[u'dag']
 
 @app.route('/get_total_order', methods=['GET'])
 def get_total_order():

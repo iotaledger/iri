@@ -51,9 +51,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     // to use
     private List<Hash> pivotChain;
 
-    // 鏈兘鍥炴函鍒癵enesis鐨勮妭鐐�
+    // 未能回溯到genesis的节点
     Queue<Hash> unTracedNodes;
-    // 淇濆瓨鍙洖婧殑鑺傜偣锛屾渶鍧忕殑鎯呭喌鏄繚瀛樹簡鏁翠釜graph锛岀┖闂存崲鏃堕棿銆�
+    // 保存可回溯的节点，最坏的情况是保存了整个graph，空间换时间。
     Set<Hash> tracedNodes;
 
     Queue<Hash> parentUnTracedNodes;
@@ -367,7 +367,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
             tracedNodes.add(genesis);
             tracedNodes.addAll(graph.get(genesis));
         }
-        //鍒ゆ柇鏄惁鍙洖婧�
+        // 判断是否可回溯
         if (!traceToGenesis(h)){
             unTracedNodes.offer(h);
             return;
@@ -391,7 +391,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         if (!parentTraceToGenesis(h)){
             parentUnTracedNodes.offer(h);
             return;
-        } 
+        }
 
         parentScore = CumWeightScore.updateParentScore(parentGraph, parentScore, h);
         parentTracedNodes.add(h);
@@ -411,7 +411,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     }
 
     private boolean parentTraceToGenesis(Hash h) {
-        //閬嶅巻锛屽墠椹辫妭鐐规槸宸查亶鍘嗚妭鐐规垨genesis锛岃繑鍥瀟rue
+        // 遍历，前驱节点是已遍历节点或genesis，返回true
         Queue<Hash> confirmNodes = new ArrayDeque<>();
         Set<Hash> visited = new HashSet<>();
         confirmNodes.add(h);
@@ -438,7 +438,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         if (unTracedNodes.isEmpty()){
             return;
         }
-        // 鍋囪unTracedNodes涔熸槸涔卞簭鐨勶紝纭繚鑺傜偣鑳藉鍦ㄥ叾渚濊禆鑺傜偣璁＄畻瀹屾瘯鍚庡緱鍒拌绠楁満浼�
+        // 假设unTracedNodes也是乱序的，确保节点能够在其依赖节点计算完毕后得到计算机会
        Queue<Hash> tmpQueue = new ArrayDeque<>();
         Set<Hash> visited = new HashSet<>();
         while (!unTracedNodes.isEmpty()) {
@@ -455,9 +455,9 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         unTracedNodes = tmpQueue;
     }
 
-    // 鍥炴函鏂规硶锛岃兘澶熷洖婧埌genesis鎴栬�呭凡鍥炴函鑺傜偣閮界畻浣滃洖婧垚鍔�
+    // 回溯方法，能够回溯到genesis或者已回溯节点都算作回溯成功
     private boolean traceToGenesis(Hash h){
-        //閬嶅巻锛屽墠椹辫妭鐐规槸宸查亶鍘嗚妭鐐规垨genesis锛岃繑鍥瀟rue
+        //遍历，前驱节点是已遍历节点或genesis，返回true
         Queue<Hash> confirmNodes = new ArrayDeque<>();
         Set<Hash> visited = new HashSet<>();
         confirmNodes.add(h);
@@ -479,7 +479,7 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                     checkParentEqual.add(hash);
                 }
             }
-            //鐖惰妭鐐逛笉閮芥槸鍙洖婧妭鐐�
+            // 父节点不都是可回溯节点
             if (checkParentEqual.size() != confirmed.size()){
                 return false;
             }

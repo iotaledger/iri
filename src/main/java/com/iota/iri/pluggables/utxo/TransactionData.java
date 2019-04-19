@@ -420,6 +420,14 @@ public class TransactionData {
         return total;
     }
 
+    public String getUTXOGraph(String type) {
+        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
+        List<Hash> totalTopOrders = provider.totalTopOrder();
+        //log.debug("all txs = {}", transactions.toString());
+        utxoGraph.markDoubleSpend(totalTopOrders, txnToTangleMap);
+        return utxoGraph.printGraph(utxoGraph.outGraph, type, null);
+    }
+
     private void checkAllBalance(UTXOGraph graph) {
         long tot = 0;
         Set<String> spend = new HashSet<>();

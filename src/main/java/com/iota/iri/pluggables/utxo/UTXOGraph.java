@@ -242,25 +242,24 @@ public class UTXOGraph {
     }
 
     //FIXME for debug :: for graphviz visualization
-    public void printGraph(Map<String, Set<String>> graph, String k, Set<String> spend) {
+    public String printGraph(Map<String, Set<String>> graph, String type, Set<String> spend) {
+        String ret = "";
         try {
-            BufferedWriter writer = null;
-            if(k != null) {
-                writer = new BufferedWriter(new FileWriter(k));
-                writer.write("digraph G {\n");
+            if(type.equals("DOT")) {
+                ret += "digraph G {\n";
             }
             for (String key : graph.keySet()) {
                 for (String val : graph.get(key)) {
                     try {
-                        if(k != null) {
-                            writer.write("\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
-                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n");
+                        if(type.equals("DOT")) {   
+                            ret += "\"" + IotaUtils.abbrieviateHash(key, 6) + "\"->" +
+                                    "\"" + IotaUtils.abbrieviateHash(val, 6) + "\"\n";
                             if(doubleSpendSet.contains((val.split(":")[0]))) {
-                                writer.write("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=red]\n");
+                                ret += "\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=red]\n";
                             } else if (!isSpent(val)) {
-                                writer.write("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=green]\n");
+                                ret += "\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "style=filled, fillcolor=green]\n";
                                 if(spend.contains(val)) {
-                                    writer.write("\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "shape=square]\n");
+                                    ret += "\""+IotaUtils.abbrieviateHash(val, 6)+"\"[" + "shape=square]\n";
                                 }
                             }
                         } else {
@@ -278,12 +277,13 @@ public class UTXOGraph {
                     }
                 }
             }
-            if(k != null) {
-                writer.write("}\n");
-                writer.close();
+            if(type.equals("DOT")) {
+                ret += "}\n";
             }
         } catch(Exception e) {
             e.printStackTrace();
+            return ret;
         }
-    }
+        return ret;
+    }   
 }

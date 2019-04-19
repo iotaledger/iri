@@ -79,7 +79,7 @@ func TestGetRankFunction(t *testing.T) {
         data := make([]string,1)
         for i := 0;i < len(nodesCache);i += 3 {
             data = append(data,`%7B%22attester%22%3A%22` + nodesCache[i+0] +
-            `%22%2C%22attestee%22%3A%22` + nodesCache[i+1] + `%22%2C%22score%22%3A` + nodesCache[i+2] +`%7D`)
+                `%22%2C%22attestee%22%3A%22` + nodesCache[i+1] + `%22%2C%22score%22%3A` + nodesCache[i+2] +`%7D`)
         }
 
         str = strings.Trim(strings.Join(data,","),",")
@@ -97,7 +97,7 @@ func TestGetRankFunction(t *testing.T) {
         t.Errorf("failed to call GetRankFunction: %s\n", resp.Message)
     }
 
-    result:=checkData(resp.Data.DataCtx)
+    result:=checkData(resp.Data)
     if result == 1{
         fmt.Println("Data detection correct")
     }else {

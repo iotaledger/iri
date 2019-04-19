@@ -2,16 +2,25 @@ package vue
 
 import (
 	"encoding/json"
+	"fmt"
 	nr "github.com/wunder3605/noderank"
+	"io/ioutil"
+	"net/http"
+	"strings"
 )
 type Message struct {
 	Code int64
 	Message string
-	Data DataTee
+	Data interface{}
 }
 type DataTee struct {
 	DataScore interface{}
 	DataCtx interface{}
+}
+
+type NodeDetailRequest struct {
+	RequestUrl  string `json:"requestUrl,omitempty"`
+	RequestData string `json:"requestData,omitempty"`
 }
 
 type OCli struct {
@@ -66,4 +75,37 @@ func (o *OCli)GetRankFunction(_data []byte)Message{
 	data:=DataTee{teescore,teectx}
 	mess=Message{Code:1,Message:"Query node data successfully",Data:data}
 	return mess
+}
+
+func (o *OCli) QueryNodeDetail(request *NodeDetailRequest) Message {
+	if (request.RequestUrl == "") {
+		return Message{Code: 0, Message: "RequestUrl is empty"}
+	}
+	result,err := httpGet(request.RequestUrl,request.RequestData);
+	if err == nil {
+		return Message{Code: 1, Message: "Success!", Data: result}
+	}else {
+		fmt.Println(err)
+		return Message{Code: 0, Message: "Query node's details failed!"}
+	}
+}
+
+func httpGet(url string, param string) (string, error) {
+	payload := strings.NewReader(param)
+
+	req, err := http.NewRequest("GET", url, payload)
+	if err != nil {
+		return "",err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	res, err := http.DefaultClient.Do(req)
+	defer res.Body.Close()
+	if err != nil{
+		return "",err
+	}
+	body, _ := ioutil.ReadAll(res.Body)
+
+	return string(body), nil;
 }

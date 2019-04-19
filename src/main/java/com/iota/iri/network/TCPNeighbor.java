@@ -16,7 +16,7 @@ import java.util.concurrent.TimeUnit;
  * Created by paul on 4/15/17.
  */
 public class TCPNeighbor extends Neighbor {
-    private static final Logger log = LoggerFactory.getLogger(Neighbor.class);
+    private static final Logger log = LoggerFactory.getLogger(TCPNeighbor.class);
     private int tcpPort;
 
     private final ArrayBlockingQueue<ByteBuffer> sendQueue = new ArrayBlockingQueue<>(10);
@@ -93,7 +93,7 @@ public class TCPNeighbor extends Neighbor {
             byte[] bytes = packet.getData().clone();
             sendQueue.add(ByteBuffer.wrap(bytes));
         }
-            
+
     }
 
     @Override

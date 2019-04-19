@@ -46,7 +46,7 @@ public class Node {
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
 
     private final List<Neighbor> neighbors = new CopyOnWriteArrayList<>();
-    private final ConcurrentSkipListSet<TransactionViewModel> broadcastQueue = weightQueue();
+    private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> broadcastQueue = weightQueueTxPair();
     private final ConcurrentSkipListSet<Pair<TransactionViewModel, Neighbor>> receiveQueue = weightQueueTxPair();
     private final ConcurrentSkipListSet<Pair<Hash, Neighbor>> replyQueue = weightQueueHashPair();
 
@@ -374,12 +374,12 @@ public class Node {
             neighbor.incInvalidTransactions();
         }
 
-        //if new, then broadcast to all neighbors
+        //if new, then broadcast to all neighbors except the one where the package from
         if (stored) {
             // add batch of txns count.
             if (BaseIotaConfig.getInstance().isEnableBatchTxns()) {
                 long count = receivedTransactionViewModel.addTxnCount(tangle);
-                log.info("received batch of {} transactions from api.", count);
+                log.info("received {} {} from network.", count, count == 1?"transaction":"transactions");
             } else {
                 tangle.addTxnCount(1);
             }
@@ -393,7 +393,7 @@ public class Node {
                 log.error("Error updating transactions.", e);
             }
             neighbor.incNewTransactions();
-            broadcast(receivedTransactionViewModel);
+            broadcast(receivedTransactionViewModel, neighbor);
         }
 
     }
@@ -497,12 +497,16 @@ public class Node {
             while (!shuttingDown.get()) {
 
                 try {
-                    final TransactionViewModel transactionViewModel = broadcastQueue.pollFirst();
-                    if (transactionViewModel != null) {
+                    final Pair<TransactionViewModel, Neighbor> broadcastData = broadcastQueue.pollFirst();
+                    if (broadcastData != null) {
+                        TransactionViewModel transactionViewModel = broadcastData.getLeft();
+                        Neighbor from = broadcastData.getRight();
 
                         for (final Neighbor neighbor : neighbors) {
                             try {
-                                sendPacket(sendingPacket, transactionViewModel, neighbor);
+                                if (!neighbor.equals(from)) {
+                                    sendPacket(sendingPacket, transactionViewModel, neighbor);
+                                }
                             } catch (final Exception e) {
                                 // ignore
                             }
@@ -640,8 +644,8 @@ public class Node {
     }
 
 
-    public void broadcast(final TransactionViewModel transactionViewModel) {
-        broadcastQueue.add(transactionViewModel);
+    public void broadcast(final TransactionViewModel transactionViewModel, Neighbor neighbor) {
+        broadcastQueue.add(new ImmutablePair<>(transactionViewModel, neighbor));
         if (broadcastQueue.size() > BROADCAST_QUEUE_SIZE) {
             broadcastQueue.pollLast();
         }

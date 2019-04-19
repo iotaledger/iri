@@ -7,6 +7,8 @@
 /bin
 /mainnetdb
 /mainnet.log
+/testnetdb
+/testnet.log
 /*.iml
 .classpath
 .project
@@ -20,6 +22,10 @@ bin/
 *.pyc
 src/main/ixi/
 dependency-reduced-pom.xml
+
+# Examples
+/scripts/examples/**/*.log
+/scripts/examples/**/*db*
 
 
 # Created by https://www.gitignore.io/api/osx,linux,windows

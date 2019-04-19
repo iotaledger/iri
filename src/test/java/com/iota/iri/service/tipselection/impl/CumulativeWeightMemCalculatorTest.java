@@ -52,6 +52,7 @@ public class CumulativeWeightMemCalculatorTest {
         tangle.init();
         cumulativeWeightCalculator = new CumulativeWeightMemCalculator(tangle);
         BaseIotaConfig.getInstance().setStreamingGraphSupport(true);
+        BaseIotaConfig.getInstance().setConfluxScoreAlgo("CUM_WEIGHT");
     }
 
     @Test

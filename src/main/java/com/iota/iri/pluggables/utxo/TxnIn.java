@@ -7,6 +7,12 @@ public class TxnIn {
     int idx;
     String userAccount;
 
+    public TxnIn() {
+        txnHash = "";
+        idx = 0;
+        userAccount = "";
+    }
+
     public String getTxnHash() {
         return txnHash;
     }

@@ -35,6 +35,7 @@ install:
     - sudo pip install docker
     - sudo pip install mock
     - sudo pip install cryptography==2.5
+    - sudo pip install sh
   # install ipfs
     - wget https://dist.ipfs.io/go-ipfs/v0.4.18/go-ipfs_v0.4.18_linux-amd64.tar.gz
       && tar xf go-ipfs_v0.4.18_linux-amd64.tar.gz
@@ -68,6 +69,7 @@ script:
   #- git checkout -f master
   - mkdir iri
   - cp -rf ../target iri/target
+  - cp -rf ../scripts iri/scripts
   - bash run_all_stable_tests.sh $VERSION
   - cd ..
   #jacoco append to report

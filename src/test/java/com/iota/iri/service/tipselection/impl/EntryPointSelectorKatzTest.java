@@ -41,6 +41,8 @@ public class EntryPointSelectorKatzTest {
     private static Tangle tangle2;
     private static EntryPointSelectorKatz selector1;
     private static EntryPointSelectorKatz selector2;
+    private static LocalInMemoryGraphProvider provider1;
+    private static LocalInMemoryGraphProvider provider2;
 
     @AfterClass
     public static void tearDown() throws Exception {
@@ -61,11 +63,13 @@ public class EntryPointSelectorKatzTest {
         logFolder1.create();
         tangle1.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder.getRoot().getAbsolutePath(), logFolder
                     .getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
-        tangle1.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle1));
+        provider1 = new LocalInMemoryGraphProvider("", tangle1);
+        tangle1.addPersistenceProvider(provider1);
         tangle1.init();
         tangle2.addPersistenceProvider(new RocksDBPersistenceProvider(dbFolder1.getRoot().getAbsolutePath(), logFolder1
                     .getRoot().getAbsolutePath(), 1000, Tangle.COLUMN_FAMILIES, Tangle.METADATA_COLUMN_FAMILY));
-        tangle2.addPersistenceProvider(new LocalInMemoryGraphProvider("", tangle2));
+        provider2 = new LocalInMemoryGraphProvider("", tangle2);
+        tangle2.addPersistenceProvider(provider2);
         tangle2.init();
         BaseIotaConfig.getInstance().setConfluxScoreAlgo("KATZ");
     }
@@ -98,7 +102,7 @@ public class EntryPointSelectorKatzTest {
         tag.put(F.getHash(), "F");
         tag.put(G.getHash(), "G");
         tag.put(H.getHash(), "H");
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider1.setNameMap(tag);
 
         A.store(tangle1);
         B.store(tangle1);
@@ -129,8 +133,7 @@ public class EntryPointSelectorKatzTest {
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
 
         // reset in memory graph
-        LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle1);
-        provider.close();
+        provider1.close();
     }
 
     @Test
@@ -260,7 +263,7 @@ public class EntryPointSelectorKatzTest {
         Assert.assertEquals(tag.get(G.getHash()),tag.get(ret));
 
         // Compute with streaming graph
-        LocalInMemoryGraphProvider.setNameMap(tag);
+        provider2.setNameMap(tag);
         BaseIotaConfig.getInstance().setStreamingGraphSupport(true);
         ret = selector2.getEntryPoint(-1);
         Assert.assertEquals(tag.get(A.getHash()),tag.get(ret));
@@ -270,7 +273,6 @@ public class EntryPointSelectorKatzTest {
         Assert.assertEquals(tag.get(G.getHash()),tag.get(ret));
 
         // reset in memory graph
-        LocalInMemoryGraphProvider provider = new LocalInMemoryGraphProvider("", tangle2);
-        provider.close();
+        provider2.close();
     }
 }

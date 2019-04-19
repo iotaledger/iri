@@ -426,6 +426,7 @@
                         <exclude>integration/*.java</exclude>
                         <exclude>benchmarks/**/*</exclude>
                     </excludes>
+                    <argLine>-XX:-OmitStackTraceInFastThrow -Xms1024m -Xmx2048m @{argLine}</argLine>
                 </configuration>
                 <executions>
                     <execution>

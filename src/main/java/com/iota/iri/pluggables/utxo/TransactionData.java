@@ -41,6 +41,7 @@ public class TransactionData {
     HashMap<String, Hash> txnToTangleMap;
     HashMap<Hash, HashSet<Txn>> tangleToTxnMap;
     List<List<Txn>> tmpStorage;
+    UTXOGraph utxoGraph;
 
     private static TransactionData txnData = new TransactionData();
 
@@ -58,6 +59,7 @@ public class TransactionData {
         txnToTangleMap = new HashMap<String, Hash>();
         tangleToTxnMap = new HashMap<Hash, HashSet<Txn>>();
         tmpStorage = new ArrayList<>();
+        utxoGraph = new UTXOGraph();
         init();
     }
 
@@ -131,12 +133,12 @@ public class TransactionData {
         if(hashList.size() != tmpStorage.size() || hashList.size() <= 1) {
             return;
         }
-        int i=hashList.size()-1;
+        int i=0;
         for(Hash h : hashList) {
             for (Txn t : tmpStorage.get(i)) {
                 putIndex(t, h);
             }
-            i--;
+            i++;
         }
         tmpStorage.clear();
     }
@@ -156,6 +158,7 @@ public class TransactionData {
 
     public void addTxn(Txn txn) {
         transactions.add(txn);
+        utxoGraph.addTxn(txn, transactions.size()-1);
     }
 
     public String getData() {
@@ -209,14 +212,14 @@ public class TransactionData {
         }
     }
 
-    public void readFromStr(String txnsStr){
+    public List<Txn> readFromStr(String txnsStr){
 
         List<RawTxn> transactionList = new ArrayList<>();
 
         RawTxn tx = new Gson().fromJson(txnsStr, RawTxn.class);
         transactionList.add(tx);
 
-        constructTxnsFromRawTxns(transactionList);
+        return constructTxnsFromRawTxns(transactionList);
     }
 
     public void readFromLines(String[] lines){
@@ -235,10 +238,7 @@ public class TransactionData {
         constructTxnsFromRawTxns(rawTxnsList);
     }
 
-
-    public void init() {
-        transactions = new ArrayList<>();
-
+    public static Txn genesis() {
         List<TxnOut> txnOutList = new ArrayList<>();
         TxnOut txOut = new TxnOut();
         txOut.amount = 1000000000;  //just for testing
@@ -247,40 +247,43 @@ public class TransactionData {
 
         Txn newTxn = new Txn();
         newTxn.inputs = new ArrayList<TxnIn>();
+        TxnIn in = new TxnIn();
+        newTxn.inputs.add(in);
         newTxn.outputs = txnOutList;
 
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
-        transactions.add(newTxn);
+        return newTxn;
+    }
+
+    public void init() {
+        transactions = new ArrayList<>();
+
+        addTxn(genesis());
     }
 
     public Txn getLast() {
         return transactions.get(transactions.size()-1);
     }
 
-    private boolean constructTxnsFromRawTxns(List<RawTxn> rawTxns) {
+    public Txn popLast() {
+        Txn ret = transactions.get(transactions.size()-1);
+        transactions.remove(transactions.size()-1);
+        return ret;
+    }
+
+    private List<Txn> constructTxnsFromRawTxns(List<RawTxn> rawTxns) {
         int size = transactions.size();
-        boolean undoFlag = false;
+        List<Txn> ret = new ArrayList<>();
 
         for (RawTxn txn: rawTxns) {
-            boolean flag = doStoreRawTxn(txn);
-            if (flag == false){
-                undoFlag = true;
+            Txn tx = doCreateRawTxn(txn);
+            if (tx == null){
                 break;
             }
+            ret.add(tx);
         }
-
-        if (undoFlag == true){
-            int undoSize = transactions.size();
-            if (undoSize > size) {
-                for (int i = size; i < undoSize; i++) {
-                    transactions.remove(i);
-                }
-            }
-            return false;
-        }
-
-        return true;
+        return ret;
     }
 
     private List<RawTxn> readRawTxnInfoFromIPFS (String ipfsAddr) throws IOException {
@@ -305,39 +308,23 @@ public class TransactionData {
     }
 
 
-    private boolean doStoreRawTxn(RawTxn txn) {
+    private Txn doCreateRawTxn(RawTxn txn) {
         String fromAddr = txn.from;
         String toAddr = txn.to;
         long total = 0;
 
         List<TxnIn> txnInList = new ArrayList<>();
 
-        // TODO: find unspent utxo more quickly.
-        for (int i = transactions.size() - 1; i >= 0; i--){
-            List<TxnOut> txnOutList = transactions.get(i).outputs;
+        Set<Integer> unspendForAccount = utxoGraph.findUnspentTxnsForAccount(fromAddr);
+
+        for (Integer idx : unspendForAccount){
+            List<TxnOut> txnOutList = transactions.get(idx).outputs;
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);
                 if (txnOut.userAccount.equals(fromAddr)){
-
-                    boolean jumpFlag = false;
-
-                    // TODO: check utxo whether or not being spent more quickly.
-                    out:
-                    for (int k = transactions.size() - 1; k > 0; k--){
-                        for (TxnIn tempTxnIn: transactions.get(k).inputs) {
-                            if (tempTxnIn.txnHash.equals(transactions.get(i).txnHash) && tempTxnIn.idx == j){
-                                jumpFlag = true; // already spend
-                                break out;
-                            }
-                        }
-                    }
-                    if (jumpFlag){
-                        continue;
-                    }
-
                     TxnIn txnIn = new TxnIn();
                     txnIn.userAccount = fromAddr;
-                    txnIn.txnHash = transactions.get(i).txnHash;
+                    txnIn.txnHash = transactions.get(idx).txnHash;
                     txnIn.idx = j;
 
                     txnInList.add(txnIn);
@@ -355,7 +342,7 @@ public class TransactionData {
         if (txnInList.size() == 0 || total < txn.amnt) {
             // TODO: it will print out the value of 'from' and the 'transfer value', will it be ok?
             log.error("Error, {} have {} token, but want to spend {}.", txn.from, total, txn.amnt);
-            return false;
+            return null;
         }
 
         Txn newTxn = new Txn();
@@ -378,11 +365,10 @@ public class TransactionData {
         newTxn.outputs = txnOutList;
         newTxn.txnHash = generateHash(new Gson().toJson(newTxn));
 
-        transactions.add(newTxn);
-        return true;
+        return newTxn;
     }
 
-    private String generateHash(String txnStr) {
+    public static String generateHash(String txnStr) {
         String trytes = Converter.asciiToTrytes(txnStr);
 
         byte[] trits = Converter.allocateTritsForTrytes(trytes.length());
@@ -408,16 +394,15 @@ public class TransactionData {
     public long getBalance(String account) {
         LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
         List<Hash> totalTopOrders = provider.totalTopOrder();
-        
-        log.debug("all txs = {}", transactions.toString());
-        UTXOGraph graph = new UTXOGraph(transactions);
-        graph.markDoubleSpend(totalTopOrders, txnToTangleMap);
+        //log.debug("all txs = {}", transactions.toString());
+        utxoGraph.markDoubleSpend(totalTopOrders, txnToTangleMap);
         //
         Set<String> visisted = new HashSet<>();
 
+
         long total = 0;
 
-        for (int i = 0; i < transactions.size(); i++) {       
+        for (int i = 0; i < transactions.size(); i++) {
             Txn transaction = transactions.get(i);
             if(visisted.contains(transaction.txnHash)) {
                 continue; //FIXME this is a problem
@@ -426,13 +411,21 @@ public class TransactionData {
             for (int j = 0; j < txnOutList.size(); j++) {
                 TxnOut txnOut = txnOutList.get(j);
                 String key = transaction.txnHash + ":" + String.valueOf(j) + "," + txnOut.userAccount;
-                if (txnOut.userAccount.equals(account) && !graph.isSpent(key) && !graph.isDoubleSpend(key)) {
+                if (txnOut.userAccount.equals(account) && !utxoGraph.isSpent(key) && !utxoGraph.isDoubleSpend(key)) {
                     total += txnOut.amount;
                 }
             }
             visisted.add(transaction.txnHash);
         }
         return total;
+    }
+
+    public String getUTXOGraph(String type) {
+        LocalInMemoryGraphProvider provider = (LocalInMemoryGraphProvider)tangle.getPersistenceProvider("LOCAL_GRAPH");
+        List<Hash> totalTopOrders = provider.totalTopOrder();
+        //log.debug("all txs = {}", transactions.toString());
+        utxoGraph.markDoubleSpend(totalTopOrders, txnToTangleMap);
+        return utxoGraph.printGraph(utxoGraph.outGraph, type, null);
     }
 
     private void checkAllBalance(UTXOGraph graph) {

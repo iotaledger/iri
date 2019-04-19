@@ -323,7 +323,21 @@ public class API {
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
                     return getTrytesStatement(hashes);
                 }
-
+                case "getBlockContent": {
+                    final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
+                    return getBlockContentStatement(hashes);
+                }
+                case "getDAG": {
+                    String type = getParameterAsString(request, "type");
+                    return getDAGStatement(type);
+                }
+                case "getUTXO": {
+                    String type = getParameterAsString(request, "type");
+                    return getUTXOStatement(type);
+                }
+                case "getTotalOrder": {
+                    return getTotalOrderStatement();
+                }
                 case "interruptAttachingToTangle": {
                     return interruptAttachingToTangleStatement();
                 }
@@ -541,6 +555,12 @@ public class API {
         return result;
     }
 
+    private String getParameterAsString(Map<String, Object> request, String paramName) throws ValidationException {
+        validateParamExists(request, paramName);
+        String result = (String) request.get(paramName);
+        return result;
+    }
+
     private void validateTrytes(String paramName, int size, String result) throws ValidationException {
         if (!validTrytes(result,size,ZERO_LENGTH_NOT_ALLOWED)) {
             throw new ValidationException("Invalid " + paramName + " input");
@@ -627,6 +647,55 @@ public class API {
             return ErrorResponse.create(overMaxErrorMessage);
         }
         return GetTrytesResponse.create(elements);
+    }
+
+
+    // FIXME add comments
+    private synchronized AbstractResponse getBlockContentStatement(List<String> hashes) throws Exception {
+        final List<String> elements = new LinkedList<>();
+        for (final String hash : hashes) {
+            Hash h = HashFactory.TRANSACTION.create(hash);
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, h);
+            if (transactionViewModel != null) {
+                byte[] sigTrits = transactionViewModel.getSignature();
+                String sigTrytes = Converter.trytes(sigTrits);
+                String txnInfo = Converter.trytesToAscii(sigTrytes);
+                Pattern pattern = Pattern.compile("\\{.*\\}");
+                Matcher matcher = pattern.matcher(txnInfo);
+                if (matcher.find()) {
+                    LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+                    double score = prov.getScore(h);
+                    double pScore = prov.getParentScore(h);
+                    String info = "{ " + "\"score\" : " + score + ",\"parentScore\" : " + pScore + "},";
+                    info += matcher.group(0); 
+                    elements.add(info);
+                }
+            }
+        }
+        if (elements.size() > maxGetTrytes){
+            return ErrorResponse.create(overMaxErrorMessage);
+        }
+        return GetTrytesResponse.create(elements);
+    }
+
+    // FIXME add comments
+    private synchronized AbstractResponse getDAGStatement(String type) throws Exception {
+        LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+        String graph = prov.printGraph(prov.getGraph(), type);
+        return GetDAGResponse.create(graph);
+    }
+
+    // FIXME add comments
+    private synchronized AbstractResponse getUTXOStatement(String type) throws Exception {
+        String graph = TransactionData.getInstance().getUTXOGraph(type);
+        return GetDAGResponse.create(graph);
+    }
+    
+    // FIXME add comments
+    private synchronized AbstractResponse getTotalOrderStatement() throws Exception {
+        LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+        List<Hash> order = prov.totalTopOrder();
+        return GetTotalOrderResponse.create(order);
     }
 
     private static int counterGetTxToApprove = 0;
@@ -725,7 +794,7 @@ public class API {
 
             if(transactionViewModel.store(instance.tangle)) {
                 long count = transactionViewModel.addTxnCount(instance.tangle);
-                log.info("received {} transactions.", count);
+                log.info("received {} {} from api.", count, count == 1?"transaction":"transactions");
 
                 transactionViewModel.setArrivalTime(System.currentTimeMillis() / 1000L);
                 instance.transactionValidator.updateStatus(transactionViewModel);
@@ -1071,7 +1140,7 @@ public class API {
         for (final TransactionViewModel transactionViewModel : elements) {
             //push first in line to broadcast
             transactionViewModel.weightMagnitude = Curl.HASH_LENGTH;
-            instance.node.broadcast(transactionViewModel);
+            instance.node.broadcast(transactionViewModel, null);
         }
     }
 
@@ -1222,6 +1291,7 @@ public class API {
                 }
                 //validate PoW - throws exception if invalid
                 final TransactionViewModel transactionViewModel = instance.transactionValidator.validateTrits(tTrits, instance.transactionValidator.getMinWeightMagnitude());
+                IotaIOUtils.processReceivedTxn(transactionViewModel);
 
                 transactionViewModels.add(transactionViewModel);
                 prevTransaction = transactionViewModel.getHash();
@@ -1365,15 +1435,23 @@ public class API {
     private synchronized AbstractResponse storeMessageStatement(final String address, final String message, final String tag) throws Exception {
         List<Hash> txToApprove = new ArrayList<Hash>();
         try {
-            txToApprove = getTransactionToApproveTips(3, Optional.empty());
+            txToApprove = getTransactionToApproveTips(15, Optional.empty());
         } catch (NullPointerException e) {
             log.warn("Tip selection failed: {}. Is this the first transaction???", e.getLocalizedMessage());
+            if(instance.tangle.getTxnCount() > 2) {
+                return AbstractResponse.createEmptyResponse();
+                // TODO, if this happens for multiple times, find the reason and solve it
+            }
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
+            txToApprove.add(IotaUtils.getRandomTransactionHash());
         }
         catch (Exception e) {
             log.error("Tip selection failed: " + e.getLocalizedMessage());
         } finally {
-            txToApprove.add(IotaUtils.getRandomTransactionHash());
-            txToApprove.add(IotaUtils.getRandomTransactionHash());
+            if(txToApprove.get(0).equals(null) || (txToApprove.size()>1 && txToApprove.get(1).equals(null))) {
+                log.warn("Tip selection failed, why?");
+                return AbstractResponse.createEmptyResponse(); // FIXME why come here?
+            }
         }
 
         final int txMessageSize = (int) TransactionViewModel.SIGNATURE_MESSAGE_FRAGMENT_TRINARY_SIZE / 3;

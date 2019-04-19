@@ -1,9 +1,10 @@
+from __future__ import print_function
 import sys
 sys.path.append("..")
 import time
 from iota import Iota, Address, ProposedTransaction, Tag, Transaction, TryteString, TransactionTrytes, ProposedBundle, Nonce, BundleHash,TransactionHash, Fragment
 from six import binary_type, moves as compat, text_type
-from iota_api.api import attachToTangle, storeMessage, getBalance, addNeighbors
+from iota_api.api import attachToTangle, storeMessage, getBalance, addNeighbors, getBlockContent, getDAG, getUTXO, getTotalOrder
 
 class IotaCache(object):
 
@@ -105,5 +106,21 @@ class IotaCache(object):
         return result
 
     def add_neighbors(self, uris):
-        res = addNeighbors(self.uri,uris)
+        res = addNeighbors(self.uri, uris)
+        return res
+
+    def get_block_content(self, hashes):
+        res = getBlockContent(self.uri, hashes)
+        return res
+
+    def get_dag(self, dag_type):
+        res = getDAG(self.uri, dag_type)
+        return res
+
+    def get_utxo(self, dag_type):
+        res = getUTXO(self.uri, dag_type)
+        return res
+
+    def get_total_order(self):
+        res = getTotalOrder(self.uri)
         return res

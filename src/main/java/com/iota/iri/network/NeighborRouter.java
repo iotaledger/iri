@@ -668,7 +668,7 @@ public class NeighborRouter {
 
         // remove the neighbor from connection attempts
         reconnectPool.remove(optUri.get());
-        URI rawURI = URI.create(String.format("%s%s:%d", protocolPrefix, inetAddr.getAddress().getHostAddress(), neighborURI.getPort())));
+        URI rawURI = URI.create(String.format("%s%s:%d", protocolPrefix, inetAddr.getAddress().getHostAddress(), neighborURI.getPort()));
         reconnectPool.remove(rawURI);
 
         String identity = String.format("%s:%d", inetAddr.getAddress().getHostAddress(), inetAddr.getPort());

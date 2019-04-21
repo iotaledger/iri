@@ -43,6 +43,7 @@ import org.slf4j.LoggerFactory;
 public class NeighborRouter {
 
     private static final Logger log = LoggerFactory.getLogger(NeighborRouter.class);
+    private static final String protocolPrefix = "tcp://";
 
     private final AtomicBoolean shutdown = new AtomicBoolean(false);
 
@@ -64,11 +65,17 @@ public class NeighborRouter {
     // neighbors which we want to connect to. entries are added upon initialization
     // of the NeighborRouter, when a neighbor is added through addNeighbors and
     // when a connection attempt failed.
-    private Set<URI> neighborsToConnectTo = new CopyOnWriteArraySet<>();
+    private Set<URI> reconnectPool = new CopyOnWriteArraySet<>();
 
     // contains the IP addresses of neighbors which are allowed to connect to us.
     // we use two sets as we allow multiple connections from a single IP address.
     private Set<String> hostsWhitelist = new HashSet<>();
+
+    // contains the mapping of IP addresses to their domain names.
+    // this is used to map an initialized connection to the domain which was defined
+    // in the configuration or added on addNeighbors, to ensure, that a reconnect attempt
+    // to the given neighbor is done through the resolved IP address of the origin domain.
+    private Map<String, String> ipToDomainMapping = new HashMap<>();
 
     // contains the IP address + port as declared in the configuration file
     // plus subsequent entries added by addNeighbors.
@@ -104,7 +111,7 @@ public class NeighborRouter {
     private void initNeighbors() {
         // parse URIs
         config.getNeighbors().stream().distinct().map(NeighborRouter::parseURI).filter(Optional::isPresent)
-                .map(Optional::get).forEach(uri -> neighborsToConnectTo.add(uri));
+                .map(Optional::get).forEach(uri -> reconnectPool.add(uri));
     }
 
     /**
@@ -134,8 +141,12 @@ public class NeighborRouter {
             serverSocketChannel.socket().bind(tcpBindAddr);
             log.info("bound server TCP socket to {}", tcpBindAddr);
 
-            // build up connections to connectedNeighbors
+            // parse neighbors from configuration
             initNeighbors();
+
+            // init connections to the wanted neighbors,
+            // this also ensures that the whitelists are updated with the corresponding
+            // IP addresses and domain name mappings.
             connectToWantedNeighbors();
 
             long lastReconnectAttempts = System.currentTimeMillis();
@@ -176,9 +187,12 @@ public class NeighborRouter {
                             Neighbor newNeighbor = new NeighborImpl<>(selector, newConn,
                                     remoteAddr.getAddress().getHostAddress(),
                                     Neighbor.UNKNOWN_REMOTE_SERVER_SOCKET_PORT, txPipeline);
-                            newNeighbor.setDomain(remoteAddr.getHostName());
+                            String domain = ipToDomainMapping.get(remoteAddr.getAddress().getHostAddress());
+                            if (domain != null) {
+                                newNeighbor.setDomain(domain);
+                            }
                             newNeighbor.send(Protocol.createHandshakePacket((char) config.getNeighboringSocketPort()));
-                            log.info("initialized connection from neighbor {}", newNeighbor.getHostAddress());
+                            log.info("new connection from {}, performing handshake...", newNeighbor.getHostAddress());
                             newConn.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, newNeighbor);
                             continue;
                         }
@@ -204,19 +218,18 @@ public class NeighborRouter {
                             // our own initialized connection was fully connected, however, since
                             // only a fully handshaked neighbor is recognized as connected, the redundant
                             // connection will be closed after that connection's handshake.
-                            log.info("finishing connection to neighbor {}", identity);
-                            URI uri = URI.create(String.format("tcp://%s", identity));
                             try {
                                 // the neighbor was faster than us to setup the connection
                                 if (connectedNeighbors.containsKey(identity)) {
                                     log.info("neighbor {} is already connected", identity);
-                                    neighborsToConnectTo.remove(uri);
+                                    removeFromReconnectPool(neighbor);
                                     key.cancel();
                                     continue;
                                 }
                                 if (channel.finishConnect()) {
-                                    log.info("initialized connection to neighbor {}", identity);
-                                    neighborsToConnectTo.remove(uri);
+                                    log.info("established connection to neighbor {}, now performing handshake...",
+                                            identity);
+                                    removeFromReconnectPool(neighbor);
                                     // remove connect interest
                                     key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                                     // add handshaking packet as the initial packet to send
@@ -225,7 +238,8 @@ public class NeighborRouter {
                                     continue;
                                 }
                             } catch (ConnectException ex) {
-                                log.info("couldn't build connection to neighbor {}, will attempt to reconnect later",
+                                log.info(
+                                        "couldn't establish connection to neighbor {}, will attempt to reconnect later",
                                         identity);
                                 closeNeighborConnection(channel, identity, selector);
                             }
@@ -244,7 +258,7 @@ public class NeighborRouter {
                                     case -1:
                                         if (neighbor.getState() == NeighborState.HANDSHAKING) {
                                             log.info(
-                                                    "closing neighbor connection to {} as handshake packet couldn't be written",
+                                                    "closing connection to {} as handshake packet couldn't be written",
                                                     identity);
                                             closeNeighborConnection(channel, null, selector);
                                         } else {
@@ -253,11 +267,9 @@ public class NeighborRouter {
                                         continue;
                                 }
                             } catch (IOException ex) {
-                                log.error("unable to write to socket of neighbor {}", identity);
+                                log.error("unable to send message to neighbor {}", identity);
                                 closeNeighborConnection(channel, identity, selector);
-                                if (neighbor.getState() == NeighborState.READY_FOR_MESSAGES) {
-                                    neighborsToConnectTo.add(URI.create(String.format("tcp://%s", identity)));
-                                }
+                                addToReconnectPool(neighbor);
                                 continue;
                             }
                         }
@@ -282,11 +294,9 @@ public class NeighborRouter {
                                         }
                                 }
                             } catch (IOException ex) {
-                                log.error("unable to read from socket of neighbor {}", identity);
+                                log.error("unable to read message from neighbor {}", identity);
                                 closeNeighborConnection(channel, identity, selector);
-                                if (neighbor.getState() == NeighborState.READY_FOR_MESSAGES) {
-                                    neighborsToConnectTo.add(URI.create(String.format("tcp://%s", identity)));
-                                }
+                                addToReconnectPool(neighbor);
                             }
                         }
                     } finally {
@@ -325,6 +335,49 @@ public class NeighborRouter {
      */
     public static long getTxCacheDigest(byte[] txBytes) {
         return txCacheDigestHashFunc.hashBytes(txBytes);
+    }
+
+    /**
+     * Adds the given neighbor to the 'reconnect pool' of neighbors which this node will try to reconnect to. If the
+     * domain of the neighbor was known when the connection was established, it will be used to re-establish the
+     * connection to the neighbor, otherwise the neighbor's current known IP address is used.<br/>
+     * The neighbor is only added to the 'reconnect pool' if the neighbor was ready to send/process messages.
+     * 
+     * @param neighbor the neighbor to attempt to reconnect to
+     */
+    private void addToReconnectPool(Neighbor neighbor) {
+        if (neighbor.getState() != NeighborState.READY_FOR_MESSAGES) {
+            return;
+        }
+        // try to pull out the origin domain which was used to establish
+        // the connection with this neighbor
+        String domain = ipToDomainMapping.get(neighbor.getHostAddress());
+        URI reconnectURI = null;
+        if (domain != null) {
+            reconnectURI = URI
+                    .create(String.format("%s%s:%d", protocolPrefix, domain, neighbor.getRemoteServerSocketPort()));
+        } else {
+            reconnectURI = URI.create(String.format("%s%s", protocolPrefix, neighbor.getHostAddressAndPort()));
+        }
+        log.info("adding {} to the reconnect pool", reconnectURI);
+        reconnectPool.add(reconnectURI);
+    }
+
+    /**
+     * Ensures that the neighbor is removed from the reconnect pool by using the neighbor's IP address and domain
+     * identity.
+     * 
+     * @param neighbor the neighbor to remove from the reconnect pool
+     */
+    private void removeFromReconnectPool(Neighbor neighbor) {
+        URI raw = URI.create(String.format("%s%s", protocolPrefix, neighbor.getHostAddressAndPort()));
+        reconnectPool.remove(raw);
+        String domain = neighbor.getDomain();
+        if (domain != null) {
+            URI withDomain = URI
+                    .create(String.format("%s%s:%d", protocolPrefix, domain, neighbor.getRemoteServerSocketPort()));
+            reconnectPool.remove(withDomain);
+        }
     }
 
     /**
@@ -406,13 +459,9 @@ public class NeighborRouter {
         // if the handshake was successful and we got the remote port
         connectedNeighbors.put(neighbor.getHostAddressAndPort(), neighbor);
 
-        // prevent a reconnect attempt from the 'wanted neighbors pool'
+        // prevent reconnect attempts from the 'reconnect pool'
         // by constructing the source URI which was used for this neighbor
-        String domainIdentity = String.format("tcp://%s:%d", neighbor.getDomain(),
-                neighbor.getRemoteServerSocketPort());
-        String rawIdentity = String.format("tcp://%s", neighbor.getHostAddressAndPort());
-        neighborsToConnectTo.remove(URI.create(domainIdentity));
-        neighborsToConnectTo.remove(URI.create(rawIdentity));
+        removeFromReconnectPool(neighbor);
 
         return true;
     }
@@ -426,12 +475,12 @@ public class NeighborRouter {
      * {@link NeighborRouter#removeNeighbor(String)}.
      */
     private void connectToWantedNeighbors() {
-        if (neighborsToConnectTo.isEmpty()) {
+        if (reconnectPool.isEmpty()) {
             return;
         }
-        log.info("attempting to build connection to {} wanted neighbors {}", neighborsToConnectTo.size(),
-                neighborsToConnectTo.toArray());
-        neighborsToConnectTo.forEach(neighborURI -> {
+        log.info("establishing connections to {} wanted neighbors {}", reconnectPool.size(),
+                reconnectPool.toArray());
+        reconnectPool.forEach(neighborURI -> {
             InetSocketAddress inetAddr = new InetSocketAddress(neighborURI.getHost(), neighborURI.getPort());
             try {
                 // if in the meantime the neighbor connected to us, we don't need to reinitialize a connection.
@@ -440,7 +489,7 @@ public class NeighborRouter {
                     String identity = String.format("%s:%d", ipAddress, inetAddr.getPort());
                     if (connectedNeighbors.containsKey(identity)) {
                         log.info("skipping connecting to {} as neighbor is already connected", identity);
-                        neighborsToConnectTo.remove(neighborURI);
+                        reconnectPool.remove(neighborURI);
                         return;
                     }
                 }
@@ -476,6 +525,9 @@ public class NeighborRouter {
         // this comes into place if our own initialized connection fails
         // but afterwards the added neighbor builds a connection to us.
         hostsWhitelist.add(ipAddress);
+
+        // map the ip address to the domain
+        ipToDomainMapping.put(ipAddress, addr.getHostString());
 
         // make the identity of the newly added neighbor clear, so that it gets rejected during handshaking
         // finalisation, in case the communicated server socket port is wrong.
@@ -588,7 +640,7 @@ public class NeighborRouter {
         }
         URI neighborURI = optUri.get();
         // add to wanted neighbors
-        neighborsToConnectTo.add(neighborURI);
+        reconnectPool.add(neighborURI);
         // wake up the selector and let it build connections to wanted neighbors
         forceReconnectAttempt.set(true);
         selector.wakeup();
@@ -608,7 +660,7 @@ public class NeighborRouter {
             return NeighborMutOp.URI_INVALID;
         }
         // remove the neighbor from connection attempts
-        neighborsToConnectTo.remove(optUri.get());
+        reconnectPool.remove(optUri.get());
 
         URI neighborURI = optUri.get();
         InetSocketAddress inetAddr = new InetSocketAddress(neighborURI.getHost(), neighborURI.getPort());
@@ -687,7 +739,7 @@ public class NeighborRouter {
      */
     public List<Neighbor> getNeighbors() {
         List<Neighbor> neighbors = new ArrayList<>(connectedNeighbors.values());
-        neighborsToConnectTo.forEach(uri -> {
+        reconnectPool.forEach(uri -> {
             neighbors.add(new NeighborImpl<>(null, null, uri.getHost(), uri.getPort(), null));
         });
         return neighbors;

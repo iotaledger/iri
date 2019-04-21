@@ -205,6 +205,7 @@ public class NeighborRouter {
                         if (neighbor.getState() == NeighborState.MARKED_FOR_DISCONNECT) {
                             allowedNeighbors.remove(identity);
                             closeNeighborConnection(channel, identity, selector);
+                            removeFromReconnectPool(neighbor);
                             continue;
                         }
 
@@ -257,8 +258,7 @@ public class NeighborRouter {
                                         break;
                                     case -1:
                                         if (neighbor.getState() == NeighborState.HANDSHAKING) {
-                                            log.info(
-                                                    "closing connection to {} as handshake packet couldn't be written",
+                                            log.info("closing connection to {} as handshake packet couldn't be written",
                                                     identity);
                                             closeNeighborConnection(channel, null, selector);
                                         } else {
@@ -478,8 +478,7 @@ public class NeighborRouter {
         if (reconnectPool.isEmpty()) {
             return;
         }
-        log.info("establishing connections to {} wanted neighbors {}", reconnectPool.size(),
-                reconnectPool.toArray());
+        log.info("establishing connections to {} wanted neighbors {}", reconnectPool.size(), reconnectPool.toArray());
         reconnectPool.forEach(neighborURI -> {
             InetSocketAddress inetAddr = new InetSocketAddress(neighborURI.getHost(), neighborURI.getPort());
             try {
@@ -651,29 +650,33 @@ public class NeighborRouter {
      * Removes the given neighbor from the {@link NeighborRouter} by marking it for "disconnect". The neighbor is
      * disconnected as soon as the next selector loop is executed.
      * 
-     * @param rawURI The URI of the neighbor
+     * @param uri The URI of the neighbor
      * @return whether the neighbor was removed or not
      */
-    public NeighborMutOp removeNeighbor(String rawURI) {
-        Optional<URI> optUri = parseURI(rawURI);
+    public NeighborMutOp removeNeighbor(String uri) {
+        Optional<URI> optUri = parseURI(uri);
         if (!optUri.isPresent()) {
             return NeighborMutOp.URI_INVALID;
         }
-        // remove the neighbor from connection attempts
-        reconnectPool.remove(optUri.get());
 
         URI neighborURI = optUri.get();
         InetSocketAddress inetAddr = new InetSocketAddress(neighborURI.getHost(), neighborURI.getPort());
         if (inetAddr.isUnresolved()) {
-            log.warn("unable to remove neighbor {} as IP address couldn't be resolved", rawURI);
+            log.warn("unable to remove neighbor {} as IP address couldn't be resolved", uri);
             return NeighborMutOp.UNRESOLVED_DOMAIN;
         }
+
+        // remove the neighbor from connection attempts
+        reconnectPool.remove(optUri.get());
+        URI rawURI = URI.create(String.format("%s%s:%d", protocolPrefix, inetAddr.getAddress().getHostAddress(), neighborURI.getPort())));
+        reconnectPool.remove(rawURI);
 
         String identity = String.format("%s:%d", inetAddr.getAddress().getHostAddress(), inetAddr.getPort());
         Neighbor neighbor = connectedNeighbors.get(identity);
         if (neighbor == null) {
             return NeighborMutOp.UNKNOWN_NEIGHBOR;
         }
+
         // the neighbor will be disconnected inside the selector loop
         neighbor.setState(NeighborState.MARKED_FOR_DISCONNECT);
         return NeighborMutOp.OK;

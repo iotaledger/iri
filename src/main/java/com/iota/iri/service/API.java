@@ -65,6 +65,10 @@ import java.util.stream.IntStream;
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
 
+import com.iota.iri.pluggables.utxo.BatchTxns;
+import com.iota.iri.pluggables.utxo.NodeFormatted;
+import com.iota.iri.pluggables.tee.TEEFormatted;
+
 import static io.undertow.Handlers.path;
 
 @SuppressWarnings("unchecked")
@@ -654,7 +658,10 @@ public class API {
 
     // FIXME add comments
     private synchronized AbstractResponse getBlockContentStatement(List<Hash> hashes) throws Exception {
+        
+
         final List<String> elements = new LinkedList<>();
+        String info = "";
         for (final Hash hash : hashes) {
             final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, hash);
             if (transactionViewModel != null) {
@@ -667,16 +674,23 @@ public class API {
                     LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
                     double score = prov.getScore(hash);
                     double pScore = prov.getParentScore(hash);
-                    String info = "{ " + "\"score\" : " + score + ",\"parentScore\" : " + pScore + "},";
-                    info += matcher.group(0); 
-                    elements.add(info);
+                    BatchTxns tx = new Gson().fromJson(matcher.group(0), BatchTxns.class);
+                    NodeFormatted fmt = new NodeFormatted();
+                    fmt.txns = tx;
+                    fmt.score = score;
+                    fmt.pScore = pScore;
+                    elements.add(new Gson().toJson(fmt));
                 } else {
                     LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
                     double score = prov.getScore(hash);
                     double pScore = prov.getParentScore(hash);
-                    String info = "{ " + "\"score\" : " + score + ",\"parentScore\" : " + pScore + "},";
+                    TEEFormatted fmt = new TEEFormatted();
+                    fmt.score = score;
+                    fmt.pScore = pScore;
                     String decoded = java.net.URLDecoder.decode(StringUtils.trim(txnInfo), StandardCharsets.UTF_8.name());
-                    elements.add(info + decoded);
+                    BatchTee tee = new Gson().fromJson(decoded, BatchTee.class);
+                    fmt.tee = tee;
+                    elements.add(new Gson().toJson(fmt));
                 }
             }
         }

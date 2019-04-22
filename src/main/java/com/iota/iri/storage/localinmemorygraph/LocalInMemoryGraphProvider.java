@@ -247,13 +247,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 if(model.getLastIndex() + 1 > 1) {   
                     bundleMap.put(key, new Pair<Hash, Integer>(model.getBundleHash(), (int)model.getCurrentIndex()));
                     if(!bundleContent.containsKey(model.getBundleHash())) {
-                        if(!bundleContent.containsKey(model.getBundleHash())) {
-                            bundleContent.put(model.getBundleHash(), new HashSet<>());
-                        }
-                        Set<Hash> content = bundleContent.get(model.getBundleHash());
-                        content.add(key);
-                        bundleContent.put(model.getBundleHash(), content);
+                        bundleContent.put(model.getBundleHash(), new HashSet<>());
                     }
+                    Set<Hash> content = bundleContent.get(model.getBundleHash());
+                    content.add(key);
+                    bundleContent.put(model.getBundleHash(), content);
                 }
                 updateTopologicalOrder(key, trunk, branch);
                 updateScore(key);
@@ -955,11 +953,11 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
     public List<Hash> getHashesFromBundle(List<String> bundleHashes) {
         List<Hash> ret = new ArrayList<>();
         for(String h : bundleHashes) {
-            Hash hh = HashFactory.TRANSACTION.create(h);
+            Hash hh = HashFactory.BUNDLE.create(h);
             if(bundleContent.containsKey(hh)) {
                 ret.addAll(bundleContent.get(hh));
             } else {
-                ret.add(hh);
+                ret.add(HashFactory.TRANSACTION.create(h));
             }
         }
         return ret;

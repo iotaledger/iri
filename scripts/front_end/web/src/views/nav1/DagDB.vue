@@ -62,7 +62,7 @@
                 alert(response["Message"]);
             } else {
                 let detail = response["Data"];
-                detail = JSON.parse(detail.replace("']", "]").replace("['", "["));
+                detail = JSON.parse(detail.replace("']", "]").replace("['", "[").replace(/\', \'/g ,","));
                 $(".detail-show pre").html(JSON.stringify(detail, null, 2));
             }
         });

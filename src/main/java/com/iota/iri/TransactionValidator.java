@@ -10,6 +10,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.network.TransactionRequester;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.transactionpruning.PrunedTransactionVerifier;
 import com.iota.iri.storage.Tangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,8 @@ public class TransactionValidator {
     private final Set<Hash> newSolidTransactionsOne = new LinkedHashSet<>();
     private final Set<Hash> newSolidTransactionsTwo = new LinkedHashSet<>();
 
+    private PrunedTransactionVerifier prunedTransactionVerifier;
+
     /**
      * Constructor for Tangle Validator
      *
@@ -81,9 +84,12 @@ public class TransactionValidator {
      *                regardless of parameter input.
      * @param mwm minimum weight magnitude: the minimal number of 9s that ought to appear at the end of the transaction
      *            hash
+     * @param prunedTransactionProviderProvider for checking if a transaction is pruned previously
      */
-    public void init(boolean testnet, int mwm) {
+    public void init(boolean testnet, int mwm, PrunedTransactionVerifier prunedTransactionVerifier) {
         setMwm(testnet, mwm);
+        
+        this.prunedTransactionVerifier = prunedTransactionVerifier;
 
         newSolidThread = new Thread(spawnSolidTransactionsPropagation(), "Solid TX cascader");
         newSolidThread.start();
@@ -247,6 +253,13 @@ public class TransactionValidator {
         if(fromHash(tangle, hash).isSolid()) {
             return true;
         }
+        
+        // isPruned gets updated through parent CF verification. 
+        // If one check is negative, isPossiblyPruned will return false.
+        if (this.prunedTransactionVerifier != null && this.prunedTransactionVerifier.isPossiblyPruned(hash)){
+            return this.prunedTransactionVerifier.isPruned(hash);
+        }
+        
         Set<Hash> analyzedHashes = new HashSet<>(snapshotProvider.getInitialSnapshot().getSolidEntryPoints().keySet());
         if(maxProcessedTransactions != Integer.MAX_VALUE) {
             maxProcessedTransactions += analyzedHashes.size();

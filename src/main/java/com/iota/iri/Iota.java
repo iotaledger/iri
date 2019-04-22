@@ -23,9 +23,11 @@ import com.iota.iri.service.tipselection.*;
 import com.iota.iri.service.tipselection.impl.*;
 import com.iota.iri.service.transactionpruning.PrunedTransactionException;
 import com.iota.iri.service.transactionpruning.PrunedTransactionProvider;
+import com.iota.iri.service.transactionpruning.PrunedTransactionVerifier;
 import com.iota.iri.service.transactionpruning.TransactionPruningException;
 import com.iota.iri.service.transactionpruning.async.AsyncTransactionPruner;
 import com.iota.iri.service.transactionpruning.impl.PrunedTransactionProviderImpl;
+import com.iota.iri.service.transactionpruning.impl.PrunedTransactionVerifierImpl;
 import com.iota.iri.storage.*;
 import com.iota.iri.storage.rocksDB.RocksDBPersistenceProvider;
 import com.iota.iri.utils.Pair;
@@ -99,6 +101,8 @@ public class Iota {
     public final TransactionRequesterWorkerImpl transactionRequesterWorker;
 
     public final PrunedTransactionProviderImpl prunedTransactionProvider;
+
+    public final PrunedTransactionVerifier prunedTransactionVerifier;
     
     public final BundleValidator bundleValidator;
 
@@ -112,6 +116,7 @@ public class Iota {
     public final IotaConfig configuration;
     public final TipsViewModel tipsViewModel;
     public final TipSelector tipsSelector;
+
 
 
     /**
@@ -142,9 +147,7 @@ public class Iota {
         transactionPruner = configuration.getLocalSnapshotsEnabled() && configuration.getLocalSnapshotsPruningEnabled()
                           ? new AsyncTransactionPruner()
                           : null;
-                          
-        prunedTransactionProvider = transactionPruner != null ? new PrunedTransactionProviderImpl() : null;
-                          
+                
         transactionRequesterWorker = new TransactionRequesterWorkerImpl();
 
         // legacy code
@@ -153,8 +156,13 @@ public class Iota {
         tipsViewModel = new TipsViewModel();
         transactionRequester = new TransactionRequester(tangle, snapshotProvider);
         transactionValidator = new TransactionValidator(tangle, snapshotProvider, tipsViewModel, transactionRequester);
+        
+        prunedTransactionProvider = transactionPruner != null ? new PrunedTransactionProviderImpl() : null;
+        prunedTransactionVerifier = transactionPruner != null ? new PrunedTransactionVerifierImpl(
+                prunedTransactionProvider, transactionRequester) : null;
+        
         node = new Node(tangle, snapshotProvider, transactionValidator, transactionRequester, tipsViewModel,
-                latestMilestoneTracker, configuration);
+                latestMilestoneTracker, configuration, prunedTransactionVerifier);
         replicator = new Replicator(node, configuration);
         udpReceiver = new UDPReceiver(node, configuration);
         tipsSolidifier = new TipsSolidifier(tangle, transactionValidator, tipsViewModel, configuration);
@@ -185,7 +193,7 @@ public class Iota {
             tangle.clearMetadata(com.iota.iri.model.persistables.Transaction.class);
         }
 
-        transactionValidator.init(configuration.isTestnet(), configuration.getMwm());
+        transactionValidator.init(configuration.isTestnet(), configuration.getMwm(), prunedTransactionVerifier);
         tipsSolidifier.init();
         transactionRequester.init(configuration.getpRemoveRequest());
         udpReceiver.init();

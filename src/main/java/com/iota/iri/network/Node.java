@@ -10,6 +10,8 @@ import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
+import com.iota.iri.service.transactionpruning.PrunedTransactionException;
+import com.iota.iri.service.transactionpruning.PrunedTransactionVerifier;
 import com.iota.iri.storage.Tangle;
 import net.openhft.hashing.LongHashFunction;
 import org.apache.commons.lang3.StringUtils;
@@ -69,7 +71,8 @@ public class Node {
     private final TransactionValidator transactionValidator;
     private final LatestMilestoneTracker latestMilestoneTracker;
     private final TransactionRequester transactionRequester;
-
+    private final PrunedTransactionVerifier prunedTransactionVerifier;
+    
     private static final SecureRandom rnd = new SecureRandom();
 
 
@@ -99,7 +102,10 @@ public class Node {
      * @param configuration Contains all the config.
      *
      */
-    public Node(final Tangle tangle, SnapshotProvider snapshotProvider, final TransactionValidator transactionValidator, final TransactionRequester transactionRequester, final TipsViewModel tipsViewModel, final LatestMilestoneTracker latestMilestoneTracker, final NodeConfig configuration
+    public Node(final Tangle tangle, SnapshotProvider snapshotProvider, final TransactionValidator transactionValidator, 
+            final TransactionRequester transactionRequester, final TipsViewModel tipsViewModel, 
+            final LatestMilestoneTracker latestMilestoneTracker, final NodeConfig configuration,
+            final PrunedTransactionVerifier prunedTransactionVerifier
     ) {
         this.configuration = configuration;
         this.tangle = tangle;
@@ -112,6 +118,7 @@ public class Node {
         int packetSize = configuration.getTransactionPacketSize();
         this.sendingPacket = new DatagramPacket(new byte[packetSize], packetSize);
         this.tipRequestingPacket = new DatagramPacket(new byte[packetSize], packetSize);
+        this.prunedTransactionVerifier = prunedTransactionVerifier;
 
     }
 
@@ -445,6 +452,20 @@ public class Node {
     public void processReceivedData(TransactionViewModel receivedTransactionViewModel, Neighbor neighbor) {
 
         boolean stored = false;
+        
+        try {
+            if (prunedTransactionVerifier != null && 
+                    prunedTransactionVerifier.waitingForHash(receivedTransactionViewModel.getHash())) {
+                
+                prunedTransactionVerifier.submitTransaction(receivedTransactionViewModel);
+                
+                // We dont store these old/pruned transactions
+                return;
+            }
+        } catch (PrunedTransactionException e) {
+            // We could not verify if this was pruned or not. Handle like normal
+            log.warn("Failed checking for pruned transaction state.", e);
+        }
 
         //store new transaction
         try {

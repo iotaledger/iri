@@ -1,6 +1,7 @@
 package com.iota.iri.network;
 
 import com.iota.iri.conf.BaseIotaConfig;
+import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
@@ -10,6 +11,7 @@ import com.iota.iri.network.neighbor.impl.NeighborImpl;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.protocol.Handshake;
 import com.iota.iri.network.protocol.Protocol;
+import com.iota.iri.utils.Converter;
 import com.iota.iri.utils.thread.ThreadIdentifier;
 import com.iota.iri.utils.thread.ThreadUtils;
 
@@ -51,7 +53,7 @@ public class NeighborRouter {
     private final ThreadIdentifier neighborRouterThreadIdentifier = new ThreadIdentifier("Neighbor Router");
 
     // external
-    private NodeConfig config;
+    private IotaConfig config;
     private TransactionRequester txRequester;
     private TransactionProcessingPipeline txPipeline;
 
@@ -88,6 +90,10 @@ public class NeighborRouter {
     // used to force the selection loop to reconnect to wanted neighbors
     private AtomicBoolean forceReconnectAttempt = new AtomicBoolean(false);
 
+    // used to match against neighbor's coordinator address to cancel the connection
+    // in case it doesn't match this node's own configured coordinator address
+    private byte[] byteEncodedCooAddress;
+
     /**
      * Defines whether a neighbor got added/removed or not and the corresponding reason.
      */
@@ -102,10 +108,17 @@ public class NeighborRouter {
      * @param txRequester {@link TransactionRequester} instance to load hashes of requested transactions when gossiping
      * @param txPipeline  {@link TransactionProcessingPipeline} passed to newly created {@link Neighbor} instances
      */
-    public void init(NodeConfig config, TransactionRequester txRequester, TransactionProcessingPipeline txPipeline) {
-        this.config = config;
+    public void init(IotaConfig config, TransactionRequester txRequester, TransactionProcessingPipeline txPipeline) {
         this.txRequester = txRequester;
         this.txPipeline = txPipeline;
+        this.config = config;
+
+        // reduce the coordinator address to its byte encoded representation
+        byte[] tritsEncodedCooAddress = new byte[config.getCoordinator().length()
+                * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
+        Converter.trits(config.getCoordinator(), tritsEncodedCooAddress, 0);
+        byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES];
+        Converter.bytes(tritsEncodedCooAddress, byteEncodedCooAddress);
     }
 
     private void initNeighbors() {
@@ -191,7 +204,8 @@ public class NeighborRouter {
                             if (domain != null) {
                                 newNeighbor.setDomain(domain);
                             }
-                            newNeighbor.send(Protocol.createHandshakePacket((char) config.getNeighboringSocketPort()));
+                            newNeighbor.send(Protocol.createHandshakePacket((char) config.getNeighboringSocketPort(),
+                                    byteEncodedCooAddress));
                             log.info("new connection from {}, performing handshake...", newNeighbor.getHostAddress());
                             newConn.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, newNeighbor);
                             continue;
@@ -234,8 +248,8 @@ public class NeighborRouter {
                                     // remove connect interest
                                     key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                                     // add handshaking packet as the initial packet to send
-                                    neighbor.send(
-                                            Protocol.createHandshakePacket((char) config.getNeighboringSocketPort()));
+                                    neighbor.send(Protocol.createHandshakePacket(
+                                            (char) config.getNeighboringSocketPort(), byteEncodedCooAddress));
                                     continue;
                                 }
                             } catch (ConnectException ex) {
@@ -387,6 +401,7 @@ public class NeighborRouter {
      * <ul>
      * <li>the handshaking is faulty, meaning that a non handshaking packet was sent</li>
      * <li>{@link BaseIotaConfig#getMaxNeighbors()} has been reached</li>
+     * <li>the neighbor has a different coordinator address set as we do</li>
      * <li>a non matching server socket port was communicated in the handshaking packet</li>
      * <li>the neighbor is already connected (checked by the identity)</li>
      * <li>the identity is not known (missing in {@link NeighborRouter#allowedNeighbors})</li>
@@ -414,6 +429,14 @@ public class NeighborRouter {
         // drop the connection if in the meantime the available neighbor slots were filled
         if (availableNeighborSlotsFilled()) {
             log.error("dropping handshaked connection to neighbor {} as all neighbor slots are filled", identity);
+            closeNeighborConnection(channel, null, selector);
+            return false;
+        }
+
+        // check whether the neighbor actually uses the same coordinator address
+        if (!Arrays.equals(byteEncodedCooAddress, handshake.getByteEncodedCooAddress())) {
+            log.error("dropping handshaked connection to neighbor {} as it uses a different coordinator address",
+                    identity);
             closeNeighborConnection(channel, null, selector);
             return false;
         }
@@ -668,7 +691,8 @@ public class NeighborRouter {
 
         // remove the neighbor from connection attempts
         reconnectPool.remove(optUri.get());
-        URI rawURI = URI.create(String.format("%s%s:%d", protocolPrefix, inetAddr.getAddress().getHostAddress(), neighborURI.getPort()));
+        URI rawURI = URI.create(String.format("%s%s:%d", protocolPrefix, inetAddr.getAddress().getHostAddress(),
+                neighborURI.getPort()));
         reconnectPool.remove(rawURI);
 
         String identity = String.format("%s:%d", inetAddr.getAddress().getHostAddress(), inetAddr.getPort());

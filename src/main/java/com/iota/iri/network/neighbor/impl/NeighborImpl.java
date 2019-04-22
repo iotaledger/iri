@@ -135,9 +135,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
             case READ_MESSAGE:
                 switch (msgReader.getMessageType()) {
                     case HANDSHAKE:
-                        handshake.setServerSocketPort((int) msg.getChar());
-                        handshake.setSentTimestamp(msg.getLong());
-                        handshake.setState(Handshake.State.OK);
+                        handshake = Handshake.fromByteBuffer(msg);
                         break;
                     case TRANSACTION_GOSSIP:
                         msgsRead++;

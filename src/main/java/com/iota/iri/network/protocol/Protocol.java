@@ -37,6 +37,10 @@ public class Protocol {
      */
     public final static int GOSSIP_REQUESTED_TX_HASH_BYTES = 49;
     /**
+     * The amount of bytes used for the coo address sent in a handshake packet.
+     */
+    public final static int BYTE_ENCODED_COO_ADDRESS_BYTES = 49;
+    /**
      * The amount of bytes making up the non signature message fragment part of a transaction gossip payload.
      */
     public final static int NON_SIG_TX_PART_SIZE_BYTES = 292;
@@ -79,7 +83,7 @@ public class Protocol {
      * the given message type.
      */
     public enum MessageSize {
-        HEADER((short) PROTOCOL_HEADER_BYTES), HANDSHAKE((short) 10),
+        HEADER((short) PROTOCOL_HEADER_BYTES), HANDSHAKE((short) 59),
         // represents the max size of a tx payload + requested hash.
         // in reality most txs won't take up their full 1604 bytes as the
         // signature message fragment is truncated
@@ -152,11 +156,12 @@ public class Protocol {
      * @param ownSourcePort the node's own server socket port number
      * @return a {@link ByteBuffer} containing the handshake packet
      */
-    public static ByteBuffer createHandshakePacket(char ownSourcePort) {
+    public static ByteBuffer createHandshakePacket(char ownSourcePort, byte[] ownByteEncodedCooAddress) {
         ByteBuffer buf = ByteBuffer.allocate(MessageSize.HEADER.getSize() + MessageSize.HANDSHAKE.getSize());
         addProtocolHeader(buf, MessageType.HANDSHAKE);
         buf.putChar(ownSourcePort);
         buf.putLong(System.currentTimeMillis());
+        buf.put(ownByteEncodedCooAddress);
         buf.flip();
         return buf;
     }

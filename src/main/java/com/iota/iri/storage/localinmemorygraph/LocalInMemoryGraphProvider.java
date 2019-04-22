@@ -3,6 +3,7 @@ package com.iota.iri.storage.localinmemorygraph;
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
+import com.iota.iri.model.HashFactory;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.service.tipselection.impl.CumWeightScore;
@@ -46,6 +47,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     private HashMap<Hash, Integer> lvlMap;
     private HashMap<Hash, String> nameMap;
+    private Map<Hash, Pair<Hash,Integer>> bundleMap;
+    private Map<Hash, Set<Hash>> bundleContent;
     private int totalDepth;
     private Tangle tangle;
     // to use
@@ -66,6 +69,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         graph = new HashMap<>();
         revGraph = new HashMap<>();
         parentGraph = new ConcurrentHashMap<>();
+        bundleMap = new ConcurrentHashMap<>();
+        bundleContent = new ConcurrentHashMap<>();
         parentRevGraph = new HashMap<>();
         degs = new HashMap<>();
         topOrder = new HashMap<>();
@@ -100,6 +105,8 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
         tracedNodes.clear();
         parentUnTracedNodes.clear();
         parentTracedNodes.clear();
+        bundleMap.clear();
+        bundleContent.clear();
     }
 
     public void init() throws Exception {
@@ -235,6 +242,18 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
                 }
                 if (degs.get(branch) == null) {
                     degs.put(branch, 0);
+                }
+
+                if(model.getLastIndex() + 1 > 1) {   
+                    bundleMap.put(key, new Pair<Hash, Integer>(model.getBundleHash(), (int)model.getCurrentIndex()));
+                    if(!bundleContent.containsKey(model.getBundleHash())) {
+                        if(!bundleContent.containsKey(model.getBundleHash())) {
+                            bundleContent.put(model.getBundleHash(), new HashSet<>());
+                        }
+                        Set<Hash> content = bundleContent.get(model.getBundleHash());
+                        content.add(key);
+                        bundleContent.put(model.getBundleHash(), content);
+                    }
                 }
                 updateTopologicalOrder(key, trunk, branch);
                 updateScore(key);
@@ -907,6 +926,43 @@ public class LocalInMemoryGraphProvider implements AutoCloseable, PersistencePro
 
     public HashMap<Hash, Set<Hash>> getGraph() {
         return this.graph;
+    }
+
+    // if belongs to the same bundle, condense it
+    public HashMap<Hash, Set<Hash>> getCondensedGraph() {
+        HashMap<Hash, Set<Hash>> ret = new HashMap<>();
+        for(Hash h : graph.keySet()) {
+            if((bundleMap.containsKey(h) && bundleMap.get(h).hi == 0) || 
+               !bundleMap.containsKey(h)) {
+                Set<Hash> to = new HashSet<>();           
+                for(Hash m : graph.get(h)) {
+                    if(bundleMap.containsKey(m)) {
+                        to.add(bundleMap.get(m).low);
+                    } else {
+                        to.add(m);
+                    }
+                }
+                if(bundleMap.containsKey(h)) {
+                    ret.put(bundleMap.get(h).low, to);
+                } else {
+                    ret .put(h, to);
+                }
+            } 
+        }
+        return ret;
+    }
+
+    public List<Hash> getHashesFromBundle(List<String> bundleHashes) {
+        List<Hash> ret = new ArrayList<>();
+        for(String h : bundleHashes) {
+            Hash hh = HashFactory.TRANSACTION.create(h);
+            if(bundleContent.containsKey(hh)) {
+                ret.addAll(bundleContent.get(hh));
+            } else {
+                ret.add(hh);
+            }
+        }
+        return ret;
     }
 
     public Map<Hash, Hash> getParentGraph() {

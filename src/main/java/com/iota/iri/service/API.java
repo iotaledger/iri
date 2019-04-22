@@ -325,7 +325,9 @@ public class API {
                 }
                 case "getBlockContent": {
                     final List<String> hashes = getParameterAsList(request,"hashes", HASH_SIZE);
-                    return getBlockContentStatement(hashes);
+                    LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+                    List<Hash> list = prov.getHashesFromBundle(hashes);
+                    return getBlockContentStatement(list);
                 }
                 case "getDAG": {
                     String type = getParameterAsString(request, "type");
@@ -651,11 +653,10 @@ public class API {
 
 
     // FIXME add comments
-    private synchronized AbstractResponse getBlockContentStatement(List<String> hashes) throws Exception {
+    private synchronized AbstractResponse getBlockContentStatement(List<Hash> hashes) throws Exception {
         final List<String> elements = new LinkedList<>();
-        for (final String hash : hashes) {
-            Hash h = HashFactory.TRANSACTION.create(hash);
-            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, h);
+        for (final Hash hash : hashes) {
+            final TransactionViewModel transactionViewModel = TransactionViewModel.fromHash(instance.tangle, hash);
             if (transactionViewModel != null) {
                 byte[] sigTrits = transactionViewModel.getSignature();
                 String sigTrytes = Converter.trytes(sigTrits);
@@ -664,15 +665,15 @@ public class API {
                 Matcher matcher = pattern.matcher(txnInfo);
                 if (matcher.find()) {
                     LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
-                    double score = prov.getScore(h);
-                    double pScore = prov.getParentScore(h);
+                    double score = prov.getScore(hash);
+                    double pScore = prov.getParentScore(hash);
                     String info = "{ " + "\"score\" : " + score + ",\"parentScore\" : " + pScore + "},";
                     info += matcher.group(0); 
                     elements.add(info);
                 } else {
                     LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
-                    double score = prov.getScore(h);
-                    double pScore = prov.getParentScore(h);
+                    double score = prov.getScore(hash);
+                    double pScore = prov.getParentScore(hash);
                     String info = "{ " + "\"score\" : " + score + ",\"parentScore\" : " + pScore + "},";
                     String decoded = java.net.URLDecoder.decode(StringUtils.trim(txnInfo), StandardCharsets.UTF_8.name());
                     elements.add(info + decoded);
@@ -688,7 +689,7 @@ public class API {
     // FIXME add comments
     private synchronized AbstractResponse getDAGStatement(String type) throws Exception {
         LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
-        String graph = prov.printGraph(prov.getGraph(), type);
+        String graph = prov.printGraph(prov.getCondensedGraph(), type);
         return GetDAGResponse.create(graph);
     }
 

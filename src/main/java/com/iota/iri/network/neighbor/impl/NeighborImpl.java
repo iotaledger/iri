@@ -117,11 +117,17 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                 }
 
                 // if we are handshaking, then we must have a handshaking packet
-                if (state == NeighborState.HANDSHAKING
-                        && protocolHeader.getMessageType() != Protocol.MessageType.HANDSHAKE) {
-                    log.error("neighbor {}'s initial packet is not a handshaking packet, closing connection",
-                            getHostAddressAndPort());
-                    return -1;
+                if (state == NeighborState.HANDSHAKING) {
+                    if (protocolHeader.getMessageType() != Protocol.MessageType.HANDSHAKE) {
+                        log.error("neighbor {}'s initial packet is not a handshaking packet, closing connection",
+                                getHostAddressAndPort());
+                        return -1;
+                    }
+                    if (protocolHeader.getMessageSize() != Protocol.MessageSize.HANDSHAKE.getSize()) {
+                        log.error("neighbor {}'s initial handshaking packet is of wrong size, closing connection",
+                                getHostAddressAndPort());
+                        return -1;
+                    }
                 }
 
                 // we got the header, now we want to read the message

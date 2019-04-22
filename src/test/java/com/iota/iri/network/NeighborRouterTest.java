@@ -1,6 +1,8 @@
 package com.iota.iri.network;
 
+import com.iota.iri.conf.IotaConfig;
 import com.iota.iri.conf.NodeConfig;
+import com.iota.iri.model.Hash;
 import com.iota.iri.network.neighbor.Neighbor;
 import com.iota.iri.network.pipeline.TransactionProcessingPipeline;
 import com.iota.iri.network.protocol.Protocol;
@@ -25,9 +27,9 @@ public class NeighborRouterTest {
     public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock
-    private NodeConfig nodeConfigA;
+    private IotaConfig nodeConfigA;
     @Mock
-    private NodeConfig nodeConfigB;
+    private IotaConfig nodeConfigB;
 
     @Mock
     private TransactionRequester transactionRequester;
@@ -38,13 +40,15 @@ public class NeighborRouterTest {
     @Test
     public void initsWithConfigDefinedNeighbors() throws InterruptedException {
         NeighborRouter neighborRouter = new NeighborRouter();
-        neighborRouter.init(nodeConfigA, transactionRequester, txPipeline);
 
         List<String> configNeighbors = new ArrayList<>(Arrays.asList("tcp://127.0.0.1:11000", "tcp://127.0.0.1:12000"));
         Mockito.when(nodeConfigA.getNeighbors()).thenReturn(configNeighbors);
         Mockito.when(nodeConfigA.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(15600);
+        Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
+
+        neighborRouter.init(nodeConfigA, transactionRequester, txPipeline);
 
         Thread neighborRouterThread = new Thread(neighborRouter::route);
         neighborRouterThread.start();
@@ -66,8 +70,6 @@ public class NeighborRouterTest {
     public void establishesConnsFromConfigAndDropsThemAccordingly() throws Exception {
         NeighborRouter neighborRouterA = new NeighborRouter();
         NeighborRouter neighborRouterB = new NeighborRouter();
-        neighborRouterA.init(nodeConfigA, transactionRequester, txPipeline);
-        neighborRouterB.init(nodeConfigB, transactionRequester, txPipeline);
 
         URI neighborAURI = URI.create("tcp://127.0.0.1:15000");
         String neighborAIdentity = String.format("%s:%d", neighborAURI.getHost(), neighborAURI.getPort());
@@ -80,7 +82,9 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigA.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(15000);
         Mockito.when(nodeConfigA.getMaxNeighbors()).thenReturn(1);
+        Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
+        neighborRouterA.init(nodeConfigA, transactionRequester, txPipeline);
 
         List<String> configNeighborsB = new ArrayList<>(Arrays.asList(neighborAURI.toString()));
         Mockito.when(nodeConfigB.isTestnet()).thenReturn(true);
@@ -88,7 +92,9 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigB.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigB.getNeighboringSocketPort()).thenReturn(16000);
         Mockito.when(nodeConfigB.getMaxNeighbors()).thenReturn(1);
+        Mockito.when(nodeConfigB.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigB.getReconnectAttemptIntervalSeconds()).thenReturn(30);
+        neighborRouterB.init(nodeConfigB, transactionRequester, txPipeline);
 
         Thread neighborRouterAThread = new Thread(neighborRouterA::route, "A");
         Thread neighborRouterBThread = new Thread(neighborRouterB::route, "B");
@@ -114,7 +120,7 @@ public class NeighborRouterTest {
 
         // send something to A in order to let B know that A is disconnected
         Neighbor neighborA = neighborRouterB.getConnectedNeighbors().get(neighborAIdentity);
-        neighborA.send(Protocol.createHandshakePacket((char) 16000));
+        neighborA.send(Protocol.createHandshakePacket((char) 16000, Hash.NULL_HASH.bytes()));
 
         // should now be disconnected
         Thread.sleep(1000);
@@ -129,8 +135,6 @@ public class NeighborRouterTest {
     public void addAndRemoveNeighborsAddsAndRemovesConnectionsAccordingly() throws Exception {
         NeighborRouter neighborRouterA = new NeighborRouter();
         NeighborRouter neighborRouterB = new NeighborRouter();
-        neighborRouterA.init(nodeConfigA, transactionRequester, txPipeline);
-        neighborRouterB.init(nodeConfigB, transactionRequester, txPipeline);
 
         URI neighborAURI = URI.create("tcp://127.0.0.1:15000");
         String neighborAIdentity = String.format("%s:%d", neighborAURI.getHost(), neighborAURI.getPort());
@@ -143,7 +147,9 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigA.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(15000);
         Mockito.when(nodeConfigA.getMaxNeighbors()).thenReturn(1);
+        Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
+        neighborRouterA.init(nodeConfigA, transactionRequester, txPipeline);
 
         List<String> configNeighborsB = new ArrayList<>();
         Mockito.when(nodeConfigB.isTestnet()).thenReturn(true);
@@ -151,7 +157,9 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigB.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
         Mockito.when(nodeConfigB.getNeighboringSocketPort()).thenReturn(16000);
         Mockito.when(nodeConfigB.getMaxNeighbors()).thenReturn(1);
+        Mockito.when(nodeConfigB.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigB.getReconnectAttemptIntervalSeconds()).thenReturn(30);
+        neighborRouterB.init(nodeConfigB, transactionRequester, txPipeline);
 
         Thread neighborRouterAThread = new Thread(neighborRouterA::route, "A");
         Thread neighborRouterBThread = new Thread(neighborRouterB::route, "B");
@@ -179,7 +187,7 @@ public class NeighborRouterTest {
 
         // send something to A in order to let A remove the connection to B
         Neighbor neighborA = neighborRouterB.getConnectedNeighbors().get(neighborAIdentity);
-        neighborA.send(Protocol.createHandshakePacket((char) 16000));
+        neighborA.send(Protocol.createHandshakePacket((char) 16000, Hash.NULL_HASH.bytes()));
 
         Thread.sleep(1000);
 

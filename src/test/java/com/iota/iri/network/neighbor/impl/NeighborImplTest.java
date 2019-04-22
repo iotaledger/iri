@@ -1,5 +1,6 @@
 package com.iota.iri.network.neighbor.impl;
 
+import com.iota.iri.model.Hash;
 import com.iota.iri.network.FakeChannel;
 import com.iota.iri.network.FakeSelectionKey;
 import com.iota.iri.network.neighbor.Neighbor;
@@ -53,7 +54,7 @@ public class NeighborImplTest {
         Neighbor neighbor = new NeighborImpl<>(selector, new FakeChannel() {
 
             // fake having a handshaking packet in the socket
-            private ByteBuffer handshakePacket = Protocol.createHandshakePacket(serverSocketPort);
+            private ByteBuffer handshakePacket = Protocol.createHandshakePacket(serverSocketPort, Hash.NULL_HASH.bytes());
 
             @Override
             public int read(ByteBuffer dst) {

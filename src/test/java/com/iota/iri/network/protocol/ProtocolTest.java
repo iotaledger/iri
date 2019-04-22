@@ -78,12 +78,16 @@ public class ProtocolTest {
     public void createHandshakePacket() {
         char ownSourcePort = (char) 15600;
         long now = System.currentTimeMillis();
-        ByteBuffer buf = Protocol.createHandshakePacket(ownSourcePort);
+        byte[] byteEncodedCooAddress = Hash.NULL_HASH.bytes();
+        ByteBuffer buf = Protocol.createHandshakePacket(ownSourcePort, byteEncodedCooAddress);
         assertEquals(1, buf.get());
         assertEquals(Protocol.MessageType.HANDSHAKE.getValue(), buf.get());
         assertEquals(Protocol.MessageSize.HANDSHAKE.getSize(), buf.getShort());
         assertEquals(ownSourcePort, buf.getChar());
         assertTrue(now <= buf.getLong());
+        byte[] actualCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES];
+        buf.get(actualCooAddress);
+        assertArrayEquals(byteEncodedCooAddress, actualCooAddress);
     }
 
     private int nonEmptySigPartBytesCount = 1000;

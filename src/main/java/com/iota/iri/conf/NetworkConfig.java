@@ -25,6 +25,11 @@ public interface NetworkConfig extends Config {
     int getReconnectAttemptIntervalSeconds();
 
     /**
+     * @return Descriptions#AUTO_TETHERING_ENABLED
+     */
+    boolean isAutoTetheringEnabled();
+
+    /**
      * @return Descriptions#P_REMOVE_REQUEST
      */
     double getpRemoveRequest();
@@ -73,10 +78,12 @@ public interface NetworkConfig extends Config {
         String NEIGHBORING_SOCKET_ADDRESS = "The address to bind the TCP server socket to.";
         String NEIGHBORING_SOCKET_PORT = "The TCP Receiver Port.";
         String RECONNECT_ATTEMPT_INTERVAL_SECONDS = "The interval at which to reconnect to wanted neighbors.";
+        String AUTO_TETHERING_ENABLED = "Whether to accept new connections from unknown neighbors. "
+                + "Unknown meaning neighbors which are not defined in the config and were not added via addNeighbors.";
         String P_REMOVE_REQUEST = DescriptionHelper.PROB_OF + " stopping to request a transaction. This number should be " +
                 "closer to 0 so non-existing transaction hashes will eventually be removed.";
         String SEND_LIMIT = "The maximum number of packets that may be sent by this node in a 1 second interval. If this number is below 0 then there is no limit.";
-        String MAX_NEIGHBORS = "The maximum number of non mutually tethered connections allowed. Works only in testnet mode";
+        String MAX_NEIGHBORS = "The maximum number of neighbors allowed to be connected.";
         String DNS_REFRESHER_ENABLED = "Reconnect to neighbors that have dynamic IPs.";
         String DNS_RESOLUTION_ENABLED = "Enable using DNS for neighbor peering.";
         String NEIGHBORS = "Urls of neighbor iota nodes.";

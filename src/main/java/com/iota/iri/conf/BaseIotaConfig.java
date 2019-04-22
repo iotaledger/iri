@@ -41,6 +41,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected String neighboringSocketAddress = Defaults.NEIGHBORING_SOCKET_ADDRESS;
     protected int neighboringSocketPort = Defaults.NEIGHBORING_SOCKET_PORT;
     protected int reconnectAttemptIntervalSeconds = Defaults.RECONNECT_ATTEMPT_INTERVAL_SECONDS;
+    protected boolean autoTetheringEnabled = Defaults.AUTO_TETHERING_ENABLED;
     protected double pRemoveRequest = Defaults.P_REMOVE_REQUEST;
     protected double pDropCacheEntry = Defaults.P_DROP_CACHE_ENTRY;
     protected int sendLimit = Defaults.SEND_LIMIT;
@@ -242,6 +243,11 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
+    public int getNeighboringSocketPort() {
+        return neighboringSocketPort;
+    }
+
+    @Override
     public int getReconnectAttemptIntervalSeconds() {
         return reconnectAttemptIntervalSeconds;
     }
@@ -253,8 +259,14 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @Override
-    public int getNeighboringSocketPort() {
-        return neighboringSocketPort;
+    public boolean isAutoTetheringEnabled() {
+        return autoTetheringEnabled;
+    }
+
+    @JsonProperty
+    @Parameter(names = {"--auto-tethering"}, description = NetworkConfig.Descriptions.AUTO_TETHERING_ENABLED)
+    protected void setAutoTetheringEnabled(boolean autoTetheringEnabled) {
+        this.autoTetheringEnabled = autoTetheringEnabled;
     }
 
     @Override
@@ -785,9 +797,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String NEIGHBORING_SOCKET_ADDRESS = "0.0.0.0";
         int NEIGHBORING_SOCKET_PORT = 15600;
         int RECONNECT_ATTEMPT_INTERVAL_SECONDS = 60;
+        boolean AUTO_TETHERING_ENABLED = false;
         double P_REMOVE_REQUEST = 0.01d;
         int SEND_LIMIT = -1;
-        int MAX_NEIGHBORS = 0;
+        int MAX_NEIGHBORS = 5;
         boolean DNS_REFRESHER_ENABLED = true;
         boolean DNS_RESOLUTION_ENABLED = true;
 

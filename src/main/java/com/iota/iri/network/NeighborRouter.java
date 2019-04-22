@@ -466,7 +466,7 @@ public class NeighborRouter {
         }
 
         // check if the given host + server socket port combination is actually defined in the config/wanted
-        if (!config.isTestnet() && !allowedNeighbors.contains(newIdentity)) {
+        if (!config.isAutoTetheringEnabled() && !allowedNeighbors.contains(newIdentity)) {
             log.info("dropping handshaked connection as neighbor from {} is not allowed to connect", newIdentity);
             closeNeighborConnection(channel, null, selector);
             return false;
@@ -573,7 +573,7 @@ public class NeighborRouter {
      * <ul>
      * <li>the IP address is not in the {@link NeighborRouter#hostsBlacklist}</li>
      * <li>{@link BaseIotaConfig#getMaxNeighbors()} has not been reached</li>
-     * <li>is whitelisted in {@link NeighborRouter#hostsWhitelist} (if {@link BaseIotaConfig#isTestnet()} is false)</li>
+     * <li>is whitelisted in {@link NeighborRouter#hostsWhitelist} (if {@link BaseIotaConfig#isAutoTetheringEnabled()} is false)</li>
      * </ul>
      * The IP address is blacklisted to mute it from subsequent connection attempts. The blacklisting is removed if the
      * IP address is added through {@link NeighborRouter#addNeighbor(String)}.
@@ -596,7 +596,7 @@ public class NeighborRouter {
         }
         boolean whitelisted = hostsWhitelist.contains(ipAddress);
         if (!whitelisted) {
-            if (!config.isTestnet()) {
+            if (!config.isAutoTetheringEnabled()) {
                 log.info("blacklisting/dropping new connection as neighbor from {} is not defined in the config",
                         ipAddress);
                 hostsBlacklist.add(ipAddress);

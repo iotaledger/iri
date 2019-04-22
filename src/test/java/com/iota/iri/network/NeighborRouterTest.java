@@ -149,6 +149,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigA.getMaxNeighbors()).thenReturn(1);
         Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
+        Mockito.when(nodeConfigA.isAutoTetheringEnabled()).thenReturn(true);
         neighborRouterA.init(nodeConfigA, transactionRequester, txPipeline);
 
         List<String> configNeighborsB = new ArrayList<>();
@@ -159,6 +160,7 @@ public class NeighborRouterTest {
         Mockito.when(nodeConfigB.getMaxNeighbors()).thenReturn(1);
         Mockito.when(nodeConfigB.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigB.getReconnectAttemptIntervalSeconds()).thenReturn(30);
+        Mockito.when(nodeConfigB.isAutoTetheringEnabled()).thenReturn(true);
         neighborRouterB.init(nodeConfigB, transactionRequester, txPipeline);
 
         Thread neighborRouterAThread = new Thread(neighborRouterA::route, "A");

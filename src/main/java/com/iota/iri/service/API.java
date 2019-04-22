@@ -669,6 +669,13 @@ public class API {
                     String info = "{ " + "\"score\" : " + score + ",\"parentScore\" : " + pScore + "},";
                     info += matcher.group(0); 
                     elements.add(info);
+                } else {
+                    LocalInMemoryGraphProvider prov = (LocalInMemoryGraphProvider)instance.tangle.getPersistenceProvider("LOCAL_GRAPH");
+                    double score = prov.getScore(h);
+                    double pScore = prov.getParentScore(h);
+                    String info = "{ " + "\"score\" : " + score + ",\"parentScore\" : " + pScore + "},";
+                    String decoded = java.net.URLDecoder.decode(StringUtils.trim(txnInfo), StandardCharsets.UTF_8.name());
+                    elements.add(info + decoded);
                 }
             }
         }

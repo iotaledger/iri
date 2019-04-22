@@ -102,7 +102,7 @@ public class TransactionProcessingPipeline {
         this.broadcastStage = new BroadcastStage(neighborRouter);
         this.validationStage = new ValidationStage(txValidator, recentlySeenBytesCache);
         this.receivedStage = new ReceivedStage(tangle, txValidator, snapshotProvider);
-        this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81);
+        this.batchedHasher = BatchedHasherFactory.create(BatchedHasherFactory.Type.BCTCURL81, 20);
         this.hashingStage = new HashingStage(batchedHasher);
     }
 

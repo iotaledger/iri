@@ -57,6 +57,9 @@ public class PreProcessStage {
         System.arraycopy(data, data.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES, reqHashBytes, 0,
                 Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES);
 
+        // increment all txs count
+        payload.getNeighbor().getMetrics().incrAllTransactionsCount();
+
         // compute digest of tx bytes data
         long txDigest = NeighborRouter.getTxCacheDigest(txDataBytes);
 

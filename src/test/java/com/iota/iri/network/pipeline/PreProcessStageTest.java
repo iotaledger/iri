@@ -4,6 +4,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.network.FIFOCache;
 import com.iota.iri.network.SampleTransaction;
 import com.iota.iri.network.neighbor.impl.NeighborImpl;
+import com.iota.iri.network.neighbor.impl.NeighborMetricsImpl;
 import com.iota.iri.network.protocol.Protocol;
 
 import java.nio.ByteBuffer;
@@ -32,6 +33,7 @@ public class PreProcessStageTest {
     @Test
     public void processingAnUnknownTxDirectsToHashingStage() {
         PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache);
+        Mockito.when(neighbor.getMetrics()).thenReturn(new NeighborMetricsImpl());
         ByteBuffer rawTxGossipData = SampleTransaction.createSampleTxBuffer();
         PreProcessPayload payload = new PreProcessPayload(neighbor, rawTxGossipData);
         ProcessingContext ctx = new ProcessingContext(null, payload);
@@ -52,6 +54,7 @@ public class PreProcessStageTest {
     @Test
     public void processingAKnownTxDirectsToReplyStage() {
         PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache);
+        Mockito.when(neighbor.getMetrics()).thenReturn(new NeighborMetricsImpl());
         ByteBuffer rawTxGossipData = SampleTransaction.createSampleTxBuffer();
         PreProcessPayload payload = new PreProcessPayload(neighbor, rawTxGossipData);
         ProcessingContext ctx = new ProcessingContext(null, payload);
@@ -77,6 +80,7 @@ public class PreProcessStageTest {
         truncatedTxGossipData.flip();
 
         // process the truncated transaction payload
+        Mockito.when(neighbor.getMetrics()).thenReturn(new NeighborMetricsImpl());
         PreProcessPayload payload = new PreProcessPayload(neighbor, truncatedTxGossipData);
         ProcessingContext ctx = new ProcessingContext(null, payload);
         stage.process(ctx);

@@ -97,7 +97,7 @@ public interface NeighborMetrics {
     long getUnknownMessageTypePacketsCount();
 
     /**
-     * Increments the count of packets received with an unknown message type.
+     * Increments the number of packets received with an unknown message type.
      * 
      * @return the number of packets received with an unknown message type
      */
@@ -111,23 +111,23 @@ public interface NeighborMetrics {
     long getIncompatiblePacketsCount();
 
     /**
-     * Increments the count of packets received with an incompatible protocol version.
+     * Increments the number of packets received with an incompatible protocol version.
      *
      * @return the number of packets received with an incompatible protocol version
      */
     long incrIncompatiblePacketsCount();
 
     /**
-     * Gets the number of packets received with a too big advertised message size.
+     * Gets the number of packets received with an invalid message length.
      * 
-     * @return the number of packets received with a too big advertised message size
+     * @return the number of packets received with an invalid message length
      */
-    long getMessageTooBigPacketsCount();
+    long getInvalidProtocolMessageLengthCount();
 
     /**
-     * Increments the count of packets received with a too big advertised message size.
+     * Increments the number of packets received with an invalid message length.
      *
-     * @return the number of packets received with a too big advertised message size
+     * @return the number of packets received with an invalid message length
      */
-    long incrMessageTooBigPacketsCount();
+    long incrInvalidProtocolMessageLengthCount();
 }

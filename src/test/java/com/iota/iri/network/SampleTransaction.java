@@ -6,6 +6,7 @@ import com.iota.iri.model.Hash;
 import com.iota.iri.model.TransactionHash;
 import com.iota.iri.model.persistables.Transaction;
 import com.iota.iri.network.protocol.Protocol;
+import com.iota.iri.network.protocol.ProtocolMessage;
 import com.iota.iri.utils.Converter;
 import net.openhft.hashing.LongHashFunction;
 
@@ -17,7 +18,7 @@ public class SampleTransaction {
     public final static int SIG_FILLED_COUNT = 1000;
     public final static LongHashFunction xxHash = LongHashFunction.xx();
     public final static long BYTES_DIGEST_OF_SAMPLE_TX = xxHash.hashBytes(createSampleTxBuffer().array(), 0,
-            Protocol.MessageSize.TRANSACTION_GOSSIP.getSize() - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES);
+            ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength() - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES);
     public static byte[] TRITS_OF_SAMPLE_TX;
     public static byte[] BYTES_OF_SAMPLE_TX;
     public static byte[] TRUNCATED_SAMPLE_TX_BYTES;
@@ -45,7 +46,7 @@ public class SampleTransaction {
     }
 
     public static ByteBuffer createSampleTxBuffer() {
-        int size = Protocol.MessageSize.TRANSACTION_GOSSIP.getSize();
+        int size = ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength();
         ByteBuffer buf = ByteBuffer.allocate(size);
         byte[] txBytes = new byte[size];
         for (int i = 0; i < SIG_FILLED_COUNT; i++) {

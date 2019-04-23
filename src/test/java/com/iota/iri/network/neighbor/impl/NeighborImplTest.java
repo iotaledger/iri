@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 
+import com.iota.iri.network.protocol.ProtocolMessage;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -37,13 +38,13 @@ public class NeighborImplTest {
 
     private final static String localAddr = "127.0.0.1";
     private final static char serverSocketPort = 15600;
-    private final static int txMessageMaxSize = Protocol.MessageSize.TRANSACTION_GOSSIP.getSize();
+    private final static int txMessageMaxSize = ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength();
 
     private ByteBuffer createEmptyTxPacket() {
         ByteBuffer buf = ByteBuffer.allocate(4 + txMessageMaxSize);
         buf.put(Protocol.PROTOCOL_VERSION);
-        buf.put(Protocol.MessageType.TRANSACTION_GOSSIP.getValue());
-        buf.putShort(Protocol.MessageSize.TRANSACTION_GOSSIP.getSize());
+        buf.put(ProtocolMessage.TRANSACTION_GOSSIP.getTypeID());
+        buf.putShort(ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength());
         buf.put(new byte[txMessageMaxSize]);
         buf.flip();
         return buf;

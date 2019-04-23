@@ -41,16 +41,16 @@ public class ProtocolTest {
     }
 
     @Test
-    public void parsingHeaderWithTooBigAdvertisedSizeThrows() {
+    public void parsingHeaderWithTooBigAdvertisedLengthThrows() {
         try {
             ByteBuffer buf = ByteBuffer.allocate(4);
             buf.put((byte) 1);
-            buf.put(Protocol.MessageType.HANDSHAKE.getValue());
-            buf.putShort((short) (Protocol.MessageSize.HANDSHAKE.getSize() + 1));
+            buf.put(ProtocolMessage.HANDSHAKE.getTypeID());
+            buf.putShort((short) (ProtocolMessage.HANDSHAKE.getMaxLength() + 1));
             buf.flip();
             Protocol.parseHeader(buf);
         } catch (Exception e) {
-            assertThat(e, IsInstanceOf.instanceOf(AdvertisedMessageSizeTooBigException.class));
+            assertThat(e, IsInstanceOf.instanceOf(InvalidProtocolMessageLengthException.class));
             return;
         }
         fail("expected an exception to be thrown");
@@ -62,15 +62,15 @@ public class ProtocolTest {
         try {
             ByteBuffer buf = ByteBuffer.allocate(4);
             buf.put((byte) 1);
-            buf.put(Protocol.MessageType.HANDSHAKE.getValue());
-            buf.putShort((Protocol.MessageSize.HANDSHAKE.getSize()));
+            buf.put(ProtocolMessage.HANDSHAKE.getTypeID());
+            buf.putShort((ProtocolMessage.HANDSHAKE.getMaxLength()));
             buf.flip();
             header = Protocol.parseHeader(buf);
         } catch (Exception e) {
             fail("didn't expect any exceptions");
         }
-        assertEquals(Protocol.MessageType.HANDSHAKE.getValue(), header.getMessageType().getValue());
-        assertEquals(Protocol.MessageSize.HANDSHAKE.getSize(), header.getMessageSize());
+        assertEquals(ProtocolMessage.HANDSHAKE.getTypeID(), header.getMessageType().getTypeID());
+        assertEquals(ProtocolMessage.HANDSHAKE.getMaxLength(), header.getMessageLength());
         assertEquals(Protocol.PROTOCOL_VERSION, header.getVersion());
     }
 
@@ -81,8 +81,8 @@ public class ProtocolTest {
         byte[] byteEncodedCooAddress = Hash.NULL_HASH.bytes();
         ByteBuffer buf = Protocol.createHandshakePacket(ownSourcePort, byteEncodedCooAddress);
         assertEquals(1, buf.get());
-        assertEquals(Protocol.MessageType.HANDSHAKE.getValue(), buf.get());
-        assertEquals(Protocol.MessageSize.HANDSHAKE.getSize(), buf.getShort());
+        assertEquals(ProtocolMessage.HANDSHAKE.getTypeID(), buf.get());
+        assertEquals(ProtocolMessage.HANDSHAKE.getMaxLength(), buf.getShort());
         assertEquals(ownSourcePort, buf.getChar());
         assertTrue(now <= buf.getLong());
         byte[] actualCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES];
@@ -114,10 +114,11 @@ public class ProtocolTest {
         sourceTx.bytes = constructTransactionBytes();
         TransactionViewModel tvm = new TransactionViewModel(sourceTx, null);
         ByteBuffer buf = Protocol.createTransactionGossipPacket(tvm, Hash.NULL_HASH.bytes());
-        final int expectedMessageSize = Transaction.SIZE - truncationBytesCount + Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES;
+        final int expectedMessageSize = Transaction.SIZE - truncationBytesCount
+                + Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES;
         assertEquals(Protocol.PROTOCOL_HEADER_BYTES + expectedMessageSize, buf.capacity());
         assertEquals(Protocol.PROTOCOL_VERSION, buf.get());
-        assertEquals(Protocol.MessageType.TRANSACTION_GOSSIP.getValue(), buf.get());
+        assertEquals(ProtocolMessage.TRANSACTION_GOSSIP.getTypeID(), buf.get());
         assertEquals(expectedMessageSize, buf.getShort());
     }
 

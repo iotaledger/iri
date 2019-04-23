@@ -75,8 +75,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
         this.selector = selector;
         this.channel = channel;
         this.txPipeline = txPipeline;
-        this.msgReader = MessageReaderFactory.create(Protocol.MessageType.HEADER,
-                Protocol.MessageSize.HEADER.getSize());
+        this.msgReader = MessageReaderFactory.create(ProtocolMessage.HEADER, ProtocolMessage.HEADER.getMaxLength());
     }
 
     @Override
@@ -109,32 +108,30 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                     log.error("{} is incompatible due to protocol version mismatch", getHostAddressAndPort());
                     metrics.incrIncompatiblePacketsCount();
                     return bytesRead;
-                } catch (AdvertisedMessageSizeTooBigException e) {
-                    log.error("{} is trying to send a message which exceeds the max size of the given message type",
+                } catch (InvalidProtocolMessageLengthException e) {
+                    log.error("{} is trying to send a message with an invalid length for the given message type",
                             getHostAddressAndPort());
-                    metrics.incrMessageTooBigPacketsCount();
+                    metrics.incrInvalidProtocolMessageLengthCount();
+
+                    // abort connection if we are handshaking
+                    if (state == NeighborState.HANDSHAKING) {
+                        return -1;
+                    }
                     return bytesRead;
                 }
 
-                // if we are handshaking, then we must have a handshaking packet
-                if (state == NeighborState.HANDSHAKING) {
-                    if (protocolHeader.getMessageType() != Protocol.MessageType.HANDSHAKE) {
-                        log.error("neighbor {}'s initial packet is not a handshaking packet, closing connection",
-                                getHostAddressAndPort());
-                        return -1;
-                    }
-                    if (protocolHeader.getMessageSize() != Protocol.MessageSize.HANDSHAKE.getSize()) {
-                        log.error("neighbor {}'s initial handshaking packet is of wrong size, closing connection",
-                                getHostAddressAndPort());
-                        return -1;
-                    }
+                // if we are handshaking, then we must have a handshaking packet as the initial packet
+                if (state == NeighborState.HANDSHAKING
+                        && protocolHeader.getMessageType() != ProtocolMessage.HANDSHAKE) {
+                    log.error("neighbor {}'s initial packet is not a handshaking packet, closing connection",
+                            getHostAddressAndPort());
+                    return -1;
                 }
 
                 // we got the header, now we want to read the message
                 readState = ReadState.READ_MESSAGE;
                 msgReader = MessageReaderFactory.create(protocolHeader.getMessageType(),
-                        protocolHeader.getMessageSize());
-
+                        protocolHeader.getMessageLength());
                 // execute another read as we likely already have the message in the network buffer
                 return read();
 
@@ -150,11 +147,7 @@ public class NeighborImpl<T extends SelectableChannel & ByteChannel> implements 
                 }
                 // reset
                 readState = ReadState.PARSE_HEADER;
-                try {
-                    msgReader = MessageReaderFactory.create(Protocol.MessageType.HEADER);
-                } catch (UnknownMessageTypeException e) {
-                    // can't happen
-                }
+                msgReader = MessageReaderFactory.create(ProtocolMessage.HEADER, ProtocolMessage.HEADER.getMaxLength());
                 return bytesRead;
         }
         return bytesRead;

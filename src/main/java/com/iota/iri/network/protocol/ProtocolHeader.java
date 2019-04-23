@@ -6,20 +6,20 @@ package com.iota.iri.network.protocol;
 public class ProtocolHeader {
 
     private byte version;
-    private Protocol.MessageType messageType;
-    private short messageSize;
+    private ProtocolMessage protoMsg;
+    private short messageLength;
 
     /**
      * Creates a new protocol header.
      * 
-     * @param version     the version used by the node
-     * @param messageType the message type
-     * @param messageSize the message size
+     * @param version       the version used by the node
+     * @param protoMsg      the message type
+     * @param messageLength the message length
      */
-    public ProtocolHeader(byte version, Protocol.MessageType messageType, short messageSize) {
+    public ProtocolHeader(byte version, ProtocolMessage protoMsg, short messageLength) {
         this.version = version;
-        this.messageType = messageType;
-        this.messageSize = messageSize;
+        this.protoMsg = protoMsg;
+        this.messageLength = messageLength;
     }
 
     /**
@@ -36,16 +36,16 @@ public class ProtocolHeader {
      * 
      * @return the denoted message type
      */
-    public Protocol.MessageType getMessageType() {
-        return messageType;
+    public ProtocolMessage getMessageType() {
+        return protoMsg;
     }
 
     /**
-     * Gets the denoted message size.
+     * Gets the denoted message length.
      * 
-     * @return the denoted message size
+     * @return the denoted message length
      */
-    public short getMessageSize() {
-        return messageSize;
+    public short getMessageLength() {
+        return messageLength;
     }
 }

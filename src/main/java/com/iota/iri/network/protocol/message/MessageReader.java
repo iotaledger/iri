@@ -1,6 +1,7 @@
 package com.iota.iri.network.protocol.message;
 
 import com.iota.iri.network.protocol.Protocol;
+import com.iota.iri.network.protocol.ProtocolMessage;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -39,6 +40,6 @@ public interface MessageReader {
      * 
      * @return the message type this {@link MessageReader} is expecting
      */
-    Protocol.MessageType getMessageType();
+    ProtocolMessage getMessageType();
 
 }

@@ -1,6 +1,7 @@
 package com.iota.iri.network.protocol.message.impl;
 
 import com.iota.iri.network.protocol.Protocol;
+import com.iota.iri.network.protocol.ProtocolMessage;
 import com.iota.iri.network.protocol.message.MessageReader;
 
 import java.io.IOException;
@@ -13,16 +14,16 @@ import java.nio.channels.ReadableByteChannel;
 public class MessageReaderImpl implements MessageReader {
 
     private ByteBuffer msgBuf;
-    private Protocol.MessageType messageType;
+    private ProtocolMessage protoMsg;
 
     /**
      * Creates a new {@link MessageReaderImpl}.
-     * @param messageType the message type
-     * @param msgSize the message size
+     * @param protoMsg the message type
+     * @param msgLength the message length
      */
-    public MessageReaderImpl(Protocol.MessageType messageType, short msgSize) {
-        this.messageType = messageType;
-        this.msgBuf = ByteBuffer.allocate(msgSize);
+    public MessageReaderImpl(ProtocolMessage protoMsg, short msgLength) {
+        this.protoMsg = protoMsg;
+        this.msgBuf = ByteBuffer.allocate(msgLength);
     }
 
     public boolean ready() {
@@ -37,7 +38,7 @@ public class MessageReaderImpl implements MessageReader {
         return msgBuf;
     }
 
-    public Protocol.MessageType getMessageType() {
-        return messageType;
+    public ProtocolMessage getMessageType() {
+        return protoMsg;
     }
 }

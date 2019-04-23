@@ -101,7 +101,7 @@ public class NeighborRouterTest {
         neighborRouterAThread.start();
         neighborRouterBThread.start();
 
-        Thread.sleep(1000);
+        Thread.sleep(2000);
 
         // A should be connected to B
         Map<String, Neighbor> connectedNeighborsA = neighborRouterA.getConnectedNeighbors();

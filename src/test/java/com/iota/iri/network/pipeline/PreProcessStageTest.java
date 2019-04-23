@@ -8,6 +8,7 @@ import com.iota.iri.network.protocol.Protocol;
 
 import java.nio.ByteBuffer;
 
+import com.iota.iri.network.protocol.ProtocolMessage;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -28,8 +29,6 @@ public class PreProcessStageTest {
 
     @Mock
     private NeighborImpl neighbor;
-
-    private final static int txMessageMaxSize = Protocol.MessageSize.TRANSACTION_GOSSIP.getSize();
 
     @Test
     public void processingAnUnknownTxDirectsToHashingStage() {
@@ -59,7 +58,8 @@ public class PreProcessStageTest {
         ProcessingContext ctx = new ProcessingContext(null, payload);
 
         // make the cache know the sample tx data
-        Mockito.when(recentlySeenBytesCache.get(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX)).thenReturn(Hash.NULL_HASH);
+        Mockito.when(recentlySeenBytesCache.get(SampleTransaction.BYTES_DIGEST_OF_SAMPLE_TX))
+                .thenReturn(Hash.NULL_HASH);
 
         stage.process(ctx);
         assertEquals(TransactionProcessingPipeline.Stage.REPLY, ctx.getNextStage());

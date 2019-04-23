@@ -55,7 +55,8 @@ public class NeighborImplTest {
         Neighbor neighbor = new NeighborImpl<>(selector, new FakeChannel() {
 
             // fake having a handshaking packet in the socket
-            private ByteBuffer handshakePacket = Protocol.createHandshakePacket(serverSocketPort, Hash.NULL_HASH.bytes());
+            private ByteBuffer handshakePacket = Protocol.createHandshakePacket(serverSocketPort,
+                    Hash.NULL_HASH.bytes(), (byte) 1);
 
             @Override
             public int read(ByteBuffer dst) {

@@ -204,7 +204,7 @@ public class NeighborRouter {
                                 newNeighbor.setDomain(domain);
                             }
                             newNeighbor.send(Protocol.createHandshakePacket((char) config.getNeighboringSocketPort(),
-                                    byteEncodedCooAddress));
+                                    byteEncodedCooAddress, (byte) config.getMwm()));
                             log.info("new connection from {}, performing handshake...", newNeighbor.getHostAddress());
                             newConn.register(selector, SelectionKey.OP_READ | SelectionKey.OP_WRITE, newNeighbor);
                             continue;
@@ -247,8 +247,9 @@ public class NeighborRouter {
                                     // remove connect interest
                                     key.interestOps(SelectionKey.OP_READ | SelectionKey.OP_WRITE);
                                     // add handshaking packet as the initial packet to send
-                                    neighbor.send(Protocol.createHandshakePacket(
-                                            (char) config.getNeighboringSocketPort(), byteEncodedCooAddress));
+                                    neighbor.send(
+                                            Protocol.createHandshakePacket((char) config.getNeighboringSocketPort(),
+                                                    byteEncodedCooAddress, (byte) config.getMwm()));
                                     continue;
                                 }
                             } catch (ConnectException ex) {
@@ -432,6 +433,14 @@ public class NeighborRouter {
             return false;
         }
 
+        // check whether same MWM is used
+        if(handshake.getMWM() != config.getMwm()){
+            log.error("dropping handshaked connection to neighbor {} as it uses a different MWM ({} instead of {})",
+                    identity, handshake.getMWM(), config.getMwm());
+            closeNeighborConnection(channel, null, selector);
+            return false;
+        }
+
         // check whether the neighbor actually uses the same coordinator address
         if (!Arrays.equals(byteEncodedCooAddress, handshake.getByteEncodedCooAddress())) {
             log.error("dropping handshaked connection to neighbor {} as it uses a different coordinator address",
@@ -572,7 +581,8 @@ public class NeighborRouter {
      * <ul>
      * <li>the IP address is not in the {@link NeighborRouter#hostsBlacklist}</li>
      * <li>{@link BaseIotaConfig#getMaxNeighbors()} has not been reached</li>
-     * <li>is whitelisted in {@link NeighborRouter#hostsWhitelist} (if {@link BaseIotaConfig#isAutoTetheringEnabled()} is false)</li>
+     * <li>is whitelisted in {@link NeighborRouter#hostsWhitelist} (if {@link BaseIotaConfig#isAutoTetheringEnabled()}
+     * is false)</li>
      * </ul>
      * The IP address is blacklisted to mute it from subsequent connection attempts. The blacklisting is removed if the
      * IP address is added through {@link NeighborRouter#addNeighbor(String)}.

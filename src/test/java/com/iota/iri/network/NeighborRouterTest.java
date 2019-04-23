@@ -71,29 +71,31 @@ public class NeighborRouterTest {
         NeighborRouter neighborRouterA = new NeighborRouter();
         NeighborRouter neighborRouterB = new NeighborRouter();
 
-        URI neighborAURI = URI.create("tcp://127.0.0.1:15000");
+        URI neighborAURI = URI.create("tcp://127.0.0.1:17000");
         String neighborAIdentity = String.format("%s:%d", neighborAURI.getHost(), neighborAURI.getPort());
-        URI neighborBURI = URI.create("tcp://127.0.0.1:16000");
+        URI neighborBURI = URI.create("tcp://127.0.0.1:18000");
         String neighborBIdentity = String.format("%s:%d", neighborBURI.getHost(), neighborBURI.getPort());
 
         List<String> configNeighborsA = new ArrayList<>(Arrays.asList(neighborBURI.toString()));
         Mockito.when(nodeConfigA.isTestnet()).thenReturn(true);
         Mockito.when(nodeConfigA.getNeighbors()).thenReturn(configNeighborsA);
         Mockito.when(nodeConfigA.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
-        Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(15000);
+        Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(17000);
         Mockito.when(nodeConfigA.getMaxNeighbors()).thenReturn(1);
         Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
+        Mockito.when(nodeConfigA.getMwm()).thenReturn(1);
         neighborRouterA.init(nodeConfigA, transactionRequester, txPipeline);
 
         List<String> configNeighborsB = new ArrayList<>(Arrays.asList(neighborAURI.toString()));
         Mockito.when(nodeConfigB.isTestnet()).thenReturn(true);
         Mockito.when(nodeConfigB.getNeighbors()).thenReturn(configNeighborsB);
         Mockito.when(nodeConfigB.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
-        Mockito.when(nodeConfigB.getNeighboringSocketPort()).thenReturn(16000);
+        Mockito.when(nodeConfigB.getNeighboringSocketPort()).thenReturn(18000);
         Mockito.when(nodeConfigB.getMaxNeighbors()).thenReturn(1);
         Mockito.when(nodeConfigB.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigB.getReconnectAttemptIntervalSeconds()).thenReturn(30);
+        Mockito.when(nodeConfigB.getMwm()).thenReturn(1);
         neighborRouterB.init(nodeConfigB, transactionRequester, txPipeline);
 
         Thread neighborRouterAThread = new Thread(neighborRouterA::route, "A");
@@ -101,7 +103,7 @@ public class NeighborRouterTest {
         neighborRouterAThread.start();
         neighborRouterBThread.start();
 
-        Thread.sleep(2000);
+        Thread.sleep(1000);
 
         // A should be connected to B
         Map<String, Neighbor> connectedNeighborsA = neighborRouterA.getConnectedNeighbors();
@@ -120,7 +122,8 @@ public class NeighborRouterTest {
 
         // send something to A in order to let B know that A is disconnected
         Neighbor neighborA = neighborRouterB.getConnectedNeighbors().get(neighborAIdentity);
-        neighborA.send(Protocol.createHandshakePacket((char) 16000, Hash.NULL_HASH.bytes()));
+        neighborA.send(
+                Protocol.createHandshakePacket((char) 17000, Hash.NULL_HASH.bytes(), (byte) nodeConfigA.getMwm()));
 
         // should now be disconnected
         Thread.sleep(1000);
@@ -136,31 +139,33 @@ public class NeighborRouterTest {
         NeighborRouter neighborRouterA = new NeighborRouter();
         NeighborRouter neighborRouterB = new NeighborRouter();
 
-        URI neighborAURI = URI.create("tcp://127.0.0.1:15000");
+        URI neighborAURI = URI.create("tcp://127.0.0.1:19000");
         String neighborAIdentity = String.format("%s:%d", neighborAURI.getHost(), neighborAURI.getPort());
-        URI neighborBURI = URI.create("tcp://127.0.0.1:16000");
+        URI neighborBURI = URI.create("tcp://127.0.0.1:20000");
         String neighborBIdentity = String.format("%s:%d", neighborBURI.getHost(), neighborBURI.getPort());
 
         List<String> configNeighborsA = new ArrayList<>();
         Mockito.when(nodeConfigA.isTestnet()).thenReturn(true);
         Mockito.when(nodeConfigA.getNeighbors()).thenReturn(configNeighborsA);
         Mockito.when(nodeConfigA.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
-        Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(15000);
+        Mockito.when(nodeConfigA.getNeighboringSocketPort()).thenReturn(19000);
         Mockito.when(nodeConfigA.getMaxNeighbors()).thenReturn(1);
         Mockito.when(nodeConfigA.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigA.getReconnectAttemptIntervalSeconds()).thenReturn(30);
         Mockito.when(nodeConfigA.isAutoTetheringEnabled()).thenReturn(true);
+        Mockito.when(nodeConfigA.getMwm()).thenReturn(1);
         neighborRouterA.init(nodeConfigA, transactionRequester, txPipeline);
 
         List<String> configNeighborsB = new ArrayList<>();
         Mockito.when(nodeConfigB.isTestnet()).thenReturn(true);
         Mockito.when(nodeConfigB.getNeighbors()).thenReturn(configNeighborsB);
         Mockito.when(nodeConfigB.getNeighboringSocketAddress()).thenReturn("127.0.0.1");
-        Mockito.when(nodeConfigB.getNeighboringSocketPort()).thenReturn(16000);
+        Mockito.when(nodeConfigB.getNeighboringSocketPort()).thenReturn(20000);
         Mockito.when(nodeConfigB.getMaxNeighbors()).thenReturn(1);
         Mockito.when(nodeConfigB.getCoordinator()).thenReturn(Hash.NULL_HASH.toString());
         Mockito.when(nodeConfigB.getReconnectAttemptIntervalSeconds()).thenReturn(30);
         Mockito.when(nodeConfigB.isAutoTetheringEnabled()).thenReturn(true);
+        Mockito.when(nodeConfigB.getMwm()).thenReturn(1);
         neighborRouterB.init(nodeConfigB, transactionRequester, txPipeline);
 
         Thread neighborRouterAThread = new Thread(neighborRouterA::route, "A");
@@ -189,7 +194,8 @@ public class NeighborRouterTest {
 
         // send something to A in order to let A remove the connection to B
         Neighbor neighborA = neighborRouterB.getConnectedNeighbors().get(neighborAIdentity);
-        neighborA.send(Protocol.createHandshakePacket((char) 16000, Hash.NULL_HASH.bytes()));
+        neighborA.send(
+                Protocol.createHandshakePacket((char) 19000, Hash.NULL_HASH.bytes(), (byte) nodeConfigA.getMwm()));
 
         Thread.sleep(1000);
 

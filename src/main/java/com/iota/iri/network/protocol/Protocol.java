@@ -90,13 +90,14 @@ public class Protocol {
      * @param ownSourcePort the node's own server socket port number
      * @return a {@link ByteBuffer} containing the handshake packet
      */
-    public static ByteBuffer createHandshakePacket(char ownSourcePort, byte[] ownByteEncodedCooAddress) {
+    public static ByteBuffer createHandshakePacket(char ownSourcePort, byte[] ownByteEncodedCooAddress, byte ownUsedMWM) {
         ByteBuffer buf = ByteBuffer
                 .allocate(ProtocolMessage.HEADER.getMaxLength() + ProtocolMessage.HANDSHAKE.getMaxLength());
         addProtocolHeader(buf, ProtocolMessage.HANDSHAKE);
         buf.putChar(ownSourcePort);
         buf.putLong(System.currentTimeMillis());
         buf.put(ownByteEncodedCooAddress);
+        buf.put(ownUsedMWM);
         buf.flip();
         return buf;
     }

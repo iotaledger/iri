@@ -10,8 +10,13 @@ public enum ProtocolMessage {
     HEADER((byte) 0, (short) Protocol.PROTOCOL_HEADER_BYTES_LENGTH, false),
     /**
      * The initial handshake packet sent over the wire up on a new neighbor connection.
+     * Made up of:
+     * - own server socket port (2 bytes)
+     * - time at which the packet was sent (8 bytes)
+     * - own used byte encoded coordinator address (49 bytes)
+     * - own used MWM (1 byte)
      */
-    HANDSHAKE((byte) 1, (short) 59, false),
+    HANDSHAKE((byte) 1, (short) 60, false),
     /**
      * The transaction payload + requested transaction hash gossipping packet. In reality most of this packets won't
      * take up their full 1604 bytes as the signature message fragment of the tx is truncated.

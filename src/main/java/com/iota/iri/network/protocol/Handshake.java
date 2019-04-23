@@ -19,6 +19,7 @@ public class Handshake {
     private int serverSocketPort;
     private long sentTimestamp;
     private byte[] byteEncodedCooAddress;
+    private int mwm;
     private State state = State.INIT;
 
     /**
@@ -34,6 +35,7 @@ public class Handshake {
         byte[] byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         msg.get(byteEncodedCooAddress);
         handshake.setByteEncodedCooAddress(byteEncodedCooAddress);
+        handshake.setMWM(msg.get());
         handshake.setState(Handshake.State.OK);
         return handshake;
     }
@@ -108,5 +110,23 @@ public class Handshake {
      */
     public void setByteEncodedCooAddress(byte[] byteEncodedCooAddress) {
         this.byteEncodedCooAddress = byteEncodedCooAddress;
+    }
+
+    /**
+     * Gets the MWM.
+     * 
+     * @return the mwm
+     */
+    public int getMWM() {
+        return mwm;
+    }
+
+    /**
+     * Sets the mwm.
+     * 
+     * @param mwm the mwm to set
+     */
+    public void setMWM(int mwm) {
+        this.mwm = mwm;
     }
 }

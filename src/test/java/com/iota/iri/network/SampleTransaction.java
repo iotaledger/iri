@@ -18,7 +18,7 @@ public class SampleTransaction {
     public final static int SIG_FILLED_COUNT = 1000;
     public final static LongHashFunction xxHash = LongHashFunction.xx();
     public final static long BYTES_DIGEST_OF_SAMPLE_TX = xxHash.hashBytes(createSampleTxBuffer().array(), 0,
-            ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength() - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES);
+            ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength() - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
     public static byte[] TRITS_OF_SAMPLE_TX;
     public static byte[] BYTES_OF_SAMPLE_TX;
     public static byte[] TRUNCATED_SAMPLE_TX_BYTES;

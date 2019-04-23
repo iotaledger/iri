@@ -2,7 +2,6 @@ package com.iota.iri.network;
 
 import com.iota.iri.conf.BaseIotaConfig;
 import com.iota.iri.conf.IotaConfig;
-import com.iota.iri.conf.NodeConfig;
 import com.iota.iri.controllers.TransactionViewModel;
 import com.iota.iri.model.Hash;
 import com.iota.iri.network.neighbor.Neighbor;
@@ -117,7 +116,7 @@ public class NeighborRouter {
         byte[] tritsEncodedCooAddress = new byte[config.getCoordinator().length()
                 * Converter.NUMBER_OF_TRITS_IN_A_TRYTE];
         Converter.trits(config.getCoordinator(), tritsEncodedCooAddress, 0);
-        byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES];
+        byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         Converter.bytes(tritsEncodedCooAddress, byteEncodedCooAddress);
     }
 

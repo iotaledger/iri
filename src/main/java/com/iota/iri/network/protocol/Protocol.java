@@ -16,37 +16,37 @@ public class Protocol {
     /**
      * The amount of bytes dedicated for the protocol version in the packet header.
      */
-    public final static byte HEADER_VERSION_BYTES = 1;
+    public final static byte HEADER_VERSION_BYTES_LENGTH = 1;
     /**
      * The amount of bytes dedicated for the message type in the packet header.
      */
-    public final static byte HEADER_TLV_TYPE_BYTES = 1;
+    public final static byte HEADER_TLV_TYPE_BYTES_LENGTH = 1;
     /**
      * The amount of bytes dedicated for the message length denotation in the packet header.
      */
-    public final static byte HEADER_TLV_LENGTH_BYTES = 2;
+    public final static byte HEADER_TLV_LENGTH_BYTES_LENGTH = 2;
     /**
      * The amount of bytes making up the protocol packet header.
      */
-    public final static byte PROTOCOL_HEADER_BYTES = HEADER_VERSION_BYTES + HEADER_TLV_LENGTH_BYTES
-            + HEADER_TLV_TYPE_BYTES;
+    public final static byte PROTOCOL_HEADER_BYTES_LENGTH = HEADER_VERSION_BYTES_LENGTH + HEADER_TLV_LENGTH_BYTES_LENGTH
+            + HEADER_TLV_TYPE_BYTES_LENGTH;
 
     /**
      * The amount of bytes used for the requested transaction hash.
      */
-    public final static int GOSSIP_REQUESTED_TX_HASH_BYTES = 49;
+    public final static int GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH = 49;
     /**
      * The amount of bytes used for the coo address sent in a handshake packet.
      */
-    public final static int BYTE_ENCODED_COO_ADDRESS_BYTES = 49;
+    public final static int BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH = 49;
     /**
      * The amount of bytes making up the non signature message fragment part of a transaction gossip payload.
      */
-    public final static int NON_SIG_TX_PART_SIZE_BYTES = 292;
+    public final static int NON_SIG_TX_PART_BYTES_LENGTH = 292;
     /**
      * The max amount of bytes a signature message fragment is made up from.
      */
-    public final static int SIG_DATA_MAX_SIZE_BYTES = 1312;
+    public final static int SIG_DATA_MAX_BYTES_LENGTH = 1312;
 
     /**
      * Parses the given buffer into a {@link ProtocolHeader}.
@@ -110,11 +110,11 @@ public class Protocol {
      */
     public static ByteBuffer createTransactionGossipPacket(TransactionViewModel tvm, byte[] requestedHash) {
         byte[] truncatedTx = truncateTx(tvm.getBytes());
-        final short payloadLengthBytes = (short) (truncatedTx.length + GOSSIP_REQUESTED_TX_HASH_BYTES);
+        final short payloadLengthBytes = (short) (truncatedTx.length + GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
         ByteBuffer buf = ByteBuffer.allocate(ProtocolMessage.HEADER.getMaxLength() + payloadLengthBytes);
         addProtocolHeader(buf, ProtocolMessage.TRANSACTION_GOSSIP, payloadLengthBytes);
         buf.put(truncatedTx);
-        buf.put(requestedHash, 0, GOSSIP_REQUESTED_TX_HASH_BYTES);
+        buf.put(requestedHash, 0, GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
         buf.flip();
         return buf;
     }
@@ -153,14 +153,14 @@ public class Protocol {
         // it could have been truncated for transmission
         int numOfBytesOfSigMsgFragToExpand = ProtocolMessage.TRANSACTION_GOSSIP.getMaxLength() - data.length;
         byte[] sigMsgFragPadding = new byte[numOfBytesOfSigMsgFragToExpand];
-        int sigMsgFragBytesToCopy = data.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES
-                - Protocol.NON_SIG_TX_PART_SIZE_BYTES;
+        int sigMsgFragBytesToCopy = data.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH
+                - Protocol.NON_SIG_TX_PART_BYTES_LENGTH;
 
         // build up transaction payload. empty signature message fragment equals padding with 1312x 0 bytes
         System.arraycopy(data, 0, txDataBytes, 0, sigMsgFragBytesToCopy);
         System.arraycopy(sigMsgFragPadding, 0, txDataBytes, sigMsgFragBytesToCopy, sigMsgFragPadding.length);
-        System.arraycopy(data, sigMsgFragBytesToCopy, txDataBytes, Protocol.SIG_DATA_MAX_SIZE_BYTES,
-                Protocol.NON_SIG_TX_PART_SIZE_BYTES);
+        System.arraycopy(data, sigMsgFragBytesToCopy, txDataBytes, Protocol.SIG_DATA_MAX_BYTES_LENGTH,
+                Protocol.NON_SIG_TX_PART_BYTES_LENGTH);
     }
 
     /**
@@ -172,17 +172,17 @@ public class Protocol {
     public static byte[] truncateTx(byte[] txBytes) {
         // check how many bytes from the signature can be truncated
         int bytesToTruncate = 0;
-        for (int i = SIG_DATA_MAX_SIZE_BYTES - 1; i >= 0; i--) {
+        for (int i = SIG_DATA_MAX_BYTES_LENGTH - 1; i >= 0; i--) {
             if (txBytes[i] != 0) {
                 break;
             }
             bytesToTruncate++;
         }
         // allocate space for truncated tx
-        byte[] truncatedTx = new byte[SIG_DATA_MAX_SIZE_BYTES - bytesToTruncate + NON_SIG_TX_PART_SIZE_BYTES];
-        System.arraycopy(txBytes, 0, truncatedTx, 0, SIG_DATA_MAX_SIZE_BYTES - bytesToTruncate);
-        System.arraycopy(txBytes, SIG_DATA_MAX_SIZE_BYTES, truncatedTx, SIG_DATA_MAX_SIZE_BYTES - bytesToTruncate,
-                NON_SIG_TX_PART_SIZE_BYTES);
+        byte[] truncatedTx = new byte[SIG_DATA_MAX_BYTES_LENGTH - bytesToTruncate + NON_SIG_TX_PART_BYTES_LENGTH];
+        System.arraycopy(txBytes, 0, truncatedTx, 0, SIG_DATA_MAX_BYTES_LENGTH - bytesToTruncate);
+        System.arraycopy(txBytes, SIG_DATA_MAX_BYTES_LENGTH, truncatedTx, SIG_DATA_MAX_BYTES_LENGTH - bytesToTruncate,
+                NON_SIG_TX_PART_BYTES_LENGTH);
         return truncatedTx;
     }
 

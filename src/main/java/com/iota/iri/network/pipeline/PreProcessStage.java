@@ -48,14 +48,14 @@ public class PreProcessStage {
 
         // allocate buffers for tx payload and requested tx hash
         byte[] txDataBytes = new byte[Transaction.SIZE];
-        byte[] reqHashBytes = new byte[Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES];
+        byte[] reqHashBytes = new byte[Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH];
 
         // expand received tx data
         Protocol.expandTx(data, txDataBytes);
 
         // copy requested hash
-        System.arraycopy(data, data.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES, reqHashBytes, 0,
-                Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES);
+        System.arraycopy(data, data.length - Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH, reqHashBytes, 0,
+                Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
 
         // increment all txs count
         payload.getNeighbor().getMetrics().incrAllTransactionsCount();
@@ -64,7 +64,7 @@ public class PreProcessStage {
         long txDigest = NeighborRouter.getTxCacheDigest(txDataBytes);
 
         Hash receivedTxHash = recentlySeenBytesCache.get(txDigest);
-        Hash requestedHash = HashFactory.TRANSACTION.create(reqHashBytes, 0, Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES);
+        Hash requestedHash = HashFactory.TRANSACTION.create(reqHashBytes, 0, Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
 
         // received tx is known, therefore we can submit to the reply stage directly.
         if (receivedTxHash != null) {

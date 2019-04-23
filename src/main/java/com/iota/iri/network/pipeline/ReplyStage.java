@@ -120,7 +120,7 @@ public class ReplyStage {
             try {
                 // retrieve requested tx
                 tvm = TransactionViewModel.fromHash(tangle, HashFactory.TRANSACTION.create(hashOfRequestedTx.bytes(), 0,
-                        Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES));
+                        Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH));
             } catch (Exception e) {
                 log.error("error while searching for explicitly asked for tx", e);
             }

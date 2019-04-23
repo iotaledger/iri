@@ -31,7 +31,7 @@ public class Handshake {
         Handshake handshake = new Handshake();
         handshake.setServerSocketPort((int) msg.getChar());
         handshake.setSentTimestamp(msg.getLong());
-        byte[] byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES];
+        byte[] byteEncodedCooAddress = new byte[Protocol.BYTE_ENCODED_COO_ADDRESS_BYTES_LENGTH];
         msg.get(byteEncodedCooAddress);
         handshake.setByteEncodedCooAddress(byteEncodedCooAddress);
         handshake.setState(Handshake.State.OK);

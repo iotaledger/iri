@@ -8,7 +8,6 @@ import com.iota.iri.network.protocol.Protocol;
 
 import java.nio.ByteBuffer;
 
-import com.iota.iri.network.protocol.ProtocolMessage;
 import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
@@ -72,9 +71,9 @@ public class PreProcessStageTest {
     public void theTransactionsPayloadGetsExpanded() {
         PreProcessStage stage = new PreProcessStage(recentlySeenBytesCache);
         ByteBuffer truncatedTxGossipData = ByteBuffer
-                .allocate(SampleTransaction.TRUNCATED_SAMPLE_TX_BYTES.length + Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES);
+                .allocate(SampleTransaction.TRUNCATED_SAMPLE_TX_BYTES.length + Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH);
         truncatedTxGossipData.put(SampleTransaction.TRUNCATED_SAMPLE_TX_BYTES);
-        truncatedTxGossipData.put(new byte[Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES]);
+        truncatedTxGossipData.put(new byte[Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH]);
         truncatedTxGossipData.flip();
 
         // process the truncated transaction payload

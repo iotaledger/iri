@@ -1,7 +1,5 @@
 package com.iota.iri.network.protocol;
 
-import java.util.HashMap;
-
 /**
  * Defines the different message types supported by the protocol and their characteristics.
  */
@@ -9,7 +7,7 @@ public enum ProtocolMessage {
     /**
      * The message header sent in each message denoting the TLV fields and used protocol version.
      */
-    HEADER((byte) 0, (short) Protocol.PROTOCOL_HEADER_BYTES, false),
+    HEADER((byte) 0, (short) Protocol.PROTOCOL_HEADER_BYTES_LENGTH, false),
     /**
      * The initial handshake packet sent over the wire up on a new neighbor connection.
      */
@@ -18,8 +16,8 @@ public enum ProtocolMessage {
      * The transaction payload + requested transaction hash gossipping packet. In reality most of this packets won't
      * take up their full 1604 bytes as the signature message fragment of the tx is truncated.
      */
-    TRANSACTION_GOSSIP((byte) 2, (short) (Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES + Protocol.NON_SIG_TX_PART_SIZE_BYTES
-            + Protocol.SIG_DATA_MAX_SIZE_BYTES), true);
+    TRANSACTION_GOSSIP((byte) 2, (short) (Protocol.GOSSIP_REQUESTED_TX_HASH_BYTES_LENGTH + Protocol.NON_SIG_TX_PART_BYTES_LENGTH
+            + Protocol.SIG_DATA_MAX_BYTES_LENGTH), true);
 
     ProtocolMessage(byte typeID, short maxLength, boolean supportsDynamicLength) {
         this.typeID = typeID;

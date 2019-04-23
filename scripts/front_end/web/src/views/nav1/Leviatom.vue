@@ -229,7 +229,7 @@
                 requestData.url = requestServer + ":" + requestPort;
                 this.axios.post("/api/AddNode", requestData).then(res => {//success callback
                     if (res.data["Code"] === 1) {
-                        this.$alert("addNode success!","Success",{type:"success"});
+                        this.$alert("addNode success!","Success",{type:"success", confirmButtonText:"OK"});
                     } else {
                         this.$alert(res.data["Message"],"Error",{type:"error"})
                     }

@@ -1,7 +1,6 @@
 package vue
 
 import (
-	"encoding/json"
 	"fmt"
 	nr "github.com/wunder3605/noderank"
 	"io/ioutil"
@@ -18,6 +17,20 @@ type DataTee struct {
 	DataCtx interface{}
 }
 
+type AddNodeRequest struct {
+	Attester string `json:"attester,omitempty"`
+	Attestee string `json:"attestee,omitempty"`
+	Score    string `json:"score,omitempty"`
+	Address  string `json:"address,omitempty"`
+	Url      string `json:"url,omitempty"`
+}
+
+type QueryNodesRequest struct {
+	Period  int64 `json:"period"`
+	NumRank int64 `json:"numRank"`
+	Url     string `json:"url,omitempty"`
+}
+
 type NodeDetailRequest struct {
 	RequestUrl  string `json:"requestUrl,omitempty"`
 	RequestData string `json:"requestData,omitempty"`
@@ -31,20 +44,14 @@ type AddAtInfo interface {
 	GetRankFunction(_data []byte) Message
 }
 
-func (o *OCli)AddAttestationInfoFunction(_data []byte )Message{
+func (o *OCli)AddAttestationInfoFunction(request *AddNodeRequest)Message{
 	mess:=Message{}
-	m:=make(map[string]string)
-	err := json.Unmarshal(_data, &m)
 
-	if err!=nil{
-		mess=Message{Code:0,Message:"Type conversion exception"}
-		return mess
-	}
 	info:=make([]string,3)
-	info[0]=m["Attester"]
-	info[1]=m["Attestee"]
-	info[2]=m["Score"]
-	err1:=nr.AddAttestationInfo("","",info)
+	info[0]=request.Attester
+	info[1]=request.Attestee
+	info[2]=request.Score
+	err1:=nr.AddAttestationInfo("",request.Url,info)
 	if err1!=nil{
 		mess=Message{Code:0,Message:"Failed to add node"}
 		return mess
@@ -53,21 +60,9 @@ func (o *OCli)AddAttestationInfoFunction(_data []byte )Message{
 	return mess
 }
 
-type parameter struct {
-	Period int64 `json:"period"`
-	NumRank int64 `json:"numRank"`
-}
-
-func (o *OCli)GetRankFunction(_data []byte)Message{
+func (o *OCli)GetRankFunction(request *QueryNodesRequest)Message{
 	mess:=Message{}
-	var para parameter
-	err:=json.Unmarshal(_data,&para)
-	if err!=nil{
-		mess=Message{Code:0,Message:"Type conversion exception"}
-		return mess
-	}
-
-	teescore,teectx,err1:=nr.GetRank("",para.Period,para.NumRank)
+	teescore,teectx,err1:=nr.GetRank("",request.Period,request.NumRank)
 	if teectx==nil||err1!=nil||teescore==nil{
 		mess=Message{Code:0,Message:"Failed to query node data"}
 		return mess

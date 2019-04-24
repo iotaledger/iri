@@ -11,6 +11,7 @@ import com.iota.iri.model.TransactionHash;
 import com.iota.iri.service.milestone.LatestMilestoneTracker;
 import com.iota.iri.service.snapshot.SnapshotProvider;
 import com.iota.iri.storage.Tangle;
+import net.openhft.hashing.LongHashFunction;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -18,9 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.net.*;
-import java.nio.ByteBuffer;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.*;
 import java.util.concurrent.*;
@@ -75,7 +73,8 @@ public class Node {
     private static final SecureRandom rnd = new SecureRandom();
 
 
-    private FIFOCache<ByteBuffer, Hash> recentSeenBytes;
+    private FIFOCache<Long, Hash> recentSeenBytes;
+    private LongHashFunction recentSeenBytesHashFunction;
 
     private static AtomicLong recentSeenBytesMissCount = new AtomicLong(0L);
     private static AtomicLong recentSeenBytesHitCount = new AtomicLong(0L);
@@ -127,6 +126,7 @@ public class Node {
 
         BROADCAST_QUEUE_SIZE = RECV_QUEUE_SIZE = REPLY_QUEUE_SIZE = configuration.getqSizeNode();
         recentSeenBytes = new FIFOCache<>(configuration.getCacheSizeBytes(), configuration.getpDropCacheEntry());
+        recentSeenBytesHashFunction = LongHashFunction.xx();
 
         parseNeighborsConfig();
 
@@ -171,7 +171,7 @@ public class Node {
      * traffic - so a balance is sought between speed and resource utilization.
      *
      */
-    private Runnable spawnNeighborDNSRefresherThread() {
+    Runnable spawnNeighborDNSRefresherThread() {
         return () -> {
             if (configuration.isDnsResolutionEnabled()) {
                 log.info("Spawning Neighbor DNS Refresher Thread");
@@ -293,7 +293,7 @@ public class Node {
                 try {
 
                     //Transaction bytes
-                    ByteBuffer digest = getBytesDigest(receivedData);
+                    long digest = getBytesDigest(receivedData);
 
                     //check if cached
                     synchronized (recentSeenBytes) {
@@ -314,9 +314,6 @@ public class Node {
                         addReceivedDataToReceiveQueue(receivedTransactionViewModel, neighbor);
 
                     }
-
-                } catch (NoSuchAlgorithmException e) {
-                    log.error("MessageDigest: " + e);
                 } catch (final TransactionValidator.StaleTimestampException e) {
                     log.debug(e.getMessage());
                     try {
@@ -516,7 +513,7 @@ public class Node {
             try {
                 sendPacket(sendingPacket, transactionViewModel, neighbor);
 
-                ByteBuffer digest = getBytesDigest(transactionViewModel.getBytes());
+                long digest = getBytesDigest(transactionViewModel.getBytes());
                 synchronized (recentSeenBytes) {
                     recentSeenBytes.put(digest, transactionViewModel.getHash());
                 }
@@ -767,10 +764,8 @@ public class Node {
         executor.awaitTermination(6, TimeUnit.SECONDS);
     }
 
-    private ByteBuffer getBytesDigest(byte[] receivedData) throws NoSuchAlgorithmException {
-        MessageDigest digest = MessageDigest.getInstance("SHA-256");
-        digest.update(receivedData, 0, TransactionViewModel.SIZE);
-        return ByteBuffer.wrap(digest.digest());
+    private long getBytesDigest(byte[] receivedData) {
+        return recentSeenBytesHashFunction.hashBytes(receivedData);
     }
 
     // helpers methods

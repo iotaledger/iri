@@ -1,14 +1,24 @@
-defaults: &db_1
+defaults: &api_tests_config_files
   db: https://s3.eu-central-1.amazonaws.com/iotaledger-dbfiles/dev/testnet_files.tgz
   db_checksum: 6eaa06d5442416b7b8139e337a1598d2bae6a7f55c2d9d01f8c5dac69c004f75
-
+  iri_args: ['--testnet-coordinator',
+  'BTCAAFIH9CJIVIMWFMIHKFNWRTLJRKSTMRCVRE9CIP9AEDTOULVFRHQZT9QAQBZXXAZGBNMVOOKTKAXTB',
+  '--milestone-start', 
+  '0',
+  '--snapshot', 
+  './snapshot.txt',
+  '--testnet-no-coo-validation',
+  'true',
+  '--testnet',
+  'true'
+  ]
 seeds: # For internal use by the regression system. 
     - SEED
     - SIID
 
 nodes:
   nodeA: #name
-    <<: *db_1
+    <<: *api_tests_config_files
   
   nodeB:
-    <<: *db_1
+    <<: *api_tests_config_files

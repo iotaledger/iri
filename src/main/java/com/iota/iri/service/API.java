@@ -91,8 +91,8 @@ public class API {
     public static final String INVALID_SUBTANGLE = "This operation cannot be executed: "
                                                  + "The subtangle has not been updated yet.";
     
-    private static final String overMaxErrorMessage = "Could not complete request";
-    private static final String invalidParams = "Invalid parameters";
+    private static final String OVER_MAX_ERROR_MESSAGE = "Could not complete request";
+    private static final String INVALID_PARAMS = "Invalid parameters";
 
     private static final char ZERO_LENGTH_ALLOWED = 'Y';
     private static final char ZERO_LENGTH_NOT_ALLOWED = 'N';
@@ -141,7 +141,7 @@ public class API {
     private Pattern trytesPattern = Pattern.compile("[9A-Z]*");
 
     //Package Private For Testing
-    final Map<String, Function<Map<String, Object>, AbstractResponse>> commandRoute;
+    final Map<ApiCommand, Function<Map<String, Object>, AbstractResponse>> commandRoute;
     
     
     private RestConnector connector;
@@ -191,24 +191,24 @@ public class API {
         features = Feature.calculateFeatureNames(configuration);
         
         commandRoute = new HashMap<>();
-        commandRoute.put(ApiCommand.ADD_NEIGHBORS.toString(), addNeighbors());
-        commandRoute.put(ApiCommand.ATTACH_TO_TANGLE.toString(), attachToTangle());
-        commandRoute.put(ApiCommand.BROADCAST_TRANSACTIONs.toString(), broadcastTransactions());
-        commandRoute.put(ApiCommand.FIND_TRANSACTIONS.toString(), findTransactions());
-        commandRoute.put(ApiCommand.GET_BALANCES.toString(), getBalances());
-        commandRoute.put(ApiCommand.GET_INCLUSION_STATES.toString(), getInclusionStates());
-        commandRoute.put(ApiCommand.GET_NEIGHBORS.toString(), getNeighbors());
-        commandRoute.put(ApiCommand.GET_NODE_INFO.toString(), getNodeInfo());
-        commandRoute.put(ApiCommand.GET_NODE_API_CONFIG.toString(), getNodeAPIConfiguration());
-        commandRoute.put(ApiCommand.GET_TIPS.toString(), getTips());
-        commandRoute.put(ApiCommand.GET_TRANSACTIONS_TO_APPROVE.toString(), getTransactionsToApprove());
-        commandRoute.put(ApiCommand.GET_TRYTES.toString(), getTrytes());
-        commandRoute.put(ApiCommand.INTERRUPT_ATTACHING_TO_TANGLE.toString(), interruptAttachingToTangle());
-        commandRoute.put(ApiCommand.REMOVE_NEIGHBORS.toString(), removeNeighbors());
-        commandRoute.put(ApiCommand.STORE_TRANSACTIONS.toString(), storeTransactions());
-        commandRoute.put(ApiCommand.GET_MISSING_TRANSACTIONS.toString(), getMissingTransactions());
-        commandRoute.put(ApiCommand.CHECK_CONSISTENCY.toString(), checkConsistency());
-        commandRoute.put(ApiCommand.WERE_ADDRESSES_SPENT_FROM.toString(), wereAddressesSpentFrom());
+        commandRoute.put(ApiCommand.ADD_NEIGHBORS, addNeighbors());
+        commandRoute.put(ApiCommand.ATTACH_TO_TANGLE, attachToTangle());
+        commandRoute.put(ApiCommand.BROADCAST_TRANSACTIONs, broadcastTransactions());
+        commandRoute.put(ApiCommand.FIND_TRANSACTIONS, findTransactions());
+        commandRoute.put(ApiCommand.GET_BALANCES, getBalances());
+        commandRoute.put(ApiCommand.GET_INCLUSION_STATES, getInclusionStates());
+        commandRoute.put(ApiCommand.GET_NEIGHBORS, getNeighbors());
+        commandRoute.put(ApiCommand.GET_NODE_INFO, getNodeInfo());
+        commandRoute.put(ApiCommand.GET_NODE_API_CONFIG, getNodeAPIConfiguration());
+        commandRoute.put(ApiCommand.GET_TIPS, getTips());
+        commandRoute.put(ApiCommand.GET_TRANSACTIONS_TO_APPROVE, getTransactionsToApprove());
+        commandRoute.put(ApiCommand.GET_TRYTES, getTrytes());
+        commandRoute.put(ApiCommand.INTERRUPT_ATTACHING_TO_TANGLE, interruptAttachingToTangle());
+        commandRoute.put(ApiCommand.REMOVE_NEIGHBORS, removeNeighbors());
+        commandRoute.put(ApiCommand.STORE_TRANSACTIONS, storeTransactions());
+        commandRoute.put(ApiCommand.GET_MISSING_TRANSACTIONS, getMissingTransactions());
+        commandRoute.put(ApiCommand.CHECK_CONSISTENCY, checkConsistency());
+        commandRoute.put(ApiCommand.WERE_ADDRESSES_SPENT_FROM, wereAddressesSpentFrom());
     }
 
     /**
@@ -284,8 +284,9 @@ public class API {
 
             log.debug("# {} -> Requesting command '{}'", counter.incrementAndGet(), command);
 
-            if (commandRoute.containsKey(command)) {
-                return commandRoute.get(command).apply(request);
+            ApiCommand apiCommand = ApiCommand.valueOf(command);
+            if (apiCommand != null) {
+                return commandRoute.get(apiCommand).apply(request);
             } else {
                 AbstractResponse response = ixi.processCommand(command, request);
                 if (response == null) {
@@ -517,7 +518,7 @@ public class API {
             }
         }
         if (elements.size() > maxGetTrytes){
-            return ErrorResponse.create(overMaxErrorMessage);
+            return ErrorResponse.create(OVER_MAX_ERROR_MESSAGE);
         }
         return GetTrytesResponse.create(elements);
     }
@@ -993,7 +994,7 @@ public class API {
         }
 
         if (!containsKey) {
-            throw new ValidationException(invalidParams);
+            throw new ValidationException(INVALID_PARAMS);
         }
 
         //Using multiple of these input fields returns the intersection of the values.
@@ -1010,7 +1011,7 @@ public class API {
             foundTransactions.retainAll(approveeTransactions);
         }
         if (foundTransactions.size() > maxFindTxs){
-            return ErrorResponse.create(overMaxErrorMessage);
+            return ErrorResponse.create(OVER_MAX_ERROR_MESSAGE);
         }
 
         final List<String> elements = foundTransactions.stream()
@@ -1373,7 +1374,7 @@ public class API {
      */
     private void validateParamExists(Map<String, Object> request, String paramName) throws ValidationException {
         if (!request.containsKey(paramName)) {
-            throw new ValidationException(invalidParams);
+            throw new ValidationException(INVALID_PARAMS);
         }
     }
 
@@ -1394,7 +1395,7 @@ public class API {
         validateParamExists(request, paramName);
         final List<String> paramList = (List<String>) request.get(paramName);
         if (paramList.size() > maxRequestList) {
-            throw new ValidationException(overMaxErrorMessage);
+            throw new ValidationException(OVER_MAX_ERROR_MESSAGE);
         }
 
         if (size > 0) {

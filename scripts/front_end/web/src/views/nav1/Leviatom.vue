@@ -125,7 +125,7 @@
             queryData() {
                 $("#dagResult").val("");
                 if (!requestServer || !requestPort) {
-                    this.$alert("Please choose server and port", "Warning", {type: "warning"});
+                    this.$alert("Please choose server and port", "Warning", this.messageOption.warning);
                     return;
                 }
                 requestData.url = requestServer + ":" + requestPort;
@@ -144,72 +144,15 @@
                 });
             },
             drawRelationMap(data) {
-                let myChart = this.$echarts.init(document.getElementById("relationChart"));
-                myChart.showLoading();
-                let datas = {};
-                data.forEach(function (item) {
-                    if (item["attester"] !== "") {
-                        datas[item["attester"]] = "1";
+                let digraph = "digraph {rankdir=LR;";
+                for(let i in data){
+                    if(data[i].attester !== "" && data[i].attestee != ""){
+                        digraph += data[i].attester + "->" + data[i].attestee + ";"
                     }
-                    if (item["attestee"] !== "") {
-                        datas[item["attestee"]] = "1";
-                    }
-                });
-                let series = [];
-                let seriesData;
-                seriesData = {
-                    type: "graph",
-                    layout: "force",
-                    // progressiveThreshold: 700,
-                    data: Object.keys(datas).map(function (item) {
-                        return {
-                            x: null,
-                            y: null,
-                            id: item,
-                            name: item,
-                            symbolSize: 25,
-                            itemStyle: {
-                                normal: {
-                                    color: "rgb(63, 167, 220)"
-                                }
-                            }
-                        };
-                    }),
-                    edges: data.map(function (edge) {
-                        return {
-                            source: edge.attestee,
-                            target: edge.attester
-                        };
-                    }),
-                    label: {
-                        emphasis: {
-                            position: "right",
-                            show: true
-                        }
-                    },
-                    roam: true,
-                    focusNodeAdjacency: true,
-                    lineStyle: {
-                        normal: {
-                            width: 0.5,
-                            curveness: 0,
-                            opacity: 0.7
-                        }
-                    },
-                    force: {
-                        repulsion: 200,
-                        edgeLength: [150, 100]
-                    }
-                };
-                series[0] = seriesData;
-                let mapOption = {};
-                mapOption.title = {};
-                mapOption.title.text = "Trias-Dag Map";
-                mapOption.animationDurationUpdate = 1500;
-                mapOption.animationEasingUpdate = "quinticInOut";
-                mapOption.series = series;
-                myChart.setOption(mapOption, true);
-                myChart.hideLoading();
+                }
+                digraph += "}";
+                let svgXml = this.$viz(digraph, {format: "svg"});
+                $("#relationChart").html(svgXml);
             },
             showResultMessage(data) {
                 if (!data || data.constructor !== Array) {//illegal data
@@ -223,15 +166,15 @@
             },
             addNode() {
                 if (!requestServer || !requestPort) {
-                    this.$alert("Please choose server and port", "Warning",{type:"warning"});
+                    this.$alert("Please choose server and port", "Warning",this.messageOption.warning);
                     return;
                 }
                 requestData.url = requestServer + ":" + requestPort;
                 this.axios.post("/api/AddNode", requestData).then(res => {//success callback
                     if (res.data["Code"] === 1) {
-                        this.$alert("addNode success!","Success",{type:"success", confirmButtonText:"OK"});
+                        this.$alert("addNode success!","Success",this.messageOption.success);
                     } else {
-                        this.$alert(res.data["Message"],"Error",{type:"error"})
+                        this.$alert(res.data["Message"],"Error",this.messageOption.error);
                     }
                 }).catch(error => {//error callback
                     console.error(error);
@@ -257,6 +200,5 @@
     .dag-map {
         width: 95%;
         height: 500px;
-        background: #f3f3f3 !important;
     }
 </style>

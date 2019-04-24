@@ -2,18 +2,18 @@ package com.iota.iri.service.dto;
 
 import java.util.List;
 
-import com.iota.iri.service.API;
-
 /**
  * 
  * Contains information about the result of a successful {@code getNeighbors} API call.
- * See {@link API#getNeighborsStatement} for how this response is created.
+ * See {@link GetNeighborsResponse#create(List)} for how this response is created.
  *
  */
 public class GetNeighborsResponse extends AbstractResponse {
 
     /**
      * The neighbors you are connected with, as well as their activity counters.
+     * 
+     * @see com.iota.iri.service.dto.GetNeighborsResponse.Neighbor
      */
     private Neighbor[] neighbors;
 
@@ -46,7 +46,8 @@ public class GetNeighborsResponse extends AbstractResponse {
      * A plain DTO of an iota neighbor.
      * 
      */
-    static class Neighbor {
+    @SuppressWarnings("unused")
+    public static class Neighbor {
 
         /**
          * The address of your neighbor

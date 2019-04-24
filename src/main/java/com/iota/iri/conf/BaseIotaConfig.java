@@ -29,7 +29,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     public static final String SPLIT_STRING_TO_LIST_REGEX = ",| ";
 
     private boolean help;
-
+    private boolean testnet = false;
+    
     //API
     protected int port = Defaults.API_PORT;
     protected String apiHost = Defaults.API_HOST;
@@ -40,6 +41,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     protected int maxGetTrytes = Defaults.MAX_GET_TRYTES;
     protected int maxBodyLength = Defaults.MAX_BODY_LENGTH;
     protected String remoteAuth = Defaults.REMOTE_AUTH;
+    
     //We don't have a REMOTE config but we have a remote flag. We must add a field for JCommander
     private boolean remote;
 
@@ -119,7 +121,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
         //One can invoke help via INI file (feature/bug) so we always create JCommander even if args is empty
         JCommander jCommander = JCommander.newBuilder()
                 .addObject(this)
-                //This is in order to enable the `--conf` and `--testnet` option
+                //This is in order to enable the `--conf` option
                 .acceptUnknownOptions(true)
                 .allowParameterOverwriting(true)
                 //This is the first line of JCommander Usage
@@ -134,6 +136,17 @@ public abstract class BaseIotaConfig implements IotaConfig {
     @Override
     public boolean isHelp() {
         return help;
+    }
+    
+    @Override
+    public boolean isTestnet() {
+        return testnet;
+    }
+    
+    @JsonIgnore
+    @Parameter(names = {Config.TESTNET_FLAG}, description = Config.Descriptions.TESTNET, arity = 1)
+    protected void setTestnet(boolean testnet) {
+        this.testnet = testnet;
     }
 
     @JsonProperty
@@ -155,6 +168,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
     @Override
     public String getApiHost() {
+        if (remote) {
+            return "0.0.0.0";
+        }
+        
         return apiHost;
     }
 
@@ -165,9 +182,9 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonIgnore
-    @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE)
+    @Parameter(names = {"--remote"}, description = APIConfig.Descriptions.REMOTE, arity = 1)
     protected void setRemote(boolean remote) {
-        this.apiHost = "0.0.0.0";
+        this.remote = remote;
     }
 
     @Override
@@ -409,7 +426,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--revalidate"}, description = DbConfig.Descriptions.REVALIDATE)
+    @Parameter(names = {"--revalidate"}, description = DbConfig.Descriptions.REVALIDATE, arity = 1)
     protected void setRevalidate(boolean revalidate) {
         this.revalidate = revalidate;
     }
@@ -420,7 +437,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = {"--rescan"}, description = DbConfig.Descriptions.RESCAN_DB)
+    @Parameter(names = {"--rescan"}, description = DbConfig.Descriptions.RESCAN_DB, arity = 1)
     protected void setRescanDb(boolean rescanDb) {
         this.rescanDb = rescanDb;
     }
@@ -673,7 +690,7 @@ public abstract class BaseIotaConfig implements IotaConfig {
      */
     @Deprecated
     @JsonProperty
-    @Parameter(names = "--zmq-enabled", description = ZMQConfig.Descriptions.ZMQ_ENABLED)
+    @Parameter(names = "--zmq-enabled", description = ZMQConfig.Descriptions.ZMQ_ENABLED, arity = 1)
     protected void setZmqEnabled(boolean zmqEnabled) {
         this.zmqEnableTcp = zmqEnabled;
         this.zmqEnableIpc = zmqEnabled;
@@ -829,7 +846,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
     }
 
     @JsonProperty
-    @Parameter(names = "--max-analyzed-transactions", description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
+    @Parameter(names = "--max-analyzed-transactions", 
+        description = TipSelConfig.Descriptions.BELOW_MAX_DEPTH_TRANSACTION_LIMIT)
     protected void setBelowMaxDepthTransactionLimit(int maxAnalyzedTransactions) {
         this.maxAnalyzedTransactions = maxAnalyzedTransactions;
     }
@@ -915,10 +933,10 @@ public abstract class BaseIotaConfig implements IotaConfig {
 
         //Coo
         Hash COORDINATOR_ADDRESS = HashFactory.ADDRESS.create(
-                        "KPWCHICGJZXKE9GSUDXZYUAPLHAKAHYHDXNPHENTERYMMBQOPSQIDENXKLKCEYCPVTZQLEEJVYJZV9BWU");
-        int COORDINATOR_SECURITY_LEVEL = 1;
-        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.CURLP27;
-        int NUM_KEYS_IN_MILESTONE = 20;
+                        "EQSAUZXULTTYZCLNJNTXQTQHOMOFZERHTCGTXOLTVAHKSA9OGAZDEKECURBRIXIJWNPFCQIOVFVVXJVD9");
+        int COORDINATOR_SECURITY_LEVEL = 2;
+        SpongeFactory.Mode COORDINATOR_SIGNATURE_MODE = SpongeFactory.Mode.KERL;
+        int NUM_KEYS_IN_MILESTONE = 23;
         int MAX_MILESTONE_INDEX = 1 << NUM_KEYS_IN_MILESTONE;
 
         //Snapshot
@@ -940,8 +958,8 @@ public abstract class BaseIotaConfig implements IotaConfig {
         String PREVIOUS_EPOCHS_SPENT_ADDRESSES_TXT =
                 "/previousEpochsSpentAddresses1.txt /previousEpochsSpentAddresses2.txt " +
                         "/previousEpochsSpentAddresses3.txt";
-        long GLOBAL_SNAPSHOT_TIME = 1545469620;
-        int MILESTONE_START_INDEX = 933_210;
+        long GLOBAL_SNAPSHOT_TIME = 1554904800;
+        int MILESTONE_START_INDEX = 1050000;
         int MAX_ANALYZED_TXS = 20_000;
 
     }

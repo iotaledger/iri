@@ -10,15 +10,18 @@ import routes from "./routes";
 import axios from "axios";
 import Vueaxios from "vue-axios";
 import Echarts from "echarts";
-
+import localConfig from "./common/config/config"
+import Viz from "viz.js";
 
 import "font-awesome/css/font-awesome.min.css";
 
 Vue.use(ElementUI);
 Vue.use(VueRouter);
 Vue.use(Vuex);
+Vue.use(localConfig);
 Vue.use(Vueaxios,axios);
 Vue.prototype.$echarts = Echarts;
+Vue.prototype.$viz = Viz;
 
 const router = new VueRouter({
     routes

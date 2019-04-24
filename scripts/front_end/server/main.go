@@ -1,12 +1,11 @@
 package main
 
 import (
+	v "./vue"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
-	v "./vue"
 )
 
 func main() {
@@ -21,9 +20,15 @@ func main() {
 }
 
 func AddNode(writer http.ResponseWriter, request *http.Request){
+	var addNodeRequest *v.AddNodeRequest
+	if err := json.NewDecoder(request.Body).Decode(&addNodeRequest);err != nil {
+		fmt.Println(err)
+		log.Fatal(err)
+		request.Body.Close()
+	}
+
 	var o v.OCli
-	body, _ := ioutil.ReadAll(request.Body)
-	response:=o.AddAttestationInfoFunction(body)
+	response:=o.AddAttestationInfoFunction(addNodeRequest)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		fmt.Println(err)
@@ -31,9 +36,15 @@ func AddNode(writer http.ResponseWriter, request *http.Request){
 }
 
 func QueryNodes(writer http.ResponseWriter, request *http.Request){
+	var queryNodesRequest *v.QueryNodesRequest
+	if err := json.NewDecoder(request.Body).Decode(&queryNodesRequest);err != nil {
+		fmt.Println(err)
+		log.Fatal(err)
+		request.Body.Close()
+	}
+
 	var o v.OCli
-	body, _ := ioutil.ReadAll(request.Body)
-	response:=o.GetRankFunction(body)
+	response:=o.GetRankFunction(queryNodesRequest)
 
 	if err := json.NewEncoder(writer).Encode(response); err != nil {
 		fmt.Println(err)
